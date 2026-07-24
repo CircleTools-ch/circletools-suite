@@ -6,7 +6,7 @@ Read it before generating code or documentation. The guideline documents it poin
 
 ## What this project is
 
-`<Suite>` is a **.NET 10 / Aspire / DDD** App-Suite for families and groups of friends
+Walf is a **.NET 10 / Aspire / DDD** app suite for families and groups of friends
 (first app: Secret-Santa). It is **local-first** (works offline with no account) with
 **optional account-based sync**. Targets: Web (Blazor) + native Android/iOS (MAUI Blazor
 Hybrid), sharing feature code. Swiss-first; product is multilingual (DE/EN/FR); **all code
@@ -33,10 +33,10 @@ and docs are English**. See [`README.md`](README.md).
 
 ## Placeholder & naming convention
 
-- The brand name is **not yet finalized**. The token **`Suite`** is used as the project /
-  namespace prefix (e.g. `Suite.AppHost`, `Suite.SecretSanta.Service.Core`) and **`<Suite>`**
-  in prose. Renaming later is a single find-replace of `Suite` → the chosen brand.
-- Individual apps become **subdomains** of the suite domain (e.g. `secretsanta.<suite>.ch`).
+- The brand name is **Walf** (backronym: *We Are Like Family*). It is the project /
+  namespace prefix (e.g. `Walf.AppHost`, `Walf.SecretSanta.Service.Core`) and the product
+  name in prose. The former `Suite` / `<Suite>` placeholder has been fully replaced.
+- Individual apps become **subdomains** of the suite domain (e.g. `secretsanta.walf.ch`).
   App brand names are decided per app during that app's idea/branding step.
 - Candidate names + domain findings live in [`docs/process/naming.md`](docs/process/naming.md).
 
@@ -75,7 +75,7 @@ the docs site, and link it into the traceability chain (backward + forward by ID
 dotnet tool restore                          # install DocFX (local tool)
 dotnet docfx docfx/docfx.json                # build the docs site (fails on broken links/xrefs)
 dotnet docfx docfx/docfx.json --serve        # build + serve locally
-dotnet build Suite.slnx                      # build the solution
+dotnet build Walf.slnx                      # build the solution
 dotnet test                                  # run tests (once test projects exist)
 ```
 

@@ -1,8 +1,7 @@
-# `<Suite>` — App-Suite for families & friends
+# Walf — app suite for families & friends
 
-> **`<Suite>`** is a placeholder brand name. The final name and domain are the first
-> tracked step of the harness — see [`docs/roadmap/backlog.md`](docs/roadmap/backlog.md)
-> and the candidate shortlist in [`docs/process/naming.md`](docs/process/naming.md).
+> **Walf** — *We Are Like Family*. The suite brand (chosen 2026-07-24); domain `walf.ch`.
+> See the decision and the naming history in [`docs/process/naming.md`](docs/process/naming.md).
 
 A suite of small, delightful apps for **families and groups of friends** — one brand,
 one login, shared configuration, and a global dashboard over every app. The first app is
@@ -58,7 +57,7 @@ dotnet tool restore
 dotnet docfx docfx/docfx.json --serve
 
 # Build the solution (near-empty during the harness phase)
-dotnet build Suite.slnx
+dotnet build Walf.slnx
 ```
 
 ## Where to find things

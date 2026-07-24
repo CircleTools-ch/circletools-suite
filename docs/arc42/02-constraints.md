@@ -25,5 +25,5 @@
 
 - Coding & architecture per the [guidelines](../guidelines/coding-guidelines.md).
 - Ubiquitous language per the [glossary](../glossary/index.md).
-- `Suite` is the placeholder namespace/brand token (see [naming](../process/naming.md); full
-  contributor guidance is in the repository `CLAUDE.md`).
+- `Walf` (We Are Like Family) is the suite brand and namespace/project prefix (see
+  [naming](../process/naming.md); full contributor guidance is in the repository `CLAUDE.md`).

@@ -5,7 +5,7 @@
 ## Targets
 - **Android** → Google Play (signed AAB), phone + tablet.
 - **iOS** → Apple App Store (signed IPA), iPhone + iPad.
-- Built from the MAUI Blazor Hybrid `Suite.<App>.App` projects.
+- Built from the MAUI Blazor Hybrid `Walf.<App>.App` projects.
 
 ## Prerequisites (already available locally)
 - MAUI workloads: `android`, `ios`, `maccatalyst`, `maui-windows` (`dotnet workload restore`).

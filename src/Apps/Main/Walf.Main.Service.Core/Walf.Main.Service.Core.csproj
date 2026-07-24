@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\Walf.SharedKernel\Walf.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Walf.Application\Walf.Application.csproj" />
+    <ProjectReference Include="..\Walf.Main.Contracts\Walf.Main.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

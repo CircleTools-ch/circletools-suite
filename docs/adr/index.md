@@ -42,5 +42,5 @@ would be premature. They will become ADRs when their inputs exist.
   [ADR-0009](0009-authentication-and-passkeys.md); the web token model is confirmed when the client shell is built.
 
 ### Depends on deployment
-- **Suite packaging & app composition** (single shell hosting apps vs per-app installs).
+- **Walf packaging & app composition** (single shell hosting apps vs per-app installs).
 - **Cloud provider & hosting target** (incl. Swiss data residency, CI/CD).
