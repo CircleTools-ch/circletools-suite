@@ -1,0 +1,15 @@
+<Solution>
+  <!--
+    <Suite> App-Suite solution (new .slnx format).
+    Intentionally near-empty: the harness ships first, code projects are added
+    during later ADR-gated phases. See docs/process/ways-of-working.md.
+
+    Placeholder note: "Suite" is a rename token for the final brand name.
+    See CLAUDE.md > "Placeholder & naming convention".
+  -->
+  <Folder Name="/docs/">
+    <File Path="README.md" />
+    <File Path="CONTRIBUTING.md" />
+    <File Path="CLAUDE.md" />
+  </Folder>
+</Solution>

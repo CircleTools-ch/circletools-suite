@@ -1,0 +1,10 @@
+- name: Overview
+  href: index.md
+- name: Ways of working
+  href: ways-of-working.md
+- name: Git conventions
+  href: git-conventions.md
+- name: Definition of Done
+  href: definition-of-done.md
+- name: Naming (suite & apps)
+  href: naming.md

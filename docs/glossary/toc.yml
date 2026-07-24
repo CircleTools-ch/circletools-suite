@@ -1,0 +1,14 @@
+- name: Overview
+  href: index.md
+- name: Assignment
+  href: assignment.md
+- name: Draw
+  href: draw.md
+- name: Exclusion
+  href: exclusion.md
+- name: Group
+  href: group.md
+- name: Member
+  href: member.md
+- name: Template
+  href: _template-glossary-entry.md

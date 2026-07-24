@@ -1,0 +1,52 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "//": "Generates the C# API reference from XML doc comments. Produces no output until src/ has projects.",
+      "src": [
+        {
+          "src": "..",
+          "files": [ "src/**/*.csproj" ],
+          "exclude": [ "**/*.Test/**", "**/bin/**", "**/obj/**" ]
+        }
+      ],
+      "dest": "api",
+      "filter": "filterConfig.yml",
+      "outputFormat": "mref",
+      "disableGitFeatures": false
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "//": "All conceptual docs + arc42 + ADRs + guidelines + process + product. Maps docs/ to the site root, so docs/toc.yml becomes the top navbar.",
+        "src": "../docs",
+        "files": [ "**/*.md", "**/*.yml" ],
+        "dest": "."
+      },
+      {
+        "//": "Generated API reference (present once code exists).",
+        "files": [ "api/**.yml", "api/**.md" ]
+      }
+    ],
+    "resource": [
+      {
+        "src": "../docs",
+        "files": [ "**/*.svg", "**/*.png", "**/*.jpg", "**/*.jpeg", "**/*.gif", "**/*.puml" ],
+        "dest": "."
+      }
+    ],
+    "output": "_site",
+    "template": [ "default", "modern", "templates/suite" ],
+    "globalMetadata": {
+      "_appName": "<Suite>",
+      "_appTitle": "<Suite> Documentation",
+      "_enableSearch": true,
+      "_disableContribution": false,
+      "pdf": false
+    },
+    "postProcessors": [ "ExtractSearchIndex" ],
+    "keepFileLink": false,
+    "disableGitFeatures": false
+  }
+}

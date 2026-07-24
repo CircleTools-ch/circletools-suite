@@ -1,0 +1,40 @@
+<Project>
+
+  <!--
+    Central Package Management (CPM).
+    All NuGet package versions are declared ONCE here; projects reference package
+    names WITHOUT versions. Add a <PackageVersion .../> line before first use.
+    See docs/guidelines/coding-guidelines.md > "Dependencies".
+
+    This list is a curated starting point; entries are inert until a project
+    actually references the package, so unused rows are harmless.
+  -->
+
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <!-- Testing (used by *.Test projects once code exists) -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="xunit.v3" Version="1.1.0" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.0" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="FluentAssertions" Version="7.0.0" />
+    <PackageVersion Include="NSubstitute" Version="5.3.0" />
+    <PackageVersion Include="bunit" Version="1.40.0" />
+  </ItemGroup>
+
+  <!-- Architecture tests (enforce dependency direction) -->
+  <ItemGroup>
+    <PackageVersion Include="TngTech.ArchUnitNET.xUnitV3" Version="0.11.0" />
+  </ItemGroup>
+
+  <!--
+    Analyzers, Aspire, EF Core, ASP.NET, MAUI, identity/passkeys, and localization
+    packages are added here as the corresponding ADRs are accepted and projects
+    are created. Do NOT add package references outside this file.
+  -->
+
+</Project>

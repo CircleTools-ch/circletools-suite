@@ -1,0 +1,12 @@
+- name: Coding guidelines
+  href: coding-guidelines.md
+- name: Architecture guidelines
+  href: architecture-guidelines.md
+- name: Testing guidelines
+  href: testing-guidelines.md
+- name: Localization guidelines
+  href: localization-guidelines.md
+- name: Documentation guidelines
+  href: documentation-guidelines.md
+- name: Security & privacy guidelines
+  href: security-privacy-guidelines.md

@@ -1,0 +1,8 @@
+- name: Overview
+  href: index.md
+- name: Templates
+  items:
+    - name: Feature spec template
+      href: _template-feature-spec.md
+    - name: Test plan template
+      href: _template-test-plan.md

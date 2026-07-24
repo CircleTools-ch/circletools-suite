@@ -1,0 +1,29 @@
+# Master table of contents — drives the top navigation bar of the docs site.
+- name: Home
+  href: index.md
+- name: Process
+  href: process/toc.yml
+- name: Architecture
+  href: arc42/toc.yml
+- name: Decisions
+  href: adr/toc.yml
+- name: Product
+  items:
+    - name: Roadmap
+      href: roadmap/toc.yml
+    - name: Requirements
+      href: requirements/toc.yml
+    - name: Use Cases
+      href: use-cases/toc.yml
+    - name: Features
+      href: features/toc.yml
+    - name: Brainstorming
+      href: brainstorming/toc.yml
+- name: Guidelines
+  href: guidelines/toc.yml
+- name: Glossary
+  href: glossary/toc.yml
+- name: Deployment
+  href: deployment/toc.yml
+- name: API Reference
+  href: api-reference.md
