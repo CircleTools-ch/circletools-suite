@@ -29,18 +29,38 @@ The remaining open choices are **deferred on purpose** — each depends on the S
 model (milestones 2–3) or on the deployment phase (milestone 8), and deciding them before then
 would be premature. They will become ADRs when their inputs exist.
 
-### Depends on the domain model (decide during MVP requirements)
+### Decide at Secret-Santa MVP implementation time
+- **Secret-Santa reveal-link encoding & privacy/tamper.** How the per-giver payload (recipient,
+  wishlist, budget, event details) is encoded into a self-contained, URL-safe
+  [Reveal link](../glossary/reveal-link.md) that decodes fully client-side, and how the scheme
+  addresses privacy and tampering (e.g. so a giver can't read another's link or forge an assignment).
+  Inputs now exist: [FR-005](../requirements/functional/FR-005-generate-reveal-links.md),
+  [FR-006](../requirements/functional/FR-006-reveal-page-decode.md),
+  [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md). To be recorded as an ADR
+  when the reveal is implemented.
+
+> **MVP is not blocked by sync/accounts.** The defined Secret-Santa MVP is fully offline and
+> account-free — the self-contained reveal link needs no backend. The sync, account-claim, and
+> cross-user sharing decisions below are therefore **post-MVP** and are **not** blockers for the
+> Secret-Santa MVP.
+
+### Depends on the domain model (post-MVP; not MVP blockers)
 - **Local↔server sync & conflict-resolution strategy.** *Interim stance:* local-first; aggregate =
   sync unit; per-aggregate version token + tombstones; delta pull/push; **last-write-wins per
   aggregate** as the starting default with an escalation hook. Includes the **web-client offline
   storage** sub-decision (WASM SQLite/OPFS vs IndexedDB).
 - **Anonymous → account "claim"/migration semantics** (merge / replace / choose).
 - **Groups / sharing model across users** (membership, cross-user sharing) — domain design.
+- **Linking a Secret-Santa `Member` to an AppSuite user account.** Post-MVP: once the Main shell has
+  central login + sync, a `Member` (today just a name in a local group) can be linked to a real
+  AppSuite **user account**, so that user receives their assignment on their own device, owns/edits
+  their own [Wishlist](../glossary/wishlist.md), and reuses one identity across apps. Shapes the
+  `Member`↔`User` relationship, the sync model, and the anonymous→account claim flow above.
 
 ### Partially settled, remainder deferred
 - **Web auth token model** (bearer-in-WASM vs BFF/cookie). The identity/passkey stack is decided in
   [ADR-0009](0009-authentication-and-passkeys.md); the web token model is confirmed when the client shell is built.
 
 ### Depends on deployment
-- **Walf packaging & app composition** (single shell hosting apps vs per-app installs).
+- **AppSuite packaging & app composition** (single shell hosting apps vs per-app installs).
 - **Cloud provider & hosting target** (incl. Swiss data residency, CI/CD).

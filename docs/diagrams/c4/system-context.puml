@@ -1,14 +1,14 @@
 @startuml system-context
-' C4 System Context for the Walf app suite.
+' C4 System Context for the AppSuite app suite.
 ' Render with the C4-PlantUML includes, then pre-render to SVG (ADR-0004):
 '   java -jar plantuml.jar -tsvg -o ../exported system-context.puml
 !include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
 
-title System Context — Walf app suite (Secret-Santa)
+title System Context — AppSuite app suite (Secret-Santa)
 
 Person(user, "Family / friends member", "Uses the apps on phone, tablet, or web")
 
-System_Boundary(suite, "Walf app suite") {
+System_Boundary(suite, "AppSuite app suite") {
   System(clients, "Apps (Web + native)", "Blazor / MAUI Blazor Hybrid; local-first with optional sync")
   System(api, "Web API", ".NET 10 / Aspire; sync, account, shared config")
 }

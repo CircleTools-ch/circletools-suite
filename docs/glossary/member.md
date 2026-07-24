@@ -8,8 +8,9 @@ status: Draft
 
 ## Definition
 
-A person participating in a [Group](group.md). A member has at least a display name; contact
-details and gift preferences are optional. Members are the givers and recipients in a draw.
+A person participating in a [Group](group.md). A member has at least a display name and an optional
+[Wishlist](wishlist.md) of gift ideas; contact details are optional. Members are the givers and
+recipients in a [Draw](draw.md).
 
 ## Bounded context(s)
 
@@ -31,8 +32,8 @@ details and gift preferences are optional. Members are the givers and recipients
 
 ## Related terms
 
-- [Group](group.md), [Assignment](assignment.md), [Exclusion](exclusion.md)
+- [Group](group.md), [Wishlist](wishlist.md), [Assignment](assignment.md), [Exclusion](exclusion.md)
 
 ## First appearance
 
-- [UC-SS-001](../use-cases/secret-santa/UC-SS-001-create-group.md)
+- [UC-SS-001](../use-cases/secret-santa/UC-SS-001-create-group.md); wishlist added in [UC-SS-002](../use-cases/secret-santa/UC-SS-002-manage-members.md)

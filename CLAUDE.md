@@ -6,7 +6,7 @@ Read it before generating code or documentation. The guideline documents it poin
 
 ## What this project is
 
-Walf is a **.NET 10 / Aspire / DDD** app suite for families and groups of friends
+AppSuite is a **.NET 10 / Aspire / DDD** app suite for families and groups of friends
 (first app: Secret-Santa). It is **local-first** (works offline with no account) with
 **optional account-based sync**. Targets: Web (Blazor) + native Android/iOS (MAUI Blazor
 Hybrid), sharing feature code. Swiss-first; product is multilingual (DE/EN/FR); **all code
@@ -33,10 +33,11 @@ and docs are English**. See [`README.md`](README.md).
 
 ## Placeholder & naming convention
 
-- The brand name is **Walf** (backronym: *We Are Like Family*). It is the project /
-  namespace prefix (e.g. `Walf.AppHost`, `Walf.SecretSanta.Service.Core`) and the product
-  name in prose. The former `Suite` / `<Suite>` placeholder has been fully replaced.
-- Individual apps become **subdomains** of the suite domain (e.g. `secretsanta.walf.ch`).
+- **AppSuite** is a neutral **working name**, not a brand. It is the solution / project /
+  namespace prefix (e.g. `AppSuite.AppHost`, `AppSuite.Main.Service.Core`) and the placeholder used
+  in prose. The final brand is **deliberately deferred** (branding may change) — do **not** bake a
+  brand into project/namespace names yet. Leading candidate: **Walf** (*We Are Like Family*).
+- Individual apps become **subdomains** of the (future) suite domain (e.g. `secretsanta.<suite-domain>`).
   App brand names are decided per app during that app's idea/branding step.
 - Candidate names + domain findings live in [`docs/process/naming.md`](docs/process/naming.md).
 
@@ -75,7 +76,7 @@ the docs site, and link it into the traceability chain (backward + forward by ID
 dotnet tool restore                          # install DocFX (local tool)
 dotnet docfx docfx/docfx.json                # build the docs site (fails on broken links/xrefs)
 dotnet docfx docfx/docfx.json --serve        # build + serve locally
-dotnet build Walf.slnx                      # build the solution
+dotnet build AppSuite.slnx                      # build the solution
 dotnet test                                  # run tests (once test projects exist)
 ```
 

@@ -13,10 +13,14 @@ only — they are **not** code names.
 
 | Term | Context | Definition |
 |------|---------|------------|
+| [Assignment](assignment.md) | Secret-Santa | A single giver→recipient pairing produced by a draw. |
+| [Budget](budget.md) | Secret-Santa | The agreed spending limit for gifts in a group. |
+| [Draw](draw.md) | Secret-Santa | The act/result of randomly assigning gift-givers to recipients under the draw rules. |
+| [Event details](event-details.md) | Secret-Santa | A group's occasion info: date, location, notes. |
+| [Exclusion](exclusion.md) | Secret-Santa | A one-directional rule preventing a giver from being matched to a recipient. |
 | [Group](group.md) | Secret-Santa | A set of participants who exchange gifts together. |
 | [Member](member.md) | Secret-Santa | A person participating in a group. |
-| [Draw](draw.md) | Secret-Santa | The act/result of randomly assigning gift-givers to recipients. |
-| [Assignment](assignment.md) | Secret-Santa | A single giver→recipient pairing produced by a draw. |
-| [Exclusion](exclusion.md) | Secret-Santa | A rule preventing certain assignments (e.g. partners). |
+| [Reveal link](reveal-link.md) | Secret-Santa | A self-contained encoded link that reveals one giver's assignment client-side. |
+| [Wishlist](wishlist.md) | Secret-Santa | A member's optional list of gift ideas. |
 
 _Keep this table sorted alphabetically as terms are added._

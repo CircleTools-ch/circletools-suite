@@ -8,9 +8,10 @@ status: Draft
 
 ## Definition
 
-A rule that forbids a particular [Assignment](assignment.md) — i.e. a giver who must **not** be
-matched to a specific recipient (e.g. partners or people in the same household who buy gifts
-together). Exclusions constrain the [Draw](draw.md).
+A **one-directional** rule that forbids a particular [Assignment](assignment.md) — "giver X must
+**not** give to recipient Y" (e.g. partners or people in the same household who buy gifts together).
+A mutual exclusion is expressed as two exclusions (X→Y and Y→X). Exclusions constrain the
+[Draw](draw.md).
 
 ## Bounded context(s)
 

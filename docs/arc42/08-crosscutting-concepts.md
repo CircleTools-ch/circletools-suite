@@ -23,7 +23,7 @@ the [ADR register](../adr/index.md)).
 
 ## 8.4 Identity & authentication
 
-`Walf.Identity` centralizes the single suite account using **ASP.NET Core Identity** with the
+`AppSuite.Identity` centralizes the single suite account using **ASP.NET Core Identity** with the
 **built-in .NET 10 passkey** support: email+password and optional **passkeys/WebAuthn**
 ([ADR-0009](../adr/0009-authentication-and-passkeys.md)). Bearer/JWT for APIs; tokens in MAUI
 `SecureStorage` on device; the web token model is confirmed at the client-shell build. Offline mode
@@ -31,7 +31,7 @@ uses **no** identity.
 
 ## 8.5 Localization (DE/EN/FR)
 
-Central `Walf.Localization` using **RESX + `IStringLocalizer`** ([ADR-0011](../adr/0011-localization-format-and-culture.md));
+Central `AppSuite.Localization` using **RESX + `IStringLocalizer`** ([ADR-0011](../adr/0011-localization-format-and-culture.md));
 `de-CH` default culture; culture is a synced user preference. Formatting via `CultureInfo`; no
 locale/currency logic in the domain. See the [localization guidelines](../guidelines/localization-guidelines.md).
 

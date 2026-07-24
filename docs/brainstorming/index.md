@@ -11,4 +11,4 @@ rejected ideas are kept for the record.
 
 | Date | Topic | Outcome |
 |------|-------|---------|
-| [2026-07-24](2026-07-24-secret-santa-scope.md) | Secret-Santa MVP scope (example) | Example session |
+| [2026-07-24](2026-07-24-secret-santa-scope.md) | Secret-Santa MVP scope | Concluded — offline, account-free MVP with self-contained reveal links |

@@ -9,14 +9,14 @@
 
 ## 5.1 Level 1 — solution structure
 
-Single solution; physical folders mirror solution folders. Projects are prefixed `Walf.`
-(placeholder), app-specific ones `Walf.<AppType>.`.
+Single solution; physical folders mirror solution folders. Projects are prefixed `AppSuite.`
+(placeholder), app-specific ones `AppSuite.<AppType>.`.
 
 ```mermaid
 flowchart TD
     subgraph Aspire
-        AppHost[Walf.AppHost]
-        Defaults[Walf.ServiceDefaults]
+        AppHost[AppSuite.AppHost]
+        Defaults[AppSuite.ServiceDefaults]
     end
     subgraph BuildingBlocks
         SK[SharedKernel]
@@ -57,25 +57,25 @@ flowchart TD
 
 | Project | Responsibility |
 |---------|----------------|
-| `Walf.AppHost` | Aspire orchestrator; local F5 entrypoint; wires DB, services, web hosts. |
-| `Walf.ServiceDefaults` | OpenTelemetry, health checks, resilience, service discovery. |
-| `Walf.SharedKernel` | DDD tactical base types (entity, value object, aggregate root, domain event). No I/O deps. |
-| `Walf.Application` | CQRS abstractions, pipeline behaviors, `Result`, unit-of-work. |
-| `Walf.Infrastructure` | Shared EF conventions, outbox, clock, ID generation. |
-| `Walf.Identity` | Identity model, JWT, WebAuthn/passkeys. |
-| `Walf.Localization` | DE/EN/FR resources & culture services. |
-| `Walf.ApiClient` | Shared typed HttpClient + auth handler. |
-| `Walf.Ui.Shared` | RCL: layout, theming, branding, shared components. |
-| `Walf.Ui.Abstractions` | Platform-service interfaces (`IDataStore`, `IConnectivity`, `ISecureStorage`, `ICultureProvider`, …). |
-| `Walf.<App>.Contracts` | API DTOs for the app-type (bounded-context boundary). |
-| `Walf.<App>.Service.Core` | Domain + application layer; defines repository **ports**. |
-| `Walf.<App>.Service.Repository` | EF Core + Postgres adapter. |
-| `Walf.<App>.Service` | API host / composition root. |
-| `Walf.<App>.Ui` | RCL: the app's pages & components. |
-| `Walf.<App>.WebApp` | Standalone **Blazor WebAssembly PWA** host ([ADR-0005](../adr/0005-web-hosting-render-model.md)). |
-| `Walf.<App>.App` | MAUI Blazor Hybrid host (Android/iOS). |
-| `Walf.<App>.LocalStore` | SQLite adapter + client sync engine. |
-| `Walf.<App>.*.Test` | Unit/integration/architecture tests co-located with the subject. |
+| `AppSuite.AppHost` | Aspire orchestrator; local F5 entrypoint; wires DB, services, web hosts. |
+| `AppSuite.ServiceDefaults` | OpenTelemetry, health checks, resilience, service discovery. |
+| `AppSuite.SharedKernel` | DDD tactical base types (entity, value object, aggregate root, domain event). No I/O deps. |
+| `AppSuite.Application` | CQRS abstractions, pipeline behaviors, `Result`, unit-of-work. |
+| `AppSuite.Infrastructure` | Shared EF conventions, outbox, clock, ID generation. |
+| `AppSuite.Identity` | Identity model, JWT, WebAuthn/passkeys. |
+| `AppSuite.Localization` | DE/EN/FR resources & culture services. |
+| `AppSuite.ApiClient` | Shared typed HttpClient + auth handler. |
+| `AppSuite.Ui.Shared` | RCL: layout, theming, branding, shared components. |
+| `AppSuite.Ui.Abstractions` | Platform-service interfaces (`IDataStore`, `IConnectivity`, `ISecureStorage`, `ICultureProvider`, …). |
+| `AppSuite.<App>.Contracts` | API DTOs for the app-type (bounded-context boundary). |
+| `AppSuite.<App>.Service.Core` | Domain + application layer; defines repository **ports**. |
+| `AppSuite.<App>.Service.Repository` | EF Core + Postgres adapter. |
+| `AppSuite.<App>.Service` | API host / composition root. |
+| `AppSuite.<App>.Ui` | RCL: the app's pages & components. |
+| `AppSuite.<App>.WebApp` | Standalone **Blazor WebAssembly PWA** host ([ADR-0005](../adr/0005-web-hosting-render-model.md)). |
+| `AppSuite.<App>.App` | MAUI Blazor Hybrid host (Android/iOS). |
+| `AppSuite.<App>.LocalStore` | SQLite adapter + client sync engine. |
+| `AppSuite.<App>.*.Test` | Unit/integration/architecture tests co-located with the subject. |
 
 **App-types now:** `Main` (shell: branding, login, dashboard, shared config) and `SecretSanta`.
 More follow the same template.

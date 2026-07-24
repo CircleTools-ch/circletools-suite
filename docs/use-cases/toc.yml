@@ -2,7 +2,17 @@
   href: index.md
 - name: Secret-Santa
   items:
-    - name: UC-SS-001 Create a group
+    - name: UC-SS-001 Create and configure a group
       href: secret-santa/UC-SS-001-create-group.md
+    - name: UC-SS-002 Manage members and wishlists
+      href: secret-santa/UC-SS-002-manage-members.md
+    - name: UC-SS-003 Define exclusions
+      href: secret-santa/UC-SS-003-define-exclusions.md
+    - name: UC-SS-004 Run the fair draw
+      href: secret-santa/UC-SS-004-run-draw.md
+    - name: UC-SS-005 Generate and share reveal links
+      href: secret-santa/UC-SS-005-share-reveal-links.md
+    - name: UC-SS-006 Open a reveal link
+      href: secret-santa/UC-SS-006-open-reveal-link.md
 - name: Template
   href: _template-use-case.md
