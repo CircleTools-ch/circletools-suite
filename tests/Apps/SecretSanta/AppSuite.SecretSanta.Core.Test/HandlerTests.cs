@@ -1,5 +1,6 @@
 using AppSuite.SecretSanta.Core.Application;
 using AppSuite.SecretSanta.Core.Domain;
+using AppSuite.SecretSanta.Core.Persistence;
 using AppSuite.SecretSanta.Core.Reveal;
 using AppSuite.SecretSanta.Core.Test.TestSupport;
 
@@ -49,6 +50,67 @@ public sealed class HandlerTests
             Assert.Equal("CHF", payload.BudgetCurrency);
             Assert.NotEqual(link.ForLabel, payload.RecipientName);
         }
+    }
+
+    [Fact]
+    public async Task GetRevealLinks_AfterMemberRemoved_ReturnsNoLinks()
+    {
+        var repository = new InMemoryGroupRepository();
+        var linkBuilder = new RevealLinkBuilder(new RevealLinkOptions("https://santa.example"), new RevealLinkCodec());
+
+        var groupId = await new CreateGroupCommandHandler(repository).HandleAsync(new CreateGroupCommand("Family"), default);
+        var addMember = new AddMemberCommandHandler(repository);
+        var alice = await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice", []), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob", []), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "Carol", []), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "Dan", []), default);
+        await new RunDrawCommandHandler(repository, new DrawGenerator(new SeededRandomSource(123)), TimeProvider.System)
+            .HandleAsync(new RunDrawCommand(groupId), default);
+
+        await new RemoveMemberCommandHandler(repository).HandleAsync(new RemoveMemberCommand(groupId, alice), default);
+
+        // A partial set of links would silently drop whoever is left dangling from the exchange.
+        var links = await new GetRevealLinksQueryHandler(repository, linkBuilder)
+            .HandleAsync(new GetRevealLinksQuery(groupId), default);
+
+        Assert.Empty(links);
+
+        var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        Assert.False(group!.HasCurrentDraw);
+        Assert.True(group.DrawInvalidatedByMembershipChange);
+    }
+
+    [Fact]
+    public async Task GetRevealLinks_WhenDrawReferencesMissingMember_ReturnsNoLinksRatherThanPartialSet()
+    {
+        // Guards against a stored snapshot whose draw no longer matches its member set.
+        var repository = new InMemoryGroupRepository();
+        var linkBuilder = new RevealLinkBuilder(new RevealLinkOptions("https://santa.example"), new RevealLinkCodec());
+
+        var alice = Guid.NewGuid();
+        var bob = Guid.NewGuid();
+        var ghost = Guid.NewGuid();
+        var state = new GroupState(
+            Guid.NewGuid(),
+            "Family",
+            Budget: null,
+            Event: null,
+            Members: [new MemberState(alice, "Alice", []), new MemberState(bob, "Bob", [])],
+            Exclusions: [],
+            Draws:
+            [
+                new DrawState(
+                    Guid.NewGuid(),
+                    DateTimeOffset.UtcNow,
+                    [new AssignmentState(alice, bob), new AssignmentState(bob, ghost)]),
+            ]);
+
+        await repository.SaveAsync(Group.FromState(state), default);
+
+        var links = await new GetRevealLinksQueryHandler(repository, linkBuilder)
+            .HandleAsync(new GetRevealLinksQuery(state.Id), default);
+
+        Assert.Empty(links);
     }
 
     [Fact]

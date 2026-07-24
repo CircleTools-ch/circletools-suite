@@ -44,6 +44,10 @@ public sealed record DrawState(Guid Id, DateTimeOffset CreatedAt, IReadOnlyList<
 /// <param name="Members">The members.</param>
 /// <param name="Exclusions">The exclusions.</param>
 /// <param name="Draws">The ordered draw history.</param>
+/// <param name="DrawInvalidatedByMembershipChange">
+/// Whether a draw was discarded because the member set changed. Snapshots written before this
+/// field existed simply deserialize to <see langword="false"/>.
+/// </param>
 public sealed record GroupState(
     Guid Id,
     string Name,
@@ -51,4 +55,5 @@ public sealed record GroupState(
     EventDetailsState? Event,
     IReadOnlyList<MemberState> Members,
     IReadOnlyList<ExclusionState> Exclusions,
-    IReadOnlyList<DrawState> Draws);
+    IReadOnlyList<DrawState> Draws,
+    bool DrawInvalidatedByMembershipChange = false);

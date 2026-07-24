@@ -22,15 +22,20 @@ else if (_payload is not null)
 
     @if (HasEvent)
     {
+        @* Razor strips the whitespace between these elements, so the separators must be explicit. *@
         <p>
             <strong>@L["RevealEventLabel"]:</strong>
             @if (_eventDate is { } date)
             {
-                <span>@date.ToString("d", CultureInfo.CurrentCulture)</span>
+                <span>&nbsp;@date.ToString("d", CultureInfo.CurrentCulture)</span>
             }
             @if (!string.IsNullOrWhiteSpace(_payload.EventLocation))
             {
-                <span>@_payload.EventLocation</span>
+                @if (_eventDate is not null)
+                {
+                    <span>,</span>
+                }
+                <span>&nbsp;@_payload.EventLocation</span>
             }
         </p>
         @if (!string.IsNullOrWhiteSpace(_payload.EventNotes))

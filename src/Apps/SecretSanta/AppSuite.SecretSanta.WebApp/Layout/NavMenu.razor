@@ -16,6 +16,10 @@
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> @L["NavGroups"]
             </NavLink>
         </div>
+        @* Stop propagation so picking a language does not also collapse the menu. *@
+        <div class="nav-item px-3 mt-3" @onclick:stopPropagation="true">
+            <CultureSelector />
+        </div>
     </nav>
 </div>
 

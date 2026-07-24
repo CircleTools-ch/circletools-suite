@@ -8,6 +8,11 @@
 
 <h1>@L["MembersTitle"]</h1>
 
+@if (_hasCurrentDraw)
+{
+    <div class="alert alert-warning" role="alert">@L["RemoveMemberVoidsDrawWarning"]</div>
+}
+
 <div class="card mb-3">
     <div class="card-body">
         <div class="mb-2">
@@ -68,9 +73,17 @@ else
                         </div>
                         <div>
                             <button class="btn btn-sm btn-outline-primary" @onclick="() => BeginEdit(member)">@L["Edit"]</button>
-                            <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => RemoveAsync(member.Id)">@L["Remove"]</button>
+                            <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => AskRemove(member.Id)">@L["Remove"]</button>
                         </div>
                     </div>
+                    @if (_pendingRemoveId == member.Id)
+                    {
+                        <div class="alert alert-warning mt-2 mb-0" role="alert">
+                            <p class="mb-2">@L["ConfirmRemoveMember", member.Name]</p>
+                            <button class="btn btn-sm btn-danger" @onclick="() => RemoveAsync(member.Id)">@L["ConfirmRemove"]</button>
+                            <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="CancelRemove">@L["Cancel"]</button>
+                        </div>
+                    }
                 }
             </li>
         }
@@ -90,6 +103,8 @@ else
     private Guid? _editingId;
     private string _editName = string.Empty;
     private string _editWishlist = string.Empty;
+    private Guid? _pendingRemoveId;
+    private bool _hasCurrentDraw;
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
@@ -97,6 +112,7 @@ else
     {
         var group = await Sender.Send(new GetGroupQuery(GroupId));
         _members = group?.Members ?? [];
+        _hasCurrentDraw = group?.HasCurrentDraw ?? false;
     }
 
     private static IReadOnlyList<string> ParseWishlist(string text) =>
@@ -148,8 +164,17 @@ else
         }
     }
 
+    private void AskRemove(Guid memberId)
+    {
+        _pendingRemoveId = memberId;
+        _error = null;
+    }
+
+    private void CancelRemove() => _pendingRemoveId = null;
+
     private async Task RemoveAsync(Guid memberId)
     {
+        _pendingRemoveId = null;
         await Sender.Send(new RemoveMemberCommand(GroupId, memberId));
         await LoadAsync();
     }

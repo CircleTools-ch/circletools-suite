@@ -79,6 +79,19 @@ New bounded-context projects under `src/Apps/SecretSanta/`, following the topolo
 - **Value objects:** `Budget`, `EventDetails` (date/location/notes), `Wishlist`.
 - **Domain service `DrawGenerator`** — produces a valid `Draw` satisfying rules (a) exclusions,
   (b) no reciprocal, (c) no repeat of previous draw; returns a typed failure when over-constrained.
+  Rule (c) compares the **whole permutation**, so an individual giver may keep the same recipient
+  across two draws as long as the draws are not identical.
+- **Draw validity is scoped to the member set.** A `Draw` maps a fixed set of givers to recipients,
+  so **adding or removing a member voids the draw**: `Group.AddMember`/`RemoveMember` clear the draw
+  history and raise `DrawInvalidatedByMembershipChange`, which the next successful draw clears. This
+  keeps `CurrentDraw` from ever referencing a member who is no longer in the group — otherwise the
+  share screen would emit a plausible-looking but incomplete set of links and silently drop whoever
+  was left dangling. Editing a member's name or wishlist does **not** void the draw. Note the
+  trade-off: because the history is cleared, rule (c) has no previous draw to compare against after
+  a membership change.
+- **Reveal links cannot be revoked** once sent ([ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md)),
+  so both paths that obsolete links are surfaced in the UI: re-drawing asks for confirmation, and the
+  members screen warns before a membership change voids an existing draw.
 - New glossary terms already recorded: [Wishlist](../glossary/wishlist.md), [Budget](../glossary/budget.md),
   [Event details](../glossary/event-details.md), [Reveal link](../glossary/reveal-link.md).
 

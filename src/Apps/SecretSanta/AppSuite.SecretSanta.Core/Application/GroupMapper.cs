@@ -7,7 +7,12 @@ namespace AppSuite.SecretSanta.Core.Application;
 internal static class GroupMapper
 {
     public static GroupSummaryDto ToSummary(Group group) =>
-        new(group.Id, group.Name, group.Members.Count, group.CurrentDraw is not null);
+        new(
+            group.Id,
+            group.Name,
+            group.Members.Count,
+            group.CurrentDraw is not null,
+            group.DrawInvalidatedByMembershipChange);
 
     public static GroupDto ToDto(Group group)
     {
@@ -39,6 +44,7 @@ internal static class GroupMapper
             members,
             exclusions,
             group.CurrentDraw is not null,
-            assignments);
+            assignments,
+            group.DrawInvalidatedByMembershipChange);
     }
 }

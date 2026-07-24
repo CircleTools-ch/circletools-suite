@@ -34,7 +34,11 @@ public sealed class GetRevealLinksQueryHandler(IGroupRepository repository, Reve
             var recipient = group.FindMember(assignment.RecipientMemberId);
             if (giver is null || recipient is null)
             {
-                continue;
+                // The draw no longer matches the member set. Skipping the broken pairs would hand
+                // the organizer a plausible-looking but incomplete set of links, silently dropping
+                // whoever is missing from the exchange. Membership changes void the draw
+                // (Group.RemoveMember), so this is a guard rather than an expected path.
+                return [];
             }
 
             var payload = new RevealPayload(
