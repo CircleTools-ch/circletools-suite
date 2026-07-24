@@ -67,6 +67,14 @@
     <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.10" />
   </ItemGroup>
 
+  <!-- Secret-Santa (local-first): JS interop for browser localStorage; MAUI Blazor Hybrid head. -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.JSInterop" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Maui.Controls" Version="10.0.20" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.20" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.10" />
+  </ItemGroup>
+
   <!-- Aspire orchestration (AppHost). -->
   <ItemGroup>
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.6" />

@@ -1,0 +1,156 @@
+@page "/groups/{GroupId:guid}/members"
+@inject ISender Sender
+@inject IStringLocalizer<AppStrings> L
+
+<PageTitle>@L["MembersTitle"]</PageTitle>
+
+<GroupNav GroupId="GroupId" />
+
+<h1>@L["MembersTitle"]</h1>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="mb-2">
+            <label class="form-label" for="new-member-name">@L["NameLabel"]</label>
+            <input id="new-member-name" class="form-control" @bind="_newName" placeholder="@L["MemberNamePlaceholder"]" />
+        </div>
+        <div class="mb-2">
+            <label class="form-label" for="new-member-wishlist">@L["WishlistLabel"]</label>
+            <textarea id="new-member-wishlist" class="form-control" @bind="_newWishlist"></textarea>
+        </div>
+        <button class="btn btn-primary" @onclick="AddAsync" disabled="@string.IsNullOrWhiteSpace(_newName)">@L["AddMember"]</button>
+        @if (_error is not null)
+        {
+            <p class="text-danger mt-2" role="alert">@_error</p>
+        }
+    </div>
+</div>
+
+@if (_members is null)
+{
+    <p>@L["Loading"]</p>
+}
+else if (_members.Count == 0)
+{
+    <p>@L["NoMembers"]</p>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var member in _members)
+        {
+            <li class="list-group-item">
+                @if (_editingId == member.Id)
+                {
+                    <div class="mb-2">
+                        <input class="form-control" @bind="_editName" aria-label="@L["NameLabel"]" />
+                    </div>
+                    <div class="mb-2">
+                        <textarea class="form-control" @bind="_editWishlist" aria-label="@L["WishlistLabel"]"></textarea>
+                    </div>
+                    <button class="btn btn-sm btn-primary" @onclick="SaveEditAsync" disabled="@string.IsNullOrWhiteSpace(_editName)">@L["Save"]</button>
+                    <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="CancelEdit">@L["Cancel"]</button>
+                }
+                else
+                {
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>@member.Name</strong>
+                            @if (member.Wishlist.Count > 0)
+                            {
+                                <ul class="mb-0">
+                                    @foreach (var item in member.Wishlist)
+                                    {
+                                        <li>@item</li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => BeginEdit(member)">@L["Edit"]</button>
+                            <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => RemoveAsync(member.Id)">@L["Remove"]</button>
+                        </div>
+                    </div>
+                }
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    /// <summary>The owning group.</summary>
+    [Parameter]
+    public Guid GroupId { get; set; }
+
+    private IReadOnlyList<MemberDto>? _members;
+    private string _newName = string.Empty;
+    private string _newWishlist = string.Empty;
+    private string? _error;
+
+    private Guid? _editingId;
+    private string _editName = string.Empty;
+    private string _editWishlist = string.Empty;
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var group = await Sender.Send(new GetGroupQuery(GroupId));
+        _members = group?.Members ?? [];
+    }
+
+    private static IReadOnlyList<string> ParseWishlist(string text) =>
+        text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private async Task AddAsync()
+    {
+        _error = null;
+        try
+        {
+            await Sender.Send(new AddMemberCommand(GroupId, _newName, ParseWishlist(_newWishlist)));
+            _newName = string.Empty;
+            _newWishlist = string.Empty;
+            await LoadAsync();
+        }
+        catch (InvalidOperationException exception)
+        {
+            _error = exception.Message;
+        }
+    }
+
+    private void BeginEdit(MemberDto member)
+    {
+        _editingId = member.Id;
+        _editName = member.Name;
+        _editWishlist = string.Join('\n', member.Wishlist);
+        _error = null;
+    }
+
+    private void CancelEdit() => _editingId = null;
+
+    private async Task SaveEditAsync()
+    {
+        if (_editingId is not { } id)
+        {
+            return;
+        }
+
+        _error = null;
+        try
+        {
+            await Sender.Send(new EditMemberCommand(GroupId, id, _editName, ParseWishlist(_editWishlist)));
+            _editingId = null;
+            await LoadAsync();
+        }
+        catch (InvalidOperationException exception)
+        {
+            _error = exception.Message;
+        }
+    }
+
+    private async Task RemoveAsync(Guid memberId)
+    {
+        await Sender.Send(new RemoveMemberCommand(GroupId, memberId));
+        await LoadAsync();
+    }
+}

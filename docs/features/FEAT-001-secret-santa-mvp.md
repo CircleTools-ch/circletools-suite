@@ -1,11 +1,11 @@
 ---
 id: FEAT-001
 title: Secret-Santa MVP (offline, local-first)
-status: Draft
+status: Done
 owner: Adrian
 target-milestone: 6a
 bounded-context: SecretSanta
-related: [UC-SS-001, UC-SS-002, UC-SS-003, UC-SS-004, UC-SS-005, UC-SS-006, FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, NFR-001, NFR-002, NFR-003, ADR-0014, ADR-0005, ADR-0006, ADR-0007, ADR-0008]
+related: [UC-SS-001, UC-SS-002, UC-SS-003, UC-SS-004, UC-SS-005, UC-SS-006, FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, NFR-001, NFR-002, NFR-003, ADR-0014, ADR-0015, ADR-0005, ADR-0006, ADR-0007, ADR-0008, ADR-0011]
 ---
 
 # FEAT-001 — Secret-Santa MVP (offline, local-first)
@@ -61,7 +61,7 @@ New bounded-context projects under `src/Apps/SecretSanta/`, following the topolo
 |---------|------|
 | `AppSuite.SecretSanta.Core` | Domain + application: aggregates, draw algorithm, reveal-link **codec** (encode/decode), commands/queries via the [dispatcher](../adr/0006-application-layer-and-mediation.md). Pure, no I/O. |
 | `AppSuite.SecretSanta.Contracts` | Reveal-link payload DTO + (future) API DTOs. |
-| `AppSuite.SecretSanta.LocalStore` | **SQLite** persistence (groups, members, exclusions, draw history) via EF Core ([ADR-0007](../adr/0007-persistence-approach.md)); re-enables `Microsoft.EntityFrameworkCore.Sqlite`. |
+| `AppSuite.SecretSanta.LocalStore` | Client persistence behind `IKeyValueStore` + `IGroupRepository` ([ADR-0015](../adr/0015-mvp-client-offline-storage.md)): **localStorage** on WASM, a **JSON file** on MAUI, one `GroupState` JSON contract. (EF Core SQLite deferred as a later native option.) |
 | `AppSuite.SecretSanta.Ui` | Razor Class Library: pages (group, members, exclusions, draw, share, **reveal**). |
 | `AppSuite.SecretSanta.WebApp` | Standalone Blazor WASM **PWA** ([ADR-0005](../adr/0005-web-hosting-render-model.md)); hosts the app **and** the static `/r` reveal route (works offline once cached). |
 | `*.Test` | Unit tests (draw rules, codec round-trip). |
@@ -96,8 +96,9 @@ New bounded-context projects under `src/Apps/SecretSanta/`, following the topolo
 
 ## Data & migration
 
-- **Local SQLite** schema for `Group`/`Member`/`Exclusion`/`Draw`/`Assignment` + wishlist/budget/event.
-  EF Core migrations owned by `SecretSanta.LocalStore`. No server DB in the MVP.
+- **Client storage** ([ADR-0015](../adr/0015-mvp-client-offline-storage.md)): the whole `GroupState`
+  collection is serialized to JSON and stored under one key — **localStorage** (WASM) or a **JSON
+  file** (MAUI) — via `IKeyValueStore`. No server DB in the MVP; schema evolution is versioned in code.
 - Draw history is retained (needed for the no-repeat rule).
 
 ## Localization impact

@@ -1,0 +1,239 @@
+using AppSuite.SecretSanta.Core.Persistence;
+using AppSuite.SharedKernel;
+
+namespace AppSuite.SecretSanta.Core.Domain;
+
+/// <summary>
+/// Aggregate root for a Secret-Santa group. Owns its members, exclusions and draw history, and
+/// enforces the group's invariants (non-empty name, unique member names, exclusion endpoints that
+/// are members, and at least two members before a draw).
+/// </summary>
+public sealed class Group : AggregateRoot
+{
+    private readonly List<Member> _members;
+    private readonly List<Exclusion> _exclusions;
+    private readonly List<Draw> _draws;
+
+    private Group(
+        Guid id,
+        string name,
+        Budget? budget,
+        EventDetails? eventDetails,
+        List<Member> members,
+        List<Exclusion> exclusions,
+        List<Draw> draws)
+    {
+        Id = id;
+        Name = name;
+        Budget = budget;
+        EventDetails = eventDetails;
+        _members = members;
+        _exclusions = exclusions;
+        _draws = draws;
+    }
+
+    /// <summary>Gets the group name.</summary>
+    public string Name { get; private set; }
+
+    /// <summary>Gets the optional gift budget.</summary>
+    public Budget? Budget { get; private set; }
+
+    /// <summary>Gets the optional event details.</summary>
+    public EventDetails? EventDetails { get; private set; }
+
+    /// <summary>Gets the group members.</summary>
+    public IReadOnlyList<Member> Members => _members.AsReadOnly();
+
+    /// <summary>Gets the configured exclusions.</summary>
+    public IReadOnlyList<Exclusion> Exclusions => _exclusions.AsReadOnly();
+
+    /// <summary>Gets the ordered draw history (oldest first).</summary>
+    public IReadOnlyList<Draw> Draws => _draws.AsReadOnly();
+
+    /// <summary>Gets the current (most recent) draw, or <see langword="null"/> if none.</summary>
+    public Draw? CurrentDraw => _draws.Count > 0 ? _draws[^1] : null;
+
+    /// <summary>Creates a new, empty group.</summary>
+    /// <param name="name">A non-empty group name.</param>
+    /// <returns>The created group.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
+    public static Group Create(string name) =>
+        new(GuidV7.New(), NormalizeName(name), budget: null, eventDetails: null, members: [], exclusions: [], draws: []);
+
+    /// <summary>Renames the group.</summary>
+    /// <param name="name">A non-empty group name.</param>
+    public void Rename(string name) => Name = NormalizeName(name);
+
+    /// <summary>Sets or clears the gift budget.</summary>
+    /// <param name="budget">The budget, or <see langword="null"/> to clear it.</param>
+    public void SetBudget(Budget? budget) => Budget = budget;
+
+    /// <summary>Sets or clears the event details.</summary>
+    /// <param name="eventDetails">The event details, or <see langword="null"/> to clear them.</param>
+    public void SetEventDetails(EventDetails? eventDetails) => EventDetails = eventDetails;
+
+    /// <summary>Adds a member to the group.</summary>
+    /// <param name="name">A non-empty member name, unique within the group (case-insensitive).</param>
+    /// <param name="wishlist">The member's wishlist.</param>
+    /// <returns>The identity of the added member.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the name duplicates an existing member.</exception>
+    public Guid AddMember(string name, Wishlist wishlist)
+    {
+        ArgumentNullException.ThrowIfNull(wishlist);
+
+        var member = Member.Create(name, wishlist);
+        GuardUniqueName(member.Name, excludingMemberId: null);
+        _members.Add(member);
+        return member.Id;
+    }
+
+    /// <summary>Edits an existing member's name and wishlist.</summary>
+    /// <param name="memberId">The member to edit.</param>
+    /// <param name="name">The new (non-empty, unique) name.</param>
+    /// <param name="wishlist">The new wishlist.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the member is unknown or the name duplicates another member.</exception>
+    public void EditMember(Guid memberId, string name, Wishlist wishlist)
+    {
+        ArgumentNullException.ThrowIfNull(wishlist);
+
+        var member = RequireMember(memberId);
+        var normalized = NormalizeName(name);
+        GuardUniqueName(normalized, excludingMemberId: memberId);
+        member.Rename(normalized);
+        member.SetWishlist(wishlist);
+    }
+
+    /// <summary>Removes a member and any exclusions that reference it.</summary>
+    /// <param name="memberId">The member to remove.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the member is unknown.</exception>
+    public void RemoveMember(Guid memberId)
+    {
+        var member = RequireMember(memberId);
+        _members.Remove(member);
+        _exclusions.RemoveAll(e => e.GiverMemberId == memberId || e.RecipientMemberId == memberId);
+    }
+
+    /// <summary>Adds a directed exclusion between two existing members.</summary>
+    /// <param name="giverMemberId">The giver member identity.</param>
+    /// <param name="recipientMemberId">The forbidden recipient member identity.</param>
+    /// <exception cref="InvalidOperationException">Thrown when either endpoint is not a member of this group.</exception>
+    public void AddExclusion(Guid giverMemberId, Guid recipientMemberId)
+    {
+        RequireMember(giverMemberId);
+        RequireMember(recipientMemberId);
+
+        var exclusion = Exclusion.Create(giverMemberId, recipientMemberId);
+        if (!_exclusions.Contains(exclusion))
+        {
+            _exclusions.Add(exclusion);
+        }
+    }
+
+    /// <summary>Removes a directed exclusion, if present.</summary>
+    /// <param name="giverMemberId">The giver member identity.</param>
+    /// <param name="recipientMemberId">The recipient member identity.</param>
+    public void RemoveExclusion(Guid giverMemberId, Guid recipientMemberId) =>
+        _exclusions.RemoveAll(e => e.GiverMemberId == giverMemberId && e.RecipientMemberId == recipientMemberId);
+
+    /// <summary>Runs a new draw and, on success, appends it to the draw history as the current draw.</summary>
+    /// <param name="generator">The draw generator domain service.</param>
+    /// <param name="now">The current instant used to stamp the draw.</param>
+    /// <returns>The <see cref="DrawResult"/> describing success or failure.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the group has fewer than two members.</exception>
+    public DrawResult RunDraw(DrawGenerator generator, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(generator);
+
+        if (_members.Count < 2)
+        {
+            throw new InvalidOperationException("A draw needs at least two members.");
+        }
+
+        var result = generator.Generate(
+            _members.Select(m => m.Id).ToList(),
+            _exclusions,
+            CurrentDraw?.ToMap());
+
+        if (result.IsSuccess)
+        {
+            _draws.Add(Draw.Create(result.Assignments, now));
+        }
+
+        return result;
+    }
+
+    /// <summary>Gets a member by identity, or <see langword="null"/> if not present.</summary>
+    /// <param name="memberId">The member identity.</param>
+    /// <returns>The member, or <see langword="null"/>.</returns>
+    public Member? FindMember(Guid memberId) => _members.FirstOrDefault(m => m.Id == memberId);
+
+    /// <summary>Captures the group's full state as a serializable memento.</summary>
+    /// <returns>The <see cref="GroupState"/> snapshot.</returns>
+    public GroupState ToState() => new(
+        Id,
+        Name,
+        Budget is null ? null : new BudgetState(Budget.Amount, Budget.Currency),
+        EventDetails is null ? null : new EventDetailsState(EventDetails.Date, EventDetails.Location, EventDetails.Description),
+        _members.Select(m => new MemberState(m.Id, m.Name, [.. m.Wishlist.Items])).ToList(),
+        _exclusions.Select(e => new ExclusionState(e.GiverMemberId, e.RecipientMemberId)).ToList(),
+        _draws.Select(d => new DrawState(
+            d.Id,
+            d.CreatedAt,
+            d.Assignments.Select(a => new AssignmentState(a.GiverMemberId, a.RecipientMemberId)).ToList())).ToList());
+
+    /// <summary>Reconstructs a group from a previously captured memento.</summary>
+    /// <param name="state">The state snapshot.</param>
+    /// <returns>The rehydrated group.</returns>
+    public static Group FromState(GroupState state)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+
+        var members = state.Members
+            .Select(m => Member.Restore(m.Id, m.Name, Wishlist.Create(m.Wishlist)))
+            .ToList();
+
+        var exclusions = state.Exclusions
+            .Select(e => Exclusion.Create(e.GiverMemberId, e.RecipientMemberId))
+            .ToList();
+
+        var draws = state.Draws
+            .Select(d => Draw.Restore(
+                d.Id,
+                d.CreatedAt,
+                d.Assignments.Select(a => Assignment.Create(a.GiverMemberId, a.RecipientMemberId)).ToList()))
+            .ToList();
+
+        var budget = state.Budget is null ? null : Budget.Create(state.Budget.Amount, state.Budget.Currency);
+        var eventDetails = state.Event is null
+            ? null
+            : EventDetails.Create(state.Event.Date, state.Event.Location, state.Event.Description);
+
+        return new Group(state.Id, state.Name, budget, eventDetails, members, exclusions, draws);
+    }
+
+    private Member RequireMember(Guid memberId) =>
+        _members.FirstOrDefault(m => m.Id == memberId)
+        ?? throw new InvalidOperationException($"Member '{memberId}' is not part of this group.");
+
+    private void GuardUniqueName(string name, Guid? excludingMemberId)
+    {
+        var duplicate = _members.Any(m =>
+            m.Id != excludingMemberId &&
+            string.Equals(m.Name, name, StringComparison.OrdinalIgnoreCase));
+
+        if (duplicate)
+        {
+            throw new InvalidOperationException($"A member named '{name}' already exists in this group.");
+        }
+    }
+
+    private static string NormalizeName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentException("Group name must not be empty.", nameof(name));
+        }
+
+        return name.Trim();
+    }
+}

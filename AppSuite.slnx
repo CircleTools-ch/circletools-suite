@@ -22,6 +22,14 @@
     <Project Path="src/Apps/Main/AppSuite.Main.Ui/AppSuite.Main.Ui.csproj" />
     <Project Path="src/Apps/Main/AppSuite.Main.WebApp/AppSuite.Main.WebApp.csproj" />
   </Folder>
+  <Folder Name="/src/Apps/SecretSanta/">
+    <Project Path="src/Apps/SecretSanta/AppSuite.SecretSanta.Contracts/AppSuite.SecretSanta.Contracts.csproj" />
+    <Project Path="src/Apps/SecretSanta/AppSuite.SecretSanta.Core/AppSuite.SecretSanta.Core.csproj" />
+    <Project Path="src/Apps/SecretSanta/AppSuite.SecretSanta.LocalStore/AppSuite.SecretSanta.LocalStore.csproj" />
+    <Project Path="src/Apps/SecretSanta/AppSuite.SecretSanta.Ui/AppSuite.SecretSanta.Ui.csproj" />
+    <Project Path="src/Apps/SecretSanta/AppSuite.SecretSanta.WebApp/AppSuite.SecretSanta.WebApp.csproj" />
+    <Project Path="src/Apps/SecretSanta/AppSuite.SecretSanta.App/AppSuite.SecretSanta.App.csproj" />
+  </Folder>
   <Folder Name="/src/Aspire/">
     <Project Path="src/Aspire/AppSuite.AppHost/AppSuite.AppHost.csproj" />
     <Project Path="src/Aspire/AppSuite.ServiceDefaults/AppSuite.ServiceDefaults.csproj" />
@@ -36,5 +44,8 @@
   <Folder Name="/tests/Apps/" />
   <Folder Name="/tests/Apps/Main/">
     <Project Path="tests/Apps/Main/AppSuite.Main.Service.Test/AppSuite.Main.Service.Test.csproj" />
+  </Folder>
+  <Folder Name="/tests/Apps/SecretSanta/">
+    <Project Path="tests/Apps/SecretSanta/AppSuite.SecretSanta.Core.Test/AppSuite.SecretSanta.Core.Test.csproj" />
   </Folder>
 </Solution>

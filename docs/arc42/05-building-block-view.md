@@ -1,11 +1,14 @@
 # 5. Building Block View
 
-> The technology choices are **ratified** ([ADR-0005–0013](09-architecture-decisions.md)). The
-> building blocks (`SharedKernel`, `Application`) and the **Main** app-type projects now **exist**
+> The technology choices are **ratified** ([ADR-0005–0015](09-architecture-decisions.md)). The
+> building blocks (`SharedKernel`, `Application`) and the **Main** app-type projects **exist**
 > (walking skeleton, milestone 5); a throwaway `Heartbeat` sample exercises the full pipeline
-> (domain → dispatcher → repository → EF Core → Postgres → Minimal API → WASM). `Ui.Shared`,
-> `Identity`, `Localization`, `LocalStore`, the MAUI head, and the SecretSanta app-type follow the
-> same template when needed.
+> (domain → dispatcher → repository → EF Core → Postgres → Minimal API → WASM). The **SecretSanta**
+> app-type is being implemented in milestone 6a as the **offline MVP — no server tier**
+> (`Contracts`/`Core`/`LocalStore`/`Ui`/`WebApp` + a MAUI head, per
+> [FEAT-001](../features/FEAT-001-secret-santa-mvp.md)); the dispatcher + domain run **client-side**
+> with local storage ([ADR-0015](../adr/0015-mvp-client-offline-storage.md)). `Ui.Shared`,
+> `Identity`, `Localization`, and the server/sync tier follow the same template when needed.
 
 ## 5.1 Level 1 — solution structure
 

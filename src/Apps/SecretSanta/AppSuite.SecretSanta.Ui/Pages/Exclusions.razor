@@ -1,0 +1,108 @@
+@page "/groups/{GroupId:guid}/exclusions"
+@inject ISender Sender
+@inject IStringLocalizer<AppStrings> L
+
+<PageTitle>@L["ExclusionsTitle"]</PageTitle>
+
+<GroupNav GroupId="GroupId" />
+
+<h1>@L["ExclusionsTitle"]</h1>
+<p class="text-muted">@L["ExclusionHint"]</p>
+
+@if (_group is null)
+{
+    <p>@L["Loading"]</p>
+}
+else if (_group.Members.Count < 2)
+{
+    <p>@L["NeedTwoMembersForExclusion"]</p>
+}
+else
+{
+    <div class="row g-2 align-items-end mb-3">
+        <div class="col">
+            <label class="form-label" for="giver">@L["GiverLabel"]</label>
+            <select id="giver" class="form-select" @bind="_giverId">
+                <option value="">--</option>
+                @foreach (var member in _group.Members)
+                {
+                    <option value="@member.Id">@member.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col">
+            <label class="form-label" for="recipient">@L["RecipientLabel"]</label>
+            <select id="recipient" class="form-select" @bind="_recipientId">
+                <option value="">--</option>
+                @foreach (var member in _group.Members)
+                {
+                    <option value="@member.Id">@member.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-primary" @onclick="AddAsync" disabled="@(!CanAdd)">@L["AddExclusion"]</button>
+        </div>
+    </div>
+
+    @if (_group.Exclusions.Count == 0)
+    {
+        <p>@L["NoExclusions"]</p>
+    }
+    else
+    {
+        <ul class="list-group">
+            @foreach (var exclusion in _group.Exclusions)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>@NameOf(exclusion.GiverMemberId) &rarr; @NameOf(exclusion.RecipientMemberId)</span>
+                    <button class="btn btn-sm btn-outline-danger"
+                            @onclick="() => RemoveAsync(exclusion.GiverMemberId, exclusion.RecipientMemberId)">
+                        @L["Remove"]
+                    </button>
+                </li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    /// <summary>The owning group.</summary>
+    [Parameter]
+    public Guid GroupId { get; set; }
+
+    private GroupDto? _group;
+    private string _giverId = string.Empty;
+    private string _recipientId = string.Empty;
+
+    private bool CanAdd =>
+        Guid.TryParse(_giverId, out var giver) &&
+        Guid.TryParse(_recipientId, out var recipient) &&
+        giver != recipient;
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync() => _group = await Sender.Send(new GetGroupQuery(GroupId));
+
+    private string NameOf(Guid memberId) =>
+        _group?.Members.FirstOrDefault(m => m.Id == memberId)?.Name ?? memberId.ToString();
+
+    private async Task AddAsync()
+    {
+        if (!CanAdd)
+        {
+            return;
+        }
+
+        await Sender.Send(new AddExclusionCommand(GroupId, Guid.Parse(_giverId), Guid.Parse(_recipientId)));
+        _giverId = string.Empty;
+        _recipientId = string.Empty;
+        await LoadAsync();
+    }
+
+    private async Task RemoveAsync(Guid giverId, Guid recipientId)
+    {
+        await Sender.Send(new RemoveExclusionCommand(GroupId, giverId, recipientId));
+        await LoadAsync();
+    }
+}

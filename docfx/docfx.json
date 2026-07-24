@@ -10,7 +10,9 @@
             "src/BuildingBlocks/**/*.csproj",
             "src/Apps/Main/AppSuite.Main.Contracts/*.csproj",
             "src/Apps/Main/AppSuite.Main.Service.Core/*.csproj",
-            "src/Apps/Main/AppSuite.Main.Service.Repository/*.csproj"
+            "src/Apps/Main/AppSuite.Main.Service.Repository/*.csproj",
+            "src/Apps/SecretSanta/AppSuite.SecretSanta.Contracts/*.csproj",
+            "src/Apps/SecretSanta/AppSuite.SecretSanta.Core/*.csproj"
           ],
           "exclude": [ "**/*.Test/**", "**/bin/**", "**/obj/**" ]
         }

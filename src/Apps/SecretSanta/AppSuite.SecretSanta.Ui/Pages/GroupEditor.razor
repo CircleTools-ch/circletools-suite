@@ -1,0 +1,131 @@
+@page "/groups/{GroupId:guid}"
+@inject ISender Sender
+@inject IStringLocalizer<AppStrings> L
+
+<PageTitle>@L["GroupEditorTitle"]</PageTitle>
+
+<GroupNav GroupId="GroupId" />
+
+@if (_group is null)
+{
+    <p>@(_loaded ? L["GroupNotFound"] : L["Loading"])</p>
+}
+else
+{
+    <h1>@_group.Name</h1>
+
+    <div class="mb-3">
+        <label class="form-label" for="group-name">@L["NameLabel"]</label>
+        <div class="input-group">
+            <input id="group-name" class="form-control" @bind="_name" />
+            <button class="btn btn-primary" @onclick="SaveNameAsync" disabled="@string.IsNullOrWhiteSpace(_name)">@L["Save"]</button>
+        </div>
+    </div>
+
+    <fieldset class="mb-3 border p-3">
+        <legend class="fs-6">@L["BudgetLabel"]</legend>
+        <div class="row g-2 align-items-end">
+            <div class="col">
+                <label class="form-label" for="budget-amount">@L["AmountLabel"]</label>
+                <input id="budget-amount" type="number" step="0.01" min="0" class="form-control" @bind="_budgetAmount" />
+            </div>
+            <div class="col">
+                <label class="form-label" for="budget-currency">@L["CurrencyLabel"]</label>
+                <input id="budget-currency" class="form-control" @bind="_budgetCurrency" />
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary" @onclick="SaveBudgetAsync">@L["Save"]</button>
+                <button class="btn btn-outline-secondary" @onclick="ClearBudgetAsync">@L["ClearBudget"]</button>
+            </div>
+        </div>
+    </fieldset>
+
+    <fieldset class="mb-3 border p-3">
+        <legend class="fs-6">@L["EventLabel"]</legend>
+        <div class="mb-2">
+            <label class="form-label" for="event-date">@L["DateLabel"]</label>
+            <input id="event-date" type="date" class="form-control" @bind="_eventDate" />
+        </div>
+        <div class="mb-2">
+            <label class="form-label" for="event-location">@L["LocationLabel"]</label>
+            <input id="event-location" class="form-control" @bind="_eventLocation" />
+        </div>
+        <div class="mb-2">
+            <label class="form-label" for="event-description">@L["DescriptionLabel"]</label>
+            <textarea id="event-description" class="form-control" @bind="_eventDescription"></textarea>
+        </div>
+        <button class="btn btn-primary" @onclick="SaveEventAsync">@L["Save"]</button>
+    </fieldset>
+
+    @if (_status is not null)
+    {
+        <p class="text-success" role="status">@_status</p>
+    }
+}
+
+@code {
+    /// <summary>The group being edited.</summary>
+    [Parameter]
+    public Guid GroupId { get; set; }
+
+    private GroupDto? _group;
+    private bool _loaded;
+    private string _name = string.Empty;
+    private decimal? _budgetAmount;
+    private string _budgetCurrency = "CHF";
+    private DateTime? _eventDate;
+    private string _eventLocation = string.Empty;
+    private string _eventDescription = string.Empty;
+    private string? _status;
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _group = await Sender.Send(new GetGroupQuery(GroupId));
+        _loaded = true;
+        if (_group is null)
+        {
+            return;
+        }
+
+        _name = _group.Name;
+        _budgetAmount = _group.Budget?.Amount;
+        _budgetCurrency = _group.Budget?.Currency ?? "CHF";
+        _eventDate = _group.Event?.Date?.DateTime;
+        _eventLocation = _group.Event?.Location ?? string.Empty;
+        _eventDescription = _group.Event?.Description ?? string.Empty;
+    }
+
+    private async Task SaveNameAsync()
+    {
+        await Sender.Send(new RenameGroupCommand(GroupId, _name));
+        await Reload();
+    }
+
+    private async Task SaveBudgetAsync()
+    {
+        await Sender.Send(new SetBudgetCommand(GroupId, _budgetAmount, _budgetCurrency));
+        await Reload();
+    }
+
+    private async Task ClearBudgetAsync()
+    {
+        _budgetAmount = null;
+        await Sender.Send(new SetBudgetCommand(GroupId, null, null));
+        await Reload();
+    }
+
+    private async Task SaveEventAsync()
+    {
+        DateTimeOffset? date = _eventDate is { } value ? new DateTimeOffset(value, TimeSpan.Zero) : null;
+        await Sender.Send(new SetEventDetailsCommand(GroupId, date, _eventLocation, _eventDescription));
+        await Reload();
+    }
+
+    private async Task Reload()
+    {
+        await LoadAsync();
+        _status = L["Saved"];
+    }
+}

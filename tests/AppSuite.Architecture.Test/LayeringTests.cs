@@ -12,50 +12,50 @@ namespace AppSuite.Architecture.Test;
 /// </summary>
 public sealed class LayeringTests
 {
-    private static readonly ArchUnitNET.Domain.Architecture Architecture = new ArchLoader()
+    private static readonly ArchUnitNET.Domain.Architecture _architecture = new ArchLoader()
         .LoadAssemblies(
             typeof(AppSuite.SharedKernel.Entity).Assembly,
             typeof(AppSuite.Main.Service.Core.Domain.Heartbeat).Assembly,
             typeof(AppSuite.Main.Service.Repository.MainDbContext).Assembly)
         .Build();
 
-    private static readonly IObjectProvider<IType> EfCore =
+    private static readonly IObjectProvider<IType> _efCore =
         Types().That().ResideInNamespaceMatching("^Microsoft\\.EntityFrameworkCore").As("EF Core");
 
-    private static readonly IObjectProvider<IType> Npgsql =
+    private static readonly IObjectProvider<IType> _npgsql =
         Types().That().ResideInNamespaceMatching("^Npgsql").As("Npgsql");
 
-    private static readonly IObjectProvider<IType> AspNetCore =
+    private static readonly IObjectProvider<IType> _aspNetCore =
         Types().That().ResideInNamespaceMatching("^Microsoft\\.AspNetCore").As("ASP.NET Core");
 
-    private static readonly IObjectProvider<IType> ServiceRepository =
+    private static readonly IObjectProvider<IType> _serviceRepository =
         Types().That().ResideInNamespaceMatching("^AppSuite\\.Main\\.Service\\.Repository").As("Service.Repository");
 
-    private static readonly IObjectProvider<IType> SharedKernelTypes =
+    private static readonly IObjectProvider<IType> _sharedKernelTypes =
         Types().That().ResideInNamespaceMatching("^AppSuite\\.SharedKernel").As("SharedKernel");
 
-    private static readonly IObjectProvider<IType> ServiceCoreTypes =
+    private static readonly IObjectProvider<IType> _serviceCoreTypes =
         Types().That().ResideInNamespaceMatching("^AppSuite\\.Main\\.Service\\.Core").As("Service.Core");
 
     [Fact]
     public void SharedKernel_DoesNotDependOnInfrastructure() =>
-        Types().That().Are(SharedKernelTypes)
-            .Should().NotDependOnAny(EfCore)
-            .AndShould().NotDependOnAny(Npgsql)
-            .AndShould().NotDependOnAny(AspNetCore)
-            .Check(Architecture);
+        Types().That().Are(_sharedKernelTypes)
+            .Should().NotDependOnAny(_efCore)
+            .AndShould().NotDependOnAny(_npgsql)
+            .AndShould().NotDependOnAny(_aspNetCore)
+            .Check(_architecture);
 
     [Fact]
     public void ServiceCore_DoesNotDependOnInfrastructure() =>
-        Types().That().Are(ServiceCoreTypes)
-            .Should().NotDependOnAny(EfCore)
-            .AndShould().NotDependOnAny(Npgsql)
-            .AndShould().NotDependOnAny(AspNetCore)
-            .Check(Architecture);
+        Types().That().Are(_serviceCoreTypes)
+            .Should().NotDependOnAny(_efCore)
+            .AndShould().NotDependOnAny(_npgsql)
+            .AndShould().NotDependOnAny(_aspNetCore)
+            .Check(_architecture);
 
     [Fact]
     public void ServiceCore_DoesNotDependOnServiceRepository() =>
-        Types().That().Are(ServiceCoreTypes)
-            .Should().NotDependOnAny(ServiceRepository)
-            .Check(Architecture);
+        Types().That().Are(_serviceCoreTypes)
+            .Should().NotDependOnAny(_serviceRepository)
+            .Check(_architecture);
 }
