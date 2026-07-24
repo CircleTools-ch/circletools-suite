@@ -15,6 +15,13 @@
 ## 3. Overall style
 - **Modular monolith first** ([ADR-0003](../adr/0003-modular-monolith-with-aspire.md)); one module
   per bounded context; extractable to a service later.
+- **Clients:** standalone **Blazor WebAssembly PWA** + **MAUI Blazor Hybrid**, both pure API clients
+  ([ADR-0005](../adr/0005-web-hosting-render-model.md)).
+- **Application:** hand-rolled CQRS dispatcher ([ADR-0006](../adr/0006-application-layer-and-mediation.md)).
+  **Persistence:** EF Core for Postgres + SQLite ([ADR-0007](../adr/0007-persistence-approach.md)),
+  GUID v7 keys ([ADR-0008](../adr/0008-entity-id-strategy.md)).
+  **API:** Minimal APIs, versioned ([ADR-0010](../adr/0010-api-style-and-versioning.md)).
+  **Auth:** ASP.NET Core Identity + built-in passkeys ([ADR-0009](../adr/0009-authentication-and-passkeys.md)).
 
 ## 4. Layering (Clean/Hexagonal)
 - Domain → Application → Infrastructure → Presentation/Hosts.

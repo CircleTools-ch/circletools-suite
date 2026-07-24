@@ -1,8 +1,7 @@
 # 5. Building Block View
 
-> _Proposed_ — the solution topology below is the recommended structure. Projects are **not
-> created yet**; they are added during implementation once the relevant [ADRs](09-architecture-decisions.md)
-> are accepted.
+> The technology choices are now **ratified** ([ADR-0005–0012](09-architecture-decisions.md)); the
+> **projects below are not created yet** — they are scaffolded in the walking-skeleton milestone.
 
 ## 5.1 Level 1 — solution structure
 
@@ -69,13 +68,18 @@ flowchart TD
 | `Suite.<App>.Service.Repository` | EF Core + Postgres adapter. |
 | `Suite.<App>.Service` | API host / composition root. |
 | `Suite.<App>.Ui` | RCL: the app's pages & components. |
-| `Suite.<App>.WebApp` | Blazor Web App host. |
+| `Suite.<App>.WebApp` | Standalone **Blazor WebAssembly PWA** host ([ADR-0005](../adr/0005-web-hosting-render-model.md)). |
 | `Suite.<App>.App` | MAUI Blazor Hybrid host (Android/iOS). |
 | `Suite.<App>.LocalStore` | SQLite adapter + client sync engine. |
 | `Suite.<App>.*.Test` | Unit/integration/architecture tests co-located with the subject. |
 
 **App-types now:** `Main` (shell: branding, login, dashboard, shared config) and `SecretSanta`.
 More follow the same template.
+
+> **Web offline-storage caveat:** on native, `LocalStore` uses on-device SQLite. On the standalone
+> WASM web client, `LocalStore` cannot use device SQLite directly; its offline persistence
+> (WASM SQLite/OPFS vs IndexedDB) is decided together with the sync strategy (deferred — see the
+> [ADR register](../adr/index.md)).
 
 ## 5.3 Dependency rule
 

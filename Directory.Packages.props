@@ -31,10 +31,27 @@
     <PackageVersion Include="TngTech.ArchUnitNET.xUnitV3" Version="0.11.0" />
   </ItemGroup>
 
+  <!-- Persistence — EF Core for Postgres (server) + SQLite (device). ADR-0007. -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+  </ItemGroup>
+
+  <!-- API — Minimal APIs versioning + auth. ADR-0009, ADR-0010. -->
+  <ItemGroup>
+    <PackageVersion Include="Asp.Versioning.Http" Version="8.1.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
+  </ItemGroup>
+
   <!--
-    Analyzers, Aspire, EF Core, ASP.NET, MAUI, identity/passkeys, and localization
-    packages are added here as the corresponding ADRs are accepted and projects
-    are created. Do NOT add package references outside this file.
+    NOTE: versions above are the intended stack (per the accepted ADRs) and are INERT until a
+    project references them; exact patch versions are confirmed when the walking skeleton is
+    scaffolded. Aspire, MAUI, and Blazor package versions are added at that point.
+    Localization uses the in-framework Microsoft.Extensions.Localization / IStringLocalizer
+    (ADR-0011) — no extra package. Do NOT add package references outside this file.
   -->
 
 </Project>
