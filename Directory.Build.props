@@ -13,7 +13,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Deterministic>true</Deterministic>
-    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- The product is multilingual (de-CH / fr-CH / en, ADR-0011), so culture-aware
+         formatting must work: invariant globalization stays OFF. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
 
     <!-- Quality gates -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

@@ -24,5 +24,7 @@
   href: 0011-localization-format-and-culture.md
 - name: ADR-0012 Observability & telemetry
   href: 0012-observability-and-telemetry.md
+- name: ADR-0013 WASM ↔ API dev wiring
+  href: 0013-wasm-api-dev-wiring.md
 - name: Template
   href: _template-adr.md

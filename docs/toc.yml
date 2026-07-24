@@ -26,4 +26,4 @@
 - name: Deployment
   href: deployment/toc.yml
 - name: API Reference
-  href: api-reference.md
+  href: api/toc.yml

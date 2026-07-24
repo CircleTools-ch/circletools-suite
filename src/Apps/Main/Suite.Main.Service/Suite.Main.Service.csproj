@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Suite.Main.Service.Core\Suite.Main.Service.Core.csproj" />
+    <ProjectReference Include="..\Suite.Main.Service.Repository\Suite.Main.Service.Repository.csproj" />
+    <ProjectReference Include="..\Suite.Main.Contracts\Suite.Main.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\Suite.Application\Suite.Application.csproj" />
+    <ProjectReference Include="..\..\..\Aspire\Suite.ServiceDefaults\Suite.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Asp.Versioning.Http" />
+  </ItemGroup>
+
+</Project>

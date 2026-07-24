@@ -2,15 +2,20 @@
   "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
   "metadata": [
     {
-      "//": "Generates the C# API reference from XML doc comments. Produces no output until src/ has projects.",
+      "//": "Generates the C# API reference from XML doc comments. Scoped to the reusable LIBRARY projects (domain, application, contracts, repository) — app hosts and Blazor/WASM/Aspire projects are entry points, not API surface, and are not processable by DocFX's Roslyn workspace.",
       "src": [
         {
           "src": "..",
-          "files": [ "src/**/*.csproj" ],
+          "files": [
+            "src/BuildingBlocks/**/*.csproj",
+            "src/Apps/Main/Suite.Main.Contracts/*.csproj",
+            "src/Apps/Main/Suite.Main.Service.Core/*.csproj",
+            "src/Apps/Main/Suite.Main.Service.Repository/*.csproj"
+          ],
           "exclude": [ "**/*.Test/**", "**/bin/**", "**/obj/**" ]
         }
       ],
-      "dest": "api",
+      "dest": "../docs/api",
       "filter": "filterConfig.yml",
       "outputFormat": "mref",
       "disableGitFeatures": false
@@ -19,14 +24,10 @@
   "build": {
     "content": [
       {
-        "//": "All conceptual docs + arc42 + ADRs + guidelines + process + product. Maps docs/ to the site root, so docs/toc.yml becomes the top navbar.",
+        "//": "All conceptual docs + arc42 + ADRs + guidelines + process + product, plus the generated API reference (metadata writes it into ../docs/api). Maps docs/ to the site root, so docs/toc.yml becomes the top navbar.",
         "src": "../docs",
         "files": [ "**/*.md", "**/*.yml" ],
         "dest": "."
-      },
-      {
-        "//": "Generated API reference (present once code exists).",
-        "files": [ "api/**.yml", "api/**.md" ]
       }
     ],
     "resource": [

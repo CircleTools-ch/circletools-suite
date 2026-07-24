@@ -1,7 +1,11 @@
 # 5. Building Block View
 
-> The technology choices are now **ratified** ([ADR-0005–0012](09-architecture-decisions.md)); the
-> **projects below are not created yet** — they are scaffolded in the walking-skeleton milestone.
+> The technology choices are **ratified** ([ADR-0005–0013](09-architecture-decisions.md)). The
+> building blocks (`SharedKernel`, `Application`) and the **Main** app-type projects now **exist**
+> (walking skeleton, milestone 5); a throwaway `Heartbeat` sample exercises the full pipeline
+> (domain → dispatcher → repository → EF Core → Postgres → Minimal API → WASM). `Ui.Shared`,
+> `Identity`, `Localization`, `LocalStore`, the MAUI head, and the SecretSanta app-type follow the
+> same template when needed.
 
 ## 5.1 Level 1 — solution structure
 
