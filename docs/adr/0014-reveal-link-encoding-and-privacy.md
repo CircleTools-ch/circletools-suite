@@ -63,6 +63,19 @@ encoded, where does it live in the URL, and what privacy properties do we guaran
   assignment — this is the intended "link is the secret" model, **not confidentiality against a
   determined holder**. URL length grows with wishlist size (see constraints). Base64 is encoding, not
   encryption.
+- **Negative / accepted — links cannot be revoked.** Because a link carries its whole payload and is
+  decoded offline, **there is no way to invalidate one after sending it**. A link from a superseded
+  draw keeps resolving and keeps showing the *old* recipient; nothing on the reveal page can detect
+  this, since the page never sees the group. Two consequences follow, both handled in the UI rather
+  than the link format:
+  - Running a **second draw** silently obsoletes every link already sent, so the organizer must
+    confirm before re-drawing.
+  - **Changing the members** voids the draw entirely (a draw belongs to the exact member set it was
+    generated for), so the organizer must draw again and re-send every link.
+
+  Adding a draw identifier to the payload would let a *newer* link identify itself, but could not
+  help the recipient of a stale one — they have only the old link. Detecting staleness would require
+  shared state, i.e. a backend, which this ADR exists to avoid.
 - **Follow-ups:** the exact **JSON schema + version strategy** and the **URL-length budget** are pinned
   in [FEAT-001](../features/FEAT-001-secret-santa-mvp.md). If links later travel over broadcast/untrusted
   channels, revisit with **optional encryption (separate code)** and/or **HMAC** — a future ADR that

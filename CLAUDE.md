@@ -91,9 +91,35 @@ dotnet test                                  # run tests (once test projects exi
 Builds run with `TreatWarningsAsErrors` and `EnforceCodeStyleInBuild` — style violations fail
 the build. Packages are added **only** via `Directory.Packages.props` (Central Package Mgmt).
 
+## Verify UI work in a real browser
+
+**A green test run is not evidence that a feature works.** Whenever you add or change something
+user-facing, run the app and drive it yourself before reporting the work as done — several real
+defects here (a silently partial set of reveal links, `Anlass:24.12.2026Zürich` with no separators,
+a badge whose text said the opposite of its condition) all passed the unit tests and were only
+visible on screen.
+
+```bash
+dotnet run --project src/Apps/SecretSanta/AppSuite.SecretSanta.WebApp --launch-profile http
+# → http://localhost:5081   (the http profile avoids dev-certificate prompts)
+```
+
+The Secret-Santa web app is a **standalone Blazor WASM** app with no backend — it is not part of the
+Aspire AppHost, so run its project directly. State lives in browser `localStorage`; clear it with
+`localStorage.clear()` for a clean run.
+
+When driving it:
+
+- Walk the whole flow a user would (create → members → exclusions → draw → share → open a reveal
+  link), not just the screen you touched.
+- Check the **error and empty paths** too, and read the **browser console** — it should stay clean.
+- Verify every locale you touched (DE/EN/FR); the language picker is in the sidebar.
+- Look at the screenshots. A page that renders is not the same as a page that reads correctly.
+
 ## Do NOT
 
 - Don't skip templates or the process phases.
+- **Don't call UI work done on a green test run alone** — run the app and look at it (see above).
 - Don't invent domain terms outside the glossary.
 - Don't add NuGet packages outside `Directory.Packages.props`.
 - Don't put domain logic in hosts, or infrastructure concerns in the domain.

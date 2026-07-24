@@ -26,7 +26,8 @@
   <data name="CreateGroup" xml:space="preserve"><value>Gruppe erstellen</value></data>
   <data name="NoGroups" xml:space="preserve"><value>Noch keine Gruppen.</value></data>
   <data name="MembersColumn" xml:space="preserve"><value>Mitglieder</value></data>
-  <data name="DrawReadyBadge" xml:space="preserve"><value>Auslosung bereit</value></data>
+  <data name="DrawCompleteBadge" xml:space="preserve"><value>Ausgelost</value></data>
+  <data name="DrawInvalidatedBadge" xml:space="preserve"><value>Neu auslosen nötig</value></data>
   <data name="GroupEditorTitle" xml:space="preserve"><value>Gruppe</value></data>
   <data name="NameLabel" xml:space="preserve"><value>Name</value></data>
   <data name="BudgetLabel" xml:space="preserve"><value>Budget</value></data>
@@ -61,6 +62,19 @@
   <data name="ShareTitle" xml:space="preserve"><value>Links teilen</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Senden Sie jeder Person ihren eigenen Link. Nur die empfangende Person sieht, wen sie beschenkt.</value></data>
   <data name="NoDrawYet" xml:space="preserve"><value>Losen Sie zuerst aus, um Links zu erzeugen.</value></data>
+  <data name="DrawInvalidatedNotice" xml:space="preserve"><value>Die Mitglieder haben sich geändert, daher gilt die frühere Auslosung nicht mehr. Bitte erneut auslosen.</value></data>
+  <data name="RedrawWarning" xml:space="preserve"><value>Diese Gruppe wurde bereits ausgelost. Ein erneutes Auslosen ersetzt alle Zuordnungen - bereits verschickte Links zeigen dann die falsche Person.</value></data>
+  <data name="RedrawConfirm" xml:space="preserve"><value>Trotzdem erneut auslosen</value></data>
+  <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>Diese Gruppe wurde bereits ausgelost. Wer Mitglieder hinzufügt oder entfernt, macht die Auslosung ungültig und muss neu auslosen.</value></data>
+  <data name="ConfirmDeleteGroup" xml:space="preserve"><value>"{0}" mit allen Inhalten löschen? Das lässt sich nicht rückgängig machen.</value></data>
+  <data name="ConfirmRemoveMember" xml:space="preserve"><value>"{0}" aus dieser Gruppe entfernen?</value></data>
+  <data name="ConfirmYes" xml:space="preserve"><value>Ja, löschen</value></data>
+  <data name="ConfirmRemove" xml:space="preserve"><value>Ja, entfernen</value></data>
+  <data name="ExclusionSelfNotAllowed" xml:space="preserve"><value>Eine Person kann nicht von sich selbst ausgeschlossen werden - sie wird sich ohnehin nie selbst zugelost.</value></data>
+  <data name="ExclusionPickBoth" xml:space="preserve"><value>Wählen Sie eine schenkende und eine beschenkte Person.</value></data>
+  <data name="NotFoundTitle" xml:space="preserve"><value>Nicht gefunden</value></data>
+  <data name="NotFoundBody" xml:space="preserve"><value>Diesen Inhalt gibt es leider nicht.</value></data>
+  <data name="LanguageLabel" xml:space="preserve"><value>Sprache</value></data>
   <data name="ShareLinkTooLong" xml:space="preserve"><value>Dieser Link ist lang und könnte von manchen Chat-Apps gekürzt oder abgeschnitten werden. Kürzen Sie ggf. die Wunschlisteneinträge.</value></data>
   <data name="ForLabel" xml:space="preserve"><value>Für</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Dein Wichtel</value></data>

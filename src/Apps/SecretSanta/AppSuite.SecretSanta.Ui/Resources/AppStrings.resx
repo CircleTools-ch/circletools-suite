@@ -80,7 +80,8 @@
   <data name="CreateGroup" xml:space="preserve"><value>Create group</value></data>
   <data name="NoGroups" xml:space="preserve"><value>No groups yet.</value></data>
   <data name="MembersColumn" xml:space="preserve"><value>Members</value></data>
-  <data name="DrawReadyBadge" xml:space="preserve"><value>Draw ready</value></data>
+  <data name="DrawCompleteBadge" xml:space="preserve"><value>Drawn</value></data>
+  <data name="DrawInvalidatedBadge" xml:space="preserve"><value>Re-draw needed</value></data>
   <data name="GroupEditorTitle" xml:space="preserve"><value>Group</value></data>
   <data name="NameLabel" xml:space="preserve"><value>Name</value></data>
   <data name="BudgetLabel" xml:space="preserve"><value>Budget</value></data>
@@ -115,6 +116,19 @@
   <data name="ShareTitle" xml:space="preserve"><value>Share links</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Send each person their own link. Only the recipient can see who they drew.</value></data>
   <data name="NoDrawYet" xml:space="preserve"><value>Run a draw first to generate links.</value></data>
+  <data name="DrawInvalidatedNotice" xml:space="preserve"><value>The members changed, so the previous draw no longer applies. Please run the draw again.</value></data>
+  <data name="RedrawWarning" xml:space="preserve"><value>This group has already been drawn. Drawing again replaces every assignment - links you have already sent will show the wrong person.</value></data>
+  <data name="RedrawConfirm" xml:space="preserve"><value>Draw again anyway</value></data>
+  <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>This group has already been drawn. Adding or removing a member voids that draw and you will need to draw again.</value></data>
+  <data name="ConfirmDeleteGroup" xml:space="preserve"><value>Delete "{0}" and everything in it? This cannot be undone.</value></data>
+  <data name="ConfirmRemoveMember" xml:space="preserve"><value>Remove "{0}" from this group?</value></data>
+  <data name="ConfirmYes" xml:space="preserve"><value>Yes, delete</value></data>
+  <data name="ConfirmRemove" xml:space="preserve"><value>Yes, remove</value></data>
+  <data name="ExclusionSelfNotAllowed" xml:space="preserve"><value>A person cannot be excluded from giving to themselves - they are never assigned to themselves anyway.</value></data>
+  <data name="ExclusionPickBoth" xml:space="preserve"><value>Choose a giver and a recipient.</value></data>
+  <data name="NotFoundTitle" xml:space="preserve"><value>Not found</value></data>
+  <data name="NotFoundBody" xml:space="preserve"><value>Sorry, the content you are looking for does not exist.</value></data>
+  <data name="LanguageLabel" xml:space="preserve"><value>Language</value></data>
   <data name="ShareLinkTooLong" xml:space="preserve"><value>This link is long and may be shortened or broken by some chat apps. Consider shortening the wishlist entries.</value></data>
   <data name="ForLabel" xml:space="preserve"><value>For</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Your Secret Santa</value></data>

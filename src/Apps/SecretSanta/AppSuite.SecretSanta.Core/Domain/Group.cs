@@ -21,7 +21,8 @@ public sealed class Group : AggregateRoot
         EventDetails? eventDetails,
         List<Member> members,
         List<Exclusion> exclusions,
-        List<Draw> draws)
+        List<Draw> draws,
+        bool drawInvalidatedByMembershipChange)
     {
         Id = id;
         Name = name;
@@ -30,6 +31,7 @@ public sealed class Group : AggregateRoot
         _members = members;
         _exclusions = exclusions;
         _draws = draws;
+        DrawInvalidatedByMembershipChange = drawInvalidatedByMembershipChange;
     }
 
     /// <summary>Gets the group name.</summary>
@@ -53,12 +55,28 @@ public sealed class Group : AggregateRoot
     /// <summary>Gets the current (most recent) draw, or <see langword="null"/> if none.</summary>
     public Draw? CurrentDraw => _draws.Count > 0 ? _draws[^1] : null;
 
+    /// <summary>
+    /// Gets a value indicating whether a draw was discarded because the member set changed. A draw
+    /// belongs to the exact member set it was generated for, so adding or removing a member voids
+    /// it (see <see cref="AddMember"/> and <see cref="RemoveMember"/>). This flag lets the UI tell
+    /// "never drawn" apart from "drawn, then invalidated"; it is cleared by the next successful draw.
+    /// </summary>
+    public bool DrawInvalidatedByMembershipChange { get; private set; }
+
     /// <summary>Creates a new, empty group.</summary>
     /// <param name="name">A non-empty group name.</param>
     /// <returns>The created group.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
     public static Group Create(string name) =>
-        new(GuidV7.New(), NormalizeName(name), budget: null, eventDetails: null, members: [], exclusions: [], draws: []);
+        new(
+            GuidV7.New(),
+            NormalizeName(name),
+            budget: null,
+            eventDetails: null,
+            members: [],
+            exclusions: [],
+            draws: [],
+            drawInvalidatedByMembershipChange: false);
 
     /// <summary>Renames the group.</summary>
     /// <param name="name">A non-empty group name.</param>
@@ -77,6 +95,7 @@ public sealed class Group : AggregateRoot
     /// <param name="wishlist">The member's wishlist.</param>
     /// <returns>The identity of the added member.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the name duplicates an existing member.</exception>
+    /// <remarks>Adding a member voids any existing draw; see <see cref="DrawInvalidatedByMembershipChange"/>.</remarks>
     public Guid AddMember(string name, Wishlist wishlist)
     {
         ArgumentNullException.ThrowIfNull(wishlist);
@@ -84,6 +103,7 @@ public sealed class Group : AggregateRoot
         var member = Member.Create(name, wishlist);
         GuardUniqueName(member.Name, excludingMemberId: null);
         _members.Add(member);
+        InvalidateDraws();
         return member.Id;
     }
 
@@ -106,11 +126,13 @@ public sealed class Group : AggregateRoot
     /// <summary>Removes a member and any exclusions that reference it.</summary>
     /// <param name="memberId">The member to remove.</param>
     /// <exception cref="InvalidOperationException">Thrown when the member is unknown.</exception>
+    /// <remarks>Removing a member voids any existing draw; see <see cref="DrawInvalidatedByMembershipChange"/>.</remarks>
     public void RemoveMember(Guid memberId)
     {
         var member = RequireMember(memberId);
         _members.Remove(member);
         _exclusions.RemoveAll(e => e.GiverMemberId == memberId || e.RecipientMemberId == memberId);
+        InvalidateDraws();
     }
 
     /// <summary>Adds a directed exclusion between two existing members.</summary>
@@ -157,6 +179,7 @@ public sealed class Group : AggregateRoot
         if (result.IsSuccess)
         {
             _draws.Add(Draw.Create(result.Assignments, now));
+            DrawInvalidatedByMembershipChange = false;
         }
 
         return result;
@@ -179,7 +202,8 @@ public sealed class Group : AggregateRoot
         _draws.Select(d => new DrawState(
             d.Id,
             d.CreatedAt,
-            d.Assignments.Select(a => new AssignmentState(a.GiverMemberId, a.RecipientMemberId)).ToList())).ToList());
+            d.Assignments.Select(a => new AssignmentState(a.GiverMemberId, a.RecipientMemberId)).ToList())).ToList(),
+        DrawInvalidatedByMembershipChange);
 
     /// <summary>Reconstructs a group from a previously captured memento.</summary>
     /// <param name="state">The state snapshot.</param>
@@ -208,7 +232,32 @@ public sealed class Group : AggregateRoot
             ? null
             : EventDetails.Create(state.Event.Date, state.Event.Location, state.Event.Description);
 
-        return new Group(state.Id, state.Name, budget, eventDetails, members, exclusions, draws);
+        return new Group(
+            state.Id,
+            state.Name,
+            budget,
+            eventDetails,
+            members,
+            exclusions,
+            draws,
+            state.DrawInvalidatedByMembershipChange);
+    }
+
+    /// <summary>
+    /// Discards the draw history because the member set changed. A draw maps a fixed set of givers
+    /// to recipients, so once that set changes the draw — and every reveal link built from it — no
+    /// longer describes the group. Clearing it here keeps <see cref="CurrentDraw"/> honest rather
+    /// than leaving assignments that reference members who are no longer present.
+    /// </summary>
+    private void InvalidateDraws()
+    {
+        if (_draws.Count == 0)
+        {
+            return;
+        }
+
+        _draws.Clear();
+        DrawInvalidatedByMembershipChange = true;
     }
 
     private Member RequireMember(Guid memberId) =>

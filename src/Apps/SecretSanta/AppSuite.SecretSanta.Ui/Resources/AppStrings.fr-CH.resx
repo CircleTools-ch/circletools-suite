@@ -26,7 +26,8 @@
   <data name="CreateGroup" xml:space="preserve"><value>Créer un groupe</value></data>
   <data name="NoGroups" xml:space="preserve"><value>Aucun groupe pour l'instant.</value></data>
   <data name="MembersColumn" xml:space="preserve"><value>Membres</value></data>
-  <data name="DrawReadyBadge" xml:space="preserve"><value>Tirage prêt</value></data>
+  <data name="DrawCompleteBadge" xml:space="preserve"><value>Tirage effectué</value></data>
+  <data name="DrawInvalidatedBadge" xml:space="preserve"><value>Nouveau tirage requis</value></data>
   <data name="GroupEditorTitle" xml:space="preserve"><value>Groupe</value></data>
   <data name="NameLabel" xml:space="preserve"><value>Nom</value></data>
   <data name="BudgetLabel" xml:space="preserve"><value>Budget</value></data>
@@ -61,6 +62,19 @@
   <data name="ShareTitle" xml:space="preserve"><value>Partager les liens</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Envoyez à chaque personne son propre lien. Seul le destinataire voit à qui il offre.</value></data>
   <data name="NoDrawYet" xml:space="preserve"><value>Lancez d'abord un tirage pour générer les liens.</value></data>
+  <data name="DrawInvalidatedNotice" xml:space="preserve"><value>Les membres ont changé, le tirage précédent ne s'applique donc plus. Veuillez relancer le tirage.</value></data>
+  <data name="RedrawWarning" xml:space="preserve"><value>Ce groupe a déjà été tiré au sort. Relancer le tirage remplace toutes les attributions - les liens déjà envoyés indiqueront la mauvaise personne.</value></data>
+  <data name="RedrawConfirm" xml:space="preserve"><value>Relancer quand même le tirage</value></data>
+  <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>Ce groupe a déjà été tiré au sort. Ajouter ou retirer un membre annule ce tirage et vous devrez le relancer.</value></data>
+  <data name="ConfirmDeleteGroup" xml:space="preserve"><value>Supprimer « {0} » et tout son contenu ? Cette action est irréversible.</value></data>
+  <data name="ConfirmRemoveMember" xml:space="preserve"><value>Retirer « {0} » de ce groupe ?</value></data>
+  <data name="ConfirmYes" xml:space="preserve"><value>Oui, supprimer</value></data>
+  <data name="ConfirmRemove" xml:space="preserve"><value>Oui, retirer</value></data>
+  <data name="ExclusionSelfNotAllowed" xml:space="preserve"><value>Une personne ne peut pas être exclue d'elle-même - elle ne se voit jamais attribuer son propre nom.</value></data>
+  <data name="ExclusionPickBoth" xml:space="preserve"><value>Choisissez une personne qui offre et une personne qui reçoit.</value></data>
+  <data name="NotFoundTitle" xml:space="preserve"><value>Introuvable</value></data>
+  <data name="NotFoundBody" xml:space="preserve"><value>Désolé, ce contenu n'existe pas.</value></data>
+  <data name="LanguageLabel" xml:space="preserve"><value>Langue</value></data>
   <data name="ShareLinkTooLong" xml:space="preserve"><value>Ce lien est long et pourrait être raccourci ou tronqué par certaines applications de messagerie. Raccourcissez si besoin les éléments de la liste de souhaits.</value></data>
   <data name="ForLabel" xml:space="preserve"><value>Pour</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Votre Père Noël secret</value></data>

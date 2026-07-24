@@ -28,19 +28,33 @@ else
     <ul class="list-group">
         @foreach (var group in _groups)
         {
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>
-                    <strong>@group.Name</strong>
-                    <span class="text-muted ms-2">@L["MembersColumn"]: @group.MemberCount</span>
-                    @if (group.HasCurrentDraw)
-                    {
-                        <span class="badge bg-success ms-2">@L["DrawReadyBadge"]</span>
-                    }
-                </span>
-                <span>
-                    <button class="btn btn-sm btn-outline-primary" @onclick="() => Open(group.Id)">@L["Open"]</button>
-                    <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => DeleteAsync(group.Id)">@L["Delete"]</button>
-                </span>
+            <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>
+                        <strong>@group.Name</strong>
+                        <span class="text-muted ms-2">@L["MembersColumn"]: @group.MemberCount</span>
+                        @if (group.HasCurrentDraw)
+                        {
+                            <span class="badge bg-success ms-2">@L["DrawCompleteBadge"]</span>
+                        }
+                        else if (group.DrawInvalidatedByMembershipChange)
+                        {
+                            <span class="badge bg-warning text-dark ms-2">@L["DrawInvalidatedBadge"]</span>
+                        }
+                    </span>
+                    <span>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => Open(group.Id)">@L["Open"]</button>
+                        <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => AskDelete(group.Id)">@L["Delete"]</button>
+                    </span>
+                </div>
+                @if (_pendingDeleteId == group.Id)
+                {
+                    <div class="alert alert-warning mt-2 mb-0" role="alert">
+                        <p class="mb-2">@L["ConfirmDeleteGroup", group.Name]</p>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteAsync(group.Id)">@L["ConfirmYes"]</button>
+                        <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="CancelDelete">@L["Cancel"]</button>
+                    </div>
+                }
             </li>
         }
     </ul>
@@ -50,6 +64,7 @@ else
     private IReadOnlyList<GroupSummaryDto>? _groups;
     private string _newName = string.Empty;
     private bool _busy;
+    private Guid? _pendingDeleteId;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -83,8 +98,13 @@ else
         }
     }
 
+    private void AskDelete(Guid id) => _pendingDeleteId = id;
+
+    private void CancelDelete() => _pendingDeleteId = null;
+
     private async Task DeleteAsync(Guid id)
     {
+        _pendingDeleteId = null;
         await Sender.Send(new DeleteGroupCommand(id));
         await LoadAsync();
     }

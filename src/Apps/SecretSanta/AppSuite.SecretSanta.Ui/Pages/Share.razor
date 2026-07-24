@@ -17,7 +17,14 @@
 }
 else if (_links.Count == 0)
 {
-    <p>@L["NoDrawYet"]</p>
+    @if (_drawInvalidated)
+    {
+        <div class="alert alert-warning" role="alert">@L["DrawInvalidatedNotice"]</div>
+    }
+    else
+    {
+        <p>@L["NoDrawYet"]</p>
+    }
 }
 else
 {
@@ -48,9 +55,14 @@ else
 
     private IReadOnlyList<RevealLinkDto>? _links;
     private string? _copiedUrl;
+    private bool _drawInvalidated;
 
-    protected override async Task OnParametersSetAsync() =>
+    protected override async Task OnParametersSetAsync()
+    {
         _links = await Sender.Send(new GetRevealLinksQuery(GroupId));
+        var group = await Sender.Send(new GetGroupQuery(GroupId));
+        _drawInvalidated = group?.DrawInvalidatedByMembershipChange ?? false;
+    }
 
     private async Task CopyAsync(string url)
     {

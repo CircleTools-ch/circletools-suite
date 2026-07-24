@@ -70,6 +70,88 @@ public sealed class GroupTests
     }
 
     [Fact]
+    public void RemoveMember_VoidsCurrentDraw()
+    {
+        var group = DrawnGroupOfFour(out var members);
+
+        group.RemoveMember(members[0]);
+
+        Assert.Null(group.CurrentDraw);
+        Assert.True(group.DrawInvalidatedByMembershipChange);
+    }
+
+    [Fact]
+    public void AddMember_VoidsCurrentDraw()
+    {
+        var group = DrawnGroupOfFour(out _);
+
+        group.AddMember("Erin", Wishlist.Empty);
+
+        Assert.Null(group.CurrentDraw);
+        Assert.True(group.DrawInvalidatedByMembershipChange);
+    }
+
+    [Fact]
+    public void AddMember_BeforeAnyDraw_DoesNotFlagInvalidation()
+    {
+        var group = Group.Create("Friends");
+
+        group.AddMember("Alice", Wishlist.Empty);
+
+        Assert.False(group.DrawInvalidatedByMembershipChange);
+    }
+
+    [Fact]
+    public void EditMember_KeepsCurrentDraw()
+    {
+        var group = DrawnGroupOfFour(out var members);
+
+        group.EditMember(members[0], "Alicia", Wishlist.Create(["Socks"]));
+
+        Assert.NotNull(group.CurrentDraw);
+        Assert.False(group.DrawInvalidatedByMembershipChange);
+    }
+
+    [Fact]
+    public void RunDraw_AfterInvalidation_ClearsTheFlag()
+    {
+        var group = DrawnGroupOfFour(out var members);
+        group.RemoveMember(members[0]);
+
+        var result = group.RunDraw(new DrawGenerator(new SeededRandomSource(7)), DateTimeOffset.UtcNow);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(group.DrawInvalidatedByMembershipChange);
+        Assert.NotNull(group.CurrentDraw);
+    }
+
+    [Fact]
+    public void ToState_FromState_RoundTripsInvalidationFlag()
+    {
+        var group = DrawnGroupOfFour(out var members);
+        group.RemoveMember(members[0]);
+
+        var restored = Group.FromState(group.ToState());
+
+        Assert.True(restored.DrawInvalidatedByMembershipChange);
+        Assert.Null(restored.CurrentDraw);
+    }
+
+    private static Group DrawnGroupOfFour(out IReadOnlyList<Guid> memberIds)
+    {
+        var group = Group.Create("Friends");
+        var ids = new List<Guid>();
+        foreach (var name in new[] { "A", "B", "C", "D" })
+        {
+            ids.Add(group.AddMember(name, Wishlist.Empty));
+        }
+
+        group.RunDraw(new DrawGenerator(new SeededRandomSource(11)), DateTimeOffset.UtcNow);
+        memberIds = ids;
+        return group;
+    }
+
+    [Fact]
     public void ToState_FromState_RoundTrips()
     {
         var group = Group.Create("Family");

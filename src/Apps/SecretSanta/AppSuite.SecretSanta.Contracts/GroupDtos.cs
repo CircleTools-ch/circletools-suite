@@ -5,7 +5,13 @@ namespace AppSuite.SecretSanta.Contracts;
 /// <param name="Name">The group name.</param>
 /// <param name="MemberCount">The number of members in the group.</param>
 /// <param name="HasCurrentDraw">Whether the group has a current (most recent) draw.</param>
-public sealed record GroupSummaryDto(Guid Id, string Name, int MemberCount, bool HasCurrentDraw);
+/// <param name="DrawInvalidatedByMembershipChange">Whether a draw was voided by a member being added or removed.</param>
+public sealed record GroupSummaryDto(
+    Guid Id,
+    string Name,
+    int MemberCount,
+    bool HasCurrentDraw,
+    bool DrawInvalidatedByMembershipChange);
 
 /// <summary>Gift budget for a group.</summary>
 /// <param name="Amount">The monetary amount.</param>
@@ -45,6 +51,7 @@ public sealed record AssignmentDto(Guid GiverMemberId, string GiverName, Guid Re
 /// <param name="Exclusions">The configured exclusions.</param>
 /// <param name="HasCurrentDraw">Whether the group has a current (most recent) draw.</param>
 /// <param name="CurrentAssignments">The assignments of the current draw (empty when none).</param>
+/// <param name="DrawInvalidatedByMembershipChange">Whether a draw was voided by a member being added or removed.</param>
 public sealed record GroupDto(
     Guid Id,
     string Name,
@@ -53,7 +60,8 @@ public sealed record GroupDto(
     IReadOnlyList<MemberDto> Members,
     IReadOnlyList<ExclusionDto> Exclusions,
     bool HasCurrentDraw,
-    IReadOnlyList<AssignmentDto> CurrentAssignments);
+    IReadOnlyList<AssignmentDto> CurrentAssignments,
+    bool DrawInvalidatedByMembershipChange);
 
 /// <summary>Outcome of a draw attempt.</summary>
 /// <param name="Success">Whether a valid draw was produced.</param>

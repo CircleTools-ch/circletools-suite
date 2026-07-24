@@ -45,6 +45,12 @@ else
         </div>
     </div>
 
+    @* A disabled button alone leaves the organizer guessing why nothing happens. *@
+    @if (ValidationMessage is { } message)
+    {
+        <p class="text-danger" role="alert">@message</p>
+    }
+
     @if (_group.Exclusions.Count == 0)
     {
         <p>@L["NoExclusions"]</p>
@@ -79,6 +85,29 @@ else
         Guid.TryParse(_giverId, out var giver) &&
         Guid.TryParse(_recipientId, out var recipient) &&
         giver != recipient;
+
+    /// <summary>Explains why <see cref="CanAdd"/> is false, or <see langword="null"/> when it is true.</summary>
+    private string? ValidationMessage
+    {
+        get
+        {
+            if (CanAdd)
+            {
+                return null;
+            }
+
+            var giverChosen = Guid.TryParse(_giverId, out var giver);
+            var recipientChosen = Guid.TryParse(_recipientId, out var recipient);
+
+            if (giverChosen && recipientChosen && giver == recipient)
+            {
+                return L["ExclusionSelfNotAllowed"].Value;
+            }
+
+            // Nothing picked yet is the initial state, not a mistake worth nagging about.
+            return giverChosen || recipientChosen ? L["ExclusionPickBoth"].Value : null;
+        }
+    }
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
