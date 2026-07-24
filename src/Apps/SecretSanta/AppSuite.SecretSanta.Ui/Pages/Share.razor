@@ -1,0 +1,62 @@
+@page "/groups/{GroupId:guid}/share"
+@inject ISender Sender
+@inject IJSRuntime JS
+@inject IStringLocalizer<AppStrings> L
+
+<PageTitle>@L["ShareTitle"]</PageTitle>
+
+<GroupNav GroupId="GroupId" />
+
+<h1>@L["ShareTitle"]</h1>
+<p class="text-muted">@L["ShareHint"]</p>
+
+@if (_links is null)
+{
+    <p>@L["Loading"]</p>
+}
+else if (_links.Count == 0)
+{
+    <p>@L["NoDrawYet"]</p>
+}
+else
+{
+    <ul class="list-group">
+        @foreach (var link in _links)
+        {
+            <li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><strong>@L["ForLabel"]:</strong> @link.ForLabel</span>
+                    <button class="btn btn-sm btn-outline-primary" @onclick="() => CopyAsync(link.Url)">
+                        @(_copiedUrl == link.Url ? L["Copied"] : L["Copy"])
+                    </button>
+                </div>
+                <div class="text-break small text-muted mt-1">@link.Url</div>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    /// <summary>The owning group.</summary>
+    [Parameter]
+    public Guid GroupId { get; set; }
+
+    private IReadOnlyList<RevealLinkDto>? _links;
+    private string? _copiedUrl;
+
+    protected override async Task OnParametersSetAsync() =>
+        _links = await Sender.Send(new GetRevealLinksQuery(GroupId));
+
+    private async Task CopyAsync(string url)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", url);
+            _copiedUrl = url;
+        }
+        catch (JSException)
+        {
+            _copiedUrl = null;
+        }
+    }
+}

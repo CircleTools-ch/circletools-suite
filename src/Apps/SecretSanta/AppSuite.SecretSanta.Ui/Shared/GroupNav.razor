@@ -1,0 +1,16 @@
+@inject IStringLocalizer<AppStrings> L
+
+<nav class="mb-3">
+    <a href="" class="btn btn-sm btn-link">@L["Back"]</a>
+    <NavLink class="btn btn-sm btn-outline-secondary ms-1" href="@($"groups/{GroupId}")" Match="NavLinkMatch.All">@L["GroupEditorTitle"]</NavLink>
+    <NavLink class="btn btn-sm btn-outline-secondary ms-1" href="@($"groups/{GroupId}/members")">@L["NavMembers"]</NavLink>
+    <NavLink class="btn btn-sm btn-outline-secondary ms-1" href="@($"groups/{GroupId}/exclusions")">@L["NavExclusions"]</NavLink>
+    <NavLink class="btn btn-sm btn-outline-secondary ms-1" href="@($"groups/{GroupId}/draw")">@L["NavDraw"]</NavLink>
+    <NavLink class="btn btn-sm btn-outline-secondary ms-1" href="@($"groups/{GroupId}/share")">@L["NavShare"]</NavLink>
+</nav>
+
+@code {
+    /// <summary>The group the sub-navigation is scoped to.</summary>
+    [Parameter]
+    public Guid GroupId { get; set; }
+}

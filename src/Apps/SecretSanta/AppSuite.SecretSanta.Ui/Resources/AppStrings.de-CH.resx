@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppName" xml:space="preserve"><value>Wichteln</value></data>
+  <data name="Loading" xml:space="preserve"><value>Wird geladen...</value></data>
+  <data name="Back" xml:space="preserve"><value>Zurück</value></data>
+  <data name="Save" xml:space="preserve"><value>Speichern</value></data>
+  <data name="Saved" xml:space="preserve"><value>Gespeichert.</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Abbrechen</value></data>
+  <data name="Edit" xml:space="preserve"><value>Bearbeiten</value></data>
+  <data name="Remove" xml:space="preserve"><value>Entfernen</value></data>
+  <data name="Delete" xml:space="preserve"><value>Löschen</value></data>
+  <data name="Open" xml:space="preserve"><value>Öffnen</value></data>
+  <data name="Copy" xml:space="preserve"><value>Kopieren</value></data>
+  <data name="Copied" xml:space="preserve"><value>Kopiert!</value></data>
+  <data name="NavGroups" xml:space="preserve"><value>Gruppen</value></data>
+  <data name="NavMembers" xml:space="preserve"><value>Mitglieder</value></data>
+  <data name="NavExclusions" xml:space="preserve"><value>Ausschlüsse</value></data>
+  <data name="NavDraw" xml:space="preserve"><value>Auslosung</value></data>
+  <data name="NavShare" xml:space="preserve"><value>Links teilen</value></data>
+  <data name="GroupsTitle" xml:space="preserve"><value>Gruppen</value></data>
+  <data name="NewGroupPlaceholder" xml:space="preserve"><value>Name der neuen Gruppe</value></data>
+  <data name="CreateGroup" xml:space="preserve"><value>Gruppe erstellen</value></data>
+  <data name="NoGroups" xml:space="preserve"><value>Noch keine Gruppen.</value></data>
+  <data name="MembersColumn" xml:space="preserve"><value>Mitglieder</value></data>
+  <data name="DrawReadyBadge" xml:space="preserve"><value>Auslosung bereit</value></data>
+  <data name="GroupEditorTitle" xml:space="preserve"><value>Gruppe</value></data>
+  <data name="NameLabel" xml:space="preserve"><value>Name</value></data>
+  <data name="BudgetLabel" xml:space="preserve"><value>Budget</value></data>
+  <data name="AmountLabel" xml:space="preserve"><value>Betrag</value></data>
+  <data name="CurrencyLabel" xml:space="preserve"><value>Währung</value></data>
+  <data name="ClearBudget" xml:space="preserve"><value>Budget entfernen</value></data>
+  <data name="EventLabel" xml:space="preserve"><value>Anlass</value></data>
+  <data name="DateLabel" xml:space="preserve"><value>Datum</value></data>
+  <data name="LocationLabel" xml:space="preserve"><value>Ort</value></data>
+  <data name="DescriptionLabel" xml:space="preserve"><value>Beschreibung</value></data>
+  <data name="GroupNotFound" xml:space="preserve"><value>Gruppe nicht gefunden.</value></data>
+  <data name="MembersTitle" xml:space="preserve"><value>Mitglieder</value></data>
+  <data name="MemberNamePlaceholder" xml:space="preserve"><value>Name des Mitglieds</value></data>
+  <data name="AddMember" xml:space="preserve"><value>Mitglied hinzufügen</value></data>
+  <data name="WishlistLabel" xml:space="preserve"><value>Wunschliste (ein Eintrag pro Zeile)</value></data>
+  <data name="NoMembers" xml:space="preserve"><value>Noch keine Mitglieder.</value></data>
+  <data name="ExclusionsTitle" xml:space="preserve"><value>Ausschlüsse</value></data>
+  <data name="ExclusionHint" xml:space="preserve"><value>Der Schenkende wird der gewählten Person nicht zugelost.</value></data>
+  <data name="GiverLabel" xml:space="preserve"><value>Schenkende Person</value></data>
+  <data name="RecipientLabel" xml:space="preserve"><value>Darf nicht beschenken</value></data>
+  <data name="AddExclusion" xml:space="preserve"><value>Ausschluss hinzufügen</value></data>
+  <data name="NoExclusions" xml:space="preserve"><value>Keine Ausschlüsse.</value></data>
+  <data name="NeedTwoMembersForExclusion" xml:space="preserve"><value>Zuerst mindestens zwei Mitglieder hinzufügen.</value></data>
+  <data name="DrawTitle" xml:space="preserve"><value>Auslosung</value></data>
+  <data name="RunDraw" xml:space="preserve"><value>Auslosen</value></data>
+  <data name="DrawSuccess" xml:space="preserve"><value>Auslosung abgeschlossen.</value></data>
+  <data name="DrawAssignmentCount" xml:space="preserve"><value>{0} Zuordnungen wurden erstellt.</value></data>
+  <data name="DrawFailedOverConstrained" xml:space="preserve"><value>Mit den aktuellen Ausschlüssen ist keine gültige Auslosung möglich. Entfernen Sie einige davon.</value></data>
+  <data name="DrawFailedTwoMember" xml:space="preserve"><value>Eine Zweiergruppe lässt sich nicht auslosen, ohne dass sich beide gegenseitig beschenken. Fügen Sie weitere Mitglieder hinzu.</value></data>
+  <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Fügen Sie mindestens zwei Mitglieder hinzu, um auszulosen.</value></data>
+  <data name="DrawSpoilerNote" xml:space="preserve"><value>Die Zuordnungen werden hier nicht angezeigt, um nichts zu verraten. Teilen Sie stattdessen die Links.</value></data>
+  <data name="ShareTitle" xml:space="preserve"><value>Links teilen</value></data>
+  <data name="ShareHint" xml:space="preserve"><value>Senden Sie jeder Person ihren eigenen Link. Nur die empfangende Person sieht, wen sie beschenkt.</value></data>
+  <data name="NoDrawYet" xml:space="preserve"><value>Losen Sie zuerst aus, um Links zu erzeugen.</value></data>
+  <data name="ForLabel" xml:space="preserve"><value>Für</value></data>
+  <data name="RevealTitle" xml:space="preserve"><value>Dein Wichtel</value></data>
+  <data name="RevealGreeting" xml:space="preserve"><value>Hallo {0}!</value></data>
+  <data name="RevealBudgetLabel" xml:space="preserve"><value>Budget</value></data>
+  <data name="RevealEventLabel" xml:space="preserve"><value>Anlass</value></data>
+  <data name="RevealButton" xml:space="preserve"><value>Zeig mir, wen ich beschenke</value></data>
+  <data name="RevealRecipientLabel" xml:space="preserve"><value>Du bist Wichtel für</value></data>
+  <data name="RevealWishlistLabel" xml:space="preserve"><value>Wunschliste</value></data>
+  <data name="RevealNoWishlist" xml:space="preserve"><value>Keine Wunschliste angegeben.</value></data>
+  <data name="RevealMalformed" xml:space="preserve"><value>Dieser Link ist ungültig oder unvollständig.</value></data>
+  <data name="RevealSpoilerNote" xml:space="preserve"><value>Tippe auf die Schaltfläche, wenn du bereit bist - nicht schummeln!</value></data>
+</root>

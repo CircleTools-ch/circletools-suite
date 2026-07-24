@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppName" xml:space="preserve"><value>Secret Santa</value></data>
+  <data name="Loading" xml:space="preserve"><value>Loading...</value></data>
+  <data name="Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Saved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="Copied" xml:space="preserve"><value>Copied!</value></data>
+  <data name="NavGroups" xml:space="preserve"><value>Groups</value></data>
+  <data name="NavMembers" xml:space="preserve"><value>Members</value></data>
+  <data name="NavExclusions" xml:space="preserve"><value>Exclusions</value></data>
+  <data name="NavDraw" xml:space="preserve"><value>Draw</value></data>
+  <data name="NavShare" xml:space="preserve"><value>Share links</value></data>
+  <data name="GroupsTitle" xml:space="preserve"><value>Groups</value></data>
+  <data name="NewGroupPlaceholder" xml:space="preserve"><value>New group name</value></data>
+  <data name="CreateGroup" xml:space="preserve"><value>Create group</value></data>
+  <data name="NoGroups" xml:space="preserve"><value>No groups yet.</value></data>
+  <data name="MembersColumn" xml:space="preserve"><value>Members</value></data>
+  <data name="DrawReadyBadge" xml:space="preserve"><value>Draw ready</value></data>
+  <data name="GroupEditorTitle" xml:space="preserve"><value>Group</value></data>
+  <data name="NameLabel" xml:space="preserve"><value>Name</value></data>
+  <data name="BudgetLabel" xml:space="preserve"><value>Budget</value></data>
+  <data name="AmountLabel" xml:space="preserve"><value>Amount</value></data>
+  <data name="CurrencyLabel" xml:space="preserve"><value>Currency</value></data>
+  <data name="ClearBudget" xml:space="preserve"><value>Clear budget</value></data>
+  <data name="EventLabel" xml:space="preserve"><value>Event</value></data>
+  <data name="DateLabel" xml:space="preserve"><value>Date</value></data>
+  <data name="LocationLabel" xml:space="preserve"><value>Location</value></data>
+  <data name="DescriptionLabel" xml:space="preserve"><value>Description</value></data>
+  <data name="GroupNotFound" xml:space="preserve"><value>Group not found.</value></data>
+  <data name="MembersTitle" xml:space="preserve"><value>Members</value></data>
+  <data name="MemberNamePlaceholder" xml:space="preserve"><value>Member name</value></data>
+  <data name="AddMember" xml:space="preserve"><value>Add member</value></data>
+  <data name="WishlistLabel" xml:space="preserve"><value>Wishlist (one item per line)</value></data>
+  <data name="NoMembers" xml:space="preserve"><value>No members yet.</value></data>
+  <data name="ExclusionsTitle" xml:space="preserve"><value>Exclusions</value></data>
+  <data name="ExclusionHint" xml:space="preserve"><value>The giver will not be assigned the chosen recipient.</value></data>
+  <data name="GiverLabel" xml:space="preserve"><value>Giver</value></data>
+  <data name="RecipientLabel" xml:space="preserve"><value>Must not give to</value></data>
+  <data name="AddExclusion" xml:space="preserve"><value>Add exclusion</value></data>
+  <data name="NoExclusions" xml:space="preserve"><value>No exclusions.</value></data>
+  <data name="NeedTwoMembersForExclusion" xml:space="preserve"><value>Add at least two members first.</value></data>
+  <data name="DrawTitle" xml:space="preserve"><value>Draw</value></data>
+  <data name="RunDraw" xml:space="preserve"><value>Run draw</value></data>
+  <data name="DrawSuccess" xml:space="preserve"><value>Draw complete.</value></data>
+  <data name="DrawAssignmentCount" xml:space="preserve"><value>{0} assignments were generated.</value></data>
+  <data name="DrawFailedOverConstrained" xml:space="preserve"><value>No valid draw exists with the current exclusions. Try removing some.</value></data>
+  <data name="DrawFailedTwoMember" xml:space="preserve"><value>A two-person group cannot be drawn without both giving to each other. Add more members.</value></data>
+  <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Add at least two members to run a draw.</value></data>
+  <data name="DrawSpoilerNote" xml:space="preserve"><value>Assignments are hidden here to avoid spoilers. Share the reveal links instead.</value></data>
+  <data name="ShareTitle" xml:space="preserve"><value>Share links</value></data>
+  <data name="ShareHint" xml:space="preserve"><value>Send each person their own link. Only the recipient can see who they drew.</value></data>
+  <data name="NoDrawYet" xml:space="preserve"><value>Run a draw first to generate links.</value></data>
+  <data name="ForLabel" xml:space="preserve"><value>For</value></data>
+  <data name="RevealTitle" xml:space="preserve"><value>Your Secret Santa</value></data>
+  <data name="RevealGreeting" xml:space="preserve"><value>Hi {0}!</value></data>
+  <data name="RevealBudgetLabel" xml:space="preserve"><value>Budget</value></data>
+  <data name="RevealEventLabel" xml:space="preserve"><value>Event</value></data>
+  <data name="RevealButton" xml:space="preserve"><value>Reveal who you got</value></data>
+  <data name="RevealRecipientLabel" xml:space="preserve"><value>You are Secret Santa for</value></data>
+  <data name="RevealWishlistLabel" xml:space="preserve"><value>Their wishlist</value></data>
+  <data name="RevealNoWishlist" xml:space="preserve"><value>No wishlist provided.</value></data>
+  <data name="RevealMalformed" xml:space="preserve"><value>This reveal link is invalid or incomplete.</value></data>
+  <data name="RevealSpoilerNote" xml:space="preserve"><value>Tap the button when you are ready - no peeking!</value></data>
+</root>

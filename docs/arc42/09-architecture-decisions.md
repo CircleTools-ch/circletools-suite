@@ -21,6 +21,7 @@ Decisions are recorded as [Architecture Decision Records](../adr/index.md) (MADR
 | [ADR-0012](../adr/0012-observability-and-telemetry.md) | Observability & client telemetry |
 | [ADR-0013](../adr/0013-wasm-api-dev-wiring.md) | Standalone WASM ↔ API wiring (manual config + CORS) |
 | [ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md) | Secret-Santa reveal-link encoding & privacy |
+| [ADR-0015](../adr/0015-mvp-client-offline-storage.md) | MVP client offline storage (localStorage / file) |
 
 ## Open (backlog)
 

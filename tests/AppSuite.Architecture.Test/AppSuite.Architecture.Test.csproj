@@ -19,6 +19,10 @@
     <ProjectReference Include="..\..\src\BuildingBlocks\AppSuite.SharedKernel\AppSuite.SharedKernel.csproj" />
     <ProjectReference Include="..\..\src\Apps\Main\AppSuite.Main.Service.Core\AppSuite.Main.Service.Core.csproj" />
     <ProjectReference Include="..\..\src\Apps\Main\AppSuite.Main.Service.Repository\AppSuite.Main.Service.Repository.csproj" />
+    <ProjectReference Include="..\..\src\Apps\SecretSanta\AppSuite.SecretSanta.Contracts\AppSuite.SecretSanta.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Apps\SecretSanta\AppSuite.SecretSanta.Core\AppSuite.SecretSanta.Core.csproj" />
+    <ProjectReference Include="..\..\src\Apps\SecretSanta\AppSuite.SecretSanta.LocalStore\AppSuite.SecretSanta.LocalStore.csproj" />
+    <ProjectReference Include="..\..\src\Apps\SecretSanta\AppSuite.SecretSanta.Ui\AppSuite.SecretSanta.Ui.csproj" />
   </ItemGroup>
 
   <ItemGroup>
