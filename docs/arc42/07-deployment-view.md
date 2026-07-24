@@ -13,6 +13,9 @@
 
 ## 7.2 Local development (today)
 
+> **Implemented (M5):** `dotnet run --project src/Aspire/Suite.AppHost` starts the Aspire dashboard,
+> a `postgres` container, the `main-api` service, and the `main-web` WASM PWA. Verified working.
+
 ```mermaid
 flowchart LR
     Dev[Developer] --> AppHost[Suite.AppHost]

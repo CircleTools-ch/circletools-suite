@@ -19,6 +19,7 @@ Decisions are recorded as [Architecture Decision Records](../adr/index.md) (MADR
 | [ADR-0010](../adr/0010-api-style-and-versioning.md) | API style & versioning (Minimal APIs) |
 | [ADR-0011](../adr/0011-localization-format-and-culture.md) | Localization format & culture (RESX, `de-CH`) |
 | [ADR-0012](../adr/0012-observability-and-telemetry.md) | Observability & client telemetry |
+| [ADR-0013](../adr/0013-wasm-api-dev-wiring.md) | Standalone WASM ↔ API wiring (manual config + CORS) |
 
 ## Open (backlog)
 

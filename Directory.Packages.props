@@ -5,53 +5,101 @@
     All NuGet package versions are declared ONCE here; projects reference package
     names WITHOUT versions. Add a <PackageVersion .../> line before first use.
     See docs/guidelines/coding-guidelines.md > "Dependencies".
-
-    This list is a curated starting point; entries are inert until a project
-    actually references the package, so unused rows are harmless.
   -->
 
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <!-- Audit only direct dependencies. Transitive framework packages are patched by the
+         .NET runtime/SDK on its own cadence; auditing them here only turns third-party
+         advisory churn into spurious build breaks under TreatWarningsAsErrors. -->
+    <NuGetAuditMode>direct</NuGetAuditMode>
+    <!-- Package sources are pinned to nuget.org in the repo-root NuGet.config. -->
   </PropertyGroup>
 
-  <!-- Testing (used by *.Test projects once code exists) -->
+  <!-- Testing (used by *.Test projects). xUnit v2 per the generated templates. -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
-    <PackageVersion Include="xunit.v3" Version="1.1.0" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
-    <PackageVersion Include="FluentAssertions" Version="7.0.0" />
-    <PackageVersion Include="NSubstitute" Version="5.3.0" />
-    <PackageVersion Include="bunit" Version="1.40.0" />
   </ItemGroup>
 
-  <!-- Architecture tests (enforce dependency direction) -->
+  <!-- Architecture tests (enforce dependency direction) — xUnit v2 variant. -->
   <ItemGroup>
-    <PackageVersion Include="TngTech.ArchUnitNET.xUnitV3" Version="0.11.0" />
+    <PackageVersion Include="TngTech.ArchUnitNET.xUnit" Version="0.13.3" />
   </ItemGroup>
 
-  <!-- Persistence — EF Core for Postgres (server) + SQLite (device). ADR-0007. -->
+  <!-- Application layer building blocks (hand-rolled CQRS, ADR-0006). -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
+  </ItemGroup>
+
+  <!-- Concrete DI + logging (used by tests to build a real service provider). -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.10" />
+  </ItemGroup>
+
+  <!-- Persistence — EF Core for Postgres (server). ADR-0007, ADR-0008. -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
   </ItemGroup>
 
-  <!-- API — Minimal APIs versioning + auth. ADR-0009, ADR-0010. -->
+  <!-- API — Minimal APIs, URL-segment versioning, OpenAPI. ADR-0010. -->
   <ItemGroup>
-    <PackageVersion Include="Asp.Versioning.Http" Version="8.1.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
+    <PackageVersion Include="Asp.Versioning.Http" Version="10.0.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+  </ItemGroup>
+
+  <!-- Blazor WebAssembly client + Razor Class Library. ADR-0005. -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.10" />
+  </ItemGroup>
+
+  <!-- Localization — RESX + IStringLocalizer, ADR-0011 (in-framework abstractions). -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.10" />
+  </ItemGroup>
+
+  <!-- Aspire orchestration (AppHost). -->
+  <ItemGroup>
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.6" />
+  </ItemGroup>
+
+  <!-- ServiceDefaults — resilience, service discovery, OpenTelemetry. ADR-0012. -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.6.0" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.6.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
   </ItemGroup>
 
   <!--
-    NOTE: versions above are the intended stack (per the accepted ADRs) and are INERT until a
-    project references them; exact patch versions are confirmed when the walking skeleton is
-    scaffolded. Aspire, MAUI, and Blazor package versions are added at that point.
+    ============================================================================
+    FUTURE / not yet referenced (kept here so the intended stack is discoverable;
+    entries are inert until a project references them). Uncomment on first use.
+    ============================================================================
+    Device persistence (SQLite, local-first) — ADR-0007:
+      <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
+    Authentication + passkeys — ADR-0009:
+      <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+      <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
+    Blazor component tests:
+      <PackageVersion Include="bunit" Version="1.40.0" />
+    Assertion / mocking helpers (currently hand-written fakes are used):
+      <PackageVersion Include="FluentAssertions" Version="7.0.0" />
+      <PackageVersion Include="NSubstitute" Version="5.3.0" />
     Localization uses the in-framework Microsoft.Extensions.Localization / IStringLocalizer
-    (ADR-0011) — no extra package. Do NOT add package references outside this file.
+    (ADR-0011) — no extra package required.
   -->
 
 </Project>

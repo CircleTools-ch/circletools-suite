@@ -1,0 +1,26 @@
+@page "/"
+@inject IStringLocalizer<AppStrings> L
+
+<PageTitle>@L["DashboardTitle"]</PageTitle>
+
+<h1>@L["Greeting"]</h1>
+
+<h2>@L["DashboardTitle"]</h2>
+<ul>
+    @foreach (var app in _apps)
+    {
+        <li>@app</li>
+    }
+</ul>
+
+<p>
+    <NavLink href="heartbeat">Heartbeat (skeleton sample)</NavLink>
+</p>
+
+@code {
+    // The suite apps. Only the skeleton sample is wired end-to-end so far.
+    private readonly string[] _apps =
+    [
+        "Secret-Santa — coming soon",
+    ];
+}

@@ -1,0 +1,5 @@
+# Test-project conventions. Scoped to tests/ only.
+# Test method names use underscores (Method_State_Expectation) by convention,
+# so the identifier-underscore rule does not apply here.
+[*.cs]
+dotnet_diagnostic.CA1707.severity = none

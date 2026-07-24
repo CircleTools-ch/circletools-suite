@@ -32,6 +32,7 @@ artifacts/
 # DocFX generated output
 docfx/_site/
 docfx/api/
+docs/api/
 **/api/.manifest
 docfx/log.txt
 
