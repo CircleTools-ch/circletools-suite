@@ -13,22 +13,33 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0002](0002-use-arc42-c4-docfx.md) | Document with arc42 + C4 + DocFX | Accepted | 2026-07-24 |
 | [0003](0003-modular-monolith-with-aspire.md) | Start as a modular monolith orchestrated by Aspire | Accepted | 2026-07-24 |
 | [0004](0004-plantuml-prerender.md) | Pre-render PlantUML diagrams to SVG | Accepted | 2026-07-24 |
+| [0005](0005-web-hosting-render-model.md) | Web hosting & render model (standalone WASM PWA) | Accepted | 2026-07-24 |
+| [0006](0006-application-layer-and-mediation.md) | Application layer & mediation (hand-rolled dispatcher) | Accepted | 2026-07-24 |
+| [0007](0007-persistence-approach.md) | Persistence approach (EF Core for Postgres + SQLite) | Accepted | 2026-07-24 |
+| [0008](0008-entity-id-strategy.md) | Entity ID strategy (client-generated GUID v7) | Accepted | 2026-07-24 |
+| [0009](0009-authentication-and-passkeys.md) | Authentication & passkeys (Identity + built-in passkeys) | Accepted | 2026-07-24 |
+| [0010](0010-api-style-and-versioning.md) | API style & versioning (Minimal APIs) | Accepted | 2026-07-24 |
+| [0011](0011-localization-format-and-culture.md) | Localization format & culture (RESX, `de-CH`) | Accepted | 2026-07-24 |
+| [0012](0012-observability-and-telemetry.md) | Observability & client telemetry | Accepted | 2026-07-24 |
 
-## Open decisions backlog (to be written as we reach the architecture phase)
+## Open decisions backlog
 
-These are the genuinely open choices identified during harness design; they will be written up
-as ADRs during the architecture phase (see [arc42 ch. 9](../arc42/09-architecture-decisions.md)):
+The remaining open choices are **deferred on purpose** — each depends on the Secret-Santa domain
+model (milestones 2–3) or on the deployment phase (milestone 8), and deciding them before then
+would be premature. They will become ADRs when their inputs exist.
 
-1. Web render/hosting model (Blazor WASM-PWA vs Server vs Auto) given offline-first
-2. Local↔server sync & conflict-resolution strategy
-3. Entity ID strategy (client-generated GUID v7)
-4. Anonymous→account data-migration ("claim") semantics
-5. Web auth token model (BFF/cookie vs bearer) + passkey library
-6. Application mediation (MediatR vs hand-rolled dispatcher)
-7. Persistence approach (EF Core for Postgres + SQLite vs `sqlite-net`)
-8. Localization resource format & culture routing (`de-CH` default)
-9. Groups / sharing model across users
-10. Suite packaging & app composition
-11. Contracts / API style & versioning
-12. Client telemetry & privacy/consent
-13. Cloud provider & hosting target
+### Depends on the domain model (decide during MVP requirements)
+- **Local↔server sync & conflict-resolution strategy.** *Interim stance:* local-first; aggregate =
+  sync unit; per-aggregate version token + tombstones; delta pull/push; **last-write-wins per
+  aggregate** as the starting default with an escalation hook. Includes the **web-client offline
+  storage** sub-decision (WASM SQLite/OPFS vs IndexedDB).
+- **Anonymous → account "claim"/migration semantics** (merge / replace / choose).
+- **Groups / sharing model across users** (membership, cross-user sharing) — domain design.
+
+### Partially settled, remainder deferred
+- **Web auth token model** (bearer-in-WASM vs BFF/cookie). The identity/passkey stack is decided in
+  [ADR-0009](0009-authentication-and-passkeys.md); the web token model is confirmed when the client shell is built.
+
+### Depends on deployment
+- **Suite packaging & app composition** (single shell hosting apps vs per-app installs).
+- **Cloud provider & hosting target** (incl. Swiss data residency, CI/CD).

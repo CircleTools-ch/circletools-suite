@@ -44,6 +44,11 @@ mismatch — they must agree.
 ## 11. DDD tactical patterns
 - Entities, value objects, aggregates (roots enforce invariants), domain events, repositories,
   factories; **pure domain** (no EF/HTTP/ASP.NET/MAUI). DTO↔domain mapping in the application layer.
+- **Entity identity:** client-generated `Guid.CreateVersion7()` — never a server round-trip for IDs
+  ([ADR-0008](../adr/0008-entity-id-strategy.md)).
+- **Application dispatch:** use the hand-rolled CQRS dispatcher (`ICommandHandler`/`IQueryHandler` +
+  `ISender` + `IPipelineBehavior`) in `Suite.Application`; **do not** use MediatR
+  ([ADR-0006](../adr/0006-application-layer-and-mediation.md)).
 
 ## 12. XML documentation
 - Public APIs carry XML doc comments (feeds the DocFX API reference).

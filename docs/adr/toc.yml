@@ -8,5 +8,21 @@
   href: 0003-modular-monolith-with-aspire.md
 - name: ADR-0004 Pre-render PlantUML
   href: 0004-plantuml-prerender.md
+- name: ADR-0005 Web hosting & render model
+  href: 0005-web-hosting-render-model.md
+- name: ADR-0006 Application layer & mediation
+  href: 0006-application-layer-and-mediation.md
+- name: ADR-0007 Persistence approach
+  href: 0007-persistence-approach.md
+- name: ADR-0008 Entity ID strategy
+  href: 0008-entity-id-strategy.md
+- name: ADR-0009 Authentication & passkeys
+  href: 0009-authentication-and-passkeys.md
+- name: ADR-0010 API style & versioning
+  href: 0010-api-style-and-versioning.md
+- name: ADR-0011 Localization format & culture
+  href: 0011-localization-format-and-culture.md
+- name: ADR-0012 Observability & telemetry
+  href: 0012-observability-and-telemetry.md
 - name: Template
   href: _template-adr.md
