@@ -1,0 +1,12 @@
+# Controls which API members appear in the generated reference.
+apiRules:
+  # Hide members explicitly marked [EditorBrowsable(Never)]
+  - exclude:
+      hasAttribute:
+        uid: System.ComponentModel.EditorBrowsableAttribute
+        ctorArguments:
+          - System.ComponentModel.EditorBrowsableState.Never
+  # Hide compiler-generated / internal implementation namespaces if any
+  - exclude:
+      uidRegex: '.*\.Internal\..*'
+      type: Namespace

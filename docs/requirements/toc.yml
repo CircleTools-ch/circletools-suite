@@ -1,0 +1,14 @@
+- name: Overview
+  href: index.md
+- name: Functional
+  items:
+    - name: FR-001 Create Secret-Santa group
+      href: functional/FR-001-create-secret-santa-group.md
+- name: Non-functional
+  items: []
+- name: Templates
+  items:
+    - name: Requirement template
+      href: _template-requirement.md
+    - name: User story template
+      href: _template-user-story.md

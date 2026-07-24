@@ -1,0 +1,48 @@
+<Project>
+
+  <!--
+    Shared MSBuild properties applied to EVERY project in the solution.
+    Keep this decision-light: language/compiler hygiene only. Architecture and
+    package choices live in ADRs and Directory.Packages.props respectively.
+  -->
+
+  <PropertyGroup>
+    <!-- Language & compiler hygiene -->
+    <TargetFramework Condition="'$(TargetFramework)' == '' AND '$(TargetFrameworks)' == ''">net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <InvariantGlobalization>true</InvariantGlobalization>
+
+    <!-- Quality gates -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-Recommended</AnalysisLevel>
+    <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
+
+    <!-- API documentation: feeds the DocFX API reference. CS1591 (missing XML
+         comment) is relaxed to a warning so it does not block early scaffolding. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+
+    <!-- Reproducible restore -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+
+    <!-- Shared assembly metadata (brand placeholder: "Suite") -->
+    <Product>Suite App-Suite</Product>
+    <Company>Suite</Company>
+    <Copyright>Copyright (c) 2026 Suite. All rights reserved.</Copyright>
+    <Authors>Suite</Authors>
+    <NeutralLanguage>en</NeutralLanguage>
+  </PropertyGroup>
+
+  <!-- Test-project conventions: any project whose name ends in ".Test" is a
+       test project. Central packages (xUnit, coverage, etc.) are declared in
+       Directory.Packages.props and referenced from the test projects. -->
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Test'))">
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,56 @@
+# .NET build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+artifacts/
+
+# .NET / Visual Studio user & cache files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.vscode/
+*.rsuser
+
+# Rider / JetBrains
+.idea/
+
+# Test results & coverage
+[Tt]est[Rr]esult*/
+[Cc]overage*/
+*.coverage
+*.coveragexml
+*.trx
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+# Keep packages.lock.json (reproducible restore) — do NOT ignore it
+
+# DocFX generated output
+docfx/_site/
+docfx/api/
+**/api/.manifest
+docfx/log.txt
+
+# MAUI / mobile build artifacts
+*.binlog
+*.aab
+*.apk
+*.ipa
+*.app/
+Platforms/**/bin/
+Platforms/**/obj/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Secrets — never commit local secrets
+*.env
+.env.*
+appsettings.*.local.json
+secrets.json

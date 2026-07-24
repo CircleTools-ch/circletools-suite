@@ -1,0 +1,12 @@
+- name: ADR register
+  href: index.md
+- name: ADR-0001 Record architecture decisions
+  href: 0001-record-architecture-decisions.md
+- name: ADR-0002 arc42 + C4 + DocFX
+  href: 0002-use-arc42-c4-docfx.md
+- name: ADR-0003 Modular monolith with Aspire
+  href: 0003-modular-monolith-with-aspire.md
+- name: ADR-0004 Pre-render PlantUML
+  href: 0004-plantuml-prerender.md
+- name: Template
+  href: _template-adr.md

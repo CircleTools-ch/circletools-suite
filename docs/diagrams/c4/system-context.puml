@@ -1,0 +1,25 @@
+@startuml system-context
+' C4 System Context for the <Suite> App-Suite.
+' Render with the C4-PlantUML includes, then pre-render to SVG (ADR-0004):
+'   java -jar plantuml.jar -tsvg -o ../exported system-context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title System Context — <Suite> App-Suite (Secret-Santa)
+
+Person(user, "Family / friends member", "Uses the apps on phone, tablet, or web")
+
+System_Boundary(suite, "<Suite> App-Suite") {
+  System(clients, "Apps (Web + native)", "Blazor / MAUI Blazor Hybrid; local-first with optional sync")
+  System(api, "Web API", ".NET 10 / Aspire; sync, account, shared config")
+}
+
+SystemDb(pg, "PostgreSQL", "Server-side data (synced users)")
+System_Ext(idp, "Identity / passkey provider", "Email+password, WebAuthn")
+System_Ext(stores, "App / Play Store", "Native distribution")
+
+Rel(user, clients, "Uses (offline or online)")
+Rel(clients, api, "Syncs when signed in", "HTTPS/REST")
+Rel(api, pg, "Reads/writes")
+Rel(api, idp, "Authenticates")
+Rel(clients, stores, "Distributed via")
+@enduml

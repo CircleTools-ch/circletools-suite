@@ -1,0 +1,8 @@
+- name: Overview
+  href: index.md
+- name: Secret-Santa
+  items:
+    - name: UC-SS-001 Create a group
+      href: secret-santa/UC-SS-001-create-group.md
+- name: Template
+  href: _template-use-case.md
