@@ -61,6 +61,7 @@
   <data name="ShareTitle" xml:space="preserve"><value>Links teilen</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Senden Sie jeder Person ihren eigenen Link. Nur die empfangende Person sieht, wen sie beschenkt.</value></data>
   <data name="NoDrawYet" xml:space="preserve"><value>Losen Sie zuerst aus, um Links zu erzeugen.</value></data>
+  <data name="ShareLinkTooLong" xml:space="preserve"><value>Dieser Link ist lang und könnte von manchen Chat-Apps gekürzt oder abgeschnitten werden. Kürzen Sie ggf. die Wunschlisteneinträge.</value></data>
   <data name="ForLabel" xml:space="preserve"><value>Für</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Dein Wichtel</value></data>
   <data name="RevealGreeting" xml:space="preserve"><value>Hallo {0}!</value></data>

@@ -61,6 +61,7 @@
   <data name="ShareTitle" xml:space="preserve"><value>Share links</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Send each person their own link. Only the recipient can see who they drew.</value></data>
   <data name="NoDrawYet" xml:space="preserve"><value>Run a draw first to generate links.</value></data>
+  <data name="ShareLinkTooLong" xml:space="preserve"><value>This link is long and may be shortened or broken by some chat apps. Consider shortening the wishlist entries.</value></data>
   <data name="ForLabel" xml:space="preserve"><value>For</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Your Secret Santa</value></data>
   <data name="RevealGreeting" xml:space="preserve"><value>Hi {0}!</value></data>

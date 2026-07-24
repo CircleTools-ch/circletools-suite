@@ -15,6 +15,22 @@ public sealed class RevealLinkBuilder(RevealLinkOptions options, RevealLinkCodec
     /// <summary>The reveal route path appended to the base URL.</summary>
     public const string RevealRoute = "/r";
 
+    /// <summary>
+    /// The recommended maximum reveal-link length, in characters. Links stay well within common
+    /// browser/messenger URL limits below this budget (FEAT-001 aims for ≤ ~1.5–2 KB). Links longer
+    /// than this still work but the organizer is warned, as some channels may truncate them.
+    /// </summary>
+    public const int MaxRecommendedUrlLength = 2000;
+
+    /// <summary>
+    /// Indicates whether a reveal link exceeds the <see cref="MaxRecommendedUrlLength"/> budget and
+    /// should be flagged to the organizer.
+    /// </summary>
+    /// <param name="url">The reveal link URL to check.</param>
+    /// <returns><see langword="true"/> when the link is longer than recommended.</returns>
+    public static bool ExceedsRecommendedLength(string url) =>
+        (url ?? string.Empty).Length > MaxRecommendedUrlLength;
+
     /// <summary>Builds a reveal link for one giver.</summary>
     /// <param name="forLabel">The readable owner label (the giver's name).</param>
     /// <param name="payload">The payload to encode into the fragment.</param>

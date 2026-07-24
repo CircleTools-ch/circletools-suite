@@ -5,7 +5,7 @@ status: Done
 owner: Adrian
 target-milestone: 6a
 bounded-context: SecretSanta
-related: [UC-SS-001, UC-SS-002, UC-SS-003, UC-SS-004, UC-SS-005, UC-SS-006, FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, NFR-001, NFR-002, NFR-003, ADR-0014, ADR-0015, ADR-0005, ADR-0006, ADR-0007, ADR-0008, ADR-0011]
+related: [UC-SS-001, UC-SS-002, UC-SS-003, UC-SS-004, UC-SS-005, UC-SS-006, FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, NFR-001, NFR-002, NFR-003, ADR-0014, ADR-0015, ADR-0005, ADR-0006, ADR-0007, ADR-0008, ADR-0011, TP-001]
 ---
 
 # FEAT-001 — Secret-Santa MVP (offline, local-first)
@@ -91,8 +91,9 @@ New bounded-context projects under `src/Apps/SecretSanta/`, following the topolo
   (round-trip unit-tested).
 - **Reveal page UX:** greeting to `for=<giver>`, budget, and event details render immediately; the
   **recipient name + wishlist are behind a "Reveal" button** (anti-spoiler).
-- **Constraints:** target a practical URL budget (aim ≤ ~1.5–2 KB; wishlists are short text). If a
-  payload would exceed a safe length, warn the organizer (open question below).
+- **Constraints:** target a practical URL budget (aim ≤ ~1.5–2 KB; wishlists are short text). The
+  warn threshold is **resolved**: `RevealLinkBuilder.MaxRecommendedUrlLength = 2000` characters; the
+  Share screen flags any longer link to the organizer (`ShareLinkTooLong`).
 
 ## Data & migration
 
@@ -113,7 +114,7 @@ New bounded-context projects under `src/Apps/SecretSanta/`, following the topolo
   handling; URL-safety), value-object invariants.
 - **Component (bUnit):** reveal page shows summary but hides giftee until "Reveal".
 - **Architecture:** `SecretSanta.Core` free of EF/ASP.NET/Npgsql (ArchUnitNET).
-- Paired test plan `TP-001` to be written at the testing phase.
+- Paired test plan **[TP-001](TP-001-secret-santa-mvp.md)** — written; test matrix and exit criteria met.
 
 ## Rollout / feature flags
 
@@ -122,17 +123,20 @@ New bounded-context projects under `src/Apps/SecretSanta/`, following the topolo
 
 ## Risks & open questions
 
-- **Draw solver** for tightly-constrained groups (many exclusions) — use randomized retry with a
-  bounded attempt count, then declare failure with guidance. (Retry bound = open, see UC-SS-004.)
-- **URL length** for large wishlists — define the warn threshold.
+- **Draw solver** for tightly-constrained groups (many exclusions) — **resolved:** randomized retry
+  with a bounded attempt count (`DrawGenerator.MaxAttempts = 2000`), then a typed failure
+  (`OverConstrained` / `TwoMemberReciprocalImpossible`) with organizer guidance. Covered by
+  `DrawGeneratorTests` (see UC-SS-004).
+- **URL length** for large wishlists — **resolved:** warn threshold =
+  `RevealLinkBuilder.MaxRecommendedUrlLength` (2000 chars); Share screen flags longer links.
 - **v2 seam:** keep `Member` free of account concepts now, but anticipate a future `Member`↔`User`
   link (post-MVP) so the domain doesn't need reshaping later.
 
 ## Definition of Done
 
-- [ ] All covered UCs/FRs/NFRs met; acceptance criteria satisfied
-- [ ] Builds clean under analyzers (warnings = errors); architecture tests green
-- [ ] Draw + codec unit tests pass; reveal-page component test passes
-- [ ] Strings localized (DE/EN/FR)
-- [ ] Docs/glossary/API comments updated; traceability closed
-- [ ] Runs fully offline with no account/backend
+- [x] All covered UCs/FRs/NFRs met; acceptance criteria satisfied (see [TP-001](TP-001-secret-santa-mvp.md))
+- [x] Builds clean under analyzers (warnings = errors); architecture tests green
+- [x] Draw + codec unit tests pass; reveal-page component test passes
+- [x] Strings localized (DE/EN/FR) — key parity enforced by `LocalizationParityTests`
+- [x] Docs/glossary/API comments updated; traceability closed (FEAT-001 ↔ TP-001)
+- [x] Runs fully offline with no account/backend

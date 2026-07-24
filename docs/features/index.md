@@ -10,4 +10,5 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 
 | ID | Title | Bounded context | Status |
 |----|-------|-----------------|--------|
-| [FEAT-001](FEAT-001-secret-santa-mvp.md) | Secret-Santa MVP (offline, local-first) | SecretSanta | Draft |
+| [FEAT-001](FEAT-001-secret-santa-mvp.md) | Secret-Santa MVP (offline, local-first) | SecretSanta | Done |
+| [TP-001](TP-001-secret-santa-mvp.md) | Test plan — Secret-Santa MVP | SecretSanta | Reviewed |
