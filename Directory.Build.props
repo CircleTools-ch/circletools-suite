@@ -31,11 +31,11 @@
     <!-- Reproducible restore -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 
-    <!-- Shared assembly metadata (brand: "Walf" — We Are Like Family) -->
-    <Product>Walf</Product>
-    <Company>Walf</Company>
-    <Copyright>Copyright (c) 2026 Walf. All rights reserved.</Copyright>
-    <Authors>Walf</Authors>
+    <!-- Shared assembly metadata (brand: "AppSuite" — We Are Like Family) -->
+    <Product>AppSuite</Product>
+    <Company>AppSuite</Company>
+    <Copyright>Copyright (c) 2026 AppSuite. All rights reserved.</Copyright>
+    <Authors>AppSuite</Authors>
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
 

@@ -1,0 +1,40 @@
+<Solution>
+  <!--
+    AppSuite app-suite solution (new .slnx format).
+    Intentionally near-empty: the harness ships first, code projects are added
+    during later ADR-gated phases. See docs/process/ways-of-working.md.
+
+    "AppSuite" (We Are Like Family) is the suite brand and the namespace/project prefix.
+    See CLAUDE.md > "Placeholder & naming convention".
+  -->
+  <Folder Name="/docs/">
+    <File Path="README.md" />
+    <File Path="CONTRIBUTING.md" />
+    <File Path="CLAUDE.md" />
+  </Folder>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Apps/" />
+  <Folder Name="/src/Apps/Main/">
+    <Project Path="src/Apps/Main/AppSuite.Main.Contracts/AppSuite.Main.Contracts.csproj" />
+    <Project Path="src/Apps/Main/AppSuite.Main.Service.Core/AppSuite.Main.Service.Core.csproj" />
+    <Project Path="src/Apps/Main/AppSuite.Main.Service.Repository/AppSuite.Main.Service.Repository.csproj" />
+    <Project Path="src/Apps/Main/AppSuite.Main.Service/AppSuite.Main.Service.csproj" />
+    <Project Path="src/Apps/Main/AppSuite.Main.Ui/AppSuite.Main.Ui.csproj" />
+    <Project Path="src/Apps/Main/AppSuite.Main.WebApp/AppSuite.Main.WebApp.csproj" />
+  </Folder>
+  <Folder Name="/src/Aspire/">
+    <Project Path="src/Aspire/AppSuite.AppHost/AppSuite.AppHost.csproj" />
+    <Project Path="src/Aspire/AppSuite.ServiceDefaults/AppSuite.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/AppSuite.Application/AppSuite.Application.csproj" />
+    <Project Path="src/BuildingBlocks/AppSuite.SharedKernel/AppSuite.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AppSuite.Architecture.Test/AppSuite.Architecture.Test.csproj" />
+  </Folder>
+  <Folder Name="/tests/Apps/" />
+  <Folder Name="/tests/Apps/Main/">
+    <Project Path="tests/Apps/Main/AppSuite.Main.Service.Test/AppSuite.Main.Service.Test.csproj" />
+  </Folder>
+</Solution>

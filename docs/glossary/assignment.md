@@ -13,8 +13,9 @@ gift to exactly one other member. Each member is a giver once and a recipient on
 
 ## Bounded context(s)
 
-- **Secret-Santa:** the private result each giver sees ("you have X"); the full mapping is not
-  revealed to the group.
+- **Secret-Santa:** the private result each giver sees ("you give to X"), delivered through that
+  giver's [Reveal link](reveal-link.md); the full mapping is never revealed to the group and is not
+  stored on any server (see [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)).
 
 ## Synonyms / do-not-use
 
@@ -31,7 +32,7 @@ gift to exactly one other member. Each member is a giver once and a recipient on
 
 ## Related terms
 
-- [Draw](draw.md), [Member](member.md)
+- [Draw](draw.md), [Member](member.md), [Reveal link](reveal-link.md)
 
 ## First appearance
 

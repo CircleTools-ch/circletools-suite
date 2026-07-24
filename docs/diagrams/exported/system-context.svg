@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="13">
-  <title>C4 System Context — Walf app suite</title>
+  <title>C4 System Context — AppSuite app suite</title>
   <rect x="0" y="0" width="720" height="420" fill="#ffffff"/>
-  <text x="360" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a1a1a">System Context — Walf app suite (pre-rendered sample)</text>
+  <text x="360" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#1a1a1a">System Context — AppSuite app suite (pre-rendered sample)</text>
 
   <!-- Person -->
   <rect x="300" y="52" width="120" height="60" rx="6" fill="#08427b" stroke="#052e56"/>
   <text x="360" y="78" text-anchor="middle" fill="#ffffff" font-weight="bold">Family / friend</text>
   <text x="360" y="96" text-anchor="middle" fill="#ccd8e6" font-size="11">[Person]</text>
 
-  <!-- Walf boundary -->
+  <!-- AppSuite boundary -->
   <rect x="120" y="150" width="480" height="150" rx="8" fill="none" stroke="#7f8c8d" stroke-dasharray="6 4"/>
-  <text x="132" y="168" fill="#7f8c8d" font-size="11">Walf app suite</text>
+  <text x="132" y="168" fill="#7f8c8d" font-size="11">AppSuite app suite</text>
 
   <!-- Clients -->
   <rect x="150" y="185" width="180" height="80" rx="6" fill="#1168bd" stroke="#0b4884"/>

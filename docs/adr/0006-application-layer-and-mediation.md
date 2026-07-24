@@ -23,14 +23,14 @@ RPL). How do we implement mediation for a product that may later be commercializ
 
 ## Considered options
 
-1. **Hand-rolled minimal dispatcher** (in `Walf.Application`)
+1. **Hand-rolled minimal dispatcher** (in `AppSuite.Application`)
 2. **`Mediator`** (martinothamar) — MIT, source-generated
 3. **MediatR 13 Community** — RPL/commercial
 4. **No mediator** — call application services directly
 
 ## Decision outcome
 
-**Chosen: a hand-rolled minimal dispatcher** in `Walf.Application`:
+**Chosen: a hand-rolled minimal dispatcher** in `AppSuite.Application`:
 
 - `ICommand`/`ICommand<TResult>`, `IQuery<TResult>` marker interfaces.
 - `ICommandHandler<…>` / `IQueryHandler<…>` implementations.
@@ -44,7 +44,7 @@ This is ~100 lines, has **no external dependency or license entanglement**, and 
 - **Positive:** Zero licensing concern; full control over the pipeline; easy to understand and debug;
   no source-gen/runtime magic.
 - **Negative:** We maintain a small amount of infrastructure ourselves (acceptable; it rarely changes).
-- **Follow-ups:** Define the dispatcher + behavior contracts in `Walf.Application`; document the pattern
+- **Follow-ups:** Define the dispatcher + behavior contracts in `AppSuite.Application`; document the pattern
   in the [coding guidelines](../guidelines/coding-guidelines.md).
 
 ## Pros and cons of the options

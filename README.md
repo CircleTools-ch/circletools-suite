@@ -1,7 +1,8 @@
-# Walf — app suite for families & friends
+# AppSuite — app suite for families & friends
 
-> **Walf** — *We Are Like Family*. The suite brand (chosen 2026-07-24); domain `walf.ch`.
-> See the decision and the naming history in [`docs/process/naming.md`](docs/process/naming.md).
+> **AppSuite** is a neutral **working name** — the brand is not finalized (branding may change).
+> A leading candidate is **Walf** (*We Are Like Family*; `walf.ch` available). See the naming
+> history and candidates in [`docs/process/naming.md`](docs/process/naming.md).
 
 A suite of small, delightful apps for **families and groups of friends** — one brand,
 one login, shared configuration, and a global dashboard over every app. The first app is
@@ -57,7 +58,7 @@ dotnet tool restore
 dotnet docfx docfx/docfx.json --serve
 
 # Build the solution (near-empty during the harness phase)
-dotnet build Walf.slnx
+dotnet build AppSuite.slnx
 ```
 
 ## Where to find things

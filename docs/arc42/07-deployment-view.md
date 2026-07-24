@@ -8,17 +8,17 @@
 | Environment | Purpose |
 |-------------|---------|
 | Local (dev) | Aspire AppHost runs API + web + Postgres containers; dashboard for observability. |
-| Cloud (later) | Managed hosting for Web/API/DB under a `.ch`/`.com` domain; apps live as subdomains (`<app>.walf.ch`). |
+| Cloud (later) | Managed hosting for Web/API/DB under a `.ch`/`.com` domain; apps live as subdomains (`<app>.<suite-domain>`). |
 | App stores | Signed Android (Play) & iOS (App Store) artifacts, localized listings (DE/EN/FR). |
 
 ## 7.2 Local development (today)
 
-> **Implemented (M5):** `dotnet run --project src/Aspire/Walf.AppHost` starts the Aspire dashboard,
+> **Implemented (M5):** `dotnet run --project src/Aspire/AppSuite.AppHost` starts the Aspire dashboard,
 > a `postgres` container, the `main-api` service, and the `main-web` WASM PWA. Verified working.
 
 ```mermaid
 flowchart LR
-    Dev[Developer] --> AppHost[Walf.AppHost]
+    Dev[Developer] --> AppHost[AppSuite.AppHost]
     AppHost --> API[Service hosts]
     AppHost --> Web[WebApp hosts]
     AppHost --> PG[(PostgreSQL container)]

@@ -5,7 +5,7 @@
 ```mermaid
 flowchart TB
     User([Family / friends member])
-    subgraph Walf["Walf app suite"]
+    subgraph AppSuite["AppSuite app suite"]
         Web[Web app - Blazor]
         Native[Native apps - Android / iOS]
         API[Web API]

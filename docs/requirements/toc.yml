@@ -4,8 +4,24 @@
   items:
     - name: FR-001 Create Secret-Santa group
       href: functional/FR-001-create-secret-santa-group.md
+    - name: FR-002 Members and wishlists
+      href: functional/FR-002-manage-members-and-wishlists.md
+    - name: FR-003 Define exclusions
+      href: functional/FR-003-define-exclusions.md
+    - name: FR-004 Run fair draw
+      href: functional/FR-004-run-fair-draw.md
+    - name: FR-005 Generate reveal links
+      href: functional/FR-005-generate-reveal-links.md
+    - name: FR-006 Reveal page decode
+      href: functional/FR-006-reveal-page-decode.md
 - name: Non-functional
-  items: []
+  items:
+    - name: NFR-001 Local-first & offline
+      href: non-functional/NFR-001-local-first-offline.md
+    - name: NFR-002 Assignment privacy
+      href: non-functional/NFR-002-assignment-privacy.md
+    - name: NFR-003 Multilingual DE/EN/FR
+      href: non-functional/NFR-003-multilingual-de-en-fr.md
 - name: Templates
   items:
     - name: Requirement template
