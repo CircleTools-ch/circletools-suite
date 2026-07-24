@@ -20,6 +20,10 @@ name, the recipient's [Wishlist](../../glossary/wishlist.md), the group
 page must not make any server request to obtain the assignment, and must handle malformed or
 tampered links by failing cleanly rather than showing a partial or incorrect assignment.
 
+Per [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md), on load the page shows a
+**summary** (greeting to the named giver, budget, event details) but keeps the **recipient's name
+and wishlist hidden behind a "Reveal" button**, so an accidental open does not spoil the result.
+
 ## Rationale
 
 Client-side decoding completes the account-free, backend-free reveal: the assignment never leaves
@@ -38,6 +42,12 @@ Given a member opens a valid reveal link while offline
 When the page loads
 Then it still decodes and displays the assignment
 
+Given a member opens a valid reveal link
+When the page loads
+Then the budget and event details are shown but the recipient and wishlist are hidden
+When the member taps "Reveal"
+Then the recipient and the recipient's wishlist are shown
+
 Given the recipient has an empty wishlist, or the group has no budget or event details
 When the page displays the assignment
 Then it omits the missing sections gracefully and still shows the recipient
@@ -52,4 +62,5 @@ And it does not display a partial or guessed assignment
 
 - Derived from: [UC-SS-006](../../use-cases/secret-santa/UC-SS-006-open-reveal-link.md)
 - Related: [FR-005](FR-005-generate-reveal-links.md), [NFR-001](../non-functional/NFR-001-local-first-offline.md), [NFR-002](../non-functional/NFR-002-assignment-privacy.md), [NFR-003](../non-functional/NFR-003-multilingual-de-en-fr.md)
+- Decision: [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md) (reveal-link encoding & privacy)
 - Glossary: [Reveal link](../../glossary/reveal-link.md), [Assignment](../../glossary/assignment.md), [Wishlist](../../glossary/wishlist.md), [Budget](../../glossary/budget.md), [Event details](../../glossary/event-details.md)

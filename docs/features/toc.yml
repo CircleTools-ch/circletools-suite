@@ -1,5 +1,7 @@
 - name: Overview
   href: index.md
+- name: FEAT-001 Secret-Santa MVP
+  href: FEAT-001-secret-santa-mvp.md
 - name: Templates
   items:
     - name: Feature spec template
