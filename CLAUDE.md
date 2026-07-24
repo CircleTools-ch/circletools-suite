@@ -30,6 +30,14 @@ and docs are English**. See [`README.md`](README.md).
    guidelines.
 7. **Ubiquitous language.** Names in code must match the [glossary](docs/glossary/). Don't
    invent domain terms; add a glossary entry first if a term is missing.
+8. **No git operations without an explicit order.** Never create branches, stage, commit, push,
+   merge, rebase, tag, or otherwise change git state — unless the user explicitly tells you to do
+   that specific action, in that instance. Prior permission does **not** carry over to later actions.
+   Make and leave changes in the working tree; the user drives git.
+9. **All knowledge lives in this repo.** Every piece of project information, decision, plan, or
+   context must reside in this repository as Markdown under git. Do **not** use global/external
+   memory files or any store outside the repo to hold project knowledge. If something needs to be
+   remembered, write it into the right in-repo doc (backlog, ADR, glossary, feature spec, arc42, …).
 
 ## Placeholder & naming convention
 
@@ -92,3 +100,7 @@ the build. Packages are added **only** via `Directory.Packages.props` (Central P
 - Don't translate the documentation (product strings only, at runtime).
 - Don't decide architecture in code without an ADR.
 - Don't commit secrets or real personal data.
+- **Don't run any git operation** (branch, stage, commit, push, merge, rebase, tag) unless the user
+  explicitly orders it in that instance — prior approval never carries over.
+- **Don't store project knowledge outside the repo.** No global/external memory files; capture
+  everything as Markdown under git.

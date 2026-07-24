@@ -20,6 +20,7 @@ Decisions are recorded as [Architecture Decision Records](../adr/index.md) (MADR
 | [ADR-0011](../adr/0011-localization-format-and-culture.md) | Localization format & culture (RESX, `de-CH`) |
 | [ADR-0012](../adr/0012-observability-and-telemetry.md) | Observability & client telemetry |
 | [ADR-0013](../adr/0013-wasm-api-dev-wiring.md) | Standalone WASM ↔ API wiring (manual config + CORS) |
+| [ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md) | Secret-Santa reveal-link encoding & privacy |
 
 ## Open (backlog)
 

@@ -15,6 +15,12 @@ reveal page decodes it **entirely client-side**; nothing is stored on or fetched
 reveal link is generated per [Member](member.md), and **the link is the secret**: whoever holds a
 member's link can see that member's assignment.
 
+The payload lives in the URL **fragment** (never sent to a server) and is compressed + Base64Url
+encoded so it is not casually readable; the **only human-readable token is the owner label**
+(`for=<giver>`). On open, the reveal page shows a summary but keeps the recipient behind a **Reveal**
+button. The encoding and privacy model are specified in
+[ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md).
+
 ## Bounded context(s)
 
 - **Secret-Santa:** generated after a successful [Draw](draw.md); distributed out-of-band (copy /

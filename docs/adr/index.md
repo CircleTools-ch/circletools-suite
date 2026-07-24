@@ -22,6 +22,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0011](0011-localization-format-and-culture.md) | Localization format & culture (RESX, `de-CH`) | Accepted | 2026-07-24 |
 | [0012](0012-observability-and-telemetry.md) | Observability & client telemetry | Accepted | 2026-07-24 |
 | [0013](0013-wasm-api-dev-wiring.md) | Standalone WASM ↔ API wiring (manual config + CORS) | Accepted | 2026-07-24 |
+| [0014](0014-reveal-link-encoding-and-privacy.md) | Secret-Santa reveal-link encoding & privacy | Accepted | 2026-07-24 |
 
 ## Open decisions backlog
 
@@ -29,15 +30,11 @@ The remaining open choices are **deferred on purpose** — each depends on the S
 model (milestones 2–3) or on the deployment phase (milestone 8), and deciding them before then
 would be premature. They will become ADRs when their inputs exist.
 
-### Decide at Secret-Santa MVP implementation time
-- **Secret-Santa reveal-link encoding & privacy/tamper.** How the per-giver payload (recipient,
-  wishlist, budget, event details) is encoded into a self-contained, URL-safe
-  [Reveal link](../glossary/reveal-link.md) that decodes fully client-side, and how the scheme
-  addresses privacy and tampering (e.g. so a giver can't read another's link or forge an assignment).
-  Inputs now exist: [FR-005](../requirements/functional/FR-005-generate-reveal-links.md),
-  [FR-006](../requirements/functional/FR-006-reveal-page-decode.md),
-  [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md). To be recorded as an ADR
-  when the reveal is implemented.
+### Decided (Secret-Santa reveal)
+- ✅ **Reveal-link encoding & privacy** — recorded in
+  [ADR-0014](0014-reveal-link-encoding-and-privacy.md): encode-only (compress + Base64Url) in the URL
+  **fragment**, a readable `for=` owner label, cryptic payload, and a reveal-button anti-spoiler UX;
+  no encryption/HMAC for the MVP.
 
 > **MVP is not blocked by sync/accounts.** The defined Secret-Santa MVP is fully offline and
 > account-free — the self-contained reveal link needs no backend. The sync, account-claim, and

@@ -42,10 +42,13 @@ The organizer selects **Share reveal links**.
 2. For each member, the system builds the giver's payload — recipient name, recipient
    [Wishlist](../../glossary/wishlist.md), group [Budget](../../glossary/budget.md), and
    [Event details](../../glossary/event-details.md).
-3. The system **encodes the full payload into a URL-safe reveal link** (self-contained; nothing is
-   uploaded or stored on a server).
-4. The system presents one link per member with the member's name, and offers to **copy**, show a
-   **QR code**, or hand the link to a **messaging** app.
+3. The system **encodes the payload into a self-contained, URL-safe reveal link** per
+   [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md): everything lives in the URL
+   **fragment** (never sent to a server), and the **only human-readable token is the owner label**
+   (`for=<giver>`) — so the organizer can tell whose link is whose, while *who that person is Secret
+   Santa for* stays in the cryptic encoded part.
+4. The system presents one link per member, labelled with the member's name, and offers to **copy**,
+   show a **QR code**, or hand the link to a **messaging** app.
 5. Organizer distributes each link to the corresponding member out-of-band.
 
 ## Extensions / alternate flows
@@ -66,10 +69,11 @@ The organizer selects **Share reveal links**.
 
 ## Open questions
 
-- Should links be tamper-evident / signed so a giver can't decode another's link? (to be recorded as an ADR at implementation time — see [ADR backlog](../../adr/index.md))
+- ~~Tamper-evidence / signing?~~ Resolved by [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md): encode-only, **no signing** for the MVP — each link is self-scoped, so it only ever reveals its own assignment.
 
 ## Traceability
 
 - Requirement: [FR-005](../../requirements/functional/FR-005-generate-reveal-links.md); related [NFR-002](../../requirements/non-functional/NFR-002-assignment-privacy.md)
+- Decision: [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md) (reveal-link encoding & privacy)
 - Glossary: [Reveal link](../../glossary/reveal-link.md), [Assignment](../../glossary/assignment.md), [Wishlist](../../glossary/wishlist.md), [Budget](../../glossary/budget.md), [Event details](../../glossary/event-details.md), [Member](../../glossary/member.md)
 - Origin: [2026-07-24 brainstorming](../../brainstorming/2026-07-24-secret-santa-scope.md)

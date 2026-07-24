@@ -26,5 +26,7 @@
   href: 0012-observability-and-telemetry.md
 - name: ADR-0013 WASM ↔ API dev wiring
   href: 0013-wasm-api-dev-wiring.md
+- name: ADR-0014 Reveal-link encoding & privacy
+  href: 0014-reveal-link-encoding-and-privacy.md
 - name: Template
   href: _template-adr.md

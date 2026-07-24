@@ -21,6 +21,11 @@ After a successful [Draw](../../glossary/draw.md), the Secret-Santa app must gen
 entirely on-device: **nothing is uploaded to or stored on a server**. The app must offer to copy a
 link, render it as a QR code, or hand it to a messaging app for out-of-band distribution.
 
+Per [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md), the payload is carried in the URL
+**fragment** (never sent to a server) and compressed + Base64Url-encoded so it is not casually
+readable; the **only human-readable token is the owner label** (`for=<giver>`) so the organizer can
+route each link, while the recipient (giftee) stays in the cryptic encoded part.
+
 ## Rationale
 
 Self-contained links deliver a private, cross-device reveal with no backend and no account, which
@@ -34,6 +39,11 @@ Given a group with a successful current draw
 When the user generates reveal links
 Then the app produces exactly one distinct link per member
 And each link encodes that giver's recipient, the recipient's wishlist, the group budget, and the event details
+
+Given a generated reveal link
+When the organizer inspects the URL
+Then the giver the link is "for" is human-readable
+And the recipient (giftee) and their wishlist are not readable from the URL
 
 Given the user generates reveal links
 When the links are produced
@@ -52,5 +62,5 @@ Then generation is blocked and the user is prompted to run or re-run the draw
 
 - Derived from: [UC-SS-005](../../use-cases/secret-santa/UC-SS-005-share-reveal-links.md)
 - Related: [FR-004](FR-004-run-fair-draw.md), [FR-006](FR-006-reveal-page-decode.md), [NFR-001](../non-functional/NFR-001-local-first-offline.md), [NFR-002](../non-functional/NFR-002-assignment-privacy.md)
-- A reveal-link **encoding & privacy/tamper** ADR is to be recorded at implementation time — see [ADR backlog](../../adr/index.md).
+- Encoding & privacy are specified in [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md).
 - Glossary: [Reveal link](../../glossary/reveal-link.md), [Assignment](../../glossary/assignment.md), [Wishlist](../../glossary/wishlist.md), [Budget](../../glossary/budget.md), [Event details](../../glossary/event-details.md), [Member](../../glossary/member.md)

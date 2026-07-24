@@ -40,8 +40,9 @@ The member opens the reveal link (tap/click, or scan its QR code).
 
 1. Member opens the reveal link.
 2. The reveal page **decodes the encoded payload from the link, entirely in the browser** (no request to a server for the assignment).
-3. The page displays: **you give to** the recipient's name, the recipient's **wishlist**, the group **budget**, and the **event details** (date, location, notes).
-4. The member reads their assignment privately and closes the page.
+3. The page shows a **summary immediately** — a greeting to the named giver (from the `for=<giver>` label), the group **budget**, and the **event details** (date, location, notes).
+4. The **recipient's name and wishlist stay hidden behind a "Reveal" button**, so an accidental open does not spoil the result. The member taps **Reveal** to see **you give to** the recipient and their **wishlist** (per [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md)).
+5. The member reads their assignment privately and closes the page.
 
 ## Extensions / alternate flows
 
@@ -52,7 +53,7 @@ The member opens the reveal link (tap/click, or scan its QR code).
 ## Exceptions
 
 - **Link is malformed or truncated** → the page shows a clear "this link could not be read" message and does not display a partial or guessed assignment.
-- **Link was tampered with** → decoding fails cleanly with an error rather than showing an incorrect assignment (tamper handling to be detailed in the reveal-link ADR).
+- **Link edited / tampered** → per [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md) the MVP does not sign links; a corrupt payload fails to decode (clear error, no partial guess), and editing a link only ever changes what the editor themselves sees (no cross-member impact).
 
 ## Non-functional notes
 
@@ -68,5 +69,6 @@ The member opens the reveal link (tap/click, or scan its QR code).
 ## Traceability
 
 - Requirement: [FR-006](../../requirements/functional/FR-006-reveal-page-decode.md); related [NFR-001](../../requirements/non-functional/NFR-001-local-first-offline.md), [NFR-002](../../requirements/non-functional/NFR-002-assignment-privacy.md), [NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)
+- Decision: [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md) (reveal-link encoding & privacy)
 - Glossary: [Reveal link](../../glossary/reveal-link.md), [Assignment](../../glossary/assignment.md), [Wishlist](../../glossary/wishlist.md), [Budget](../../glossary/budget.md), [Event details](../../glossary/event-details.md), [Member](../../glossary/member.md)
 - Origin: [2026-07-24 brainstorming](../../brainstorming/2026-07-24-secret-santa-scope.md)

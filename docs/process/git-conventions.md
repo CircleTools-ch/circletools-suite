@@ -34,3 +34,11 @@ Examples:
 ## Do not
 - Don't commit secrets, real personal data, or build output.
 - Don't bypass hooks/signing unless explicitly agreed.
+
+## AI assistants & automation
+- **Never perform git operations on your own.** Creating branches, staging, committing, pushing,
+  merging, rebasing, or tagging happens **only** when the user explicitly orders that specific
+  action, in that instance — prior approval does not carry over. Otherwise, leave changes in the
+  working tree for the user to review and commit.
+- **Keep all project knowledge in this repo** (Markdown under git). Do not rely on global/external
+  memory or notes outside the repository. See the repository `CLAUDE.md` (golden rules 8–9).
