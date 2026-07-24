@@ -47,5 +47,7 @@
   </Folder>
   <Folder Name="/tests/Apps/SecretSanta/">
     <Project Path="tests/Apps/SecretSanta/AppSuite.SecretSanta.Core.Test/AppSuite.SecretSanta.Core.Test.csproj" />
+    <Project Path="tests/Apps/SecretSanta/AppSuite.SecretSanta.LocalStore.Test/AppSuite.SecretSanta.LocalStore.Test.csproj" />
+    <Project Path="tests/Apps/SecretSanta/AppSuite.SecretSanta.Ui.Test/AppSuite.SecretSanta.Ui.Test.csproj" />
   </Folder>
 </Solution>

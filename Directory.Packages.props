@@ -25,6 +25,11 @@
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
   </ItemGroup>
 
+  <!-- Blazor component tests (bUnit) — used by *.Ui.Test projects. -->
+  <ItemGroup>
+    <PackageVersion Include="bunit" Version="1.40.0" />
+  </ItemGroup>
+
   <!-- Architecture tests (enforce dependency direction) — xUnit v2 variant. -->
   <ItemGroup>
     <PackageVersion Include="TngTech.ArchUnitNET.xUnit" Version="0.13.3" />
@@ -101,8 +106,6 @@
     Authentication + passkeys — ADR-0009:
       <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
       <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
-    Blazor component tests:
-      <PackageVersion Include="bunit" Version="1.40.0" />
     Assertion / mocking helpers (currently hand-written fakes are used):
       <PackageVersion Include="FluentAssertions" Version="7.0.0" />
       <PackageVersion Include="NSubstitute" Version="5.3.0" />

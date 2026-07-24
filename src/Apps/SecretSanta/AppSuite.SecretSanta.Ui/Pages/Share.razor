@@ -1,4 +1,5 @@
 @page "/groups/{GroupId:guid}/share"
+@using AppSuite.SecretSanta.Core.Reveal
 @inject ISender Sender
 @inject IJSRuntime JS
 @inject IStringLocalizer<AppStrings> L
@@ -31,6 +32,10 @@ else
                     </button>
                 </div>
                 <div class="text-break small text-muted mt-1">@link.Url</div>
+                @if (RevealLinkBuilder.ExceedsRecommendedLength(link.Url))
+                {
+                    <div class="small text-warning mt-1" role="alert">@L["ShareLinkTooLong"]</div>
+                }
             </li>
         }
     </ul>

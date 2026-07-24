@@ -61,6 +61,7 @@
   <data name="ShareTitle" xml:space="preserve"><value>Partager les liens</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Envoyez à chaque personne son propre lien. Seul le destinataire voit à qui il offre.</value></data>
   <data name="NoDrawYet" xml:space="preserve"><value>Lancez d'abord un tirage pour générer les liens.</value></data>
+  <data name="ShareLinkTooLong" xml:space="preserve"><value>Ce lien est long et pourrait être raccourci ou tronqué par certaines applications de messagerie. Raccourcissez si besoin les éléments de la liste de souhaits.</value></data>
   <data name="ForLabel" xml:space="preserve"><value>Pour</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Votre Père Noël secret</value></data>
   <data name="RevealGreeting" xml:space="preserve"><value>Bonjour {0} !</value></data>
