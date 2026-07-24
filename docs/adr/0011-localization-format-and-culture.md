@@ -21,13 +21,13 @@ MAUI native apps.
 
 ## Considered options
 
-1. **RESX + `IStringLocalizer`** with a central `Suite.Localization`
+1. **RESX + `IStringLocalizer`** with a central `Walf.Localization`
 2. JSON/PO resource files + a custom loader
 3. A third-party localization service/SDK
 
 ## Decision outcome
 
-**Chosen: RESX resource files with `IStringLocalizer`**, centralized in `Suite.Localization` and consumed
+**Chosen: RESX resource files with `IStringLocalizer`**, centralized in `Walf.Localization` and consumed
 by every RCL/host. Default culture **`de-CH`**; supported cultures **`de-CH`, `fr-CH`, `en`**. The selected
 culture is a **user preference** persisted locally and synced. Date/number/currency formatting uses
 `CultureInfo` (Swiss conventions); **no locale/format logic lives in the domain**.
@@ -38,7 +38,7 @@ culture is a **user preference** persisted locally and synced. Date/number/curre
   Web and native; clean separation from the domain.
 - **Negative:** RESX editing is XML-based (mitigated by IDE editors); satellite assemblies add a little size.
 - **Follow-ups:** Establish a key-naming convention; wire an `ICultureProvider` abstraction in
-  `Suite.Ui.Abstractions`; ensure new feature strings ship in all three languages (feature-spec checklist).
+  `Walf.Ui.Abstractions`; ensure new feature strings ship in all three languages (feature-spec checklist).
 
 ## Pros and cons of the options
 

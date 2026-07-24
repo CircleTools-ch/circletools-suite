@@ -3,7 +3,7 @@
 ## Our commitment
 
 This project is built for families and groups of friends, and we hold ourselves to
-the same warmth and respect internally. Everyone contributing to `<Suite>` — whether
+the same warmth and respect internally. Everyone contributing to Walf — whether
 human or AI assistant — is expected to act professionally, kindly, and inclusively.
 
 ## Expected behaviour

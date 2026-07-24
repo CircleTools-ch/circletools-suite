@@ -8,7 +8,7 @@
 - Default culture: **`de-CH`**. Supported: `de-CH`, `fr-CH`, `en`.
 
 ## 2. Where localization lives
-- Central `Suite.Localization` building block; consumed by every RCL/host via `IStringLocalizer`
+- Central `Walf.Localization` building block; consumed by every RCL/host via `IStringLocalizer`
   / an `ICultureProvider` abstraction.
 
 ## 3. Rules

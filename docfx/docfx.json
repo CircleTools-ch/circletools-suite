@@ -8,9 +8,9 @@
           "src": "..",
           "files": [
             "src/BuildingBlocks/**/*.csproj",
-            "src/Apps/Main/Suite.Main.Contracts/*.csproj",
-            "src/Apps/Main/Suite.Main.Service.Core/*.csproj",
-            "src/Apps/Main/Suite.Main.Service.Repository/*.csproj"
+            "src/Apps/Main/Walf.Main.Contracts/*.csproj",
+            "src/Apps/Main/Walf.Main.Service.Core/*.csproj",
+            "src/Apps/Main/Walf.Main.Service.Repository/*.csproj"
           ],
           "exclude": [ "**/*.Test/**", "**/bin/**", "**/obj/**" ]
         }
@@ -38,10 +38,10 @@
       }
     ],
     "output": "_site",
-    "template": [ "default", "modern", "templates/suite" ],
+    "template": [ "default", "modern", "templates/walf" ],
     "globalMetadata": {
-      "_appName": "<Suite>",
-      "_appTitle": "<Suite> Documentation",
+      "_appName": "Walf",
+      "_appTitle": "Walf Documentation",
       "_enableSearch": true,
       "_disableContribution": false,
       "pdf": false

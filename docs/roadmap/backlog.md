@@ -12,7 +12,7 @@ Idea stubs and work items, newest-first. Promote items into
 - **Value:** a delightful, private, offline-capable way to run a gift exchange; syncs if you want.
 - **Next:** brainstorm MVP scope → see [2026-07-24 session](../brainstorming/2026-07-24-secret-santa-scope.md).
 
-### IDEA-000 — Suite shell (Main app-type) · _status: planned_
+### IDEA-000 — Walf shell (Main app-type) · _status: planned_
 - **Problem:** apps need shared branding, one login, shared config, and a dashboard.
 - **Next:** design during the walking-skeleton milestone.
 

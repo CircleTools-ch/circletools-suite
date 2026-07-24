@@ -1,6 +1,6 @@
 # Process
 
-How we run `<Suite>` as a professional project.
+How we run Walf as a professional project.
 
 - **[Ways of working](ways-of-working.md)** — the development process, phase by phase.
 - **[Git conventions](git-conventions.md)** — branches, commits, PRs.

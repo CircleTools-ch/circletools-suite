@@ -6,7 +6,7 @@
 
 ## 1.1 Requirements overview
 
-`<Suite>` is an App-Suite for **families and groups of friends**: one brand, one login, shared
+Walf is an app suite for **families and groups of friends**: one brand, one login, shared
 configuration, and a global dashboard over multiple bundled apps. The first app is a
 **Secret-Santa** app.
 

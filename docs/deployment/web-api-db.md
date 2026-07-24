@@ -4,7 +4,7 @@
 
 ## Targets
 - **Web app** (Blazor) and **Web API** hosted as containers behind HTTPS on the suite domain.
-- Apps served as **subdomains**: `<app>.<suite>.ch`.
+- Apps served as **subdomains**: `<app>.walf.ch`.
 - **Managed PostgreSQL** with Swiss data residency (provider TBD via ADR).
 - **Docs site** (DocFX `_site`) published to a static host / Pages.
 

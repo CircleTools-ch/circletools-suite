@@ -1,0 +1,21 @@
+/*
+ * Walf DocFX custom template — light branding on top of the "modern" theme.
+ * The modern template renders Mermaid (```mermaid blocks) natively; PlantUML
+ * diagrams are pre-rendered to SVG and embedded as images (see ADR-0004).
+ */
+
+:root {
+  --bs-primary: #1168bd;      /* placeholder brand accent (matches sample C4 diagram) */
+  --bs-link-color: #0b4884;
+}
+
+.navbar-brand {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+/* Make embedded diagram SVGs responsive */
+article img[src$=".svg"] {
+  max-width: 100%;
+  height: auto;
+}
