@@ -1,5 +1,6 @@
 using AppSuite.Identity;
 using AppSuite.Identity.Tokens;
+using AppSuite.Infrastructure.Mail;
 using AppSuite.Infrastructure.Outbox;
 using AppSuite.Main.Service.Core.Domain;
 using Microsoft.AspNetCore.Identity;
@@ -27,6 +28,7 @@ public static class MainRepositoryServiceCollectionExtensions
         services.AddScoped<IRefreshTokenChainStore, RefreshTokenChainStore>();
         services.AddScoped<ISessionUserLookup, SessionUserLookup>();
         services.AddScoped<IOutbox, EfOutbox>();
+        services.AddScoped<IOutboxDispatchStore, OutboxDispatchStore>();
 
         return services;
     }
@@ -81,6 +83,31 @@ public static class MainRepositoryServiceCollectionExtensions
         // AddDefaultTokenProviders lives in the ASP.NET Core framework assembly, which this
         // library deliberately does not reference. The API host adds them — without that,
         // GenerateEmailConfirmationTokenAsync (FR-007) and reset tokens (FR-009) throw at runtime.
+    }
+
+    /// <summary>
+    /// Registers outbound mail and the background dispatcher (ADR-0023, NFR-005).
+    /// </summary>
+    /// <param name="services">The service collection to add to.</param>
+    /// <param name="configuration">Configuration holding the <c>Mail</c> and <c>Outbox</c> sections.</param>
+    /// <returns>The same service collection, for chaining.</returns>
+    public static IServiceCollection AddAppSuiteMail(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        services.Configure<MailOptions>(configuration.GetSection(MailOptions.SectionName));
+        services.Configure<OutboxDispatcherOptions>(configuration.GetSection(OutboxDispatcherOptions.SectionName));
+
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddSingleton<IMailTemplateRenderer, MailTemplateRenderer>();
+        services.AddSingleton<IMailSender, SmtpMailSender>();
+        services.AddScoped<OutboxDispatcher>();
+        services.AddHostedService<OutboxDispatcherService>();
+
+        return services;
     }
 
     /// <summary>

@@ -23,6 +23,21 @@ public static class AccountEndpoints
     /// </summary>
     public const string SignUpAttemptMailType = "mail.signup-attempt";
 
+    /// <summary>Outbox message type for the password-reset mail.</summary>
+    public const string PasswordResetMailType = "mail.password-reset";
+
+    /// <summary>
+    /// Rate-limit policy applied to every endpoint that accepts an email address (NFR-005).
+    /// </summary>
+    /// <remarks>
+    /// Partitioned by source address. <strong>Per-address limiting is not yet implemented</strong>:
+    /// it needs a counter shared across instances, which is a deployment decision still open
+    /// alongside hosting. Until then an attacker distributing across many source addresses is
+    /// slowed but not stopped — the identical-response rule is the primary control, and this is
+    /// the reinforcement.
+    /// </remarks>
+    public const string SensitiveRateLimitPolicy = "account-sensitive";
+
     /// <summary>Maps the account endpoints onto a route group.</summary>
     /// <param name="group">The <c>/api/v{version}/account</c> group.</param>
     /// <returns>The same group, for chaining.</returns>
@@ -30,9 +45,11 @@ public static class AccountEndpoints
     {
         ArgumentNullException.ThrowIfNull(group);
 
-        group.MapPost("/register", RegisterAsync).WithName("Register").AllowAnonymous();
-        group.MapPost("/verify-email", VerifyEmailAsync).WithName("VerifyEmail").AllowAnonymous();
-        group.MapPost("/login", LoginAsync).WithName("Login").AllowAnonymous();
+        group.MapPost("/register", RegisterAsync).WithName("Register").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
+        group.MapPost("/verify-email", VerifyEmailAsync).WithName("VerifyEmail").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
+        group.MapPost("/forgot-password", ForgotPasswordAsync).WithName("ForgotPassword").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
+        group.MapPost("/reset-password", ResetPasswordAsync).WithName("ResetPassword").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
+        group.MapPost("/login", LoginAsync).WithName("Login").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
         group.MapPost("/refresh", RefreshAsync).WithName("Refresh").AllowAnonymous();
         group.MapPost("/logout", LogoutAsync).WithName("Logout").RequireAuthorization();
         group.MapGet("/profile", GetProfileAsync).WithName("GetProfile").RequireAuthorization();
@@ -153,6 +170,103 @@ public static class AccountEndpoints
         return result.Succeeded ? Results.NoContent() : Results.BadRequest();
     }
 
+    /// <summary>Queues a password-reset link (FR-009).</summary>
+    /// <remarks>
+    /// The response is identical for a registered and an unregistered address, and no mail is sent
+    /// for the latter. Requesting a reset does <em>not</em> invalidate the current password — a
+    /// stranger entering someone's address must not be able to lock them out (NFR-005).
+    /// </remarks>
+    private static async Task<IResult> ForgotPasswordAsync(
+        [FromBody] ForgotPasswordRequest request,
+        UserManager<AppSuiteUser> users,
+        IOutbox outbox,
+        TimeProvider clock,
+        CancellationToken cancellationToken)
+    {
+        var user = string.IsNullOrWhiteSpace(request.Email)
+            ? null
+            : await users.FindByEmailAsync(request.Email).ConfigureAwait(false);
+
+        if (user is not null)
+        {
+            var token = await users.GeneratePasswordResetTokenAsync(user).ConfigureAwait(false);
+
+            await outbox.EnqueueAsync(
+                OutboxMessage.Create(
+                    PasswordResetMailType,
+                    JsonSerializer.Serialize(new
+                    {
+                        userId = user.Id,
+                        email = user.Email,
+                        language = user.PreferredLanguage,
+                        token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token)),
+                    }),
+                    clock.GetUtcNow()),
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        return ResetRequested();
+    }
+
+    /// <summary>Completes a password reset (FR-009).</summary>
+    /// <remarks>
+    /// Succeeding here revokes <em>every</em> session: a user resetting because they suspect
+    /// compromise must actually eject the intruder. Passkeys are kept — forgetting a password is
+    /// not evidence of a lost device.
+    /// </remarks>
+    private static async Task<IResult> ResetPasswordAsync(
+        [FromBody] ResetPasswordRequest request,
+        UserManager<AppSuiteUser> users,
+        SessionService sessions,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(request.UserId, out var userId))
+        {
+            return Results.BadRequest();
+        }
+
+        var user = await users.FindByIdAsync(userId.ToString()).ConfigureAwait(false);
+
+        if (user is null)
+        {
+            return Results.BadRequest();
+        }
+
+        string token;
+
+        try
+        {
+            token = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.Token));
+        }
+        catch (FormatException)
+        {
+            return Results.BadRequest();
+        }
+
+        var result = await users.ResetPasswordAsync(user, token, request.NewPassword ?? string.Empty)
+            .ConfigureAwait(false);
+
+        if (!result.Succeeded)
+        {
+            return Results.ValidationProblem(new Dictionary<string, string[]>
+            {
+                ["password"] = [.. result.Errors.Select(e => e.Description)],
+            });
+        }
+
+        // Completing a reset proves control of the address, so it also verifies a pending account
+        // (UC-MAIN-007 extension 2b) — the mail did the same job the verification mail would have.
+        if (!user.EmailConfirmed)
+        {
+            user.EmailConfirmed = true;
+            await users.UpdateAsync(user).ConfigureAwait(false);
+        }
+
+        await sessions.RevokeAllAsync(user.Id, cancellationToken).ConfigureAwait(false);
+
+        return Results.NoContent();
+    }
+
     /// <summary>Signs in with email and password (FR-008).</summary>
     /// <remarks>
     /// An unknown address and a wrong password produce the same response, so the form cannot be
@@ -267,6 +381,10 @@ public static class AccountEndpoints
     /// </summary>
     private static IResult AcceptedRegistration() =>
         Results.Accepted(value: new { message = "If that address can be registered, a verification email is on its way." });
+
+    /// <summary>The single reset response. Identical whether or not the address has an account.</summary>
+    private static IResult ResetRequested() =>
+        Results.Accepted(value: new { message = "If that address has an account, a reset link is on its way." });
 
     private static IResult InvalidCredentials() =>
         Results.Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Invalid credentials.");

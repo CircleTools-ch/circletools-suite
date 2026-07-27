@@ -16,6 +16,16 @@ public sealed record LoginRequest(string Email, string Password);
 /// <param name="RefreshToken">The refresh secret previously issued.</param>
 public sealed record RefreshRequest(string RefreshToken);
 
+/// <summary>Request for a password-reset link (FR-009).</summary>
+/// <param name="Email">The address to send the link to, if it has an account.</param>
+public sealed record ForgotPasswordRequest(string Email);
+
+/// <summary>Completion of a password reset (FR-009).</summary>
+/// <param name="UserId">The account being reset.</param>
+/// <param name="Token">The single-use token from the reset link.</param>
+/// <param name="NewPassword">The replacement password; same policy as sign-up.</param>
+public sealed record ResetPasswordRequest(string UserId, string Token, string NewPassword);
+
 /// <summary>Email-verification request (FR-007).</summary>
 /// <param name="UserId">The account being verified.</param>
 /// <param name="Token">The token from the verification link.</param>

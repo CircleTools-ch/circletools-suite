@@ -161,12 +161,22 @@ namespace AppSuite.Main.Service.Repository.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset>("EnqueuedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("Payload")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -175,7 +185,7 @@ namespace AppSuite.Main.Service.Repository.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EnqueuedAt");
+                    b.HasIndex("ProcessedAt", "EnqueuedAt");
 
                     b.ToTable("outbox_messages", (string)null);
                 });

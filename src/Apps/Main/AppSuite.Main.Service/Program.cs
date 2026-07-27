@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text;
+using System.Threading.RateLimiting;
 using Asp.Versioning;
 using Asp.Versioning.Builder;
 using AppSuite.Identity.Tokens;
@@ -32,6 +34,7 @@ builder.Services.AddMainRepository(
 // assembly, and the email-confirmation and password-reset tokens depend on it.
 builder.Services.AddAppSuiteIdentityCore().AddDefaultTokenProviders();
 builder.Services.AddAppSuiteSessions(builder.Configuration);
+builder.Services.AddAppSuiteMail(builder.Configuration);
 
 var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 
@@ -55,6 +58,38 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+
+// Rate limiting for the address-accepting endpoints (NFR-005). This is what stops the identical
+// responses those endpoints return from being defeated by volume or timing.
+builder.Services.AddRateLimiter(options =>
+{
+    options.AddPolicy(AccountEndpoints.SensitiveRateLimitPolicy, context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = builder.Configuration.GetValue("RateLimiting:SensitivePermitLimit", 20),
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
+
+    // A rejection must look the same whether or not the account exists — a lockout message that
+    // only appears for real accounts is itself an enumeration oracle (NFR-005).
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+
+        if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+        {
+            context.HttpContext.Response.Headers.RetryAfter =
+                ((int)retryAfter.TotalSeconds).ToString(CultureInfo.InvariantCulture);
+        }
+
+        await context.HttpContext.Response.WriteAsJsonAsync(
+            new { message = "Too many requests. Please try again later." },
+            cancellationToken);
+    };
+});
 
 // API versioning (URL-segment, /api/v1) — ADR-0010.
 builder.Services.AddApiVersioning(options =>
@@ -95,6 +130,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors(corsPolicyName);
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
