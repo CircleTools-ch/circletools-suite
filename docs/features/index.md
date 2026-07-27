@@ -13,3 +13,4 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [FEAT-001](FEAT-001-secret-santa-mvp.md) | Secret-Santa MVP (offline, local-first) | SecretSanta | Done |
 | [TP-001](TP-001-secret-santa-mvp.md) | Test plan — Secret-Santa MVP | SecretSanta | Reviewed |
 | [FEAT-002](FEAT-002-m1-identity.md) | M1 — Identity in the Main shell | Identity | Draft |
+| [TP-002](TP-002-m1-identity.md) | Test plan — M1 Identity | Identity | Draft |

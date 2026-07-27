@@ -154,7 +154,7 @@ owner ([UC-MAIN-007](../use-cases/main/UC-MAIN-007-reset-password.md)). `de-CH` 
 
 ## Testing strategy
 
-Paired plan: **TP-002**. Levels: unit (profile, export assembly, deletion policy), integration
+Paired plan: **[TP-002](TP-002-m1-identity.md)**. Levels: unit (profile, export assembly, deletion policy), integration
 (endpoints against Postgres + Mailpit via [ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md)),
 **authorization tests** for the export boundary (FR-014 reuses ADR-0020's), **paired
 enumeration tests** asserting identical body, status and timing distribution per NFR-005, and

@@ -94,7 +94,11 @@ Idea stubs and work items, newest-first. Promote items into
   two building blocks arc42 ch.5 already planned but that do not exist yet — `AppSuite.Identity`
   (suite-wide, per ADR-0009) and `AppSuite.Infrastructure` (outbox + SMTP sender). arc42 ch.5 §5.3 now
   fixes the four bounded contexts.
-- **Next:** the **TP-002** test plan, then build M1.
+- **Test plan written (2026-07-27):** [TP-002](../features/TP-002-m1-identity.md), weighted toward the
+  two disproportionate risks — refresh-token rotation (custom code, incl. the racing-refresh case) and
+  enumeration resistance (whose failure mode is invisible to ordinary functional tests).
+- **Next:** build M1 — starting with the two building blocks (`AppSuite.Identity`,
+  `AppSuite.Infrastructure`) that arc42 ch.5 plans but that do not exist yet.
 - **Three acceptance criteria cannot close in M1** and are recorded as deferred in FEAT-002: MAUI
   cross-client passkeys (needs the real domain), the *offline* language change (needs M3 sync), and
   the sole-circle-owner deletion guard (needs M2 circles).
