@@ -30,6 +30,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0019](0019-member-user-linking.md) | Member↔User linking (optional `UserId`) | Accepted | 2026-07-27 |
 | [0020](0020-server-side-assignment-privacy.md) | Server-side assignment storage & privacy (plaintext + authz) | Accepted | 2026-07-27 |
 | [0021](0021-web-auth-token-model.md) | Web auth token model (bearer in WASM) | Accepted | 2026-07-27 |
+| [0022](0022-account-deletion-and-data-export.md) | Account deletion & data export (immediate delete, export mirrors visibility) | Accepted | 2026-07-27 |
 
 ## Open decisions backlog
 
@@ -50,6 +51,10 @@ What remains open genuinely depends on the deployment phase or on evidence we do
   [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md).
 - ✅ **Web auth token model** → [ADR-0021](0021-web-auth-token-model.md) (bearer in WASM), closing the
   follow-up deferred in [ADR-0009](0009-authentication-and-passkeys.md).
+- ✅ **Account deletion & data export** → [ADR-0022](0022-account-deletion-and-data-export.md)
+  (immediate hard delete; the export reuses the ADR-0020 authorization boundary). Raised by the M1
+  identity use cases, and legally due now that v2 stores PII. **Follow-up: NFR-004 (data protection &
+  retention) does not exist yet** — first task of the M1 requirements step.
 
 ### Depends on deployment (genuinely open)
 - **Cloud provider & hosting target**, including **Swiss data residency** — now due, because v2 stores

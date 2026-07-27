@@ -379,9 +379,18 @@ Glossary first — no code may use these terms before they exist (`CLAUDE.md` ru
       [Group](../glossary/group.md) corrected — “circle” moved from *synonym* to *do-not-use*.
       **Bounded-context labels (`Identity`, `Circles`, `Platform`) are provisional** until arc42
       ch. 5 formalizes them.
-- [ ] Use cases (Main): create an account; sign in with a passkey; create a circle; invite a new
-      person; invite an existing account; accept/decline; leave/remove; delete account & export data
-      → `docs/use-cases/main/UC-MAIN-NNN-*.md`, register in [use cases](../use-cases/index.md).
+- [x] Use cases (Main, **M1 — Identity**) written and registered (2026-07-27):
+      [UC-MAIN-001](../use-cases/main/UC-MAIN-001-create-account.md) create a suite account ·
+      [UC-MAIN-002](../use-cases/main/UC-MAIN-002-sign-in-with-password.md) sign in with email &
+      password · [UC-MAIN-003](../use-cases/main/UC-MAIN-003-register-passkey.md) register a passkey ·
+      [UC-MAIN-004](../use-cases/main/UC-MAIN-004-sign-in-with-passkey.md) sign in with a passkey ·
+      [UC-MAIN-005](../use-cases/main/UC-MAIN-005-manage-profile.md) profile & preferred language ·
+      [UC-MAIN-006](../use-cases/main/UC-MAIN-006-delete-account-and-export-data.md) delete account &
+      export data · [UC-MAIN-007](../use-cases/main/UC-MAIN-007-reset-password.md) reset a forgotten
+      password. Their open questions were resolved the same day; deletion & export became
+      [ADR-0022](../adr/0022-account-deletion-and-data-export.md).
+- [ ] Use cases (Main, **M2 — Circle**): create a circle; invite a new person; invite an existing
+      account; accept/decline; leave/remove → `UC-MAIN-007…`.
 - [ ] Use cases (Secret-Santa): create a group from a circle; link a member to an account; see my
       assignment while logged in; edit my own wishlist → `UC-SS-007…`.
 - [x] **Amend [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)** per D1 —

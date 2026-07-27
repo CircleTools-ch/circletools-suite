@@ -14,5 +14,21 @@
       href: secret-santa/UC-SS-005-share-reveal-links.md
     - name: UC-SS-006 Open a reveal link
       href: secret-santa/UC-SS-006-open-reveal-link.md
+- name: Main (Identity — M1)
+  items:
+    - name: UC-MAIN-001 Create a suite account
+      href: main/UC-MAIN-001-create-account.md
+    - name: UC-MAIN-002 Sign in with email and password
+      href: main/UC-MAIN-002-sign-in-with-password.md
+    - name: UC-MAIN-003 Register a passkey
+      href: main/UC-MAIN-003-register-passkey.md
+    - name: UC-MAIN-004 Sign in with a passkey
+      href: main/UC-MAIN-004-sign-in-with-passkey.md
+    - name: UC-MAIN-005 Manage profile and preferred language
+      href: main/UC-MAIN-005-manage-profile.md
+    - name: UC-MAIN-006 Delete the account and export personal data
+      href: main/UC-MAIN-006-delete-account-and-export-data.md
+    - name: UC-MAIN-007 Reset a forgotten password
+      href: main/UC-MAIN-007-reset-password.md
 - name: Template
   href: _template-use-case.md

@@ -42,5 +42,7 @@
   href: 0020-server-side-assignment-privacy.md
 - name: ADR-0021 Web auth token model
   href: 0021-web-auth-token-model.md
+- name: ADR-0022 Account deletion & data export
+  href: 0022-account-deletion-and-data-export.md
 - name: Template
   href: _template-adr.md
