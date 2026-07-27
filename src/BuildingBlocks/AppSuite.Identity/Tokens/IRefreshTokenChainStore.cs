@@ -34,6 +34,12 @@ public interface IRefreshTokenChainStore
     /// <returns>The number of chains revoked.</returns>
     Task<int> RevokeAllForUserAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken = default);
 
+    /// <summary>Counts a user's live sessions — reported in their data export (FR-014).</summary>
+    /// <param name="userId">The user to count sessions for.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>How many chains are still live.</returns>
+    Task<int> CountActiveForUserAsync(Guid userId, CancellationToken cancellationToken = default);
+
     /// <summary>Persists pending changes.</summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task that completes once changes are written.</returns>

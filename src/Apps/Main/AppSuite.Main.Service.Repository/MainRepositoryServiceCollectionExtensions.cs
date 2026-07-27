@@ -111,6 +111,27 @@ public static class MainRepositoryServiceCollectionExtensions
     }
 
     /// <summary>
+    /// Registers the retention purge for unverified accounts (NFR-004).
+    /// </summary>
+    /// <param name="services">The service collection to add to.</param>
+    /// <param name="configuration">Configuration holding the <c>Retention</c> section.</param>
+    /// <returns>The same service collection, for chaining.</returns>
+    public static IServiceCollection AddAppSuiteRetention(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        services.Configure<RetentionOptions>(configuration.GetSection(RetentionOptions.SectionName));
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddScoped<PendingAccountPurge>();
+        services.AddHostedService<PendingAccountRetentionService>();
+
+        return services;
+    }
+
+    /// <summary>
     /// Registers session issuance and refresh (ADR-0021), binding lifetimes and signing
     /// parameters from configuration.
     /// </summary>
