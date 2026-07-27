@@ -71,7 +71,7 @@ public sealed class RefreshTokenChainStoreTests(PostgresFixture fixture)
         await WithStoreAsync(async store =>
         {
             var chain = await store.FindByTokenHandleAsync(first);
-            var result = chain!.Redeem(first, second, Now.AddMinutes(10), Options());
+            var result = chain!.Redeem(first, second, "secret-2", Now.AddMinutes(10), Options());
             Assert.IsType<RefreshTokenRedemption.Rotated>(result);
             await store.SaveChangesAsync();
         });
@@ -106,7 +106,7 @@ public sealed class RefreshTokenChainStoreTests(PostgresFixture fixture)
         await WithStoreAsync(async store =>
         {
             var chain = await store.FindByTokenHandleAsync(first);
-            chain!.Redeem(first, second, Now, Options());
+            chain!.Redeem(first, second, "secret-2", Now, Options());
             await store.SaveChangesAsync();
         });
 
@@ -114,7 +114,7 @@ public sealed class RefreshTokenChainStoreTests(PostgresFixture fixture)
         {
             var chain = await store.FindByTokenHandleAsync(first);
             var replayAt = Now + Options().RefreshReplayGraceWindow + TimeSpan.FromMinutes(1);
-            var result = chain!.Redeem(first, third, replayAt, Options());
+            var result = chain!.Redeem(first, third, "secret-3", replayAt, Options());
 
             var rejected = Assert.IsType<RefreshTokenRedemption.Rejected>(result);
             Assert.Equal(RefreshTokenRejection.ReuseDetected, rejected.Reason);
@@ -160,6 +160,49 @@ public sealed class RefreshTokenChainStoreTests(PostgresFixture fixture)
         Assert.True(first!.IsRevoked);
         Assert.True(second!.IsRevoked);
         Assert.False(other!.IsRevoked);
+    }
+
+    [Fact]
+    public async Task ConcurrentRefreshAcrossRequests_ReturnsTheSameUsableSecret()
+    {
+        // The racing-refresh case as it actually happens: two tabs, two requests, two contexts.
+        // The second must receive a secret it can really use — which is only possible because the
+        // successor's secret is retained for the grace window. Handles are hashes; if this
+        // returned a handle the second tab would be holding an unusable string.
+        var userId = Guid.CreateVersion7();
+        var (_, first) = RefreshTokenSecret.Create();
+        var (secondSecret, secondHandle) = RefreshTokenSecret.Create();
+        var (_, thirdHandle) = RefreshTokenSecret.Create();
+
+        await WithStoreAsync(async store =>
+        {
+            await store.AddAsync(RefreshTokenChain.Start(userId, first, Now, Options()));
+            await store.SaveChangesAsync();
+        });
+
+        await WithStoreAsync(async store =>
+        {
+            var chain = await store.FindByTokenHandleAsync(first);
+            chain!.Redeem(first, secondHandle, secondSecret, Now, Options());
+            await store.SaveChangesAsync();
+        });
+
+        var replayed = await WithStoreAsync(async store =>
+        {
+            var chain = await store.FindByTokenHandleAsync(first);
+            var result = chain!.Redeem(first, thirdHandle, "unused", Now.AddSeconds(2), Options());
+            await store.SaveChangesAsync();
+            return Assert.IsType<RefreshTokenRedemption.ReplayedWithinGrace>(result);
+        });
+
+        Assert.Equal(secondSecret, replayed.Secret);
+
+        // And the secret really works: hashing it finds the same live chain.
+        var found = await WithStoreAsync(store =>
+            store.FindByTokenHandleAsync(RefreshTokenSecret.HandleFor(replayed.Secret)));
+
+        Assert.NotNull(found);
+        Assert.False(found.IsRevoked);
     }
 
     [Fact]

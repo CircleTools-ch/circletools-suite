@@ -37,7 +37,7 @@ public sealed class RefreshTokenChainTests
     {
         var chain = StartedChain();
 
-        var result = chain.Redeem("h0", "h1", Now.AddMinutes(20), Options());
+        var result = chain.Redeem("h0", "h1", "sh1", Now.AddMinutes(20), Options());
 
         var rotated = Assert.IsType<RefreshTokenRedemption.Rotated>(result);
         Assert.Equal("h1", rotated.Token.Handle);
@@ -53,7 +53,7 @@ public sealed class RefreshTokenChainTests
         var chain = StartedChain();
         var later = Now.AddDays(20);
 
-        var result = chain.Redeem("h0", "h1", later, options);
+        var result = chain.Redeem("h0", "h1", "sh1", later, options);
 
         var rotated = Assert.IsType<RefreshTokenRedemption.Rotated>(result);
         Assert.Equal(later + options.RefreshTokenLifetime, rotated.Token.ExpiresAt);
@@ -64,10 +64,10 @@ public sealed class RefreshTokenChainTests
     {
         var options = Options();
         var chain = StartedChain();
-        chain.Redeem("h0", "h1", Now, options);
+        chain.Redeem("h0", "h1", "sh1", Now, options);
 
         var replayAt = Now + options.RefreshReplayGraceWindow + TimeSpan.FromSeconds(1);
-        var result = chain.Redeem("h0", "h2", replayAt, options);
+        var result = chain.Redeem("h0", "h2", "sh2", replayAt, options);
 
         var rejected = Assert.IsType<RefreshTokenRedemption.Rejected>(result);
         Assert.Equal(RefreshTokenRejection.ReuseDetected, rejected.Reason);
@@ -80,10 +80,10 @@ public sealed class RefreshTokenChainTests
     {
         var options = Options();
         var chain = StartedChain();
-        chain.Redeem("h0", "h1", Now, options);
-        chain.Redeem("h0", "h2", Now.AddMinutes(5), options); // trips detection
+        chain.Redeem("h0", "h1", "sh1", Now, options);
+        chain.Redeem("h0", "h2", "sh2", Now.AddMinutes(5), options); // trips detection
 
-        var result = chain.Redeem("h1", "h3", Now.AddMinutes(6), options);
+        var result = chain.Redeem("h1", "h3", "sh3", Now.AddMinutes(6), options);
 
         var rejected = Assert.IsType<RefreshTokenRedemption.Rejected>(result);
         Assert.Equal(RefreshTokenRejection.ChainRevoked, rejected.Reason);
@@ -97,8 +97,8 @@ public sealed class RefreshTokenChainTests
         var options = Options();
         var chain = StartedChain();
 
-        var first = chain.Redeem("h0", "h1", Now, options);
-        var second = chain.Redeem("h0", "h2", Now.AddMilliseconds(80), options);
+        var first = chain.Redeem("h0", "h1", "sh1", Now, options);
+        var second = chain.Redeem("h0", "h2", "sh2", Now.AddMilliseconds(80), options);
 
         var rotated = Assert.IsType<RefreshTokenRedemption.Rotated>(first);
         var replayed = Assert.IsType<RefreshTokenRedemption.ReplayedWithinGrace>(second);
@@ -106,7 +106,43 @@ public sealed class RefreshTokenChainTests
         Assert.False(chain.IsRevoked);
         Assert.Equal("h1", rotated.Token.Handle);
         Assert.Equal("h1", replayed.Token.Handle); // same successor, not a second one
+        Assert.Equal("sh1", replayed.Secret); // ...and the *same secret*, so the tab can use it
         Assert.Equal(2, chain.Tokens.Count); // "h2" was never issued
+    }
+
+    [Fact]
+    public void Redeem_RetainsTheSuccessorSecretOnlyForTheGraceWindow()
+    {
+        // The retained secret is the one reversible copy in the system. It must not outlive the
+        // window that justifies it, or a database dump would expose every live session's token.
+        var options = Options();
+        var chain = StartedChain();
+        chain.Redeem("h0", "h1", "sh1", Now, options);
+
+        Assert.Equal("sh1", chain.Tokens[0].SuccessorSecret);
+
+        // Any later redemption sweeps secrets whose window has closed.
+        chain.Redeem("h1", "h2", "sh2", Now + options.RefreshReplayGraceWindow + TimeSpan.FromSeconds(1), options);
+
+        Assert.Null(chain.Tokens[0].SuccessorSecret);
+        Assert.Equal("h1", chain.Tokens[0].SuccessorHandle); // the audit trail stays
+    }
+
+    [Fact]
+    public void Redeem_ForgottenSecret_IsTreatedAsTheftRatherThanServedWithoutOne()
+    {
+        // Belt and braces: if a secret is ever missing when a replay arrives, the chain must not
+        // fall through to some "successful but token-less" answer.
+        var options = Options();
+        var chain = StartedChain();
+        chain.Redeem("h0", "h1", "sh1", Now, options);
+        chain.Redeem("h1", "h2", "sh2", Now.AddMinutes(5), options); // sweeps h0's secret
+
+        var result = chain.Redeem("h0", "h3", "sh3", Now.AddMinutes(5), options);
+
+        var rejected = Assert.IsType<RefreshTokenRedemption.Rejected>(result);
+        Assert.Equal(RefreshTokenRejection.ReuseDetected, rejected.Reason);
+        Assert.True(chain.IsRevoked);
     }
 
     [Fact]
@@ -114,9 +150,9 @@ public sealed class RefreshTokenChainTests
     {
         var options = Options();
         var chain = StartedChain();
-        chain.Redeem("h0", "h1", Now, options);
+        chain.Redeem("h0", "h1", "sh1", Now, options);
 
-        var result = chain.Redeem("h0", "h2", Now + options.RefreshReplayGraceWindow, options);
+        var result = chain.Redeem("h0", "h2", "sh2", Now + options.RefreshReplayGraceWindow, options);
 
         Assert.IsType<RefreshTokenRedemption.ReplayedWithinGrace>(result);
         Assert.False(chain.IsRevoked);
@@ -128,7 +164,7 @@ public sealed class RefreshTokenChainTests
         var options = Options();
         var chain = StartedChain();
 
-        var result = chain.Redeem("h0", "h1", Now + options.RefreshTokenLifetime, options);
+        var result = chain.Redeem("h0", "h1", "sh1", Now + options.RefreshTokenLifetime, options);
 
         var rejected = Assert.IsType<RefreshTokenRedemption.Rejected>(result);
         Assert.Equal(RefreshTokenRejection.Expired, rejected.Reason);
@@ -140,7 +176,7 @@ public sealed class RefreshTokenChainTests
     {
         var chain = StartedChain();
 
-        var result = chain.Redeem("nope", "h1", Now, Options());
+        var result = chain.Redeem("nope", "h1", "sh1", Now, Options());
 
         var rejected = Assert.IsType<RefreshTokenRedemption.Rejected>(result);
         Assert.Equal(RefreshTokenRejection.UnknownToken, rejected.Reason);
@@ -153,7 +189,7 @@ public sealed class RefreshTokenChainTests
         var chain = StartedChain();
         chain.Revoke(Now);
 
-        var result = chain.Redeem("h0", "h1", Now.AddMinutes(1), Options());
+        var result = chain.Redeem("h0", "h1", "sh1", Now.AddMinutes(1), Options());
 
         var rejected = Assert.IsType<RefreshTokenRedemption.Rejected>(result);
         Assert.Equal(RefreshTokenRejection.ChainRevoked, rejected.Reason);
@@ -180,7 +216,7 @@ public sealed class RefreshTokenChainTests
         for (var i = 1; i <= 20; i++)
         {
             at = at.AddMinutes(14);
-            var result = chain.Redeem($"h{i - 1}", $"h{i}", at, options);
+            var result = chain.Redeem($"h{i - 1}", $"h{i}", $"sh{i}", at, options);
             Assert.IsType<RefreshTokenRedemption.Rotated>(result);
         }
 

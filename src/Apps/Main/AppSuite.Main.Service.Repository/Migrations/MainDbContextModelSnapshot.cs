@@ -127,6 +127,10 @@ namespace AppSuite.Main.Service.Repository.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
+                    b.Property<string>("SuccessorSecret")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
                     b.HasKey("Handle");
 
                     b.HasIndex("ChainId");
