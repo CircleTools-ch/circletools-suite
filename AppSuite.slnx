@@ -36,10 +36,15 @@
   </Folder>
   <Folder Name="/src/BuildingBlocks/">
     <Project Path="src/BuildingBlocks/AppSuite.Application/AppSuite.Application.csproj" />
+    <Project Path="src/BuildingBlocks/AppSuite.Identity/AppSuite.Identity.csproj" />
+    <Project Path="src/BuildingBlocks/AppSuite.Infrastructure/AppSuite.Infrastructure.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.SharedKernel/AppSuite.SharedKernel.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/AppSuite.Architecture.Test/AppSuite.Architecture.Test.csproj" />
+  </Folder>
+  <Folder Name="/tests/BuildingBlocks/">
+    <Project Path="tests/BuildingBlocks/AppSuite.Identity.Test/AppSuite.Identity.Test.csproj" />
   </Folder>
   <Folder Name="/tests/Apps/" />
   <Folder Name="/tests/Apps/Main/">
