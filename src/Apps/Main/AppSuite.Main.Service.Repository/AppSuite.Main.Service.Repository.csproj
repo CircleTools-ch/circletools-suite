@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\AppSuite.Main.Service.Core\AppSuite.Main.Service.Core.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\AppSuite.Identity\AppSuite.Identity.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\AppSuite.Infrastructure\AppSuite.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

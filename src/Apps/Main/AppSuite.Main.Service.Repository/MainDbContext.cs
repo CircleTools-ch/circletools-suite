@@ -1,5 +1,6 @@
 using AppSuite.Identity;
 using AppSuite.Identity.Tokens;
+using AppSuite.Infrastructure.Outbox;
 using AppSuite.Main.Service.Core.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -25,6 +26,9 @@ public sealed class MainDbContext(DbContextOptions<MainDbContext> options)
 
     /// <summary>Gets the refresh-token chains — one row per sign-in session (FR-008).</summary>
     public DbSet<RefreshTokenChain> RefreshTokenChains => Set<RefreshTokenChain>();
+
+    /// <summary>Gets pending outbound side effects, chiefly mail (NFR-005).</summary>
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     /* Passkey storage (FR-010) is gated behind the Identity schema version, and the switch is
        IdentityOptions.Stores.SchemaVersion — configured in AddAppSuiteIdentityCore, NOT the
@@ -92,6 +96,19 @@ public sealed class MainDbContext(DbContextOptions<MainDbContext> options)
             entity.Navigation(c => c.Tokens)
                 .HasField("_tokens")
                 .UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        builder.Entity<OutboxMessage>(entity =>
+        {
+            entity.ToTable("outbox_messages");
+            entity.HasKey(m => m.Id);
+            entity.Property(m => m.Id).ValueGeneratedNever();
+            entity.Property(m => m.Type).IsRequired().HasMaxLength(100);
+            entity.Property(m => m.Payload).IsRequired();
+            entity.Property(m => m.EnqueuedAt).IsRequired();
+
+            // The dispatcher drains oldest-first.
+            entity.HasIndex(m => m.EnqueuedAt);
         });
 
         builder.Entity<RefreshToken>(entity =>

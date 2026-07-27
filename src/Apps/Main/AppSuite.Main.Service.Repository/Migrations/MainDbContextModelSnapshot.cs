@@ -156,6 +156,30 @@ namespace AppSuite.Main.Service.Repository.Migrations
                     b.ToTable("refresh_token_chains", (string)null);
                 });
 
+            modelBuilder.Entity("AppSuite.Infrastructure.Outbox.OutboxMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("EnqueuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EnqueuedAt");
+
+                    b.ToTable("outbox_messages", (string)null);
+                });
+
             modelBuilder.Entity("AppSuite.Main.Service.Core.Domain.Heartbeat", b =>
                 {
                     b.Property<Guid>("Id")
