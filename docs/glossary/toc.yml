@@ -4,6 +4,10 @@
   href: assignment.md
 - name: Budget
   href: budget.md
+- name: Circle
+  href: circle.md
+- name: Circle membership
+  href: circle-membership.md
 - name: Draw
   href: draw.md
 - name: Event details
@@ -12,10 +16,18 @@
   href: exclusion.md
 - name: Group
   href: group.md
+- name: Invitation
+  href: invitation.md
+- name: Managed member
+  href: managed-member.md
 - name: Member
   href: member.md
 - name: Reveal link
   href: reveal-link.md
+- name: Sync
+  href: sync.md
+- name: User
+  href: user.md
 - name: Wishlist
   href: wishlist.md
 - name: Template

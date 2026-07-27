@@ -21,8 +21,10 @@ the Secret-Santa app.
 
 ## Synonyms / do-not-use
 
-- **Synonyms:** circle, round (informal).
-- **Do NOT use:** "team", "party" (ambiguous in code).
+- **Synonyms:** round (informal).
+- **Do NOT use:** "team", "party" (ambiguous in code); **"circle"** — [Circle](circle.md) is a
+  separate concept (the standing set of people), while a group is one gift exchange. A group may be
+  created *from* a circle, but the two must never be conflated in code.
 
 ## Product display terms (reference only — not code names)
 
