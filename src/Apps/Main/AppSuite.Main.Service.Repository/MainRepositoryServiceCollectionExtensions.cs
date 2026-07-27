@@ -1,5 +1,6 @@
 using AppSuite.Identity;
 using AppSuite.Identity.Tokens;
+using AppSuite.Infrastructure.Outbox;
 using AppSuite.Main.Service.Core.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -25,6 +26,7 @@ public static class MainRepositoryServiceCollectionExtensions
         services.AddScoped<IHeartbeatRepository, HeartbeatRepository>();
         services.AddScoped<IRefreshTokenChainStore, RefreshTokenChainStore>();
         services.AddScoped<ISessionUserLookup, SessionUserLookup>();
+        services.AddScoped<IOutbox, EfOutbox>();
 
         return services;
     }
@@ -74,6 +76,11 @@ public static class MainRepositoryServiceCollectionExtensions
                 options.SignIn.RequireConfirmedEmail = false;
             })
             .AddEntityFrameworkStores<MainDbContext>();
+
+        // NOTE: token providers are NOT registered here. AddIdentityCore omits them, and
+        // AddDefaultTokenProviders lives in the ASP.NET Core framework assembly, which this
+        // library deliberately does not reference. The API host adds them — without that,
+        // GenerateEmailConfirmationTokenAsync (FR-007) and reset tokens (FR-009) throw at runtime.
     }
 
     /// <summary>

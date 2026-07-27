@@ -14,12 +14,15 @@
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\BuildingBlocks\AppSuite.Application\AppSuite.Application.csproj" />
     <ProjectReference Include="..\..\..\..\src\Apps\Main\AppSuite.Main.Service.Core\AppSuite.Main.Service.Core.csproj" />
     <ProjectReference Include="..\..\..\..\src\Apps\Main\AppSuite.Main.Contracts\AppSuite.Main.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Apps\Main\AppSuite.Main.Service\AppSuite.Main.Service.csproj" />
   </ItemGroup>
 
   <ItemGroup>
