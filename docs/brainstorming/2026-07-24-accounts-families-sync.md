@@ -12,8 +12,16 @@ status: Concluded
 > under “Decisions & selected ideas”. The option tables are kept deliberately: the rejected
 > alternatives are the record of *why*. One decision (**D1**) knowingly changes a published privacy
 > promise — [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md) has been amended
-> accordingly, and a pending ADR will partly supersede
+> accordingly, and [ADR-0020](../adr/0020-server-side-assignment-privacy.md) partly supersedes
 > [ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md).
+>
+> **All eight decisions are now recorded as ADRs** —
+> [0016](../adr/0016-sync-and-conflict-resolution.md) sync ·
+> [0017](../adr/0017-anonymous-to-account-claim.md) claim ·
+> [0018](../adr/0018-circle-and-sharing-model.md) circles ·
+> [0019](../adr/0019-member-user-linking.md) linking ·
+> [0020](../adr/0020-server-side-assignment-privacy.md) assignment privacy ·
+> [0021](../adr/0021-web-auth-token-model.md) web tokens.
 
 ## Objective / framing question
 
@@ -187,8 +195,9 @@ tidy but delivers an account that doesn’t do the thing people log in for.
 > [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md) is **amended** — its
 > “zero assignments stored server-side” target now applies to **account-free mode only**, and account
 > mode is governed by an authorization target verified by tests instead of network capture.
-> [ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md) will be **partly superseded** by the
-> pending server-side-assignment-privacy ADR. [NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md)
+> [ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md) is **partly superseded** by
+> [ADR-0020](../adr/0020-server-side-assignment-privacy.md), which records this decision.
+> [NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md)
 > is untouched: not signing in preserves the original property in full.
 
 #### D2 — Circle membership vs group snapshot
@@ -380,14 +389,21 @@ Glossary first — no code may use these terms before they exist (`CLAUDE.md` ru
       authorization target with its own acceptance criteria.
 - [ ] Requirements: FRs per use case; new NFRs for data protection & residency,
       account-enumeration resistance, and sync convergence → [requirements](../requirements/index.md).
-- [ ] ADRs (each already in the [backlog](../adr/index.md), unblocked by this session):
-      sync & conflict resolution (D4 + mechanism) · anonymous→account claim (D4) ·
-      circle/sharing model (D2, D6, D7) · Member↔User linking (D3) ·
-      **server-side assignment storage & privacy, superseding part of
-      [ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md)** (D1) · web token model (D8).
-- [ ] arc42: new **Identity** and **Circles** bounded contexts (confirming the provisional labels
-      used in the glossary) in
-      [ch. 5](../arc42/05-building-block-view.md); update ch. 8 and ch. 9.
+- [x] ADRs written and **Accepted** (2026-07-27):
+      [ADR-0016](../adr/0016-sync-and-conflict-resolution.md) sync & conflict resolution (incl. the
+      client-storage sub-decision) · [ADR-0017](../adr/0017-anonymous-to-account-claim.md)
+      anonymous→account claim (D4) · [ADR-0018](../adr/0018-circle-and-sharing-model.md)
+      circle & sharing model (D2, D5, D6, D7) · [ADR-0019](../adr/0019-member-user-linking.md)
+      Member↔User linking (D3) · [ADR-0020](../adr/0020-server-side-assignment-privacy.md)
+      server-side assignment privacy (D1), partly superseding
+      [ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md) ·
+      [ADR-0021](../adr/0021-web-auth-token-model.md) web token model (D8).
+- [x] arc42 **ch. 8** (§8.2 persistence, §8.3 sync, §8.4 identity/tokens, §8.8 privacy &
+      enumeration resistance, new §8.10 circles & sharing) and **ch. 9** (register + an
+      *Amended / partly superseded* table) updated.
+- [ ] arc42 **ch. 5**: add the **Identity** and **Circles** bounded contexts to the
+      [building-block view](../arc42/05-building-block-view.md), confirming the provisional context
+      labels used in the glossary.
 - [ ] Deployment-phase ADRs now genuinely due: cloud provider & hosting (Swiss data residency),
       transactional email provider, CI/CD → [deployment](../deployment/index.md).
 - [x] Update [backlog.md](../roadmap/backlog.md): `IDEA-000` promoted to *in progress*, and the

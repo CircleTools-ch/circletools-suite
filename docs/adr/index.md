@@ -24,41 +24,47 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0013](0013-wasm-api-dev-wiring.md) | Standalone WASM ↔ API wiring (manual config + CORS) | Accepted | 2026-07-24 |
 | [0014](0014-reveal-link-encoding-and-privacy.md) | Secret-Santa reveal-link encoding & privacy | Accepted | 2026-07-24 |
 | [0015](0015-mvp-client-offline-storage.md) | MVP client offline storage (localStorage / file) | Accepted | 2026-07-24 |
+| [0016](0016-sync-and-conflict-resolution.md) | Local↔server sync & conflict resolution (aggregate LWW) | Accepted | 2026-07-27 |
+| [0017](0017-anonymous-to-account-claim.md) | Anonymous → account claim (choose per group) | Accepted | 2026-07-27 |
+| [0018](0018-circle-and-sharing-model.md) | Circle & sharing model (canonical `Circle`, user-chosen label) | Accepted | 2026-07-27 |
+| [0019](0019-member-user-linking.md) | Member↔User linking (optional `UserId`) | Accepted | 2026-07-27 |
+| [0020](0020-server-side-assignment-privacy.md) | Server-side assignment storage & privacy (plaintext + authz) | Accepted | 2026-07-27 |
+| [0021](0021-web-auth-token-model.md) | Web auth token model (bearer in WASM) | Accepted | 2026-07-27 |
 
 ## Open decisions backlog
 
-The remaining open choices are **deferred on purpose** — each depends on the Secret-Santa domain
-model (milestones 2–3) or on the deployment phase (milestone 8), and deciding them before then
-would be premature. They will become ADRs when their inputs exist.
+The Secret-Santa MVP shipped, and the **v2 domain decisions that were deferred behind it are now
+recorded** as ADR-0016…0021, resolved by the
+[accounts, families & sync brainstorming session](../brainstorming/2026-07-24-accounts-families-sync.md).
+What remains open genuinely depends on the deployment phase or on evidence we do not yet have.
 
-### Decided (Secret-Santa reveal)
-- ✅ **Reveal-link encoding & privacy** — recorded in
-  [ADR-0014](0014-reveal-link-encoding-and-privacy.md): encode-only (compress + Base64Url) in the URL
-  **fragment**, a readable `for=` owner label, cryptic payload, and a reveal-button anti-spoiler UX;
-  no encryption/HMAC for the MVP.
+### Recently closed (v2 — 2026-07-27)
+- ✅ **Sync & conflict resolution** → [ADR-0016](0016-sync-and-conflict-resolution.md). Includes the
+  web-client offline storage sub-decision: `localStorage` per
+  [ADR-0015](0015-mvp-client-offline-storage.md) **stays**, extended with sync metadata.
+- ✅ **Anonymous → account claim** → [ADR-0017](0017-anonymous-to-account-claim.md) (choose per group).
+- ✅ **Circle & sharing model across users** → [ADR-0018](0018-circle-and-sharing-model.md).
+- ✅ **Member↔User linking** → [ADR-0019](0019-member-user-linking.md) (optional `UserId`).
+- ✅ **Server-side assignment storage & privacy** → [ADR-0020](0020-server-side-assignment-privacy.md);
+  **partly supersedes** [ADR-0014](0014-reveal-link-encoding-and-privacy.md) and amends
+  [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md).
+- ✅ **Web auth token model** → [ADR-0021](0021-web-auth-token-model.md) (bearer in WASM), closing the
+  follow-up deferred in [ADR-0009](0009-authentication-and-passkeys.md).
 
-> **MVP is not blocked by sync/accounts.** The defined Secret-Santa MVP is fully offline and
-> account-free — the self-contained reveal link needs no backend. The sync, account-claim, and
-> cross-user sharing decisions below are therefore **post-MVP** and are **not** blockers for the
-> Secret-Santa MVP.
-
-### Depends on the domain model (post-MVP; not MVP blockers)
-- **Local↔server sync & conflict-resolution strategy.** *Interim stance:* local-first; aggregate =
-  sync unit; per-aggregate version token + tombstones; delta pull/push; **last-write-wins per
-  aggregate** as the starting default with an escalation hook. Includes the **web-client offline
-  storage** sub-decision (WASM SQLite/OPFS vs IndexedDB).
-- **Anonymous → account "claim"/migration semantics** (merge / replace / choose).
-- **Groups / sharing model across users** (membership, cross-user sharing) — domain design.
-- **Linking a Secret-Santa `Member` to an AppSuite user account.** Post-MVP: once the Main shell has
-  central login + sync, a `Member` (today just a name in a local group) can be linked to a real
-  AppSuite **user account**, so that user receives their assignment on their own device, owns/edits
-  their own [Wishlist](../glossary/wishlist.md), and reuses one identity across apps. Shapes the
-  `Member`↔`User` relationship, the sync model, and the anonymous→account claim flow above.
-
-### Partially settled, remainder deferred
-- **Web auth token model** (bearer-in-WASM vs BFF/cookie). The identity/passkey stack is decided in
-  [ADR-0009](0009-authentication-and-passkeys.md); the web token model is confirmed when the client shell is built.
-
-### Depends on deployment
+### Depends on deployment (genuinely open)
+- **Cloud provider & hosting target**, including **Swiss data residency** — now due, because v2 stores
+  personal data and assignments server-side.
+- **Transactional email provider** — invitations ([ADR-0018](0018-circle-and-sharing-model.md)) make
+  email delivery a hard onboarding dependency.
+- **CI/CD pipeline.**
 - **AppSuite packaging & app composition** (single shell hosting apps vs per-app installs).
-- **Cloud provider & hosting target** (incl. Swiss data residency, CI/CD).
+
+### Parked — revisit on a concrete trigger
+- **Per-member envelope encryption of assignments** (option P3 in
+  [ADR-0020](0020-server-side-assignment-privacy.md)) — if operator-as-trusted-party stops being
+  acceptable.
+- **IndexedDB / SQLite-in-OPFS client storage** — if data volume or partial-query needs outgrow
+  load-all/save-all ([ADR-0016](0016-sync-and-conflict-resolution.md)).
+- **Invite by link or short code** — if email delivery proves to be the friction point.
+- **Conflict-resolution UI** and **continuous background sync** — if the escalation hook in ADR-0016
+  shows collisions actually occur.

@@ -41,9 +41,12 @@ template provides first-class PWA/offline support (service worker, installable, 
 - **Negative:** No server-side rendering → weaker first-load performance and no SEO (acceptable — this
   is an authenticated/utility app, not content marketing). Larger initial download (mitigated by
   caching + trimming).
-- **Follow-ups:** Web-client **offline storage** mechanism (WASM SQLite/OPFS vs IndexedDB) is decided
-  together with the sync strategy (deferred). Establish service-worker cache-versioning discipline
-  per release.
+- **Follow-ups:** ~~Web-client **offline storage** mechanism~~ — decided in
+  [ADR-0015](0015-mvp-client-offline-storage.md) (`localStorage`) and confirmed under sync by
+  [ADR-0016](0016-sync-and-conflict-resolution.md). The **web auth token model** that this ADR's
+  serverless choice constrains is settled in [ADR-0021](0021-web-auth-token-model.md) — bearer in
+  WASM, no BFF, so this decision is **not** reopened. Establish service-worker cache-versioning
+  discipline per release.
 
 ## Pros and cons of the options
 

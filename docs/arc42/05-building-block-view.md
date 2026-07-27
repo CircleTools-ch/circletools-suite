@@ -84,9 +84,11 @@ flowchart TD
 More follow the same template.
 
 > **Web offline-storage caveat:** on native, `LocalStore` uses on-device SQLite. On the standalone
-> WASM web client, `LocalStore` cannot use device SQLite directly; its offline persistence
-> (WASM SQLite/OPFS vs IndexedDB) is decided together with the sync strategy (deferred — see the
-> [ADR register](../adr/index.md)).
+> WASM web client, `LocalStore` cannot use device SQLite directly; it persists to `localStorage`
+> behind `IKeyValueStore` / `IGroupRepository`
+> ([ADR-0015](../adr/0015-mvp-client-offline-storage.md)), extended with sync metadata by
+> [ADR-0016](../adr/0016-sync-and-conflict-resolution.md). WASM SQLite/OPFS and IndexedDB remain
+> parked behind a concrete trigger (data volume or partial-query needs).
 
 ## 5.3 Dependency rule
 

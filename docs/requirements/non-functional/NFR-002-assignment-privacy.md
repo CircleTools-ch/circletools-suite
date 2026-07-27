@@ -49,10 +49,12 @@ giver, recipient and group), never expose another member's row through the API, 
 assumption stop being acceptable.
 
 > **Amended** by [brainstorming — accounts, families & sync (v2)](../../brainstorming/2026-07-24-accounts-families-sync.md),
-> decision D1. The original requirement stated an unconditional *"zero assignments stored
-> server-side"*; that now holds for account-free mode only. A pending ADR on server-side assignment
-> storage & privacy will record the decision architecturally and **partly supersede**
-> [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md).
+> decision D1, and recorded architecturally in
+> [ADR-0020](../../adr/0020-server-side-assignment-privacy.md). The original requirement stated an
+> unconditional *"zero assignments stored server-side"*; that now holds for account-free mode only.
+> ADR-0020 **partly supersedes**
+> [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md) — only its
+> "never stored server-side" claim; the reveal-link design itself still stands.
 
 ## Acceptance criteria
 
@@ -99,5 +101,6 @@ Then the response contains their own assignment only, never the full mapping
 
 - Derived from: [UC-SS-004](../../use-cases/secret-santa/UC-SS-004-run-draw.md), [UC-SS-005](../../use-cases/secret-santa/UC-SS-005-share-reveal-links.md), [UC-SS-006](../../use-cases/secret-santa/UC-SS-006-open-reveal-link.md)
 - Related: [FR-004](../functional/FR-004-run-fair-draw.md), [FR-005](../functional/FR-005-generate-reveal-links.md), [FR-006](../functional/FR-006-reveal-page-decode.md), [NFR-001](NFR-001-local-first-offline.md)
-- Amended by: [brainstorming — accounts, families & sync (v2)](../../brainstorming/2026-07-24-accounts-families-sync.md) decision D1
+- Amended by: [ADR-0020](../../adr/0020-server-side-assignment-privacy.md), from [brainstorming — accounts, families & sync (v2)](../../brainstorming/2026-07-24-accounts-families-sync.md) decision D1
+- Governing ADRs: [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md) (account-free mode), [ADR-0020](../../adr/0020-server-side-assignment-privacy.md) (account mode)
 - Glossary: [Assignment](../../glossary/assignment.md), [Reveal link](../../glossary/reveal-link.md), [Draw](../../glossary/draw.md), [User](../../glossary/user.md), [Sync](../../glossary/sync.md)

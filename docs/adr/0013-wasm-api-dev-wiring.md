@@ -59,5 +59,5 @@ projects use fixed dev ports. Zero extra dependencies, and it stays neutral w.r.
 
 ## Links
 
-- Related: [ADR-0005](0005-web-hosting-render-model.md), [ADR-0009](0009-authentication-and-passkeys.md) (web token model still open)
+- Related: [ADR-0005](0005-web-hosting-render-model.md), [ADR-0009](0009-authentication-and-passkeys.md); the web token model this ADR avoided pre-committing is now settled in [ADR-0021](0021-web-auth-token-model.md) (bearer in WASM, no BFF)
 - arc42: [07 Deployment view](../arc42/07-deployment-view.md)

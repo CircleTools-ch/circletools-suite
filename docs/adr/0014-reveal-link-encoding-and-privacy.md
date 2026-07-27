@@ -7,6 +7,13 @@ tags: [secret-santa, privacy, web, encoding]
 
 # ADR-0014 — Secret-Santa reveal-link encoding & privacy
 
+> **Partly superseded by [ADR-0020](0020-server-side-assignment-privacy.md) (2026-07-27).** This ADR
+> assumed assignments are **never** stored server-side. In v2 **account mode** they are, protected by
+> authorization instead ([NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md) was
+> amended accordingly). Everything else here — encode-only payloads, the URL fragment, the readable
+> owner label, the anti-spoiler UX — **still stands**, and the entire account-free flow still depends
+> on it, which is why this ADR remains **Accepted** rather than superseded.
+
 ## Context and problem statement
 
 The Secret-Santa MVP reveals each giver's [Assignment](../glossary/assignment.md) through a
@@ -104,4 +111,5 @@ encoded, where does it live in the URL, and what privacy properties do we guaran
 - Requirements: [FR-005](../requirements/functional/FR-005-generate-reveal-links.md), [FR-006](../requirements/functional/FR-006-reveal-page-decode.md), [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)
 - Use cases: [UC-SS-005](../use-cases/secret-santa/UC-SS-005-share-reveal-links.md), [UC-SS-006](../use-cases/secret-santa/UC-SS-006-open-reveal-link.md)
 - Feature spec: [FEAT-001](../features/FEAT-001-secret-santa-mvp.md)
+- Partly superseded by: [ADR-0020](0020-server-side-assignment-privacy.md) (server-side assignment storage in account mode)
 - Glossary: [Reveal link](../glossary/reveal-link.md)
