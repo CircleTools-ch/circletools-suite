@@ -4,6 +4,8 @@
   href: FEAT-001-secret-santa-mvp.md
 - name: TP-001 Secret-Santa MVP test plan
   href: TP-001-secret-santa-mvp.md
+- name: FEAT-002 M1 Identity
+  href: FEAT-002-m1-identity.md
 - name: Templates
   items:
     - name: Feature spec template
