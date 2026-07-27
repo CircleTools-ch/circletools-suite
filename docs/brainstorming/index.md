@@ -12,3 +12,4 @@ rejected ideas are kept for the record.
 | Date | Topic | Outcome |
 |------|-------|---------|
 | [2026-07-24](2026-07-24-secret-santa-scope.md) | Secret-Santa MVP scope | Concluded — offline, account-free MVP with self-contained reveal links |
+| [2026-07-24](2026-07-24-accounts-families-sync.md) | Accounts, families & sync (v2) | Draft — options laid out; pivotal decisions D1–D8 open (incl. server-side assignment privacy) |
