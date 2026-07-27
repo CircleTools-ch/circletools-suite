@@ -70,6 +70,21 @@ public sealed record DataExport(
 /// <param name="CreatedAt">When it was registered, if known.</param>
 public sealed record ExportedPasskey(string CredentialId, DateTimeOffset? CreatedAt);
 
+/// <summary>Registration of a newly created passkey (FR-010).</summary>
+/// <param name="CredentialJson">JSON-serialized result of <c>navigator.credentials.create()</c>.</param>
+/// <param name="Label">A name the user recognises the device by; defaulted when omitted.</param>
+public sealed record RegisterPasskeyRequest(string CredentialJson, string? Label);
+
+/// <summary>Passkey sign-in (FR-011).</summary>
+/// <param name="CredentialJson">JSON-serialized result of <c>navigator.credentials.get()</c>.</param>
+public sealed record PasskeyLoginRequest(string CredentialJson);
+
+/// <summary>A registered passkey as shown in security settings (FR-010).</summary>
+/// <param name="CredentialId">Base64Url public identifier of the credential.</param>
+/// <param name="Label">The user-chosen name.</param>
+/// <param name="CreatedAt">When it was registered.</param>
+public sealed record PasskeyResponse(string CredentialId, string? Label, DateTimeOffset CreatedAt);
+
 /// <summary>Email-verification request (FR-007).</summary>
 /// <param name="UserId">The account being verified.</param>
 /// <param name="Token">The token from the verification link.</param>
