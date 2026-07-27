@@ -106,6 +106,9 @@ public sealed class MainDbContext(DbContextOptions<MainDbContext> options)
             entity.Property(t => t.ConsumedAt);
             entity.Property(t => t.SuccessorHandle).HasMaxLength(128);
 
+            // Held only for the replay grace window, then nulled — see RefreshToken.
+            entity.Property(t => t.SuccessorSecret).HasMaxLength(128);
+
             entity.Ignore(t => t.IsConsumed);
         });
     }

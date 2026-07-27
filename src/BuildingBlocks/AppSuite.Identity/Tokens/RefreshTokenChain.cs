@@ -68,6 +68,11 @@ public sealed class RefreshTokenChain
     /// <summary>Presents a refresh token for rotation.</summary>
     /// <param name="presentedHandle">The stored handle the client presented.</param>
     /// <param name="newHandle">Stored handle to issue if rotation succeeds.</param>
+    /// <param name="newSecret">
+    /// The client-facing secret matching <paramref name="newHandle"/>. Retained on the consumed
+    /// predecessor for the replay grace window so a concurrent request can be answered with the
+    /// same token, then forgotten.
+    /// </param>
     /// <param name="now">The current time.</param>
     /// <param name="options">Configured lifetimes and the replay grace window.</param>
     /// <returns>
@@ -83,17 +88,21 @@ public sealed class RefreshTokenChain
     public RefreshTokenRedemption Redeem(
         string presentedHandle,
         string newHandle,
+        string newSecret,
         DateTimeOffset now,
         TokenLifetimeOptions options)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(presentedHandle);
         ArgumentException.ThrowIfNullOrWhiteSpace(newHandle);
+        ArgumentException.ThrowIfNullOrWhiteSpace(newSecret);
         ArgumentNullException.ThrowIfNull(options);
 
         if (IsRevoked)
         {
             return new RefreshTokenRedemption.Rejected(RefreshTokenRejection.ChainRevoked);
         }
+
+        ForgetSecretsOutsideGrace(now, options);
 
         var presented = _tokens.SingleOrDefault(t =>
             string.Equals(t.Handle, presentedHandle, StringComparison.Ordinal));
@@ -111,7 +120,7 @@ public sealed class RefreshTokenChain
             }
 
             var successor = new RefreshToken(newHandle, now, now + options.RefreshTokenLifetime);
-            presented.Consume(now, successor.Handle);
+            presented.Consume(now, successor.Handle, newSecret);
             _tokens.Add(successor);
             return new RefreshTokenRedemption.Rotated(successor);
         }
@@ -124,13 +133,36 @@ public sealed class RefreshTokenChain
         var successorToken = _tokens.SingleOrDefault(t =>
             string.Equals(t.Handle, presented.SuccessorHandle, StringComparison.Ordinal));
 
-        if (withinGrace && successorToken is not null && !successorToken.IsExpiredAt(now))
+        // The retained secret is what makes an idempotent answer possible at all. Once it has
+        // been forgotten there is nothing to hand back, so the replay is indistinguishable from
+        // theft — which is the correct reading, because forgetting only happens after the window.
+        if (withinGrace
+            && successorToken is not null
+            && !successorToken.IsExpiredAt(now)
+            && presented.SuccessorSecret is { } secret)
         {
-            return new RefreshTokenRedemption.ReplayedWithinGrace(successorToken);
+            return new RefreshTokenRedemption.ReplayedWithinGrace(successorToken, secret);
         }
 
         Revoke(now);
         return new RefreshTokenRedemption.Rejected(RefreshTokenRejection.ReuseDetected);
+    }
+
+    /// <summary>
+    /// Drops retained successor secrets whose replay window has closed, so the reversible copy
+    /// exists for seconds rather than for the life of the session.
+    /// </summary>
+    private void ForgetSecretsOutsideGrace(DateTimeOffset now, TokenLifetimeOptions options)
+    {
+        foreach (var token in _tokens)
+        {
+            if (token.SuccessorSecret is not null
+                && token.ConsumedAt is { } consumedAt
+                && now - consumedAt > options.RefreshReplayGraceWindow)
+            {
+                token.ForgetSuccessorSecret();
+            }
+        }
     }
 
     /// <summary>

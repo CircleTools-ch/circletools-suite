@@ -21,7 +21,7 @@ public enum RefreshTokenRejection
 
 /// <summary>
 /// The outcome of presenting a refresh token. See
-/// <see cref="RefreshTokenChain.Redeem(string, string, DateTimeOffset, TokenLifetimeOptions)"/>.
+/// <see cref="RefreshTokenChain.Redeem(string, string, string, DateTimeOffset, TokenLifetimeOptions)"/>.
 /// </summary>
 public abstract record RefreshTokenRedemption
 {
@@ -38,11 +38,17 @@ public abstract record RefreshTokenRedemption
     /// successor it previously produced is returned again rather than treating this as theft.
     /// </summary>
     /// <param name="Token">The successor issued by the original redemption.</param>
+    /// <param name="Secret">
+    /// That successor's secret, so the caller can be handed the <em>same</em> token as the
+    /// request that raced it. Callers must return this rather than minting a new one — issuing a
+    /// different token here would leave two live leaves on one chain, and the loser's next
+    /// refresh would trip theft detection.
+    /// </param>
     /// <remarks>
     /// This is the racing-refresh case: two browser tabs redeeming the same token at nearly
-    /// the same moment must both end up signed in.
+    /// the same moment must both end up signed in, holding the same token afterwards.
     /// </remarks>
-    public sealed record ReplayedWithinGrace(RefreshToken Token) : RefreshTokenRedemption;
+    public sealed record ReplayedWithinGrace(RefreshToken Token, string Secret) : RefreshTokenRedemption;
 
     /// <summary>The redemption was refused.</summary>
     /// <param name="Reason">Why it was refused.</param>
