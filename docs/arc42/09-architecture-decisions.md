@@ -28,6 +28,7 @@ Decisions are recorded as [Architecture Decision Records](../adr/index.md) (MADR
 | [ADR-0019](../adr/0019-member-user-linking.md) | Member↔User linking (optional `UserId`) |
 | [ADR-0020](../adr/0020-server-side-assignment-privacy.md) | Server-side assignment storage & privacy (plaintext + authz) |
 | [ADR-0021](../adr/0021-web-auth-token-model.md) | Web auth token model (bearer in WASM) |
+| [ADR-0022](../adr/0022-account-deletion-and-data-export.md) | Account deletion & data export (immediate delete; export mirrors in-app visibility) |
 
 ## Amended / partly superseded
 
@@ -40,7 +41,7 @@ Decisions are recorded as [Architecture Decision Records](../adr/index.md) (MADR
 ## Open (backlog)
 
 The v2 domain decisions (sync, account claim, sharing model, Member↔User linking, assignment privacy,
-web token model) are **now recorded** as ADR-0016…0021. What remains open depends on the **deployment
-phase** — cloud provider & Swiss data residency, transactional email, CI/CD, suite packaging — or is
+web token model, deletion & export) are **now recorded** as ADR-0016…0022. What remains open depends
+on the **deployment phase** — cloud provider & Swiss data residency, transactional email, CI/CD, suite packaging — or is
 **parked behind a concrete trigger** (envelope encryption, IndexedDB, invite-by-link, conflict UI).
 Tracked with rationale in the [ADR register's open backlog](../adr/index.md#open-decisions-backlog).

@@ -25,8 +25,9 @@ Idea stubs and work items, newest-first. Promote items into
 - **Architecture decided (2026-07-27):** [ADR-0018](../adr/0018-circle-and-sharing-model.md) — the
   `Circle` aggregate, roles, enumeration-resistant invitations, managed members, and the
   snapshot-at-draw rule; [ADR-0019](../adr/0019-member-user-linking.md) for member linking.
-- **Next:** the `UC-MAIN-*` use cases (create a circle, invite a new person, invite an existing
-  account, accept/decline, leave/remove) → FRs → the M2 feature spec. Ships as **M2**.
+- **Next:** the `UC-MAIN-007+` use cases (create a circle, invite a new person, invite an existing
+  account, accept/decline, leave/remove) → FRs → the M2 feature spec. Ships as **M2**, after the
+  M1 identity slice whose use cases are now written.
 
 ### IDEA-001 — Secret-Santa app (first app) · _status: MVP defined_
 - **Problem:** Organizing a Secret-Santa (Wichteln) by hand is fiddly — drawing names fairly,
@@ -75,8 +76,22 @@ Idea stubs and work items, newest-first. Promote items into
   glossary [User](../glossary/user.md), [Sync](../glossary/sync.md) →
   ADRs [0016](../adr/0016-sync-and-conflict-resolution.md),
   [0017](../adr/0017-anonymous-to-account-claim.md), [0021](../adr/0021-web-auth-token-model.md).
-- **Next:** the `UC-MAIN-*` account use cases (create an account, sign in with a passkey, delete
-  account & export data) → FRs → the **M1 — Identity** feature spec. The ADRs no longer block it.
+- **Use cases written (2026-07-27):** [UC-MAIN-001..007](../use-cases/index.md) cover the **M1 —
+  Identity** slice — create an account, sign in with email+password, register a passkey, sign in with
+  a passkey, profile & preferred language, delete account & export data, reset a forgotten password.
+- **Open questions resolved (2026-07-27):** unverified accounts may sign in but get nothing
+  account-scoped (purged after 30 days); password policy is NIST-style (12+ chars, no composition
+  rules, breach-list check); sessions are 15-min access / 30-day rotating refresh, persistent, with no
+  "remember me" tick; passkey **RP-ID is the registrable suite domain** so one passkey spans all app
+  subdomains; display names are not unique; avatar deferred to M2. Deletion & export became
+  [ADR-0022](../adr/0022-account-deletion-and-data-export.md) — immediate hard delete, export mirrors
+  in-app visibility.
+- **Next:** derive the **M1 FRs** from UC-MAIN-001..007 → the **M1 — Identity** feature spec.
+  Two items must be handled in that step: **NFR-004 (data protection & retention)** does not exist and
+  is the first task, and **email change** needs its own FR. One thing stays genuinely blocked: the
+  **literal suite domain** for the passkey RP-ID and the CSP, which waits on the deployment ADRs and
+  on [naming](../process/naming.md) — the *strategy* for both is now decided, only the string is
+  missing.
 
 ## Later / parked
 - Additional apps (to be brainstormed).
