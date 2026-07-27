@@ -1,8 +1,9 @@
 # 4. Solution Strategy
 
-> Key strategic decisions are now **ratified** via [ADR-0005–0012](09-architecture-decisions.md).
-> Items that depend on the domain model or deployment remain deferred (see the
-> [ADR register](../adr/index.md)).
+> Key strategic decisions are **ratified** via [ADR-0005–0021](09-architecture-decisions.md),
+> including the v2 account, circle, sync and privacy decisions. What remains deferred is the
+> **deployment** set — cloud provider & Swiss data residency, transactional email, CI/CD — plus items
+> parked behind a concrete trigger (see the [ADR register](../adr/index.md)).
 
 | Goal / constraint | Strategic decision |
 |-------------------|--------------------|

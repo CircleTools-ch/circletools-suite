@@ -50,6 +50,11 @@ data sizes).
 - **Follow-ups:** if data grows or richer querying is needed, revisit with SQLite/IndexedDB (a future
   ADR). The v2 sync work builds on the same `IGroupRepository` port.
 
+> **Extended by [ADR-0016](0016-sync-and-conflict-resolution.md) (2026-07-27).** v2 sync keeps this
+> decision — `localStorage` and the `IKeyValueStore` / `IGroupRepository` ports stay — and adds sync
+> metadata (version token, tombstone flag, cursor) to the persisted `GroupState`. IndexedDB and
+> SQLite-in-OPFS remain parked behind a concrete trigger, so this ADR is **extended, not superseded**.
+
 ## Pros and cons of the options
 
 ### 1. localStorage + file (chosen)
@@ -67,4 +72,5 @@ data sizes).
 ## Links
 
 - Related: [ADR-0007](0007-persistence-approach.md), [ADR-0005](0005-web-hosting-render-model.md), [ADR-0008](0008-entity-id-strategy.md)
+- Extended by: [ADR-0016](0016-sync-and-conflict-resolution.md) (sync metadata on the persisted state)
 - Feature: [FEAT-001](../features/FEAT-001-secret-santa-mvp.md); [NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md)

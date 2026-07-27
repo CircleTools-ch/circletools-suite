@@ -30,5 +30,17 @@
   href: 0014-reveal-link-encoding-and-privacy.md
 - name: ADR-0015 MVP client offline storage
   href: 0015-mvp-client-offline-storage.md
+- name: ADR-0016 Sync & conflict resolution
+  href: 0016-sync-and-conflict-resolution.md
+- name: ADR-0017 Anonymous → account claim
+  href: 0017-anonymous-to-account-claim.md
+- name: ADR-0018 Circle & sharing model
+  href: 0018-circle-and-sharing-model.md
+- name: ADR-0019 Member↔User linking
+  href: 0019-member-user-linking.md
+- name: ADR-0020 Server-side assignment privacy
+  href: 0020-server-side-assignment-privacy.md
+- name: ADR-0021 Web auth token model
+  href: 0021-web-auth-token-model.md
 - name: Template
   href: _template-adr.md

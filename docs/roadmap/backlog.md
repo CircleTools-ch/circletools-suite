@@ -22,7 +22,11 @@ Idea stubs and work items, newest-first. Promote items into
   (decisions D2, D5, D6, D7) → glossary [Circle](../glossary/circle.md),
   [Circle membership](../glossary/circle-membership.md), [Invitation](../glossary/invitation.md),
   [Managed member](../glossary/managed-member.md).
-- **Next:** ADR for the circle/sharing model, then the `UC-MAIN-*` use cases. Ships as **M2**.
+- **Architecture decided (2026-07-27):** [ADR-0018](../adr/0018-circle-and-sharing-model.md) — the
+  `Circle` aggregate, roles, enumeration-resistant invitations, managed members, and the
+  snapshot-at-draw rule; [ADR-0019](../adr/0019-member-user-linking.md) for member linking.
+- **Next:** the `UC-MAIN-*` use cases (create a circle, invite a new person, invite an existing
+  account, accept/decline, leave/remove) → FRs → the M2 feature spec. Ships as **M2**.
 
 ### IDEA-001 — Secret-Santa app (first app) · _status: MVP defined_
 - **Problem:** Organizing a Secret-Santa (Wichteln) by hand is fiddly — drawing names fairly,
@@ -48,9 +52,13 @@ Idea stubs and work items, newest-first. Promote items into
   server-side** and protected by authorization rather than by absence. The account-free flow is
   unchanged and still stores nothing.
   [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md) has been amended, and
-  [ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md) will be partly superseded.
-- **Next:** the v2 ADRs (sync & conflicts, account claim, circle model, Member↔User linking,
-  server-side assignment privacy, web token model) → `UC-SS-007+` → feature specs.
+  [ADR-0020](../adr/0020-server-side-assignment-privacy.md) partly supersedes
+  [ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md).
+- **Architecture decided (2026-07-27):** [ADR-0016](../adr/0016-sync-and-conflict-resolution.md)…
+  [ADR-0021](../adr/0021-web-auth-token-model.md) cover sync, the account claim, the circle model,
+  Member↔User linking, assignment privacy and the web token model.
+- **Next:** `UC-SS-007+` use cases (create a group from a circle; link a member; see my assignment
+  while logged in; edit my own wishlist) → FRs → the M4 feature spec.
 
 ### IDEA-000 — AppSuite shell (Main app-type) · _status: in progress_
 - **Problem:** apps need shared branding, one login, shared config, and a dashboard.
@@ -64,9 +72,11 @@ Idea stubs and work items, newest-first. Promote items into
   [Sync](../glossary/sync.md) with per-aggregate last-write-wins; anonymous→account claim by
   **per-group choice** on first login (D4).
 - **Traceability:** [brainstorming v2](../brainstorming/2026-07-24-accounts-families-sync.md) →
-  glossary [User](../glossary/user.md), [Sync](../glossary/sync.md).
-- **Next:** **M1 — Identity** (signup, login, passkey registration, profile, deletion & export),
-  gated on the v2 ADRs and the `UC-MAIN-*` use cases.
+  glossary [User](../glossary/user.md), [Sync](../glossary/sync.md) →
+  ADRs [0016](../adr/0016-sync-and-conflict-resolution.md),
+  [0017](../adr/0017-anonymous-to-account-claim.md), [0021](../adr/0021-web-auth-token-model.md).
+- **Next:** the `UC-MAIN-*` account use cases (create an account, sign in with a passkey, delete
+  account & export data) → FRs → the **M1 — Identity** feature spec. The ADRs no longer block it.
 
 ## Later / parked
 - Additional apps (to be brainstormed).

@@ -42,8 +42,10 @@ common WebAuthn scenarios without a third-party library.
   one account model for the whole suite.
 - **Negative:** Built-in passkey support is scoped to common auth scenarios (not a full WebAuthn toolkit) —
   if we later need advanced ceremonies, add a FIDO2 library then.
-- **Follow-ups:** Confirm the **web token model** (bearer-in-WASM vs a BFF/cookie) when the client shell is
-  built; wire passkey Relying-Party settings to the suite domain; define token lifetime/refresh.
+- **Follow-ups:** ~~Confirm the **web token model** (bearer-in-WASM vs a BFF/cookie)~~ — **closed by
+  [ADR-0021](0021-web-auth-token-model.md)**: bearer token in the WASM client, with short-lived access
+  tokens, refresh-token rotation and a strict CSP. Still open: wire passkey Relying-Party settings to
+  the suite domain, and pin concrete token lifetimes (ADR-0021 follow-ups).
 
 ## Pros and cons of the options
 
@@ -63,4 +65,5 @@ common WebAuthn scenarios without a third-party library.
 
 - arc42: [08 Cross-cutting concepts](../arc42/08-crosscutting-concepts.md)
 - Guideline: [security-privacy-guidelines.md](../guidelines/security-privacy-guidelines.md)
-- Related open item: web auth token model (deferred — see [ADR register](index.md))
+- Web auth token model: [ADR-0021](0021-web-auth-token-model.md) (closes the follow-up above)
+- Related: [ADR-0018](0018-circle-and-sharing-model.md), [ADR-0020](0020-server-side-assignment-privacy.md)

@@ -22,10 +22,25 @@ Decisions are recorded as [Architecture Decision Records](../adr/index.md) (MADR
 | [ADR-0013](../adr/0013-wasm-api-dev-wiring.md) | Standalone WASM ↔ API wiring (manual config + CORS) |
 | [ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md) | Secret-Santa reveal-link encoding & privacy |
 | [ADR-0015](../adr/0015-mvp-client-offline-storage.md) | MVP client offline storage (localStorage / file) |
+| [ADR-0016](../adr/0016-sync-and-conflict-resolution.md) | Local↔server sync & conflict resolution (aggregate LWW) |
+| [ADR-0017](../adr/0017-anonymous-to-account-claim.md) | Anonymous → account claim (choose per group) |
+| [ADR-0018](../adr/0018-circle-and-sharing-model.md) | Circle & sharing model (canonical `Circle`, user-chosen label) |
+| [ADR-0019](../adr/0019-member-user-linking.md) | Member↔User linking (optional `UserId`) |
+| [ADR-0020](../adr/0020-server-side-assignment-privacy.md) | Server-side assignment storage & privacy (plaintext + authz) |
+| [ADR-0021](../adr/0021-web-auth-token-model.md) | Web auth token model (bearer in WASM) |
+
+## Amended / partly superseded
+
+| # | Change |
+|---|--------|
+| [ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md) | **Partly superseded** by [ADR-0020](../adr/0020-server-side-assignment-privacy.md): assignments *are* stored server-side in account mode. The reveal-link decision itself stands and the account-free flow still depends on it, so it remains Accepted. |
+| [ADR-0015](../adr/0015-mvp-client-offline-storage.md) | **Extended** by [ADR-0016](../adr/0016-sync-and-conflict-resolution.md) with client-side sync metadata; `localStorage` stays. |
+| [ADR-0009](../adr/0009-authentication-and-passkeys.md) | Its deferred web-token-model follow-up is **closed** by [ADR-0021](../adr/0021-web-auth-token-model.md). |
 
 ## Open (backlog)
 
-The remaining decisions are **deferred on purpose** — they depend on the Secret-Santa domain model
-(sync & conflict strategy, anonymous→account claim, groups/sharing model) or on deployment (suite
-packaging, cloud provider). They are tracked with rationale and interim stances in the
-[ADR register's open backlog](../adr/index.md#open-decisions-backlog).
+The v2 domain decisions (sync, account claim, sharing model, Member↔User linking, assignment privacy,
+web token model) are **now recorded** as ADR-0016…0021. What remains open depends on the **deployment
+phase** — cloud provider & Swiss data residency, transactional email, CI/CD, suite packaging — or is
+**parked behind a concrete trigger** (envelope encryption, IndexedDB, invite-by-link, conflict UI).
+Tracked with rationale in the [ADR register's open backlog](../adr/index.md#open-decisions-backlog).
