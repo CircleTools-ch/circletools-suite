@@ -29,6 +29,7 @@ Decisions are recorded as [Architecture Decision Records](../adr/index.md) (MADR
 | [ADR-0020](../adr/0020-server-side-assignment-privacy.md) | Server-side assignment storage & privacy (plaintext + authz) |
 | [ADR-0021](../adr/0021-web-auth-token-model.md) | Web auth token model (bearer in WASM) |
 | [ADR-0022](../adr/0022-account-deletion-and-data-export.md) | Account deletion & data export (immediate delete; export mirrors in-app visibility) |
+| [ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md) | Local dev infrastructure in the AppHost (containers behind provider-agnostic seams) |
 
 ## Amended / partly superseded
 

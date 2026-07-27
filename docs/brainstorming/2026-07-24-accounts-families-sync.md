@@ -396,8 +396,14 @@ Glossary first — no code may use these terms before they exist (`CLAUDE.md` ru
 - [x] **Amend [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)** per D1 —
       the “zero assignments server-side” target now scopes to account-free mode; account mode gets an
       authorization target with its own acceptance criteria.
-- [ ] Requirements: FRs per use case; new NFRs for data protection & residency,
-      account-enumeration resistance, and sync convergence → [requirements](../requirements/index.md).
+- [x] Requirements (**M1 — Identity**) written and registered (2026-07-27):
+      [FR-007..FR-015](../requirements/index.md) per use case, plus
+      [NFR-004](../requirements/non-functional/NFR-004-data-protection-and-retention.md) data
+      protection & retention (residency target still open, pending the hosting ADR) and
+      [NFR-005](../requirements/non-functional/NFR-005-account-enumeration-resistance.md)
+      account-enumeration resistance, which generalises the ADR-0018 invitation rule to every
+      address-accepting surface. Glossary gained [Passkey](../glossary/passkey.md).
+- [ ] Requirements (**M2/M3**): FRs per circle & sync use case; **sync convergence** NFR → M3.
 - [x] ADRs written and **Accepted** (2026-07-27):
       [ADR-0016](../adr/0016-sync-and-conflict-resolution.md) sync & conflict resolution (incl. the
       client-storage sub-decision) · [ADR-0017](../adr/0017-anonymous-to-account-claim.md)

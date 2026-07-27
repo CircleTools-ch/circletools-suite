@@ -103,7 +103,7 @@ The user chooses **Add a passkey** in profile → security.
 
 ## Traceability
 
-- Requirements: to be derived; constrained by
+- Requirement: [FR-010](../../requirements/functional/FR-010-manage-passkeys.md); constrained by
   [NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)
 - ADRs: [ADR-0009](../../adr/0009-authentication-and-passkeys.md),
   [ADR-0021](../../adr/0021-web-auth-token-model.md)

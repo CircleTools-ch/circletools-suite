@@ -4,10 +4,27 @@ var builder = DistributedApplication.CreateBuilder(args);
 var postgres = builder.AddPostgres("postgres");
 var maindb = postgres.AddDatabase("maindb");
 
+// Mailpit — the development mail sink (ADR-0023). It stands in for the not-yet-chosen
+// transactional email provider so identity flows that send mail (FR-007 verification,
+// FR-009 password reset, FR-013 email change) can be built and tested with no external
+// account. The app sends through IEmailSender over SMTP and references no provider SDK;
+// choosing a provider later is an adapter plus configuration, not a code change.
+//   SMTP  → 1025 (consumed by the API below)
+//   Inbox → 8025 (browsable from the Aspire dashboard)
+var mailpit = builder.AddContainer("mailpit", "axllent/mailpit")
+    .WithEndpoint(port: 1025, targetPort: 1025, name: "smtp")
+    .WithHttpEndpoint(port: 8025, targetPort: 8025, name: "inbox");
+
+var smtp = mailpit.GetEndpoint("smtp");
+
 // Main API — receives ConnectionStrings__maindb via WithReference(maindb).
 var api = builder.AddProject<Projects.AppSuite_Main_Service>("main-api")
     .WithReference(maindb)
-    .WaitFor(maindb);
+    .WithEnvironment("Mail__Host", smtp.Property(EndpointProperty.Host))
+    .WithEnvironment("Mail__Port", smtp.Property(EndpointProperty.Port))
+    .WithEnvironment("Mail__FromAddress", "no-reply@appsuite.test")
+    .WaitFor(maindb)
+    .WaitFor(mailpit);
 
 // Standalone Blazor WebAssembly PWA — pure API client.
 var web = builder.AddProject<Projects.AppSuite_Main_WebApp>("main-web")

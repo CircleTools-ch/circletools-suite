@@ -21,5 +21,25 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [NFR-001](non-functional/NFR-001-local-first-offline.md) | Local-first and fully offline (no account or backend) | Non-functional | Must | Draft |
 | [NFR-002](non-functional/NFR-002-assignment-privacy.md) | Assignment privacy — the link is the secret | Non-functional | Must | Draft |
 | [NFR-003](non-functional/NFR-003-multilingual-de-en-fr.md) | Multilingual DE/EN/FR with de-CH default | Non-functional | Must | Draft |
+| [FR-007](functional/FR-007-create-suite-account.md) | Create a suite account with email verification | Functional | Must | Draft |
+| [FR-008](functional/FR-008-sign-in-with-password.md) | Sign in with email and password | Functional | Must | Draft |
+| [FR-009](functional/FR-009-reset-password.md) | Reset a forgotten password | Functional | Must | Draft |
+| [FR-010](functional/FR-010-manage-passkeys.md) | Register and remove passkeys | Functional | Should | Draft |
+| [FR-011](functional/FR-011-sign-in-with-passkey.md) | Sign in with a passkey | Functional | Should | Draft |
+| [FR-012](functional/FR-012-manage-profile.md) | Manage profile and preferred language | Functional | Must | Draft |
+| [FR-013](functional/FR-013-change-email-address.md) | Change the account email address | Functional | Should | Draft |
+| [FR-014](functional/FR-014-export-personal-data.md) | Export personal data | Functional | Must | Draft |
+| [FR-015](functional/FR-015-delete-account.md) | Delete the account | Functional | Must | Draft |
+| [NFR-004](non-functional/NFR-004-data-protection-and-retention.md) | Data protection & retention | Non-functional | Must | Draft |
+| [NFR-005](non-functional/NFR-005-account-enumeration-resistance.md) | Account-enumeration resistance | Non-functional | Must | Draft |
 
 _Add a row per requirement._
+
+## Slices
+
+- **FR-001..006, NFR-001..003** — the Secret-Santa MVP (shipped,
+  [FEAT-001](../features/FEAT-001-secret-santa-mvp.md)).
+- **FR-007..015, NFR-004..005** — **M1 — Identity in Main**, derived from
+  [UC-MAIN-001..007](../use-cases/index.md). Input for the M1 feature spec.
+- **NFR-005** is cross-cutting: it also governs M2 invitations, where the rule originated
+  ([ADR-0018](../adr/0018-circle-and-sharing-model.md)).

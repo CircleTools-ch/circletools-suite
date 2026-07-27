@@ -86,12 +86,18 @@ Idea stubs and work items, newest-first. Promote items into
   subdomains; display names are not unique; avatar deferred to M2. Deletion & export became
   [ADR-0022](../adr/0022-account-deletion-and-data-export.md) — immediate hard delete, export mirrors
   in-app visibility.
-- **Next:** derive the **M1 FRs** from UC-MAIN-001..007 → the **M1 — Identity** feature spec.
-  Two items must be handled in that step: **NFR-004 (data protection & retention)** does not exist and
-  is the first task, and **email change** needs its own FR. One thing stays genuinely blocked: the
-  **literal suite domain** for the passkey RP-ID and the CSP, which waits on the deployment ADRs and
-  on [naming](../process/naming.md) — the *strategy* for both is now decided, only the string is
-  missing.
+- **Requirements written (2026-07-27):** [FR-007..FR-015](../requirements/index.md) plus
+  [NFR-004](../requirements/non-functional/NFR-004-data-protection-and-retention.md) (data protection
+  & retention) and [NFR-005](../requirements/non-functional/NFR-005-account-enumeration-resistance.md)
+  (account-enumeration resistance). Glossary gained [Passkey](../glossary/passkey.md).
+- **Next:** the **M1 — Identity feature spec** (`FEAT-002`) + test plan (`TP-002`), then build.
+- **Blocked on deployment ADRs — M1 cannot ship without them:**
+  - **Transactional email provider.** FR-007 (verification), FR-009 (reset) and FR-013 (email change)
+    all depend on delivery. The ADR register currently justifies deferring this behind M2 invitations;
+    it is in fact an **M1** dependency.
+  - **Hosting / suite domain.** Needed for the passkey RP-ID (FR-010, FR-011), the CSP directive set
+    (ADR-0021), and the NFR-004 residency target. The *strategy* for each is decided — only the
+    literal domain is missing. See [naming](../process/naming.md).
 
 ## Later / parked
 - Additional apps (to be brainstormed).

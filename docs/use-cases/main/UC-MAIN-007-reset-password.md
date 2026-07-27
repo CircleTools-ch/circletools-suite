@@ -95,9 +95,10 @@ The user selects **Forgot password** on the sign-in screen.
 
 ## Traceability
 
-- Requirements: to be derived; constrained by
+- Requirement: [FR-009](../../requirements/functional/FR-009-reset-password.md); constrained by
   [NFR-001](../../requirements/non-functional/NFR-001-local-first-offline.md),
-  [NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)
+  [NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md),
+  [NFR-005](../../requirements/non-functional/NFR-005-account-enumeration-resistance.md)
 - ADRs: [ADR-0009](../../adr/0009-authentication-and-passkeys.md),
   [ADR-0018](../../adr/0018-circle-and-sharing-model.md) (enumeration-resistance rule),
   [ADR-0021](../../adr/0021-web-auth-token-model.md) (session revocation)

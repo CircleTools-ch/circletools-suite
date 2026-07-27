@@ -127,10 +127,11 @@ The user opens **Profile → Data & account** and chooses **Export my data** or 
 
 ## Traceability
 
-- Requirements: to be derived; constrained by
+- Requirements: [FR-014](../../requirements/functional/FR-014-export-personal-data.md) (export),
+  [FR-015](../../requirements/functional/FR-015-delete-account.md) (deletion); constrained by
   [NFR-001](../../requirements/non-functional/NFR-001-local-first-offline.md),
-  [NFR-002](../../requirements/non-functional/NFR-002-assignment-privacy.md); a new data-protection
-  NFR is proposed above
+  [NFR-002](../../requirements/non-functional/NFR-002-assignment-privacy.md),
+  [NFR-004](../../requirements/non-functional/NFR-004-data-protection-and-retention.md)
 - ADRs: **[ADR-0022](../../adr/0022-account-deletion-and-data-export.md)** (the decision for this use
   case), [ADR-0017](../../adr/0017-anonymous-to-account-claim.md),
   [ADR-0018](../../adr/0018-circle-and-sharing-model.md),

@@ -14,6 +14,24 @@
       href: functional/FR-005-generate-reveal-links.md
     - name: FR-006 Reveal page decode
       href: functional/FR-006-reveal-page-decode.md
+    - name: FR-007 Create a suite account
+      href: functional/FR-007-create-suite-account.md
+    - name: FR-008 Sign in with password
+      href: functional/FR-008-sign-in-with-password.md
+    - name: FR-009 Reset a forgotten password
+      href: functional/FR-009-reset-password.md
+    - name: FR-010 Register and remove passkeys
+      href: functional/FR-010-manage-passkeys.md
+    - name: FR-011 Sign in with a passkey
+      href: functional/FR-011-sign-in-with-passkey.md
+    - name: FR-012 Manage profile and language
+      href: functional/FR-012-manage-profile.md
+    - name: FR-013 Change the email address
+      href: functional/FR-013-change-email-address.md
+    - name: FR-014 Export personal data
+      href: functional/FR-014-export-personal-data.md
+    - name: FR-015 Delete the account
+      href: functional/FR-015-delete-account.md
 - name: Non-functional
   items:
     - name: NFR-001 Local-first & offline
@@ -22,6 +40,10 @@
       href: non-functional/NFR-002-assignment-privacy.md
     - name: NFR-003 Multilingual DE/EN/FR
       href: non-functional/NFR-003-multilingual-de-en-fr.md
+    - name: NFR-004 Data protection & retention
+      href: non-functional/NFR-004-data-protection-and-retention.md
+    - name: NFR-005 Account-enumeration resistance
+      href: non-functional/NFR-005-account-enumeration-resistance.md
 - name: Templates
   items:
     - name: Requirement template

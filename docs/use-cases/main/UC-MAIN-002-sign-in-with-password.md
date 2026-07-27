@@ -110,10 +110,11 @@ The user chooses **Sign in** in the Main shell, or the app finds no valid sessio
 
 ## Traceability
 
-- Requirements: to be derived; constrained by
+- Requirement: [FR-008](../../requirements/functional/FR-008-sign-in-with-password.md); constrained by
   [NFR-001](../../requirements/non-functional/NFR-001-local-first-offline.md),
   [NFR-002](../../requirements/non-functional/NFR-002-assignment-privacy.md),
-  [NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)
+  [NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md),
+  [NFR-005](../../requirements/non-functional/NFR-005-account-enumeration-resistance.md)
 - ADRs: [ADR-0009](../../adr/0009-authentication-and-passkeys.md),
   [ADR-0016](../../adr/0016-sync-and-conflict-resolution.md),
   [ADR-0017](../../adr/0017-anonymous-to-account-claim.md),
