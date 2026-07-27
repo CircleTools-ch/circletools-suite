@@ -56,6 +56,8 @@
   <ItemGroup>
     <PackageVersion Include="Microsoft.Extensions.Identity.Stores" Version="10.0.10" />
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.10" />
+    <!-- Access-token issuance (ADR-0021). The API host adds JwtBearer for validation. -->
+    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.1.2" />
   </ItemGroup>
 
   <!-- Persistence — EF Core for Postgres (server). ADR-0007, ADR-0008. -->

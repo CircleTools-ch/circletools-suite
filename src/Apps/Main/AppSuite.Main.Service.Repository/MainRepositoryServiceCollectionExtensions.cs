@@ -3,7 +3,9 @@ using AppSuite.Identity.Tokens;
 using AppSuite.Main.Service.Core.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace AppSuite.Main.Service.Repository;
 
@@ -22,6 +24,7 @@ public static class MainRepositoryServiceCollectionExtensions
         services.AddDbContext<MainDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<IHeartbeatRepository, HeartbeatRepository>();
         services.AddScoped<IRefreshTokenChainStore, RefreshTokenChainStore>();
+        services.AddScoped<ISessionUserLookup, SessionUserLookup>();
 
         return services;
     }
@@ -71,5 +74,29 @@ public static class MainRepositoryServiceCollectionExtensions
                 options.SignIn.RequireConfirmedEmail = false;
             })
             .AddEntityFrameworkStores<MainDbContext>();
+    }
+
+    /// <summary>
+    /// Registers session issuance and refresh (ADR-0021), binding lifetimes and signing
+    /// parameters from configuration.
+    /// </summary>
+    /// <param name="services">The service collection to add to.</param>
+    /// <param name="configuration">Configuration holding the <c>Auth</c> section.</param>
+    /// <returns>The same service collection, for chaining.</returns>
+    public static IServiceCollection AddAppSuiteSessions(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(configuration);
+
+        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
+        services.Configure<TokenLifetimeOptions>(configuration.GetSection(TokenLifetimeOptions.SectionName));
+
+        services.TryAddSingleton(TimeProvider.System);
+        services.AddScoped<AccessTokenIssuer>();
+        services.AddScoped<SessionService>();
+
+        return services;
     }
 }
