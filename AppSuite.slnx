@@ -49,6 +49,7 @@
   <Folder Name="/tests/Apps/" />
   <Folder Name="/tests/Apps/Main/">
     <Project Path="tests/Apps/Main/AppSuite.Main.Service.Test/AppSuite.Main.Service.Test.csproj" />
+    <Project Path="tests/Apps/Main/AppSuite.Main.Service.Repository.Test/AppSuite.Main.Service.Repository.Test.csproj" />
   </Folder>
   <Folder Name="/tests/Apps/SecretSanta/">
     <Project Path="tests/Apps/SecretSanta/AppSuite.SecretSanta.Core.Test/AppSuite.SecretSanta.Core.Test.csproj" />
