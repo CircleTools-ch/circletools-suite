@@ -106,9 +106,14 @@ public sealed class MainDbContext(DbContextOptions<MainDbContext> options)
             entity.Property(m => m.Type).IsRequired().HasMaxLength(100);
             entity.Property(m => m.Payload).IsRequired();
             entity.Property(m => m.EnqueuedAt).IsRequired();
+            entity.Property(m => m.ProcessedAt);
+            entity.Property(m => m.Attempts).IsRequired();
+            entity.Property(m => m.LastError).HasMaxLength(500);
 
-            // The dispatcher drains oldest-first.
-            entity.HasIndex(m => m.EnqueuedAt);
+            entity.Ignore(m => m.IsPending);
+
+            // The dispatcher drains pending messages oldest-first.
+            entity.HasIndex(m => new { m.ProcessedAt, m.EnqueuedAt });
         });
 
         builder.Entity<RefreshToken>(entity =>

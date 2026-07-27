@@ -46,6 +46,10 @@ public sealed class AccountApiFactory : WebApplicationFactory<Program>, IAsyncLi
         // app reads configuration while Program's top-level statements run, which is too early for
         // callbacks added here. Host settings are in place before that.
         builder.UseSetting("ConnectionStrings:maindb", _database.GetConnectionString());
+
+        // These tests share one source address and would otherwise trip the NFR-005 rate limit.
+        // The limiter has its own dedicated coverage in RateLimitingTests.
+        builder.UseSetting("RateLimiting:SensitivePermitLimit", "100000");
         builder.UseSetting("Auth:Jwt:Issuer", "appsuite");
         builder.UseSetting("Auth:Jwt:Audience", "appsuite-api");
         builder.UseSetting("Auth:Jwt:SigningKey", "integration-test-signing-key-long-enough-for-hmac");
