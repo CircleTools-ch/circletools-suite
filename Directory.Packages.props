@@ -35,6 +35,11 @@
     <PackageVersion Include="TngTech.ArchUnitNET.xUnit" Version="0.13.3" />
   </ItemGroup>
 
+  <!-- Integration tests against a real Postgres (TP-002). Requires a container runtime. -->
+  <ItemGroup>
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.6.0" />
+  </ItemGroup>
+
   <!-- Application layer building blocks (hand-rolled CQRS, ADR-0006). -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
