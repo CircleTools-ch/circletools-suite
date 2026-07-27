@@ -90,7 +90,14 @@ Idea stubs and work items, newest-first. Promote items into
   [NFR-004](../requirements/non-functional/NFR-004-data-protection-and-retention.md) (data protection
   & retention) and [NFR-005](../requirements/non-functional/NFR-005-account-enumeration-resistance.md)
   (account-enumeration resistance). Glossary gained [Passkey](../glossary/passkey.md).
-- **Next:** the **M1 — Identity feature spec** (`FEAT-002`) + test plan (`TP-002`), then build.
+- **Feature spec written (2026-07-27):** [FEAT-002](../features/FEAT-002-m1-identity.md). It creates
+  two building blocks arc42 ch.5 already planned but that do not exist yet — `AppSuite.Identity`
+  (suite-wide, per ADR-0009) and `AppSuite.Infrastructure` (outbox + SMTP sender). arc42 ch.5 §5.3 now
+  fixes the four bounded contexts.
+- **Next:** the **TP-002** test plan, then build M1.
+- **Three acceptance criteria cannot close in M1** and are recorded as deferred in FEAT-002: MAUI
+  cross-client passkeys (needs the real domain), the *offline* language change (needs M3 sync), and
+  the sole-circle-owner deletion guard (needs M2 circles).
 - **Blocked on deployment ADRs — M1 cannot ship without them:**
   - **Transactional email provider.** FR-007 (verification), FR-009 (reset) and FR-013 (email change)
     all depend on delivery. The ADR register currently justifies deferring this behind M2 invitations;

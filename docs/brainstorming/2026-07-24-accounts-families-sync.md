@@ -416,9 +416,10 @@ Glossary first — no code may use these terms before they exist (`CLAUDE.md` ru
 - [x] arc42 **ch. 8** (§8.2 persistence, §8.3 sync, §8.4 identity/tokens, §8.8 privacy &
       enumeration resistance, new §8.10 circles & sharing) and **ch. 9** (register + an
       *Amended / partly superseded* table) updated.
-- [ ] arc42 **ch. 5**: add the **Identity** and **Circles** bounded contexts to the
-      [building-block view](../arc42/05-building-block-view.md), confirming the provisional context
-      labels used in the glossary.
+- [x] arc42 **ch. 5** §5.3 now maps the four bounded contexts (**Secret-Santa, Identity, Circles,
+      Platform**) to their projects and milestones, **fixing** the provisional glossary labels, and
+      records why `AppSuite.Identity` is a shared building block rather than part of `Main`
+      (2026-07-27).
 - [ ] Deployment-phase ADRs now genuinely due: cloud provider & hosting (Swiss data residency),
       transactional email provider, CI/CD → [deployment](../deployment/index.md).
 - [x] Update [backlog.md](../roadmap/backlog.md): `IDEA-000` promoted to *in progress*, and the

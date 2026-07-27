@@ -90,7 +90,29 @@ More follow the same template.
 > [ADR-0016](../adr/0016-sync-and-conflict-resolution.md). WASM SQLite/OPFS and IndexedDB remain
 > parked behind a concrete trigger (data volume or partial-query needs).
 
-## 5.3 Dependency rule
+## 5.3 Bounded contexts
+
+The [glossary](../glossary/index.md) tags each term with a context. Those labels were provisional
+until this chapter confirmed them; they are now **fixed**:
+
+| Context | Owns | Lives in | Status |
+|---------|------|----------|--------|
+| **Secret-Santa** | [Group](../glossary/group.md), [Member](../glossary/member.md), [Exclusion](../glossary/exclusion.md), [Draw](../glossary/draw.md), [Assignment](../glossary/assignment.md), [Wishlist](../glossary/wishlist.md), [Budget](../glossary/budget.md), [Event details](../glossary/event-details.md), [Reveal link](../glossary/reveal-link.md) | `AppSuite.SecretSanta.*` | shipped (FEAT-001) |
+| **Identity** | [User](../glossary/user.md), [Passkey](../glossary/passkey.md) — credentials, profile, account lifecycle | `AppSuite.Identity` + the Main service host | **M1** ([FEAT-002](../features/FEAT-002-m1-identity.md)) |
+| **Circles** | [Circle](../glossary/circle.md), [Circle membership](../glossary/circle-membership.md), [Invitation](../glossary/invitation.md), [Managed member](../glossary/managed-member.md) | `AppSuite.Circles.*` (planned) | M2 |
+| **Platform** | [Sync](../glossary/sync.md) — local↔server reconciliation | `AppSuite.Infrastructure` + per-app `LocalStore` | M3 |
+
+**The Secret-Santa context does not depend on Identity.** A [Member](../glossary/member.md) carries an
+**optional `UserId` — an identifier, not a reference to a user**
+([ADR-0019](../adr/0019-member-user-linking.md)), so the two contexts stay independently deployable and
+Secret-Santa keeps working with no account at all.
+
+`AppSuite.Identity` sits in `BuildingBlocks/` rather than under `Main` because
+[ADR-0009](../adr/0009-authentication-and-passkeys.md) makes one account serve **all** apps: any future
+app-type's API host authenticates the same bearer tokens
+([ADR-0021](../adr/0021-web-auth-token-model.md)).
+
+## 5.4 Dependency rule
 
 Dependencies point **inward**; the domain (`Service.Core` / `SharedKernel`) has **no** dependency
 on EF, ASP.NET, HTTP, or MAUI. Enforced by an **architecture test** (ArchUnitNET). Full reference
