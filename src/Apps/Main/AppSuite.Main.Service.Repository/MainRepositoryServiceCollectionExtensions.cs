@@ -1,4 +1,5 @@
 using AppSuite.Identity;
+using AppSuite.Identity.Tokens;
 using AppSuite.Main.Service.Core.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,7 @@ public static class MainRepositoryServiceCollectionExtensions
 
         services.AddDbContext<MainDbContext>(options => options.UseNpgsql(connectionString));
         services.AddScoped<IHeartbeatRepository, HeartbeatRepository>();
+        services.AddScoped<IRefreshTokenChainStore, RefreshTokenChainStore>();
 
         return services;
     }
