@@ -31,6 +31,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0020](0020-server-side-assignment-privacy.md) | Server-side assignment storage & privacy (plaintext + authz) | Accepted | 2026-07-27 |
 | [0021](0021-web-auth-token-model.md) | Web auth token model (bearer in WASM) | Accepted | 2026-07-27 |
 | [0022](0022-account-deletion-and-data-export.md) | Account deletion & data export (immediate delete, export mirrors visibility) | Accepted | 2026-07-27 |
+| [0023](0023-local-dev-infrastructure-in-apphost.md) | Local dev infrastructure in the AppHost (containers behind provider-agnostic seams) | Accepted | 2026-07-27 |
 
 ## Open decisions backlog
 
@@ -57,10 +58,19 @@ What remains open genuinely depends on the deployment phase or on evidence we do
   retention) does not exist yet** — first task of the M1 requirements step.
 
 ### Depends on deployment (genuinely open)
+
+> [ADR-0023](0023-local-dev-infrastructure-in-apphost.md) lets **implementation** proceed without
+> these, via containerised dev infrastructure behind provider-agnostic seams. It buys time; it does
+> **not** close them, and M1 cannot ship until they are decided.
+
 - **Cloud provider & hosting target**, including **Swiss data residency** — now due, because v2 stores
-  personal data and assignments server-side.
-- **Transactional email provider** — invitations ([ADR-0018](0018-circle-and-sharing-model.md)) make
-  email delivery a hard onboarding dependency.
+  personal data and assignments server-side. Also gates the passkey RP-ID
+  ([FR-010](../requirements/functional/FR-010-manage-passkeys.md)) and the CSP directive set.
+- **Transactional email provider** — required by **M1**, not only M2: verification
+  ([FR-007](../requirements/functional/FR-007-create-suite-account.md)), password reset
+  ([FR-009](../requirements/functional/FR-009-reset-password.md)) and email change
+  ([FR-013](../requirements/functional/FR-013-change-email-address.md)) all depend on delivery.
+  Invitations ([ADR-0018](0018-circle-and-sharing-model.md)) then add M2's onboarding dependency.
 - **CI/CD pipeline.**
 - **AppSuite packaging & app composition** (single shell hosting apps vs per-app installs).
 

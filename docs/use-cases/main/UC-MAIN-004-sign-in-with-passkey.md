@@ -94,7 +94,7 @@ directly in the sign-in field (conditional UI / autofill).
 
 ## Traceability
 
-- Requirements: to be derived; constrained by
+- Requirement: [FR-011](../../requirements/functional/FR-011-sign-in-with-passkey.md); constrained by
   [NFR-001](../../requirements/non-functional/NFR-001-local-first-offline.md),
   [NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)
 - ADRs: [ADR-0009](../../adr/0009-authentication-and-passkeys.md),

@@ -24,6 +24,7 @@ only — they are **not** code names.
 | [Invitation](invitation.md) | Circles | A pending offer to join a circle, sent to an email address. |
 | [Managed member](managed-member.md) | Circles | A person in a circle with a profile but no account, maintained by an admin. |
 | [Member](member.md) | Secret-Santa | A person participating in a group; optionally linked to a user. |
+| [Passkey](passkey.md) | Identity | A WebAuthn credential letting a user sign in without a password. |
 | [Reveal link](reveal-link.md) | Secret-Santa | A self-contained encoded link that reveals one giver's assignment client-side. |
 | [Sync](sync.md) | Platform | Local-first reconciliation of on-device data with the server for a signed-in user. |
 | [User](user.md) | Identity | A person with an authenticated account, shared across all apps in the suite. |

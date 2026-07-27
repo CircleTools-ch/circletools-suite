@@ -118,9 +118,11 @@ an address that has no account.
 
 ## Traceability
 
-- Requirements: to be derived (this use case is the input for the M1 FRs); constrained by
+- Requirement: [FR-007](../../requirements/functional/FR-007-create-suite-account.md); constrained by
   [NFR-001](../../requirements/non-functional/NFR-001-local-first-offline.md),
-  [NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)
+  [NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md),
+  [NFR-004](../../requirements/non-functional/NFR-004-data-protection-and-retention.md),
+  [NFR-005](../../requirements/non-functional/NFR-005-account-enumeration-resistance.md)
 - ADRs: [ADR-0009](../../adr/0009-authentication-and-passkeys.md),
   [ADR-0017](../../adr/0017-anonymous-to-account-claim.md),
   [ADR-0018](../../adr/0018-circle-and-sharing-model.md),

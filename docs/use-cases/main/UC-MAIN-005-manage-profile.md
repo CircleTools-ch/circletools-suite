@@ -99,8 +99,10 @@ _None outstanding — remaining M1 detail lands in the feature spec._
 
 ## Traceability
 
-- Requirements: to be derived; constrained by
-  [NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)
+- Requirements: [FR-012](../../requirements/functional/FR-012-manage-profile.md) (profile & language),
+  [FR-013](../../requirements/functional/FR-013-change-email-address.md) (email change, extension 3b);
+  constrained by [NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md),
+  [NFR-005](../../requirements/non-functional/NFR-005-account-enumeration-resistance.md)
 - ADRs: [ADR-0009](../../adr/0009-authentication-and-passkeys.md),
   [ADR-0016](../../adr/0016-sync-and-conflict-resolution.md),
   [ADR-0018](../../adr/0018-circle-and-sharing-model.md)

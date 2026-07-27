@@ -22,6 +22,8 @@
   href: managed-member.md
 - name: Member
   href: member.md
+- name: Passkey
+  href: passkey.md
 - name: Reveal link
   href: reveal-link.md
 - name: Sync
