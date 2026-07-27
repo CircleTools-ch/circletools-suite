@@ -50,12 +50,15 @@
   <!-- Identity — ASP.NET Core Identity model & stores. ADR-0009, ADR-0021, FEAT-002. -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.Extensions.Identity.Stores" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.10" />
   </ItemGroup>
 
   <!-- Persistence — EF Core for Postgres (server). ADR-0007, ADR-0008. -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0" />
+    <!-- Kept on the same 10.0.10 servicing band as ASP.NET Core Identity, which references
+         EF Core 10.0.10 — a lower pin here fails the build with CS1705. -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
   </ItemGroup>
 

@@ -163,4 +163,9 @@ generated_code = true
 dotnet_analyzer_diagnostic.severity = none
 
 [**/Migrations/*.cs]
+# EF Core scaffolds these; they are generated code and must not be held to the
+# hand-written style/quality rules (a scaffolded array argument tripped CA1861 under
+# TreatWarningsAsErrors). `generated_code` is what actually makes analyzers skip the
+# file — a bulk severity alone does not.
+generated_code = true
 dotnet_analyzer_diagnostic.severity = none
