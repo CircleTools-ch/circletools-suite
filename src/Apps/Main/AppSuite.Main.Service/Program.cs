@@ -35,6 +35,7 @@ builder.Services.AddMainRepository(
 builder.Services.AddAppSuiteIdentityCore().AddDefaultTokenProviders();
 builder.Services.AddAppSuiteSessions(builder.Configuration);
 builder.Services.AddAppSuiteMail(builder.Configuration);
+builder.Services.AddAppSuiteRetention(builder.Configuration);
 
 var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 

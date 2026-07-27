@@ -26,6 +26,50 @@ public sealed record ForgotPasswordRequest(string Email);
 /// <param name="NewPassword">The replacement password; same policy as sign-up.</param>
 public sealed record ResetPasswordRequest(string UserId, string Token, string NewPassword);
 
+/// <summary>Profile update (FR-012).</summary>
+/// <param name="DisplayName">The name others sharing a circle see. Required, not unique.</param>
+/// <param name="Language">Preferred language (<c>de-CH</c>, <c>en</c>, <c>fr-CH</c>).</param>
+public sealed record UpdateProfileRequest(string DisplayName, string Language);
+
+/// <summary>Request to move the account to a new address (FR-013).</summary>
+/// <param name="NewEmail">The address to move to, once verified.</param>
+public sealed record ChangeEmailRequest(string NewEmail);
+
+/// <summary>Completion of an email change (FR-013).</summary>
+/// <param name="UserId">The account changing address.</param>
+/// <param name="NewEmail">The address being confirmed.</param>
+/// <param name="Token">The token from the link sent to the new address.</param>
+public sealed record ConfirmEmailChangeRequest(string UserId, string NewEmail, string Token);
+
+/// <summary>Account-deletion request (FR-015).</summary>
+/// <param name="Password">
+/// The current password. Deletion is immediate and irreversible, so it re-authenticates rather
+/// than trusting a session that may have been left open.
+/// </param>
+public sealed record DeleteAccountRequest(string Password);
+
+/// <summary>
+/// The exported copy of a user's data (FR-014). Mirrors what the user can already see in the app.
+/// </summary>
+/// <param name="ExportedAt">When the archive was produced.</param>
+/// <param name="Profile">The account's own profile.</param>
+/// <param name="Passkeys">Registered passkeys, by label and creation date — never key material.</param>
+/// <param name="Sessions">Active session count; sessions themselves are not personal content.</param>
+/// <param name="Notes">
+/// What is deliberately absent, so an empty-looking archive is not mistaken for data loss.
+/// </param>
+public sealed record DataExport(
+    DateTimeOffset ExportedAt,
+    ProfileResponse Profile,
+    IReadOnlyList<ExportedPasskey> Passkeys,
+    int Sessions,
+    IReadOnlyList<string> Notes);
+
+/// <summary>A passkey as it appears in an export (FR-014).</summary>
+/// <param name="CredentialId">The credential's public identifier.</param>
+/// <param name="CreatedAt">When it was registered, if known.</param>
+public sealed record ExportedPasskey(string CredentialId, DateTimeOffset? CreatedAt);
+
 /// <summary>Email-verification request (FR-007).</summary>
 /// <param name="UserId">The account being verified.</param>
 /// <param name="Token">The token from the verification link.</param>

@@ -50,6 +50,12 @@ public sealed class RefreshTokenChainStore(MainDbContext context) : IRefreshToke
     }
 
     /// <inheritdoc />
+    public async Task<int> CountActiveForUserAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        await context.RefreshTokenChains
+            .CountAsync(c => c.UserId == userId && c.RevokedAt == null, cancellationToken)
+            .ConfigureAwait(false);
+
+    /// <inheritdoc />
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 }

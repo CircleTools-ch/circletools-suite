@@ -38,6 +38,9 @@ internal sealed class FakeChainStore : IRefreshTokenChainStore
         return Task.FromResult(live.Count);
     }
 
+    public Task<int> CountActiveForUserAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_chains.Count(c => c.UserId == userId && !c.IsRevoked));
+
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         SaveCount++;

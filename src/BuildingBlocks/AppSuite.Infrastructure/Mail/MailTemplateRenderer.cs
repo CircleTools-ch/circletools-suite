@@ -32,6 +32,12 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
     /// <summary>Outbox type for the password-reset mail (FR-009).</summary>
     public const string PasswordResetType = "mail.password-reset";
 
+    /// <summary>Outbox type for the confirmation sent to a new address (FR-013).</summary>
+    public const string EmailChangeType = "mail.email-change";
+
+    /// <summary>Outbox type for the notice sent to the address being replaced (FR-013).</summary>
+    public const string EmailChangeNoticeType = "mail.email-change-notice";
+
     private static readonly string[] SupportedLanguages = ["de", "fr", "en"];
 
     /// <inheritdoc />
@@ -55,6 +61,8 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
             VerificationType => RenderVerification(root, email, language),
             SignUpAttemptType => RenderSignUpAttempt(email, language),
             PasswordResetType => RenderPasswordReset(root, email, language),
+            EmailChangeType => RenderEmailChange(root, email, language),
+            EmailChangeNoticeType => RenderEmailChangeNotice(email, language),
             _ => null,
         };
     }
@@ -127,6 +135,61 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
                 $"You asked to reset your AppSuite password.\n\n{link}\n\n" +
                 "The link is single-use and expires shortly. Your current password keeps working " +
                 "until you set a new one. If you didn't ask for this, nothing has happened."),
+        };
+
+        return new OutboundMail(email, subject, body);
+    }
+
+    private OutboundMail RenderEmailChange(JsonElement root, string email, string language)
+    {
+        var userId = root.GetProperty("userId").GetString();
+        var token = root.GetProperty("token").GetString();
+        var link = string.Create(
+            CultureInfo.InvariantCulture,
+            $"{options.Value.ClientBaseUrl.TrimEnd('/')}/confirm-email-change?userId={userId}" +
+            $"&newEmail={Uri.EscapeDataString(email)}&token={token}");
+
+        var (subject, body) = language switch
+        {
+            "de" => (
+                "Neue E-Mail-Adresse bestätigen",
+                $"Bestätigen Sie diese Adresse, um sie für Ihr AppSuite-Konto zu verwenden:\n{link}\n\n" +
+                "Bis zur Bestätigung bleibt Ihre bisherige Adresse aktiv."),
+            "fr" => (
+                "Confirmez votre nouvelle adresse e-mail",
+                $"Confirmez cette adresse pour l'utiliser avec votre compte AppSuite :\n{link}\n\n" +
+                "Votre adresse actuelle reste active jusqu'à la confirmation."),
+            _ => (
+                "Confirm your new email address",
+                $"Confirm this address to use it for your AppSuite account:\n{link}\n\n" +
+                "Your current address stays active until you confirm."),
+        };
+
+        return new OutboundMail(email, subject, body);
+    }
+
+    private static OutboundMail RenderEmailChangeNotice(string email, string language)
+    {
+        // Goes to the address being replaced, so the real owner hears about a change while they
+        // still control the account (FR-013).
+        var (subject, body) = language switch
+        {
+            "de" => (
+                "Änderung Ihrer E-Mail-Adresse angefordert",
+                "Für Ihr AppSuite-Konto wurde eine neue E-Mail-Adresse angefordert.\n\n" +
+                "Ihre bisherige Adresse bleibt aktiv, bis die neue bestätigt wird. Falls Sie das " +
+                "nicht waren, ändern Sie bitte umgehend Ihr Passwort."),
+            "fr" => (
+                "Changement d'adresse e-mail demandé",
+                "Une nouvelle adresse e-mail a été demandée pour votre compte AppSuite.\n\n" +
+                "Votre adresse actuelle reste active jusqu'à la confirmation de la nouvelle. Si " +
+                "vous n'êtes pas à l'origine de cette demande, changez votre mot de passe " +
+                "immédiatement."),
+            _ => (
+                "Email address change requested",
+                "A new email address was requested for your AppSuite account.\n\n" +
+                "Your current address stays active until the new one is confirmed. If this " +
+                "wasn't you, change your password immediately."),
         };
 
         return new OutboundMail(email, subject, body);
