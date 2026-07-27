@@ -32,7 +32,24 @@ builder.Services.AddMainRepository(
 // Identity, sessions and bearer-token validation — ADR-0009, ADR-0021.
 // AddDefaultTokenProviders must be applied here: it lives in the ASP.NET Core framework
 // assembly, and the email-confirmation and password-reset tokens depend on it.
-builder.Services.AddAppSuiteIdentityCore().AddDefaultTokenProviders();
+// SignInManager drives the WebAuthn ceremonies (FR-010/011) and reads the current request, so it
+// needs IHttpContextAccessor — nothing else in this host registers it, and without it every
+// passkey endpoint fails at runtime with "HttpContext must not be null".
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddAppSuiteIdentityCore().AddDefaultTokenProviders().AddSignInManager();
+
+// Passkey relying-party settings (FR-010). ServerDomain is the RP ID: the *registrable* suite
+// domain, never an app subdomain, so one passkey works across the shell and every app. Passkeys
+// do not migrate between RP IDs, so this value must be settled before real users register any.
+builder.Services.Configure<IdentityPasskeyOptions>(options =>
+{
+    var serverDomain = builder.Configuration["Auth:Passkey:ServerDomain"];
+
+    if (!string.IsNullOrWhiteSpace(serverDomain))
+    {
+        options.ServerDomain = serverDomain;
+    }
+});
 builder.Services.AddAppSuiteSessions(builder.Configuration);
 builder.Services.AddAppSuiteMail(builder.Configuration);
 builder.Services.AddAppSuiteRetention(builder.Configuration);
@@ -57,6 +74,16 @@ builder.Services
             ClockSkew = TimeSpan.FromSeconds(30),
         };
     });
+
+// The WebAuthn ceremony helpers on SignInManager persist their challenge through a *sign-in*
+// authentication handler, and refuse to run without one ("No sign-in authentication handlers are
+// registered"). Registering this cookie scheme is what makes FR-010/011 work at all.
+//
+// This is narrower than it looks and does NOT reopen ADR-0021: the cookie carries ceremony state
+// for the seconds a passkey prompt is open, never a session. Sign-in still yields a bearer token
+// exactly as password sign-in does. Flagged as an ADR-0021 follow-up because it is a deviation
+// from "no cookies" that a reader would otherwise assume was an oversight.
+builder.Services.AddAuthentication().AddCookie(IdentityConstants.TwoFactorUserIdScheme);
 
 builder.Services.AddAuthorization();
 
@@ -146,6 +173,7 @@ var account = app
     .MapToApiVersion(new ApiVersion(1, 0));
 
 account.MapAccountEndpoints();
+account.MapPasskeyEndpoints();
 
 var heartbeats = app
     .MapGroup("/api/v{version:apiVersion}/heartbeats")
