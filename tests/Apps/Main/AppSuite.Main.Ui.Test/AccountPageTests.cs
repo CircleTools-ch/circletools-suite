@@ -20,7 +20,10 @@ public sealed class AccountPageTests
 {
     private const string Account = "api/v1/account";
 
-    private static readonly string[] _tooShort = ["Too short."];
+    // What the API actually sends for a password-policy failure: codes, not prose (ADR-0027).
+    private static readonly string[] _tooShort = ["PasswordTooShort"];
+    private static readonly string[] _breached = ["BreachedPassword"];
+    private static readonly string[] _unknownProse = ["Something the client has no key for."];
 
     [Fact]
     public void SignUp_ShowsTheSameConfirmationWhateverTheAddress()
@@ -40,8 +43,10 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void SignUp_ShowsThePasswordPolicyMessagesTheServerReturned()
+    public void SignUp_SaysWhyThePasswordWasRefused_InTheUsersLanguage()
     {
+        // The API answers with a code; the screen must turn it into a localized sentence rather
+        // than show the code or Identity's English prose (NFR-003, ADR-0027).
         using var ctx = new AccountTestContext();
         ctx.Api.RespondJson(
             HttpMethod.Post,
@@ -58,8 +63,57 @@ public sealed class AccountPageTests
         {
             var alert = cut.Find("[role=alert]");
             Assert.Contains("ErrorValidation", alert.TextContent, StringComparison.Ordinal);
-            Assert.Contains("Too short.", alert.TextContent, StringComparison.Ordinal);
+            Assert.Contains("PasswordErrorTooShort", alert.TextContent, StringComparison.Ordinal);
+            Assert.DoesNotContain("PasswordTooShort<", alert.TextContent, StringComparison.Ordinal);
         });
+    }
+
+    [Fact]
+    public void SignUp_ExplainsABreachedPassword_RatherThanJustRefusingIt()
+    {
+        // FR-007 requires the rule to be explained. A bare "validation failed" would leave someone
+        // retrying a 16-character password they consider strong, with no idea what is wrong.
+        using var ctx = new AccountTestContext();
+        ctx.Api.RespondJson(
+            HttpMethod.Post,
+            $"{Account}/register",
+            new { title = "Validation failed", errors = new { password = _breached } },
+            HttpStatusCode.BadRequest);
+
+        var cut = ctx.RenderPage<Register>();
+        Fill(cut, "#register-email", "anna@example.test");
+        Fill(cut, "#register-password", "passwordpassword");
+        cut.Find("form").Submit();
+
+        cut.WaitForAssertion(() =>
+            Assert.Contains(
+                "PasswordErrorBreached",
+                cut.Find("[role=alert]").TextContent,
+                StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void SignUp_PassesThroughAMessageItHasNoTranslationFor()
+    {
+        // Not every endpoint answers in codes, and a message the client cannot translate is still
+        // better than silence. This is the fallback the mixed contract depends on.
+        using var ctx = new AccountTestContext();
+        ctx.Api.RespondJson(
+            HttpMethod.Post,
+            $"{Account}/register",
+            new { title = "Validation failed", errors = new { request = _unknownProse } },
+            HttpStatusCode.BadRequest);
+
+        var cut = ctx.RenderPage<Register>();
+        Fill(cut, "#register-email", "anna@example.test");
+        Fill(cut, "#register-password", "a-long-enough-passphrase");
+        cut.Find("form").Submit();
+
+        cut.WaitForAssertion(() =>
+            Assert.Contains(
+                "Something the client has no key for.",
+                cut.Find("[role=alert]").TextContent,
+                StringComparison.Ordinal));
     }
 
     [Fact]

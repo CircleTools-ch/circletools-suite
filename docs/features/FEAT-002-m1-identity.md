@@ -5,7 +5,7 @@ status: In progress
 owner: Adrian
 target-milestone: M1 (v2 — accounts)
 bounded-context: Identity
-related: [UC-MAIN-001, UC-MAIN-002, UC-MAIN-003, UC-MAIN-004, UC-MAIN-005, UC-MAIN-006, UC-MAIN-007, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, NFR-003, NFR-004, NFR-005, ADR-0009, ADR-0021, ADR-0022, ADR-0023, ADR-0024, ADR-0025, ADR-0026, TP-002]
+related: [UC-MAIN-001, UC-MAIN-002, UC-MAIN-003, UC-MAIN-004, UC-MAIN-005, UC-MAIN-006, UC-MAIN-007, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, NFR-003, NFR-004, NFR-005, ADR-0009, ADR-0021, ADR-0022, ADR-0023, ADR-0024, ADR-0025, ADR-0026, ADR-0027, TP-002]
 ---
 
 # FEAT-002 — M1 — Identity in the Main shell
@@ -29,7 +29,7 @@ related: [UC-MAIN-001, UC-MAIN-002, UC-MAIN-003, UC-MAIN-004, UC-MAIN-005, UC-MA
 
 | Item | Covered? | Notes |
 |------|----------|-------|
-| [UC-MAIN-001](../use-cases/main/UC-MAIN-001-create-account.md) → [FR-007](../requirements/functional/FR-007-create-suite-account.md) | ✅ | incl. 30-day purge of pending accounts |
+| [UC-MAIN-001](../use-cases/main/UC-MAIN-001-create-account.md) → [FR-007](../requirements/functional/FR-007-create-suite-account.md) | ✅ | incl. 30-day purge of pending accounts and the breached-password check ([ADR-0027](../adr/0027-breached-password-check.md)) |
 | [UC-MAIN-002](../use-cases/main/UC-MAIN-002-sign-in-with-password.md) → [FR-008](../requirements/functional/FR-008-sign-in-with-password.md) | ✅ | 15 min / 30 day, rotation + reuse detection |
 | [UC-MAIN-007](../use-cases/main/UC-MAIN-007-reset-password.md) → [FR-009](../requirements/functional/FR-009-reset-password.md) | ✅ | |
 | [UC-MAIN-003](../use-cases/main/UC-MAIN-003-register-passkey.md) → [FR-010](../requirements/functional/FR-010-manage-passkeys.md) | ⚠️ **partial** | web only; the MAUI cross-client criterion needs the real domain ([ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md)) |
@@ -88,7 +88,7 @@ in `BuildingBlocks/`, not inside `Main`.
 
 | Project | Change |
 |---------|--------|
-| `AppSuite.Identity` | **NEW (planned in ch.5)** — `AppSuiteUser : IdentityUser<Guid>` incl. `DisplayName` / `PreferredLanguage`, ASP.NET Core Identity + `AddPasskeys()` configuration, token issuance and the **refresh-chain rotation & reuse detection**. |
+| `AppSuite.Identity` | **NEW (planned in ch.5)** — `AppSuiteUser : IdentityUser<Guid>` incl. `DisplayName` / `PreferredLanguage`, ASP.NET Core Identity + `AddPasskeys()` configuration, token issuance, the **refresh-chain rotation & reuse detection**, and the **breached-password validator** with its bundled corpus ([ADR-0027](../adr/0027-breached-password-check.md)). |
 | `AppSuite.Infrastructure` | **NEW (planned in ch.5)** — the **outbox** (already its stated role) plus the SMTP `IEmailSender` and DE/EN/FR templates for the four transactional mails. The outbox is what makes dispatch *queued*, which NFR-005's timing rule requires. |
 | `AppSuite.Main.Service.Core` | **+** export assembly and deletion policy, incl. `IAccountDeletionGuard`. Stays pure — no ASP.NET, no EF. |
 | `AppSuite.Main.Service.Repository` | **+** Identity & passkey schema mapping, first migration into `maindb`, retention-job queries. |
@@ -163,6 +163,12 @@ Two of these differ from the shapes first sketched, and the reasons are worth ke
 - **`POST /delete`, not `DELETE /account`.** Deletion re-authenticates with the current password
   (FR-015), and a request body on `DELETE` is poorly specified and unevenly supported. The verb loses
   a little REST purity; the alternative loses the re-authentication, which is the part that matters.
+
+**Password-policy failures answer with codes, not prose.** `POST /register` and `POST /reset-password`
+return `PasswordTooShort` / `BreachedPassword` in the `password` field of the `ValidationProblem` body.
+Identity's own `Description` is English and the product is DE/EN/FR — a client can translate a code but
+not a sentence. Everything else still answers in prose, and the client passes unknown messages through
+unchanged ([ADR-0027](../adr/0027-breached-password-check.md)).
 
 **Mail links are root-level routes**, fixed by the URLs already baked into sent mail:
 `/verify-email`, `/reset-password`, `/confirm-email-change`. Only the last requires a signed-in

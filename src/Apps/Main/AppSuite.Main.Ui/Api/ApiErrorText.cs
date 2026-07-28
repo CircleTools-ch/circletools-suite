@@ -13,6 +13,22 @@ namespace AppSuite.Main.Ui.Api;
 /// </remarks>
 public static class ApiErrorText
 {
+    /// <summary>
+    /// Per-field messages the API reports as codes rather than prose, mapped to resource keys.
+    /// </summary>
+    /// <remarks>
+    /// The password-policy codes come from ASP.NET Core Identity, except <c>BreachedPassword</c>,
+    /// which is the suite's own validator (ADR-0027). Only codes the configured policy can actually
+    /// produce are listed: FR-007 turns the composition rules off, so <c>PasswordRequiresDigit</c>
+    /// and its siblings can never arrive.
+    /// </remarks>
+    private static readonly Dictionary<string, string> _localizableCodes = new(StringComparer.Ordinal)
+    {
+        ["PasswordTooShort"] = "PasswordErrorTooShort",
+        ["BreachedPassword"] = "PasswordErrorBreached",
+        ["InvalidToken"] = "PasswordErrorInvalidToken",
+    };
+
     /// <summary>Describes a failure.</summary>
     /// <param name="localizer">The page's string localizer.</param>
     /// <param name="error">The failure, or <see langword="null"/> for none.</param>
@@ -43,13 +59,25 @@ public static class ApiErrorText
     /// Lists the per-field messages a validation failure carried, for display under the summary.
     /// </summary>
     /// <remarks>
-    /// These <em>are</em> shown, unlike <c>detail</c>: they are almost always the password-policy
-    /// text from Identity, and telling someone their password is too short in English beats telling
-    /// them nothing at all in three languages. Localizing them properly needs the API to return
-    /// codes rather than prose — a change worth making when the policy grows past one rule.
+    /// These <em>are</em> shown, unlike <c>detail</c> — telling someone why their password was
+    /// refused is the point of the rule (FR-007). The API sends password-policy failures as
+    /// <strong>codes</strong> so they can be said in the user's language (NFR-003); anything that is
+    /// not a known code is passed through unchanged, which is what the endpoints still answering in
+    /// prose rely on.
     /// </remarks>
+    /// <param name="localizer">The page's string localizer.</param>
     /// <param name="error">The failure.</param>
     /// <returns>The messages, or an empty list.</returns>
-    public static IReadOnlyList<string> Details(ApiError? error) =>
-        error is null ? [] : [.. error.Errors.SelectMany(e => e.Value)];
+    public static IReadOnlyList<string> Details(IStringLocalizer localizer, ApiError? error)
+    {
+        ArgumentNullException.ThrowIfNull(localizer);
+
+        return error is null
+            ? []
+            : [.. error.Errors
+                .SelectMany(e => e.Value)
+                .Select(message => _localizableCodes.TryGetValue(message, out var key)
+                    ? localizer[key].Value
+                    : message)];
+    }
 }

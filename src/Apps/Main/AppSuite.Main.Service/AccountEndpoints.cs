@@ -131,10 +131,7 @@ public static class AccountEndpoints
             // Password-policy failures are the caller's own input, so reporting them leaks nothing
             // about other accounts. A duplicate-email error can never reach here — that path
             // returned above with the neutral response.
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["password"] = [.. created.Errors.Select(e => e.Description)],
-            });
+            return PasswordRejected(created);
         }
 
         var token = await users.GenerateEmailConfirmationTokenAsync(user).ConfigureAwait(false);
@@ -311,10 +308,7 @@ public static class AccountEndpoints
 
         if (!result.Succeeded)
         {
-            return Results.ValidationProblem(new Dictionary<string, string[]>
-            {
-                ["password"] = [.. result.Errors.Select(e => e.Description)],
-            });
+            return PasswordRejected(result);
         }
 
         // Completing a reset proves control of the address, so it also verifies a pending account
@@ -712,6 +706,24 @@ public static class AccountEndpoints
         var json = JsonDocument.Parse(WebEncoders.Base64UrlDecode(payload));
         return json.RootElement.GetProperty("sub").GetString()!;
     }
+
+    /// <summary>
+    /// Reports a password-policy rejection as machine-readable <em>codes</em> (FR-007, NFR-003).
+    /// </summary>
+    /// <remarks>
+    /// Identity's <c>Description</c> is English prose, and the product is DE/EN/FR
+    /// ([ADR-0011](../../../docs/adr/0011-localization-format-and-culture.md)); a client cannot
+    /// translate a sentence, but it can translate <c>PasswordTooShort</c> or
+    /// <c>BreachedPassword</c>. This is the change
+    /// [ADR-0027](../../../docs/adr/0027-breached-password-check.md) triggers by taking the policy
+    /// past a single rule. Codes leak nothing about other accounts — they describe the caller's own
+    /// input.
+    /// </remarks>
+    private static IResult PasswordRejected(IdentityResult result) =>
+        Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            ["password"] = [.. result.Errors.Select(e => e.Code)],
+        });
 
     /// <summary>
     /// The single registration response. Identical for a new address and one already in use.
