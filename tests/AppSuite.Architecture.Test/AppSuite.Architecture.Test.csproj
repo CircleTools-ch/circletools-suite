@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\src\Apps\SecretSanta\AppSuite.SecretSanta.Core\AppSuite.SecretSanta.Core.csproj" />
     <ProjectReference Include="..\..\src\Apps\SecretSanta\AppSuite.SecretSanta.LocalStore\AppSuite.SecretSanta.LocalStore.csproj" />
     <ProjectReference Include="..\..\src\Apps\SecretSanta\AppSuite.SecretSanta.Ui\AppSuite.SecretSanta.Ui.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\AppSuite.Ui.Web\AppSuite.Ui.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

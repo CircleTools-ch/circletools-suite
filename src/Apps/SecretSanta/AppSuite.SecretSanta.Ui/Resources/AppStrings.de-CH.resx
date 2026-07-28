@@ -74,7 +74,6 @@
   <data name="ExclusionPickBoth" xml:space="preserve"><value>Wählen Sie eine schenkende und eine beschenkte Person.</value></data>
   <data name="NotFoundTitle" xml:space="preserve"><value>Nicht gefunden</value></data>
   <data name="NotFoundBody" xml:space="preserve"><value>Diesen Inhalt gibt es leider nicht.</value></data>
-  <data name="LanguageLabel" xml:space="preserve"><value>Sprache</value></data>
   <data name="ShareLinkTooLong" xml:space="preserve"><value>Dieser Link ist lang und könnte von manchen Chat-Apps gekürzt oder abgeschnitten werden. Kürzen Sie ggf. die Wunschlisteneinträge.</value></data>
   <data name="ForLabel" xml:space="preserve"><value>Für</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Dein Wichtel</value></data>

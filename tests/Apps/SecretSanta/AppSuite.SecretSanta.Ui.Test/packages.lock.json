@@ -392,6 +392,14 @@
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.10, )"
         }
       },
+      "appsuite.localization": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.Ui.Abstractions": "[1.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.10, )",
+          "Microsoft.Extensions.Localization": "[10.0.10, )"
+        }
+      },
       "appsuite.secretsanta.contracts": {
         "type": "Project"
       },
@@ -406,14 +414,28 @@
       "appsuite.secretsanta.ui": {
         "type": "Project",
         "dependencies": {
+          "AppSuite.Localization": "[1.0.0, )",
           "AppSuite.SecretSanta.Contracts": "[1.0.0, )",
           "AppSuite.SecretSanta.Core": "[1.0.0, )",
+          "AppSuite.Ui.Shared": "[1.0.0, )",
           "Microsoft.AspNetCore.Components.Web": "[10.0.10, )",
           "Microsoft.Extensions.Localization": "[10.0.10, )"
         }
       },
       "appsuite.sharedkernel": {
         "type": "Project"
+      },
+      "appsuite.ui.abstractions": {
+        "type": "Project"
+      },
+      "appsuite.ui.shared": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.Localization": "[1.0.0, )",
+          "AppSuite.Ui.Abstractions": "[1.0.0, )",
+          "Microsoft.AspNetCore.Components.Web": "[10.0.10, )",
+          "Microsoft.Extensions.Localization": "[10.0.10, )"
+        }
       },
       "Microsoft.AspNetCore.Components.Authorization": {
         "type": "CentralTransitive",

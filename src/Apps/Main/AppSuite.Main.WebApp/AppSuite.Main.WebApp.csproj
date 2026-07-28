@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AppSuite.Main.Ui\AppSuite.Main.Ui.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\AppSuite.Ui.Web\AppSuite.Ui.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>

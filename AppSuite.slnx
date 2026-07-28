@@ -43,6 +43,7 @@
     <Project Path="src/BuildingBlocks/AppSuite.SharedKernel/AppSuite.SharedKernel.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.Ui.Abstractions/AppSuite.Ui.Abstractions.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.Ui.Shared/AppSuite.Ui.Shared.csproj" />
+    <Project Path="src/BuildingBlocks/AppSuite.Ui.Web/AppSuite.Ui.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/AppSuite.Architecture.Test/AppSuite.Architecture.Test.csproj" />
@@ -50,6 +51,7 @@
   <Folder Name="/tests/BuildingBlocks/">
     <Project Path="tests/BuildingBlocks/AppSuite.ApiClient.Test/AppSuite.ApiClient.Test.csproj" />
     <Project Path="tests/BuildingBlocks/AppSuite.Identity.Test/AppSuite.Identity.Test.csproj" />
+    <Project Path="tests/BuildingBlocks/AppSuite.Ui.Shared.Test/AppSuite.Ui.Shared.Test.csproj" />
   </Folder>
   <Folder Name="/tests/Apps/" />
   <Folder Name="/tests/Apps/Main/">

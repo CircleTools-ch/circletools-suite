@@ -18,10 +18,18 @@ public enum StorageScope
 /// A minimal string key/value store, scoped by lifetime.
 /// </summary>
 /// <remarks>
-/// Reads and writes must never throw when the underlying storage is unavailable — private-mode
-/// browsing and blocked cookies both make <c>localStorage</c> inaccessible, and a language
-/// preference or a remembered session is not worth failing a page render over. Implementations
-/// swallow storage errors and behave as though nothing was stored.
+/// <para>
+/// <strong>Reads and removes never throw.</strong> Private-mode browsing and blocked cookies both
+/// make <c>localStorage</c> inaccessible, and a language preference or a remembered session is not
+/// worth failing a page render over. Implementations swallow those errors and behave as though
+/// nothing was stored.
+/// </para>
+/// <para>
+/// <strong>Writes do not throw either, but they report whether the value stuck.</strong> Swallowing
+/// silently is right for a preference and wrong for data the user cannot get back: Secret-Santa is
+/// local-first with no backend (NFR-001), so the store holds the only copy of a group. Callers that
+/// can afford the loss ignore the result; callers that cannot check it and surface the failure.
+/// </para>
 /// </remarks>
 public interface IKeyValueStore
 {
@@ -37,8 +45,11 @@ public interface IKeyValueStore
     /// <param name="key">The key to write.</param>
     /// <param name="value">The value to store.</param>
     /// <param name="cancellationToken">Cancels the write.</param>
-    /// <returns>A task that completes once the value has been stored (or silently dropped).</returns>
-    ValueTask SetAsync(
+    /// <returns>
+    /// <see langword="true"/> if the value was stored; <see langword="false"/> if the storage
+    /// refused it (unavailable, full, or blocked). Never throws for those cases.
+    /// </returns>
+    ValueTask<bool> SetAsync(
         StorageScope scope,
         string key,
         string value,

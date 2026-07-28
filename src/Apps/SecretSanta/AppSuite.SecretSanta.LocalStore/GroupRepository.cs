@@ -1,6 +1,7 @@
 using System.Text.Json;
 using AppSuite.SecretSanta.Core.Domain;
 using AppSuite.SecretSanta.Core.Persistence;
+using AppSuite.Ui.Abstractions;
 
 namespace AppSuite.SecretSanta.LocalStore;
 
@@ -9,6 +10,12 @@ namespace AppSuite.SecretSanta.LocalStore;
 /// <see cref="GroupState"/> mementos) to JSON under a single key in an <see cref="IKeyValueStore"/>.
 /// Suitable for the local-first MVP where the whole data set is small.
 /// </summary>
+/// <remarks>
+/// This store holds the <em>only</em> copy of a group: Secret-Santa is local-first with no backend
+/// (NFR-001). A write the storage refuses is therefore data loss, not a forgotten preference, and
+/// it is raised as a <see cref="StorageUnavailableException"/> rather than passed over — the user
+/// has to learn that their group did not save while they can still do something about it.
+/// </remarks>
 /// <param name="store">The underlying key-value store.</param>
 public sealed class GroupRepository(IKeyValueStore store) : IGroupRepository
 {
@@ -62,7 +69,7 @@ public sealed class GroupRepository(IKeyValueStore store) : IGroupRepository
 
     private async Task<List<GroupState>> LoadStatesAsync(CancellationToken cancellationToken)
     {
-        var json = await store.GetAsync(StorageKey, cancellationToken);
+        var json = await store.GetAsync(StorageScope.Durable, StorageKey, cancellationToken);
         if (string.IsNullOrWhiteSpace(json))
         {
             return [];
@@ -72,9 +79,14 @@ public sealed class GroupRepository(IKeyValueStore store) : IGroupRepository
         return states ?? [];
     }
 
-    private Task SaveStatesAsync(List<GroupState> states, CancellationToken cancellationToken)
+    private async Task SaveStatesAsync(List<GroupState> states, CancellationToken cancellationToken)
     {
         var json = JsonSerializer.Serialize(states, GroupStateJsonContext.Default.ListGroupState);
-        return store.SetAsync(StorageKey, json, cancellationToken);
+        var stored = await store.SetAsync(StorageScope.Durable, StorageKey, json, cancellationToken);
+        if (!stored)
+        {
+            throw new StorageUnavailableException(
+                "The groups could not be saved: local storage is unavailable or full.");
+        }
     }
 }

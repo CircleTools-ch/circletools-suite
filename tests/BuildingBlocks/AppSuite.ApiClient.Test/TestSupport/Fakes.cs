@@ -91,19 +91,30 @@ public sealed class FakeKeyValueStore : IKeyValueStore
     public string? Peek(StorageScope scope, string key) =>
         _values.TryGetValue((scope, key), out var value) ? value : null;
 
+    /// <summary>
+    /// When set, every write is refused — the store stays empty and <c>SetAsync</c> returns
+    /// <see langword="false"/>, as a browser with storage blocked or full does.
+    /// </summary>
+    public bool RefuseWrites { get; set; }
+
     /// <inheritdoc />
     public ValueTask<string?> GetAsync(StorageScope scope, string key, CancellationToken cancellationToken = default) =>
         ValueTask.FromResult(Peek(scope, key));
 
     /// <inheritdoc />
-    public ValueTask SetAsync(
+    public ValueTask<bool> SetAsync(
         StorageScope scope,
         string key,
         string value,
         CancellationToken cancellationToken = default)
     {
+        if (RefuseWrites)
+        {
+            return ValueTask.FromResult(false);
+        }
+
         _values[(scope, key)] = value;
-        return ValueTask.CompletedTask;
+        return ValueTask.FromResult(true);
     }
 
     /// <inheritdoc />

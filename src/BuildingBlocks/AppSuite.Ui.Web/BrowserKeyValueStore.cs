@@ -1,7 +1,7 @@
 using AppSuite.Ui.Abstractions;
 using Microsoft.JSInterop;
 
-namespace AppSuite.Main.WebApp.Storage;
+namespace AppSuite.Ui.Web;
 
 /// <summary>
 /// Maps <see cref="StorageScope"/> onto the browser's two web-storage areas.
@@ -13,9 +13,11 @@ namespace AppSuite.Main.WebApp.Storage;
 /// the distinction the "stay signed in" checkbox offers (ADR-0026).
 /// </para>
 /// <para>
-/// Every call is wrapped: web storage throws in private-browsing modes and wherever site data is
-/// blocked. A blocked store means "nothing was remembered", never a broken page — the app still
-/// works, the user just signs in again.
+/// Every call is wrapped: web storage throws in private-browsing modes, wherever site data is
+/// blocked, and when the origin's quota is exhausted. A blocked store means "nothing was
+/// remembered", never a broken page. A refused <em>write</em> is reported back rather than
+/// swallowed, because whether that matters depends on what was being written — see
+/// <see cref="IKeyValueStore"/>.
 /// </para>
 /// </remarks>
 /// <param name="js">The JavaScript runtime.</param>
@@ -38,7 +40,7 @@ public sealed class BrowserKeyValueStore(IJSRuntime js) : IKeyValueStore
     }
 
     /// <inheritdoc />
-    public async ValueTask SetAsync(
+    public async ValueTask<bool> SetAsync(
         StorageScope scope,
         string key,
         string value,
@@ -47,10 +49,11 @@ public sealed class BrowserKeyValueStore(IJSRuntime js) : IKeyValueStore
         try
         {
             await js.InvokeVoidAsync($"{Area(scope)}.setItem", cancellationToken, key, value);
+            return true;
         }
         catch (JSException)
         {
-            // Storage unavailable or full. The value is lost, which costs a re-login at worst.
+            return false;
         }
     }
 

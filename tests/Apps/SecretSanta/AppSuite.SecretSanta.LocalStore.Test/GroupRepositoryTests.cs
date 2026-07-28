@@ -1,5 +1,6 @@
 using AppSuite.SecretSanta.Core.Domain;
 using AppSuite.SecretSanta.LocalStore.Test.TestSupport;
+using AppSuite.Ui.Abstractions;
 
 namespace AppSuite.SecretSanta.LocalStore.Test;
 
@@ -50,7 +51,7 @@ public sealed class GroupRepositoryTests
         Assert.Contains(all, g => g.Name == "One");
         Assert.Contains(all, g => g.Name == "Two");
         // All groups live under a single storage key.
-        Assert.NotNull(await store.GetAsync(GroupRepository.StorageKey, default));
+        Assert.NotNull(await store.GetAsync(StorageScope.Durable, GroupRepository.StorageKey, default));
     }
 
     [Fact]
@@ -90,5 +91,35 @@ public sealed class GroupRepositoryTests
         var repository = new GroupRepository(new InMemoryKeyValueStore());
 
         Assert.Null(await repository.GetAsync(Guid.NewGuid(), default));
+    }
+
+    /// <summary>
+    /// A refused write must not read as a successful save. This store holds the only copy of a
+    /// group (NFR-001, no backend), so the shared <see cref="IKeyValueStore"/> contract's
+    /// swallow-and-carry-on behaviour — right for a language preference — would be silent data
+    /// loss here.
+    /// </summary>
+    [Fact]
+    public async Task Save_WhenStorageRefusesTheWrite_Throws()
+    {
+        var store = new InMemoryKeyValueStore { RefuseWrites = true };
+        var repository = new GroupRepository(store);
+
+        await Assert.ThrowsAsync<StorageUnavailableException>(
+            () => repository.SaveAsync(CreateGroupWithMembers("Family", "Alice"), default));
+    }
+
+    [Fact]
+    public async Task Delete_WhenStorageRefusesTheWrite_Throws()
+    {
+        var store = new InMemoryKeyValueStore();
+        var repository = new GroupRepository(store);
+        var group = CreateGroupWithMembers("Family", "Alice");
+        await repository.SaveAsync(group, default);
+
+        store.RefuseWrites = true;
+
+        await Assert.ThrowsAsync<StorageUnavailableException>(
+            () => repository.DeleteAsync(group.Id, default));
     }
 }

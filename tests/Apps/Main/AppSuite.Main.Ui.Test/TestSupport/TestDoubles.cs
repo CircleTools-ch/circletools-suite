@@ -113,14 +113,14 @@ public sealed class FakeKeyValueStore : IKeyValueStore
         ValueTask.FromResult(_values.TryGetValue((scope, key), out var value) ? value : null);
 
     /// <inheritdoc />
-    public ValueTask SetAsync(
+    public ValueTask<bool> SetAsync(
         StorageScope scope,
         string key,
         string value,
         CancellationToken cancellationToken = default)
     {
         _values[(scope, key)] = value;
-        return ValueTask.CompletedTask;
+        return ValueTask.FromResult(true);
     }
 
     /// <inheritdoc />

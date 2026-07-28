@@ -474,14 +474,16 @@
         "type": "Project",
         "dependencies": {
           "AppSuite.SecretSanta.Core": "[1.0.0, )",
-          "Microsoft.JSInterop": "[10.0.10, )"
+          "AppSuite.Ui.Abstractions": "[1.0.0, )"
         }
       },
       "appsuite.secretsanta.ui": {
         "type": "Project",
         "dependencies": {
+          "AppSuite.Localization": "[1.0.0, )",
           "AppSuite.SecretSanta.Contracts": "[1.0.0, )",
           "AppSuite.SecretSanta.Core": "[1.0.0, )",
+          "AppSuite.Ui.Shared": "[1.0.0, )",
           "Microsoft.AspNetCore.Components.Web": "[10.0.10, )",
           "Microsoft.Extensions.Localization": "[10.0.10, )"
         }
@@ -499,6 +501,13 @@
           "AppSuite.Ui.Abstractions": "[1.0.0, )",
           "Microsoft.AspNetCore.Components.Web": "[10.0.10, )",
           "Microsoft.Extensions.Localization": "[10.0.10, )"
+        }
+      },
+      "appsuite.ui.web": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.Ui.Abstractions": "[1.0.0, )",
+          "Microsoft.JSInterop": "[10.0.10, )"
         }
       },
       "MailKit": {

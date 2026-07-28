@@ -48,7 +48,10 @@ public sealed class RefreshTokenStore(IKeyValueStore store, RefreshTokenStoreOpt
             : (StorageScope.Session, StorageScope.Durable);
 
         await store.RemoveAsync(other, options.StorageKey, cancellationToken);
-        await store.SetAsync(target, options.StorageKey, refreshToken, cancellationToken);
+
+        // Ignored on purpose: a refresh token that could not be stored costs a re-login, which is
+        // the same outcome the user gets in a browser that blocks storage outright.
+        _ = await store.SetAsync(target, options.StorageKey, refreshToken, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -62,7 +65,7 @@ public sealed class RefreshTokenStore(IKeyValueStore store, RefreshTokenStoreOpt
         var durable = await store.GetAsync(StorageScope.Durable, options.StorageKey, cancellationToken);
         var scope = string.IsNullOrEmpty(durable) ? StorageScope.Session : StorageScope.Durable;
 
-        await store.SetAsync(scope, options.StorageKey, refreshToken, cancellationToken);
+        _ = await store.SetAsync(scope, options.StorageKey, refreshToken, cancellationToken);
     }
 
     /// <inheritdoc />

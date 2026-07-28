@@ -78,6 +78,16 @@ genuine risk to a working app, for no user-visible gain; it is a follow-up, not 
 `CultureOptions.StorageKey` exists precisely so that migration can happen later without anyone losing
 their language preference — Secret-Santa keeps `secretsanta.culture`, Main uses `main.culture`.
 
+> **Update (2026-07-28) — the migration has happened.** Secret-Santa now uses
+> `AppSuite.Localization` and `AppSuite.Ui.Shared`, and `secretsanta.culture` survived it, as
+> `CultureOptions` was designed to allow. Carrying it out forced two amendments recorded as their own
+> ADRs: [ADR-0028](0028-browser-platform-adapters-block.md) moves the browser adapters into a shared
+> `Ui.Web` block, because "a host supplies the platform" stopped being the right rule once there were
+> two web hosts wanting the identical adapter; and
+> [ADR-0029](0029-storage-write-failure-contract.md) changes `IKeyValueStore.SetAsync` to report
+> whether the write stuck, because this block's swallow-everything contract — correct for a
+> preference — would have meant silent data loss for the only copy of a Secret-Santa group.
+
 ## Consequences
 
 - **Positive:** arc42 ch.5 now describes the code instead of an intention; the MAUI head becomes a
@@ -88,13 +98,16 @@ their language preference — Secret-Santa keeps `secretsanta.culture`, Main use
 - **Negative / accepted:** four projects instead of one, and a solution that is four entries longer.
 - **Negative / accepted:** the suite temporarily has **two** culture implementations — the shared one
   and Secret-Santa's. That is the cost of not touching a working app, and it is a real cost: a change
-  to language handling has to be made in two places until the migration happens.
+  to language handling has to be made in two places until the migration happens. *(Closed 2026-07-28
+  — there is one implementation again.)*
 - **Negative / accepted:** `AppSuite.Ui.Shared` trips CA1716 (`Shared` is a Visual Basic keyword).
   The name is fixed by arc42 and the suite is C#-only, so the rule is suppressed in that project with
   the reason recorded there.
-- **Follow-ups:** migrate `AppSuite.SecretSanta.Ui` onto `AppSuite.Localization` and
+- **Follow-ups:** ~~migrate `AppSuite.SecretSanta.Ui` onto `AppSuite.Localization` and
   `AppSuite.Ui.Shared` for `AppCultures`/`CultureSelector`, keeping its existing storage key; move
-  Secret-Santa's `IKeyValueStore` to `Ui.Abstractions` at the same time.
+  Secret-Santa's `IKeyValueStore` to `Ui.Abstractions` at the same time.~~ **Done 2026-07-28** — see
+  the update above, [ADR-0028](0028-browser-platform-adapters-block.md) and
+  [ADR-0029](0029-storage-write-failure-contract.md).
 - **New risks:** `Ui.Shared` can become the place things go when nobody knows where they go. The
   boundary that keeps it honest is stated in [ADR-0024](0024-ui-styling-and-theming.md): shared means
   used by more than one app, and nothing else.

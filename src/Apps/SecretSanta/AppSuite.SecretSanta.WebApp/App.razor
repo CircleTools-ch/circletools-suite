@@ -1,8 +1,18 @@
-<Router AppAssembly="@typeof(App).Assembly"
-        AdditionalAssemblies="new[] { typeof(AppSuite.SecretSanta.Ui.AppStrings).Assembly }"
-        NotFoundPage="typeof(Pages.NotFound)">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-</Router>
+@*
+    CultureBoundary hands down the current culture name; keying the router on it rebuilds the whole
+    tree when the language changes, so the switch takes effect without a page reload and without a
+    flash of the previous language. Before the migration onto the shared blocks (ADR-0025) this app
+    reloaded the page instead.
+*@
+
+<CultureBoundary Context="culture">
+    <Router @key="culture"
+            AppAssembly="@typeof(App).Assembly"
+            AdditionalAssemblies="new[] { typeof(AppSuite.SecretSanta.Ui.AppStrings).Assembly }"
+            NotFoundPage="typeof(Pages.NotFound)">
+        <Found Context="routeData">
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+    </Router>
+</CultureBoundary>

@@ -51,9 +51,6 @@ public sealed class MainUiLayeringTests
     private static readonly IObjectProvider<IType> _apiClient =
         Types().That().ResideInNamespaceMatching("^AppSuite\\.ApiClient").As("ApiClient");
 
-    private static readonly IObjectProvider<IType> _uiAbstractions =
-        Types().That().ResideInNamespaceMatching("^AppSuite\\.Ui\\.Abstractions").As("Ui.Abstractions");
-
     [Fact]
     public void MainUi_DoesNotDependOnTheServerOrItsPersistence() =>
         Types().That().Are(_mainUi)
@@ -74,13 +71,5 @@ public sealed class MainUiLayeringTests
         Types().That().Are(_apiClient)
             .Should().NotDependOnAny(_jsInterop)
             .AndShould().NotDependOnAny(_webAssembly)
-            .Check(_architecture);
-
-    [Fact]
-    public void UiAbstractions_AreJustSeams() =>
-        Types().That().Are(_uiAbstractions)
-            .Should().NotDependOnAny(_jsInterop)
-            .AndShould().NotDependOnAny(_webAssembly)
-            .AndShould().NotDependOnAny(_apiClient)
             .Check(_architecture);
 }

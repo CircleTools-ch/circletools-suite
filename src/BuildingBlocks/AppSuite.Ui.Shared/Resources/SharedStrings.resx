@@ -4,6 +4,10 @@
   <resheader name="version"><value>2.0</value></resheader>
   <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
-  <data name="Language" xml:space="preserve"><value>Sprache</value></data>
-  <data name="Working" xml:space="preserve"><value>Wird ausgeführt …</value></data>
+  <!-- The neutral set must hold ENGLISH, because Directory.Build.props sets NeutralLanguage=en:
+       that emits [assembly: NeutralResourcesLanguage("en")], and a lookup under culture "en" then
+       reads these values and never consults the en/ satellite. German here meant an English UI
+       rendered German labels. -->
+  <data name="Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Working" xml:space="preserve"><value>Working …</value></data>
 </root>

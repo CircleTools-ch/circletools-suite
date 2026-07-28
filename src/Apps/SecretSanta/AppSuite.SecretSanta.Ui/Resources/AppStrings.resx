@@ -128,7 +128,6 @@
   <data name="ExclusionPickBoth" xml:space="preserve"><value>Choose a giver and a recipient.</value></data>
   <data name="NotFoundTitle" xml:space="preserve"><value>Not found</value></data>
   <data name="NotFoundBody" xml:space="preserve"><value>Sorry, the content you are looking for does not exist.</value></data>
-  <data name="LanguageLabel" xml:space="preserve"><value>Language</value></data>
   <data name="ShareLinkTooLong" xml:space="preserve"><value>This link is long and may be shortened or broken by some chat apps. Consider shortening the wishlist entries.</value></data>
   <data name="ForLabel" xml:space="preserve"><value>For</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Your Secret Santa</value></data>

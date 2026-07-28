@@ -249,6 +249,13 @@
           "Microsoft.Extensions.Localization": "[10.0.10, )"
         }
       },
+      "appsuite.ui.web": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.Ui.Abstractions": "[1.0.0, )",
+          "Microsoft.JSInterop": "[10.0.10, )"
+        }
+      },
       "Microsoft.AspNetCore.Components.Authorization": {
         "type": "CentralTransitive",
         "requested": "[10.0.10, )",
