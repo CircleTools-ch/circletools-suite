@@ -85,7 +85,10 @@ Then they are rate-limited per address and per source with progressive backoff
     addresses;
   - **timing:** the difference in median response time between the existing-address and
     non-existing-address cases must be **below the noise floor of the test harness**, and in no case
-    may one path await an outbound email while the other does not;
+    may one path await an outbound email while the other does not, **nor compute a password hash
+    while the other does not** — hashing is deliberately slow and dominates these endpoints, so a
+    branch that skips it is the loudest possible signal (measured at 20x before it was fixed;
+    see [FEAT-002](../../features/FEAT-002-m1-identity.md));
   - **100 %** of address-accepting endpoints rate-limited per address and per source.
 - **Measurement approach:** paired **automated tests** per endpoint asserting identical body and
   status; a timing test comparing the two distributions over repeated runs; a review checklist item

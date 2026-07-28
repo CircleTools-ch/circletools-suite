@@ -62,38 +62,41 @@ Circles, sync, the claim flow and Secret-Santa linking are **out of scope** (M2�
 
 | Requirement / AC | Test case | Level | Automated? |
 |------------------|-----------|-------|------------|
-| FR-007 sign-up + verification | `RegisterTests` (pending state created, verification mail delivered to Mailpit, link verifies, user signed in) | Integration | ✅ |
-| FR-007 existing address | `RegisterTests.ExistingAddress_*` (identical response; "someone tried to sign up" mail sent instead; no second account) | Integration | ✅ |
+| FR-007 sign-up + verification | `AccountEndpointsTests.Register_CreatesPendingAccountAndQueuesVerificationMail` + `.VerifyEmail_MarksTheAccountVerified`; `MailDeliveryTests.VerificationMail_CarriesALinkThatActuallyVerifies` takes the link out of the *delivered* mail and uses it | Integration | ✅ |
+| FR-007 existing address | `AccountEndpointsTests.Register_ExistingAddress_IsIndistinguishableButWarnsTheRealOwner`; `MailTemplateRendererTests.SignUpAttempt_TellsTheOwnerWithoutConfirmingAnythingToTheRequester` | Integration / Unit | ✅ |
+| FR-007 resend verification | `ResendVerificationTests` (a pending account gets a fresh mail; an unknown address and an already-verified one answer identically and send nothing) | Integration | ✅ |
 | FR-007 password policy — length | `AccountEndpointsTests.Register_ShortPassword_IsRejected` (rejected, and reported as the `PasswordTooShort` code) | Integration | ✅ |
 | FR-007 password policy — **breached list** | `BreachedPasswordValidatorTests` (corpus hits rejected with their own code; an unbreached passphrase accepted; comparison is case-sensitive; a missing password is left to Identity's own validators) | Unit | ✅ |
 | FR-007 / ADR-0027 the corpus itself | `BreachedPasswordValidatorTests.TheBundledCorpus_*` (the embedded resource loads, holds ~31 500 entries, and contains nothing under 12 characters — a list that failed to load would make the check pass every password in silence) | Unit | ✅ |
 | FR-007 breached password end to end | `AccountEndpointsTests.Register_BreachedPassword_IsRejected` + `.Register_BreachedPassword_CreatesNoAccount` (the address stays free for a second attempt) | Integration | ✅ |
 | FR-009 policy holds on recovery too | `PasswordResetTests.Reset_BreachedPassword_IsRejectedAndTheOldPasswordStillWorks` | Integration | ✅ |
 | NFR-003 policy failures are translatable | `AccountEndpointsTests.PasswordRejections_AreReportedAsCodesNotEnglishProse` — the API answers with codes, never Identity's English prose | Integration | ✅ |
-| FR-007 pending account limits | `PendingAccountTests` (may sign in; sync/claim/circle surfaces unavailable) | Integration | ✅ |
-| FR-007 / NFR-004 30-day purge | `RetentionJobTests` (29 days kept, 31 days purged, verified accounts untouched) | Integration | ✅ |
-| FR-008 session issuance | `LoginTests` (15-min access token, 30-day refresh, access token never written to storage) | Integration | ✅ |
-| FR-008 rotation | `RefreshRotationTests` (each refresh issues a new pair; the previous refresh token is invalidated) | Integration | ✅ |
-| FR-008 **reuse = theft** | `RefreshRotationTests.ConsumedToken_Replayed_RevokesWholeChain` | Integration | ✅ |
-| FR-008 **racing refresh** | `RefreshRotationTests.TwoConcurrentRefreshes_DoNotRevokeChain` (ADR-0021's explicit case) | Integration | ✅ |
+| FR-007 pending account may sign in | `AccountEndpointsTests.Login_BeforeVerification_SucceedsButReportsUnverified`; `AccessTokenIssuerTests.Issue_MarksAPendingAccountAsUnverified`; `TokenAuthStateProviderTests.PendingAccount_IsSignedInButNotVerified` | Integration / Unit / Component | ✅ |
+| FR-007 pending account is *limited* | **not testable in M1** — the criterion says sync, claiming and circle join/invite stay unavailable, and none of those surfaces exists before M2/M3. The claim is carried by the unverified marker above; the restriction itself arrives with the first surface that has to honour it. | — | n/a |
+| FR-007 / NFR-004 30-day purge | `PendingAccountPurgeTests` (inside the window kept, past it purged, verified accounts untouched however old, no-op when nothing is expired) — against real Postgres, clock injected | Integration | ✅ |
+| FR-008 session issuance | `AccessTokenIssuerTests` (configured access-token lifetime, the claims endpoints authorise on, a distinct id per token, refuses to sign with a weak key); `SessionServiceTests.Start_IssuesBothTokensAndPersistsTheChain` | Unit | ✅ |
+| FR-008 the refresh secret is never stored | `SessionServiceTests.Start_StoresOnlyTheHashOfTheRefreshSecret`; `RefreshTokenSecretTests` (the handle is not the secret, is unpredictable, is deterministic for lookup, and fits its column) | Unit | ✅ |
+| FR-008 rotation | `RefreshTokenChainTests.Redeem_UnusedToken_RotatesAndInvalidatesPredecessor` + `.Redeem_SlidesTheWindow_OnEveryRotation`; `RefreshTokenChainStoreTests.Rotation_PersistsConsumptionAndSuccessor`; `AccountEndpointsTests.Refresh_RotatesTheTokenAndTheNewOneWorks` | Unit / Integration | ✅ |
+| FR-008 **reuse = theft** | `RefreshTokenChainTests.Redeem_ConsumedTokenReplayedOutsideGrace_IsTheft_AndRevokesWholeChain` + `.Redeem_AfterTheftDetected_EvenTheValidSuccessorIsRefused`; `RefreshTokenChainStoreTests.ReuseAcrossRequests_IsDetectedAndRevokesTheChain`; `SessionServiceTests.Refresh_PersistsRevocationWhenReuseIsDetected` | Unit / Integration | ✅ |
+| FR-008 **racing refresh** | `RefreshTokenChainTests.Redeem_TwoConcurrentRefreshes_DoNotRevokeChain` + `.Redeem_ReplayAtTheGraceBoundary_IsStillTreatedAsConcurrent` + `.Redeem_RetainsTheSuccessorSecretOnlyForTheGraceWindow`; `SessionServiceTests.Refresh_ConcurrentCallers_BothReceiveTheSameUsableSecret`; `RefreshTokenChainStoreTests.ConcurrentRefreshAcrossRequests_ReturnsTheSameUsableSecret`; `AccountEndpointsTests.Refresh_ConcurrentCallers_BothSucceedWithTheSameToken` (ADR-0021's explicit case, covered at all three levels) | Unit / Integration | ✅ |
 | FR-008 reload → silent refresh | `TokenAuthStateProviderTests` (no token = anonymous; an unreadable token is treated as signed out rather than trusted; claims the UI needs are readable) | Component | ✅ |
 | FR-008 client refresh discipline | `AuthorizedHttpMessageHandlerTests` (401 → one refresh → one retry; **N concurrent 401s trigger exactly one refresh**; a token near expiry is renewed before the request goes out; a failed refresh returns the 401 and signs out; the refresh call itself bypasses the handler) | Client HTTP | ✅ |
 | FR-008 retry fidelity | `AuthorizedHttpMessageHandlerTests.Retry_ResendsTheOriginalBodyAndItsRequestOptions` — the retry keeps the body **and** the cross-origin credentials marker the ceremonies need | Client HTTP | ✅ |
 | FR-008 / ADR-0026 "stay signed in" | `RefreshTokenStoreTests` (durable vs session scope; saving to one clears the other; rotation keeps the scope it found; sign-out clears both) | Client HTTP | ✅ |
 | ADR-0010 failure mapping | `ApiResponseReaderTests` (status → failure; `ValidationProblem` field messages kept; the rate limiter's bare `{message}` recognised; a proxy's HTML page reported as the status alone) | Client HTTP | ✅ |
-| FR-009 reset flow | `PasswordResetTests` (single-use link, expiry, sessions revoked, pending email verified, passkeys retained) | Integration | ✅ |
-| FR-009 reset does not lock the old password | `PasswordResetTests.RequestingReset_DoesNotInvalidateCurrentPassword` | Integration | ✅ |
-| FR-010 passkey registration | `PasskeyTests` (public key + metadata only stored, label defaulting, duplicate authenticator rejected, removal leaves password usable) | Integration | ✅ |
-| FR-010 no private/biometric data | `PasskeyTests.StoredCredential_ContainsNoPrivateKeyOrBiometricData` | Integration | ✅ |
-| FR-011 passkey sign-in | `PasskeyLoginTests` (session identical in shape/lifetime to password login; removed credential rejected; cancel is not an error) | Integration | ✅ |
-| FR-012 profile & language | `ProfileTests` (display name required, duplicates allowed, language applies immediately, email hidden from other members) | Integration / Component | ✅ |
-| FR-013 email change | `EmailChangeTests` (verify-before-swap, old address still valid until confirmed, old address notified, expiry leaves account unchanged) | Integration | ✅ |
-| FR-014 export contents | `ExportTests` (profile + memberships + owned groups + own wishlist + permitted assignments; empty account yields a valid archive) | Integration | ✅ |
-| FR-014 **export leaks nothing** | `ExportAuthorizationTests` (non-organizer export carries only the caller's own assignment; nothing unreadable via UI appears) | Authorization | ✅ |
+| FR-009 reset flow | `PasswordResetTests` (`Reset_ReplacesThePasswordAndRevokesEverySession`, `.Reset_LinkIsSingleUse`, `.Reset_AlsoVerifiesAPendingAddress`, `.Reset_ShortPassword_IsRejected`) | Integration | ✅ |
+| FR-009 reset does not lock the old password | `PasswordResetTests.RequestingReset_DoesNotInvalidateTheCurrentPassword` | Integration | ✅ |
+| FR-010 passkey management | `PasskeyTests` (credentials listed with their labels, scoped to their owner, another user's cannot be removed, every endpoint requires authentication, removal leaves password sign-in working, creation options issued for a signed-in user) | Integration | ✅ |
+| FR-010 no private/biometric data | **not covered** — no test inspects a stored credential, because no test can register one: creating a credential needs a real WebAuthn authenticator. See the coverage notes. | — | ❌ |
+| FR-011 passkey sign-in — negative paths only | `PasskeyTests.RequestOptions_NameNoUser_SoTheyRevealNothing` and `.PasskeyLogin_WithGarbage_IsRefused`; `AccountPageTests.CancelledPasskeySignIn_*` / `.BrokenPasskeyCeremony_*`. **A successful ceremony is not automated** — see the coverage notes. | Integration / Component | ⚠️ partial |
+| FR-012 profile & language | `ProfileAndEmailChangeTests.UpdateProfile_*` (name and language change, empty display name rejected, duplicate display names allowed, authentication required) | Integration | ✅ |
+| FR-013 email change | `ProfileAndEmailChangeTests.ChangeEmail_KeepsTheOldAddressWorkingUntilConfirmed`, `.ConfirmEmailChange_MovesTheAccountToTheNewAddress`, `.ChangeEmail_ToATakenAddress_IsIndistinguishableAndSendsNothing`, `.ConfirmEmailChange_ForAnotherUser_IsRefused` | Integration | ✅ |
+| FR-014 export contents | `ExportAndDeletionTests.Export_ContainsTheCallersOwnProfile`, `.Export_ExplainsWhatIsDeliberatelyAbsent`, `.Export_RequiresAuthentication` | Integration | ✅ |
+| FR-014 **export leaks nothing** | `ExportAndDeletionTests.Export_NeverReturnsAnotherUsersData`. The ADR-0020 assignment-authorization suite this row once promised to reuse does not apply yet: **no assignment is stored server-side in M1**, so there is nothing for an export to over-share. It becomes real in M4. | Authorization | ⚠️ partial |
 | FR-014 archive delivery | **not applicable in M1** — the archive is a few hundred bytes and is returned inline, so there is no link to be single-use or short-lived. The [ADR-0022](../adr/0022-account-deletion-and-data-export.md) link arrives with the first export large enough to generate asynchronously (M2+). | — | n/a |
-| FR-015 deletion | `DeleteAccountTests` (account/credentials/passkeys gone, all sessions revoked, no soft-deleted row remains) | Integration | ✅ |
-| FR-015 re-auth required | `DeleteAccountTests.WithoutRecentReauthentication_IsRejected` | Integration | ✅ |
-| FR-015 history survives | `DeleteAccountTests.CompletedDraw_Unchanged_And_RevealLinksStillResolve` | Integration | ✅ |
+| FR-015 deletion | `ExportAndDeletionTests.Delete_RemovesTheAccountAndEndsEverySession` + `.Delete_FreesTheAddressForAFreshSignup` (no soft-deleted row can remain, or the address would still be taken); `SessionServiceTests.Refresh_AfterTheAccountIsDeleted_RevokesRatherThanIssuing` | Integration / Unit | ✅ |
+| FR-015 re-auth required | `ExportAndDeletionTests.Delete_WithoutTheCorrectPassword_IsRefused` + `.Delete_RequiresAuthentication` | Integration | ✅ |
+| FR-015 history survives | **not applicable in M1** — the criterion is about a completed draw outliving its organizer's account, and Secret-Santa data is not stored server-side until M4. Nothing on the server can be affected by deletion because nothing is there. | — | n/a |
 | FR-015 local data survives | manual browser check — deletion is server-side only | Exploratory | ❌ (manual) |
 | FR-007 sign-up screen | `AccountPageTests.SignUp_ShowsTheSameConfirmationWhateverTheAddress` | Component | ✅ |
 | FR-007 / NFR-003 the rule is explained | `AccountPageTests.SignUp_SaysWhyThePasswordWasRefused_InTheUsersLanguage` and `.SignUp_ExplainsABreachedPassword_RatherThanJustRefusingIt` — the code becomes a localized sentence, not a code on screen; `.SignUp_PassesThroughAMessageItHasNoTranslationFor` pins the fallback the mixed contract needs | Component | ✅ |
@@ -104,17 +107,19 @@ Circles, sync, the claim flow and Secret-Santa linking are **out of scope** (M2�
 | FR-011 broken ceremony does report | `AccountPageTests.BrokenPasskeyCeremony_DoesSayWhatWentWrong` | Component | ✅ |
 | FR-013 confirm-change link states | `AccountPageTests.ConfirmEmailChange_*` (arriving signed out, and arriving as a different account, each get their own message rather than a bare 401) | Component | ✅ |
 | FR-014 export reaches the user | `AccountPageTests.Export_HandsTheArchiveToThePlatformToSave` (file name, content type, contents) | Component | ✅ |
-| FR-015 deletion is deliberate | `AccountPageTests.DeleteAccount_RequiresThePasswordBeforeTheButtonDoesAnything` (disabled without a password; not the primary button style) | Component | ✅ |
+| FR-015 deletion is deliberate | `AccountPageTests.DeleteAccount_RequiresThePasswordBeforeTheButtonDoesAnything` + `.DeleteAccount_OnSuccess_SaysTheAccountIsGoneAndDropsTheSession` | Component | ✅ |
 | Client layering | `MainUiLayeringTests` (`Main.Ui` depends on neither `AppSuite.Identity`, `Main.Service`, EF Core nor the WebAssembly host; `ApiClient` and `Ui.Abstractions` stay platform-neutral) | Architecture | ✅ |
-| NFR-003 string parity | `LocalizationParityTests` extended to the **email templates** | Localization | ✅ |
-| NFR-003 email language | `EmailLanguageTests` (reset mail uses the *account's* language, not the requester's browser) | Integration | ✅ |
-| NFR-004 data minimisation | `PersistedModelReviewTests` (no DOB/postal/phone/payment columns; assignment columns limited to giver, recipient, group) | Architecture | ✅ |
-| NFR-004 credential storage | covered by `PasswordPolicyTests` + `PasskeyTests` above (hash only; no private key) | Integration | ✅ |
-| **NFR-005 identical responses** | `EnumerationTests` — parameterised over sign-up, sign-in, reset and email-change: body and status identical for existing vs non-existing addresses | Security | ✅ |
-| **NFR-005 timing** | `EnumerationTimingTests` — median response times of the two paths compared over repeated runs; fails if they diverge beyond the harness noise floor | Security | ✅ |
-| NFR-005 queued dispatch | `OutboxTests.MailIsEnqueuedNotAwaited` — the structural guarantee behind the timing test | Unit | ✅ |
-| NFR-005 lockout is not an oracle | `EnumerationTests.RateLimitedResponses_DoNotRevealAccountExistence` | Security | ✅ |
-| Layering | `IdentityLayeringTests` (no ASP.NET/EF in `Main.Service.Core`; no Secret-Santa project references `AppSuite.Identity`) | Architecture | ✅ |
+| NFR-003 string parity | `LocalizationParityTests` — one in `Main.Ui.Test`, one in `SecretSanta.Ui.Test`: every neutral key is present and non-empty in `de-CH`, `en` and `fr-CH` | Localization | ✅ |
+| NFR-003 mail templates | **not** the parity test — the templates are code in `MailTemplateRenderer`, not RESX, so they are covered by `MailTemplateRendererTests` (each template renders in all three languages; `Normalize_ReducesCultureNamesToASupportedLanguage`). The row that claimed the parity test was "extended to the email templates" described a design that was not built. | Unit | ✅ |
+| NFR-003 email language | `PasswordResetTests.ResetMail_UsesTheAccountsLanguage` (the *account's* language, not the requester's browser) and `MailDeliveryTests.Registering_DeliversTheVerificationMailInTheChosenLanguage`, both asserting on messages delivered to Mailpit | Integration | ✅ |
+| NFR-004 data minimisation | `PersistedModelReviewTests.NoPersistedProperty_HoldsDataTheSuitePromisedNotToKeep` — scans every persisted property of the whole model for date-of-birth, postal, phone and payment fragments. **Found a real breach when written:** `IdentityUser` ships `PhoneNumber`/`PhoneNumberConfirmed` and the first migration created both columns; they are now mapped away and dropped. The assignment half of the criterion is M4 (nothing server-side yet). | Architecture | ✅ |
+| NFR-004 credential storage | `PersistedModelReviewTests.ThePassword_IsPersistedOnlyAsAHash` and `.TheRefreshTokenTable_StoresHandlesNotSecrets`. The passkey half (no private key, no biometric data) is **not covered** — see the coverage notes. | Architecture | ⚠️ partial |
+| **NFR-005 identical responses** | Asserted per surface next to that surface's own tests, not in one parameterised class: `AccountEndpointsTests.Register_ExistingAddress_*` and `.Login_UnknownAddressAndWrongPassword_AreIndistinguishable`, `PasswordResetTests.ForgotPassword_UnknownAddress_LooksIdenticalAndSendsNothing`, `ProfileAndEmailChangeTests.ChangeEmail_ToATakenAddress_IsIndistinguishableAndSendsNothing`, `ResendVerificationTests.UnknownAddress_*` and `.AlreadyVerifiedAccount_*` | Security | ✅ |
+| **NFR-005 timing** | `EnumerationTimingTests` — interleaved samples, medians compared, per surface. **Found two real leaks when written:** sign-in answered 20x faster for an unknown address (no password hash to compute) and sign-up 18x faster for a *taken* one (no account to create). Both are closed by `DecoyPasswordVerifier`. | Security | ✅ |
+| NFR-005 queued dispatch | `OutboxTests.MailIsEnqueuedNotAwaited` — one of the two structural guarantees behind the timing test | Unit | ✅ |
+| NFR-005 equal password work | `DecoyPasswordVerifier` — the other one: a branch with no password to check spends the hash anyway, so it cannot be told apart by time | Unit / Security | ✅ |
+| NFR-005 lockout is not an oracle | `RateLimitingTests.RateLimitRejection_DoesNotRevealWhetherTheAccountExists`, plus `.SensitiveEndpoints_AreRateLimitedPerSource` and `.Refresh_IsNotRateLimited` | Security | ✅ |
+| Layering | `LayeringTests` (no EF Core, Npgsql or ASP.NET in `SharedKernel` or `Main.Service.Core`; `Service.Core` does not reach into `Service.Repository`) and `SecretSantaLayeringTests.SecretSanta_DoesNotDependOnTheIdentityModel` (ADR-0019 — the rule exists before M4 gives anyone a reason to break it) | Architecture | ✅ |
 
 ## Test data & environments
 
@@ -153,18 +158,45 @@ listed here so the matrix is not mistaken for full coverage:
    extension point (a registered failing guard blocks deletion); the *circle* guard itself arrives with
    M2.
 
+Reconciling this plan against the tests that actually exist (2026-07-28) turned up **four more gaps**
+that the matrix had been reporting as covered:
+
+4. **Passkey registration and a successful passkey sign-in are not automated.** Every passkey test in
+   the suite is a negative or an authorization check — listing, scoping, removal, "garbage is
+   refused", "options reveal no user". None of them creates a credential, because creating one needs
+   a real WebAuthn authenticator, which an in-process `WebApplicationFactory` does not have. The
+   consequence is that **NFR-004's "no private key, no biometric data" has nothing to inspect**: there
+   is no stored credential in any test. Both were verified by hand through a CDP virtual authenticator
+   during the browser walkthrough; neither runs in CI. Closing this means driving the ceremony from a
+   browser in the test suite, which belongs with the milestone-7 end-to-end work.
+5. **FR-015 "history survives" and the export authorization suite have nothing to act on in M1.**
+   Both are about Secret-Santa data on the server, and there is none until M4. They are marked `n/a`
+   above rather than ✅.
+6. **FR-007's pending-account restrictions cannot be tested**, because sync, claiming and circles do
+   not exist yet. Only the "may sign in, and is marked unverified" half is real in M1.
+7. **The matrix named ~17 test classes that were never written under those names.** `RegisterTests`,
+   `LoginTests`, `RefreshRotationTests`, `DeleteAccountTests`, `EnumerationTests` and others were
+   plan-time names; the behaviour is largely covered, but by differently-named classes. Every row
+   above now names a class that exists, so the traceability chain points at something real.
+
 Also not covered here: end-to-end journeys across Web **and** native, deferred to milestone 7; and
 deliverability (SPF/DKIM/DMARC, bounces), which no local sink can exercise
 ([ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md)).
 
 ## Exit criteria
 
-- [ ] All acceptance criteria covered by automated tests **except the three recorded above**
-- [ ] Refresh rotation, reuse detection and the racing-refresh case all green
-- [ ] Enumeration parity green on every address-accepting endpoint, body/status **and** timing
-- [ ] Export authorization tests green (no assignment reachable that the UI would refuse)
-- [ ] Architecture fitness functions green
-- [ ] Localization parity green, including email templates
+- [ ] All acceptance criteria covered by automated tests **except those recorded above** — open: the
+      passkey ceremony (gap 4), which also blocks NFR-004's stored-credential check
+- [x] Refresh rotation, reuse detection and the racing-refresh case all green — at unit, store and
+      endpoint level (2026-07-28)
+- [x] Enumeration parity green on every address-accepting endpoint, body/status **and** timing
+      (2026-07-28) — the timing half found and closed two 20x leaks on the way
+- [x] Export authorization green *for what M1 stores* — `Export_NeverReturnsAnotherUsersData`. The
+      assignment-level checks this criterion anticipates have nothing to guard until M4
+- [x] Architecture fitness functions green (2026-07-28) — 11 rules, including the new
+      Secret-Santa ↛ Identity rule and the NFR-004 model review
+- [x] Localization parity green, including the mail templates (via `MailTemplateRendererTests` —
+      the templates are code, not RESX)
 - [x] Browser walkthrough completed (2026-07-28) — register → verification mail → verify → sign in →
       reload/silent refresh → profile + DE/EN/FR switch with no reload → passkey register, sign in and
       cancel → forgot/reset → change email + confirm → export download → delete. Console clean, **zero
@@ -175,4 +207,6 @@ deliverability (SPF/DKIM/DMARC, bounces), which no local sink can exercise
       through the running Aspire stack (Postgres + Mailpit + API + WASM). The rejection reads as a
       sentence in each language rather than an error code, and the console stayed clean apart from
       the deliberate 400s.
-- [ ] CI green
+- [ ] CI green — **there is no CI pipeline yet.** The suite (272 tests) is green locally on
+      2026-07-28; the pipeline itself is an open item in the
+      [ADR backlog](../adr/index.md#open-decisions-backlog) and is milestone 7's work.

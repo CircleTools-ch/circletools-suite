@@ -253,6 +253,14 @@ architecture tests keeping ASP.NET/EF out of `Service.Core`.
 - **Timing equality (NFR-005) is a design constraint, not a test.** Mail dispatch must be queued
   before the response is written, or the existing-address path is measurably slower. Getting this
   wrong is invisible in functional tests.
+  - **This was stated too narrowly, and the gap it left was real.** Queued dispatch is *necessary*
+    and was never *sufficient*: the dominant cost on these endpoints is the **password hash**, not
+    the mail. `EnumerationTimingTests` measured sign-in answering **20x faster** for an unknown
+    address (nothing to verify) and sign-up **18x faster** for an address already taken (no account
+    to create) — the second one leaking in the opposite direction from the one anyone was watching
+    for. Both are closed by `DecoyPasswordVerifier`, which spends the hash on the branch that has no
+    password to check. The lesson generalises: **any** work that happens on one branch and not the
+    other is a timing oracle, and hashing is the most expensive thing these endpoints do.
 - **The CSP directive set** cannot be finalised without the hosting origin; M1 ships the strict
   development CSP pinned above, and a deployment check is added with the hosting ADR.
 - **The RP ID is `localhost` in development**, because `Auth:Passkey:ServerDomain` is left unset and
@@ -272,12 +280,18 @@ architecture tests keeping ASP.NET/EF out of `Service.Core`.
 
 ## Definition of Done
 
-- [ ] Meets acceptance criteria of all covered requirements, **except the three recorded as deferred above**
-- [ ] Builds clean under analyzers (warnings = errors)
-- [ ] Tests per TP-002 pass; coverage target met
-- [ ] Architecture boundaries respected (arch tests green — no ASP.NET/EF in `Service.Core`)
-- [ ] Docs, glossary, and API comments updated; **arc42 ch.5 gains the Identity context**
-- [ ] Localized strings provided (DE/EN/FR), **including the four emails**
+- [ ] Meets acceptance criteria of all covered requirements, **except those recorded as deferred
+      above and in [TP-002](TP-002-m1-identity.md)** — the open one is the passkey ceremony, which
+      also leaves NFR-004's stored-credential check with nothing to inspect
+- [x] Builds clean under analyzers (warnings = errors) — 0 warnings, 2026-07-28
+- [x] Tests per TP-002 pass — 272 green, 2026-07-28. *Coverage target: none is stated anywhere in
+      the guidelines, so this half of the criterion cannot be met as written; the
+      [testing guidelines](../guidelines/testing-guidelines.md) should either name a number or drop it.*
+- [x] Architecture boundaries respected (arch tests green — no ASP.NET/EF in `Service.Core`, and
+      no Secret-Santa project reaches the Identity model)
+- [x] Docs, glossary, and API comments updated; **arc42 ch.5 gains the Identity context** (§5.3)
+- [x] Localized strings provided (DE/EN/FR), **including the four emails**
 - [x] Verified in a real browser across DE/EN/FR, with the browser console clean (2026-07-28) — see
       [TP-002](TP-002-m1-identity.md) exit criteria for what the walkthrough covered
-- [ ] Traceability links closed
+- [x] Traceability links closed — every row of [TP-002](TP-002-m1-identity.md)'s matrix names a test
+      class that exists (reconciled 2026-07-28; ~17 rows had named classes that were never written)
