@@ -35,21 +35,27 @@
     <Project Path="src/Aspire/AppSuite.ServiceDefaults/AppSuite.ServiceDefaults.csproj" />
   </Folder>
   <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/AppSuite.ApiClient/AppSuite.ApiClient.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.Application/AppSuite.Application.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.Identity/AppSuite.Identity.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.Infrastructure/AppSuite.Infrastructure.csproj" />
+    <Project Path="src/BuildingBlocks/AppSuite.Localization/AppSuite.Localization.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.SharedKernel/AppSuite.SharedKernel.csproj" />
+    <Project Path="src/BuildingBlocks/AppSuite.Ui.Abstractions/AppSuite.Ui.Abstractions.csproj" />
+    <Project Path="src/BuildingBlocks/AppSuite.Ui.Shared/AppSuite.Ui.Shared.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/AppSuite.Architecture.Test/AppSuite.Architecture.Test.csproj" />
   </Folder>
   <Folder Name="/tests/BuildingBlocks/">
+    <Project Path="tests/BuildingBlocks/AppSuite.ApiClient.Test/AppSuite.ApiClient.Test.csproj" />
     <Project Path="tests/BuildingBlocks/AppSuite.Identity.Test/AppSuite.Identity.Test.csproj" />
   </Folder>
   <Folder Name="/tests/Apps/" />
   <Folder Name="/tests/Apps/Main/">
     <Project Path="tests/Apps/Main/AppSuite.Main.Service.Test/AppSuite.Main.Service.Test.csproj" />
     <Project Path="tests/Apps/Main/AppSuite.Main.Service.Repository.Test/AppSuite.Main.Service.Repository.Test.csproj" />
+    <Project Path="tests/Apps/Main/AppSuite.Main.Ui.Test/AppSuite.Main.Ui.Test.csproj" />
   </Folder>
   <Folder Name="/tests/Apps/SecretSanta/">
     <Project Path="tests/Apps/SecretSanta/AppSuite.SecretSanta.Core.Test/AppSuite.SecretSanta.Core.Test.csproj" />

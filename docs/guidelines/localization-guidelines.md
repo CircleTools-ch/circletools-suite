@@ -19,10 +19,35 @@
 
 ## 4. Culture selection
 - Selected culture is a **user preference**, persisted locally and synced across devices.
+- Persist it through `IKeyValueStore` under a **per-app key** (`CultureOptions.StorageKey`), so two
+  apps in the suite do not overwrite each other's choice.
+- **Changing language must not reload the page**
+  ([UC-MAIN-005](../use-cases/main/UC-MAIN-005-manage-profile.md)). A `forceLoad` navigation is a
+  regression, not a shortcut. In Blazor WebAssembly this needs three things, and missing any one of
+  them fails quietly rather than loudly:
+  - Start the runtime with `loadAllSatelliteResources: true`. Otherwise only the startup culture's
+    resource assemblies are downloaded and every other language falls back to the neutral strings —
+    the picker "works" and shows English.
+  - Set `CultureInfo.CurrentCulture`/`CurrentUICulture`, not just the `DefaultThread*` properties.
+    The defaults are consulted only by threads that have not already resolved their own.
+  - Rebuild the tree, don't just re-render it: wrap the router in `CultureBoundary` and put an
+    `@key` on the `Router` bound to the culture name. A `StateHasChanged` above the router does not
+    reliably reach the layout.
+- **A keyed rebuild discards page state.** Any page that both changes the language and needs to show
+  something afterwards (a "saved" confirmation) must keep it somewhere that survives — the query
+  string, or a scoped service.
+- When a signed-in user's account carries a language, it wins over whatever this browser last
+  remembered.
 
 ## 5. Glossary vs. UI terms
 - The [glossary](../glossary/index.md) holds canonical **English** domain terms (code names). It
   may list DE/EN/FR **display** terms for reference; those are not code identifiers.
 
-## 6. Open decision
-- Resource format (RESX vs JSON/PO) & culture routing — to be fixed by an ADR.
+## 6. Decided
+- Resource format and culture routing: **RESX + `IStringLocalizer`**, cultures `de-CH` (default),
+  `en` and `fr-CH` — [ADR-0011](../adr/0011-localization-format-and-culture.md). The shared
+  implementation lives in `AppSuite.Localization`
+  ([ADR-0025](../adr/0025-shared-ui-building-blocks.md)).
+- Key parity across all three cultures is enforced per app by a `LocalizationParityTests` fixture: a
+  key present in the neutral resources and missing or empty in any culture fails the build's test
+  step, rather than falling back silently on screen.

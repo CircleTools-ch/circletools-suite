@@ -1,0 +1,32 @@
+@implements IDisposable
+@inject ICultureProvider Culture
+
+@*
+    Rebuilds everything below it whenever the language changes.
+
+    IStringLocalizer resolves CultureInfo.CurrentUICulture at lookup time, so a re-render is all a
+    language switch needs — the obvious implementation reloads the whole page, which UC-MAIN-005
+    explicitly rules out ("without a reload or a flash of the wrong language").
+
+    It hands the culture name to its child content so the child can put an @key on the subtree. That
+    is not belt-and-braces: calling StateHasChanged here alone does *not* reliably reach the layout,
+    which hangs off Router → RouteView → LayoutView and re-renders on its own schedule. Verified in
+    a browser: without the key, choosing a new language left the navigation and the page heading in
+    the previous one until the next navigation. Keying rebuilds the subtree, so every component
+    reads the new culture on its first render.
+*@
+
+@ChildContent(Culture.CurrentCulture.Name)
+
+@code {
+    /// <summary>The application tree, given the current culture name to key itself on.</summary>
+    [Parameter]
+    [EditorRequired]
+    public RenderFragment<string> ChildContent { get; set; } = default!;
+
+    protected override void OnInitialized() => Culture.CultureChanged += OnCultureChanged;
+
+    private void OnCultureChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Culture.CultureChanged -= OnCultureChanged;
+}

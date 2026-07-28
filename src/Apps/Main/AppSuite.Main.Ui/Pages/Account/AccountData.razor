@@ -1,0 +1,143 @@
+@page "/account/data"
+@inject IStringLocalizer<AppStrings> L
+@inject AccountApiClient Api
+@inject AccountSession Session
+@inject IFileSaver Files
+
+<PageTitle>@L["DataTitle"]</PageTitle>
+
+@if (_deleted)
+{
+    @* Rendered outside AuthorizeView: the account is gone, so the signed-in branch no longer
+       applies and the user would otherwise be bounced to sign-in mid-sentence. *@
+    <AuthCard Title="@L["DeleteDoneTitle"]">
+        <ChildContent>
+            <p class="mb-0">@L["DeleteDoneText"]</p>
+        </ChildContent>
+        <Footer>
+            <a href="">@L["NavDashboard"]</a>
+        </Footer>
+    </AuthCard>
+}
+else
+{
+    <AuthorizeView>
+        <Authorized>
+            <div class="appsuite-page">
+                <h1 class="h4">@L["DataTitle"]</h1>
+                <p class="text-body-secondary">@L["DataLead"]</p>
+
+                <section class="mb-5">
+                    <h2 class="h5">@L["ExportTitle"]</h2>
+                    <p class="text-body-secondary small">@L["ExportLead"]</p>
+
+                    <ProblemAlert Message="@_exportError" />
+
+                    <BusyButton Type="button"
+                                CssClass="btn btn-primary"
+                                Label="@L["ExportDownload"]"
+                                Busy="_exporting"
+                                OnClick="ExportAsync" />
+                </section>
+
+                <section class="appsuite-danger">
+                    <h2 class="h5">@L["DeleteTitle"]</h2>
+                    <p class="small">@L["DeleteLead"]</p>
+
+                    <form class="appsuite-form" @onsubmit="DeleteAsync" @onsubmit:preventDefault="true">
+                        <ProblemAlert Message="@_deleteError" Details="@_deleteDetails" />
+
+                        <div>
+                            <label class="form-label" for="delete-password">@L["DeletePasswordPrompt"]</label>
+                            @* Bound on input, not on change: the button below is gated on this
+                               field, and with the default change binding it only unlocks when the
+                               field loses focus - so the user's first click lands on a button that
+                               is still disabled and does nothing. *@
+                            <input id="delete-password" type="password" class="form-control" required
+                                   autocomplete="current-password"
+                                   @bind="_password" @bind:event="oninput" />
+                        </div>
+
+                        @* Not the primary style and not the first thing focused on the page: an
+                           irreversible action should take a deliberate move to reach (TP-002). *@
+                        <BusyButton CssClass="btn btn-outline-danger"
+                                    Label="@L["DeleteSubmit"]"
+                                    Busy="_deleting"
+                                    Disabled="@(_password.Length == 0)" />
+                    </form>
+                </section>
+            </div>
+        </Authorized>
+        <NotAuthorized>
+            @* Guarded, because deleting an account makes this branch true a moment before the page
+               itself re-renders: clearing the session publishes the new authentication state
+               synchronously, so an unguarded redirect fires first and the user is bounced to a
+               sign-in form instead of being told their account is gone. *@
+            @if (!_deleted)
+            {
+                <RedirectToLogin />
+            }
+        </NotAuthorized>
+    </AuthorizeView>
+}
+
+@code {
+    private string _password = string.Empty;
+    private string? _exportError;
+    private string? _deleteError;
+    private IReadOnlyList<string>? _deleteDetails;
+    private bool _exporting;
+    private bool _deleting;
+    private bool _deleted;
+
+    private async Task ExportAsync()
+    {
+        _exporting = true;
+        _exportError = null;
+
+        var result = await Api.ExportAsync();
+
+        if (result.Value is { } export)
+        {
+            var json = JsonSerializer.Serialize(export, ExportJson);
+            var stamp = export.ExportedAt.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+            await Files.SaveAsync($"appsuite-export-{stamp}.json", "application/json", json);
+        }
+        else
+        {
+            _exportError = ApiErrorText.Describe(L, result.Error);
+        }
+
+        _exporting = false;
+    }
+
+    private async Task DeleteAsync()
+    {
+        _deleting = true;
+        _deleteError = null;
+        _deleteDetails = null;
+
+        var result = await Api.DeleteAccountAsync(new DeleteAccountRequest(_password));
+
+        _deleting = false;
+
+        if (!result.IsSuccess)
+        {
+            _deleteError = ApiErrorText.Describe(L, result.Error);
+            _deleteDetails = ApiErrorText.Details(result.Error);
+            return;
+        }
+
+        // Set before clearing: the redirect guard above reads this, and clearing publishes the new
+        // authentication state before this component gets a chance to re-render.
+        _deleted = true;
+
+        // The server revoked the sessions along with the account, so there is nothing to log out of.
+        await Session.ForgetAsync();
+    }
+
+    // Indented, because a user opening their own export should be able to read it.
+    private static readonly JsonSerializerOptions ExportJson =
+        new(JsonSerializerDefaults.Web) { WriteIndented = true };
+}

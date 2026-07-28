@@ -4,7 +4,14 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+    <!-- Asset fingerprinting is off here, and only here, because of the CSP (ADR-0021).
+         Fingerprinting works by filling an inline <script type="importmap"> with the hashed asset
+         names, and an import map is subject to script-src. With no 'unsafe-inline' the browser
+         blocks it and logs a CSP violation on every page load; the alternative - pinning the map's
+         SHA-256 in the policy - changes with every build, which a static meta tag cannot track.
+         Cache-busting is not lost: the PWA's service-worker-assets.js manifest already carries a
+         content hash for every file. -->
+    <OverrideHtmlAssetPlaceholders>false</OverrideHtmlAssetPlaceholders>
     <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
     <!-- Localization (ADR-0011) needs real culture data; the repo default is invariant. -->
     <InvariantGlobalization>false</InvariantGlobalization>

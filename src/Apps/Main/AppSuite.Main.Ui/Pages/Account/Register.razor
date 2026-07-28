@@ -1,0 +1,85 @@
+@page "/account/register"
+@inject IStringLocalizer<AppStrings> L
+@inject AccountApiClient Api
+@inject ICultureProvider Culture
+
+<PageTitle>@L["RegisterTitle"]</PageTitle>
+
+@if (_sent)
+{
+    @* The same message whether or not the address was already registered. Saying anything else
+       would turn sign-up into a way to discover who has an account (NFR-005). *@
+    <AuthCard Title="@L["RegisterDoneTitle"]">
+        <ChildContent>
+            <p class="mb-0">@L["RegisterDoneText"]</p>
+        </ChildContent>
+    </AuthCard>
+}
+else
+{
+    <AuthCard Title="@L["RegisterTitle"]" Lead="@L["RegisterLead"]">
+        <ChildContent>
+            <form class="appsuite-form" @onsubmit="SubmitAsync" @onsubmit:preventDefault="true">
+                <ProblemAlert Message="@_error" Details="@_details" />
+
+                <div>
+                    <label class="form-label" for="register-name">@L["FieldDisplayName"]</label>
+                    <input id="register-name" class="form-control" required maxlength="100"
+                           autocomplete="nickname" @bind="_displayName" />
+                    <div class="form-text">@L["DisplayNameHint"]</div>
+                </div>
+
+                <div>
+                    <label class="form-label" for="register-email">@L["FieldEmail"]</label>
+                    <input id="register-email" type="email" class="form-control" required
+                           autocomplete="email" @bind="_email" />
+                </div>
+
+                <div>
+                    <label class="form-label" for="register-password">@L["FieldPassword"]</label>
+                    <input id="register-password" type="password" class="form-control" required minlength="12"
+                           autocomplete="new-password" @bind="_password" />
+                    <div class="form-text">@L["PasswordHint"]</div>
+                </div>
+
+                <BusyButton Label="@L["RegisterSubmit"]" Busy="_busy" />
+            </form>
+        </ChildContent>
+        <Footer>
+            @L["RegisterHaveAccount"] <a href="account/login">@L["NavSignIn"]</a>
+        </Footer>
+    </AuthCard>
+}
+
+@code {
+    private string _displayName = string.Empty;
+    private string _email = string.Empty;
+    private string _password = string.Empty;
+    private string? _error;
+    private IReadOnlyList<string>? _details;
+    private bool _busy;
+    private bool _sent;
+
+    private async Task SubmitAsync()
+    {
+        _busy = true;
+        _error = null;
+        _details = null;
+
+        // The language the form was filled in decides which language the verification mail arrives
+        // in - there is no account yet to read a preference from.
+        var request = new RegisterRequest(_displayName, _email, _password, Culture.CurrentCulture.Name);
+        var result = await Api.RegisterAsync(request);
+
+        _busy = false;
+
+        if (result.IsSuccess)
+        {
+            _sent = true;
+            return;
+        }
+
+        _error = ApiErrorText.Describe(L, result.Error);
+        _details = ApiErrorText.Details(result.Error);
+    }
+}

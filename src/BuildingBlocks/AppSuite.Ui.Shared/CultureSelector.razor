@@ -1,0 +1,23 @@
+@inject ICultureProvider Culture
+@inject IStringLocalizer<SharedStrings> L
+
+@*
+    The language picker. Changing the selection re-renders the app in the new language rather than
+    reloading the page (UC-MAIN-005) — see CultureBoundary, which is what makes that work.
+*@
+
+<label class="form-label visually-hidden" for="culture-selector">@L["Language"]</label>
+<select id="culture-selector" class="form-select form-select-sm"
+        aria-label="@L["Language"]"
+        value="@Culture.CurrentCulture.Name"
+        @onchange="OnChangedAsync">
+    @foreach (var culture in AppCultures.Supported)
+    {
+        <option value="@culture">@AppCultures.DisplayName(culture)</option>
+    }
+</select>
+
+@code {
+    private async Task OnChangedAsync(ChangeEventArgs args) =>
+        await Culture.SetCultureAsync(args.Value?.ToString() ?? AppCultures.DefaultCulture);
+}

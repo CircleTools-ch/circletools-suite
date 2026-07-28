@@ -1,0 +1,50 @@
+@inject IStringLocalizer<AppStrings> L
+@inject AccountApiClient Api
+
+@*
+    Shown while an account's address is still unproven (FR-007). A pending account may sign in, so
+    without this the user meets a series of refusals with no explanation and no way forward - the
+    "send again" action is the way forward, because the original mail is the one step of sign-up
+    they cannot retry themselves.
+*@
+
+<AuthorizeView>
+    <Authorized>
+        @if (!context.User.IsEmailVerified())
+        {
+            <div class="alert alert-warning appsuite-banner mb-0 rounded-0" role="alert">
+                <span>@L["VerifyBannerText"]</span>
+                @if (_sent)
+                {
+                    <span class="fw-semibold">@L["VerifyBannerSent"]</span>
+                }
+                else
+                {
+                    <BusyButton Type="button"
+                                CssClass="btn btn-sm btn-outline-dark ms-2"
+                                Label="@L["VerifyBannerResend"]"
+                                Busy="_busy"
+                                OnClick="@(() => ResendAsync(context.User.Email()))" />
+                }
+            </div>
+        }
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    private bool _busy;
+    private bool _sent;
+
+    // The server answers identically for "resent", "already verified" and "no such address"
+    // (NFR-005), so there is nothing to distinguish here: anything but a transport failure means
+    // the same thing to the user.
+    private async Task ResendAsync(string email)
+    {
+        _busy = true;
+
+        var result = await Api.ResendVerificationAsync(new ResendVerificationRequest(email));
+
+        _busy = false;
+        _sent = result.IsSuccess;
+    }
+}

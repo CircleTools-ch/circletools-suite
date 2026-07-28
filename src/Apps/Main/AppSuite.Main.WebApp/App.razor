@@ -1,8 +1,20 @@
-<Router AppAssembly="@typeof(App).Assembly"
-        AdditionalAssemblies="new[] { typeof(AppSuite.Main.Ui.AppStrings).Assembly }"
-        NotFoundPage="typeof(Pages.NotFound)">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-</Router>
+@*
+    CascadingAuthenticationState feeds AuthorizeView from the access token (ADR-0021).
+    CultureBoundary hands down the current culture name; keying the router on it rebuilds the whole
+    tree when the language changes, so the switch takes effect without a reload and without a flash
+    of the previous language (UC-MAIN-005).
+*@
+
+<CascadingAuthenticationState>
+    <CultureBoundary Context="culture">
+        <Router @key="culture"
+                AppAssembly="@typeof(App).Assembly"
+                AdditionalAssemblies="new[] { typeof(AppSuite.Main.Ui.AppStrings).Assembly }"
+                NotFoundPage="typeof(Pages.NotFound)">
+            <Found Context="routeData">
+                <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+                <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+            </Found>
+        </Router>
+    </CultureBoundary>
+</CascadingAuthenticationState>

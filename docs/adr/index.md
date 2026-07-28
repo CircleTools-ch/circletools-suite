@@ -32,6 +32,9 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0021](0021-web-auth-token-model.md) | Web auth token model (bearer in WASM) | Accepted | 2026-07-27 |
 | [0022](0022-account-deletion-and-data-export.md) | Account deletion & data export (immediate delete, export mirrors visibility) | Accepted | 2026-07-27 |
 | [0023](0023-local-dev-infrastructure-in-apphost.md) | Local dev infrastructure in the AppHost (containers behind provider-agnostic seams) | Accepted | 2026-07-27 |
+| [0024](0024-ui-styling-and-theming.md) | UI styling & theming (Bootstrap 5 + thin suite theme) | Accepted | 2026-07-28 |
+| [0025](0025-shared-ui-building-blocks.md) | Shared UI building blocks (Ui.Abstractions, Localization, ApiClient, Ui.Shared) | Accepted | 2026-07-28 |
+| [0026](0026-refresh-token-persistence.md) | Refresh-token persistence in the browser (session by default, durable on request) | Accepted | 2026-07-28 |
 
 ## Open decisions backlog
 
@@ -56,6 +59,21 @@ What remains open genuinely depends on the deployment phase or on evidence we do
   (immediate hard delete; the export reuses the ADR-0020 authorization boundary). Raised by the M1
   identity use cases, and legally due now that v2 stores PII. **Follow-up: NFR-004 (data protection &
   retention) does not exist yet** — first task of the M1 requirements step.
+
+### Recently closed (M1 client — 2026-07-28)
+
+Raised by building the Main app's Blazor client. The first two were being decided silently in code —
+the template's Bootstrap, and a storage choice with no record; the third is a gap ADR-0021 left open
+on purpose until there was a client to be concrete about.
+
+- ✅ **UI styling & theming** → [ADR-0024](0024-ui-styling-and-theming.md) (Bootstrap 5 + a thin suite
+  theme; brand deliberately absent, per [naming](../process/naming.md)).
+- ✅ **Shared UI building blocks** → [ADR-0025](0025-shared-ui-building-blocks.md), making
+  [arc42 ch.5](../arc42/05-building-block-view.md)'s planned blocks real. **Follow-up: Secret-Santa
+  still has its own culture implementation** and is migrated later, keeping its storage key.
+- ✅ **Refresh-token persistence in the browser** →
+  [ADR-0026](0026-refresh-token-persistence.md), extending
+  [ADR-0021](0021-web-auth-token-model.md) with the session/durable split behind "stay signed in".
 
 ### Depends on deployment (genuinely open)
 

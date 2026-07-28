@@ -1,0 +1,117 @@
+@page "/confirm-email-change"
+@inject IStringLocalizer<AppStrings> L
+@inject AccountApiClient Api
+@inject AuthenticationStateProvider AuthState
+
+@*
+    Root-level route, fixed by the links already sent (MailTemplateRenderer).
+
+    The only mail link that needs a signed-in session: the server checks that the caller is the
+    account the link names. That makes the two "wrong state" cases — arriving signed out, or signed
+    in as someone else — ordinary and worth explaining, rather than a bare 401.
+*@
+
+<PageTitle>@L["ConfirmEmailTitle"]</PageTitle>
+
+<AuthCard Title="@Title">
+    <ChildContent>
+        @switch (_state)
+        {
+            case State.Working:
+                <p class="mb-0">@L["VerifyWorking"]</p>
+                break;
+
+            case State.Confirmed:
+                <p class="mb-0">@L["ConfirmEmailDoneText"]</p>
+                break;
+
+            case State.SignedOut:
+                <p class="mb-0">@L["ConfirmEmailSignedOut"]</p>
+                break;
+
+            case State.WrongAccount:
+                <p class="mb-0">@L["ConfirmEmailWrongAccount"]</p>
+                break;
+
+            default:
+                <p class="mb-0">@L["ConfirmEmailFailed"]</p>
+                break;
+        }
+    </ChildContent>
+    <Footer>
+        @if (_state == State.SignedOut)
+        {
+            <a href="account/login">@L["NavSignIn"]</a>
+        }
+        else
+        {
+            <a href="account/security">@L["NavSecurity"]</a>
+        }
+    </Footer>
+</AuthCard>
+
+@code {
+    private enum State
+    {
+        Working,
+        Confirmed,
+        SignedOut,
+        WrongAccount,
+        Failed,
+    }
+
+    private State _state = State.Working;
+
+    /// <summary>The account changing address, from the link.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "userId")]
+    public string? UserId { get; set; }
+
+    /// <summary>The address being confirmed, from the link.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "newEmail")]
+    public string? NewEmail { get; set; }
+
+    /// <summary>The single-use token from the link.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "token")]
+    public string? Token { get; set; }
+
+    private string Title => _state switch
+    {
+        State.Working => L["ConfirmEmailTitle"],
+        State.Confirmed => L["ConfirmEmailDoneTitle"],
+        _ => L["ConfirmEmailTitle"],
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(UserId)
+            || string.IsNullOrWhiteSpace(NewEmail)
+            || string.IsNullOrWhiteSpace(Token))
+        {
+            _state = State.Failed;
+            return;
+        }
+
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+
+        if (user.Identity?.IsAuthenticated != true)
+        {
+            _state = State.SignedOut;
+            return;
+        }
+
+        if (!Guid.TryParse(UserId, out var linkUserId) || user.UserId() != linkUserId)
+        {
+            // Checked here as well as on the server so the message can say which of the two
+            // problems it is; a 401 alone cannot tell "signed out" from "signed in as someone else".
+            _state = State.WrongAccount;
+            return;
+        }
+
+        var result = await Api.ConfirmEmailChangeAsync(new ConfirmEmailChangeRequest(UserId, NewEmail, Token));
+
+        _state = result.IsSuccess ? State.Confirmed : State.Failed;
+    }
+}

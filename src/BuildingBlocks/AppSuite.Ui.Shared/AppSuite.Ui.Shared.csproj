@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- CA1716: "Shared" is a Visual Basic keyword. The name is fixed by arc42 ch.5, which plans this
+         block as Ui.Shared, and the suite is C#-only Blazor — renaming the project to satisfy a
+         cross-language rule we do not exercise would cost more than it buys. Razor-generated
+         components in this namespace are already exempt as generated code; this covers the
+         hand-written ones. -->
+    <NoWarn>$(NoWarn);CA1716</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AppSuite.Localization\AppSuite.Localization.csproj" />
+    <ProjectReference Include="..\AppSuite.Ui.Abstractions\AppSuite.Ui.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <PackageReference Include="Microsoft.Extensions.Localization" />
+  </ItemGroup>
+
+</Project>

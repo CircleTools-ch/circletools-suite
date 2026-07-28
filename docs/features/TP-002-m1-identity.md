@@ -1,7 +1,7 @@
 ---
 id: TP-002
 feature: FEAT-002
-status: Draft
+status: In progress
 related: [UC-MAIN-001, UC-MAIN-002, UC-MAIN-003, UC-MAIN-004, UC-MAIN-005, UC-MAIN-006, UC-MAIN-007, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, NFR-003, NFR-004, NFR-005]
 ---
 
@@ -36,10 +36,21 @@ Circles, sync, the claim flow and Secret-Santa linking are **out of scope** (M2�
 - **Security / timing** — paired enumeration tests per address-accepting endpoint.
 - **Architecture** — ASP.NET Core and EF absent from `Main.Service.Core`; `AppSuite.Identity` not
   referenced by any Secret-Santa project ([ADR-0019](../adr/0019-member-user-linking.md)).
-- **UI/component (bUnit)** — sign-up/sign-in validation, the verification banner, the deletion
-  confirmation screen.
+- **UI/component (bUnit)** — the account pages, composed over a stub transport rather than a fake API
+  client, so the assertions are about how a page reacts to what the API actually says. Two themes
+  dominate: the deliberately uninformative answers that keep NFR-005 intact, and the rule that a
+  cancelled passkey prompt is not a failure.
+- **Client HTTP (`AppSuite.ApiClient.Test`)** — the authorizing handler and the token stores in
+  isolation. This is where "exactly one refresh" is pinned; getting it wrong is what makes a
+  legitimate client look like a token thief to the server.
 - **Localization** — key parity across `de-CH`/`en`/`fr-CH`, **including the four email templates**.
 - **Exploratory** — the full browser walkthrough required by `CLAUDE.md`, in all three languages.
+  This is not a formality here: the walkthrough found six defects that every automated level above
+  passed clean — a CSP violation from Blazor's own import map, a captive-dependency startup failure,
+  a language picker that silently rendered the neutral strings, a language switch that did not reach
+  the layout, a delete button whose first click was swallowed because its field bound on blur, and a
+  post-deletion redirect that bounced the user to sign-in instead of a farewell. Where a defect could
+  be pinned by a component test afterwards, it was.
 
 ## Test matrix
 
@@ -54,7 +65,11 @@ Circles, sync, the claim flow and Secret-Santa linking are **out of scope** (M2�
 | FR-008 rotation | `RefreshRotationTests` (each refresh issues a new pair; the previous refresh token is invalidated) | Integration | ✅ |
 | FR-008 **reuse = theft** | `RefreshRotationTests.ConsumedToken_Replayed_RevokesWholeChain` | Integration | ✅ |
 | FR-008 **racing refresh** | `RefreshRotationTests.TwoConcurrentRefreshes_DoNotRevokeChain` (ADR-0021's explicit case) | Integration | ✅ |
-| FR-008 reload → silent refresh | `AuthStateProviderTests` (in-memory token lost on reload, refresh recovers, failure signs out cleanly) | Component | ✅ |
+| FR-008 reload → silent refresh | `TokenAuthStateProviderTests` (no token = anonymous; an unreadable token is treated as signed out rather than trusted; claims the UI needs are readable) | Component | ✅ |
+| FR-008 client refresh discipline | `AuthorizedHttpMessageHandlerTests` (401 → one refresh → one retry; **N concurrent 401s trigger exactly one refresh**; a token near expiry is renewed before the request goes out; a failed refresh returns the 401 and signs out; the refresh call itself bypasses the handler) | Client HTTP | ✅ |
+| FR-008 retry fidelity | `AuthorizedHttpMessageHandlerTests.Retry_ResendsTheOriginalBodyAndItsRequestOptions` — the retry keeps the body **and** the cross-origin credentials marker the ceremonies need | Client HTTP | ✅ |
+| FR-008 / ADR-0026 "stay signed in" | `RefreshTokenStoreTests` (durable vs session scope; saving to one clears the other; rotation keeps the scope it found; sign-out clears both) | Client HTTP | ✅ |
+| ADR-0010 failure mapping | `ApiResponseReaderTests` (status → failure; `ValidationProblem` field messages kept; the rate limiter's bare `{message}` recognised; a proxy's HTML page reported as the status alone) | Client HTTP | ✅ |
 | FR-009 reset flow | `PasswordResetTests` (single-use link, expiry, sessions revoked, pending email verified, passkeys retained) | Integration | ✅ |
 | FR-009 reset does not lock the old password | `PasswordResetTests.RequestingReset_DoesNotInvalidateCurrentPassword` | Integration | ✅ |
 | FR-010 passkey registration | `PasskeyTests` (public key + metadata only stored, label defaulting, duplicate authenticator rejected, removal leaves password usable) | Integration | ✅ |
@@ -64,11 +79,21 @@ Circles, sync, the claim flow and Secret-Santa linking are **out of scope** (M2�
 | FR-013 email change | `EmailChangeTests` (verify-before-swap, old address still valid until confirmed, old address notified, expiry leaves account unchanged) | Integration | ✅ |
 | FR-014 export contents | `ExportTests` (profile + memberships + owned groups + own wishlist + permitted assignments; empty account yields a valid archive) | Integration | ✅ |
 | FR-014 **export leaks nothing** | `ExportAuthorizationTests` (non-organizer export carries only the caller's own assignment; nothing unreadable via UI appears) | Authorization | ✅ |
-| FR-014 archive links | `ExportTests.ArchiveLink_IsSingleUseAndShortLived` | Integration | ✅ |
+| FR-014 archive delivery | **not applicable in M1** — the archive is a few hundred bytes and is returned inline, so there is no link to be single-use or short-lived. The [ADR-0022](../adr/0022-account-deletion-and-data-export.md) link arrives with the first export large enough to generate asynchronously (M2+). | — | n/a |
 | FR-015 deletion | `DeleteAccountTests` (account/credentials/passkeys gone, all sessions revoked, no soft-deleted row remains) | Integration | ✅ |
 | FR-015 re-auth required | `DeleteAccountTests.WithoutRecentReauthentication_IsRejected` | Integration | ✅ |
 | FR-015 history survives | `DeleteAccountTests.CompletedDraw_Unchanged_And_RevealLinksStillResolve` | Integration | ✅ |
 | FR-015 local data survives | manual browser check — deletion is server-side only | Exploratory | ❌ (manual) |
+| FR-007 sign-up screen | `AccountPageTests.SignUp_*` (the confirmation is identical whatever the address; the server's password-policy messages are shown) | Component | ✅ |
+| FR-007 verification banner | `AccountPageTests.VerificationBanner_*` (shown only while unverified; "send again" reports sent) | Component | ✅ |
+| FR-007 verification link | `AccountPageTests.VerifyEmail_*` (the token is passed through exactly as it arrived; an incomplete link explains instead of calling the API) | Component | ✅ |
+| FR-009 forgot screen | `AccountPageTests.ForgotPassword_ShowsTheSameConfirmationForAnyAddress` | Component | ✅ |
+| FR-011 **cancel is not an error** | `AccountPageTests.CancelledPasskeySignIn_LeavesThePageWithNoError` — nothing with `role="alert"` appears, and no assertion is posted | Component | ✅ |
+| FR-011 broken ceremony does report | `AccountPageTests.BrokenPasskeyCeremony_DoesSayWhatWentWrong` | Component | ✅ |
+| FR-013 confirm-change link states | `AccountPageTests.ConfirmEmailChange_*` (arriving signed out, and arriving as a different account, each get their own message rather than a bare 401) | Component | ✅ |
+| FR-014 export reaches the user | `AccountPageTests.Export_HandsTheArchiveToThePlatformToSave` (file name, content type, contents) | Component | ✅ |
+| FR-015 deletion is deliberate | `AccountPageTests.DeleteAccount_RequiresThePasswordBeforeTheButtonDoesAnything` (disabled without a password; not the primary button style) | Component | ✅ |
+| Client layering | `MainUiLayeringTests` (`Main.Ui` depends on neither `AppSuite.Identity`, `Main.Service`, EF Core nor the WebAssembly host; `ApiClient` and `Ui.Abstractions` stay platform-neutral) | Architecture | ✅ |
 | NFR-003 string parity | `LocalizationParityTests` extended to the **email templates** | Localization | ✅ |
 | NFR-003 email language | `EmailLanguageTests` (reset mail uses the *account's* language, not the requester's browser) | Integration | ✅ |
 | NFR-004 data minimisation | `PersistedModelReviewTests` (no DOB/postal/phone/payment columns; assignment columns limited to giver, recipient, group) | Architecture | ✅ |
@@ -96,8 +121,11 @@ Circles, sync, the claim flow and Secret-Santa linking are **out of scope** (M2�
 - **Localization:** parity fails if any `de-CH`/`en`/`fr-CH` key is missing or empty, now including
   the four transactional email templates. A separate assertion covers that the mail body language
   follows the **account**, per [UC-MAIN-007](../use-cases/main/UC-MAIN-007-reset-password.md).
-- **Accessibility:** form validation messages carry `role="alert"`; the deletion confirmation is
-  keyboard-reachable and its destructive action is not the default focus.
+- **Accessibility:** failures render through `ProblemAlert`, which always carries `role="alert"`, so a
+  screen reader announces them instead of leaving the user waiting on a form that silently refused;
+  successes use `role="status"`. Every input has a `<label for>`. The deletion confirmation is
+  keyboard-reachable, its button is not the primary style and is disabled until the password is
+  entered, so the destructive action is never the default focus.
 
 ## Coverage notes / known gaps (no silent truncation)
 
@@ -125,5 +153,9 @@ deliverability (SPF/DKIM/DMARC, bounces), which no local sink can exercise
 - [ ] Export authorization tests green (no assignment reachable that the UI would refuse)
 - [ ] Architecture fitness functions green
 - [ ] Localization parity green, including email templates
-- [ ] Manual browser walkthrough completed in DE/EN/FR with a clean console
+- [x] Browser walkthrough completed (2026-07-28) — register → verification mail → verify → sign in →
+      reload/silent refresh → profile + DE/EN/FR switch with no reload → passkey register, sign in and
+      cancel → forgot/reset → change email + confirm → export download → delete. Console clean, **zero
+      CSP violations**. Passkey ceremonies driven through a CDP virtual authenticator, per the
+      "Test data & environments" note above.
 - [ ] CI green

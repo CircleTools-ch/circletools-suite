@@ -89,6 +89,10 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.10" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.10" />
+    <!-- AuthorizeView / CascadingAuthenticationState against a custom AuthenticationStateProvider.
+         The token model is bearer-in-WASM (ADR-0021), so none of the hosted-Blazor auth packages
+         apply — only the component-level authorization primitives are needed. -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.10" />
   </ItemGroup>
 
   <!-- Localization — RESX + IStringLocalizer, ADR-0011 (in-framework abstractions). -->
