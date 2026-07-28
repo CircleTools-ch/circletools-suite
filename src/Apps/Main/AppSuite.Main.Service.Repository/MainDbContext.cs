@@ -58,6 +58,15 @@ public sealed class MainDbContext(DbContextOptions<MainDbContext> options)
 
         builder.Entity<AppSuiteUser>(entity =>
         {
+            // NFR-004 data minimisation: "no field stores a date of birth, postal address, phone
+            // number or payment data". IdentityUser ships PhoneNumber/PhoneNumberConfirmed whether
+            // or not an application wants them, and the first Identity migration duly created both
+            // columns. Nothing in the suite reads or writes them — there is no SMS second factor
+            // and no requirement asking for a number — so a column that can only ever hold personal
+            // data we promised not to keep is mapped away rather than left empty.
+            entity.Ignore(u => u.PhoneNumber);
+            entity.Ignore(u => u.PhoneNumberConfirmed);
+
             entity.Property(u => u.DisplayName).IsRequired().HasMaxLength(100);
 
             // Culture name — "de-CH", "en", "fr-CH" (ADR-0011).

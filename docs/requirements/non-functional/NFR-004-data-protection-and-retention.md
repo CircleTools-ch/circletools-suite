@@ -94,10 +94,13 @@ Then their local data is intact
   - unverified accounts purged within **30 days** (target: 100 % of eligible accounts per run);
   - export and deletion available **self-service**, 0 manual steps;
   - **zero** soft-deleted account rows remaining after a deletion.
-- **Measurement approach:** data-model and schema **review** against the enumerated fields, run as
-  part of the Definition of Done for any change touching Identity; automated tests for the retention
-  job and for the post-deletion absence of account rows; the residency target becomes measurable once
-  the hosting ADR lands.
+- **Measurement approach:** the data-model check is **automated**, not reviewed —
+  `PersistedModelReviewTests` scans every persisted property of the whole EF model for the forbidden
+  field kinds on each build. A review that runs once per change is exactly how the first breach got
+  in: `IdentityUser` ships `PhoneNumber` and `PhoneNumberConfirmed`, nobody chose to add them, and
+  the first Identity migration created both columns (dropped 2026-07-28). Also automated: the
+  retention job and the post-deletion absence of account rows. The residency target becomes
+  measurable once the hosting ADR lands.
 
 ## Dependencies & related
 

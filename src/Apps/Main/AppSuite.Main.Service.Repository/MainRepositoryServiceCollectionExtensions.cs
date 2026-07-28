@@ -51,8 +51,7 @@ public static class MainRepositoryServiceCollectionExtensions
     /// <para>
     /// The password rules implement FR-007: length over composition, per NIST SP 800-63B. The
     /// breached-password check is a separate validator, not an <c>IdentityOptions</c> setting —
-    /// see <see cref="BreachedPasswordValidator"/> and
-    /// <see href="../../../docs/adr/0027-breached-password-check.md">ADR-0027</see>.
+    /// see <see cref="BreachedPasswordValidator"/> (ADR-0027).
     /// </para>
     /// </remarks>
     public static IdentityBuilder AddAppSuiteIdentityCore(this IServiceCollection services)
@@ -62,6 +61,9 @@ public static class MainRepositoryServiceCollectionExtensions
         // Singleton: the corpus is parsed once per process, keeping the sign-up path free of I/O
         // (NFR-005 timing).
         services.TryAddSingleton<IBreachedPasswordList, EmbeddedBreachedPasswordList>();
+
+        // Scoped, because IPasswordHasher<T> is (NFR-005 — see DecoyPasswordVerifier).
+        services.TryAddScoped<DecoyPasswordVerifier>();
 
         return services.AddIdentityCore<AppSuiteUser>(options =>
             {

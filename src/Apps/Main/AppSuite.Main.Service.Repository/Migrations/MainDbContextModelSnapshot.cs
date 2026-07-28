@@ -67,13 +67,6 @@ namespace AppSuite.Main.Service.Repository.Migrations
                     b.Property<string>("PasswordHash")
                         .HasColumnType("text");
 
-                    b.Property<string>("PhoneNumber")
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("PreferredLanguage")
                         .IsRequired()
                         .HasMaxLength(16)

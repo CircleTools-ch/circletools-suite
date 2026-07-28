@@ -18,7 +18,8 @@ public sealed class SecretSantaLayeringTests
             typeof(AppSuite.SecretSanta.Contracts.RevealPayload).Assembly,
             typeof(AppSuite.SecretSanta.Core.Domain.Group).Assembly,
             typeof(AppSuite.SecretSanta.LocalStore.GroupRepository).Assembly,
-            typeof(AppSuite.SecretSanta.Ui.AppStrings).Assembly)
+            typeof(AppSuite.SecretSanta.Ui.AppStrings).Assembly,
+            typeof(AppSuite.Identity.AppSuiteUser).Assembly)
         .Build();
 
     private static readonly IObjectProvider<IType> _efCore =
@@ -38,6 +39,12 @@ public sealed class SecretSantaLayeringTests
 
     private static readonly IObjectProvider<IType> _ui =
         Types().That().ResideInNamespaceMatching("^AppSuite\\.SecretSanta\\.Ui").As("UI");
+
+    private static readonly IObjectProvider<IType> _identity =
+        Types().That().ResideInNamespaceMatching("^AppSuite\\.Identity").As("AppSuite.Identity");
+
+    private static readonly IObjectProvider<IType> _secretSantaTypes =
+        Types().That().ResideInNamespaceMatching("^AppSuite\\.SecretSanta").As("Secret-Santa");
 
     private static readonly IObjectProvider<IType> _coreTypes =
         Types().That().ResideInNamespaceMatching("^AppSuite\\.SecretSanta\\.Core").As("Secret-Santa Core");
@@ -61,6 +68,21 @@ public sealed class SecretSantaLayeringTests
             .AndShould().NotDependOnAny(_npgsql)
             .AndShould().NotDependOnAny(_aspNetCore)
             .AndShould().NotDependOnAny(_jsInterop)
+            .Check(_architecture);
+
+    /// <summary>
+    /// No Secret-Santa project may reference <c>AppSuite.Identity</c> (ADR-0019, arc42 §5.3).
+    /// </summary>
+    /// <remarks>
+    /// A <see href="../../docs/glossary/member.md">Member</see> carries an <em>optional</em>
+    /// <c>UserId</c> and nothing more: the game must keep working with no account at all
+    /// (NFR-001), and reaching into the identity model is how that quietly stops being true.
+    /// The link lands in M4, so this rule exists before there is anything tempting to break it.
+    /// </remarks>
+    [Fact]
+    public void SecretSanta_DoesNotDependOnTheIdentityModel() =>
+        Types().That().Are(_secretSantaTypes)
+            .Should().NotDependOnAny(_identity)
             .Check(_architecture);
 
     [Fact]

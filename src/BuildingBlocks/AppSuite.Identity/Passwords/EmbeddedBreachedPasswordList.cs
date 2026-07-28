@@ -20,9 +20,7 @@ namespace AppSuite.Identity.Passwords;
 /// <para>
 /// Register this as a <em>singleton</em>. The set is built lazily on first use and costs a few
 /// megabytes; building it per request would put file parsing on the sign-up path, which is exactly
-/// the kind of asymmetric work
-/// <see href="../../../docs/requirements/non-functional/NFR-005-account-enumeration-resistance.md">NFR-005</see>
-/// forbids.
+/// the kind of asymmetric work NFR-005 forbids.
 /// </para>
 /// </remarks>
 public sealed class EmbeddedBreachedPasswordList : IBreachedPasswordList

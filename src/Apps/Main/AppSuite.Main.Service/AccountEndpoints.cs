@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using AppSuite.Identity;
+using AppSuite.Identity.Passwords;
 using AppSuite.Identity.Tokens;
 using AppSuite.Infrastructure.Outbox;
 using AppSuite.Main.Contracts;
@@ -79,16 +80,25 @@ public static class AccountEndpoints
     /// Creates a pending account and queues its verification mail (FR-007).
     /// </summary>
     /// <remarks>
+    /// <para>
     /// The response is identical whether or not the address already has an account. An address in
     /// use instead receives a "someone tried to sign up" mail, so the real owner learns of the
-    /// attempt while the requester learns nothing (NFR-005). Both paths queue exactly one message,
-    /// which is also what keeps their timing indistinguishable.
+    /// attempt while the requester learns nothing (NFR-005). Both paths queue exactly one message.
+    /// </para>
+    /// <para>
+    /// <strong>Queueing one message each is not by itself enough to make them take the same time</strong>,
+    /// which is what this comment used to claim. Creating an account hashes the password, and hashing
+    /// is deliberately slow, so the free-address path measured <strong>18x slower</strong> than the
+    /// taken-address path — a fast answer meant "already registered". The taken-address path now
+    /// spends the same hash through <see cref="DecoyPasswordVerifier"/>.
+    /// </para>
     /// </remarks>
     private static async Task<IResult> RegisterAsync(
         [FromBody] RegisterRequest request,
         UserManager<AppSuiteUser> users,
         IOutbox outbox,
         TimeProvider clock,
+        DecoyPasswordVerifier decoy,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.DisplayName) || string.IsNullOrWhiteSpace(request.Email))
@@ -104,6 +114,10 @@ public static class AccountEndpoints
 
         if (existing is not null)
         {
+            // Pay for the password hash the other branch pays for, or the two are trivially
+            // distinguishable by time (NFR-005).
+            decoy.Spend(request.Password);
+
             await outbox.EnqueueAsync(
                 OutboxMessage.Create(
                     SignUpAttemptMailType,
@@ -333,11 +347,24 @@ public static class AccountEndpoints
         [FromBody] LoginRequest request,
         UserManager<AppSuiteUser> users,
         SessionService sessions,
+        DecoyPasswordVerifier decoy,
         CancellationToken cancellationToken)
     {
         var user = await users.FindByEmailAsync(request.Email ?? string.Empty).ConfigureAwait(false);
 
-        if (user is null || !await users.CheckPasswordAsync(user, request.Password ?? string.Empty).ConfigureAwait(false))
+        if (user is null)
+        {
+            // No account, so nothing to verify - but returning now would answer in a few
+            // milliseconds where a real account takes tens of them, and that difference alone
+            // reveals which addresses are registered (NFR-005). Measured at 20x before this call
+            // existed. The short-circuit `user is null || !await CheckPassword...` that used to
+            // stand here reads as equivalent and is not.
+            decoy.Spend(request.Password);
+
+            return InvalidCredentials();
+        }
+
+        if (!await users.CheckPasswordAsync(user, request.Password ?? string.Empty).ConfigureAwait(false))
         {
             return InvalidCredentials();
         }
@@ -711,13 +738,10 @@ public static class AccountEndpoints
     /// Reports a password-policy rejection as machine-readable <em>codes</em> (FR-007, NFR-003).
     /// </summary>
     /// <remarks>
-    /// Identity's <c>Description</c> is English prose, and the product is DE/EN/FR
-    /// ([ADR-0011](../../../docs/adr/0011-localization-format-and-culture.md)); a client cannot
-    /// translate a sentence, but it can translate <c>PasswordTooShort</c> or
-    /// <c>BreachedPassword</c>. This is the change
-    /// [ADR-0027](../../../docs/adr/0027-breached-password-check.md) triggers by taking the policy
-    /// past a single rule. Codes leak nothing about other accounts — they describe the caller's own
-    /// input.
+    /// Identity's <c>Description</c> is English prose, and the product is DE/EN/FR (ADR-0011); a
+    /// client cannot translate a sentence, but it can translate <c>PasswordTooShort</c> or
+    /// <c>BreachedPassword</c>. This is the change ADR-0027 triggers by taking the policy past a
+    /// single rule. Codes leak nothing about other accounts — they describe the caller's own input.
     /// </remarks>
     private static IResult PasswordRejected(IdentityResult result) =>
         Results.ValidationProblem(new Dictionary<string, string[]>
