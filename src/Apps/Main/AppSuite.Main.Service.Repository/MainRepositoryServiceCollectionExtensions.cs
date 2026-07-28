@@ -1,4 +1,5 @@
 using AppSuite.Identity;
+using AppSuite.Identity.Passwords;
 using AppSuite.Identity.Tokens;
 using AppSuite.Infrastructure.Mail;
 using AppSuite.Infrastructure.Outbox;
@@ -49,12 +50,18 @@ public static class MainRepositoryServiceCollectionExtensions
     /// </para>
     /// <para>
     /// The password rules implement FR-007: length over composition, per NIST SP 800-63B. The
-    /// breached-password check is a separate validator, not an <c>IdentityOptions</c> setting.
+    /// breached-password check is a separate validator, not an <c>IdentityOptions</c> setting —
+    /// see <see cref="BreachedPasswordValidator"/> and
+    /// <see href="../../../docs/adr/0027-breached-password-check.md">ADR-0027</see>.
     /// </para>
     /// </remarks>
     public static IdentityBuilder AddAppSuiteIdentityCore(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
+
+        // Singleton: the corpus is parsed once per process, keeping the sign-up path free of I/O
+        // (NFR-005 timing).
+        services.TryAddSingleton<IBreachedPasswordList, EmbeddedBreachedPasswordList>();
 
         return services.AddIdentityCore<AppSuiteUser>(options =>
             {
@@ -77,6 +84,7 @@ public static class MainRepositoryServiceCollectionExtensions
                 // blocking sign-in here.
                 options.SignIn.RequireConfirmedEmail = false;
             })
+            .AddPasswordValidator<BreachedPasswordValidator>()
             .AddEntityFrameworkStores<MainDbContext>();
 
         // NOTE: token providers are NOT registered here. AddIdentityCore omits them, and

@@ -105,6 +105,60 @@ public sealed class AccountEndpointsTests(AccountApiFactory factory)
             new RegisterRequest("Anna", UniqueEmail(), "short", "de-CH"));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("PasswordTooShort", await PasswordErrorsAsync(response));
+    }
+
+    [Fact]
+    public async Task Register_BreachedPassword_IsRejected()
+    {
+        // FR-007 / ADR-0027: long enough to clear the length rule, and in the breach corpus.
+        var response = await Client().PostAsJsonAsync(
+            "/api/v1/account/register",
+            new RegisterRequest("Anna", UniqueEmail(), "passwordpassword", "de-CH"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("BreachedPassword", await PasswordErrorsAsync(response));
+    }
+
+    [Fact]
+    public async Task Register_BreachedPassword_CreatesNoAccount()
+    {
+        var email = UniqueEmail();
+
+        await Client().PostAsJsonAsync(
+            "/api/v1/account/register",
+            new RegisterRequest("Anna", email, "qwertyuiopasdfgh", "de-CH"));
+
+        // The address must still be free — a rejected password may not leave a half-made account
+        // behind, which would also make the address unusable for the person who owns it.
+        var retry = await Client().PostAsJsonAsync(
+            "/api/v1/account/register",
+            new RegisterRequest("Anna", email, "a-passphrase-nobody-leaked", "de-CH"));
+
+        Assert.Equal(HttpStatusCode.Accepted, retry.StatusCode);
+    }
+
+    [Fact]
+    public async Task PasswordRejections_AreReportedAsCodesNotEnglishProse()
+    {
+        // NFR-003: the client says this in DE/EN/FR, which it can only do from a code. Identity's
+        // own Description is English, and shipping it would put untranslated text on screen.
+        var response = await Client().PostAsJsonAsync(
+            "/api/v1/account/register",
+            new RegisterRequest("Anna", UniqueEmail(), "short", "de-CH"));
+
+        var errors = await PasswordErrorsAsync(response);
+
+        Assert.All(errors, error => Assert.DoesNotContain(' ', error));
+    }
+
+    /// <summary>Reads the <c>password</c> field of a ValidationProblem body.</summary>
+    private static async Task<string[]> PasswordErrorsAsync(HttpResponseMessage response)
+    {
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        return [.. problem.GetProperty("errors").GetProperty("password").EnumerateArray()
+            .Select(e => e.GetString()!)];
     }
 
     [Fact]

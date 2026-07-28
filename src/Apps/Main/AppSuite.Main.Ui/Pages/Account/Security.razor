@@ -161,7 +161,7 @@
         if (!result.IsSuccess)
         {
             _passkeyError = ApiErrorText.Describe(L, result.Error);
-            _passkeyDetails = ApiErrorText.Details(result.Error);
+            _passkeyDetails = ApiErrorText.Details(L, result.Error);
             return;
         }
 
@@ -222,6 +222,6 @@
         }
 
         _emailError = ApiErrorText.Describe(L, result.Error);
-        _emailDetails = ApiErrorText.Details(result.Error);
+        _emailDetails = ApiErrorText.Details(L, result.Error);
     }
 }

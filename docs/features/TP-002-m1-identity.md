@@ -44,6 +44,12 @@ Circles, sync, the claim flow and Secret-Santa linking are **out of scope** (M2�
   isolation. This is where "exactly one refresh" is pinned; getting it wrong is what makes a
   legitimate client look like a token thief to the server.
 - **Localization** — key parity across `de-CH`/`en`/`fr-CH`, **including the four email templates**.
+- **Password policy** — the length rule and the breached-list rule are verified at three levels: the
+  validator and its corpus in isolation (unit), both rejections through the running API (integration),
+  and the sentence that reaches the user (component + browser). The corpus test is the one that matters
+  most: a list that failed to load would make the check accept every password with nothing else
+  noticing, and building the list byte-wise instead of character-wise did in fact slip 98 too-short
+  entries past every other level ([ADR-0027](../adr/0027-breached-password-check.md)).
 - **Exploratory** — the full browser walkthrough required by `CLAUDE.md`, in all three languages.
   This is not a formality here: the walkthrough found six defects that every automated level above
   passed clean — a CSP violation from Blazor's own import map, a captive-dependency startup failure,
@@ -58,7 +64,12 @@ Circles, sync, the claim flow and Secret-Santa linking are **out of scope** (M2�
 |------------------|-----------|-------|------------|
 | FR-007 sign-up + verification | `RegisterTests` (pending state created, verification mail delivered to Mailpit, link verifies, user signed in) | Integration | ✅ |
 | FR-007 existing address | `RegisterTests.ExistingAddress_*` (identical response; "someone tried to sign up" mail sent instead; no second account) | Integration | ✅ |
-| FR-007 password policy | `PasswordPolicyTests` (<12 chars rejected, breached-list hit rejected, no composition rule imposed) | Unit | ✅ |
+| FR-007 password policy — length | `AccountEndpointsTests.Register_ShortPassword_IsRejected` (rejected, and reported as the `PasswordTooShort` code) | Integration | ✅ |
+| FR-007 password policy — **breached list** | `BreachedPasswordValidatorTests` (corpus hits rejected with their own code; an unbreached passphrase accepted; comparison is case-sensitive; a missing password is left to Identity's own validators) | Unit | ✅ |
+| FR-007 / ADR-0027 the corpus itself | `BreachedPasswordValidatorTests.TheBundledCorpus_*` (the embedded resource loads, holds ~31 500 entries, and contains nothing under 12 characters — a list that failed to load would make the check pass every password in silence) | Unit | ✅ |
+| FR-007 breached password end to end | `AccountEndpointsTests.Register_BreachedPassword_IsRejected` + `.Register_BreachedPassword_CreatesNoAccount` (the address stays free for a second attempt) | Integration | ✅ |
+| FR-009 policy holds on recovery too | `PasswordResetTests.Reset_BreachedPassword_IsRejectedAndTheOldPasswordStillWorks` | Integration | ✅ |
+| NFR-003 policy failures are translatable | `AccountEndpointsTests.PasswordRejections_AreReportedAsCodesNotEnglishProse` — the API answers with codes, never Identity's English prose | Integration | ✅ |
 | FR-007 pending account limits | `PendingAccountTests` (may sign in; sync/claim/circle surfaces unavailable) | Integration | ✅ |
 | FR-007 / NFR-004 30-day purge | `RetentionJobTests` (29 days kept, 31 days purged, verified accounts untouched) | Integration | ✅ |
 | FR-008 session issuance | `LoginTests` (15-min access token, 30-day refresh, access token never written to storage) | Integration | ✅ |
@@ -84,7 +95,8 @@ Circles, sync, the claim flow and Secret-Santa linking are **out of scope** (M2�
 | FR-015 re-auth required | `DeleteAccountTests.WithoutRecentReauthentication_IsRejected` | Integration | ✅ |
 | FR-015 history survives | `DeleteAccountTests.CompletedDraw_Unchanged_And_RevealLinksStillResolve` | Integration | ✅ |
 | FR-015 local data survives | manual browser check — deletion is server-side only | Exploratory | ❌ (manual) |
-| FR-007 sign-up screen | `AccountPageTests.SignUp_*` (the confirmation is identical whatever the address; the server's password-policy messages are shown) | Component | ✅ |
+| FR-007 sign-up screen | `AccountPageTests.SignUp_ShowsTheSameConfirmationWhateverTheAddress` | Component | ✅ |
+| FR-007 / NFR-003 the rule is explained | `AccountPageTests.SignUp_SaysWhyThePasswordWasRefused_InTheUsersLanguage` and `.SignUp_ExplainsABreachedPassword_RatherThanJustRefusingIt` — the code becomes a localized sentence, not a code on screen; `.SignUp_PassesThroughAMessageItHasNoTranslationFor` pins the fallback the mixed contract needs | Component | ✅ |
 | FR-007 verification banner | `AccountPageTests.VerificationBanner_*` (shown only while unverified; "send again" reports sent) | Component | ✅ |
 | FR-007 verification link | `AccountPageTests.VerifyEmail_*` (the token is passed through exactly as it arrived; an incomplete link explains instead of calling the API) | Component | ✅ |
 | FR-009 forgot screen | `AccountPageTests.ForgotPassword_ShowsTheSameConfirmationForAnyAddress` | Component | ✅ |
@@ -158,4 +170,9 @@ deliverability (SPF/DKIM/DMARC, bounces), which no local sink can exercise
       cancel → forgot/reset → change email + confirm → export download → delete. Console clean, **zero
       CSP violations**. Passkey ceremonies driven through a CDP virtual authenticator, per the
       "Test data & environments" note above.
+- [x] Password-policy walkthrough completed (2026-07-28) — sign-up refused a 16-character breached
+      password and a short one, and accepted an unbreached passphrase, in **DE, EN and FR**, driven
+      through the running Aspire stack (Postgres + Mailpit + API + WASM). The rejection reads as a
+      sentence in each language rather than an error code, and the console stayed clean apart from
+      the deliberate 400s.
 - [ ] CI green

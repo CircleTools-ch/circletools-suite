@@ -52,5 +52,7 @@
   href: 0025-shared-ui-building-blocks.md
 - name: ADR-0026 Refresh-token persistence in the browser
   href: 0026-refresh-token-persistence.md
+- name: ADR-0027 Breached-password check
+  href: 0027-breached-password-check.md
 - name: Template
   href: _template-adr.md

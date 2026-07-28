@@ -23,6 +23,9 @@
   <data name="FieldLanguage" xml:space="preserve"><value>Language</value></data>
   <data name="FieldPasskeyLabel" xml:space="preserve"><value>Name for this device</value></data>
   <data name="PasswordHint" xml:space="preserve"><value>At least 12 characters. Length is what matters — a phrase you can remember beats a short scramble.</value></data>
+  <data name="PasswordErrorTooShort" xml:space="preserve"><value>That password is too short. Please use at least 12 characters.</value></data>
+  <data name="PasswordErrorBreached" xml:space="preserve"><value>That password appears in a public list of passwords exposed in data breaches. Please choose a different one.</value></data>
+  <data name="PasswordErrorInvalidToken" xml:space="preserve"><value>This link is no longer valid. Please request a new one.</value></data>
   <data name="DisplayNameHint" xml:space="preserve"><value>This is what the people you share with see.</value></data>
   <data name="ActionSave" xml:space="preserve"><value>Save</value></data>
   <data name="ActionBack" xml:space="preserve"><value>Back</value></data>

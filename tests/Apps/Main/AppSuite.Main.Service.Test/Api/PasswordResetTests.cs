@@ -162,6 +162,34 @@ public sealed class PasswordResetTests(MailApiFactory factory)
     }
 
     [Fact]
+    public async Task Reset_BreachedPassword_IsRejectedAndTheOldPasswordStillWorks()
+    {
+        // FR-007's policy is a property of setting a password, not of the sign-up screen, so it
+        // must hold on the recovery path too (ADR-0027). A rejected reset must also leave the
+        // account usable rather than stranding someone mid-recovery.
+        var (email, _) = await SignedInUserAsync();
+        var (userId, token) = await RequestResetAsync(email);
+
+        using var client = factory.CreateClient();
+        var response = await client.PostAsJsonAsync(
+            "/api/v1/account/reset-password",
+            new ResetPasswordRequest(userId, token, "iloveyouiloveyou"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var errors = problem.GetProperty("errors").GetProperty("password").EnumerateArray()
+            .Select(e => e.GetString()).ToArray();
+
+        Assert.Contains("BreachedPassword", errors);
+
+        var login = await client.PostAsJsonAsync(
+            "/api/v1/account/login", new LoginRequest(email, OriginalPassword));
+
+        login.EnsureSuccessStatusCode();
+    }
+
+    [Fact]
     public async Task Reset_AlsoVerifiesAPendingAddress()
     {
         // Completing a reset proves control of the address, so it does the verification mail's job

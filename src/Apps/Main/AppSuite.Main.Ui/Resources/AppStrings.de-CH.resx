@@ -23,6 +23,9 @@
   <data name="FieldLanguage" xml:space="preserve"><value>Sprache</value></data>
   <data name="FieldPasskeyLabel" xml:space="preserve"><value>Name für dieses Gerät</value></data>
   <data name="PasswordHint" xml:space="preserve"><value>Mindestens 12 Zeichen. Entscheidend ist die Länge — ein Satz, den Sie sich merken können, ist besser als ein kurzes Kauderwelsch.</value></data>
+  <data name="PasswordErrorTooShort" xml:space="preserve"><value>Dieses Passwort ist zu kurz. Bitte verwenden Sie mindestens 12 Zeichen.</value></data>
+  <data name="PasswordErrorBreached" xml:space="preserve"><value>Dieses Passwort steht in einer öffentlichen Liste von Passwörtern, die bei Datenlecks bekannt geworden sind. Bitte wählen Sie ein anderes.</value></data>
+  <data name="PasswordErrorInvalidToken" xml:space="preserve"><value>Dieser Link ist nicht mehr gültig. Bitte fordern Sie einen neuen an.</value></data>
   <data name="DisplayNameHint" xml:space="preserve"><value>Diesen Namen sehen die Personen, mit denen Sie teilen.</value></data>
   <data name="ActionSave" xml:space="preserve"><value>Speichern</value></data>
   <data name="ActionBack" xml:space="preserve"><value>Zurück</value></data>

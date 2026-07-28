@@ -35,6 +35,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0024](0024-ui-styling-and-theming.md) | UI styling & theming (Bootstrap 5 + thin suite theme) | Accepted | 2026-07-28 |
 | [0025](0025-shared-ui-building-blocks.md) | Shared UI building blocks (Ui.Abstractions, Localization, ApiClient, Ui.Shared) | Accepted | 2026-07-28 |
 | [0026](0026-refresh-token-persistence.md) | Refresh-token persistence in the browser (session by default, durable on request) | Accepted | 2026-07-28 |
+| [0027](0027-breached-password-check.md) | Breached-password check (bundled ≥12-character list) | Accepted | 2026-07-28 |
 
 ## Open decisions backlog
 

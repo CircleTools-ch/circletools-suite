@@ -125,7 +125,7 @@ else
         if (!result.IsSuccess)
         {
             _deleteError = ApiErrorText.Describe(L, result.Error);
-            _deleteDetails = ApiErrorText.Details(result.Error);
+            _deleteDetails = ApiErrorText.Details(L, result.Error);
             return;
         }
 
