@@ -122,10 +122,13 @@
         "type": "Project",
         "dependencies": {
           "AppSuite.SecretSanta.Core": "[1.0.0, )",
-          "Microsoft.JSInterop": "[10.0.10, )"
+          "AppSuite.Ui.Abstractions": "[1.0.0, )"
         }
       },
       "appsuite.sharedkernel": {
+        "type": "Project"
+      },
+      "appsuite.ui.abstractions": {
         "type": "Project"
       },
       "Microsoft.Extensions.DependencyInjection.Abstractions": {
@@ -142,12 +145,6 @@
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.10"
         }
-      },
-      "Microsoft.JSInterop": {
-        "type": "CentralTransitive",
-        "requested": "[10.0.10, )",
-        "resolved": "10.0.10",
-        "contentHash": "VivWvz1iFR3Ntf/e5/xci6o/MF2tcHiprNkhRlL+gMkBoDjQJCioiO+Gwp/DP8scuzqbp3b9C3wh+zuy4pD4AA=="
       }
     }
   }

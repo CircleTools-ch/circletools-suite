@@ -1,0 +1,36 @@
+using AppSuite.Localization;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace AppSuite.SecretSanta.Ui;
+
+/// <summary>Registers the Secret-Santa UI's shared services in a host's composition root.</summary>
+public static class SecretSantaUiServiceCollectionExtensions
+{
+    /// <summary>The key the chosen language is remembered under, per app (ADR-0011).</summary>
+    /// <remarks>
+    /// <c>secretsanta.culture</c> and not <c>main.culture</c>: this is the key the shipped MVP has
+    /// been writing since before the shared localization block existed. It is user data, so it
+    /// survives the migration onto <see cref="AppSuite.Localization"/> unchanged — changing it
+    /// would silently reset the language for everyone who has already chosen one (ADR-0025).
+    /// </remarks>
+    public const string CultureStorageKey = "secretsanta.culture";
+
+    /// <summary>
+    /// Adds the suite localization services under Secret-Santa's own storage key.
+    /// </summary>
+    /// <remarks>
+    /// The host must still register an <see cref="AppSuite.Ui.Abstractions.IKeyValueStore"/> — the
+    /// browser and the device disagree about what storage is, which is the whole reason it is a
+    /// seam.
+    /// </remarks>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The same service collection, for chaining.</returns>
+    public static IServiceCollection AddSecretSantaUi(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.AddAppSuiteLocalization(CultureStorageKey);
+
+        return services;
+    }
+}

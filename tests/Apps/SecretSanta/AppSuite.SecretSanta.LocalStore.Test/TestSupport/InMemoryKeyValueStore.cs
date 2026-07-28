@@ -1,4 +1,4 @@
-using AppSuite.SecretSanta.LocalStore;
+using AppSuite.Ui.Abstractions;
 
 namespace AppSuite.SecretSanta.LocalStore.Test.TestSupport;
 
@@ -8,23 +8,41 @@ namespace AppSuite.SecretSanta.LocalStore.Test.TestSupport;
 /// </summary>
 public sealed class InMemoryKeyValueStore : IKeyValueStore
 {
-    private readonly Dictionary<string, string> _values = [];
+    private readonly Dictionary<(StorageScope Scope, string Key), string> _values = [];
+
+    /// <summary>
+    /// When set, every write is refused — the store stays empty and <c>SetAsync</c> returns
+    /// <see langword="false"/>, as a browser with storage blocked or full does.
+    /// </summary>
+    public bool RefuseWrites { get; set; }
 
     /// <inheritdoc />
-    public Task<string?> GetAsync(string key, CancellationToken cancellationToken) =>
-        Task.FromResult(_values.TryGetValue(key, out var value) ? value : null);
+    public ValueTask<string?> GetAsync(
+        StorageScope scope,
+        string key,
+        CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult(_values.TryGetValue((scope, key), out var value) ? value : null);
 
     /// <inheritdoc />
-    public Task SetAsync(string key, string value, CancellationToken cancellationToken)
+    public ValueTask<bool> SetAsync(
+        StorageScope scope,
+        string key,
+        string value,
+        CancellationToken cancellationToken = default)
     {
-        _values[key] = value;
-        return Task.CompletedTask;
+        if (RefuseWrites)
+        {
+            return ValueTask.FromResult(false);
+        }
+
+        _values[(scope, key)] = value;
+        return ValueTask.FromResult(true);
     }
 
     /// <inheritdoc />
-    public Task RemoveAsync(string key, CancellationToken cancellationToken)
+    public ValueTask RemoveAsync(StorageScope scope, string key, CancellationToken cancellationToken = default)
     {
-        _values.Remove(key);
-        return Task.CompletedTask;
+        _values.Remove((scope, key));
+        return ValueTask.CompletedTask;
     }
 }

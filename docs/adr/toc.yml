@@ -54,5 +54,9 @@
   href: 0026-refresh-token-persistence.md
 - name: ADR-0027 Breached-password check
   href: 0027-breached-password-check.md
+- name: ADR-0028 Browser platform adapters as a shared block
+  href: 0028-browser-platform-adapters-block.md
+- name: ADR-0029 Storage write-failure contract
+  href: 0029-storage-write-failure-contract.md
 - name: Template
   href: _template-adr.md

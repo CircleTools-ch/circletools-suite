@@ -37,7 +37,12 @@ public sealed class CultureProvider(IKeyValueStore store, CultureOptions options
         }
 
         Apply(culture);
-        await store.SetAsync(StorageScope.Durable, options.StorageKey, culture.Name, cancellationToken);
+
+        // The result is deliberately ignored. A preference that could not be remembered is a
+        // preference the user re-picks next visit; the language they asked for still applies to
+        // this session, and refusing to switch would be a worse answer than forgetting.
+        _ = await store.SetAsync(StorageScope.Durable, options.StorageKey, culture.Name, cancellationToken);
+
         CultureChanged?.Invoke(this, EventArgs.Empty);
     }
 

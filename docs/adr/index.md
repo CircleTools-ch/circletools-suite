@@ -36,6 +36,8 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0025](0025-shared-ui-building-blocks.md) | Shared UI building blocks (Ui.Abstractions, Localization, ApiClient, Ui.Shared) | Accepted | 2026-07-28 |
 | [0026](0026-refresh-token-persistence.md) | Refresh-token persistence in the browser (session by default, durable on request) | Accepted | 2026-07-28 |
 | [0027](0027-breached-password-check.md) | Breached-password check (bundled ≥12-character list) | Accepted | 2026-07-28 |
+| [0028](0028-browser-platform-adapters-block.md) | Browser platform adapters as a shared block (`Ui.Web`) | Accepted | 2026-07-28 |
+| [0029](0029-storage-write-failure-contract.md) | What an `IKeyValueStore` write does when storage refuses it | Accepted | 2026-07-28 |
 
 ## Open decisions backlog
 
@@ -70,11 +72,27 @@ on purpose until there was a client to be concrete about.
 - ✅ **UI styling & theming** → [ADR-0024](0024-ui-styling-and-theming.md) (Bootstrap 5 + a thin suite
   theme; brand deliberately absent, per [naming](../process/naming.md)).
 - ✅ **Shared UI building blocks** → [ADR-0025](0025-shared-ui-building-blocks.md), making
-  [arc42 ch.5](../arc42/05-building-block-view.md)'s planned blocks real. **Follow-up: Secret-Santa
-  still has its own culture implementation** and is migrated later, keeping its storage key.
+  [arc42 ch.5](../arc42/05-building-block-view.md)'s planned blocks real. Its follow-up —
+  Secret-Santa's own culture implementation — **is now closed** (see below).
 - ✅ **Refresh-token persistence in the browser** →
   [ADR-0026](0026-refresh-token-persistence.md), extending
   [ADR-0021](0021-web-auth-token-model.md) with the session/durable split behind "stay signed in".
+
+### Recently closed (Secret-Santa migration — 2026-07-28)
+
+Raised by carrying out ADR-0025's recorded follow-up: migrating Secret-Santa onto the shared blocks.
+Both decisions exist because the follow-up turned out to touch more than Secret-Santa — the second
+web host made a Main-only adapter shared, and the second kind of caller made the storage contract
+insufficient.
+
+- ✅ **Where browser platform adapters live** → [ADR-0028](0028-browser-platform-adapters-block.md)
+  (a new `AppSuite.Ui.Web` block), **amending** ADR-0025's "a host supplies the platform" rule.
+  **Follow-up: the remaining three adapters** (`BrowserFileSaver`, `BrowserPasskeyCeremony`,
+  `BrowserCredentialsHandler`) stay in `Main.WebApp` until a second host needs them.
+- ✅ **Storage write-failure contract** → [ADR-0029](0029-storage-write-failure-contract.md)
+  (`SetAsync` reports success), so a lost preference and a lost group stop being the same event.
+  **Follow-up: the Secret-Santa UI does not yet present the failure** — the exception reaches
+  Blazor's error UI, as a failed write already did.
 
 ### Depends on deployment (genuinely open)
 

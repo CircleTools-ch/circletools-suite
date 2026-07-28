@@ -74,7 +74,6 @@
   <data name="ExclusionPickBoth" xml:space="preserve"><value>Choisissez une personne qui offre et une personne qui reçoit.</value></data>
   <data name="NotFoundTitle" xml:space="preserve"><value>Introuvable</value></data>
   <data name="NotFoundBody" xml:space="preserve"><value>Désolé, ce contenu n'existe pas.</value></data>
-  <data name="LanguageLabel" xml:space="preserve"><value>Langue</value></data>
   <data name="ShareLinkTooLong" xml:space="preserve"><value>Ce lien est long et pourrait être raccourci ou tronqué par certaines applications de messagerie. Raccourcissez si besoin les éléments de la liste de souhaits.</value></data>
   <data name="ForLabel" xml:space="preserve"><value>Pour</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Votre Père Noël secret</value></data>

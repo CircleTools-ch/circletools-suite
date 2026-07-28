@@ -25,9 +25,10 @@ Idea stubs and work items, newest-first. Promote items into
 - **Architecture decided (2026-07-27):** [ADR-0018](../adr/0018-circle-and-sharing-model.md) — the
   `Circle` aggregate, roles, enumeration-resistant invitations, managed members, and the
   snapshot-at-draw rule; [ADR-0019](../adr/0019-member-user-linking.md) for member linking.
-- **Next:** the `UC-MAIN-007+` use cases (create a circle, invite a new person, invite an existing
+- **Next:** the `UC-MAIN-008+` use cases (create a circle, invite a new person, invite an existing
   account, accept/decline, leave/remove) → FRs → the M2 feature spec. Ships as **M2**, after the
-  M1 identity slice whose use cases are now written.
+  M1 identity slice whose use cases are now written. *(Numbering: `UC-MAIN-007` is taken — it is
+  "reset a forgotten password" in M1 — so the circle use cases start at 008.)*
 
 ### IDEA-001 — Secret-Santa app (first app) · _status: MVP defined_
 - **Problem:** Organizing a Secret-Santa (Wichteln) by hand is fiddly — drawing names fairly,
@@ -108,10 +109,20 @@ Idea stubs and work items, newest-first. Promote items into
   blocks ([0025](../adr/0025-shared-ui-building-blocks.md)), and where the refresh token is kept
   ([0026](../adr/0026-refresh-token-persistence.md), extending ADR-0021). FEAT-002 and TP-002 moved
   to *In progress*.
-- **Next:** the browser walkthrough `CLAUDE.md` requires — the full journey in DE/EN/FR with a clean
-  console and zero CSP violations, and the first end-to-end run of the WebAuthn ceremonies, which no
-  automated test covers. Then the Secret-Santa culture migration onto the shared blocks (ADR-0025's
-  recorded follow-up).
+- **Secret-Santa migrated onto the shared blocks (2026-07-28):** ADR-0025's recorded follow-up is
+  closed. Secret-Santa lost its own `AppCultures`, its own `CultureSelector` and its own
+  `IKeyValueStore`; `secretsanta.culture` and `appsuite.secretsanta.groups` are untouched, so no
+  user loses a language or a group. Two amendments came out of it —
+  [ADR-0028](../adr/0028-browser-platform-adapters-block.md) (a shared `Ui.Web` block for the browser
+  adapters, now that there are two web hosts) and
+  [ADR-0029](../adr/0029-storage-write-failure-contract.md) (`SetAsync` reports success, so a lost
+  preference and a lost group stop being the same event). 281 tests green; full journey re-driven in
+  a browser in DE/EN/FR.
+- **Next:** close M1 in the docs — [FEAT-002](../features/FEAT-002-m1-identity.md) and
+  [TP-002](../features/TP-002-m1-identity.md) are still *In progress* although their only open exit
+  criteria are the two items deliberately deferred to milestone 7 (automating the WebAuthn ceremony,
+  and a CI pipeline that does not exist yet). Then **M2 circles**, starting where the process starts:
+  the `UC-MAIN-008+` use cases → FRs → the M2 feature spec.
 - **Three acceptance criteria cannot close in M1** and are recorded as deferred in FEAT-002: MAUI
   cross-client passkeys (needs the real domain), the *offline* language change (needs M3 sync), and
   the sole-circle-owner deletion guard (needs M2 circles).

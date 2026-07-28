@@ -36,6 +36,7 @@ flowchart TD
     subgraph UI
         UiShared[Ui.Shared - RCL]
         UiAbs[Ui.Abstractions]
+        UiWeb[Ui.Web - browser adapters]
     end
     subgraph AppType["Per app-type (Main, SecretSanta, ...)"]
         Contracts
@@ -54,11 +55,13 @@ flowchart TD
     Core --> SK
     App --> SK
     WebApp --> AppUi --> UiShared
+    WebApp --> UiWeb
     Native --> AppUi
     Native --> Local
     AppUi --> ApiC
     UiShared --> Loc --> UiAbs
     ApiC --> UiAbs
+    UiWeb --> UiAbs
     Svc --> Defaults
     Svc --> Id
     Svc --> Infra
@@ -66,7 +69,13 @@ flowchart TD
 
 Note where `ApiClient` hangs: off `App.Ui`, not off the host. The typed client and the session
 handling are feature code that a MAUI head reuses unchanged; only the *implementations* of the
-`Ui.Abstractions` seams — browser storage, the WebAuthn ceremony, saving a file — belong to a host.
+`Ui.Abstractions` seams — browser storage, the WebAuthn ceremony, saving a file — are platform code.
+
+`Ui.Web` hangs off the **hosts**, never off `Ui.Shared`. Both web hosts register its
+`BrowserKeyValueStore` in their own composition root, so the seam a MAUI head has to replace stays a
+single visible line; and because `Ui.Shared` does not depend on it, a MAUI head can take the shared
+Razor components without inheriting `localStorage`
+([ADR-0028](../adr/0028-browser-platform-adapters-block.md)).
 
 ## 5.2 Projects & responsibilities
 
@@ -81,7 +90,8 @@ handling are feature code that a MAUI head reuses unchanged; only the *implement
 | `AppSuite.Localization` | `AppCultures` (DE/EN/FR, `de-CH` default), `CultureProvider`, DI extension. |
 | `AppSuite.ApiClient` | `ApiResult`/`ApiError` + `ProblemDetails` reading; access/refresh token stores; `AuthorizedHttpMessageHandler` (bearer + silent refresh). No app DTOs, no routes. |
 | `AppSuite.Ui.Shared` | RCL: the suite theme ([ADR-0024](../adr/0024-ui-styling-and-theming.md)) and the components more than one app needs — `AuthCard`, `BusyButton`, `ProblemAlert`, `CultureSelector`, `CultureBoundary`. |
-| `AppSuite.Ui.Abstractions` | Platform seams: `IKeyValueStore`, `ICultureProvider`, `IPasskeyCeremony`, `IFileSaver`. **References nothing** — no packages, no JS interop — which is what lets a MAUI head swap the implementations and change nothing else. |
+| `AppSuite.Ui.Abstractions` | Platform seams: `IKeyValueStore`, `ICultureProvider`, `IPasskeyCeremony`, `IFileSaver`, `StorageUnavailableException`. **References nothing** — no packages, no JS interop — which is what lets a MAUI head swap the implementations and change nothing else. |
+| `AppSuite.Ui.Web` | Browser implementations of those seams, shared by both web hosts: `BrowserKeyValueStore` over `sessionStorage`/`localStorage` ([ADR-0028](../adr/0028-browser-platform-adapters-block.md)). Not an RCL — adapters only, no components — so `Ui.Shared` stays usable by a MAUI head. |
 | `AppSuite.<App>.Contracts` | API DTOs for the app-type (bounded-context boundary). |
 | `AppSuite.<App>.Service.Core` | Domain + application layer; defines repository **ports**. |
 | `AppSuite.<App>.Service.Repository` | EF Core + Postgres adapter. |
@@ -131,7 +141,7 @@ on EF, ASP.NET, HTTP, or MAUI. Enforced by an **architecture test** (ArchUnitNET
 rules are in the [architecture guidelines](../guidelines/architecture-guidelines.md).
 
 On the client side the same rule reads outward-in from the host, and is enforced by
-`MainUiLayeringTests`:
+`MainUiLayeringTests` and `SharedUiBlockLayeringTests`:
 
 - `<App>.Ui` may reference `Ui.Shared`, `Ui.Abstractions`, `Localization`, `ApiClient` and its own
   `Contracts` — and **never** `AppSuite.Identity`, `<App>.Service*`, EF Core, or the WebAssembly
@@ -140,3 +150,7 @@ On the client side the same rule reads outward-in from the host, and is enforced
 - `ApiClient` and `Ui.Abstractions` stay free of `Microsoft.JSInterop` and
   `Microsoft.AspNetCore.Components.WebAssembly`; the moment either references a platform it stops
   being reusable by the MAUI head.
+- **`Ui.Shared` must not reference `Ui.Web`**, and `Ui.Web` must not reference `Ui.Shared`, the
+  `ApiClient`, or any app. `Ui.Shared` is what a MAUI head renders; `Ui.Web` is what only a browser
+  can run. Keeping the arrow absent in both directions is what lets a native head take the first
+  without the second ([ADR-0028](../adr/0028-browser-platform-adapters-block.md)).
