@@ -1,0 +1,75 @@
+@page "/verify-email"
+@inject IStringLocalizer<AppStrings> L
+@inject AccountApiClient Api
+
+@*
+    Root-level route, not /account/verify-email: the address is baked into every verification mail
+    already sent (MailTemplateRenderer), and links in someone's inbox cannot be migrated.
+*@
+
+<PageTitle>@L["VerifyTitle"]</PageTitle>
+
+<AuthCard Title="@Title">
+    <ChildContent>
+        @switch (_state)
+        {
+            case State.Working:
+                <p class="mb-0">@L["VerifyWorking"]</p>
+                break;
+
+            case State.Confirmed:
+                <p class="mb-0">@L["VerifyDoneText"]</p>
+                break;
+
+            default:
+                <p class="mb-0">@L["VerifyFailedText"]</p>
+                break;
+        }
+    </ChildContent>
+    <Footer>
+        <a href="account/login">@L["NavSignIn"]</a>
+    </Footer>
+</AuthCard>
+
+@code {
+    private enum State
+    {
+        Working,
+        Confirmed,
+        Failed,
+    }
+
+    private State _state = State.Working;
+
+    /// <summary>The account being verified, from the link.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "userId")]
+    public string? UserId { get; set; }
+
+    /// <summary>The single-use token from the link.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "token")]
+    public string? Token { get; set; }
+
+    private string Title => _state switch
+    {
+        State.Working => L["VerifyTitle"],
+        State.Confirmed => L["VerifyDoneTitle"],
+        _ => L["VerifyFailedTitle"],
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(UserId) || string.IsNullOrWhiteSpace(Token))
+        {
+            _state = State.Failed;
+            return;
+        }
+
+        // The token is passed on exactly as it arrived. It is already Base64Url-encoded and the
+        // server decodes it itself; decoding here would turn a valid link into a 400.
+        var result = await Api.VerifyEmailAsync(new VerifyEmailRequest(UserId, Token));
+
+        _state = result.IsSuccess ? State.Confirmed : State.Failed;
+    }
+}

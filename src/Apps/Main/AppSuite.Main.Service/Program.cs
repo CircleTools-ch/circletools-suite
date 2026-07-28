@@ -83,7 +83,19 @@ builder.Services
 // for the seconds a passkey prompt is open, never a session. Sign-in still yields a bearer token
 // exactly as password sign-in does. Flagged as an ADR-0021 follow-up because it is a deviation
 // from "no cookies" that a reader would otherwise assume was an oversight.
-builder.Services.AddAuthentication().AddCookie(IdentityConstants.TwoFactorUserIdScheme);
+builder.Services.AddAuthentication().AddCookie(IdentityConstants.TwoFactorUserIdScheme, options =>
+{
+    // The client is a separate origin (ADR-0013), so this cookie is set and returned on cross-origin
+    // fetches. SameSite=Lax would be dropped on those, which fails the ceremony with a "challenge not
+    // found" that looks nothing like its actual cause. None requires Secure, which is satisfied
+    // everywhere the app runs: HTTPS in deployment, and localhost counts as a secure context.
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.HttpOnly = true;
+
+    // Ceremony state, not a session: it is worthless once the prompt is answered.
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+});
 
 builder.Services.AddAuthorization();
 
@@ -132,14 +144,34 @@ builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 
 // CORS: allow the origins configured under "Cors:AllowedOrigins".
+//
+// AllowCredentials is required by the WebAuthn ceremonies alone: without it the browser refuses to
+// send or store the challenge cookie on a cross-origin fetch, and FR-010/011 cannot complete. It is
+// only legal alongside an explicit origin list — pairing it with AllowAnyOrigin is rejected by
+// ASP.NET Core at startup, and would be a genuine hole rather than a technicality. Every other
+// endpoint authenticates with a bearer header and is unaffected.
+// In Development the origin cannot be pinned down in advance. Aspire publishes each project on the
+// port from its launch profile but proxies it to a Kestrel port the host assigns at start-up, and
+// depending on how the app is opened — dashboard link, Visual Studio, a bookmark — the browser can
+// end up on either one. A single configured origin then rejects the other with a bare preflight
+// failure, which surfaces to the user as "the server is unreachable" and says nothing about why.
+// Loopback origins only, and only here; a deployed environment still gets the explicit list.
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+var isDevelopment = builder.Environment.IsDevelopment();
 builder.Services.AddCors(options => options.AddPolicy(corsPolicyName, policy =>
 {
-    if (allowedOrigins.Length > 0)
+    if (isDevelopment)
     {
-        policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
+        policy.SetIsOriginAllowed(IsLoopbackOrigin).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+    }
+    else if (allowedOrigins.Length > 0)
+    {
+        policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
     }
 }));
+
+static bool IsLoopbackOrigin(string origin) =>
+    Uri.TryCreate(origin, UriKind.Absolute, out var uri) && uri.IsLoopback;
 
 var app = builder.Build();
 

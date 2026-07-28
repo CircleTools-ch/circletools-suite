@@ -1,0 +1,19 @@
+@inject NavigationManager Navigation
+
+@*
+    Sends a signed-out visitor to the sign-in form and remembers where they were going, so following
+    a bookmark to an account page lands there rather than dumping them on the dashboard.
+
+    Renders nothing: it exists only for its effect, and showing "redirecting…" for the fraction of a
+    second before the navigation happens is worse than showing nothing.
+*@
+
+@code {
+    protected override void OnInitialized()
+    {
+        var target = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var returnUrl = string.IsNullOrEmpty(target) ? string.Empty : $"?returnUrl={Uri.EscapeDataString(target)}";
+
+        Navigation.NavigateTo($"account/login{returnUrl}", replace: true);
+    }
+}

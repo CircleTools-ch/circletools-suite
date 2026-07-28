@@ -20,6 +20,10 @@ public sealed record RefreshRequest(string RefreshToken);
 /// <param name="Email">The address to send the link to, if it has an account.</param>
 public sealed record ForgotPasswordRequest(string Email);
 
+/// <summary>Request for a replacement verification link (FR-007).</summary>
+/// <param name="Email">The address to re-send to, if it has an unverified account.</param>
+public sealed record ResendVerificationRequest(string Email);
+
 /// <summary>Completion of a password reset (FR-009).</summary>
 /// <param name="UserId">The account being reset.</param>
 /// <param name="Token">The single-use token from the reset link.</param>

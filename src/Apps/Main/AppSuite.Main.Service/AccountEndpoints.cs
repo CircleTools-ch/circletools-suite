@@ -54,6 +54,7 @@ public static class AccountEndpoints
 
         group.MapPost("/register", RegisterAsync).WithName("Register").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
         group.MapPost("/verify-email", VerifyEmailAsync).WithName("VerifyEmail").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
+        group.MapPost("/resend-verification", ResendVerificationAsync).WithName("ResendVerification").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
         group.MapPost("/forgot-password", ForgotPasswordAsync).WithName("ForgotPassword").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
         group.MapPost("/reset-password", ResetPasswordAsync).WithName("ResetPassword").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
         group.MapPost("/login", LoginAsync).WithName("Login").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
@@ -185,6 +186,51 @@ public static class AccountEndpoints
         var result = await users.ConfirmEmailAsync(user, token).ConfigureAwait(false);
 
         return result.Succeeded ? Results.NoContent() : Results.BadRequest();
+    }
+
+    /// <summary>
+    /// Queues a fresh verification link for an address that has not been confirmed yet (FR-007).
+    /// </summary>
+    /// <remarks>
+    /// Verification links are the one step of sign-up the user cannot retry on their own — the mail
+    /// can be lost, filtered, or simply deleted, and without this the account is stranded.
+    /// <para>
+    /// The response is the same 202 as <c>/register</c>, in every case: unknown address, already
+    /// verified, or genuinely resent. Answering differently would turn this into the enumeration
+    /// oracle that sign-up itself carefully is not (NFR-005), and "already verified" is exactly the
+    /// fact an attacker wants.
+    /// </para>
+    /// </remarks>
+    private static async Task<IResult> ResendVerificationAsync(
+        [FromBody] ResendVerificationRequest request,
+        UserManager<AppSuiteUser> users,
+        IOutbox outbox,
+        TimeProvider clock,
+        CancellationToken cancellationToken)
+    {
+        var user = string.IsNullOrWhiteSpace(request.Email)
+            ? null
+            : await users.FindByEmailAsync(request.Email).ConfigureAwait(false);
+
+        if (user is not null && !user.EmailConfirmed)
+        {
+            var token = await users.GenerateEmailConfirmationTokenAsync(user).ConfigureAwait(false);
+
+            await outbox.EnqueueAsync(
+                OutboxMessage.Create(
+                    VerificationMailType,
+                    JsonSerializer.Serialize(new
+                    {
+                        userId = user.Id,
+                        email = user.Email,
+                        language = user.PreferredLanguage,
+                        token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token)),
+                    }),
+                    clock.GetUtcNow()),
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        return AcceptedRegistration();
     }
 
     /// <summary>Queues a password-reset link (FR-009).</summary>
@@ -581,7 +627,9 @@ public static class AccountEndpoints
                 user.Email ?? string.Empty,
                 user.PreferredLanguage,
                 user.EmailConfirmed),
-            [.. passkeys.Select(p => new ExportedPasskey(Convert.ToBase64String(p.CredentialId), p.CreatedAt))],
+            // Base64Url, matching PasskeyResponse and the DELETE /passkeys/{credentialId} route.
+            // Plain Base64 here would produce ids from the export that the delete endpoint rejects.
+            [.. passkeys.Select(p => new ExportedPasskey(WebEncoders.Base64UrlEncode(p.CredentialId), p.CreatedAt))],
             sessions,
             [
                 "Circles are not part of this release; nothing is missing from this archive.",

@@ -46,5 +46,11 @@
   href: 0022-account-deletion-and-data-export.md
 - name: ADR-0023 Local dev infrastructure in the AppHost
   href: 0023-local-dev-infrastructure-in-apphost.md
+- name: ADR-0024 UI styling & theming
+  href: 0024-ui-styling-and-theming.md
+- name: ADR-0025 Shared UI building blocks
+  href: 0025-shared-ui-building-blocks.md
+- name: ADR-0026 Refresh-token persistence in the browser
+  href: 0026-refresh-token-persistence.md
 - name: Template
   href: _template-adr.md

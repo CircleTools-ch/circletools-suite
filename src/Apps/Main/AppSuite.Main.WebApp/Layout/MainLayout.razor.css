@@ -36,6 +36,13 @@ main {
         text-overflow: ellipsis;
     }
 
+.appsuite-topbar__user {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #444;
+}
+
 @media (max-width: 640.98px) {
     .top-row {
         justify-content: space-between;

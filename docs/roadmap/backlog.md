@@ -97,8 +97,21 @@ Idea stubs and work items, newest-first. Promote items into
 - **Test plan written (2026-07-27):** [TP-002](../features/TP-002-m1-identity.md), weighted toward the
   two disproportionate risks — refresh-token rotation (custom code, incl. the racing-refresh case) and
   enumeration resistance (whose failure mode is invisible to ordinary functional tests).
-- **Next:** build M1 — starting with the two building blocks (`AppSuite.Identity`,
-  `AppSuite.Infrastructure`) that arc42 ch.5 plans but that do not exist yet.
+- **Server half built (2026-07-27):** `AppSuite.Identity` and `AppSuite.Infrastructure` exist, and
+  the whole `/api/v1/account` surface with them — register, verify, login, refresh, logout,
+  forgot/reset, profile, change-email, passkeys, export, delete — against real Postgres and real
+  Mailpit.
+- **Client half built (2026-07-28):** the Main Blazor client, plus the four UI building blocks arc42
+  ch.5 planned — `Ui.Abstractions`, `Localization`, `ApiClient`, `Ui.Shared`
+  ([ADR-0025](../adr/0025-shared-ui-building-blocks.md)). Three decisions that were being made
+  silently in code became ADRs: styling ([0024](../adr/0024-ui-styling-and-theming.md)), the shared
+  blocks ([0025](../adr/0025-shared-ui-building-blocks.md)), and where the refresh token is kept
+  ([0026](../adr/0026-refresh-token-persistence.md), extending ADR-0021). FEAT-002 and TP-002 moved
+  to *In progress*.
+- **Next:** the browser walkthrough `CLAUDE.md` requires — the full journey in DE/EN/FR with a clean
+  console and zero CSP violations, and the first end-to-end run of the WebAuthn ceremonies, which no
+  automated test covers. Then the Secret-Santa culture migration onto the shared blocks (ADR-0025's
+  recorded follow-up).
 - **Three acceptance criteria cannot close in M1** and are recorded as deferred in FEAT-002: MAUI
   cross-client passkeys (needs the real domain), the *offline* language change (needs M3 sync), and
   the sole-circle-owner deletion guard (needs M2 circles).

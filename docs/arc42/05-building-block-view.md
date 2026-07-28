@@ -7,8 +7,12 @@
 > app-type is being implemented in milestone 6a as the **offline MVP — no server tier**
 > (`Contracts`/`Core`/`LocalStore`/`Ui`/`WebApp` + a MAUI head, per
 > [FEAT-001](../features/FEAT-001-secret-santa-mvp.md)); the dispatcher + domain run **client-side**
-> with local storage ([ADR-0015](../adr/0015-mvp-client-offline-storage.md)). `Ui.Shared`,
-> `Identity`, `Localization`, and the server/sync tier follow the same template when needed.
+> with local storage ([ADR-0015](../adr/0015-mvp-client-offline-storage.md)).
+>
+> **M1 ([FEAT-002](../features/FEAT-002-m1-identity.md)) makes the remaining planned blocks real:**
+> `Identity` and `Infrastructure` on the server side, and `Ui.Abstractions`, `Localization`,
+> `ApiClient` and `Ui.Shared` on the client side
+> ([ADR-0025](../adr/0025-shared-ui-building-blocks.md)). Only the sync tier is still a plan.
 
 ## 5.1 Level 1 — solution structure
 
@@ -52,9 +56,17 @@ flowchart TD
     WebApp --> AppUi --> UiShared
     Native --> AppUi
     Native --> Local
-    WebApp --> ApiC
+    AppUi --> ApiC
+    UiShared --> Loc --> UiAbs
+    ApiC --> UiAbs
     Svc --> Defaults
+    Svc --> Id
+    Svc --> Infra
 ```
+
+Note where `ApiClient` hangs: off `App.Ui`, not off the host. The typed client and the session
+handling are feature code that a MAUI head reuses unchanged; only the *implementations* of the
+`Ui.Abstractions` seams — browser storage, the WebAuthn ceremony, saving a file — belong to a host.
 
 ## 5.2 Projects & responsibilities
 
@@ -64,12 +76,12 @@ flowchart TD
 | `AppSuite.ServiceDefaults` | OpenTelemetry, health checks, resilience, service discovery. |
 | `AppSuite.SharedKernel` | DDD tactical base types (entity, value object, aggregate root, domain event). No I/O deps. |
 | `AppSuite.Application` | CQRS abstractions, pipeline behaviors, `Result`, unit-of-work. |
-| `AppSuite.Infrastructure` | Shared EF conventions, outbox, clock, ID generation. |
-| `AppSuite.Identity` | Identity model, JWT, WebAuthn/passkeys. |
-| `AppSuite.Localization` | DE/EN/FR resources & culture services. |
-| `AppSuite.ApiClient` | Shared typed HttpClient + auth handler. |
-| `AppSuite.Ui.Shared` | RCL: layout, theming, branding, shared components. |
-| `AppSuite.Ui.Abstractions` | Platform-service interfaces (`IDataStore`, `IConnectivity`, `ISecureStorage`, `ICultureProvider`, …). |
+| `AppSuite.Infrastructure` | Shared EF conventions, outbox, clock, ID generation, SMTP mail. |
+| `AppSuite.Identity` | Identity model, JWT, refresh-token chains, WebAuthn/passkeys. |
+| `AppSuite.Localization` | `AppCultures` (DE/EN/FR, `de-CH` default), `CultureProvider`, DI extension. |
+| `AppSuite.ApiClient` | `ApiResult`/`ApiError` + `ProblemDetails` reading; access/refresh token stores; `AuthorizedHttpMessageHandler` (bearer + silent refresh). No app DTOs, no routes. |
+| `AppSuite.Ui.Shared` | RCL: the suite theme ([ADR-0024](../adr/0024-ui-styling-and-theming.md)) and the components more than one app needs — `AuthCard`, `BusyButton`, `ProblemAlert`, `CultureSelector`, `CultureBoundary`. |
+| `AppSuite.Ui.Abstractions` | Platform seams: `IKeyValueStore`, `ICultureProvider`, `IPasskeyCeremony`, `IFileSaver`. **References nothing** — no packages, no JS interop — which is what lets a MAUI head swap the implementations and change nothing else. |
 | `AppSuite.<App>.Contracts` | API DTOs for the app-type (bounded-context boundary). |
 | `AppSuite.<App>.Service.Core` | Domain + application layer; defines repository **ports**. |
 | `AppSuite.<App>.Service.Repository` | EF Core + Postgres adapter. |
@@ -98,7 +110,7 @@ until this chapter confirmed them; they are now **fixed**:
 | Context | Owns | Lives in | Status |
 |---------|------|----------|--------|
 | **Secret-Santa** | [Group](../glossary/group.md), [Member](../glossary/member.md), [Exclusion](../glossary/exclusion.md), [Draw](../glossary/draw.md), [Assignment](../glossary/assignment.md), [Wishlist](../glossary/wishlist.md), [Budget](../glossary/budget.md), [Event details](../glossary/event-details.md), [Reveal link](../glossary/reveal-link.md) | `AppSuite.SecretSanta.*` | shipped (FEAT-001) |
-| **Identity** | [User](../glossary/user.md), [Passkey](../glossary/passkey.md) — credentials, profile, account lifecycle | `AppSuite.Identity` + the Main service host | **M1** ([FEAT-002](../features/FEAT-002-m1-identity.md)) |
+| **Identity** | [User](../glossary/user.md), [Passkey](../glossary/passkey.md) — credentials, profile, account lifecycle | `AppSuite.Identity` + the Main service host; the client half in `AppSuite.Main.Ui` (`Auth/`, `Api/`) over `AppSuite.ApiClient` | **M1** ([FEAT-002](../features/FEAT-002-m1-identity.md)) |
 | **Circles** | [Circle](../glossary/circle.md), [Circle membership](../glossary/circle-membership.md), [Invitation](../glossary/invitation.md), [Managed member](../glossary/managed-member.md) | `AppSuite.Circles.*` (planned) | M2 |
 | **Platform** | [Sync](../glossary/sync.md) — local↔server reconciliation | `AppSuite.Infrastructure` + per-app `LocalStore` | M3 |
 
@@ -117,3 +129,14 @@ app-type's API host authenticates the same bearer tokens
 Dependencies point **inward**; the domain (`Service.Core` / `SharedKernel`) has **no** dependency
 on EF, ASP.NET, HTTP, or MAUI. Enforced by an **architecture test** (ArchUnitNET). Full reference
 rules are in the [architecture guidelines](../guidelines/architecture-guidelines.md).
+
+On the client side the same rule reads outward-in from the host, and is enforced by
+`MainUiLayeringTests`:
+
+- `<App>.Ui` may reference `Ui.Shared`, `Ui.Abstractions`, `Localization`, `ApiClient` and its own
+  `Contracts` — and **never** `AppSuite.Identity`, `<App>.Service*`, EF Core, or the WebAssembly
+  host. Reaching for the server's Identity code from the browser would move a security decision
+  somewhere the browser can read it.
+- `ApiClient` and `Ui.Abstractions` stay free of `Microsoft.JSInterop` and
+  `Microsoft.AspNetCore.Components.WebAssembly`; the moment either references a platform it stops
+  being reusable by the MAUI head.

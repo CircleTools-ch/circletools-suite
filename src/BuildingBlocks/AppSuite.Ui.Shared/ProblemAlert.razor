@@ -1,0 +1,36 @@
+@*
+    Renders a failure the user needs to know about.
+
+    role="alert" is required, not decorative: TP-002 makes it an accessibility criterion, so a screen
+    reader announces the failure instead of leaving the user waiting on a form that silently refused.
+*@
+
+@if (!string.IsNullOrWhiteSpace(Message))
+{
+    <div class="alert @CssClass" role="alert">
+        <div>@Message</div>
+        @if (Details is { Count: > 0 })
+        {
+            <ul class="mb-0 mt-2 small">
+                @foreach (var detail in Details)
+                {
+                    <li>@detail</li>
+                }
+            </ul>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>The message to show. Nothing renders when this is empty.</summary>
+    [Parameter]
+    public string? Message { get; set; }
+
+    /// <summary>Per-field messages shown beneath the main one.</summary>
+    [Parameter]
+    public IReadOnlyList<string>? Details { get; set; }
+
+    /// <summary>The Bootstrap alert variant.</summary>
+    [Parameter]
+    public string CssClass { get; set; } = "alert-danger";
+}

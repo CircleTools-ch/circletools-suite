@@ -1,0 +1,42 @@
+@inject IStringLocalizer<SharedStrings> L
+
+@*
+    A button that disables itself while its action is running. Every account page has one, and every
+    one of them can be double-submitted without it — sign-up twice, delete twice.
+*@
+
+<button type="@Type" class="@CssClass" disabled="@(Busy || Disabled)" @onclick="OnClick">
+    @if (Busy)
+    {
+        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        <span class="visually-hidden">@L["Working"]</span>
+    }
+    @Label
+</button>
+
+@code {
+    /// <summary>The button's caption, supplied by the page so the wording stays with its own resources.</summary>
+    [Parameter]
+    [EditorRequired]
+    public string? Label { get; set; }
+
+    /// <summary>Whether the action is currently running.</summary>
+    [Parameter]
+    public bool Busy { get; set; }
+
+    /// <summary>Whether the button is unavailable for reasons other than being busy.</summary>
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>The HTML button type; <c>submit</c> by default, since these sit in forms.</summary>
+    [Parameter]
+    public string Type { get; set; } = "submit";
+
+    /// <summary>The Bootstrap classes to apply.</summary>
+    [Parameter]
+    public string CssClass { get; set; } = "btn btn-primary";
+
+    /// <summary>Invoked on click, for buttons that are not form submits.</summary>
+    [Parameter]
+    public EventCallback<MouseEventArgs> OnClick { get; set; }
+}

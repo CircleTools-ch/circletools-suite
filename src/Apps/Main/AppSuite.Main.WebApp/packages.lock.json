@@ -208,15 +208,55 @@
           "Microsoft.JSInterop": "10.0.10"
         }
       },
+      "appsuite.apiclient": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.Ui.Abstractions": "[1.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.10, )"
+        }
+      },
+      "appsuite.localization": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.Ui.Abstractions": "[1.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.10, )",
+          "Microsoft.Extensions.Localization": "[10.0.10, )"
+        }
+      },
       "appsuite.main.contracts": {
         "type": "Project"
       },
       "appsuite.main.ui": {
         "type": "Project",
         "dependencies": {
+          "AppSuite.ApiClient": "[1.0.0, )",
           "AppSuite.Main.Contracts": "[1.0.0, )",
+          "AppSuite.Ui.Shared": "[1.0.0, )",
+          "Microsoft.AspNetCore.Components.Authorization": "[10.0.10, )",
           "Microsoft.AspNetCore.Components.Web": "[10.0.10, )",
           "Microsoft.Extensions.Localization": "[10.0.10, )"
+        }
+      },
+      "appsuite.ui.abstractions": {
+        "type": "Project"
+      },
+      "appsuite.ui.shared": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.Localization": "[1.0.0, )",
+          "AppSuite.Ui.Abstractions": "[1.0.0, )",
+          "Microsoft.AspNetCore.Components.Web": "[10.0.10, )",
+          "Microsoft.Extensions.Localization": "[10.0.10, )"
+        }
+      },
+      "Microsoft.AspNetCore.Components.Authorization": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.10, )",
+        "resolved": "10.0.10",
+        "contentHash": "em2xVQkvtn3BHFT3J9pp4K3yDgPnp0S5a+gcGxb6xkjqy+81yDa8XEEaQnkruCVRusFMltORFFmnlrnHa/A90w==",
+        "dependencies": {
+          "Microsoft.AspNetCore.Authorization": "10.0.10",
+          "Microsoft.AspNetCore.Components": "10.0.10"
         }
       },
       "Microsoft.AspNetCore.Components.Web": {

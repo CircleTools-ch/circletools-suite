@@ -56,11 +56,89 @@ contained, not solved, by: **short-lived access tokens held in memory**, **refre
 (reuse of a consumed refresh token revokes the chain), and a **strict CSP**, which is the primary
 control and must stay strict — relaxing it silently removes the main mitigation.
 
+### How a browser session actually behaves
+
+The client half lives in `AppSuite.ApiClient` and `AppSuite.Main.Ui/Auth`, and the flow is worth
+stating because several parts of it only look right if you know what they are for.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant App as WASM client
+    participant Mem as Access token (memory)
+    participant Store as Refresh token (web storage)
+    participant API as Main API
+
+    U->>App: sign in (+ "stay signed in"?)
+    App->>API: POST /login
+    API-->>App: access token + refresh token
+    App->>Mem: hold access token
+    App->>Store: session scope, or durable if asked
+    Note over App: reload — memory is gone, storage is not
+    App->>Store: read refresh token
+    App->>API: POST /refresh (unauthenticated client)
+    API-->>App: new pair (previous refresh token now dead)
+    App->>Store: write back to the same scope
+```
+
+- **The access token is never persisted.** A reload therefore always starts signed out and recovers
+  by refreshing, which is why startup awaits one silent refresh before the first render.
+- **The refresh token's scope is the user's choice** — `sessionStorage` by default, `localStorage`
+  behind "stay signed in" ([ADR-0026](../adr/0026-refresh-token-persistence.md)). Rotation writes
+  back to whichever scope it found, so a refresh never quietly lengthens a session.
+- **Refreshing goes through an unauthenticated client.** Routing it through the handler that
+  triggers refreshes would recurse; that is the whole reason the client is split in two.
+- **Concurrent 401s collapse into one refresh.** The server treats a replayed refresh token as theft
+  and revokes the chain; it forgives replays inside a 30-second grace window, but a client that
+  relies on that is building on the safety net.
+- **Unreachable is not signed out.** A failed refresh caused by the network keeps the refresh token,
+  so the session returns when the network does. Only a *rejected* refresh clears it.
+- **WebAuthn ceremonies are the one place cookies are used**, and only for the seconds a prompt is
+  open: Identity keeps the challenge in a cookie between the "options" call and the credential
+  submission. Cross-origin, that needs `SameSite=None; Secure`, CORS `AllowCredentials()` against an
+  explicit origin list, and `credentials: "include"` on those two calls. This does not reopen the
+  no-cookie-sessions decision — sign-in still yields a bearer token.
+
 ## 8.5 Localization (DE/EN/FR)
 
 Central `AppSuite.Localization` using **RESX + `IStringLocalizer`** ([ADR-0011](../adr/0011-localization-format-and-culture.md));
 `de-CH` default culture; culture is a synced user preference. Formatting via `CultureInfo`; no
 locale/currency logic in the domain. See the [localization guidelines](../guidelines/localization-guidelines.md).
+
+**Switching language does not reload the page.**
+[UC-MAIN-005](../use-cases/main/UC-MAIN-005-manage-profile.md) requires the change to take effect
+"without a reload or a flash of the wrong language". Blazor WebAssembly does not give this for free,
+and three separate things have to be true — each of which failed on its own in a browser before it
+worked:
+
+1. **The resources for the new language must already be in the browser.** The runtime downloads
+   satellite assemblies for the *startup* culture only, so switching to French otherwise falls back
+   silently to the neutral (English) strings — a picker that appears to work and produces the wrong
+   language. The host therefore starts the runtime with
+   `loadAllSatelliteResources: true` (`wwwroot/js/app.js`), which fetches all three up front. Two
+   small extra downloads; the framework's own answer is to reload the page on every change, which is
+   exactly what the use case rules out.
+2. **The culture must be applied to the current thread, not just the defaults.**
+   `CultureProvider.SetCultureAsync` assigns `CurrentCulture`/`CurrentUICulture` as well as
+   `DefaultThreadCurrent*`; the defaults are consulted only by threads that have not already resolved
+   their own, which by the time a user clicks the picker is no longer true.
+3. **The tree must actually be rebuilt.** `IStringLocalizer` reads `CurrentUICulture` at lookup time,
+   so in principle a re-render is enough — but `StateHasChanged` on a component above the router does
+   not reliably reach the layout, which hangs off Router → RouteView → LayoutView. `CultureBoundary`
+   therefore hands the culture name to its child content and `App.razor` puts an `@key` on the
+   `Router`, so a change rebuilds the subtree and every component reads the new culture on its first
+   render.
+
+The storage key is per app (`CultureOptions.StorageKey`), so each app keeps its own remembered
+preference.
+
+One consequence of the keyed rebuild is worth knowing before writing a page: **changing the language
+discards the state of whatever page is on screen.** The profile page carries its "saved"
+confirmation in the query string for exactly this reason.
+
+Signing in applies the **account's** language over whatever the browser last remembered — the
+preference travels in the access token, so it costs no extra round trip, and a borrowed device does
+not leave someone reading a stranger's language.
 
 ## 8.6 Configuration sharing
 
