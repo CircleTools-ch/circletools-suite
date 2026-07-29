@@ -6,7 +6,7 @@ status: Approved
 priority: Must
 source: UC-MAIN-012
 verification: test
-related: [UC-MAIN-012, UC-MAIN-013, UC-MAIN-014, NFR-005, NFR-006, ADR-0018]
+related: [UC-MAIN-012, UC-MAIN-013, UC-MAIN-014, NFR-005, NFR-006, ADR-0018, FEAT-003]
 ---
 
 # FR-020 — Manage circle roles, membership and ownership
@@ -120,7 +120,12 @@ And the label is not translated for viewers in other languages
   [NFR-005](../non-functional/NFR-005-account-enumeration-resistance.md)
 - Governing ADR: [ADR-0018](../../adr/0018-circle-and-sharing-model.md) (the role table; the transfer
   flow it deferred to this milestone)
-- **Open for the M2 feature spec:** whether a removed person is notified; how elevated roles are
-  surfaced to the owner at a glance.
+- **Decided in [FEAT-003](../../features/FEAT-003-m2-circles.md):** a removed person gets **no mail** —
+  the circle is simply gone from their list, and an open page says so on the next request; removal is
+  a social act with no reply channel, and mailing it makes the product a participant in the argument.
+  Elevated roles are surfaced as a badge on **owner and admin only**, so the owner sees at a glance
+  who else can act without the list turning into badges.
+- Implemented by: [FEAT-003](../../features/FEAT-003-m2-circles.md) ·
+  verified by [TP-003](../../features/TP-003-m2-circles.md)
 - Glossary: [Circle membership](../../glossary/circle-membership.md), [Circle](../../glossary/circle.md),
   [Managed member](../../glossary/managed-member.md)

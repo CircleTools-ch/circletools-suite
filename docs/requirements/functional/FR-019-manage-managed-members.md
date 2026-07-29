@@ -6,7 +6,7 @@ status: Approved
 priority: Must
 source: UC-MAIN-011
 verification: test
-related: [UC-MAIN-011, UC-MAIN-009, NFR-003, NFR-004, NFR-006, ADR-0018, ADR-0022]
+related: [UC-MAIN-011, UC-MAIN-009, NFR-003, NFR-004, NFR-006, ADR-0018, ADR-0022, FEAT-003]
 ---
 
 # FR-019 — Add and maintain managed members
@@ -107,7 +107,12 @@ Then neither a profile nor a membership remains
   [NFR-006](../non-functional/NFR-006-circle-authorization.md)
 - Governing ADRs: [ADR-0018](../../adr/0018-circle-and-sharing-model.md) (decision D7),
   [ADR-0022](../../adr/0022-account-deletion-and-data-export.md)
-- **Open for the M2 feature spec:** whether managed members appear in another member's data export
-  (ADR-0022's "export mirrors in-app visibility" suggests yes); a per-circle cap as an abuse limit.
+- **Decided in [FEAT-003](../../features/FEAT-003-m2-circles.md):** managed members **do** appear in
+  another member's export — display name and the managed marker, exactly what the people list shows
+  and nothing more, so ADR-0022's "mirrors in-app visibility" and NFR-006's no-addresses rule stay
+  true together. The cap is **100 memberships per circle**, managed members included. On promotion the
+  **account's display name wins**: one person, one name.
+- Implemented by: [FEAT-003](../../features/FEAT-003-m2-circles.md) ·
+  verified by [TP-003](../../features/TP-003-m2-circles.md)
 - Glossary: [Managed member](../../glossary/managed-member.md),
   [Circle membership](../../glossary/circle-membership.md), [Member](../../glossary/member.md)

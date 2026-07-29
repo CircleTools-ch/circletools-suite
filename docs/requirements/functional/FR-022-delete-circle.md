@@ -6,7 +6,7 @@ status: Approved
 priority: Must
 source: UC-MAIN-014
 verification: test
-related: [UC-MAIN-014, UC-MAIN-006, FR-015, NFR-004, NFR-006, ADR-0018, ADR-0022]
+related: [UC-MAIN-014, UC-MAIN-006, FR-015, NFR-004, NFR-006, ADR-0018, ADR-0022, FEAT-003]
 ---
 
 # FR-022 — Delete a circle
@@ -106,7 +106,14 @@ Then account deletion may proceed
   [NFR-006](../non-functional/NFR-006-circle-authorization.md)
 - Governing ADRs: [ADR-0018](../../adr/0018-circle-and-sharing-model.md),
   [ADR-0022](../../adr/0022-account-deletion-and-data-export.md)
-- **Open for the M2 feature spec:** whether deletion requires recent re-authentication (account
-  deletion does); whether members get a pre-deletion export window.
+- **Decided in [FEAT-003](../../features/FEAT-003-m2-circles.md):** **no password** — the owner types
+  the circle's **name** back. Account deletion asks for a password because the threat there is a
+  stolen session taking everything; here the threat is the misclick, and a hijacker who wants to hurt
+  you deletes the account, which is already guarded. Typing the name defends against the real failure
+  mode without training users to type their password into in-app prompts. **No pre-deletion export
+  window:** every member can already export at any time, and a window is a soft-delete state by
+  another name.
+- Implemented by: [FEAT-003](../../features/FEAT-003-m2-circles.md) ·
+  verified by [TP-003](../../features/TP-003-m2-circles.md)
 - Glossary: [Circle](../../glossary/circle.md), [Managed member](../../glossary/managed-member.md),
   [Invitation](../../glossary/invitation.md)
