@@ -653,7 +653,11 @@ public static class AccountEndpoints
             [.. passkeys.Select(p => new ExportedPasskey(WebEncoders.Base64UrlEncode(p.CredentialId), p.CreatedAt))],
             sessions,
             [
-                "Circles are not part of this release; nothing is missing from this archive.",
+                // Circles exist as of M2, so the old "circles are not part of this release" note
+                // would now be false. What the archive still omits is their *content* — that is
+                // FR-014's next slice, and saying so is better than a thin archive being read as
+                // data loss (ADR-0022).
+                "Your circles are not in this archive yet; you can see them in the app.",
                 "Secret-Santa data is stored on your own device and is not synced to the server yet.",
             ]);
 
@@ -662,9 +666,18 @@ public static class AccountEndpoints
 
     /// <summary>Deletes the account immediately and irreversibly (FR-015, ADR-0022).</summary>
     /// <remarks>
+    /// <para>
     /// Re-authenticates first: deletion cannot be undone, so a session left open on a shared
     /// device must not be enough. Local data on the user's own devices is untouched — that is what
     /// makes immediate deletion defensible ([ADR-0017]).
+    /// </para>
+    /// <para>
+    /// The order of the four steps is the whole design. Guards run before anything changes, because
+    /// ADR-0022 leaves nothing to roll back. Then sessions, then the other contexts' cleanups, and
+    /// the account row last — so that every partial failure leaves the recoverable state rather than
+    /// the corrupt one. See <see cref="IAccountDeletionCleanup"/> for why cleanup precedes the
+    /// delete and not the other way round.
+    /// </para>
     /// </remarks>
     private static async Task<IResult> DeleteAccountAsync(
         [FromBody] DeleteAccountRequest request,
@@ -672,6 +685,7 @@ public static class AccountEndpoints
         UserManager<AppSuiteUser> users,
         SessionService sessions,
         IEnumerable<IAccountDeletionGuard> guards,
+        IEnumerable<IAccountDeletionCleanup> cleanups,
         CancellationToken cancellationToken)
     {
         if (!TryGetUserId(principal, out var userId))
@@ -693,17 +707,30 @@ public static class AccountEndpoints
 
         foreach (var guard in guards)
         {
-            var blocked = await guard.CheckAsync(user.Id, cancellationToken).ConfigureAwait(false);
+            var refusal = await guard.CheckAsync(user.Id, cancellationToken).ConfigureAwait(false);
 
-            if (blocked is not null)
+            if (refusal is not null)
             {
-                return Results.Problem(statusCode: StatusCodes.Status409Conflict, title: blocked);
+                return Results.Problem(
+                    statusCode: StatusCodes.Status409Conflict,
+                    title: refusal.Title,
+                    extensions: new Dictionary<string, object?>
+                    {
+                        ["code"] = refusal.Code,
+                        ["blockers"] = refusal.Blockers,
+                    });
             }
         }
 
         // Sessions first: if the delete fails afterwards the account is at worst signed out, which
         // is recoverable. The reverse order could leave live tokens for a deleted account.
         await sessions.RevokeAllAsync(user.Id, cancellationToken).ConfigureAwait(false);
+
+        // Then the other contexts, while the account still exists to be cleaned up after.
+        foreach (var cleanup in cleanups)
+        {
+            await cleanup.CleanUpAsync(user.Id, cancellationToken).ConfigureAwait(false);
+        }
 
         var deleted = await users.DeleteAsync(user).ConfigureAwait(false);
 

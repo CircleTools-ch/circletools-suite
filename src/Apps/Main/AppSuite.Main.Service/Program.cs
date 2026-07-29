@@ -13,6 +13,7 @@ using AppSuite.Application;
 using AppSuite.Main.Contracts;
 using AppSuite.Main.Service.Core;
 using AppSuite.Main.Service.Core.Application;
+using AppSuite.Main.Service.Core.Domain;
 using AppSuite.Main.Service.Repository;
 using AppSuite.Circles.Core;
 using AppSuite.Circles.Core.Domain;
@@ -45,6 +46,12 @@ builder.Services.Configure<CircleLimits>(builder.Configuration.GetSection(Circle
 // outbox, and the Circles context references neither. This host is the only place that has both.
 builder.Services.AddScoped<IAccountDirectory, IdentityAccountDirectory>();
 builder.Services.AddScoped<IInvitationMailer, OutboxInvitationMailer>();
+
+// The two account-deletion seams, in the direction Main defines them (FR-015). The guard is what
+// M1 shipped IAccountDeletionGuard for and left unregistered on purpose; the cleanup is its other
+// half, without which a deleted account leaves memberships pointing at nobody.
+builder.Services.AddScoped<IAccountDeletionGuard, SoleOwnerCircleGuard>();
+builder.Services.AddScoped<IAccountDeletionCleanup, CircleMembershipCleanup>();
 
 // Identity, sessions and bearer-token validation — ADR-0009, ADR-0021.
 // AddDefaultTokenProviders must be applied here: it lives in the ASP.NET Core framework
