@@ -144,15 +144,38 @@ splitting it later a deployment change rather than a rewrite. There is **no fore
 
 M1 shipped `IAccountDeletionGuard` for exactly this milestone, and it is half of what deletion needs.
 The guard answers *may this account be deleted* — M2 registers `SoleOwnerCircleGuard`, which refuses
-while the user is the sole owner of a circle and names the circles, so the UI can offer transfer
+while the user still owns a circle and names the circles, so the UI can offer transfer
 (FR-020) or deletion (FR-022).
 
 Nothing, however, **removes the departing user's other memberships**. Without that, deleting an
 account leaves rows pointing at a `UserId` that no longer resolves — a person who is in the people
-list and is nobody. So M2 adds `IAccountDeletionCleanup`, invoked inside the same transaction as the
-deletion, and the Circles context implements it: delete this user's memberships and any invitations
-they issued. **Managed members are not touched** — FR-019 makes them circle data that survives their
-creator.
+list and is nobody. So M2 adds `IAccountDeletionCleanup`, and the Circles context implements it:
+delete this user's memberships and any invitations they issued. **Managed members are not touched** —
+FR-019 makes them circle data that survives their creator.
+
+Three corrections the implementation made here:
+
+- **The guard blocks on every circle the account owns, not only the ones nobody else could own.**
+  "Sole owner" above reads as `Circle.IsSoleOwner`, and that reading is wrong: for a circle that has
+  other members, deletion would run `PurgeAccount` over the owner's own membership and leave the
+  circle with **no owner at all**. Nothing in the domain defines an ownerless circle, precisely
+  because `Circle.Leave` guarantees one can never occur — the guard has to hold the same line
+  `Leave` does. Each blocked circle therefore carries the way out that fits it, using the same two
+  codes `Leave` returns: `owner_must_transfer_ownership` when somebody else could take it,
+  `owner_must_delete_circle` when nobody could.
+- **The refusal is structured, not a sentence.** `IAccountDeletionGuard` returned `string?` in M1,
+  which cannot name circles and cannot be translated. It now returns a code plus the blockers, each
+  with an id, a name and its resolution — the same reasoning ADR-0011 already forced on M1's
+  password errors. Changing the shape cost nothing because M1 registered no guards.
+- **The cleanup is *not* in the same transaction as the deletion**, as stated above, and cannot
+  cheaply be: Identity and Circles have separate `DbContext`s over one database, so a single
+  transaction would mean sharing a connection between them — a change worth an ADR, not a
+  side effect of this milestone. What actually holds is **ordering**: guards, then sessions, then
+  the cleanups, then the account row. If the account delete fails after a cleanup, a live account
+  has been dropped from its circles — bad, but bounded, and it happens only to the user who just
+  asked for exactly that. The reverse order would leave orphan rows in **other people's** circles,
+  permanently, with the account gone and no way to retry. Same principle as M1's "sessions first":
+  order the steps so the state that survives a partial failure is the recoverable one.
 
 ## Domain model impact
 
