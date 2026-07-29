@@ -17,6 +17,7 @@ public sealed class CirclesLayeringTests
         .LoadAssemblies(
             typeof(AppSuite.Circles.Contracts.CreateCircleRequest).Assembly,
             typeof(AppSuite.Circles.Core.Domain.Circle).Assembly,
+            typeof(AppSuite.Circles.Repository.CirclesDbContext).Assembly,
             typeof(AppSuite.SecretSanta.Core.Domain.Group).Assembly,
             typeof(AppSuite.Identity.AppSuiteUser).Assembly)
         .Build();
@@ -42,6 +43,9 @@ public sealed class CirclesLayeringTests
     private static readonly IObjectProvider<IType> _circlesContracts =
         Types().That().ResideInNamespaceMatching("^AppSuite\\.Circles\\.Contracts").As("Circles.Contracts");
 
+    private static readonly IObjectProvider<IType> _circlesRepository =
+        Types().That().ResideInNamespaceMatching("^AppSuite\\.Circles\\.Repository").As("Circles.Repository");
+
     private static readonly IObjectProvider<IType> _secretSanta =
         Types().That().ResideInNamespaceMatching("^AppSuite\\.SecretSanta").As("Secret-Santa");
 
@@ -62,6 +66,17 @@ public sealed class CirclesLayeringTests
             .Check(_architecture);
 
     /// <summary>
+    /// The persistence adapter is allowed EF Core and Npgsql — that is what it is for — but not the
+    /// web stack. A repository that can see ASP.NET Core is one <c>HttpContext</c> away from
+    /// deciding authorization in a query, which is exactly where NFR-006 must not end up.
+    /// </summary>
+    [Fact]
+    public void Repository_DoesNotDependOnWeb() =>
+        Types().That().Are(_circlesRepository)
+            .Should().NotDependOnAny(_aspNetCore)
+            .Check(_architecture);
+
+    /// <summary>
     /// Circles must not reference <c>AppSuite.Identity</c> (arc42 §5.3, FEAT-003).
     /// </summary>
     /// <remarks>
@@ -69,6 +84,11 @@ public sealed class CirclesLayeringTests
     /// that no longer resolves is a case the context tolerates. Everything Circles needs to know
     /// about an account goes through <c>IAccountDirectory</c>, which the API host implements —
     /// exactly one crossing point instead of a dependency.
+    /// <para>
+    /// This is the rule the persistence adapter is most likely to break, since it is the layer that
+    /// could add a foreign key to <c>AspNetUsers</c> and get a referential guarantee for free. It
+    /// would cost the ability to keep a circle intact when a member deletes their account.
+    /// </para>
     /// </remarks>
     [Fact]
     public void Circles_DoesNotDependOnTheIdentityModel() =>

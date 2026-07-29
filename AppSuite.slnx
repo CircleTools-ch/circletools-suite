@@ -40,6 +40,7 @@
     <Project Path="src/BuildingBlocks/AppSuite.Application/AppSuite.Application.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.Circles.Contracts/AppSuite.Circles.Contracts.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.Circles.Core/AppSuite.Circles.Core.csproj" />
+    <Project Path="src/BuildingBlocks/AppSuite.Circles.Repository/AppSuite.Circles.Repository.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.Identity/AppSuite.Identity.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.Infrastructure/AppSuite.Infrastructure.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.Localization/AppSuite.Localization.csproj" />
@@ -54,6 +55,7 @@
   <Folder Name="/tests/BuildingBlocks/">
     <Project Path="tests/BuildingBlocks/AppSuite.ApiClient.Test/AppSuite.ApiClient.Test.csproj" />
     <Project Path="tests/BuildingBlocks/AppSuite.Circles.Core.Test/AppSuite.Circles.Core.Test.csproj" />
+    <Project Path="tests/BuildingBlocks/AppSuite.Circles.Repository.Test/AppSuite.Circles.Repository.Test.csproj" />
     <Project Path="tests/BuildingBlocks/AppSuite.Identity.Test/AppSuite.Identity.Test.csproj" />
     <Project Path="tests/BuildingBlocks/AppSuite.Ui.Shared.Test/AppSuite.Ui.Shared.Test.csproj" />
   </Folder>
