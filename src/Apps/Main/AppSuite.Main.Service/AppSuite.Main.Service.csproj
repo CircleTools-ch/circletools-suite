@@ -12,6 +12,7 @@
     <ProjectReference Include="..\AppSuite.Main.Contracts\AppSuite.Main.Contracts.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\AppSuite.Application\AppSuite.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\AppSuite.Circles.Core\AppSuite.Circles.Core.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\AppSuite.Circles.Repository\AppSuite.Circles.Repository.csproj" />
     <ProjectReference Include="..\..\..\Aspire\AppSuite.ServiceDefaults\AppSuite.ServiceDefaults.csproj" />
   </ItemGroup>
 

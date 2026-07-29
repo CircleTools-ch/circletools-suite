@@ -200,6 +200,24 @@ Minimal APIs per [ADR-0010](../adr/0010-api-style-and-versioning.md).
 | `GET /api/v1/invitations` | verified user — join requests matching their **verified** address | FR-018 |
 | `GET /api/v1/invitations/{token}` · `POST …/{token}/decline` | **anonymous** | FR-018 |
 | `POST /api/v1/invitations/{token}/accept` | signed-in, verified, address must match | FR-018 |
+| `POST /api/v1/invitations/{circleId}/{invitationId}/accept` · `…/decline` | signed-in, verified, address must match | FR-018 |
+
+Three corrections the implementation made to the table above, all of them visible to a client:
+
+- **The in-app path needed routes of its own** — the last row. Listing `GET /api/v1/invitations` alone
+  left the account path with nothing to call, and it cannot borrow the `{token}` routes: its whole
+  point is that it carries **no token from any mail**. Nor can it live under `/api/v1/circles`, where
+  `CircleRoleFilter` would answer `404` to exactly the people these routes exist for — someone who is
+  not in the circle yet. What admits them is the same verified-address check the link path makes.
+- **Every refusal carries a stable `code` beside its English title** (`circle_full`,
+  `email_not_verified`, …). The product is DE/EN/FR and a client cannot translate prose, which is the
+  reasoning [ADR-0011](../adr/0011-localization-format-and-culture.md) already forced on M1's password
+  errors.
+- **A rate-limited invitation says when the caller may continue.** The limiter computed that instant
+  and the handler discarded it, so the endpoint could only answer "not now". `CircleResult` now
+  carries an optional `RetryAfter`, which the endpoint relays as a `Retry-After` header — where
+  `ApiResponseReader` already looks for it — closing FR-017's *"a message saying when they may
+  continue"* at the API rather than only at the limiter.
 
 **Not a member and no such circle answer identically — `404`, same body, on every route.** A member
 whose *role* is insufficient gets `403`, which reveals nothing they did not already know. This is one

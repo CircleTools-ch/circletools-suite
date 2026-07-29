@@ -14,6 +14,9 @@ using AppSuite.Main.Contracts;
 using AppSuite.Main.Service.Core;
 using AppSuite.Main.Service.Core.Application;
 using AppSuite.Main.Service.Repository;
+using AppSuite.Circles.Core;
+using AppSuite.Circles.Core.Domain;
+using AppSuite.Circles.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,9 +28,23 @@ builder.AddServiceDefaults();
 // Application layer (CQRS dispatcher + behaviors) and the Main module.
 builder.Services.AddApplication();
 builder.Services.AddMainCore();
-builder.Services.AddMainRepository(
-    builder.Configuration.GetConnectionString("maindb")
-    ?? throw new InvalidOperationException("Connection string 'maindb' is not configured."));
+
+var mainConnectionString = builder.Configuration.GetConnectionString("maindb")
+    ?? throw new InvalidOperationException("Connection string 'maindb' is not configured.");
+
+builder.Services.AddMainRepository(mainConnectionString);
+
+// Circles (FEAT-003). Its own DbContext and its own schema inside the same database — a modular
+// monolith with a visible seam, not a second database (ADR-0003).
+builder.Services.AddCirclesCore();
+builder.Services.AddCirclesRepository(mainConnectionString);
+builder.Services.AddCirclesRetention(builder.Configuration);
+builder.Services.Configure<CircleLimits>(builder.Configuration.GetSection(CircleLimits.SectionName));
+
+// The two Circles ports no other project can supply: one needs Identity, the other needs the
+// outbox, and the Circles context references neither. This host is the only place that has both.
+builder.Services.AddScoped<IAccountDirectory, IdentityAccountDirectory>();
+builder.Services.AddScoped<IInvitationMailer, OutboxInvitationMailer>();
 
 // Identity, sessions and bearer-token validation — ADR-0009, ADR-0021.
 // AddDefaultTokenProviders must be applied here: it lives in the ASP.NET Core framework
@@ -182,10 +199,11 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 
-    // Apply pending migrations on startup in Development.
+    // Apply pending migrations on startup in Development. Two contexts, two independent migration
+    // histories, one database.
     using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<MainDbContext>();
-    db.Database.Migrate();
+    scope.ServiceProvider.GetRequiredService<MainDbContext>().Database.Migrate();
+    scope.ServiceProvider.GetRequiredService<CirclesDbContext>().Database.Migrate();
 }
 
 app.UseHttpsRedirection();
@@ -206,6 +224,20 @@ var account = app
 
 account.MapAccountEndpoints();
 account.MapPasskeyEndpoints();
+
+var circles = app
+    .MapGroup("/api/v{version:apiVersion}/circles")
+    .WithApiVersionSet(versionSet)
+    .MapToApiVersion(new ApiVersion(1, 0));
+
+circles.MapCircleEndpoints();
+
+var invitations = app
+    .MapGroup("/api/v{version:apiVersion}/invitations")
+    .WithApiVersionSet(versionSet)
+    .MapToApiVersion(new ApiVersion(1, 0));
+
+invitations.MapInvitationEndpoints();
 
 var heartbeats = app
     .MapGroup("/api/v{version:apiVersion}/heartbeats")
