@@ -38,6 +38,8 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0027](0027-breached-password-check.md) | Breached-password check (bundled ≥12-character list) | Accepted | 2026-07-28 |
 | [0028](0028-browser-platform-adapters-block.md) | Browser platform adapters as a shared block (`Ui.Web`) | Accepted | 2026-07-28 |
 | [0029](0029-storage-write-failure-contract.md) | What an `IKeyValueStore` write does when storage refuses it | Accepted | 2026-07-28 |
+| [0030](0030-mobile-store-publisher-identity.md) | Store publisher identity and account ownership (individual, project-owned accounts) | Accepted | 2026-07-29 |
+| [0031](0031-ios-build-host.md) | iOS build host (own Apple-silicon Mac) | Accepted | 2026-07-29 |
 
 ## Open decisions backlog
 
@@ -94,6 +96,24 @@ insufficient.
   **Follow-up: the Secret-Santa UI does not yet present the failure** — the exception reaches
   Blazor's error UI, as a failed write already did.
 
+### Recently closed (distribution — 2026-07-29)
+
+Raised by working out what it actually takes to put the MAUI heads in the two stores. Both are
+deployment decisions, but neither waits on the cloud provider — they depend on identity and on
+hardware, and both have long lead times, so deciding them early is what keeps them off the critical
+path.
+
+- ✅ **Store publisher identity & account ownership** →
+  [ADR-0030](0030-mobile-store-publisher-identity.md) (enrol as a private individual, on accounts
+  created for the project). **Follow-up: point both accounts at a suite-domain role address** once
+  [naming](../process/naming.md) lands.
+- ✅ **iOS build host** → [ADR-0031](0031-ios-build-host.md) (an own Apple-silicon Mac; the Intel
+  MacBook Pro is at best a one-release bridge). Feeds the still-open **CI/CD** item below by making a
+  self-hosted macOS runner possible.
+
+Both are governed by [NFR-007](../requirements/non-functional/NFR-007-store-distributability.md),
+which states the recurring platform obligations that outlive any single release.
+
 ### Depends on deployment (genuinely open)
 
 > [ADR-0023](0023-local-dev-infrastructure-in-apphost.md) lets **implementation** proceed without
@@ -108,8 +128,12 @@ insufficient.
   ([FR-009](../requirements/functional/FR-009-reset-password.md)) and email change
   ([FR-013](../requirements/functional/FR-013-change-email-address.md)) all depend on delivery.
   Invitations ([ADR-0018](0018-circle-and-sharing-model.md)) then add M2's onboarding dependency.
-- **CI/CD pipeline.**
-- **AppSuite packaging & app composition** (single shell hosting apps vs per-app installs).
+- **CI/CD pipeline.** [ADR-0031](0031-ios-build-host.md) settles the *build host* but not the
+  *pipeline*; note that any macOS leg is either the self-hosted Mac or per-minute hosted macOS.
+- **AppSuite packaging & app composition** (single shell hosting apps vs per-app installs). Now also
+  a **distribution** question: it decides how many store listings, bundle identifiers and review
+  cycles the suite carries — and bundle identifiers are permanent once released
+  ([NFR-007](../requirements/non-functional/NFR-007-store-distributability.md)).
 
 ### Parked — revisit on a concrete trigger
 - **Per-member envelope encryption of assignments** (option P3 in

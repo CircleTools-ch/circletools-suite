@@ -66,7 +66,7 @@ and docs are English**. See [`README.md`](README.md).
 
 | Artifact | Copy template | Destination | ID scheme |
 |----------|---------------|-------------|-----------|
-| Architecture decision | `docs/adr/0000-template.md` | `docs/adr/` | `NNNN-kebab-title.md` |
+| Architecture decision | `docs/adr/_template-adr.md` | `docs/adr/` | `NNNN-kebab-title.md` |
 | Use case | `docs/use-cases/_template-use-case.md` | `docs/use-cases/<app>/` | `UC-<APP>-NNN` |
 | Requirement | `docs/requirements/_template-requirement.md` | `docs/requirements/functional` or `non-functional` | `FR-NNN` / `NFR-NNN` |
 | User story | `docs/requirements/_template-user-story.md` | `docs/requirements/` | `US-NNN` |
