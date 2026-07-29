@@ -32,6 +32,14 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-015](functional/FR-015-delete-account.md) | Delete the account | Functional | Must | Approved |
 | [NFR-004](non-functional/NFR-004-data-protection-and-retention.md) | Data protection & retention | Non-functional | Must | Approved |
 | [NFR-005](non-functional/NFR-005-account-enumeration-resistance.md) | Account-enumeration resistance | Non-functional | Must | Implemented |
+| [FR-016](functional/FR-016-create-circle.md) | Create a circle with a user-chosen label | Functional | Must | Approved |
+| [FR-017](functional/FR-017-invite-to-circle.md) | Invite a person to a circle by email | Functional | Must | Approved |
+| [FR-018](functional/FR-018-respond-to-circle-invitation.md) | Accept or decline a circle invitation | Functional | Must | Approved |
+| [FR-019](functional/FR-019-manage-managed-members.md) | Add and maintain managed members | Functional | Must | Approved |
+| [FR-020](functional/FR-020-manage-circle-roles-and-membership.md) | Manage circle roles, membership and ownership | Functional | Must | Approved |
+| [FR-021](functional/FR-021-leave-circle.md) | Leave a circle | Functional | Must | Approved |
+| [FR-022](functional/FR-022-delete-circle.md) | Delete a circle | Functional | Must | Approved |
+| [NFR-006](non-functional/NFR-006-circle-authorization.md) | Circle data authorization | Non-functional | Must | Approved |
 
 _Add a row per requirement._
 
@@ -42,22 +50,34 @@ _Add a row per requirement._
 - **FR-007..015, NFR-004..005** — **M1 — Identity in Main**, derived from
   [UC-MAIN-001..007](../use-cases/index.md), built and closed as
   [FEAT-002](../features/FEAT-002-m1-identity.md).
+- **FR-016..022, NFR-006** — **M2 — Circles**, derived from
+  [UC-MAIN-008..014](../use-cases/index.md). Specified, not yet built.
 - **NFR-005** is cross-cutting: it also governs M2 invitations, where the rule originated
-  ([ADR-0018](../adr/0018-circle-and-sharing-model.md)).
+  ([ADR-0018](../adr/0018-circle-and-sharing-model.md)) — see
+  [FR-017](functional/FR-017-invite-to-circle.md) and
+  [FR-018](functional/FR-018-respond-to-circle-invitation.md).
+- **NFR-006** is the M2 counterpart: M1's protected data belonged to the caller, while circle data
+  belongs to *other people*, so authorization becomes a role matrix that one NFR states once instead
+  of seven requirements repeating.
 
 ## Reading the statuses
 
 `Implemented` and `Approved` are used deliberately, not interchangeably. A requirement is
-`Implemented` only when **every** acceptance criterion is met and covered. The five that sit at
-`Approved` — **FR-010**, **FR-011**, **FR-012**, **FR-015** and **NFR-004** — are built and in use,
-but each still carries one criterion that cannot close yet, and the reason is recorded rather than
-quietly dropped:
+`Implemented` only when **every** acceptance criterion is met and covered.
+
+`Approved` covers two different situations, and it is worth knowing which is which:
+
+- **Specified, not yet built** — **FR-016..022** and **NFR-006**, the M2 slice. Nothing is
+  implemented; they are agreed input for the M2 feature spec.
+- **Built, one criterion still open** — **FR-010**, **FR-011**, **FR-012**, **FR-015** and
+  **NFR-004** from M1. Each is in use, but carries a criterion that cannot close yet, and the reason
+  is recorded rather than quietly dropped:
 
 | Requirement | What is still open | Unblocked by |
 |---|---|---|
 | FR-010 / FR-011 | passkeys across the MAUI heads (needs `apple-app-site-association` / Digital Asset Links on the real domain) | the hosting & domain decision |
 | FR-012 | changing the language *offline*, pushed on the next sync | M3 — sync |
-| FR-015 | the sole-circle-owner guard (`IAccountDeletionGuard` exists with nothing to guard) | M2 — circles |
+| FR-015 | the sole-circle-owner guard (`IAccountDeletionGuard` exists with nothing to guard) | M2 — now specified by [FR-022](functional/FR-022-delete-circle.md) and [FR-020](functional/FR-020-manage-circle-roles-and-membership.md) |
 | NFR-004 | the data-residency target, and the "no private key, no biometric data" check that needs a stored passkey credential to inspect | the hosting decision; milestone 7 |
 
 The mixed statuses are the point: they mark exactly where the M1 slice stops, so a later milestone

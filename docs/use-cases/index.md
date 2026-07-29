@@ -24,6 +24,13 @@ Use cases describe how actors achieve goals with the system. They are the bridge
 | [UC-MAIN-005](main/UC-MAIN-005-manage-profile.md) | Manage profile and preferred language | Main | Approved |
 | [UC-MAIN-006](main/UC-MAIN-006-delete-account-and-export-data.md) | Delete the account and export personal data | Main | Approved |
 | [UC-MAIN-007](main/UC-MAIN-007-reset-password.md) | Reset a forgotten password | Main | Approved |
+| [UC-MAIN-008](main/UC-MAIN-008-create-circle.md) | Create a circle | Main | Approved |
+| [UC-MAIN-009](main/UC-MAIN-009-invite-to-circle.md) | Invite a person to a circle | Main | Approved |
+| [UC-MAIN-010](main/UC-MAIN-010-respond-to-invitation.md) | Accept or decline a circle invitation | Main | Approved |
+| [UC-MAIN-011](main/UC-MAIN-011-manage-managed-members.md) | Add and maintain managed members | Main | Approved |
+| [UC-MAIN-012](main/UC-MAIN-012-manage-circle-people.md) | Manage a circle's people, roles and ownership | Main | Approved |
+| [UC-MAIN-013](main/UC-MAIN-013-leave-circle.md) | Leave a circle | Main | Approved |
+| [UC-MAIN-014](main/UC-MAIN-014-delete-circle.md) | Delete a circle | Main | Approved |
 
 _Add a row per use case._
 
@@ -31,7 +38,11 @@ _Add a row per use case._
 
 - **UC-SS-001..006** — the Secret-Santa MVP (shipped, [FEAT-001](../features/FEAT-001-secret-santa-mvp.md)).
 - **UC-MAIN-001..007** — **M1 — Identity in Main**: sign-up, sign-in, passkeys, profile, deletion &
-  export, password reset. Input for the M1 requirements and feature spec.
-- Still to write: `UC-MAIN-008+` for **M2 — Circle** (create a circle, invite a new person, invite an
-  existing account, accept/decline, leave/remove) and `UC-SS-007+` for **M3/M4** (claim a group,
-  create a group from a circle, link a member, see my assignment while signed in).
+  export, password reset. Built and closed as [FEAT-002](../features/FEAT-002-m1-identity.md).
+- **UC-MAIN-008..014** — **M2 — Circles**: create a circle, invite, accept/decline, managed members,
+  roles & ownership, leave, delete. Input for [FR-016..022 and NFR-006](../requirements/index.md) and
+  the M2 feature spec. Two of them close loose ends M1 left: UC-MAIN-014 unblocks
+  [FR-015](../requirements/functional/FR-015-delete-account.md)'s sole-circle-owner guard, and
+  UC-MAIN-011 answers what happens to managed members when their creator leaves.
+- Still to write: `UC-SS-007+` for **M3/M4** (claim a group, create a group from a circle, link a
+  member, see my assignment while signed in).

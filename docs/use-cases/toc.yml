@@ -30,5 +30,21 @@
       href: main/UC-MAIN-006-delete-account-and-export-data.md
     - name: UC-MAIN-007 Reset a forgotten password
       href: main/UC-MAIN-007-reset-password.md
+- name: Main (Circles — M2)
+  items:
+    - name: UC-MAIN-008 Create a circle
+      href: main/UC-MAIN-008-create-circle.md
+    - name: UC-MAIN-009 Invite a person to a circle
+      href: main/UC-MAIN-009-invite-to-circle.md
+    - name: UC-MAIN-010 Accept or decline an invitation
+      href: main/UC-MAIN-010-respond-to-invitation.md
+    - name: UC-MAIN-011 Add and maintain managed members
+      href: main/UC-MAIN-011-manage-managed-members.md
+    - name: UC-MAIN-012 Manage people, roles and ownership
+      href: main/UC-MAIN-012-manage-circle-people.md
+    - name: UC-MAIN-013 Leave a circle
+      href: main/UC-MAIN-013-leave-circle.md
+    - name: UC-MAIN-014 Delete a circle
+      href: main/UC-MAIN-014-delete-circle.md
 - name: Template
   href: _template-use-case.md

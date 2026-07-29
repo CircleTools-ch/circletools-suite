@@ -5,7 +5,7 @@ Idea stubs and work items, newest-first. Promote items into
 
 ## Ideas
 
-### IDEA-002 — Circle (shared people across the suite) · _status: designed_
+### IDEA-002 — Circle (shared people across the suite) · _status: specified (M2)_
 - **Problem:** every app re-asks who your people are. A family or friend-group has no lasting
   existence in the suite — each Secret-Santa group is typed in from scratch, and nobody but the
   organizer can contribute.
@@ -25,10 +25,24 @@ Idea stubs and work items, newest-first. Promote items into
 - **Architecture decided (2026-07-27):** [ADR-0018](../adr/0018-circle-and-sharing-model.md) — the
   `Circle` aggregate, roles, enumeration-resistant invitations, managed members, and the
   snapshot-at-draw rule; [ADR-0019](../adr/0019-member-user-linking.md) for member linking.
-- **Next:** the `UC-MAIN-008+` use cases (create a circle, invite a new person, invite an existing
-  account, accept/decline, leave/remove) → FRs → the M2 feature spec. Ships as **M2**, after the
-  M1 identity slice whose use cases are now written. *(Numbering: `UC-MAIN-007` is taken — it is
-  "reset a forgotten password" in M1 — so the circle use cases start at 008.)*
+- **Use cases & requirements written (2026-07-29):**
+  [UC-MAIN-008..014](../use-cases/index.md) — create a circle · invite a person · accept/decline ·
+  managed members · roles, removal & ownership transfer · leave · delete — and
+  [FR-016..022](../requirements/index.md) plus
+  [NFR-006](../requirements/non-functional/NFR-006-circle-authorization.md) (circle data
+  authorization). Four points ADR-0018 left to this milestone are now decided in the specs, with the
+  reasoning attached: **transfer of ownership is immediate, not an offer** (a pending transfer is the
+  ownerless limbo the model forbids); **role changes are owner-only** and an admin may not remove
+  another admin (or one admin can manufacture a majority); **membership is granted only to a verified
+  owner of the invited address**, which closes the forwarded-invitation hole without a second secret;
+  and **declining must be possible without an account**, because otherwise "declined" in the inviter's
+  list would itself prove the address has one. Two M1 loose ends were closed on the way —
+  [FR-015](../requirements/functional/FR-015-delete-account.md)'s sole-owner guard now has
+  [FR-022](../requirements/functional/FR-022-delete-circle.md) behind it, and managed members are
+  confirmed to be circle data that survives their creator.
+- **Next:** the M2 architecture follow-ups ADR-0018 recorded — arc42 ch. 5's **Circles** bounded
+  context, and the numbers the specs deliberately left open (invitation lifetime, rate limits,
+  re-invite cooldown, per-circle caps) — then the **M2 feature spec** and test plan.
 
 ### IDEA-001 — Secret-Santa app (first app) · _status: MVP defined_
 - **Problem:** Organizing a Secret-Santa (Wichteln) by hand is fiddly — drawing names fairly,
@@ -133,8 +147,9 @@ Idea stubs and work items, newest-first. Promote items into
   - **A CI pipeline.** There is none, so the Definition of Done's "CI green" cannot be satisfied by
     any milestone until one exists. The CI/CD choice is still an open item in the
     [ADR register](../adr/index.md#open-decisions-backlog) and needs an ADR before the pipeline.
-- **Next:** **M2 circles**, starting where the process starts: the `UC-MAIN-008+` use cases → FRs →
-  the M2 feature spec.
+- **M2 phase 3 done (2026-07-29):** the circle use cases and requirements are written and registered —
+  see `IDEA-002` above for what they decided. **Next:** arc42 ch. 5's Circles bounded context and the
+  M2 feature spec + test plan; no M2 code yet.
 - **Three acceptance criteria cannot close in M1** and are recorded as deferred in FEAT-002: MAUI
   cross-client passkeys (needs the real domain), the *offline* language change (needs M3 sync), and
   the sole-circle-owner deletion guard (needs M2 circles).
