@@ -40,6 +40,7 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-021](functional/FR-021-leave-circle.md) | Leave a circle | Functional | Must | Approved |
 | [FR-022](functional/FR-022-delete-circle.md) | Delete a circle | Functional | Must | Approved |
 | [NFR-006](non-functional/NFR-006-circle-authorization.md) | Circle data authorization | Non-functional | Must | Approved |
+| [NFR-007](non-functional/NFR-007-store-distributability.md) | Store distributability & platform compliance | Non-functional | Must | Approved |
 
 _Add a row per requirement._
 
@@ -59,6 +60,13 @@ _Add a row per requirement._
 - **NFR-006** is the M2 counterpart: M1's protected data belonged to the caller, while circle data
   belongs to *other people*, so authorization becomes a role matrix that one NFR states once instead
   of seven requirements repeating.
+- **NFR-007** belongs to no slice. It states what the App Store and Google Play demand in return for
+  distribution, and unlike every other requirement here it is never finally satisfied — both stores
+  raise their floor annually. It is written down because the failure mode is silent: nothing breaks
+  when a deadline passes, the app simply becomes unshippable the next time an update is needed. Due
+  at [milestone 8](../roadmap/roadmap.md); governed by
+  [ADR-0030](../adr/0030-mobile-store-publisher-identity.md) and
+  [ADR-0031](../adr/0031-ios-build-host.md).
 
 ## Reading the statuses
 

@@ -195,6 +195,28 @@ Idea stubs and work items, newest-first. Promote items into
   - **Hosting / suite domain.** Needed for the passkey RP-ID (FR-010, FR-011), the CSP directive set
     (ADR-0021), and the NFR-004 residency target. The *strategy* for each is decided — only the
     literal domain is missing. See [naming](../process/naming.md).
+- **Store distribution scoped (2026-07-29):** what it actually takes to put the MAUI heads in the two
+  stores, worked out and written down ahead of milestone 8, because two parts of it have long lead
+  times and one is irreversible.
+  - **Decided:** publisher identity — enrol as a private individual on **project-owned** accounts,
+    never the personal ones ([ADR-0030](../adr/0030-mobile-store-publisher-identity.md)); and the
+    **iOS build host** — an own Apple-silicon Mac ([ADR-0031](../adr/0031-ios-build-host.md)).
+  - **The finding that reorders the work:** iOS cannot be built on Windows at all, and the Intel
+    MacBook Pro is at best a one-release bridge — .NET 10 needs Xcode 26 → macOS 26, which only the
+    16-inch 2019 and four-port 13-inch 2020 models run, and macOS 27 drops Intel entirely. Recorded
+    as risk **R6**.
+  - **The other long pole is Google's, not ours:** a new personal Play account must run closed
+    testing with **12 opted-in testers for 14 continuous days** before it may even apply for
+    production access. Android is ≈4–6 weeks of mostly waiting; iOS is ≈1–2 weeks once a Mac exists.
+    So the Play account and the tester list should be started first, well before code is ready.
+  - **Obligations stated** as [NFR-007](../requirements/non-functional/NFR-007-store-distributability.md)
+    (annual SDK / target-API floors, DSA trader status, account-deletion URL, privacy declarations,
+    DE/EN/FR listings) and the procedure as the
+    [mobile-apps runbook](../deployment/mobile-apps.md); what can be tested on today's hardware is in
+    [device testing](../deployment/device-testing.md).
+  - **Still blocked on the brand:** submission, not account setup. The bundle id is permanent once
+    released and RP-IDs do not migrate, which promotes [naming](../process/naming.md) from a cosmetic
+    milestone to a hard gate (risks **R8**, debt **D7**).
 
 ## Later / parked
 - Additional apps (to be brainstormed).

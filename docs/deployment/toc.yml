@@ -4,3 +4,5 @@
   href: web-api-db.md
 - name: Mobile apps (Android / iOS)
   href: mobile-apps.md
+- name: Device testing
+  href: device-testing.md
