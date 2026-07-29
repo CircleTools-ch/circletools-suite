@@ -2,7 +2,7 @@
 id: NFR-005
 title: Account-enumeration resistance
 type: non-functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-MAIN-001, UC-MAIN-002, UC-MAIN-007, ADR-0018
 verification: test

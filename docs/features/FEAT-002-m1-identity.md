@@ -1,7 +1,7 @@
 ---
 id: FEAT-002
 title: M1 — Identity in the Main shell
-status: In progress
+status: Done
 owner: Adrian
 target-milestone: M1 (v2 — accounts)
 bounded-context: Identity
@@ -280,11 +280,15 @@ architecture tests keeping ASP.NET/EF out of `Service.Core`.
 
 ## Definition of Done
 
-- [ ] Meets acceptance criteria of all covered requirements, **except those recorded as deferred
-      above and in [TP-002](TP-002-m1-identity.md)** — the open one is the passkey ceremony, which
-      also leaves NFR-004's stored-credential check with nothing to inspect
+- [x] Meets acceptance criteria of all covered requirements, **except those recorded as deferred
+      above and in [TP-002](TP-002-m1-identity.md)**. One criterion is met but not *automatically
+      verified*: the passkey ceremony was driven by hand through a CDP virtual authenticator during
+      the browser walkthrough, and automating it — which also gives NFR-004's stored-credential check
+      something to inspect — is **carried to milestone 7** with the end-to-end work. Tracked in
+      [the backlog](../roadmap/backlog.md) and
+      [arc42 ch. 11](../arc42/11-risks-and-technical-debt.md), so closing M1 does not lose it.
 - [x] Builds clean under analyzers (warnings = errors) — 0 warnings, 2026-07-28
-- [x] Tests per TP-002 pass — 272 green, 2026-07-28. *Coverage target: none is stated anywhere in
+- [x] Tests per TP-002 pass — 281 green across 10 projects, 2026-07-29. *Coverage target: none is stated anywhere in
       the guidelines, so this half of the criterion cannot be met as written; the
       [testing guidelines](../guidelines/testing-guidelines.md) should either name a number or drop it.*
 - [x] Architecture boundaries respected (arch tests green — no ASP.NET/EF in `Service.Core`, and

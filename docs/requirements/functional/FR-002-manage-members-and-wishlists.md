@@ -2,7 +2,7 @@
 id: FR-002
 title: Manage members and their wishlists
 type: functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-SS-002
 verification: test

@@ -2,7 +2,7 @@
 id: FR-009
 title: Reset a forgotten password
 type: functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-MAIN-007
 verification: test

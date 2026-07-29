@@ -2,7 +2,7 @@
 id: FR-013
 title: Change the account email address
 type: functional
-status: Draft
+status: Implemented
 priority: Should
 source: UC-MAIN-005
 verification: test

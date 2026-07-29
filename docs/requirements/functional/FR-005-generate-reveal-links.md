@@ -2,7 +2,7 @@
 id: FR-005
 title: Generate self-contained reveal links
 type: functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-SS-005
 verification: test

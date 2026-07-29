@@ -3,7 +3,7 @@ id: UC-MAIN-006
 title: Delete the account and export personal data
 app: Main
 actors: [User]
-status: Draft
+status: Approved
 priority: Must
 related: [NFR-001, NFR-002, ADR-0017, ADR-0018, ADR-0019, ADR-0020, ADR-0022]
 ---

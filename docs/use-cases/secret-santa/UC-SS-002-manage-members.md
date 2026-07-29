@@ -3,7 +3,7 @@ id: UC-SS-002
 title: Manage members and their wishlists
 app: Secret-Santa
 actors: [Organizer]
-status: Draft
+status: Approved
 priority: Must
 related: [FR-002, NFR-001, NFR-003]
 ---

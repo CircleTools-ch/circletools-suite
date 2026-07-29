@@ -2,7 +2,7 @@
 id: FR-010
 title: Register and remove passkeys
 type: functional
-status: Draft
+status: Approved
 priority: Should
 source: UC-MAIN-003
 verification: test

@@ -2,7 +2,7 @@
 id: FR-014
 title: Export personal data
 type: functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-MAIN-006
 verification: test

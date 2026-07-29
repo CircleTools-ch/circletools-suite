@@ -2,7 +2,7 @@
 id: FR-011
 title: Sign in with a passkey
 type: functional
-status: Draft
+status: Approved
 priority: Should
 source: UC-MAIN-004
 verification: test

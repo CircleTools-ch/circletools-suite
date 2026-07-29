@@ -2,7 +2,7 @@
 id: FR-007
 title: Create a suite account with email verification
 type: functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-MAIN-001
 verification: test

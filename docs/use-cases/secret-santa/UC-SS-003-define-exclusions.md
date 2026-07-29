@@ -3,7 +3,7 @@ id: UC-SS-003
 title: Define exclusions between members
 app: Secret-Santa
 actors: [Organizer]
-status: Draft
+status: Approved
 priority: Must
 related: [FR-003, FR-004, NFR-001]
 ---

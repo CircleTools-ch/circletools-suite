@@ -3,7 +3,7 @@ id: UC-MAIN-005
 title: Manage profile and preferred language
 app: Main
 actors: [User]
-status: Draft
+status: Approved
 priority: Must
 related: [NFR-003, ADR-0009, ADR-0016, ADR-0018]
 ---
