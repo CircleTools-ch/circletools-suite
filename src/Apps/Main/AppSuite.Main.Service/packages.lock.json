@@ -236,6 +236,17 @@
           "AppSuite.SharedKernel": "[1.0.0, )"
         }
       },
+      "appsuite.circles.contracts": {
+        "type": "Project"
+      },
+      "appsuite.circles.core": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.Application": "[1.0.0, )",
+          "AppSuite.Circles.Contracts": "[1.0.0, )",
+          "AppSuite.SharedKernel": "[1.0.0, )"
+        }
+      },
       "appsuite.identity": {
         "type": "Project",
         "dependencies": {

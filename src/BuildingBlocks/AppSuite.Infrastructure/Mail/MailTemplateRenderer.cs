@@ -5,7 +5,7 @@ using Microsoft.Extensions.Options;
 namespace AppSuite.Infrastructure.Mail;
 
 /// <summary>
-/// Renders the M1 transactional mails in DE / EN / FR (NFR-003).
+/// Renders the suite's transactional mails in DE / EN / FR (NFR-003).
 /// </summary>
 /// <param name="options">Mail settings, for the link base URL.</param>
 /// <remarks>
@@ -38,6 +38,14 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
     /// <summary>Outbox type for the notice sent to the address being replaced (FR-013).</summary>
     public const string EmailChangeNoticeType = "mail.email-change-notice";
 
+    /// <summary>Outbox type for the circle invitation (FR-017).</summary>
+    /// <remarks>
+    /// The first mail the suite sends to someone who has no relationship with it. Everything it may
+    /// say about the circle is fixed by UC-MAIN-010: its name, its label and the inviter's display
+    /// name — never who else is in it, which is member-only data (NFR-006).
+    /// </remarks>
+    public const string InvitationType = "mail.circle-invitation";
+
     private static readonly string[] SupportedLanguages = ["de", "fr", "en"];
 
     /// <inheritdoc />
@@ -63,6 +71,7 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
             PasswordResetType => RenderPasswordReset(root, email, language),
             EmailChangeType => RenderEmailChange(root, email, language),
             EmailChangeNoticeType => RenderEmailChangeNotice(email, language),
+            InvitationType => RenderInvitation(root, email, language),
             _ => null,
         };
     }
@@ -166,6 +175,56 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
         };
 
         return new OutboundMail(email, subject, body);
+    }
+
+    private OutboundMail RenderInvitation(JsonElement root, string email, string language)
+    {
+        // The label is the word this circle calls itself, chosen by a user and stored as user data.
+        // It is rendered exactly as it was written and is never looked up or re-translated, whatever
+        // language the mail is in (FR-016).
+        var circleName = root.GetProperty("circleName").GetString();
+        var circleLabel = root.GetProperty("circleLabel").GetString();
+        var inviter = root.GetProperty("inviterDisplayName").GetString();
+        var hasAccount = root.GetProperty("hasAccount").GetBoolean();
+        var baseUrl = options.Value.ClientBaseUrl.TrimEnd('/');
+
+        // Two mails, and which one is sent is decided server-side and never surfaced through the API.
+        // The recipient who already has an account is pointed at the app and carries no secret at
+        // all: their join request is matched by their *verified* address, which is why that path
+        // needs no token (UC-MAIN-010). The recipient without an account gets the link, and it lets
+        // them read the invitation and decline it — never join.
+        var link = hasAccount
+            ? string.Create(CultureInfo.InvariantCulture, $"{baseUrl}/invitations")
+            : string.Create(
+                CultureInfo.InvariantCulture,
+                $"{baseUrl}/invitation/{Uri.EscapeDataString(root.GetProperty("secret").GetString()!)}");
+
+        var (subject, intro, action, closing) = language switch
+        {
+            "de" => (
+                $"{inviter} lädt Sie zu «{circleName}» ein",
+                $"{inviter} lädt Sie zu «{circleName}» ({circleLabel}) bei AppSuite ein.",
+                hasAccount
+                    ? $"Die Einladung wartet in der App auf Sie:\n{link}"
+                    : $"Hier können Sie zusagen oder absagen:\n{link}",
+                "Wenn Sie nichts unternehmen, passiert nichts — die Einladung läuft von selbst ab."),
+            "fr" => (
+                $"{inviter} vous invite à «{circleName}»",
+                $"{inviter} vous invite à rejoindre «{circleName}» ({circleLabel}) sur AppSuite.",
+                hasAccount
+                    ? $"L'invitation vous attend dans l'application :\n{link}"
+                    : $"Vous pouvez accepter ou refuser ici :\n{link}",
+                "Si vous ne faites rien, rien ne se passe — l'invitation expire d'elle-même."),
+            _ => (
+                $"{inviter} invites you to “{circleName}”",
+                $"{inviter} invites you to “{circleName}” ({circleLabel}) on AppSuite.",
+                hasAccount
+                    ? $"The invitation is waiting for you in the app:\n{link}"
+                    : $"You can accept or decline here:\n{link}",
+                "If you do nothing, nothing happens — the invitation expires on its own."),
+        };
+
+        return new OutboundMail(email, subject, $"{intro}\n\n{action}\n\n{closing}");
     }
 
     private static OutboundMail RenderEmailChangeNotice(string email, string language)
