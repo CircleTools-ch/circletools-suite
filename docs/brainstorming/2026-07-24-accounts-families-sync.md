@@ -389,8 +389,16 @@ Glossary first — no code may use these terms before they exist (`CLAUDE.md` ru
       export data · [UC-MAIN-007](../use-cases/main/UC-MAIN-007-reset-password.md) reset a forgotten
       password. Their open questions were resolved the same day; deletion & export became
       [ADR-0022](../adr/0022-account-deletion-and-data-export.md).
-- [ ] Use cases (Main, **M2 — Circle**): create a circle; invite a new person; invite an existing
-      account; accept/decline; leave/remove → `UC-MAIN-007…`.
+- [x] Use cases (Main, **M2 — Circle**) written and registered (2026-07-29):
+      [UC-MAIN-008](../use-cases/main/UC-MAIN-008-create-circle.md) create a circle ·
+      [UC-MAIN-009](../use-cases/main/UC-MAIN-009-invite-to-circle.md) invite a person ·
+      [UC-MAIN-010](../use-cases/main/UC-MAIN-010-respond-to-invitation.md) accept or decline (both
+      paths — sign-up and in-app join request) ·
+      [UC-MAIN-011](../use-cases/main/UC-MAIN-011-manage-managed-members.md) managed members, incl.
+      promotion · [UC-MAIN-012](../use-cases/main/UC-MAIN-012-manage-circle-people.md) roles, removal
+      and ownership transfer · [UC-MAIN-013](../use-cases/main/UC-MAIN-013-leave-circle.md) leave ·
+      [UC-MAIN-014](../use-cases/main/UC-MAIN-014-delete-circle.md) delete a circle. *(Numbering
+      starts at 008 — `UC-MAIN-007` is M1's password reset.)*
 - [ ] Use cases (Secret-Santa): create a group from a circle; link a member to an account; see my
       assignment while logged in; edit my own wishlist → `UC-SS-007…`.
 - [x] **Amend [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)** per D1 —
@@ -403,7 +411,12 @@ Glossary first — no code may use these terms before they exist (`CLAUDE.md` ru
       [NFR-005](../requirements/non-functional/NFR-005-account-enumeration-resistance.md)
       account-enumeration resistance, which generalises the ADR-0018 invitation rule to every
       address-accepting surface. Glossary gained [Passkey](../glossary/passkey.md).
-- [ ] Requirements (**M2/M3**): FRs per circle & sync use case; **sync convergence** NFR → M3.
+- [x] Requirements (**M2 — Circle**) written and registered (2026-07-29):
+      [FR-016..FR-022](../requirements/index.md) per circle use case, plus
+      [NFR-006](../requirements/non-functional/NFR-006-circle-authorization.md) circle data
+      authorization — the M2 counterpart to NFR-005, stating once that circle data belongs to *other
+      people* and is authorized per request against current membership, never from a token claim.
+- [ ] Requirements (**M3**): FRs per sync use case; **sync convergence** NFR.
 - [x] ADRs written and **Accepted** (2026-07-27):
       [ADR-0016](../adr/0016-sync-and-conflict-resolution.md) sync & conflict resolution (incl. the
       client-storage sub-decision) · [ADR-0017](../adr/0017-anonymous-to-account-claim.md)

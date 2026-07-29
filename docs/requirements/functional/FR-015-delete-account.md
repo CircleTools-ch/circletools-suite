@@ -95,9 +95,12 @@ And the user is not told their data is gone
   [ADR-0017](../../adr/0017-anonymous-to-account-claim.md),
   [ADR-0018](../../adr/0018-circle-and-sharing-model.md),
   [ADR-0019](../../adr/0019-member-user-linking.md)
-- **Deferred to M2:** what happens to [Managed members](../../glossary/managed-member.md) created by a
-  departing user — the principle set in ADR-0022 is that they are circle data and survive with the
-  circle.
+- **Answered in M2 (2026-07-29):** what happens to [Managed members](../../glossary/managed-member.md)
+  created by a departing user — they are circle data and survive with the circle, as ADR-0022's
+  principle implied and [FR-019](FR-019-manage-managed-members.md) now states outright. The
+  sole-circle-owner guard is specified by [FR-022](FR-022-delete-circle.md) (delete the circle) and
+  [FR-020](FR-020-manage-circle-roles-and-membership.md) (transfer ownership); it remains unbuilt
+  until M2 ships.
 - Glossary: [User](../../glossary/user.md), [Member](../../glossary/member.md),
   [Draw](../../glossary/draw.md), [Circle](../../glossary/circle.md),
   [Passkey](../../glossary/passkey.md)
