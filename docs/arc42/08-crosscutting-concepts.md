@@ -197,3 +197,21 @@ people in as [Members](../glossary/member.md) and freezing that set when the dra
 Secret-Santa domain holds at most a circle identifier and never references the Circles context. A
 `Member` may carry an optional `UserId` ([ADR-0019](../adr/0019-member-user-linking.md)); unlinked
 members stay first-class and keep their reveal links.
+
+**Authorization is the cross-cutting part** ([NFR-006](../requirements/non-functional/NFR-006-circle-authorization.md)).
+A circle is the first data in the suite that belongs to *other people*, so every circle endpoint
+answers two questions separately — *is the caller a member of this circle*, and *does their role
+permit this* — and answers them **per request against current membership**. No role is ever written
+into a token: with 15-minute access tokens, a role claim would give a removed member a quarter of an
+hour inside a family's data, and removal is precisely the case where it is urgent. *Not a member* and
+*no such circle* are the same response, so a circle identifier learned elsewhere cannot be confirmed.
+
+**Invitation mechanics** are fixed by [FEAT-003](../features/FEAT-003-m2-circles.md): a single-use
+secret stored only as a hash, 14 days to live, a resend that replaces the live link rather than adding
+one, and three limits keyed on the *inviter*, the *recipient address* and the *circle* — the middle
+one being the only limit that protects the third party. Membership is granted solely to an account
+whose **verified** address is the invited one, which is what makes a forwarded invitation readable but
+not usable. Declining is possible without an account, and a declined address is remembered as a hash
+for a short cooldown during which a re-invite silently sends nothing — because a cooldown the inviter
+could observe would reveal the decline, and a decline nobody could make anonymously would reveal that
+the address has an account.

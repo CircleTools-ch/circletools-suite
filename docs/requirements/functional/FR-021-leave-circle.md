@@ -6,7 +6,7 @@ status: Approved
 priority: Must
 source: UC-MAIN-013
 verification: test
-related: [UC-MAIN-013, UC-MAIN-012, UC-MAIN-014, NFR-001, NFR-006, ADR-0018]
+related: [UC-MAIN-013, UC-MAIN-012, UC-MAIN-014, NFR-001, NFR-006, ADR-0018, FEAT-003]
 ---
 
 # FR-021 — Leave a circle
@@ -98,4 +98,6 @@ Then it is refused, because they cannot sign in
   [NFR-006](../non-functional/NFR-006-circle-authorization.md)
 - Governing ADR: [ADR-0018](../../adr/0018-circle-and-sharing-model.md) ("membership is what a person
   leaves"; the sole-owner edge case it deferred here)
+- Implemented by: [FEAT-003](../../features/FEAT-003-m2-circles.md) ·
+  verified by [TP-003](../../features/TP-003-m2-circles.md)
 - Glossary: [Circle membership](../../glossary/circle-membership.md), [Circle](../../glossary/circle.md)

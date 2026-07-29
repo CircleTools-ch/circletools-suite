@@ -8,6 +8,10 @@
   href: FEAT-002-m1-identity.md
 - name: TP-002 M1 Identity test plan
   href: TP-002-m1-identity.md
+- name: FEAT-003 M2 Circles
+  href: FEAT-003-m2-circles.md
+- name: TP-003 M2 Circles test plan
+  href: TP-003-m2-circles.md
 - name: Templates
   items:
     - name: Feature spec template

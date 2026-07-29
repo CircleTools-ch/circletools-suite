@@ -6,7 +6,7 @@ status: Approved
 priority: Must
 source: UC-MAIN-008
 verification: test
-related: [UC-MAIN-008, NFR-003, NFR-004, NFR-006, ADR-0018, ADR-0008]
+related: [UC-MAIN-008, NFR-003, NFR-004, NFR-006, ADR-0018, ADR-0008, FEAT-003]
 ---
 
 # FR-016 — Create a circle with a user-chosen label
@@ -86,7 +86,10 @@ Then neither a circle nor a membership remains
   [NFR-006](../non-functional/NFR-006-circle-authorization.md)
 - Governing ADRs: [ADR-0018](../../adr/0018-circle-and-sharing-model.md),
   [ADR-0008](../../adr/0008-entity-id-strategy.md)
-- **Open for the M2 feature spec:** per-user circle cap and creation rate limit (abuse limits, not
-  product limits).
+- **Decided in [FEAT-003](../../features/FEAT-003-m2-circles.md):** **20 owned circles** per user
+  (joined circles are unlimited — you cannot be spammed into one you did not accept) and **10
+  creations per day**. Abuse limits, held in configuration rather than in the domain.
+- Implemented by: [FEAT-003](../../features/FEAT-003-m2-circles.md) ·
+  verified by [TP-003](../../features/TP-003-m2-circles.md)
 - Glossary: [Circle](../../glossary/circle.md),
   [Circle membership](../../glossary/circle-membership.md), [User](../../glossary/user.md)

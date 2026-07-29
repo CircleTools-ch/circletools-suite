@@ -6,7 +6,7 @@ status: Approved
 priority: Must
 source: UC-MAIN-010
 verification: test
-related: [UC-MAIN-010, UC-MAIN-009, UC-MAIN-001, NFR-005, NFR-006, ADR-0018]
+related: [UC-MAIN-010, UC-MAIN-009, UC-MAIN-001, NFR-005, NFR-006, ADR-0018, FEAT-003]
 ---
 
 # FR-018 — Accept or decline a circle invitation
@@ -108,7 +108,13 @@ And before accepting they saw only the circle name, its label and the inviter's 
   [NFR-006](../non-functional/NFR-006-circle-authorization.md)
 - Governing ADR: [ADR-0018](../../adr/0018-circle-and-sharing-model.md) (decision D5 — the branch
   resolves on the recipient's side)
-- **Open for the M2 feature spec:** whether the inviter is notified of an acceptance beyond the person
-  appearing in the list; the re-invite cooldown after a decline.
+- **Decided in [FEAT-003](../../features/FEAT-003-m2-circles.md):** the inviter is **not** notified —
+  the person appearing in the people list is the whole signal, and M2 adds no notification channel.
+  The decline cooldown is **7 days, enforced silently** (see FR-017). The spec also fixes the
+  mechanism: **one accept path** serves both branches, so the "caller's verified address is the
+  invited address" check lives in exactly one place; the no-account branch carries the token through
+  sign-up rather than joining as a side effect of verification.
+- Implemented by: [FEAT-003](../../features/FEAT-003-m2-circles.md) ·
+  verified by [TP-003](../../features/TP-003-m2-circles.md)
 - Glossary: [Invitation](../../glossary/invitation.md),
   [Circle membership](../../glossary/circle-membership.md), [User](../../glossary/user.md)

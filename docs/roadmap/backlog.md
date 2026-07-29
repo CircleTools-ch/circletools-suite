@@ -5,7 +5,7 @@ Idea stubs and work items, newest-first. Promote items into
 
 ## Ideas
 
-### IDEA-002 — Circle (shared people across the suite) · _status: specified (M2)_
+### IDEA-002 — Circle (shared people across the suite) · _status: designed (M2), no code yet_
 - **Problem:** every app re-asks who your people are. A family or friend-group has no lasting
   existence in the suite — each Secret-Santa group is typed in from scratch, and nobody but the
   organizer can contribute.
@@ -40,9 +40,31 @@ Idea stubs and work items, newest-first. Promote items into
   [FR-015](../requirements/functional/FR-015-delete-account.md)'s sole-owner guard now has
   [FR-022](../requirements/functional/FR-022-delete-circle.md) behind it, and managed members are
   confirmed to be circle data that survives their creator.
-- **Next:** the M2 architecture follow-ups ADR-0018 recorded — arc42 ch. 5's **Circles** bounded
-  context, and the numbers the specs deliberately left open (invitation lifetime, rate limits,
-  re-invite cooldown, per-circle caps) — then the **M2 feature spec** and test plan.
+- **Architecture follow-up closed (2026-07-29):** [arc42 ch. 5](../arc42/05-building-block-view.md)
+  now describes the **Circles** context — `Circles.Contracts` / `Circles.Core` / `Circles.Repository`,
+  hosted by the Main API host, with its own Postgres schema and no foreign key to Identity. It sits in
+  `BuildingBlocks/` for the same reason Identity does (every app reuses it) but gets the full
+  Core/Repository split, because unlike Identity it has invariants that must hold transactionally.
+  [ch. 8 §8.10](../arc42/08-crosscutting-concepts.md) gained the authorization and invitation
+  mechanics. This closes the last follow-up ADR-0018 recorded; **no new ADR was needed** — the
+  packaging follows M1's precedent rather than deciding anything new.
+- **Feature spec & test plan written (2026-07-29):** [FEAT-003](../features/FEAT-003-m2-circles.md) and
+  [TP-003](../features/TP-003-m2-circles.md), both *Draft*. The spec fixes every number the
+  requirements deferred to it — **14-day invitations** (a resend replaces the live link rather than
+  adding one), rate limits keyed on the **inviter**, the **recipient address** (the only one that
+  protects the third party) and the **circle**, a **7-day silent** cooldown after a decline, and caps
+  of 100 people per circle / 20 owned circles — and answers the four product questions: no acceptance
+  or removal notifications (M2 has no notification channel and this is not the place to invent one),
+  managed members *do* appear in a member's export because it mirrors in-app visibility, and circle
+  deletion asks the owner to **type the circle's name** rather than their password, because the threat
+  here is the misclick, not a stolen session. Two design points are worth knowing before implementing:
+  memberships, invitations and decline records live **inside the `Circle` aggregate** (every invariant
+  is circle-scoped), and there is **exactly one accept path** for both invitation branches, so the
+  "verified address must match" rule lives in one place.
+- **Next:** build it — `AppSuite.Circles.*`, the endpoints and the Main UI, per FEAT-003. Deleting an
+  account needs a **second seam** alongside M1's `IAccountDeletionGuard`: a cleanup that removes the
+  departing user's memberships in the same transaction, or the people list keeps a person who is
+  nobody.
 
 ### IDEA-001 — Secret-Santa app (first app) · _status: MVP defined_
 - **Problem:** Organizing a Secret-Santa (Wichteln) by hand is fiddly — drawing names fairly,
@@ -147,9 +169,10 @@ Idea stubs and work items, newest-first. Promote items into
   - **A CI pipeline.** There is none, so the Definition of Done's "CI green" cannot be satisfied by
     any milestone until one exists. The CI/CD choice is still an open item in the
     [ADR register](../adr/index.md#open-decisions-backlog) and needs an ADR before the pipeline.
-- **M2 phase 3 done (2026-07-29):** the circle use cases and requirements are written and registered —
-  see `IDEA-002` above for what they decided. **Next:** arc42 ch. 5's Circles bounded context and the
-  M2 feature spec + test plan; no M2 code yet.
+- **M2 phases 3 & 4 done (2026-07-29):** the circle use cases and requirements are written and
+  registered, arc42 ch. 5 has the Circles bounded context, and
+  [FEAT-003](../features/FEAT-003-m2-circles.md) + [TP-003](../features/TP-003-m2-circles.md) are
+  drafted — see `IDEA-002` above for what they decided. **Next: implementation**; no M2 code yet.
 - **Three acceptance criteria cannot close in M1** and are recorded as deferred in FEAT-002: MAUI
   cross-client passkeys (needs the real domain), the *offline* language change (needs M3 sync), and
   the sole-circle-owner deletion guard (needs M2 circles).

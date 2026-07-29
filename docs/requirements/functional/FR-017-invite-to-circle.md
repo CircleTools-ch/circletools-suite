@@ -6,7 +6,7 @@ status: Approved
 priority: Must
 source: UC-MAIN-009
 verification: test
-related: [UC-MAIN-009, UC-MAIN-010, NFR-003, NFR-005, NFR-006, ADR-0018]
+related: [UC-MAIN-009, UC-MAIN-010, NFR-003, NFR-005, NFR-006, ADR-0018, FEAT-003]
 ---
 
 # FR-017 — Invite a person to a circle by email
@@ -103,8 +103,14 @@ Then mail dispatch has been queued, not awaited
   [NFR-006](../non-functional/NFR-006-circle-authorization.md),
   [NFR-003](../non-functional/NFR-003-multilingual-de-en-fr.md)
 - Governing ADR: [ADR-0018](../../adr/0018-circle-and-sharing-model.md) (decision D5)
-- **Open for the M2 feature spec:** invitation lifetime; the rate-limit numbers per inviter, per
-  address and per circle; the re-invite cooldown after a decline.
+- **Decided in [FEAT-003](../../features/FEAT-003-m2-circles.md):** invitations live **14 days**, and
+  a resend issues a fresh secret and a fresh window while killing the previous link — one invitation,
+  one live link. Limits: **20/hour and 60/day per inviter**, **3 per 24 h per recipient address**
+  whatever the sender or circle (the only limit that protects the third party), **50 pending per
+  circle**. After a decline, a re-invite inside **7 days** answers "invitation sent" and silently
+  sends nothing — a cooldown the inviter could observe would reveal the decline.
+- Implemented by: [FEAT-003](../../features/FEAT-003-m2-circles.md) ·
+  verified by [TP-003](../../features/TP-003-m2-circles.md)
 - **Blocked on:** the transactional-email provider decision — the same dependency M1 carries for
   verification and reset mail ([backlog](../../roadmap/backlog.md)).
 - Glossary: [Invitation](../../glossary/invitation.md), [Circle](../../glossary/circle.md)

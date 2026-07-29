@@ -6,7 +6,7 @@ status: Approved
 priority: Must
 source: UC-MAIN-008, UC-MAIN-012, ADR-0018
 verification: test
-related: [UC-MAIN-008, UC-MAIN-009, UC-MAIN-010, UC-MAIN-011, UC-MAIN-012, UC-MAIN-013, UC-MAIN-014, FR-016, FR-017, FR-019, FR-020, FR-022, NFR-005, ADR-0018, ADR-0021]
+related: [UC-MAIN-008, UC-MAIN-009, UC-MAIN-010, UC-MAIN-011, UC-MAIN-012, UC-MAIN-013, UC-MAIN-014, FR-016, FR-017, FR-019, FR-020, FR-022, NFR-005, ADR-0018, ADR-0021, FEAT-003]
 ---
 
 # NFR-006 — Circle data authorization
@@ -111,6 +111,11 @@ Then it has a membership check, a role check, and a role-matrix test
 - Governing ADRs: [ADR-0018](../../adr/0018-circle-and-sharing-model.md) (roles),
   [ADR-0021](../../adr/0021-web-auth-token-model.md) (token lifetimes),
   [ADR-0008](../../adr/0008-entity-id-strategy.md) (unguessable identifiers)
+- Implemented by: [FEAT-003](../../features/FEAT-003-m2-circles.md) — one `CircleRoleFilter` per
+  route, `404` for both *not a member* and *unknown circle*, `403` only for a member whose role is
+  insufficient · verified by [TP-003](../../features/TP-003-m2-circles.md), whose role matrix and two
+  fitness functions (`EveryCircleRoute_CarriesTheRoleFilter`, `NoCircleDto_CarriesAnEmailField`) carry
+  the "a new endpoint added later" criterion
 - Guideline: [security & privacy guidelines](../../guidelines/security-privacy-guidelines.md)
 - Glossary: [Circle](../../glossary/circle.md),
   [Circle membership](../../glossary/circle-membership.md)

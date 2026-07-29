@@ -12,7 +12,12 @@
 > **M1 ([FEAT-002](../features/FEAT-002-m1-identity.md)) makes the remaining planned blocks real:**
 > `Identity` and `Infrastructure` on the server side, and `Ui.Abstractions`, `Localization`,
 > `ApiClient` and `Ui.Shared` on the client side
-> ([ADR-0025](../adr/0025-shared-ui-building-blocks.md)). Only the sync tier is still a plan.
+> ([ADR-0025](../adr/0025-shared-ui-building-blocks.md)).
+>
+> **M2 ([FEAT-003](../features/FEAT-003-m2-circles.md)) adds the `Circles` context** —
+> `Circles.Contracts` / `Circles.Core` / `Circles.Repository`, hosted by the Main API host — which is
+> the follow-up [ADR-0018](../adr/0018-circle-and-sharing-model.md) recorded against this chapter.
+> Only the sync tier is still a plan.
 
 ## 5.1 Level 1 — solution structure
 
@@ -37,6 +42,11 @@ flowchart TD
         UiShared[Ui.Shared - RCL]
         UiAbs[Ui.Abstractions]
         UiWeb[Ui.Web - browser adapters]
+    end
+    subgraph Circles["Circles context (M2)"]
+        CirContracts[Circles.Contracts]
+        CirCore[Circles.Core - domain+application]
+        CirRepo[Circles.Repository - Postgres schema circles]
     end
     subgraph AppType["Per app-type (Main, SecretSanta, ...)"]
         Contracts
@@ -65,6 +75,11 @@ flowchart TD
     Svc --> Defaults
     Svc --> Id
     Svc --> Infra
+    Svc --> CirCore
+    CirRepo --> CirCore
+    CirCore --> SK
+    CirCore --> Infra
+    Svc --> CirContracts
 ```
 
 Note where `ApiClient` hangs: off `App.Ui`, not off the host. The typed client and the session
@@ -92,6 +107,9 @@ Razor components without inheriting `localStorage`
 | `AppSuite.Ui.Shared` | RCL: the suite theme ([ADR-0024](../adr/0024-ui-styling-and-theming.md)) and the components more than one app needs — `AuthCard`, `BusyButton`, `ProblemAlert`, `CultureSelector`, `CultureBoundary`. |
 | `AppSuite.Ui.Abstractions` | Platform seams: `IKeyValueStore`, `ICultureProvider`, `IPasskeyCeremony`, `IFileSaver`, `StorageUnavailableException`. **References nothing** — no packages, no JS interop — which is what lets a MAUI head swap the implementations and change nothing else. |
 | `AppSuite.Ui.Web` | Browser implementations of those seams, shared by both web hosts: `BrowserKeyValueStore` over `sessionStorage`/`localStorage` ([ADR-0028](../adr/0028-browser-platform-adapters-block.md)). Not an RCL — adapters only, no components — so `Ui.Shared` stays usable by a MAUI head. |
+| `AppSuite.Circles.Contracts` | DTOs for the Circles context. Carries **no email field anywhere** — an architecture test enforces it ([NFR-006](../requirements/non-functional/NFR-006-circle-authorization.md)). |
+| `AppSuite.Circles.Core` | The [Circle](../glossary/circle.md) aggregate (memberships, invitations, roles, managed members), its application handlers, and the repository **port**. No ASP.NET, no EF. |
+| `AppSuite.Circles.Repository` | EF Core adapter with its **own `DbContext` and its own Postgres schema `circles`** inside `maindb`. No foreign key to the Identity tables — a membership holds a `UserId` **value** ([ADR-0019](../adr/0019-member-user-linking.md)). |
 | `AppSuite.<App>.Contracts` | API DTOs for the app-type (bounded-context boundary). |
 | `AppSuite.<App>.Service.Core` | Domain + application layer; defines repository **ports**. |
 | `AppSuite.<App>.Service.Repository` | EF Core + Postgres adapter. |
@@ -121,24 +139,50 @@ until this chapter confirmed them; they are now **fixed**:
 |---------|------|----------|--------|
 | **Secret-Santa** | [Group](../glossary/group.md), [Member](../glossary/member.md), [Exclusion](../glossary/exclusion.md), [Draw](../glossary/draw.md), [Assignment](../glossary/assignment.md), [Wishlist](../glossary/wishlist.md), [Budget](../glossary/budget.md), [Event details](../glossary/event-details.md), [Reveal link](../glossary/reveal-link.md) | `AppSuite.SecretSanta.*` | shipped (FEAT-001) |
 | **Identity** | [User](../glossary/user.md), [Passkey](../glossary/passkey.md) — credentials, profile, account lifecycle | `AppSuite.Identity` + the Main service host; the client half in `AppSuite.Main.Ui` (`Auth/`, `Api/`) over `AppSuite.ApiClient` | **M1** ([FEAT-002](../features/FEAT-002-m1-identity.md)) |
-| **Circles** | [Circle](../glossary/circle.md), [Circle membership](../glossary/circle-membership.md), [Invitation](../glossary/invitation.md), [Managed member](../glossary/managed-member.md) | `AppSuite.Circles.*` (planned) | M2 |
+| **Circles** | [Circle](../glossary/circle.md), [Circle membership](../glossary/circle-membership.md), [Invitation](../glossary/invitation.md), [Managed member](../glossary/managed-member.md) | `AppSuite.Circles.Contracts/.Core/.Repository`, hosted by the Main service; the client half in `AppSuite.Main.Ui` | **M2** ([FEAT-003](../features/FEAT-003-m2-circles.md)) |
 | **Platform** | [Sync](../glossary/sync.md) — local↔server reconciliation | `AppSuite.Infrastructure` + per-app `LocalStore` | M3 |
 
-**The Secret-Santa context does not depend on Identity.** A [Member](../glossary/member.md) carries an
-**optional `UserId` — an identifier, not a reference to a user**
-([ADR-0019](../adr/0019-member-user-linking.md)), so the two contexts stay independently deployable and
-Secret-Santa keeps working with no account at all.
+**Neither Secret-Santa nor Circles depends on Identity, and Secret-Santa does not depend on Circles.**
+Both cross-context links are the same shape: a [Member](../glossary/member.md) carries an **optional
+`UserId`**, and a [circle membership](../glossary/circle-membership.md) carries a `UserId` — an
+**identifier, not a reference to a user**, with no foreign key behind it
+([ADR-0019](../adr/0019-member-user-linking.md)). The contexts therefore stay independently
+deployable, and Secret-Santa keeps working with no account and no circle at all. A group created
+*from* a circle (M4) holds at most a circle identifier, and must tolerate that identifier resolving to
+nothing after the circle is deleted
+([FR-022](../requirements/functional/FR-022-delete-circle.md)).
 
 `AppSuite.Identity` sits in `BuildingBlocks/` rather than under `Main` because
 [ADR-0009](../adr/0009-authentication-and-passkeys.md) makes one account serve **all** apps: any future
 app-type's API host authenticates the same bearer tokens
 ([ADR-0021](../adr/0021-web-auth-token-model.md)).
 
+**Circles sits there for the same reason, but is layered differently.** A
+[Circle](../glossary/circle.md) is the standing set of people that *every* app reuses
+([ADR-0018](../adr/0018-circle-and-sharing-model.md)), so putting it under `Main` would have to be
+undone by the first app that reads it. Unlike Identity — a supporting subdomain wrapping a framework,
+and therefore one flat project — Circles is a real domain whose invariants must hold transactionally
+(**exactly one owner**, no managed admin, one pending invitation per address). It therefore gets the
+full inward-pointing split: `Core` owns the aggregate and the ports, `Repository` is the EF adapter,
+`Contracts` is the boundary.
+
+It is **not an app-type**: it has no head, no `WebApp` and no `LocalStore`. The Main API host maps
+`/api/v1/circles` and `/api/v1/invitations`, and the client half is pages in `AppSuite.Main.Ui` —
+the same division of labour M1 used for Identity. Circles is **online-only** until sync (M3) decides
+whether a set of people that several devices edit belongs under last-write-wins at all
+([ADR-0016](../adr/0016-sync-and-conflict-resolution.md)).
+
 ## 5.4 Dependency rule
 
 Dependencies point **inward**; the domain (`Service.Core` / `SharedKernel`) has **no** dependency
 on EF, ASP.NET, HTTP, or MAUI. Enforced by an **architecture test** (ArchUnitNET). Full reference
 rules are in the [architecture guidelines](../guidelines/architecture-guidelines.md).
+
+`AppSuite.Circles.Core` is bound by the same rule as any `Service.Core`: no EF, no ASP.NET, no HTTP.
+Two further rules exist because the temptation is obvious — **no Circles project may reference
+`AppSuite.Identity`** (a `UserId` is a value, and reaching for the user would create the coupling
+ADR-0019 exists to prevent), and **no Secret-Santa project may reference Circles** in either
+direction.
 
 On the client side the same rule reads outward-in from the host, and is enforced by
 `MainUiLayeringTests` and `SharedUiBlockLayeringTests`:
