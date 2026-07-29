@@ -90,9 +90,9 @@ flowchart LR
     end
     subgraph Ctx["AppSuite.Circles — NEW bounded context"]
       Core[Circles.Core\nCircle aggregate + handlers]
-      Repo[Circles.Repository\nEF Core → schema circles]
+      Repo[Circles.Repository\nEF Core → schema circles\nIInvitationRateLimiter]
     end
-    Adapters[Main.Service adapters\nIAccountDirectory · IInvitationMailer\nIInvitationRateLimiter]
+    Adapters[Main.Service adapters\nIAccountDirectory · IInvitationMailer]
     Infra[AppSuite.Infrastructure\noutbox + SMTP]
     Db[(Postgres — maindb)]
 
@@ -125,7 +125,7 @@ flat project.
 |---------|--------|
 | `AppSuite.Circles.Contracts` | **NEW** — request/response DTOs. **No DTO describing a person carries an email field**, and an architecture test says so with a two-name exemption list (NFR-006). *Corrected during implementation:* "no email field anywhere" is unachievable — `InviteRequest` is an address going **in**, and the pending-invitation list is unusable without showing which address each entry is for. Neither is what NFR-006 forbids: no *member's* address is ever returned, and neither reveals whether an address has an account. The exemption list is what keeps a third one from appearing unnoticed. |
 | `AppSuite.Circles.Core` | **NEW** — the `Circle` aggregate, `CircleMembership`, `Invitation`, `DeclineRecord`, roles, the application handlers, and four **ports**: `ICircleRepository`, `IAccountDirectory` (the one crossing to Identity), `IInvitationMailer` and `IInvitationRateLimiter`. No ASP.NET, no EF. |
-| `AppSuite.Circles.Repository` | **NEW** — EF Core adapter, own `CirclesDbContext`, own migrations, **own Postgres schema `circles`** in the existing `maindb`. |
+| `AppSuite.Circles.Repository` | **NEW** — EF Core adapter, own `CirclesDbContext`, own migrations, **own Postgres schema `circles`** in the existing `maindb`. Implements `ICircleRepository` and — *corrected during implementation* — `IInvitationRateLimiter` as well: the table below assigned that port to the API host, but FR-017's counters were always specified as part of the `circles` schema, and an adapter in `Main.Service` would have meant the host writing directly into another context's tables. The two ports that genuinely cannot live here are `IAccountDirectory` (needs Identity) and `IInvitationMailer` (needs the outbox). |
 | `AppSuite.Main.Service` | **+** `/api/v1/circles` and `/api/v1/invitations`, the `CircleRoleFilter`, the circles rate-limit policies, DI composition, and the registration of `SoleOwnerCircleGuard`. |
 | `AppSuite.Main.Service.Core` | **+** `IAccountDeletionCleanup` — the second deletion seam (see below). |
 | `AppSuite.Infrastructure` | **+** the invitation mail template in DE/EN/FR — the fifth transactional mail, through the existing outbox. |
@@ -233,13 +233,30 @@ against persisted counters, and their rejection body is the same shape as the li
   `invitation_declines`, plus the per-inviter/per-address counters. Optimistic concurrency on the
   circle row (`xmin`), so two admins acting at once cannot both win a transfer — FR-020's
   "target's membership ended concurrently" criterion is exactly this.
+  Three details the implementation had to fix, all in `CirclesDbContext` and its migration:
+  - **`xmin` alone does not cover the aggregate.** Postgres bumps it per *row*, and every
+    interesting change — a role, a membership ending, an invitation — is a change to a *child* row.
+    So `SaveAsync` marks the circle row modified on every save, which puts the token in the `WHERE`
+    clause of a statement that is always issued. Without it two concurrent transfers both succeed.
+  - **The counters are rows, not counters.** All three limits are rolling windows, and a
+    fixed-window counter lets twice the limit through across the boundary. `invitation_attempts`
+    holds an inviter, an address *hash* and an instant; the windows are counted over two indexes,
+    and the rows are swept once no limit counts them (NFR-004). It is also the only shape that can
+    answer FR-017's "say when they may continue".
+  - **The circle-creation limit is counted from the circles themselves**, not from a creation log.
+    A circle created and then transferred away stops counting — accepted, because this is an abuse
+    limit, transferring needs a second consenting account, and the alternative is storing a creator
+    identifier on every circle forever to answer a question that expires after a day.
 - **SQLite (local):** unchanged. Circles are online-only in M2.
 - **Sync impact:** none yet, by design. M3 has to decide whether a circle syncs at all; a standing set
   of people that several devices edit is a poor fit for last-write-wins on a whole aggregate
   ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md)), and M2 deliberately does not prejudge it.
 - **Retention (NFR-004):** expired invitations are purged by the same hosted-service pattern as
   pending accounts. A pending invitation is the only place M2 stores an address belonging to someone
-  who has not agreed to anything — so it does not outlive its purpose.
+  who has not agreed to anything — so it does not outlive its purpose. The same sweep takes elapsed
+  decline records and counted invitation attempts, which after their window suppress and bound
+  nothing. The aggregate also drops its own expired invitations whenever it is loaded; the job is
+  what reaches the circles nobody opens.
 
 ## Localization impact
 

@@ -47,8 +47,11 @@ notifications of any kind (not built).
   account, one without, and one already in the circle must be indistinguishable in body, status and
   timing distribution.
 - **Repository (`AppSuite.Circles.Repository.Test`)** — the `circles` schema mapping, the optimistic
-  concurrency token, cascade behaviour on deletion, and the expired-invitation purge, against real
-  Postgres.
+  concurrency token, cascade behaviour on deletion, the retention sweeps and the three invitation
+  rate limits, against real Postgres. Applying the migration is itself part of the suite: `xmin` is a
+  system column that cannot be created, and every test here fails at startup if the provider ever
+  stops filtering it out of the generated SQL. Two providers per test are two concurrent callers —
+  the concurrency assertions are worthless against a single change tracker.
 - **Architecture** — `Circles.Core` free of ASP.NET/EF; no Secret-Santa project references Circles;
   no Circles project references `AppSuite.Identity`; plus the two NFR-006 fitness functions.
 - **UI/component (bUnit, `AppSuite.Main.Ui.Test`)** — the circle pages over a stub transport, as M1's
@@ -73,13 +76,14 @@ criteria say so.
 | FR-016 name required | `CircleTests.Create_BlankName_IsRefused` | Unit | ✅ |
 | FR-016 verified address required | `CircleEndpointsTests.Create_UnverifiedAccount_IsRefusedWithAResendOffer` | Integration | ✅ |
 | FR-016 atomicity | `CircleRepositoryTests.FailedCreate_LeavesNeitherCircleNorMembership` | Repository | ✅ |
+| FR-016 / FR-019 the mapping is faithful | `CircleRepositoryTests.Circle_SurvivesARoundTripWholeWithEveryPersonInvitationAndDecline` — the aggregate reloaded from Postgres in a second context, managed member and all | Repository | ✅ |
 | FR-016 caps | `CircleTests.Create_BeyondTheOwnedCircleCap_IsRefused`; `RateLimitTests.CircleCreation_IsLimitedPerUserPerDay` | Unit / Integration | ✅ |
 | **FR-017 identical response** | `InvitationEnumerationTests.Invite_KnownAddress_UnknownAddress_AndExistingMember_AreIndistinguishable` — body, status **and** timing distribution, interleaved samples | Security | ✅ |
 | FR-017 resend rather than duplicate | `CircleTests.Invite_SameAddressTwice_ResendsTheExistingInvitation` + `.Resend_IssuesAFreshSecretAndKillsThePreviousLink` | Unit | ✅ |
 | FR-017 revoke | `InvitationEndpointsTests.Revoked_CannotBeAccepted_AndSaysSoPlainly` | Integration | ✅ |
 | FR-017 expiry (14 days) | `CircleTests.Invitation_PastItsExpiry_LeavesThePendingListAndFreesTheAddress` (virtual clock) | Unit | ✅ |
 | FR-017 role-only-member | `CircleTests.Invitation_NeverGrantsMoreThanMember` | Unit | ✅ |
-| FR-017 rate limits | `InvitationRateLimitTests` — per inviter (20/h, 60/d), **per recipient address (3/24 h whatever the sender)**, per circle (50 pending); the refusal says when they may continue | Integration | ✅ |
+| FR-017 rate limits | `InvitationRateLimiterTests` (Repository, real Postgres) — per inviter (20/h, 60/d), **per recipient address (3/24 h whatever the sender)**, the rolling window, that a refused attempt is not counted, and that the refusal says *when* they may continue; `InvitationRateLimitTests` (Integration) for the per-circle 50-pending cap and the endpoint's answer | Repository / Integration | ✅ |
 | FR-017 delivery failure is not reported | `InvitationEndpointsTests.UndeliverableMail_LeavesTheInvitationPendingAndTellsTheInviterNothing` | Integration | ✅ |
 | FR-017 mail language | `InvitationMailTests.Mail_UsesTheRecipientsAccountLanguage_OtherwiseTheInvitersUsingMailpit` | Integration | ✅ |
 | FR-017 dispatch is queued | `InvitationEndpointsTests.Invite_QueuesTheMailRatherThanAwaitingIt` (the structural half of the timing property) | Integration | ✅ |
@@ -95,14 +99,14 @@ criteria say so.
 | FR-019 add / edit / mark | `ManagedMemberTests` (added in the member role, marked managed, no address stored or returned, name and language editable, duplicate names allowed) | Unit / Integration | ✅ |
 | FR-019 never elevated | `CircleTests.ManagedMember_CannotBeGivenAdminOrOwner` | Unit | ✅ |
 | FR-019 promotion links | `CircleTests.Promotion_LinksTheExistingMembership_AndCreatesNoDuplicate` + `.Promotion_LetsTheAccountsDisplayNameWin` | Unit | ✅ |
-| FR-019 survives its creator | `AccountDeletionCleanupTests.DeletingAnAdmin_LeavesTheirManagedMembersInTheCircle` | Integration | ✅ |
+| FR-019 survives its creator | `CircleRepositoryTests.PurgeAccount_RemovesTheMembershipAndTheirInvitations_ButKeepsTheirManagedMembers` (the persisted half); `AccountDeletionCleanupTests.DeletingAnAdmin_LeavesTheirManagedMembersInTheCircle` (through account deletion) | Repository / Integration | ✅ |
 | FR-019 Secret-Santa copy unaffected | **not testable in M2** — nothing copies a circle into a group until M4. See the coverage notes. | — | n/a |
 | FR-020 role change is owner-only | `CircleRoleMatrixTests` rows for `PUT …/role`; `CircleTests.AdminChangingARole_IsRefused` | Authorization / Unit | ✅ |
 | FR-020 admin may not remove an admin | `CircleTests.Admin_CannotRemoveAnotherAdmin` | Unit | ✅ |
 | FR-020 removal deletes only the membership | `CircleEndpointsTests.Removal_LeavesTheAccountAndSecretSantaDataUntouched` | Integration | ✅ |
 | **FR-020 / NFR-006 effect is immediate** | `CircleAuthorizationTests.RemovedMember_IsRefusedOnTheNextRequest_WithTheSameAccessToken` and `.DemotedAdmin_IsAuthorizedUnderTheNewRoleWithoutSigningOut` | Authorization | ✅ |
 | FR-020 owner cannot self-remove or demote | `CircleTests.Owner_CannotBeRemovedOrDemoted_EvenByThemselves` | Unit | ✅ |
-| FR-020 transfer | `CircleTests.Transfer_MakesTheTargetOwnerAndThePreviousOwnerAdmin_Atomically` + `.Transfer_ToAManagedMember_IsRefused`; `CircleRepositoryTests.Transfer_WhenTheTargetLeftConcurrently_Fails_AndTheCircleKeepsItsOwner` | Unit / Repository | ✅ |
+| FR-020 transfer | `CircleTests.Transfer_MakesTheTargetOwnerAndThePreviousOwnerAdmin_Atomically` + `.Transfer_ToAManagedMember_IsRefused`; `CircleRepositoryTests.Transfer_WhenTheTargetLeftConcurrently_Fails_AndTheCircleKeepsItsOwner` + `.TwoConcurrentEdits_DoNotBothWin_EvenWhenOnlyChildrenChanged` — the second is the general case, and the one that fails if the concurrency token ever stops covering the whole aggregate | Unit / Repository | ✅ |
 | **NFR-006 no addresses** | `CircleContractsTests.NoCircleDto_CarriesAnEmailField` — an assembly scan, not a per-endpoint assertion | Architecture | ✅ |
 | **NFR-006 role matrix** | `CircleRoleMatrixTests` — every route × owner / admin / member / non-member / anonymous, permitted **and** refused outcomes | Authorization | ✅ |
 | **NFR-006 non-member ≡ unknown** | `CircleAuthorizationTests.NonMemberAndUnknownCircle_AnswerIdentically` | Authorization | ✅ |
@@ -116,13 +120,15 @@ criteria say so.
 | FR-022 deletion scope | `CircleDeletionTests.Delete_RemovesCircleMembershipsManagedMembersAndPendingInvitations_ButNoAccount` | Integration | ✅ |
 | FR-022 the confirmation | `CirclePageTests.DeleteConfirmation_NamesTheCircle_CountsThePeople_AndNamesEveryManagedMember` + `.DeleteButton_StaysDisabledUntilTheNameIsTypedBack` | Component | ✅ |
 | FR-022 admin cannot delete | `CircleRoleMatrixTests` row for `DELETE /circles/{id}` | Authorization | ✅ |
-| FR-022 one transaction | `CircleRepositoryTests.FailedDelete_LeavesEverythingInPlace` | Repository | ✅ |
+| FR-022 one transaction | `CircleRepositoryTests.FailedDelete_LeavesEverythingInPlace` — and it asserts the `DELETE` was actually issued before the failure, so it cannot pass vacuously; plus `.Delete_TakesEveryPersonInvitationAndDeclineWithIt` and `.Delete_LeavesOtherCirclesUntouched` for the cascade's scope | Repository | ✅ |
 | FR-022 dangling circle id tolerated | `CircleDeletionTests.ADeletedCircleId_IsToleratedRatherThanTreatedAsCorruption` — asserted at the contract level in M2; the Secret-Santa half arrives with M4 | Integration | ⚠️ partial |
 | FR-022 pending invitation dies with it | `InvitationEndpointsTests.AfterTheCircleIsDeleted_TheRecipientIsToldItNoLongerExists` | Integration | ✅ |
 | **FR-015 sole-owner guard** | `SoleOwnerCircleGuardTests` (refuses while sole owner, names the circles, allows once transferred or deleted); `AccountDeletionCleanupTests.Deletion_RemovesTheUsersOtherMemberships_InTheSameTransaction` | Unit / Integration | ✅ |
-| NFR-004 managed-member minimisation | `PersistedModelReviewTests` extended to the `circles` schema — the existing scan for birth-date/postal/phone/payment fragments now covers a model describing people who did not enter their own data | Architecture | ✅ |
-| NFR-004 invitation retention | `InvitationPurgeTests.ExpiredInvitations_ArePurged_AndPendingOnesAreNot` (virtual clock, real Postgres) | Integration | ✅ |
-| NFR-004 declines keep no address | `CircleTests.ADecline_StoresOnlyAHash` | Unit | ✅ |
+| NFR-004 managed-member minimisation | `AppSuite.Circles.Repository.Test.PersistedModelReviewTests` — the same scan for birth-date/postal/phone/payment fragments the Main model has carried since M1, over a model describing people who did not enter their own data, plus `.AManagedMember_PersistsNothingBeyondANameAndALanguage` pinned as an exact column list. A sibling class rather than an extension of Main's: the two contexts have separate models, and coupling Main's test project to Circles to share one list would breach the layering this milestone is enforcing | Architecture | ✅ |
+| NFR-004 invitation retention | `InvitationPurgeTests.ExpiredInvitations_ArePurged_AndPendingOnesAreNot`, `.ADeclineIsSwept_OnceItSuppressesNothing`, `.CountedInvitationAttempts_AreSweptOnceNoLimitCountsThem` (virtual clock, real Postgres) | Repository | ✅ |
+| NFR-004 declines keep no address | `CircleTests.ADecline_StoresOnlyAHash`; `CircleRepositoryTests.ADeclinedInvitation_LeavesARowThatHoldsNoAddress` — the domain's intent, and then what is actually in the row | Unit / Repository | ✅ |
+| NFR-004 the invitation secret is never stored | `PersistedModelReviewTests.AnInvitation_StoresTheHandleOfItsSecretAndNeverTheSecret` | Architecture | ✅ |
+| **FR-020 / ADR-0003 the schema seam** | `PersistedModelReviewTests.EveryTable_LivesInTheCirclesSchema`; `CirclesLayeringTests.Repository_DoesNotDependOnWeb` | Architecture | ✅ |
 | NFR-003 string parity | `LocalizationParityTests` (existing) covers the new keys | Localization | ✅ |
 | NFR-003 invitation mail in three languages | `MailTemplateRendererTests.InvitationTemplate_RendersInAllThreeLanguages` | Unit | ✅ |
 | Layering | `CirclesLayeringTests` — no ASP.NET/EF in `Circles.Core`; no Secret-Santa project references Circles; no Circles project references `AppSuite.Identity` | Architecture | ✅ |

@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\src\BuildingBlocks\AppSuite.Ui.Web\AppSuite.Ui.Web.csproj" />
     <ProjectReference Include="..\..\src\BuildingBlocks\AppSuite.Circles.Contracts\AppSuite.Circles.Contracts.csproj" />
     <ProjectReference Include="..\..\src\BuildingBlocks\AppSuite.Circles.Core\AppSuite.Circles.Core.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\AppSuite.Circles.Repository\AppSuite.Circles.Repository.csproj" />
   </ItemGroup>
 
   <ItemGroup>

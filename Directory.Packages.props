@@ -67,6 +67,10 @@
     <PackageVersion Include="MailKit" Version="4.17.0" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.10" />
+    <!-- Binds an options class to a configuration section (services.Configure<T>(section)).
+         Reaches the Main host transitively via Identity/EF; the Circles repository references
+         neither, so it takes the dependency directly. -->
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.10" />
   </ItemGroup>
 
   <!-- Persistence — EF Core for Postgres (server). ADR-0007, ADR-0008. -->
@@ -75,6 +79,10 @@
          EF Core 10.0.10 — a lower pin here fails the build with CS1705. -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
+    <!-- Npgsql 10.0.0 depends on EF Core Relational 10.0.0 while EF Core itself is on 10.0.10.
+         Pinned (transitive pinning is on) so the two agree; without it, a project that references
+         only Npgsql and EF Core binds Relational 10.0.0 as primary and MSB3277 fires. -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
   </ItemGroup>
 
