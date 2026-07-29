@@ -3,7 +3,7 @@ id: UC-MAIN-004
 title: Sign in with a passkey
 app: Main
 actors: [User]
-status: Draft
+status: Approved
 priority: Should
 related: [NFR-001, NFR-003, ADR-0009, ADR-0021]
 ---

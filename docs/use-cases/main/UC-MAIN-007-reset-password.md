@@ -3,7 +3,7 @@ id: UC-MAIN-007
 title: Reset a forgotten password
 app: Main
 actors: [User]
-status: Draft
+status: Approved
 priority: Must
 related: [NFR-003, ADR-0009, ADR-0018, ADR-0021]
 ---

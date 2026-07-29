@@ -3,7 +3,7 @@ id: UC-MAIN-002
 title: Sign in with email and password
 app: Main
 actors: [User]
-status: Draft
+status: Approved
 priority: Must
 related: [NFR-001, NFR-003, ADR-0009, ADR-0016, ADR-0017, ADR-0021]
 ---

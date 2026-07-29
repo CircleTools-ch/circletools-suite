@@ -3,7 +3,7 @@ id: UC-MAIN-001
 title: Create a suite account
 app: Main
 actors: [Visitor]
-status: Draft
+status: Approved
 priority: Must
 related: [NFR-001, NFR-003, ADR-0009, ADR-0017, ADR-0018, ADR-0021]
 ---

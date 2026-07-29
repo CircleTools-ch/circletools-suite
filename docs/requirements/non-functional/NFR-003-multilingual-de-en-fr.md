@@ -2,7 +2,7 @@
 id: NFR-003
 title: Multilingual DE/EN/FR with de-CH default
 type: non-functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-SS-001, UC-SS-006
 verification: test

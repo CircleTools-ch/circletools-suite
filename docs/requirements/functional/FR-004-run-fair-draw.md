@@ -2,7 +2,7 @@
 id: FR-004
 title: Run a fair draw with rules, history, and graceful failure
 type: functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-SS-004
 verification: test

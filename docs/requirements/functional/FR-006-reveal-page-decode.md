@@ -2,7 +2,7 @@
 id: FR-006
 title: Reveal page decodes a link client-side
 type: functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-SS-006
 verification: test

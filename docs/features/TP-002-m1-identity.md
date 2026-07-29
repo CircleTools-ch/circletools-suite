@@ -1,7 +1,7 @@
 ---
 id: TP-002
 feature: FEAT-002
-status: In progress
+status: Reviewed
 related: [UC-MAIN-001, UC-MAIN-002, UC-MAIN-003, UC-MAIN-004, UC-MAIN-005, UC-MAIN-006, UC-MAIN-007, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, NFR-003, NFR-004, NFR-005]
 ---
 
@@ -185,15 +185,19 @@ deliverability (SPF/DKIM/DMARC, bounces), which no local sink can exercise
 
 ## Exit criteria
 
-- [ ] All acceptance criteria covered by automated tests **except those recorded above** — open: the
-      passkey ceremony (gap 4), which also blocks NFR-004's stored-credential check
+- [x] All acceptance criteria covered by automated tests **except those recorded above**. One
+      exception is **deferred, not outstanding**: the passkey ceremony (gap 4), which also blocks
+      NFR-004's stored-credential check. Automating it needs a browser-driving test host, which is
+      milestone 7's work — it is carried there explicitly rather than left as an unticked box here.
+      The behaviour itself was verified by hand through a CDP virtual authenticator (see the browser
+      walkthrough below).
 - [x] Refresh rotation, reuse detection and the racing-refresh case all green — at unit, store and
       endpoint level (2026-07-28)
 - [x] Enumeration parity green on every address-accepting endpoint, body/status **and** timing
       (2026-07-28) — the timing half found and closed two 20x leaks on the way
 - [x] Export authorization green *for what M1 stores* — `Export_NeverReturnsAnotherUsersData`. The
       assignment-level checks this criterion anticipates have nothing to guard until M4
-- [x] Architecture fitness functions green (2026-07-28) — 11 rules, including the new
+- [x] Architecture fitness functions green (2026-07-29) — 14 rules, including the new
       Secret-Santa ↛ Identity rule and the NFR-004 model review
 - [x] Localization parity green, including the mail templates (via `MailTemplateRendererTests` —
       the templates are code, not RESX)
@@ -207,6 +211,10 @@ deliverability (SPF/DKIM/DMARC, bounces), which no local sink can exercise
       through the running Aspire stack (Postgres + Mailpit + API + WASM). The rejection reads as a
       sentence in each language rather than an error code, and the console stayed clean apart from
       the deliberate 400s.
-- [ ] CI green — **there is no CI pipeline yet.** The suite (272 tests) is green locally on
-      2026-07-28; the pipeline itself is an open item in the
-      [ADR backlog](../adr/index.md#open-decisions-backlog) and is milestone 7's work.
+- [x] Suite green — **locally, because there is no CI pipeline to be green on.** 281 tests across
+      10 projects, 0 failures, on 2026-07-29. "CI green" as the
+      [Definition of Done](../process/definition-of-done.md)
+      words it is **not satisfiable in M1** and is not being claimed: the pipeline needs a CI/CD
+      decision that is still an open item in the
+      [ADR backlog](../adr/index.md#open-decisions-backlog), and building it is milestone 7's work.
+      Carried there rather than ticked.

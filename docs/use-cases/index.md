@@ -11,19 +11,19 @@ Use cases describe how actors achieve goals with the system. They are the bridge
 
 | ID | Title | App | Status |
 |----|-------|-----|--------|
-| [UC-SS-001](secret-santa/UC-SS-001-create-group.md) | Create and configure a Secret-Santa group | Secret-Santa | Draft |
-| [UC-SS-002](secret-santa/UC-SS-002-manage-members.md) | Manage members and their wishlists | Secret-Santa | Draft |
-| [UC-SS-003](secret-santa/UC-SS-003-define-exclusions.md) | Define exclusions between members | Secret-Santa | Draft |
-| [UC-SS-004](secret-santa/UC-SS-004-run-draw.md) | Run the fair draw | Secret-Santa | Draft |
-| [UC-SS-005](secret-santa/UC-SS-005-share-reveal-links.md) | Generate and share reveal links | Secret-Santa | Draft |
-| [UC-SS-006](secret-santa/UC-SS-006-open-reveal-link.md) | Open a reveal link | Secret-Santa | Draft |
-| [UC-MAIN-001](main/UC-MAIN-001-create-account.md) | Create a suite account | Main | Draft |
-| [UC-MAIN-002](main/UC-MAIN-002-sign-in-with-password.md) | Sign in with email and password | Main | Draft |
-| [UC-MAIN-003](main/UC-MAIN-003-register-passkey.md) | Register a passkey | Main | Draft |
-| [UC-MAIN-004](main/UC-MAIN-004-sign-in-with-passkey.md) | Sign in with a passkey | Main | Draft |
-| [UC-MAIN-005](main/UC-MAIN-005-manage-profile.md) | Manage profile and preferred language | Main | Draft |
-| [UC-MAIN-006](main/UC-MAIN-006-delete-account-and-export-data.md) | Delete the account and export personal data | Main | Draft |
-| [UC-MAIN-007](main/UC-MAIN-007-reset-password.md) | Reset a forgotten password | Main | Draft |
+| [UC-SS-001](secret-santa/UC-SS-001-create-group.md) | Create and configure a Secret-Santa group | Secret-Santa | Approved |
+| [UC-SS-002](secret-santa/UC-SS-002-manage-members.md) | Manage members and their wishlists | Secret-Santa | Approved |
+| [UC-SS-003](secret-santa/UC-SS-003-define-exclusions.md) | Define exclusions between members | Secret-Santa | Approved |
+| [UC-SS-004](secret-santa/UC-SS-004-run-draw.md) | Run the fair draw | Secret-Santa | Approved |
+| [UC-SS-005](secret-santa/UC-SS-005-share-reveal-links.md) | Generate and share reveal links | Secret-Santa | Approved |
+| [UC-SS-006](secret-santa/UC-SS-006-open-reveal-link.md) | Open a reveal link | Secret-Santa | Approved |
+| [UC-MAIN-001](main/UC-MAIN-001-create-account.md) | Create a suite account | Main | Approved |
+| [UC-MAIN-002](main/UC-MAIN-002-sign-in-with-password.md) | Sign in with email and password | Main | Approved |
+| [UC-MAIN-003](main/UC-MAIN-003-register-passkey.md) | Register a passkey | Main | Approved |
+| [UC-MAIN-004](main/UC-MAIN-004-sign-in-with-passkey.md) | Sign in with a passkey | Main | Approved |
+| [UC-MAIN-005](main/UC-MAIN-005-manage-profile.md) | Manage profile and preferred language | Main | Approved |
+| [UC-MAIN-006](main/UC-MAIN-006-delete-account-and-export-data.md) | Delete the account and export personal data | Main | Approved |
+| [UC-MAIN-007](main/UC-MAIN-007-reset-password.md) | Reset a forgotten password | Main | Approved |
 
 _Add a row per use case._
 

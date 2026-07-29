@@ -36,4 +36,4 @@ are **English**.
 | **Product** | Roadmap, requirements, use cases, feature specs, brainstorming |
 | **Guidelines** | Coding, architecture, testing, localization, documentation, security |
 | **Glossary** | Canonical domain terms |
-| **API Reference** | Generated from C# XML doc comments (appears once code exists) |
+| **API Reference** | Generated from the C# XML doc comments in `src/` |

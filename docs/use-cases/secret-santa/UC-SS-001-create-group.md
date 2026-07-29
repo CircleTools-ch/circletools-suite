@@ -3,7 +3,7 @@ id: UC-SS-001
 title: Create and configure a Secret-Santa group
 app: Secret-Santa
 actors: [Organizer]
-status: Draft
+status: Approved
 priority: Must
 related: [FR-001, NFR-001, NFR-003]
 ---

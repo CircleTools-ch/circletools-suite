@@ -2,7 +2,7 @@
 id: FR-008
 title: Sign in with email and password
 type: functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-MAIN-002
 verification: test

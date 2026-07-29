@@ -3,7 +3,7 @@ id: UC-SS-004
 title: Run the fair draw
 app: Secret-Santa
 actors: [Organizer]
-status: Draft
+status: Approved
 priority: Must
 related: [FR-004, NFR-001, NFR-002]
 ---

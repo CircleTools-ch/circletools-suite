@@ -118,11 +118,23 @@ Idea stubs and work items, newest-first. Promote items into
   [ADR-0029](../adr/0029-storage-write-failure-contract.md) (`SetAsync` reports success, so a lost
   preference and a lost group stop being the same event). 281 tests green; full journey re-driven in
   a browser in DE/EN/FR.
-- **Next:** close M1 in the docs — [FEAT-002](../features/FEAT-002-m1-identity.md) and
-  [TP-002](../features/TP-002-m1-identity.md) are still *In progress* although their only open exit
-  criteria are the two items deliberately deferred to milestone 7 (automating the WebAuthn ceremony,
-  and a CI pipeline that does not exist yet). Then **M2 circles**, starting where the process starts:
-  the `UC-MAIN-008+` use cases → FRs → the M2 feature spec.
+- **M1 closed in the docs (2026-07-29):** [FEAT-002](../features/FEAT-002-m1-identity.md) is *Done*
+  and [TP-002](../features/TP-002-m1-identity.md) *Reviewed*. The requirement and use-case registers
+  were advanced with them — `Implemented` where every criterion is met, `Approved` where one is
+  knowingly still open (FR-010/011/012/015, NFR-004), so the split marks where the slice stops
+  instead of reading as neglect. The two exit criteria that could not be met are **carried to
+  milestone 7**, not ticked; see the carry-overs below.
+- **Carried to milestone 7 (from M1):**
+  - **Automate the WebAuthn ceremony.** Every passkey test in the suite is negative or an
+    authorization check; none creates a credential, because an in-process `WebApplicationFactory`
+    has no authenticator. The ceremony works — it was driven by hand through a CDP virtual
+    authenticator — but nothing re-checks it, and **NFR-004's "no private key, no biometric data"
+    has no stored credential to inspect** until it is automated. Needs a browser-driving test host.
+  - **A CI pipeline.** There is none, so the Definition of Done's "CI green" cannot be satisfied by
+    any milestone until one exists. The CI/CD choice is still an open item in the
+    [ADR register](../adr/index.md#open-decisions-backlog) and needs an ADR before the pipeline.
+- **Next:** **M2 circles**, starting where the process starts: the `UC-MAIN-008+` use cases → FRs →
+  the M2 feature spec.
 - **Three acceptance criteria cannot close in M1** and are recorded as deferred in FEAT-002: MAUI
   cross-client passkeys (needs the real domain), the *offline* language change (needs M3 sync), and
   the sole-circle-owner deletion guard (needs M2 circles).

@@ -2,7 +2,7 @@
 id: FR-003
 title: Define exclusions between members
 type: functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-SS-003
 verification: test

@@ -1,10 +1,11 @@
 <Solution>
   <!--
     AppSuite app-suite solution (new .slnx format).
-    Intentionally near-empty: the harness ships first, code projects are added
-    during later ADR-gated phases. See docs/process/ways-of-working.md.
+    Projects are added phase by phase, each gated by an ADR.
+    See docs/process/ways-of-working.md.
 
-    "AppSuite" (We Are Like Family) is the suite brand and the namespace/project prefix.
+    "AppSuite" is a neutral working name — the namespace/project prefix and the
+    placeholder in prose, not a brand. The brand is deliberately deferred.
     See CLAUDE.md > "Placeholder & naming convention".
   -->
   <Folder Name="/docs/">

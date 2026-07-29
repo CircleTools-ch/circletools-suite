@@ -2,7 +2,7 @@
 id: NFR-001
 title: Local-first and fully offline (no account or backend for MVP)
 type: non-functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-SS-001, UC-SS-004, UC-SS-006
 verification: test

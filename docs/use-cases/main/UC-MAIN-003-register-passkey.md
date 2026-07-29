@@ -3,7 +3,7 @@ id: UC-MAIN-003
 title: Register a passkey
 app: Main
 actors: [User]
-status: Draft
+status: Approved
 priority: Should
 related: [NFR-003, ADR-0009, ADR-0021]
 ---

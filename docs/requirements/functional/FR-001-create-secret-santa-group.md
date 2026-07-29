@@ -2,7 +2,7 @@
 id: FR-001
 title: Create and configure a Secret-Santa group offline
 type: functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-SS-001
 verification: test

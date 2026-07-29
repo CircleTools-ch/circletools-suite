@@ -2,7 +2,7 @@
 id: FR-015
 title: Delete the account
 type: functional
-status: Draft
+status: Approved
 priority: Must
 source: UC-MAIN-006
 verification: test

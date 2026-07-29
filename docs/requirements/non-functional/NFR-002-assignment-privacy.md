@@ -2,7 +2,7 @@
 id: NFR-002
 title: Assignment privacy — the link is the secret
 type: non-functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-SS-004, UC-SS-005, UC-SS-006
 verification: review

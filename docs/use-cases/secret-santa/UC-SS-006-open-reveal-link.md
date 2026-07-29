@@ -3,7 +3,7 @@ id: UC-SS-006
 title: Open a reveal link
 app: Secret-Santa
 actors: [Member]
-status: Draft
+status: Approved
 priority: Must
 related: [FR-006, NFR-001, NFR-002, NFR-003]
 ---

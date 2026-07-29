@@ -2,7 +2,7 @@
 id: NFR-004
 title: Data protection & retention
 type: non-functional
-status: Draft
+status: Approved
 priority: Must
 source: UC-MAIN-001, UC-MAIN-006, ADR-0022
 verification: review
