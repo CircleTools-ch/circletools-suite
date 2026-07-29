@@ -1,7 +1,7 @@
 ---
 id: FEAT-003
 title: M2 — Circles in the Main shell
-status: Draft
+status: In progress
 owner: Adrian
 target-milestone: M2 (v2 — circles)
 bounded-context: Circles
@@ -92,13 +92,20 @@ flowchart LR
       Core[Circles.Core\nCircle aggregate + handlers]
       Repo[Circles.Repository\nEF Core → schema circles]
     end
+    Adapters[Main.Service adapters\nIAccountDirectory · IInvitationMailer\nIInvitationRateLimiter]
     Infra[AppSuite.Infrastructure\noutbox + SMTP]
     Db[(Postgres — maindb)]
 
     Pages --> Ep --> Core --> Repo --> Db
     Ep --> Guard --> Core
-    Core --> Infra --> Db
+    Core --> Adapters --> Infra --> Db
 ```
+
+**The mail goes out through a port, not through `IOutbox` directly.** `Circles.Core` names what it
+needs — `IInvitationMailer.QueueAsync`, whose contract is *enqueue and return, never send inline* —
+and the API host implements it over the existing outbox. Referencing `AppSuite.Infrastructure` from
+the domain project would have pulled MailKit into it for one call, and the timing property that
+matters (NFR-005) is stated more clearly as a rule on the port than as a habit at the call site.
 
 The shape follows M1's: a **suite-wide bounded context in `BuildingBlocks/`**, hosted by the Main API
 host, with its client half in `Main.Ui`. Circles is not an app-type — it has no head of its own — and
@@ -116,8 +123,8 @@ flat project.
 
 | Project | Change |
 |---------|--------|
-| `AppSuite.Circles.Contracts` | **NEW** — request/response DTOs. Contains **no email field anywhere**, and an architecture test says so (NFR-006). |
-| `AppSuite.Circles.Core` | **NEW** — the `Circle` aggregate, `CircleMembership`, `Invitation`, roles, the application handlers, and the repository **port**. No ASP.NET, no EF. |
+| `AppSuite.Circles.Contracts` | **NEW** — request/response DTOs. **No DTO describing a person carries an email field**, and an architecture test says so with a two-name exemption list (NFR-006). *Corrected during implementation:* "no email field anywhere" is unachievable — `InviteRequest` is an address going **in**, and the pending-invitation list is unusable without showing which address each entry is for. Neither is what NFR-006 forbids: no *member's* address is ever returned, and neither reveals whether an address has an account. The exemption list is what keeps a third one from appearing unnoticed. |
+| `AppSuite.Circles.Core` | **NEW** — the `Circle` aggregate, `CircleMembership`, `Invitation`, `DeclineRecord`, roles, the application handlers, and four **ports**: `ICircleRepository`, `IAccountDirectory` (the one crossing to Identity), `IInvitationMailer` and `IInvitationRateLimiter`. No ASP.NET, no EF. |
 | `AppSuite.Circles.Repository` | **NEW** — EF Core adapter, own `CirclesDbContext`, own migrations, **own Postgres schema `circles`** in the existing `maindb`. |
 | `AppSuite.Main.Service` | **+** `/api/v1/circles` and `/api/v1/invitations`, the `CircleRoleFilter`, the circles rate-limit policies, DI composition, and the registration of `SoleOwnerCircleGuard`. |
 | `AppSuite.Main.Service.Core` | **+** `IAccountDeletionCleanup` — the second deletion seam (see below). |
@@ -169,8 +176,9 @@ creator.
 - **A decline leaves a `DeclineRecord`**: the **hash** of the address and a timestamp, nothing else.
   It is all the cooldown needs, and it means a declined invitation stops holding an address the
   circle has no further business with (NFR-004).
-- **No new domain events.** The invitation mail is enqueued by the handler through `IOutbox`; an event
-  in between would be indirection with exactly one consumer.
+- **No new domain events.** The invitation mail is enqueued by the handler through `IInvitationMailer`
+  (which the host implements over `IOutbox`); an event in between would be indirection with exactly
+  one consumer.
 - **Glossary:** [Circle](../glossary/circle.md), [Circle membership](../glossary/circle-membership.md),
   [Invitation](../glossary/invitation.md), [Managed member](../glossary/managed-member.md) all exist
   already — M2 writes no new terms, it implements the ones ADR-0018 fixed.

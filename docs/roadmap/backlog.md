@@ -5,7 +5,7 @@ Idea stubs and work items, newest-first. Promote items into
 
 ## Ideas
 
-### IDEA-002 — Circle (shared people across the suite) · _status: designed (M2), no code yet_
+### IDEA-002 — Circle (shared people across the suite) · _status: in progress (M2) — domain & application built_
 - **Problem:** every app re-asks who your people are. A family or friend-group has no lasting
   existence in the suite — each Secret-Santa group is typed in from scratch, and nobody but the
   organizer can contribute.
@@ -61,10 +61,22 @@ Idea stubs and work items, newest-first. Promote items into
   memberships, invitations and decline records live **inside the `Circle` aggregate** (every invariant
   is circle-scoped), and there is **exactly one accept path** for both invitation branches, so the
   "verified address must match" rule lives in one place.
-- **Next:** build it — `AppSuite.Circles.*`, the endpoints and the Main UI, per FEAT-003. Deleting an
-  account needs a **second seam** alongside M1's `IAccountDeletionGuard`: a cleanup that removes the
-  departing user's memberships in the same transaction, or the people list keeps a person who is
-  nobody.
+- **Domain & application built (2026-07-29):** `AppSuite.Circles.Contracts` and
+  `AppSuite.Circles.Core` exist — the `Circle` aggregate with memberships, invitations and decline
+  records inside it, every invariant and cap, and 23 command/query handlers, with **68 unit tests**
+  and four architecture fitness functions green (355 tests across 11 projects overall). Four ports
+  are declared and unimplemented until the host slice: `ICircleRepository`, `IAccountDirectory`,
+  `IInvitationMailer`, `IInvitationRateLimiter`. Two spec corrections were made and recorded in
+  [FEAT-003](../features/FEAT-003-m2-circles.md): the "no email field anywhere in Contracts" rule
+  became "no DTO describing a **person** carries one", with a two-name exemption list under test
+  (an invite request must carry an address, and a pending-invitation list is unusable without one);
+  and the invitation mail leaves through an `IInvitationMailer` **port** rather than `Circles.Core`
+  referencing `AppSuite.Infrastructure`, which would have pulled MailKit into the domain project.
+- **Next:** `AppSuite.Circles.Repository` (the `circles` schema, its migration and `xmin`
+  concurrency), then the endpoints and `CircleRoleFilter` in `Main.Service`, the two deletion seams,
+  the invitation mail template, and the Main UI. Deleting an account needs that **second seam**
+  alongside M1's `IAccountDeletionGuard` — `PurgeAccountFromCirclesCommand` is written and waiting
+  for an `IAccountDeletionCleanup` to call it, or the people list keeps a person who is nobody.
 
 ### IDEA-001 — Secret-Santa app (first app) · _status: MVP defined_
 - **Problem:** Organizing a Secret-Santa (Wichteln) by hand is fiddly — drawing names fairly,
@@ -172,7 +184,7 @@ Idea stubs and work items, newest-first. Promote items into
 - **M2 phases 3 & 4 done (2026-07-29):** the circle use cases and requirements are written and
   registered, arc42 ch. 5 has the Circles bounded context, and
   [FEAT-003](../features/FEAT-003-m2-circles.md) + [TP-003](../features/TP-003-m2-circles.md) are
-  drafted — see `IDEA-002` above for what they decided. **Next: implementation**; no M2 code yet.
+  written — see `IDEA-002` above for what they decided and for what has since been built.
 - **Three acceptance criteria cannot close in M1** and are recorded as deferred in FEAT-002: MAUI
   cross-client passkeys (needs the real domain), the *offline* language change (needs M3 sync), and
   the sole-circle-owner deletion guard (needs M2 circles).
