@@ -1,3 +1,4 @@
+using AppSuite.Circles.Repository;
 using AppSuite.Main.Service.Repository;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -26,6 +27,7 @@ public sealed class AccountApiFactory : WebApplicationFactory<Program>, IAsyncLi
 
         using var scope = Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<MainDbContext>().Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<CirclesDbContext>().Database.MigrateAsync();
     }
 
     async Task IAsyncLifetime.DisposeAsync()

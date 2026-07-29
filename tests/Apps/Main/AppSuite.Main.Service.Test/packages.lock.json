@@ -739,6 +739,18 @@
           "Microsoft.Extensions.Options": "[10.0.10, )"
         }
       },
+      "appsuite.circles.repository": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.Circles.Core": "[1.0.0, )",
+          "Microsoft.EntityFrameworkCore": "[10.0.10, )",
+          "Microsoft.Extensions.Hosting.Abstractions": "[10.0.10, )",
+          "Microsoft.Extensions.Logging.Abstractions": "[10.0.10, )",
+          "Microsoft.Extensions.Options": "[10.0.10, )",
+          "Microsoft.Extensions.Options.ConfigurationExtensions": "[10.0.10, )",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.0, )"
+        }
+      },
       "appsuite.identity": {
         "type": "Project",
         "dependencies": {
@@ -766,6 +778,7 @@
         "dependencies": {
           "AppSuite.Application": "[1.0.0, )",
           "AppSuite.Circles.Core": "[1.0.0, )",
+          "AppSuite.Circles.Repository": "[1.0.0, )",
           "AppSuite.Main.Contracts": "[1.0.0, )",
           "AppSuite.Main.Service.Core": "[1.0.0, )",
           "AppSuite.Main.Service.Repository": "[1.0.0, )",

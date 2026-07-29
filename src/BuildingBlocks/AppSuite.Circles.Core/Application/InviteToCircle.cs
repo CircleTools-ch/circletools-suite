@@ -75,7 +75,7 @@ public sealed class InviteToCircleCommandHandler(
         var allowance = await rateLimiter.TryConsumeAsync(command.UserId, emailHash, options, cancellationToken);
         if (!allowance.IsAllowed)
         {
-            return CircleResult.Refused(CircleError.InvitationRateLimitReached);
+            return CircleResult.Refused(CircleError.InvitationRateLimitReached, allowance.RetryAfter);
         }
 
         var recipient = await accounts.FindByVerifiedEmailAsync(command.Email, cancellationToken);
@@ -219,7 +219,7 @@ public sealed class ResendInvitationCommandHandler(
 
         if (!allowance.IsAllowed)
         {
-            return CircleResult.Refused(CircleError.InvitationRateLimitReached);
+            return CircleResult.Refused(CircleError.InvitationRateLimitReached, allowance.RetryAfter);
         }
 
         var recipient = await accounts.FindByVerifiedEmailAsync(invitation.Email, cancellationToken);

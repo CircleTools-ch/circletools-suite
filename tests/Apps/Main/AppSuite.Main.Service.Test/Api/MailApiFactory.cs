@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AppSuite.Circles.Repository;
 using AppSuite.Main.Service.Repository;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
@@ -45,6 +46,7 @@ public sealed class MailApiFactory : WebApplicationFactory<Program>, IAsyncLifet
 
         using var scope = Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<MainDbContext>().Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<CirclesDbContext>().Database.MigrateAsync();
     }
 
     async Task IAsyncLifetime.DisposeAsync()
