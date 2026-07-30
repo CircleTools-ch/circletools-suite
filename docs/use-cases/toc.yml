@@ -46,5 +46,15 @@
       href: main/UC-MAIN-013-leave-circle.md
     - name: UC-MAIN-014 Delete a circle
       href: main/UC-MAIN-014-delete-circle.md
+- name: Sync & claim (M3)
+  items:
+    - name: UC-MAIN-015 See my data on every device
+      href: main/UC-MAIN-015-sync-across-devices.md
+    - name: UC-MAIN-016 Work offline and reconcile
+      href: main/UC-MAIN-016-work-offline-and-reconcile.md
+    - name: UC-SS-007 Take my existing groups into my account
+      href: secret-santa/UC-SS-007-claim-local-groups.md
+    - name: UC-SS-008 Take a group back out of my account
+      href: secret-santa/UC-SS-008-remove-group-from-account.md
 - name: Template
   href: _template-use-case.md

@@ -40,6 +40,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0029](0029-storage-write-failure-contract.md) | What an `IKeyValueStore` write does when storage refuses it | Accepted | 2026-07-28 |
 | [0030](0030-mobile-store-publisher-identity.md) | Store publisher identity and account ownership (individual, project-owned accounts) | Accepted | 2026-07-29 |
 | [0031](0031-ios-build-host.md) | iOS build host (own Apple-silicon Mac) | Accepted | 2026-07-29 |
+| [0032](0032-ui-tone-of-voice-and-gender-neutral-terms.md) | UI tone of voice & gender-neutral role terms | Accepted | 2026-07-30 |
 
 ## Open decisions backlog
 
@@ -125,6 +126,18 @@ one red panel — a defect no test could see.
   form for German agent nouns). The convention is recorded in the
   [localization guidelines](../guidelines/localization-guidelines.md) so new strings follow it
   without rediscovering the ADR.
+
+### Raised by the M3 requirements (2026-07-30) — due before M3 is built
+
+- **Which aggregates sync.** [ADR-0016](0016-sync-and-conflict-resolution.md) names both the
+  Secret-Santa [Group](../glossary/group.md) and the [Circle](../glossary/circle.md) as sync units.
+  [FR-023](../requirements/functional/FR-023-sync-across-devices.md) **excludes the circle**: M2 built
+  circles server-authoritative and online-only, last-write-wins would silently discard *other people's*
+  edits on data several admins share, and an offline circle write cannot take the server-side
+  authorization decision [NFR-006](../requirements/non-functional/NFR-006-circle-authorization.md)
+  requires on every mutation. That is a narrowing of an accepted ADR, so it is recorded as one rather
+  than left as a divergence between the ADR and the code. It should also state what *would* bring
+  circles into sync later — an offline read cache is a different decision from offline writes.
 
 ### Depends on deployment (genuinely open)
 

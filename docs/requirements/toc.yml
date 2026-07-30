@@ -46,6 +46,14 @@
       href: functional/FR-021-leave-circle.md
     - name: FR-022 Delete a circle
       href: functional/FR-022-delete-circle.md
+    - name: FR-023 Sync across devices
+      href: functional/FR-023-sync-across-devices.md
+    - name: FR-024 Offline editing and reconciliation
+      href: functional/FR-024-offline-editing-and-reconciliation.md
+    - name: FR-025 Claim local groups
+      href: functional/FR-025-claim-local-groups.md
+    - name: FR-026 Remove a group from the account
+      href: functional/FR-026-remove-group-from-account.md
 - name: Non-functional
   items:
     - name: NFR-001 Local-first & offline
@@ -62,6 +70,8 @@
       href: non-functional/NFR-006-circle-authorization.md
     - name: NFR-007 Store distributability
       href: non-functional/NFR-007-store-distributability.md
+    - name: NFR-008 Sync convergence & data safety
+      href: non-functional/NFR-008-sync-convergence-and-data-safety.md
 - name: Templates
   items:
     - name: Requirement template

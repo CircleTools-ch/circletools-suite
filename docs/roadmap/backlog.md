@@ -132,8 +132,17 @@ Idea stubs and work items, newest-first. Promote items into
 - **Architecture decided (2026-07-27):** [ADR-0016](../adr/0016-sync-and-conflict-resolution.md)…
   [ADR-0021](../adr/0021-web-auth-token-model.md) cover sync, the account claim, the circle model,
   Member↔User linking, assignment privacy and the web token model.
-- **Next:** `UC-SS-007+` use cases (create a group from a circle; link a member; see my assignment
-  while logged in; edit my own wishlist) → FRs → the M4 feature spec.
+- **M3 specified (2026-07-30):** the sync and claim slice has its use cases and requirements —
+  [UC-SS-007](../use-cases/secret-santa/UC-SS-007-claim-local-groups.md) take my existing groups into
+  my account · [UC-SS-008](../use-cases/secret-santa/UC-SS-008-remove-group-from-account.md) take one
+  back out · [UC-MAIN-015](../use-cases/main/UC-MAIN-015-sync-across-devices.md) ·
+  [UC-MAIN-016](../use-cases/main/UC-MAIN-016-work-offline-and-reconcile.md) → FR-023..026 and
+  [NFR-008](../requirements/non-functional/NFR-008-sync-convergence-and-data-safety.md). The
+  privacy consequence is worth stating where the Secret-Santa idea lives: **a claimed group carries
+  its draw**, so M3 — not M4 — is when assignments first reach the server, and the claim screen has to
+  say so before the upload rather than in a settings page afterwards.
+- **Next:** `UC-SS-009+` use cases (create a group from a circle; link a member; see my assignment
+  while logged in; edit my own wishlist) → FRs → the M4 feature spec. *(M3 took `UC-SS-007..008`.)*
 
 ### IDEA-000 — AppSuite shell (Main app-type) · _status: in progress_
 - **Problem:** apps need shared branding, one login, shared config, and a dashboard.
@@ -210,6 +219,19 @@ Idea stubs and work items, newest-first. Promote items into
   arc42 ch. 5's Circles context, [FEAT-003](../features/FEAT-003-m2-circles.md) (*Done*) and
   [TP-003](../features/TP-003-m2-circles.md) (*Reviewed*) — see `IDEA-002` above for what they decided,
   what was built, and what closing the milestone turned up.
+- **M3 written (2026-07-30):** the sync and claim requirements —
+  [FR-023](../requirements/functional/FR-023-sync-across-devices.md) sync across devices ·
+  [FR-024](../requirements/functional/FR-024-offline-editing-and-reconciliation.md) offline editing
+  and reconciliation · [FR-025](../requirements/functional/FR-025-claim-local-groups.md) claim ·
+  [FR-026](../requirements/functional/FR-026-remove-group-from-account.md) un-claim ·
+  [NFR-008](../requirements/non-functional/NFR-008-sync-convergence-and-data-safety.md) convergence &
+  data safety — plus glossary entries for [Claim](../glossary/claim.md) (whose naming hazard is
+  recorded: ASP.NET Identity already has a `Claim`) and [Tombstone](../glossary/tombstone.md) (which
+  is **not** a soft delete). **One decision is open and blocks the build:** the requirements exclude
+  circle data from sync, narrowing [ADR-0016](../adr/0016-sync-and-conflict-resolution.md), and that
+  narrowing needs an ADR — last-write-wins on data four admins share would discard other people's
+  edits, and an offline circle write cannot make the server-side authorization decision NFR-006
+  requires. FR-023 also carries **FR-012**'s offline language change.
 - **Two of M1's three deferred criteria still stand**, and are recorded as deferred in FEAT-002: MAUI
   cross-client passkeys (needs the real domain) and the *offline* language change (needs M3 sync).
   The third — **the sole-circle-owner deletion guard — closed with M2** as `SoleOwnerCircleGuard`,

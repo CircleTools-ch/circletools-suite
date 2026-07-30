@@ -31,6 +31,10 @@ Use cases describe how actors achieve goals with the system. They are the bridge
 | [UC-MAIN-012](main/UC-MAIN-012-manage-circle-people.md) | Manage a circle's people, roles and ownership | Main | Approved |
 | [UC-MAIN-013](main/UC-MAIN-013-leave-circle.md) | Leave a circle | Main | Approved |
 | [UC-MAIN-014](main/UC-MAIN-014-delete-circle.md) | Delete a circle | Main | Approved |
+| [UC-MAIN-015](main/UC-MAIN-015-sync-across-devices.md) | See my data on every device I sign in on | Main | Approved |
+| [UC-MAIN-016](main/UC-MAIN-016-work-offline-and-reconcile.md) | Work offline while signed in, and reconcile when back online | Main | Approved |
+| [UC-SS-007](secret-santa/UC-SS-007-claim-local-groups.md) | Take my existing groups into my account | Secret-Santa | Approved |
+| [UC-SS-008](secret-santa/UC-SS-008-remove-group-from-account.md) | Take a group back out of my account | Secret-Santa | Approved |
 
 _Add a row per use case._
 
@@ -45,5 +49,14 @@ _Add a row per use case._
   left: UC-MAIN-014 unblocks
   [FR-015](../requirements/functional/FR-015-delete-account.md)'s sole-circle-owner guard, and
   UC-MAIN-011 answers what happens to managed members when their creator leaves.
-- Still to write: `UC-SS-007+` for **M3/M4** (claim a group, create a group from a circle, link a
-  member, see my assignment while signed in).
+- **UC-MAIN-015..016 + UC-SS-007..008** — **M3 — Sync & claim**: sync across devices, offline editing
+  and reconciliation, taking local groups into the account, and taking one back out. Realised by
+  [FR-023..026 and NFR-008](../requirements/index.md). Two of them close things earlier milestones
+  left open: UC-MAIN-015 carries [FR-012](../requirements/functional/FR-012-manage-profile.md)'s
+  offline language change, and UC-SS-007 is where
+  [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)'s amended account-mode half
+  first becomes visible to a user — the claim screen is the moment a completed
+  [Draw](../glossary/draw.md) leaves the device.
+- Still to write: `UC-SS-009+` for **M4** (create a group from a circle, link a member to an account,
+  see my assignment while signed in, edit my own wishlist). *(M3 took `UC-SS-007..008`, so M4's
+  Secret-Santa use cases start at 009.)*

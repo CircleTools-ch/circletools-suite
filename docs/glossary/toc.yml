@@ -8,6 +8,8 @@
   href: circle.md
 - name: Circle membership
   href: circle-membership.md
+- name: Claim
+  href: claim.md
 - name: Draw
   href: draw.md
 - name: Event details
@@ -28,6 +30,8 @@
   href: reveal-link.md
 - name: Sync
   href: sync.md
+- name: Tombstone
+  href: tombstone.md
 - name: User
   href: user.md
 - name: Wishlist
