@@ -2,7 +2,7 @@
 id: FR-020
 title: Manage circle roles, membership and ownership
 type: functional
-status: Approved
+status: Implemented
 priority: Must
 source: UC-MAIN-012
 verification: test

@@ -14,7 +14,7 @@
 > `ApiClient` and `Ui.Shared` on the client side
 > ([ADR-0025](../adr/0025-shared-ui-building-blocks.md)).
 >
-> **M2 ([FEAT-003](../features/FEAT-003-m2-circles.md)) adds the `Circles` context** —
+> **M2 ([FEAT-003](../features/FEAT-003-m2-circles.md)) has built the `Circles` context** —
 > `Circles.Contracts` / `Circles.Core` / `Circles.Repository`, hosted by the Main API host — which is
 > the follow-up [ADR-0018](../adr/0018-circle-and-sharing-model.md) recorded against this chapter.
 > Only the sync tier is still a plan.
@@ -107,9 +107,9 @@ Razor components without inheriting `localStorage`
 | `AppSuite.Ui.Shared` | RCL: the suite theme ([ADR-0024](../adr/0024-ui-styling-and-theming.md)) and the components more than one app needs — `AuthCard`, `BusyButton`, `ProblemAlert`, `CultureSelector`, `CultureBoundary`. |
 | `AppSuite.Ui.Abstractions` | Platform seams: `IKeyValueStore`, `ICultureProvider`, `IPasskeyCeremony`, `IFileSaver`, `StorageUnavailableException`. **References nothing** — no packages, no JS interop — which is what lets a MAUI head swap the implementations and change nothing else. |
 | `AppSuite.Ui.Web` | Browser implementations of those seams, shared by both web hosts: `BrowserKeyValueStore` over `sessionStorage`/`localStorage` ([ADR-0028](../adr/0028-browser-platform-adapters-block.md)). Not an RCL — adapters only, no components — so `Ui.Shared` stays usable by a MAUI head. |
-| `AppSuite.Circles.Contracts` | DTOs for the Circles context. Carries **no email field anywhere** — an architecture test enforces it ([NFR-006](../requirements/non-functional/NFR-006-circle-authorization.md)). |
-| `AppSuite.Circles.Core` | The [Circle](../glossary/circle.md) aggregate (memberships, invitations, roles, managed members), its application handlers, and the repository **port**. No ASP.NET, no EF. |
-| `AppSuite.Circles.Repository` | EF Core adapter with its **own `DbContext` and its own Postgres schema `circles`** inside `maindb`. No foreign key to the Identity tables — a membership holds a `UserId` **value** ([ADR-0019](../adr/0019-member-user-linking.md)). |
+| `AppSuite.Circles.Contracts` | DTOs for the Circles context. Returns **no member's email address**, enforced by an assembly scan with a two-name exemption list — an address going *in* (`InviteRequest`) and the pending-invitation list an admin typed themselves ([NFR-006](../requirements/non-functional/NFR-006-circle-authorization.md)). |
+| `AppSuite.Circles.Core` | The [Circle](../glossary/circle.md) aggregate (memberships, invitations, decline records, roles, managed members), its application handlers, and **four ports**: `ICircleRepository`, `IAccountDirectory` (the one crossing to Identity, by value), `IInvitationMailer` (*enqueue and return, never send inline* — the contract NFR-005 depends on) and `IInvitationRateLimiter`. No ASP.NET, no EF. |
+| `AppSuite.Circles.Repository` | EF Core adapter with its **own `DbContext` and its own Postgres schema `circles`** inside `maindb`. Implements `ICircleRepository` **and `IInvitationRateLimiter`** — FR-017's counters are `circles` tables (`invitation_attempts`, rolling windows over two indexes), so an adapter in the host would have meant the host writing into another context's tables. No foreign key to the Identity tables — a membership holds a `UserId` **value** ([ADR-0019](../adr/0019-member-user-linking.md)). Concurrency is `xmin` on the circle row, marked modified on every save so the token covers changes to *child* rows too. |
 | `AppSuite.<App>.Contracts` | API DTOs for the app-type (bounded-context boundary). |
 | `AppSuite.<App>.Service.Core` | Domain + application layer; defines repository **ports**. |
 | `AppSuite.<App>.Service.Repository` | EF Core + Postgres adapter. |
@@ -171,6 +171,29 @@ It is **not an app-type**: it has no head, no `WebApp` and no `LocalStore`. The 
 the same division of labour M1 used for Identity. Circles is **online-only** until sync (M3) decides
 whether a set of people that several devices edit belongs under last-write-wins at all
 ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md)).
+
+**What the host contributes**, since none of it may live in the context itself:
+
+| In `AppSuite.Main.Service` | Why it is here and not in `Circles.*` |
+|---|---|
+| `CircleEndpoints`, `InvitationEndpoints` | ASP.NET, which `Circles.Core` may not reference. |
+| `CircleRoleFilter` + `CircleRoleRequirement` | The requirement is endpoint **metadata**, not a filter argument, so `CircleEndpointGuardTests` can read it back off the endpoint data source and fail the build when a circle route is added without a guard. The caller's membership is loaded **per request** — no role ever enters a token, which is what makes a removal take effect on the next request (FR-020, NFR-006). |
+| `OutboxInvitationMailer` | Implements `IInvitationMailer` over `IOutbox`. Referencing `AppSuite.Infrastructure` from the domain would have pulled MailKit in for one call. |
+| `SoleOwnerCircleGuard` | Implements M1's `IAccountDeletionGuard`. Blocks on **every** circle the account owns — not only the ones nobody else could own — because deleting the owner's membership would otherwise leave a circle with no owner, a state the domain does not define. Each blocker names itself and carries the way out (`owner_must_transfer_ownership` / `owner_must_delete_circle`). |
+| `CircleMembershipCleanup` | Implements `IAccountDeletionCleanup`, the **second** deletion seam, added in `AppSuite.Main.Service.Core` by this milestone. Removes the departing account's memberships and the invitations it sent; **leaves managed members**, which are circle data that survives their creator (FR-019). |
+
+`AppSuite.ApiClient` gained `ApiError.Code` for this milestone: every circle refusal carries a stable
+code beside its English title, and the reader had been discarding it — so a DE/EN/FR client could only
+ever have said "there was a conflict" ([ADR-0011](../adr/0011-localization-format-and-culture.md)).
+`CircleErrorCodeCoverageTests` keeps the code table and the translated sentences in step in both
+directions.
+
+The client half is **four** pages in `AppSuite.Main.Ui/Pages/Circles/`: `MyCircles` (list + create),
+`CircleDetail` (people, invitations, managed members, roles, transfer, leave, delete), `JoinRequests`
+(`/invitations`) and `InvitationLanding` (`/invitation/{token}`). Everything from invite through delete
+is one change to one aggregate and one people list, so splitting it across routes would only mean
+reloading the circle to answer "who is in it" on each one. The two invitation pages stay separate
+because they are two different ways in: one carries a token from a mail, the other carries none.
 
 ## 5.4 Dependency rule
 

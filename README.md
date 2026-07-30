@@ -41,7 +41,7 @@ default). **Code & documentation:** English only.
 
 ## Status
 
-🟢 **Two slices built; M2 next.** See the [roadmap](docs/roadmap/roadmap.md) and
+🟢 **Three slices built; M3 next.** See the [roadmap](docs/roadmap/roadmap.md) and
 [backlog](docs/roadmap/backlog.md).
 
 - **Secret-Santa MVP — shipped** ([FEAT-001](docs/features/FEAT-001-secret-santa-mvp.md)). Create a
@@ -50,14 +50,22 @@ default). **Code & documentation:** English only.
 - **M1 — Identity in the Main shell — built and closed**
   ([FEAT-002](docs/features/FEAT-002-m1-identity.md)). Sign-up with email verification, password and
   passkey sign-in, refresh rotation with reuse detection, password reset, profile and language,
-  email change, data export, account deletion. 281 tests green.
-- **Not yet shippable.** M1 runs locally against real Postgres and a real SMTP sink, but production
-  needs two decisions that have not been made: a **transactional-email provider** and the
+  email change, data export, account deletion.
+- **M2 — Circles — built and closed** ([FEAT-003](docs/features/FEAT-003-m2-circles.md)). A circle is
+  the standing set of people apps reuse: create one with a label you choose, invite by email without
+  the form revealing whether an address already has an account, accept or decline from the mail link
+  or in the app, keep managed members for people who will never sign up, administer roles and
+  ownership, leave, delete. Online-only for now — offline circles are M3's decision, not a patch.
+  **537 tests green across 12 projects.**
+- **Not yet shippable.** Both slices run locally against real Postgres and a real SMTP sink, but
+  production needs two decisions that have not been made: a **transactional-email provider** and the
   **hosting / suite domain** (which fixes the passkey RP-ID, the CSP origin, and the data-residency
-  target). The brand and domain are still deliberately open — see
+  target). M2 makes the first one urgent rather than merely pending: an invitation that does not
+  arrive is a person who never joins. The brand and domain are still deliberately open — see
   [naming](docs/process/naming.md).
-- **Next:** **M2 — Circles**, the shared set of people reused across apps and years, starting with
-  the `UC-MAIN-008+` use cases.
+- **Next:** **M3 — Sync**, App↔backend reconciliation and the anonymous→account claim. It has to
+  decide whether a circle syncs at all: a standing set of people that several devices edit is a poor
+  fit for last-write-wins over a whole aggregate.
 
 ## Quickstart
 

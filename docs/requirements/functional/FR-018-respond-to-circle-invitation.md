@@ -2,7 +2,7 @@
 id: FR-018
 title: Accept or decline a circle invitation
 type: functional
-status: Approved
+status: Implemented
 priority: Must
 source: UC-MAIN-010
 verification: test

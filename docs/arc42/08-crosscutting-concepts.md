@@ -176,6 +176,16 @@ awareness. See the [security & privacy guidelines](../guidelines/security-privac
 an account — the UI always says *"invitation sent"* and the branch resolves on the recipient's side.
 Invitations expire, can be revoked, and are rate-limited per inviter.
 
+**Identical wording is not enough; the timing has to match too.** Every surface that accepts an email
+address answers the same way on both branches, and the branch with less work to do would otherwise
+answer measurably sooner. Four of them — `/forgot-password`, `/resend-verification`, `/change-email`
+and the circle invite form — carry `RequireConstantTime`, an endpoint filter that holds a response
+until a fixed floor has elapsed; the mechanism and when to reach for it are recorded in
+[NFR-005](../requirements/non-functional/NFR-005-account-enumeration-resistance.md). This is a
+crosscutting concern rather than a per-endpoint concern for a reason found the hard way in M2: the
+leak reappears whenever a *new* address-accepting endpoint is added, and it is invisible to every
+functional test. Paired tests compare body, status **and** timing distribution per surface.
+
 ## 8.9 Error handling
 
 Domain exceptions vs. `Result` for expected failures; no control-flow-by-exception; API errors as
@@ -206,6 +216,28 @@ into a token: with 15-minute access tokens, a role claim would give a removed me
 hour inside a family's data, and removal is precisely the case where it is urgent. *Not a member* and
 *no such circle* are the same response, so a circle identifier learned elsewhere cannot be confirmed.
 
+**How that is enforced, and how it stays enforced.** One endpoint filter (`CircleRoleFilter`) carries
+it for every route that names a circle, and the required role is attached as endpoint **metadata**
+rather than passed to the filter — which is what lets a fitness function walk the endpoint data source
+and fail the build when a circle route is mapped without a guard. The three in-app invitation routes
+are the only exemptions, on a named list, because they exist to serve somebody who is *not in the
+circle yet* and the filter would answer them `404`; what admits them is the same verified-address check
+the mailed-link path makes. The filter does not replace the checks inside the aggregate — those are the
+enforcement, driven exhaustively at unit level — it adds a property that can be verified
+*structurally* rather than case by case. M2's reconciliation is the argument for the fitness function:
+the metadata had been built to be read back, nothing read it, and the design comment saying so read as
+if the check existed.
+
+**Account deletion crosses this context in two seams**, and the ordering matters more than the
+transaction. `IAccountDeletionGuard` answers *may this account be deleted* — `SoleOwnerCircleGuard`
+refuses while the account owns any circle and names each one with its way out. `IAccountDeletionCleanup`
+then removes the departing account's memberships and the invitations it sent, leaving
+[managed members](../glossary/managed-member.md) in place. The two contexts have separate `DbContext`s
+over one database, so this is **not** one transaction: the order is guards → sessions → cleanups →
+the account row, chosen so that the state surviving a partial failure is the recoverable one. The
+reverse order would leave rows pointing at a deleted account in **other people's** circles, permanently
+and with no way to retry.
+
 **Invitation mechanics** are fixed by [FEAT-003](../features/FEAT-003-m2-circles.md): a single-use
 secret stored only as a hash, 14 days to live, a resend that replaces the live link rather than adding
 one, and three limits keyed on the *inviter*, the *recipient address* and the *circle* — the middle
@@ -215,3 +247,11 @@ not usable. Declining is possible without an account, and a declined address is 
 for a short cooldown during which a re-invite silently sends nothing — because a cooldown the inviter
 could observe would reveal the decline, and a decline nobody could make anonymously would reveal that
 the address has an account.
+
+**Every cap and lifetime is configuration with a documented default**, bound from `Circles:Limits`
+and never a constant in the domain: they are abuse limits and every number is a guess until real use
+says otherwise, so moving one must not need a migration or a release of the domain. The rolling
+windows are counted from rows (`invitation_attempts`, an inviter, an address *hash* and an instant)
+rather than from fixed-window counters, which is also the only shape that can answer FR-017's *"say
+when they may continue"* — relayed to the client as a `Retry-After` header. Those rows are swept once
+no limit counts them ([NFR-004](../requirements/non-functional/NFR-004-data-protection-and-retention.md)).

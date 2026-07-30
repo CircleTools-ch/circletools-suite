@@ -159,9 +159,14 @@
   <data name="CircleConfirmNo" xml:space="preserve"><value>Abbrechen</value></data>
   <data name="CircleLeave" xml:space="preserve"><value>Kreis verlassen</value></data>
   <data name="CircleLeaveConfirm" xml:space="preserve"><value>Diesen Kreis verlassen? Für eine Rückkehr brauchst du eine neue Einladung.</value></data>
+  <data name="CircleLeaveKeeps" xml:space="preserve"><value>Dein Konto bleibt bestehen, und deine eigenen Secret-Santa-Gruppen, deren Mitglieder und bereits erfolgte Auslosungen bleiben unberührt.</value></data>
   <data name="CircleLeft" xml:space="preserve"><value>Du hast den Kreis verlassen.</value></data>
   <data name="CircleDeleteTitle" xml:space="preserve"><value>Diesen Kreis löschen</value></data>
-  <data name="CircleDeleteLead" xml:space="preserve"><value>Das entfernt den Kreis für alle Beteiligten, samt allen Personen ohne Konto und allen offenen Einladungen. Es lässt sich nicht rückgängig machen.</value></data>
+  <data name="CircleDeleteLead" xml:space="preserve"><value>Alle offenen Einladungen werden ebenfalls zurückgezogen, und nichts davon lässt sich rückgängig machen.</value></data>
+  <data name="CircleDeleteNames" xml:space="preserve"><value>Damit löschst du den Kreis {0}.</value></data>
+  <data name="CircleDeleteLosesAccess" xml:space="preserve"><value>{0} Personen verlieren damit den Zugriff darauf.</value></data>
+  <data name="CircleDeleteManagedNamed" xml:space="preserve"><value>Diese Personen ohne Konto werden mitgelöscht:</value></data>
+  <data name="CircleDeleteKeeps" xml:space="preserve"><value>Deine Secret-Santa-Gruppen, deren Auslosungen und bereits geteilte Links bleiben unberührt.</value></data>
   <data name="CircleDeleteConfirmPrompt" xml:space="preserve"><value>Tippe den Namen des Kreises zur Bestätigung.</value></data>
   <data name="CircleDeleteSubmit" xml:space="preserve"><value>Kreis löschen</value></data>
   <data name="CircleDeleted" xml:space="preserve"><value>Der Kreis ist gelöscht.</value></data>

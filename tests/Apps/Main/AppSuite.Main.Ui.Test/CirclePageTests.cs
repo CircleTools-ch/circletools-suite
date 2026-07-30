@@ -386,6 +386,154 @@ public sealed class CirclePageTests
         Assert.Contains("InvitationFrom", page.Markup, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// FR-021 asks the leave confirmation to say what leaving does <em>not</em> take: the account
+    /// stays, and the user's own Secret-Santa groups, members and completed draws are untouched.
+    /// </summary>
+    [Fact]
+    public void LeaveConfirmation_SaysWhatLeavingDoesNotTake()
+    {
+        using var context = DetailContext(
+            out var circleId,
+            "Member",
+            Person("Anna", "Owner"),
+            Person("Bea", "Member", isYou: true));
+
+        var page = RenderDetail(context, circleId);
+        page.FindAll("button").First(b => b.TextContent.Contains("CircleLeave", StringComparison.Ordinal)).Click();
+
+        var confirmation = page.Find("div.alert-warning").TextContent;
+
+        Assert.Contains("CircleLeaveConfirm", confirmation, StringComparison.Ordinal);
+        Assert.Contains("CircleLeaveKeeps", confirmation, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// FR-022's confirmation is specific, not merely stern: the circle by name, how many people lose
+    /// access, and every managed member by name — they are the only data here that nobody else can
+    /// recreate.
+    /// </summary>
+    [Fact]
+    public void DeleteConfirmation_NamesTheCircle_CountsWhoLosesAccess_AndNamesEveryManagedMember()
+    {
+        using var context = DetailContext(
+            out var circleId,
+            "Owner",
+            Person("Anna", "Owner", isYou: true),
+            Person("Bea", "Member"),
+            Person("Grosi", isManaged: true),
+            Person("Grosspapa", isManaged: true));
+
+        var page = RenderDetail(context, circleId);
+        var danger = page.Find("section.appsuite-danger");
+
+        // The two managed members are named individually — the assertion that fails if the list is
+        // ever replaced by a count, or moved inside the format string where a translation could drop
+        // it.
+        Assert.Contains("Grosi", danger.TextContent, StringComparison.Ordinal);
+        Assert.Contains("Grosspapa", danger.TextContent, StringComparison.Ordinal);
+
+        // The four sentences FR-022 requires. Two of them carry the circle's name and the count of
+        // people losing access as placeholders, which the pass-through localizer drops — that the
+        // placeholders survive translation is asserted in LocalizationParityTests, and the prose
+        // itself in the browser walkthrough.
+        Assert.Contains("CircleDeleteNames", danger.TextContent, StringComparison.Ordinal);
+        Assert.Contains("CircleDeleteLosesAccess", danger.TextContent, StringComparison.Ordinal);
+        Assert.Contains("CircleDeleteManagedNamed", danger.TextContent, StringComparison.Ordinal);
+        Assert.Contains("CircleDeleteKeeps", danger.TextContent, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A circle with nobody to lose but its owner has no managed members to name, and the sentence
+    /// naming them is left out rather than rendered empty.
+    /// </summary>
+    [Fact]
+    public void DeleteConfirmation_WithNoManagedMembers_LeavesThatSentenceOut()
+    {
+        using var context = DetailContext(out var circleId, "Owner", Person("Anna", "Owner", isYou: true));
+
+        var danger = RenderDetail(context, circleId).Find("section.appsuite-danger").TextContent;
+
+        Assert.DoesNotContain("CircleDeleteManagedNamed", danger, StringComparison.Ordinal);
+        Assert.Contains("CircleDeleteNames", danger, StringComparison.Ordinal);
+    }
+
+    // ---- the invitation link lands here (FR-018) ----
+
+    /// <summary>
+    /// Expired, revoked, already used and never existed are one answer, deliberately. The API gives
+    /// the landing page no way to tell them apart, which is what stops a forwarded link from becoming
+    /// a probe — and it means the page must say "no longer valid" plainly rather than guess why.
+    /// </summary>
+    [Fact]
+    public void InvitationLanding_WhenTheInvitationIsNoLongerValid_SaysSoPlainly_WithoutSayingWhy()
+    {
+        using var context = new AccountTestContext();
+        context.Api.Respond(HttpMethod.Get, $"api/v1/invitations/{Token}", HttpStatusCode.NotFound);
+
+        var page = RenderLanding(context);
+
+        Assert.Contains("InvitationInvalid", page.Markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("InvitationAccept", page.Markup, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The NFR-005 property of this page: it offers signing in <strong>and</strong> signing up, and
+    /// never says which one applies. Saying so would turn the invitation into an
+    /// account-existence oracle — the leak ADR-0018 paid real UX to avoid.
+    /// </summary>
+    [Fact]
+    public void InvitationLanding_ToSomeoneNotSignedIn_OffersBothWaysIn_WithoutSayingWhichApplies()
+    {
+        using var context = new AccountTestContext();
+        context.Api.RespondJson(
+            HttpMethod.Get,
+            $"api/v1/invitations/{Token}",
+            new InvitationPreviewResponse("Müller", "Familie", "Anna"));
+
+        var page = RenderLanding(context);
+
+        Assert.Contains("InvitationLandingSignIn", page.Markup, StringComparison.Ordinal);
+        Assert.Contains("InvitationLandingRegister", page.Markup, StringComparison.Ordinal);
+
+        // Declining needs no account either, on purpose: requiring one would make a decline prove the
+        // address has one (FR-018).
+        Assert.Contains("InvitationDecline", page.Markup, StringComparison.Ordinal);
+
+        // What the holder is shown is the circle, its label and who invited them — and nobody else in
+        // it (FR-018's pre-accept visibility). The name and the inviter reach the lead sentence
+        // through placeholders the pass-through localizer drops; the label is rendered as the user
+        // data it is, so it appears verbatim here.
+        Assert.Contains("InvitationLandingLead", page.Markup, StringComparison.Ordinal);
+        Assert.Contains("Familie", page.Markup, StringComparison.Ordinal);
+    }
+
+    /// <summary>Declining from the link needs no account, and says so once it is done.</summary>
+    [Fact]
+    public void InvitationLanding_Declining_NeedsNoAccount_AndConfirmsPlainly()
+    {
+        using var context = new AccountTestContext();
+        context.Api.RespondJson(
+            HttpMethod.Get,
+            $"api/v1/invitations/{Token}",
+            new InvitationPreviewResponse("Müller", "Familie", "Anna"));
+        context.Api.Respond(HttpMethod.Post, $"api/v1/invitations/{Token}/decline", HttpStatusCode.NoContent);
+
+        var page = RenderLanding(context);
+        page.FindAll("button").First(b => b.TextContent.Contains("InvitationDecline", StringComparison.Ordinal)).Click();
+
+        Assert.Contains("InvitationDeclined", page.Markup, StringComparison.Ordinal);
+        Assert.Contains($"POST api/v1/invitations/{Token}/decline", context.Api.Calls, StringComparer.Ordinal);
+    }
+
+    private const string Token = "s3cr3t-from-the-mail";
+
+    private static IRenderedComponent<InvitationLanding> RenderLanding(AccountTestContext context) =>
+        context.RenderComponent<Microsoft.AspNetCore.Components.Authorization.CascadingAuthenticationState>(
+                parameters => parameters.AddChildContent<InvitationLanding>(
+                    child => child.Add(p => p.Token, Token)))
+            .FindComponent<InvitationLanding>();
+
     private static string RowFor(IReadOnlyList<AngleSharp.Dom.IElement> rows, string displayName) =>
         rows.First(r => r.TextContent.Contains(displayName, StringComparison.Ordinal)).InnerHtml;
 }

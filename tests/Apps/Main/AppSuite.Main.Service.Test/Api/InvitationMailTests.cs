@@ -53,21 +53,37 @@ public sealed class InvitationMailTests(MailApiFactory factory)
     /// Whatever the address turns out to be, the inviter is told exactly one thing. This is the
     /// oracle ADR-0018 closed, and the endpoint is where it would reopen (NFR-005).
     /// </summary>
+    /// <remarks>
+    /// The same three arms <c>InvitationTimingTests</c> compares, compared here on <strong>status and
+    /// body</strong> instead. The two halves are deliberately separate tests: timing needs many
+    /// interleaved samples and a statistic, parity needs one call each and an exact comparison, and a
+    /// single test doing both would have to be lenient about one of them. The fourth fact the endpoint
+    /// withholds — that the address declined recently — is asserted where the decision is made, in
+    /// <c>Circles.Core.Test.CircleTests.ReInviteInsideTheCooldown_LooksIdenticalAndSendsNothing</c>,
+    /// because reaching it here would mean declining through a mail link first.
+    /// </remarks>
     [Fact]
-    public async Task Invite_AnswersTheSameForAnAddressWithAnAccountAndOneWithout()
+    public async Task Invite_AnswersIdentically_WhetherTheAddressHasAnAccountIsUnknownOrIsAlreadyInTheCircle()
     {
         var anna = await CircleTestAccounts.SignUpAsync(factory, "Anna");
         var bea = await CircleTestAccounts.SignUpAsync(factory, "Bea");
+        var cara = await CircleTestAccounts.SignUpAsync(factory, "Cara");
         var circle = await CircleFixture.CreateAsync(anna, "Müller", "Familie");
 
-        var withAnAccount = await Invite(anna, circle.Id, bea.Email);
-        var withNone = await Invite(anna, circle.Id, $"nobody-{Guid.CreateVersion7():N}@example.test");
+        await CircleFixture.AddMemberAsync(factory, anna, cara, circle.Id);
 
-        Assert.Equal(HttpStatusCode.Accepted, withAnAccount.StatusCode);
+        var withNone = await Invite(anna, circle.Id, $"nobody-{Guid.CreateVersion7():N}@example.test");
+        var withAnAccount = await Invite(anna, circle.Id, bea.Email);
+        var alreadyAMember = await Invite(anna, circle.Id, cara.Email);
+
         Assert.Equal(HttpStatusCode.Accepted, withNone.StatusCode);
-        Assert.Equal(
-            await withNone.Content.ReadAsStringAsync(),
-            await withAnAccount.Content.ReadAsStringAsync());
+        Assert.Equal(HttpStatusCode.Accepted, withAnAccount.StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, alreadyAMember.StatusCode);
+
+        var expected = await withNone.Content.ReadAsStringAsync();
+
+        Assert.Equal(expected, await withAnAccount.Content.ReadAsStringAsync());
+        Assert.Equal(expected, await alreadyAMember.Content.ReadAsStringAsync());
     }
 
     private static async Task<HttpResponseMessage> Invite(CircleTestAccount inviter, Guid circleId, string email) =>

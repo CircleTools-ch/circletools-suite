@@ -1,7 +1,7 @@
 ---
 id: TP-003
 feature: FEAT-003
-status: In progress
+status: Reviewed
 related: [UC-MAIN-008, UC-MAIN-009, UC-MAIN-010, UC-MAIN-011, UC-MAIN-012, UC-MAIN-013, UC-MAIN-014, FR-015, FR-016, FR-017, FR-018, FR-019, FR-020, FR-021, FR-022, NFR-003, NFR-004, NFR-005, NFR-006]
 ---
 
@@ -64,74 +64,80 @@ notifications of any kind (not built).
 
 ## Test matrix
 
-Test class names below are **plan-time names**. M1 closed with ~17 rows naming classes that were never
-written under those names; this plan is to be reconciled against the code at close, and the exit
-criteria say so.
+**Reconciled against the code on 2026-07-30.** Every class and method named below exists; the
+plan-time names that drifted are noted in the rows where the difference is worth knowing, and the two
+rows that needed something *built* rather than renamed are marked. What the reconciliation found, and
+what it cost, is in [the closing notes](#what-the-reconciliation-found-2026-07-30).
+
+Where a row sits at a different **level** than the plan asked for, that is stated rather than
+smoothed over: several properties the plan expected at integration level are enforced in the
+aggregate and are tested there, because that is where they are decided.
 
 | Requirement / AC | Test case | Level | Automated? |
 |------------------|-----------|-------|------------|
-| FR-016 create + owner membership | `CircleTests.Create_MakesTheCreatorTheSoleOwner`; `CircleEndpointsTests.Create_ReturnsTheCircleWithItsOwner` | Unit / Integration | ✅ |
-| FR-016 label defaults per language | `CircleTests.Create_EmptyLabel_FallsBackToTheLanguageDefault`; `CirclePageTests.Create_PrefillsTheLabelForTheCurrentLanguage` (DE/EN/FR) | Unit / Component | ✅ |
-| FR-016 the label is user data | `CircleEndpointsTests.Label_IsNotRetranslatedForAViewerInAnotherLanguage` | Integration | ✅ |
+| FR-016 create + owner membership | `CircleTests.Create_MakesTheCreatorTheSoleOwner`; `HandlerTests.CreateCircle_MakesTheCallerTheOwner_AndDefaultsTheLabelToTheirLanguage`; `CircleEndpointsTests.Create_ReturnsTheCircleWithItsOwner` + `.Create_ThenTheCircleIsInTheOwnersList` | Unit / Integration | ✅ |
+| FR-016 label defaults per language | `CircleTests.Create_EmptyLabel_FallsBackToTheLanguageDefault` (DE/EN/FR + no language, as a theory); `CirclePageTests.MyCircles_PrefillsTheLabelForTheCurrentLanguage` | Unit / Component | ✅ |
+| FR-016 the label is user data | `CircleEndpointsTests.Label_IsNotRetranslatedForAViewerInAnotherLanguage`; `CircleTests.Create_KeepsTheLabelItWasGiven` + `.Update_WithABlankLabel_KeepsTheStoredOne`; `CirclePageTests.MyCircles_ShowsTheStoredLabel_NotOneLookedUpForTheViewer`; `MailTemplateRendererTests.Invitation_DoesNotRetranslateTheCirclesLabel` — the rule holds in the API, the aggregate, the page **and** the mail | Integration / Unit / Component | ✅ |
 | FR-016 name required | `CircleTests.Create_BlankName_IsRefused` | Unit | ✅ |
 | FR-016 verified address required | `CircleEndpointsTests.Create_UnverifiedAccount_IsRefusedWithAResendOffer` | Integration | ✅ |
 | FR-016 atomicity | `CircleRepositoryTests.FailedCreate_LeavesNeitherCircleNorMembership` | Repository | ✅ |
-| FR-016 / FR-019 the mapping is faithful | `CircleRepositoryTests.Circle_SurvivesARoundTripWholeWithEveryPersonInvitationAndDecline` — the aggregate reloaded from Postgres in a second context, managed member and all | Repository | ✅ |
-| FR-016 caps | `CircleTests.Create_BeyondTheOwnedCircleCap_IsRefused`; `RateLimitTests.CircleCreation_IsLimitedPerUserPerDay` | Unit / Integration | ✅ |
-| **FR-017 identical response** | `InvitationTimingTests.Invite_NoAccount_WithAccount_AndAlreadyAMember_AreIndistinguishable` — three arms, interleaved, compared on the fastest sample each managed. *Renamed from the plan's `InvitationEnumerationTests`, and it does less than the plan implied:* it covers **timing** only. Body and status parity across the three arms is still owed — see gap 6 | Security | ⚠️ **partial** |
+| FR-016 / FR-019 the mapping is faithful | `CircleRepositoryTests.Circle_SurvivesARoundTripWholeWithEveryPersonInvitationAndDecline` — the aggregate reloaded from Postgres in a second context, managed member and all; `.Queries_FindCirclesByMembership_Ownership_InvitationHandleAndInvitedAddress` | Repository | ✅ |
+| FR-016 caps | `CircleTests.Create_BeyondTheOwnedCircleCap_IsRefused`; `HandlerTests.CreateCircle_BeyondTheDailyRate_IsRefused` — *the plan put the daily rate at integration level* (`RateLimitTests`); it is a handler decision over the repository's own count, and it is driven there. The integration factory raises both creation limits so `CircleRoleMatrixTests` can build a circle per row, which is why they cannot also be asserted through the API | Unit | ✅ |
+| **FR-017 identical response** | `InvitationTimingTests.Invite_NoAccount_WithAccount_AndAlreadyAMember_AreIndistinguishable` (timing, three interleaved arms, compared on the fastest sample each managed) **and** `InvitationMailTests.Invite_AnswersIdentically_WhetherTheAddressHasAnAccountIsUnknownOrIsAlreadyInTheCircle` (status and body, same three arms). *Renamed from the plan's `InvitationEnumerationTests`, and deliberately two tests:* timing needs many samples and a statistic, parity needs one call each and an exact comparison — one test doing both would have to be lenient about one of them | Security | ✅ |
 | FR-017 resend rather than duplicate | `CircleTests.Invite_SameAddressTwice_ResendsTheExistingInvitation` + `.Resend_IssuesAFreshSecretAndKillsThePreviousLink` | Unit | ✅ |
-| FR-017 revoke | `InvitationEndpointsTests.Revoked_CannotBeAccepted_AndSaysSoPlainly` | Integration | ✅ |
+| FR-017 revoke | `CircleTests.Revoke_DeletesTheInvitation_SoItsLinkStopsWorkingAndTheAddressIsFreeAgain`, `.Revoke_AnInvitationThatIsAlreadyGone_IsRefusedRatherThanSilentlyAccepted`, `.Revoke_ByAMember_IsRefused`; the route's own authorization in `CircleRoleMatrixTests` (`DELETE …/invitations/{iid}`). *Written at close:* the plan named an `InvitationEndpointsTests` that was never built, and revoke had no functional test at all — only its route filter | Unit / Authorization | ✅ |
 | FR-017 expiry (14 days) | `CircleTests.Invitation_PastItsExpiry_LeavesThePendingListAndFreesTheAddress` (virtual clock) | Unit | ✅ |
 | FR-017 role-only-member | `CircleTests.Invitation_NeverGrantsMoreThanMember` | Unit | ✅ |
-| FR-017 rate limits | `InvitationRateLimiterTests` (Repository, real Postgres) — per inviter (20/h, 60/d), **per recipient address (3/24 h whatever the sender)**, the rolling window, that a refused attempt is not counted, and that the refusal says *when* they may continue; `InvitationRateLimitTests` (Integration) for the per-circle 50-pending cap and the endpoint's answer | Repository / Integration | ✅ |
-| FR-017 delivery failure is not reported | `InvitationEndpointsTests.UndeliverableMail_LeavesTheInvitationPendingAndTellsTheInviterNothing` | Integration | ✅ |
-| FR-017 mail language | `InvitationMailTests.Mail_UsesTheRecipientsAccountLanguage_OtherwiseTheInvitersUsingMailpit` | Integration | ✅ |
-| FR-017 dispatch is queued | `InvitationEndpointsTests.Invite_QueuesTheMailRatherThanAwaitingIt` (the structural half of the timing property) | Integration | ✅ |
-| FR-018 no-account path | `InvitationEndpointsTests.SignUpPath_CreatesTheMembershipOnceTheAddressIsVerified`; `InvitationPageTests.SignUp_PrefillsAndLocksTheInvitedAddress` | Integration / Component | ✅ |
-| FR-018 account path | `InvitationEndpointsTests.JoinRequest_IsListedForTheMatchingVerifiedAddress_AndAcceptsWithoutAnyMailToken` | Integration | ✅ |
-| **FR-018 the forwarded link** | `InvitationEndpointsTests.Accept_BySomeoneElsesVerifiedAddress_CreatesNothingAndRevealsNothing` — the single most important test in this plan | Integration | ✅ |
-| FR-018 decline without an account | `InvitationEndpointsTests.Decline_WorksAnonymously_AndConsumesTheInvitation` | Integration | ✅ |
-| FR-018 decline cooldown is silent | `CircleTests.ReInviteInsideTheCooldown_LooksIdenticalAndSendsNothing` + `InvitationMailTests.NoMailIsDeliveredInsideTheCooldown` | Unit / Integration | ✅ |
-| FR-018 already a member | `InvitationEndpointsTests.Accept_WhenAlreadyAMember_SaysSo_AndCreatesNoSecondMembership` | Integration | ✅ |
-| FR-018 invalid / used / deleted circle | `InvitationPageTests.ExpiredRevokedUsedAndDeletedCircle_EachGetTheirOwnPlainMessage` | Component | ✅ |
-| FR-018 abandoned sign-up resumes | `InvitationEndpointsTests.AbandonedSignUp_LeavesTheInvitationPending` | Integration | ✅ |
-| FR-018 pre-accept visibility | `InvitationEndpointsTests.Preview_ShowsOnlyCircleNameLabelAndInviterDisplayName` | Integration | ✅ |
-| FR-019 add / edit / mark | `ManagedMemberTests` (added in the member role, marked managed, no address stored or returned, name and language editable, duplicate names allowed) | Unit / Integration | ✅ |
-| FR-019 never elevated | `CircleTests.ManagedMember_CannotBeGivenAdminOrOwner` | Unit | ✅ |
+| FR-017 rate limits | `InvitationRateLimiterTests` (Repository, real Postgres) — per inviter (`AnInviter_IsStoppedAfterTwentyInvitationsInAnHour_AndToldWhenTheyMayContinue`, `.AnInviter_IsStoppedAfterSixtyInvitationsInADay`), **per recipient address** (`.AnAddress_ReceivesNoMoreThanThreeInvitationsADay_WhoeverSendsThem`), the rolling window (`.TheHourlyWindow_Rolls_RatherThanResettingOnTheHour`), that a refused attempt is not counted, and that one inviter's usage does not count against another; the handler's side in `HandlerTests.Invite_WhenTheLimiterRefuses_IsRefusedAndSendsNothing` + `.Invite_ChargesTheRateLimiterEvenWhenItSendsNothing`; the per-circle 50-pending cap in `CircleTests.PendingInvitations_AreCappedPerCircle`. *The plan's `InvitationRateLimitTests` (integration) does not exist:* the endpoint's relay of `Retry-After` is asserted by the limiter and the handler, and the integration factory has to raise these limits to test anything else | Repository / Unit | ✅ |
+| FR-017 delivery failure is not reported | Structural, and asserted as such: `OutboxInvitationMailerTests.QueueAsync_EnqueuesOneInvitationMessage` + `.WhatIsQueued_IsWhatTheTemplateCanRender` — the port enqueues and returns, so the endpoint has already answered before any delivery is attempted and has nothing to report. `MailDeliveryTests.Dispatcher_MarksMessagesProcessed_SoTheyAreNotSentTwice` covers the dispatch side. A **real SMTP failure** is not exercised — see gap 3 | Unit / Integration | ⚠️ partial |
+| FR-017 mail language | `InvitationMailTests.Mail_UsesTheRecipientsAccountLanguage_OtherwiseTheInvitersUsingMailpit` (delivered messages); `HandlerTests.Invite_QueuesOneMailInTheRecipientsLanguage_WhenTheAddressHasAnAccount` + `.Invite_UsesTheInvitersLanguage_WhenTheAddressHasNoAccount` | Integration / Unit | ✅ |
+| FR-017 dispatch is queued | `OutboxInvitationMailerTests.QueueAsync_EnqueuesOneInvitationMessage` + `.QueueAsync_CarriesTheChosenLanguage_AndLeavesNullToTheRenderer` + `.QueueAsync_RecordsWhetherTheRecipientHasAnAccount` — the structural half of the timing property, at the port rather than the endpoint | Unit | ✅ |
+| FR-018 no-account path | `HandlerTests.AcceptInvitation_FromTheLink_JoinsTheCircleAsAMember`; `CirclePageTests.InvitationLanding_ToSomeoneNotSignedIn_OffersBothWaysIn_WithoutSayingWhichApplies` — the landing page offers signing in **and** signing up and never says which applies (NFR-005). The register-then-verify-then-accept journey end to end is M1's flow plus this accept, and is walked in the browser rather than automated — see gap 7 | Unit / Component | ⚠️ partial |
+| FR-018 account path | `HandlerTests.JoinRequests_ListOnlyTheInvitationsForTheCallersVerifiedAddress`; `CircleFixture.AddMemberAsync` drives the whole in-app path (invite → list → accept, no mail token) in **every** integration test that puts somebody in a circle; `CirclePageTests.JoinRequests_NamesTheCircleAndWhoInvitedYou` + `.JoinRequests_WithNothingWaiting_SaysSo` | Unit / Integration / Component | ✅ |
+| **FR-018 the forwarded link** | `HandlerTests.AcceptInvitation_BySomeoneElsesVerifiedAddress_CreatesNothingAndRevealsNothing` and `CircleTests.Accept_BySomeoneElsesVerifiedAddress_CreatesNothing` — the single most important assertion in this plan, made where the single accept path checks it. *Level differs from the plan:* it is one comparison inside the aggregate, and the integration suite reaches the same code through `CircleRoleMatrixTests`' invitation rows | Unit | ✅ |
+| FR-018 decline without an account | `HandlerTests.DeclineInvitation_NeedsNoAccount_AndConsumesTheInvitation`; `.DeclineJoinRequest_ByAnotherAccount_IsRefused`; `CirclePageTests.InvitationLanding_Declining_NeedsNoAccount_AndConfirmsPlainly` | Unit / Component | ✅ |
+| FR-018 decline cooldown is silent | `CircleTests.ReInviteInsideTheCooldown_LooksIdenticalAndSendsNothing` + `.ReInviteAfterTheCooldown_IsSentAgain` (virtual clock). *The plan's integration half (`NoMailIsDeliveredInsideTheCooldown`) does not exist:* asserting that **no** mail arrives means waiting for a timeout, and the decision is the aggregate's | Unit | ✅ |
+| FR-018 already a member | `CircleTests.Accept_WhenAlreadyAMember_CreatesNoSecondMembership`; `.Invite_AnAddressAlreadyInTheCircle_SendsNothingAndSaysNothing`; `HandlerTests.Invite_ToSomeoneAlreadyInTheCircle_AnswersTheSameAndQueuesNothing` | Unit | ✅ |
+| FR-018 invalid / used / expired link | `CirclePageTests.InvitationLanding_WhenTheInvitationIsNoLongerValid_SaysSoPlainly_WithoutSayingWhy`; `CircleTests.Accept_AfterExpiry_IsRefusedAndTheInvitationIsGone`. **The plan asked for the wrong thing here** and the build is right: it wanted "each gets their own plain message", but the API answers expired, revoked, consumed and never-existed with one `invitation_not_found`, so the page says *no longer valid* without guessing why. Four distinguishable messages would tell whoever holds a forwarded link which of the four it was | Component / Unit | ✅ |
+| FR-018 abandoned sign-up resumes | `CircleTests.AnInvitationNobodyAnswered_StaysPendingAndItsLinkKeepsWorking` — nothing but accepting or declining consumes an invitation, so an unfinished sign-up leaves it waiting. *Written at close* | Unit | ✅ |
+| FR-018 pre-accept visibility | `HandlerTests.InvitationPreview_ShowsOnlyTheCircleNameLabelAndInviter`; `CirclePageTests.InvitationLanding_ToSomeoneNotSignedIn_OffersBothWaysIn_WithoutSayingWhichApplies` asserts the page shows nothing more | Unit / Component | ✅ |
+| FR-019 add / edit / mark | `CircleTests.ManagedMember_IsAddedInTheMemberRole_WithNoAddress` + `.ManagedMembers_MayShareADisplayName`; `PersistedModelReviewTests.AManagedMember_PersistsNothingBeyondANameAndALanguage`; `CirclePageTests.AManagedMember_IsMarkedAndIsNeverOfferedARole`. *The plan's `ManagedMemberTests` class does not exist* — these are rules about the aggregate and live with it | Unit / Repository / Component | ✅ |
+| FR-019 never elevated | `CircleTests.ManagedMember_CannotBeGivenAdminOrOwner`; `.Transfer_ToAManagedMember_IsRefused` | Unit | ✅ |
 | FR-019 promotion links | `CircleTests.Promotion_LinksTheExistingMembership_AndCreatesNoDuplicate` + `.Promotion_LetsTheAccountsDisplayNameWin` | Unit | ✅ |
-| FR-019 survives its creator | `CircleRepositoryTests.PurgeAccount_RemovesTheMembershipAndTheirInvitations_ButKeepsTheirManagedMembers` (the persisted half); `AccountDeletionCleanupTests.DeletingAnAdmin_LeavesTheirManagedMembersInTheCircle` (through account deletion) | Repository / Integration | ✅ |
+| FR-019 survives its creator | `CircleRepositoryTests.PurgeAccount_RemovesTheMembershipAndTheirInvitations_ButKeepsTheirManagedMembers` (the persisted half); `CircleTests.PurgeAccount_RemovesTheirMembership_ButLeavesManagedMembersInPlace`; `HandlerTests.PurgeAccountFromCircles_RemovesTheirMemberships_AndLeavesManagedMembers`; `AccountDeletionCleanupTests.Deletion_LeavesTheManagedMembersTheAccountAdded` (through real account deletion) | Repository / Unit / Integration | ✅ |
 | FR-019 Secret-Santa copy unaffected | **not testable in M2** — nothing copies a circle into a group until M4. See the coverage notes. | — | n/a |
-| FR-020 role change is owner-only | `CircleRoleMatrixTests` rows for `PUT …/role`; `CircleTests.AdminChangingARole_IsRefused` | Authorization / Unit | ✅ |
-| FR-020 admin may not remove an admin | `CircleTests.Admin_CannotRemoveAnotherAdmin` | Unit | ✅ |
-| FR-020 removal deletes only the membership | `CircleEndpointsTests.Removal_LeavesTheAccountAndSecretSantaDataUntouched` | Integration | ✅ |
-| **FR-020 / NFR-006 effect is immediate** | `CircleAuthorizationTests.RemovedMember_IsRefusedOnTheNextRequest_WithTheSameAccessToken` and `.DemotedAdmin_IsAuthorizedUnderTheNewRoleWithoutSigningOut` | Authorization | ✅ |
-| FR-020 owner cannot self-remove or demote | `CircleTests.Owner_CannotBeRemovedOrDemoted_EvenByThemselves` | Unit | ✅ |
-| FR-020 transfer | `CircleTests.Transfer_MakesTheTargetOwnerAndThePreviousOwnerAdmin_Atomically` + `.Transfer_ToAManagedMember_IsRefused`; `CircleRepositoryTests.Transfer_WhenTheTargetLeftConcurrently_Fails_AndTheCircleKeepsItsOwner` + `.TwoConcurrentEdits_DoNotBothWin_EvenWhenOnlyChildrenChanged` — the second is the general case, and the one that fails if the concurrency token ever stops covering the whole aggregate | Unit / Repository | ✅ |
-| **NFR-006 no addresses** | `CircleContractsTests.NoCircleDto_CarriesAnEmailField` — an assembly scan, not a per-endpoint assertion | Architecture | ✅ |
-| **NFR-006 role matrix** | `CircleRoleMatrixTests` — every route × owner / admin / member / non-member / anonymous, permitted **and** refused outcomes | Authorization | ✅ |
-| **NFR-006 non-member ≡ unknown** | `CircleAuthorizationTests.NonMemberAndUnknownCircle_AnswerIdentically` | Authorization | ✅ |
-| **NFR-006 the next endpoint** | `CircleEndpointGuardTests.EveryCircleRoute_CarriesTheRoleFilter` — walks the endpoint data source, so an endpoint added later without a check fails the build rather than a review | Architecture | ✅ |
-| NFR-006 UI hiding is not the control | `CircleRoleMatrixTests` covers it by construction — every refused row is a direct API call | Authorization | ✅ |
-| FR-021 leave | `CircleEndpointsTests.Leave_DeletesTheMembership_AndTheCircleVanishesFromTheirList`; `.Leave_ThenRequestWithAStillValidToken_IsRefused` | Integration | ✅ |
-| FR-021 the confirmation says what survives | `CirclePageTests.LeaveConfirmation_StatesAccountGroupsMembersAndDrawsAreUntouched` | Component | ✅ |
-| FR-021 sole-owner branches | `CircleTests.Owner_WithOtherAccountBackedPeople_CannotLeave_AndIsOfferedTransfer` + `.Owner_WithOnlyManagedMembers_IsOfferedDeletion` | Unit | ✅ |
+| FR-020 role change is owner-only | `CircleRoleMatrixTests` rows for `PUT …/role` (owner permitted, admin and member refused, non-member `404`, anonymous `401`); `CircleTests.AdminChangingARole_IsRefused`; `.ChangeRole_ToOwner_IsRefusedInFavourOfTransfer`; `CirclePageTests.AnAdmin_CanInviteButCannotDeleteTheCircleOrChangeRoles` | Authorization / Unit / Component | ✅ |
+| FR-020 admin may not remove an admin | `CircleTests.Admin_CannotRemoveAnotherAdmin` + `.Admin_MayRemoveAMemberAndAManagedMember`; `CirclePageTests.AnAdmin_MayRemoveAMemberButNotAnotherAdmin` | Unit / Component | ✅ |
+| FR-020 removal deletes only the membership | `CircleAuthorizationTests.RemovedMember_IsRefusedOnTheNextRequest_WithTheSameAccessToken` — the removed account still works, still holds its session, and simply no longer has this circle; `CircleTests.Admin_MayRemoveAMemberAndAManagedMember`; `CirclePageTests.Removing_AsksFirst_AndNamesThePerson`. *The plan's `Removal_LeavesTheAccountAndSecretSantaDataUntouched` does not exist as one test:* the Secret-Santa half is untestable until M4 (gap 1), and the account half is the assertion above | Authorization / Unit / Component | ✅ |
+| **FR-020 / NFR-006 effect is immediate** | `CircleAuthorizationTests.RemovedMember_IsRefusedOnTheNextRequest_WithTheSameAccessToken` and `.DemotedAdmin_IsAuthorizedUnderTheNewRoleWithoutSigningOut` — both with the token issued *before* the change. *Written at close* | Authorization | ✅ |
+| FR-020 owner cannot self-remove or demote | `CircleTests.Owner_CannotBeRemovedOrDemoted_EvenByThemselves`; `CirclePageTests.TheOwner_IsNeverOfferedAWayToRemoveThemselvesOrBeRemoved` | Unit / Component | ✅ |
+| FR-020 transfer | `CircleTests.Transfer_MakesTheTargetOwnerAndThePreviousOwnerAdmin_Atomically`, `.Transfer_ToAManagedMember_IsRefused`, `.Transfer_ByAnAdmin_IsRefused`; `CircleRepositoryTests.Transfer_WhenTheTargetLeftConcurrently_Fails_AndTheCircleKeepsItsOwner` + `.TwoConcurrentEdits_DoNotBothWin_EvenWhenOnlyChildrenChanged` — the second is the general case, and the one that fails if the concurrency token ever stops covering the whole aggregate | Unit / Repository | ✅ |
+| **NFR-006 no addresses** | `CircleContractsTests.NoCircleDto_CarriesAnEmailField` — an assembly scan, not a per-endpoint assertion — plus `.EveryExemptedContractTypeStillExists`, which stops the two-name exemption list outliving its types | Architecture | ✅ |
+| **NFR-006 role matrix** | `CircleRoleMatrixTests` — all **14** circle-scoped routes × owner / admin / member / non-member / anonymous, permitted **and** refused outcomes, 71 rows. `.TheMatrix_CoversEveryCircleScopedRoute` ties the table to the endpoint data source so a new route cannot be missing from it. *Written at close:* the class did not exist; `CircleAuthorizationTests` held three spot checks | Authorization | ✅ |
+| **NFR-006 non-member ≡ unknown** | `CircleRoleMatrixTests.ANonMember_IsAnsweredExactlyAsForACircleThatDoesNotExist` — every route, status **and** body, against the same request aimed at a circle id that resolves to nothing; `CircleAuthorizationTests.NonMemberAndUnknownCircle_AnswerIdentically`; `HandlerTests.GetCircle_ForANonMember_AnswersExactlyAsAnUnknownCircleDoes`; `CircleTests.Update_ByANonMember_IsRefusedAsIfTheCircleWereUnknown`; `CirclePageTests.ACircleTheCallerIsNotIn_ReadsAsNoSuchCircle` | Authorization / Unit / Component | ✅ |
+| **NFR-006 the next endpoint** | `CircleEndpointGuardTests.EveryCircleRoute_CarriesTheRoleFilter` — walks the endpoint data source, so an endpoint added later without a check fails the build rather than a review; `.ACircleRouteWithoutARoleRequirement_StillRequiresAnAccount` (no route becomes public by omission); `.EveryRouteNamingACircleAnywhere_IsGuardedOrExempted` with a three-name exemption list for the in-app invitation routes, `.EveryExemptedRouteStillExists`, and `.TheScanActuallyFindsTheCircleRoutes` so none of them can pass vacuously. *Written at close:* the metadata existed to be read back, and nothing read it | Architecture | ✅ |
+| NFR-006 UI hiding is not the control | `CircleRoleMatrixTests` covers it by construction — every refused row is a direct API call; `CirclePageTests.AMember_SeesNeitherTheInviteFormNorTheDeleteSection` is the cosmetic half only | Authorization / Component | ✅ |
+| FR-021 leave | `CircleEndpointsTests.Leave_DeletesTheMembership_AndTheCircleVanishesFromTheirList` + `.Leave_ThenARequestWithAStillValidToken_IsRefused`; `CircleTests.Leave_DeletesTheMembership`. *Written at close* | Integration / Unit | ✅ |
+| FR-021 the confirmation says what survives | `CirclePageTests.LeaveConfirmation_SaysWhatLeavingDoesNotTake`. **The reconciliation found this criterion unmet in the product, not merely untested:** the confirmation said only that rejoining needs a new invitation. `CircleLeaveKeeps` was added in DE/EN/FR to say that the account stays and the user's own groups, members and completed draws are untouched | Component | ✅ |
+| FR-021 sole-owner branches | `CircleTests.Owner_WithOtherAccountBackedPeople_CannotLeave_AndIsOfferedTransfer` + `.Owner_WithOnlyManagedMembers_IsOfferedDeletion` + `.IsSoleOwner_IsTrueOnlyWhileNobodyElseCouldOwnIt`; `HandlerTests.SoleOwnedCircles_TellTheCallerWhetherAnyoneElseCouldTakeOver`; `CirclePageTests.AnOwnerLeaving_IsToldWhichWayOutTheyHave` | Unit / Component | ✅ |
 | FR-021 rejoin does not restore a role | `CircleTests.Rejoining_AfterLeaving_ComesBackAsMember` | Unit | ✅ |
-| FR-021 already removed | `CircleEndpointsTests.Leave_WhenAlreadyRemoved_IsSilent` | Integration | ✅ |
-| FR-022 deletion scope | `CircleDeletionTests.Delete_RemovesCircleMembershipsManagedMembersAndPendingInvitations_ButNoAccount` | Integration | ✅ |
-| FR-022 the confirmation | `CirclePageTests.DeleteConfirmation_NamesTheCircle_CountsThePeople_AndNamesEveryManagedMember` + `.DeleteButton_StaysDisabledUntilTheNameIsTypedBack` | Component | ✅ |
-| FR-022 admin cannot delete | `CircleRoleMatrixTests` row for `DELETE /circles/{id}` | Authorization | ✅ |
+| FR-021 already removed | `CircleTests.Leave_WhenAlreadyRemoved_ReportsNotAMember` — *unit rather than the planned integration:* the endpoint's `404` for a non-member is one of `CircleRoleMatrixTests`' rows | Unit / Authorization | ✅ |
+| FR-022 deletion scope | `CircleRepositoryTests.Delete_TakesEveryPersonInvitationAndDeclineWithIt` + `.Delete_LeavesOtherCirclesUntouched` (what goes, and what does not); `CircleEndpointsTests.WhenTheCircleIsDeleted_ItsPendingInvitationIsGone_AndTheRecipientIsToldSo` (through the API, and no account is touched — both accounts keep working afterwards); `HandlerTests.DeleteCircle_NeedsTheNameTypedBack`. *The plan's `CircleDeletionTests` class does not exist* | Repository / Integration / Unit | ✅ |
+| FR-022 the confirmation | `CirclePageTests.DeleteConfirmation_NamesTheCircle_CountsWhoLosesAccess_AndNamesEveryManagedMember` + `.DeleteConfirmation_WithNoManagedMembers_LeavesThatSentenceOut` + `.DeleteButton_StaysDisabledUntilTheNameIsTypedBack`. **Also unmet in the product before close:** the section stated the scope of deletion generically. It now names the circle, counts who loses access, names every managed member, and states that Secret-Santa groups, draws and reveal links are unaffected (`CircleDeleteNames`, `CircleDeleteLosesAccess`, `CircleDeleteManagedNamed`, `CircleDeleteKeeps`) | Component | ✅ |
+| FR-022 admin cannot delete | `CircleRoleMatrixTests` row for `DELETE /circles/{id}`; `HandlerTests.DeleteCircle_ByAnAdmin_IsRefused`; `CirclePageTests.AnAdmin_CanInviteButCannotDeleteTheCircleOrChangeRoles` | Authorization / Unit / Component | ✅ |
 | FR-022 one transaction | `CircleRepositoryTests.FailedDelete_LeavesEverythingInPlace` — and it asserts the `DELETE` was actually issued before the failure, so it cannot pass vacuously; plus `.Delete_TakesEveryPersonInvitationAndDeclineWithIt` and `.Delete_LeavesOtherCirclesUntouched` for the cascade's scope | Repository | ✅ |
-| FR-022 dangling circle id tolerated | `CircleDeletionTests.ADeletedCircleId_IsToleratedRatherThanTreatedAsCorruption` — asserted at the contract level in M2; the Secret-Santa half arrives with M4 | Integration | ⚠️ partial |
-| FR-022 pending invitation dies with it | `InvitationEndpointsTests.AfterTheCircleIsDeleted_TheRecipientIsToldItNoLongerExists` | Integration | ✅ |
-| **FR-015 sole-owner guard** | `SoleOwnerCircleGuardTests` (nothing owned passes; each owned circle is named and given the way out that fits it); `AccountDeletionCleanupTests` (`.Deletion_IsRefusedWhileTheAccountOwnsACircle`, `.OnceOwnershipIsHandedOver_TheAccountCanBeDeleted`, `.DeletingTheCircleFirst_UnblocksTheAccount`, `.Deletion_RemovesTheAccountFromOtherPeoplesCircles`, `.Deletion_LeavesTheManagedMembersTheAccountAdded`, `.Deletion_WithdrawsTheInvitationsTheAccountSent`) | Unit / Integration | ✅ |
-| NFR-004 managed-member minimisation | `AppSuite.Circles.Repository.Test.PersistedModelReviewTests` — the same scan for birth-date/postal/phone/payment fragments the Main model has carried since M1, over a model describing people who did not enter their own data, plus `.AManagedMember_PersistsNothingBeyondANameAndALanguage` pinned as an exact column list. A sibling class rather than an extension of Main's: the two contexts have separate models, and coupling Main's test project to Circles to share one list would breach the layering this milestone is enforcing | Architecture | ✅ |
-| NFR-004 invitation retention | `InvitationPurgeTests.ExpiredInvitations_ArePurged_AndPendingOnesAreNot`, `.ADeclineIsSwept_OnceItSuppressesNothing`, `.CountedInvitationAttempts_AreSweptOnceNoLimitCountsThem` (virtual clock, real Postgres) | Repository | ✅ |
-| NFR-004 declines keep no address | `CircleTests.ADecline_StoresOnlyAHash`; `CircleRepositoryTests.ADeclinedInvitation_LeavesARowThatHoldsNoAddress` — the domain's intent, and then what is actually in the row | Unit / Repository | ✅ |
-| NFR-004 the invitation secret is never stored | `PersistedModelReviewTests.AnInvitation_StoresTheHandleOfItsSecretAndNeverTheSecret` | Architecture | ✅ |
+| FR-022 dangling circle id tolerated | `CircleEndpointsTests.WhenTheCircleIsDeleted_ItsPendingInvitationIsGone_AndTheRecipientIsToldSo` — a circle id that resolves to nothing is answered `404`, not an error; the Secret-Santa half arrives with M4 (gap 2) | Integration | ⚠️ partial |
+| FR-022 pending invitation dies with it | `CircleEndpointsTests.WhenTheCircleIsDeleted_ItsPendingInvitationIsGone_AndTheRecipientIsToldSo` — the join request disappears from the recipient's list and accepting it answers *no such invitation*. *Written at close* | Integration | ✅ |
+| **FR-015 sole-owner guard** | `SoleOwnerCircleGuardTests.AnAccountThatOwnsNothing_MayBeDeleted`, `.ACircleSomebodyElseCouldOwn_IsStillABlocker_AndIsOfferedTransfer`, `.ACircleNobodyElseCouldOwn_IsOfferedDeletion`, `.EveryOwnedCircleIsNamedAndIdentified_SoTheUserIsNotSentHunting`; `AccountDeletionCleanupTests` (`.Deletion_IsRefusedWhileTheAccountOwnsACircle`, `.WithOthersInTheCircle_TheRefusalOffersTransferInstead`, `.OnceOwnershipIsHandedOver_TheAccountCanBeDeleted`, `.DeletingTheCircleFirst_UnblocksTheAccount`, `.Deletion_RemovesTheAccountFromOtherPeoplesCircles`, `.Deletion_LeavesTheManagedMembersTheAccountAdded`, `.Deletion_WithdrawsTheInvitationsTheAccountSent`, `.ARefusedDeletion_ChangesNothing`) | Unit / Integration | ✅ |
+| NFR-004 managed-member minimisation | `AppSuite.Circles.Repository.Test.PersistedModelReviewTests.NoPersistedProperty_HoldsDataTheSuitePromisedNotToKeep` — the same scan for birth-date/postal/phone/payment fragments the Main model has carried since M1, over a model describing people who did not enter their own data — plus `.AManagedMember_PersistsNothingBeyondANameAndALanguage` pinned as an exact column list. A sibling class rather than an extension of Main's: the two contexts have separate models, and coupling Main's test project to Circles to share one list would breach the layering this milestone is enforcing | Architecture | ✅ |
+| NFR-004 invitation retention | `InvitationPurgeTests.ExpiredInvitations_ArePurged_AndPendingOnesAreNot`, `.ADeclineIsSwept_OnceItSuppressesNothing`, `.CountedInvitationAttempts_AreSweptOnceNoLimitCountsThem`, `.Purge_IsSafeWhenNothingHasExpired` (virtual clock, real Postgres) | Repository | ✅ |
+| NFR-004 declines keep no address | `CircleTests.ADecline_StoresOnlyAHash`; `CircleRepositoryTests.ADeclinedInvitation_LeavesARowThatHoldsNoAddress` + `.ASecondDeclineByTheSameAddress_ReplacesTheRecordRatherThanColliding` — the domain's intent, and then what is actually in the row | Unit / Repository | ✅ |
+| NFR-004 the invitation secret is never stored | `PersistedModelReviewTests.AnInvitation_StoresTheHandleOfItsSecretAndNeverTheSecret`; `.TheCounters_HoldAHashOfTheRecipient_NotTheAddress` | Architecture | ✅ |
 | **FR-020 / ADR-0003 the schema seam** | `PersistedModelReviewTests.EveryTable_LivesInTheCirclesSchema`; `CirclesLayeringTests.Repository_DoesNotDependOnWeb` | Architecture | ✅ |
-| NFR-003 string parity | `LocalizationParityTests` (existing) covers the new keys | Localization | ✅ |
-| NFR-003 invitation mail in three languages | `MailTemplateRendererTests.InvitationTemplate_RendersInAllThreeLanguages` | Unit | ✅ |
-| Layering | `CirclesLayeringTests` — no ASP.NET/EF in `Circles.Core`; no Secret-Santa project references Circles; no Circles project references `AppSuite.Identity` | Architecture | ✅ |
+| NFR-003 string parity | `LocalizationParityTests.EverySupportedCulture_DefinesEveryNeutralKey` covers the new keys, and `.EveryPlaceholderInANeutralString_SurvivesIntoEveryLanguage` — *added at close* — covers what key parity cannot see: a translation that keeps the key and drops the `{0}` renders a sentence that reads well and names nothing, which is exactly how FR-022's confirmation would fail silently | Localization | ✅ |
+| NFR-003 invitation mail in three languages | `MailTemplateRendererTests.InvitationTemplate_RendersInAllThreeLanguages`; `.Invitation_ToAnAddressWithoutAnAccount_CarriesTheLink` + `.Invitation_ToAnAddressWithAnAccount_PointsAtTheAppAndCarriesNoSecret` | Unit | ✅ |
+| NFR-006 / ADR-0011 every refusal is translatable | `CircleErrorCodeCoverageTests.EveryRefusalCodeTheApiCanSend_HasATranslatedSentence` + `.TheUiTable_DoesNotDescribeRefusalsTheApiCannotSend` — *not in the plan at all.* It arrived with `ApiError.Code`, and it is the fitness function that keeps a new refusal code from reaching a DE/EN/FR client as a bare conflict | Architecture | ✅ |
+| Layering | `CirclesLayeringTests.Core_DoesNotDependOnInfrastructureOrWeb`, `.Contracts_DoesNotDependOnInfrastructureOrWeb`, `.Repository_DoesNotDependOnWeb`, `.Circles_DoesNotDependOnTheIdentityModel`, `.SecretSanta_DoesNotDependOnCircles` | Architecture | ✅ |
 
 ## Test data & environments
 
@@ -167,10 +173,18 @@ criteria say so.
 4. **No end-to-end journey across Web and native**, deferred to milestone 7 with M1's carry-overs.
 5. **"CI green"** remains unsatisfiable until the CI/CD ADR and pipeline exist (milestone 7); the exit
    criterion below says so rather than quietly claiming it.
-6. **The invite form's body/status parity is not yet asserted.** `InvitationTimingTests` covers the
-   timing arm — which is the one that was actually leaking — but nothing yet asserts that the three
-   responses are byte-identical. The plan's single row implied both; splitting them here rather than
-   leaving the row ticked is the point of reconciling against the code.
+6. ~~**The invite form's body/status parity is not yet asserted.**~~ **Closed at reconciliation.**
+   `InvitationMailTests.Invite_AnswersIdentically_WhetherTheAddressHasAnAccountIsUnknownOrIsAlreadyInTheCircle`
+   now compares status and body across the same three arms `InvitationTimingTests` compares on timing.
+   The fourth fact the endpoint withholds — a recent decline — is asserted where the decision is made
+   (`CircleTests.ReInviteInsideTheCooldown_LooksIdenticalAndSendsNothing`), because reaching it through
+   the API would mean declining through a mail link first.
+7. **The sign-up-from-a-link journey is not automated end to end.** Its two halves are: M1's
+   register → verify → sign in (covered by `AccountEndpointsTests`) and this milestone's accept
+   (`HandlerTests.AcceptInvitation_FromTheLink_JoinsTheCircleAsAMember`, with the landing page in
+   `CirclePageTests`). Joining them into one integration test means driving a mail link through
+   sign-up, and it is walked in the browser instead. This is the largest remaining hole in M2's own
+   coverage and it is worth closing when the E2E harness arrives with milestone 7 (gap 4).
 
 ### What the timing work found (2026-07-30)
 
@@ -189,21 +203,53 @@ Two lessons worth keeping in this plan:
 - **These tests are more trustworthy under load than on an idle machine**, which inverts the usual
   instinct to re-run a failure in isolation and call it flaky.
 
+### What the reconciliation found (2026-07-30)
+
+Reconciling the matrix against the code was not the clerical exercise the plan expected. Naming drift
+was the least of it — `InvitationEndpointsTests`, `ManagedMemberTests`, `CircleDeletionTests`,
+`InvitationPageTests`, `CircleRoleMatrixTests`, `CircleEndpointGuardTests`, `RateLimitTests` and
+`InvitationRateLimitTests` were all plan-time names, and most of what they promised turned out to be
+covered elsewhere, at a different level, under a different name. Four things were **not** covered at
+all, and three of those were the ones the plan itself called load-bearing:
+
+- **`EveryCircleRoute_CarriesTheRoleFilter` did not exist.** `CircleRoleRequirement` was deliberately
+  built as endpoint *metadata* — with a comment saying that this is what lets a fitness function read
+  it back — and nothing ever read it. The mechanism was there and the assertion was missing, which is
+  the most easily overlooked kind of gap: the design intent is visible in the code and reads as done.
+- **The "role matrix" was three spot checks**, not a matrix. It is now 14 routes × 5 caller kinds,
+  71 rows, with the table tied to the endpoint data source.
+- **Two acceptance criteria were unmet in the product, not merely untested.** FR-021's leave
+  confirmation did not say that the account and the user's Secret-Santa data survive; FR-022's delete
+  confirmation did not name the circle, count who loses access, or name the managed members. Both were
+  found by reading the criteria against the screen rather than against the tests — a green suite had
+  nothing to say about either, because no test asserted the sentences that were missing.
+- **Revoking an invitation had no functional test.** Only its route filter was covered, so the matrix
+  proved an admin may call it and nothing proved what it did.
+
+The lesson worth carrying to M3 is narrower than "reconcile the matrix": **a test plan row is not
+evidence, and a fitness function that is designed but not written leaves the design comment behind as
+false reassurance.** The three checks that mattered most here were all cheap once written; what kept
+them missing was that everything around them looked finished.
+
 ## Exit criteria
 
-- [ ] All acceptance criteria covered by automated tests except the gaps recorded above
-- [ ] The **role matrix** is complete — every route × every caller kind, and `CircleEndpointGuardTests`
+- [x] All acceptance criteria covered by automated tests except the gaps recorded above — and the two
+      that were unmet in the **product** (FR-021's and FR-022's confirmations) fixed rather than
+      recorded
+- [x] The **role matrix** is complete — 14 routes × 5 caller kinds, and `CircleEndpointGuardTests`
       green, so the next endpoint cannot skip it
-- [ ] Enumeration parity green on the invite form: body, status **and** timing
-- [ ] `Accept_BySomeoneElsesVerifiedAddress_CreatesNothingAndRevealsNothing` green — the forwarded-link
-      invariant is the security core of this milestone
-- [ ] Aggregate invariants green: exactly one owner, atomic transfer, no elevated managed member
-- [ ] FR-015's sole-owner guard green end to end, closing the criterion carried from M1
-- [ ] Architecture fitness functions green, including the extended NFR-004 model review
-- [ ] Localization parity green, including the invitation mail
+- [x] Enumeration parity green on the invite form: body, status **and** timing
+- [x] `AcceptInvitation_BySomeoneElsesVerifiedAddress_CreatesNothingAndRevealsNothing` green — the
+      forwarded-link invariant is the security core of this milestone
+- [x] Aggregate invariants green: exactly one owner, atomic transfer, no elevated managed member
+- [x] FR-015's sole-owner guard green end to end, closing the criterion carried from M1
+- [x] Architecture fitness functions green, including the extended NFR-004 model review and the
+      unplanned `CircleErrorCodeCoverageTests`
+- [x] Localization parity green, including the invitation mail and the new placeholder-parity check
 - [ ] Browser walkthrough completed in DE/EN/FR with a clean console — **two accounts, two browser
       profiles**: create → invite an address with no account → sign up from the link → invite an
       address that has one → accept in-app → decline → managed member → promote → role change →
-      transfer → leave → delete
-- [ ] Matrix reconciled against the tests that actually exist, so every row names a real class
-- [ ] Suite green locally; **"CI green" is carried to milestone 7**, not ticked
+      transfer → leave → delete. The M2 walkthrough was completed before close; the **two confirmation
+      screens changed at close still have to be looked at** in all three languages
+- [x] Matrix reconciled against the tests that actually exist, so every row names a real class
+- [x] Suite green locally; **"CI green" is carried to milestone 7**, not ticked

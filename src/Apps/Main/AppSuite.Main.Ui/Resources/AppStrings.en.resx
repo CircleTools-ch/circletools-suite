@@ -159,9 +159,14 @@
   <data name="CircleConfirmNo" xml:space="preserve"><value>Cancel</value></data>
   <data name="CircleLeave" xml:space="preserve"><value>Leave this circle</value></data>
   <data name="CircleLeaveConfirm" xml:space="preserve"><value>Leave this circle? You will need a new invitation to come back.</value></data>
+  <data name="CircleLeaveKeeps" xml:space="preserve"><value>Your account stays, and your own Secret-Santa groups, their members and any completed draws are untouched.</value></data>
   <data name="CircleLeft" xml:space="preserve"><value>You have left the circle.</value></data>
   <data name="CircleDeleteTitle" xml:space="preserve"><value>Delete this circle</value></data>
-  <data name="CircleDeleteLead" xml:space="preserve"><value>This removes the circle for everyone in it, along with everyone without an account and every open invitation. It cannot be undone.</value></data>
+  <data name="CircleDeleteLead" xml:space="preserve"><value>Every open invitation is withdrawn as well, and none of this can be undone.</value></data>
+  <data name="CircleDeleteNames" xml:space="preserve"><value>This deletes the circle {0}.</value></data>
+  <data name="CircleDeleteLosesAccess" xml:space="preserve"><value>{0} people will lose access to it.</value></data>
+  <data name="CircleDeleteManagedNamed" xml:space="preserve"><value>These people without an account are deleted with it:</value></data>
+  <data name="CircleDeleteKeeps" xml:space="preserve"><value>Your Secret-Santa groups, their draws and any reveal links you shared are unaffected.</value></data>
   <data name="CircleDeleteConfirmPrompt" xml:space="preserve"><value>Type the circle's name to confirm.</value></data>
   <data name="CircleDeleteSubmit" xml:space="preserve"><value>Delete circle</value></data>
   <data name="CircleDeleted" xml:space="preserve"><value>The circle is gone.</value></data>

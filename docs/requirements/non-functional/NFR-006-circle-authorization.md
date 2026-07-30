@@ -2,7 +2,7 @@
 id: NFR-006
 title: Circle data authorization
 type: non-functional
-status: Approved
+status: Implemented
 priority: Must
 source: UC-MAIN-008, UC-MAIN-012, ADR-0018
 verification: test

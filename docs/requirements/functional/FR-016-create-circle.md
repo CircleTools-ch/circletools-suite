@@ -2,7 +2,7 @@
 id: FR-016
 title: Create a circle with a user-chosen label
 type: functional
-status: Approved
+status: Implemented
 priority: Must
 source: UC-MAIN-008
 verification: test

@@ -1,7 +1,7 @@
 ---
 id: FEAT-003
 title: M2 — Circles in the Main shell
-status: In progress
+status: Done
 owner: Adrian
 target-milestone: M2 (v2 — circles)
 bounded-context: Circles
@@ -41,8 +41,8 @@ related: [UC-MAIN-008, UC-MAIN-009, UC-MAIN-010, UC-MAIN-011, UC-MAIN-012, UC-MA
 | [UC-MAIN-010](../use-cases/main/UC-MAIN-010-respond-to-invitation.md) → [FR-018](../requirements/functional/FR-018-respond-to-circle-invitation.md) | ✅ | both paths, one accept code path |
 | [UC-MAIN-011](../use-cases/main/UC-MAIN-011-manage-managed-members.md) → [FR-019](../requirements/functional/FR-019-manage-managed-members.md) | ✅ | incl. promotion by linking |
 | [UC-MAIN-012](../use-cases/main/UC-MAIN-012-manage-circle-people.md) → [FR-020](../requirements/functional/FR-020-manage-circle-roles-and-membership.md) | ✅ | roles, removal, immediate transfer |
-| [UC-MAIN-013](../use-cases/main/UC-MAIN-013-leave-circle.md) → [FR-021](../requirements/functional/FR-021-leave-circle.md) | ✅ | incl. the sole-owner branches |
-| [UC-MAIN-014](../use-cases/main/UC-MAIN-014-delete-circle.md) → [FR-022](../requirements/functional/FR-022-delete-circle.md) | ✅ | one transaction, no soft-delete |
+| [UC-MAIN-013](../use-cases/main/UC-MAIN-013-leave-circle.md) → [FR-021](../requirements/functional/FR-021-leave-circle.md) | ✅ | incl. the sole-owner branches. *Closed at review:* the confirmation now states what leaving does **not** take — the account, and the user's own groups, members and completed draws |
+| [UC-MAIN-014](../use-cases/main/UC-MAIN-014-delete-circle.md) → [FR-022](../requirements/functional/FR-022-delete-circle.md) | ⚠️ **partial** | one transaction, no soft-delete; the confirmation now names the circle, counts who loses access and names every managed member. The dangling-identifier criterion needs M4 |
 | [FR-015](../requirements/functional/FR-015-delete-account.md) — sole-owner guard | ✅ | **closes the criterion M1 carried**: `IAccountDeletionGuard` finally gets its guard |
 | [NFR-003](../requirements/non-functional/NFR-003-multilingual-de-en-fr.md) | ✅ | UI **and** the invitation mail |
 | [NFR-004](../requirements/non-functional/NFR-004-data-protection-and-retention.md) | ⚠️ **partial** | managed-member minimisation and invitation retention are M2's; the residency target still waits on hosting |
@@ -351,17 +351,26 @@ that no Circles contract type has an email field.
 
 ## Definition of Done
 
-- [ ] Meets acceptance criteria of all covered requirements, except the one recorded as deferred
-      above and in [TP-003](TP-003-m2-circles.md)
+- [x] Meets acceptance criteria of all covered requirements, except the three recorded as deferred
+      above and in [TP-003](TP-003-m2-circles.md). **Two were found unmet at close and fixed rather
+      than deferred:** FR-021's leave confirmation did not say that the account and the user's own
+      Secret-Santa data survive, and FR-022's delete confirmation did not name the circle, count who
+      loses access, or name the managed members
 - [x] Builds clean under analyzers (warnings = errors)
 - [x] Tests per TP-003 pass
 - [x] Architecture boundaries respected — `Circles.Core` free of ASP.NET and EF; no Secret-Santa
       project references Circles; no Circles project references `AppSuite.Identity`
-- [ ] Docs and API comments updated; [arc42 ch. 5](../arc42/05-building-block-view.md) and
-      [ch. 8](../arc42/08-crosscutting-concepts.md) reflect the built shape
-- [x] Localized strings provided (DE/EN/FR), including the invitation mail
-- [x] **Verified in a real browser** across DE/EN/FR with a clean console — create → invite → accept
-      on both paths → decline → managed member → promote → role change → transfer → leave → delete
+- [x] Docs and API comments updated; [arc42 ch. 5](../arc42/05-building-block-view.md) and
+      [ch. 8](../arc42/08-crosscutting-concepts.md) reflect the built shape — the four ports, the rate
+      limiter in `Circles.Repository`, both deletion seams and their ordering, `CircleRoleFilter` as
+      readable metadata, `ApiError.Code`, and the four `Main.Ui` pages
+- [x] Localized strings provided (DE/EN/FR), including the invitation mail and the confirmation
+      sentences added at close
+- [ ] **Verified in a real browser** across DE/EN/FR with a clean console — create → invite → accept
+      on both paths → decline → managed member → promote → role change → transfer → leave → delete.
+      Done for the milestone; **the two confirmation screens changed at close still need a look**.
+      Their prose is asserted against the real DE/EN/FR resources by
+      `CircleConfirmationTextTests`, which is evidence about the sentences and not about the screen
 - [x] FR-015's sole-owner guard demonstrated end to end, closing the criterion M1 carried
-- [ ] Traceability links closed — every row of TP-003's matrix names a test class that exists
-      (the M1 lesson: plan-time names drift, and the matrix must be reconciled at close)
+- [x] Traceability links closed — every row of TP-003's matrix names a test class that exists
+      (the M1 lesson held, and cost more than expected: see TP-003's closing notes)
