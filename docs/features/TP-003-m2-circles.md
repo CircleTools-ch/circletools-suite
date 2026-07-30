@@ -78,7 +78,7 @@ criteria say so.
 | FR-016 atomicity | `CircleRepositoryTests.FailedCreate_LeavesNeitherCircleNorMembership` | Repository | ✅ |
 | FR-016 / FR-019 the mapping is faithful | `CircleRepositoryTests.Circle_SurvivesARoundTripWholeWithEveryPersonInvitationAndDecline` — the aggregate reloaded from Postgres in a second context, managed member and all | Repository | ✅ |
 | FR-016 caps | `CircleTests.Create_BeyondTheOwnedCircleCap_IsRefused`; `RateLimitTests.CircleCreation_IsLimitedPerUserPerDay` | Unit / Integration | ✅ |
-| **FR-017 identical response** | `InvitationEnumerationTests.Invite_KnownAddress_UnknownAddress_AndExistingMember_AreIndistinguishable` — body, status **and** timing distribution, interleaved samples | Security | ✅ |
+| **FR-017 identical response** | `InvitationTimingTests.Invite_NoAccount_WithAccount_AndAlreadyAMember_AreIndistinguishable` — three arms, interleaved, compared on the fastest sample each managed. *Renamed from the plan's `InvitationEnumerationTests`, and it does less than the plan implied:* it covers **timing** only. Body and status parity across the three arms is still owed — see gap 6 | Security | ⚠️ **partial** |
 | FR-017 resend rather than duplicate | `CircleTests.Invite_SameAddressTwice_ResendsTheExistingInvitation` + `.Resend_IssuesAFreshSecretAndKillsThePreviousLink` | Unit | ✅ |
 | FR-017 revoke | `InvitationEndpointsTests.Revoked_CannotBeAccepted_AndSaysSoPlainly` | Integration | ✅ |
 | FR-017 expiry (14 days) | `CircleTests.Invitation_PastItsExpiry_LeavesThePendingListAndFreesTheAddress` (virtual clock) | Unit | ✅ |
@@ -167,6 +167,27 @@ criteria say so.
 4. **No end-to-end journey across Web and native**, deferred to milestone 7 with M1's carry-overs.
 5. **"CI green"** remains unsatisfiable until the CI/CD ADR and pipeline exist (milestone 7); the exit
    criterion below says so rather than quietly claiming it.
+6. **The invite form's body/status parity is not yet asserted.** `InvitationTimingTests` covers the
+   timing arm — which is the one that was actually leaking — but nothing yet asserts that the three
+   responses are byte-identical. The plan's single row implied both; splitting them here rather than
+   leaving the row ticked is the point of reconciling against the code.
+
+### What the timing work found (2026-07-30)
+
+M1's `EnumerationTimingTests` had one hole and it was load-dependent: a **3 ms absolute noise floor**
+that passed any difference beneath it whatever the ratio said. `/forgot-password` sat in that hole
+for the whole of M1 at a steady 1.9x (2.36 ms against 1.24 ms), and surfaced only when a loaded
+full-suite run scaled both paths past 3 ms — which is why it read as a flaky test rather than a leak.
+
+Reviewing the shape rather than the symptom found the same asymmetry on three more surfaces —
+`/resend-verification` (1.67x), `/change-email` (1.63x) and the invite form itself (1.18x, 2.79 ms).
+All four now carry `RequireConstantTime`; NFR-005 records the mechanism and when to reach for it.
+Two lessons worth keeping in this plan:
+
+- **A stable ratio across differently loaded runs is evidence of structure**, even when the absolute
+  difference is small. Noise does not hold a ratio.
+- **These tests are more trustworthy under load than on an idle machine**, which inverts the usual
+  instinct to re-run a failure in isolation and call it flaky.
 
 ## Exit criteria
 
