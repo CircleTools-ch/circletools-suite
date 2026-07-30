@@ -55,8 +55,8 @@ public static class AccountEndpoints
 
         group.MapPost("/register", RegisterAsync).WithName("Register").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
         group.MapPost("/verify-email", VerifyEmailAsync).WithName("VerifyEmail").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
-        group.MapPost("/resend-verification", ResendVerificationAsync).WithName("ResendVerification").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
-        group.MapPost("/forgot-password", ForgotPasswordAsync).WithName("ForgotPassword").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
+        group.MapPost("/resend-verification", ResendVerificationAsync).WithName("ResendVerification").RequireConstantTime().AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
+        group.MapPost("/forgot-password", ForgotPasswordAsync).WithName("ForgotPassword").RequireConstantTime().AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
         group.MapPost("/reset-password", ResetPasswordAsync).WithName("ResetPassword").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
         group.MapPost("/login", LoginAsync).WithName("Login").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
         group.MapPost("/refresh", RefreshAsync).WithName("Refresh").AllowAnonymous();
@@ -69,7 +69,7 @@ public static class AccountEndpoints
             .RequireAuthorization().RequireRateLimiting(SensitiveRateLimitPolicy);
 
         group.MapPost("/change-email", ChangeEmailAsync).WithName("ChangeEmail")
-            .RequireAuthorization().RequireRateLimiting(SensitiveRateLimitPolicy);
+            .RequireConstantTime().RequireAuthorization().RequireRateLimiting(SensitiveRateLimitPolicy);
         group.MapPost("/confirm-email-change", ConfirmEmailChangeAsync).WithName("ConfirmEmailChange")
             .RequireAuthorization().RequireRateLimiting(SensitiveRateLimitPolicy);
 
@@ -211,6 +211,11 @@ public static class AccountEndpoints
     /// oracle that sign-up itself carefully is not (NFR-005), and "already verified" is exactly the
     /// fact an attacker wants.
     /// </para>
+    /// <para>
+    /// Only the resent case generates a token and queues a mail — so the two cases an attacker is
+    /// asking about are also the two cheap ones, and the gap measured 1.67x. <c>RequireConstantTime</c>
+    /// closes it; without the filter the branch structure here reads the question aloud.
+    /// </para>
     /// </remarks>
     private static async Task<IResult> ResendVerificationAsync(
         [FromBody] ResendVerificationRequest request,
@@ -246,9 +251,18 @@ public static class AccountEndpoints
 
     /// <summary>Queues a password-reset link (FR-009).</summary>
     /// <remarks>
+    /// <para>
     /// The response is identical for a registered and an unregistered address, and no mail is sent
     /// for the latter. Requesting a reset does <em>not</em> invalidate the current password — a
     /// stranger entering someone's address must not be able to lock them out (NFR-005).
+    /// </para>
+    /// <para>
+    /// <strong>Identical is not indistinguishable.</strong> A known address pays for a reset token
+    /// and an outbox row that an unknown one skips entirely, and that showed up as a steady 1.9x
+    /// difference — 2.36 ms against 1.24 ms — for the whole of M1, under a response body that was
+    /// carefully identical the entire time. The route now carries <c>RequireConstantTime</c>, which
+    /// is what makes the sentence above true rather than merely intended.
+    /// </para>
     /// </remarks>
     private static async Task<IResult> ForgotPasswordAsync(
         [FromBody] ForgotPasswordRequest request,
@@ -501,6 +515,12 @@ public static class AccountEndpoints
     /// sent (NFR-005). That costs the user an explanation — the same "flying blind" cost
     /// [ADR-0018] accepts for invitations — and is preferred to confirming which addresses are
     /// registered.
+    /// </para>
+    /// <para>
+    /// The asymmetry here is the largest of the four and runs the other way: a free address costs a
+    /// token and <em>two</em> outbox rows, a taken one costs nothing, so the fast answer meant
+    /// "taken" — measured at 1.63x. Mirroring that work would mean writing rows nobody reads, so the
+    /// route carries <c>RequireConstantTime</c> instead.
     /// </para>
     /// </remarks>
     private static async Task<IResult> ChangeEmailAsync(

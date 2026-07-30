@@ -67,6 +67,16 @@ public sealed class MailApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         // These tests share one source address and would otherwise trip the NFR-005 rate limit.
         // The limiter has its own dedicated coverage in RateLimitingTests.
         builder.UseSetting("RateLimiting:SensitivePermitLimit", "100000");
+
+        // Likewise the application-level invitation limits: InvitationTimingTests sends dozens of
+        // invitations from one inviter, and repeats one recipient address deliberately. Their real
+        // coverage is AppSuite.Circles.Repository.Test.InvitationRateLimiterTests, against the same
+        // Postgres counters. PendingInvitationsPerCircle is deliberately left at its default — no
+        // test here approaches 50, and leaving it on keeps the per-circle cap honest.
+        builder.UseSetting("Circles:Limits:InvitationsPerInviterPerHour", "100000");
+        builder.UseSetting("Circles:Limits:InvitationsPerInviterPerDay", "100000");
+        builder.UseSetting("Circles:Limits:InvitationsPerRecipientPerDay", "100000");
+
         builder.UseSetting("Auth:Jwt:SigningKey", "integration-test-signing-key-long-enough-for-hmac");
         builder.UseSetting("Mail:Host", _mailpit.Hostname);
         builder.UseSetting("Mail:Port", _mailpit.GetMappedPublicPort(MailpitSmtpPort).ToString(System.Globalization.CultureInfo.InvariantCulture));

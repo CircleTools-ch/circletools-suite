@@ -45,8 +45,12 @@ public static class CircleEndpoints
         // FR-017 — invitations. The invite and resend routes also take the per-IP limiter: the
         // three limits that matter are keyed on the inviter, the recipient and the circle and are
         // enforced in the handler, but volume from one source is still worth bounding (NFR-005).
+        // RequireConstantTime comes first so it nests outside the role filter and covers the circle
+        // load as well. The invite handler is already symmetric in the account lookup itself, but it
+        // queues no mail for an address that is already in the circle or inside the decline cooldown
+        // — and those are exactly the two facts the silent cooldown exists to withhold (FR-018).
         group.MapPost("/{circleId:guid}/invitations", InviteAsync)
-            .WithName("InviteToCircle").RequireCircleRole(CircleRole.Admin)
+            .WithName("InviteToCircle").RequireConstantTime().RequireCircleRole(CircleRole.Admin)
             .RequireRateLimiting(AccountEndpoints.SensitiveRateLimitPolicy);
         group.MapGet("/{circleId:guid}/invitations", GetPendingInvitationsAsync)
             .WithName("GetPendingInvitations").RequireCircleRole(CircleRole.Admin);

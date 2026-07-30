@@ -31,6 +31,14 @@ public sealed record InviteToCircleCommand(Guid UserId, Guid CircleId, string Em
 /// not write — is bounded by <see cref="IInvitationMailer"/> never sending inline, which is what
 /// keeps the difference in the noise rather than in the seconds.
 /// </para>
+/// <para>
+/// <strong>"In the noise" was measured, and it was not.</strong> That row is worth about 1 ms, which
+/// is small against this handler's own cost and therefore only a 1.18x difference — but it is
+/// perfectly consistent, and it orders the branches exactly as an attacker would want: already a
+/// member fastest, a new invitation slowest. The evenness above is still worth keeping, because it
+/// is what makes the residue small; what makes it <em>unobservable</em> is the constant-time budget
+/// the endpoint carries, and <c>InvitationTimingTests</c> is what keeps that honest.
+/// </para>
 /// </remarks>
 public sealed class InviteToCircleCommandHandler(
     ICircleRepository repository,

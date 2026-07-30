@@ -21,12 +21,27 @@ address-accepting surface in the suite:
 | Sign-up ([FR-007](../functional/FR-007-create-suite-account.md)) | identical response; an existing address receives a *"someone tried to sign up"* mail instead of a verification mail |
 | Sign-in ([FR-008](../functional/FR-008-sign-in-with-password.md)) | unknown address and wrong password are indistinguishable |
 | Password reset ([FR-009](../functional/FR-009-reset-password.md)) | identical response; no mail sent for an unknown address |
+| Resend verification ([FR-007](../functional/FR-007-create-suite-account.md)) | the same 202 for an unknown address, an already-verified one, and a genuine resend |
 | Email change ([FR-013](../functional/FR-013-change-email-address.md)) | identical response whether or not the new address is taken |
 | [Invitations](../../glossary/invitation.md) (M2) | *"invitation sent"* either way; the inviter is never told which path applied ([ADR-0018](../../adr/0018-circle-and-sharing-model.md)) |
 
 "Identical" means identical in **response body, HTTP status code, and timing**. Timing is the part
 that is easy to get wrong and easy for an attacker to measure: a path that sends an email must not
 take measurably longer than one that does not, so mail dispatch is queued rather than awaited.
+
+**Queueing the mail is necessary and not sufficient**, which M2 established by measurement. Even
+queued, the branch that has an account to act on generates a token and writes an outbox row, and the
+branch that does not writes nothing — and that residue is enough. Four surfaces leaked on it:
+password reset at 1.9x, resend-verification at 1.7x, email change at 1.6x, and the invite form at
+1.18x. All four had bodies and status codes that were already identical, and one of them had been
+shipping since M1.
+
+Two mechanisms answer it, and which one fits depends on the shape of the asymmetry:
+
+| Mechanism | Where it applies |
+|-----------|------------------|
+| **Decoy work** — `DecoyPasswordVerifier` spends the same password hash on the branch with no password to check | One dominant, symmetric cost. Sign-up and sign-in. |
+| **Constant-time envelope** — `RequireConstantTime` holds the whole response to a fixed budget | A token, a database write, or several — anything a decoy cannot mirror without writing rows nobody reads. Password reset, resend-verification, email change, invitations. |
 
 Lockout and rate-limiting responses are also covered — a lockout message that only appears for real
 accounts is itself an oracle. **Rate limiting is part of this requirement, not separate from it:** it
@@ -68,9 +83,21 @@ Given an account that is currently rate-limited or locked out
 When sign-in is attempted against it and against a non-existent address
 Then the responses do not reveal which case applied
 
+Given an email address with an account and one without
+When verification is resent for each
+Then the two responses are identical in body, status code and timing distribution
+
+Given an invitation to a circle
+When it is sent to an address with no account, one with an account, and one already in the circle
+Then all three responses are identical in body, status code and timing distribution
+
 Given any address-accepting endpoint
 When a path sends an email and another path does not
 Then mail dispatch is queued rather than awaited, so response times do not diverge
+
+Given an address-accepting endpoint whose branches differ by a token, a database write, or both
+When it is not equalised by decoy work
+Then it is held to a constant-time budget, and every branch reaches that budget
 
 Given repeated requests to any address-accepting endpoint
 When they exceed the configured threshold
@@ -83,12 +110,23 @@ Then they are rate-limited per address and per source with progressive backoff
 - **Metric & target:**
   - **zero** endpoints whose response body or status code differs between existing and non-existing
     addresses;
-  - **timing:** the difference in median response time between the existing-address and
-    non-existing-address cases must be **below the noise floor of the test harness**, and in no case
-    may one path await an outbound email while the other does not, **nor compute a password hash
-    while the other does not** — hashing is deliberately slow and dominates these endpoints, so a
-    branch that skips it is the loudest possible signal (measured at 20x before it was fixed;
-    see [FEAT-002](../../features/FEAT-002-m1-identity.md));
+  - **timing:** in no case may one path await an outbound email while the other does not, **nor
+    compute a password hash while the other does not** — hashing is deliberately slow and dominates
+    these endpoints, so a branch that skips it is the loudest possible signal (measured at 20x
+    before it was fixed; see [FEAT-002](../../features/FEAT-002-m1-identity.md)). Beyond that, the
+    target depends on the mechanism:
+    - a surface equalised by **decoy work** must keep its two paths within a **1.5x ratio** of each
+      other;
+    - a surface under a **constant-time envelope** must have **every** path reach the budget, within
+      timer jitter.
+
+    > **"Below the noise floor of the test harness" was the previous target, and it is why four
+    > leaks shipped.** A floor is a hole: `/forgot-password` sat in it for all of M1 at a steady 1.9x
+    > because the absolute gap was 1.12 ms, and it surfaced only when a loaded run scaled both paths
+    > past 3 ms. A target phrased against the harness's resolution measures the harness. The
+    > replacements above measure the endpoint — and the envelope's target is deliberately not a
+    > difference at all, because the smallest real leak found (0.70 ms) is inside the resolution of
+    > the timer used to look for it.
   - **100 %** of address-accepting endpoints rate-limited per address and per source.
 - **Measurement approach:** paired **automated tests** per endpoint asserting identical body and
   status; a timing test comparing the two distributions over repeated runs; a review checklist item
@@ -107,4 +145,5 @@ Then they are rate-limited per address and per source with progressive backoff
 - Governing ADR: [ADR-0018](../../adr/0018-circle-and-sharing-model.md) (established the rule for
   invitations; this NFR generalises it to every address-accepting surface)
 - Guideline: [security & privacy guidelines](../../guidelines/security-privacy-guidelines.md) §1
+  and §7 (address-accepting endpoints — which mechanism to use, and how to test it)
 - Glossary: [User](../../glossary/user.md), [Invitation](../../glossary/invitation.md)
