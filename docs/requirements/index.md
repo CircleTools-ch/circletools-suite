@@ -29,17 +29,17 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-012](functional/FR-012-manage-profile.md) | Manage profile and preferred language | Functional | Must | Approved |
 | [FR-013](functional/FR-013-change-email-address.md) | Change the account email address | Functional | Should | Implemented |
 | [FR-014](functional/FR-014-export-personal-data.md) | Export personal data | Functional | Must | Implemented |
-| [FR-015](functional/FR-015-delete-account.md) | Delete the account | Functional | Must | Approved |
+| [FR-015](functional/FR-015-delete-account.md) | Delete the account | Functional | Must | Implemented |
 | [NFR-004](non-functional/NFR-004-data-protection-and-retention.md) | Data protection & retention | Non-functional | Must | Approved |
 | [NFR-005](non-functional/NFR-005-account-enumeration-resistance.md) | Account-enumeration resistance | Non-functional | Must | Implemented |
-| [FR-016](functional/FR-016-create-circle.md) | Create a circle with a user-chosen label | Functional | Must | Approved |
+| [FR-016](functional/FR-016-create-circle.md) | Create a circle with a user-chosen label | Functional | Must | Implemented |
 | [FR-017](functional/FR-017-invite-to-circle.md) | Invite a person to a circle by email | Functional | Must | Approved |
-| [FR-018](functional/FR-018-respond-to-circle-invitation.md) | Accept or decline a circle invitation | Functional | Must | Approved |
+| [FR-018](functional/FR-018-respond-to-circle-invitation.md) | Accept or decline a circle invitation | Functional | Must | Implemented |
 | [FR-019](functional/FR-019-manage-managed-members.md) | Add and maintain managed members | Functional | Must | Approved |
-| [FR-020](functional/FR-020-manage-circle-roles-and-membership.md) | Manage circle roles, membership and ownership | Functional | Must | Approved |
-| [FR-021](functional/FR-021-leave-circle.md) | Leave a circle | Functional | Must | Approved |
+| [FR-020](functional/FR-020-manage-circle-roles-and-membership.md) | Manage circle roles, membership and ownership | Functional | Must | Implemented |
+| [FR-021](functional/FR-021-leave-circle.md) | Leave a circle | Functional | Must | Implemented |
 | [FR-022](functional/FR-022-delete-circle.md) | Delete a circle | Functional | Must | Approved |
-| [NFR-006](non-functional/NFR-006-circle-authorization.md) | Circle data authorization | Non-functional | Must | Approved |
+| [NFR-006](non-functional/NFR-006-circle-authorization.md) | Circle data authorization | Non-functional | Must | Implemented |
 | [NFR-007](non-functional/NFR-007-store-distributability.md) | Store distributability & platform compliance | Non-functional | Must | Approved |
 
 _Add a row per requirement._
@@ -52,7 +52,9 @@ _Add a row per requirement._
   [UC-MAIN-001..007](../use-cases/index.md), built and closed as
   [FEAT-002](../features/FEAT-002-m1-identity.md).
 - **FR-016..022, NFR-006** — **M2 — Circles**, derived from
-  [UC-MAIN-008..014](../use-cases/index.md). Specified, not yet built.
+  [UC-MAIN-008..014](../use-cases/index.md). Built and closed as
+  [FEAT-003](../features/FEAT-003-m2-circles.md). It also closed **FR-015**, the criterion M1 carried:
+  the sole-circle-owner guard finally has circles to guard.
 - **NFR-005** is cross-cutting: it also governs M2 invitations, where the rule originated
   ([ADR-0018](../adr/0018-circle-and-sharing-model.md)) — see
   [FR-017](functional/FR-017-invite-to-circle.md) and
@@ -75,20 +77,24 @@ _Add a row per requirement._
 
 `Approved` covers two different situations, and it is worth knowing which is which:
 
-- **Specified, not yet built** — **FR-016..022** and **NFR-006**, the M2 slice. Nothing is
-  implemented; they are agreed input for the M2 feature spec.
-- **Built, one criterion still open** — **FR-010**, **FR-011**, **FR-012**, **FR-015** and
-  **NFR-004** from M1. Each is in use, but carries a criterion that cannot close yet, and the reason
-  is recorded rather than quietly dropped:
+- **Specified, not yet built** — nothing, at this point. Every requirement written so far has been
+  built; **NFR-007** is the one exception and belongs to no slice (see above).
+- **Built, one criterion still open** — **FR-010**, **FR-011**, **FR-012** and **NFR-004** from M1,
+  and **FR-017**, **FR-019** and **FR-022** from M2. Each is in use, but carries a criterion that
+  cannot close yet, and the reason is recorded rather than quietly dropped:
 
 | Requirement | What is still open | Unblocked by |
 |---|---|---|
 | FR-010 / FR-011 | passkeys across the MAUI heads (needs `apple-app-site-association` / Digital Asset Links on the real domain) | the hosting & domain decision |
 | FR-012 | changing the language *offline*, pushed on the next sync | M3 — sync |
-| FR-015 | the sole-circle-owner guard (`IAccountDeletionGuard` exists with nothing to guard) | M2 — now specified by [FR-022](functional/FR-022-delete-circle.md) and [FR-020](functional/FR-020-manage-circle-roles-and-membership.md) |
 | NFR-004 | the data-residency target, and the "no private key, no biometric data" check that needs a stored passkey credential to inspect | the hosting decision; milestone 7 |
+| FR-017 | deliverability of the invitation — SPF/DKIM/DMARC, bounces, abuse reports. Everything else is built and tested against Mailpit, but an invitation is the first thing the suite sends to somebody with no relationship to it, and a local sink cannot exercise any of that | the transactional-email provider decision |
+| FR-019 | *"a managed member copied into a Secret-Santa group is unaffected by their removal from the circle"* — nothing copies a circle into a group yet, so there is no copy to leave unchanged | M4 — create a group from a circle |
+| FR-022 | *"a Secret-Santa group created from a deleted circle opens unchanged, and its dangling circle identifier does not cause an error"* — the API half is asserted; the Secret-Santa half has no circle identifier to hold yet | M4 — same reason |
 
-The mixed statuses are the point: they mark exactly where the M1 slice stops, so a later milestone
-can find the loose ends instead of re-deriving them. See
-[FEAT-002](../features/FEAT-002-m1-identity.md)'s coverage table and
-[TP-002](../features/TP-002-m1-identity.md)'s coverage notes.
+**FR-015 closed with M2.** Its sole-circle-owner guard was M1's recorded loose end and is now
+`SoleOwnerCircleGuard`, verified end to end through real account deletion — which is what the mixed
+statuses are for: they mark where a slice stops so the next milestone finds the loose ends instead of
+re-deriving them. See [FEAT-002](../features/FEAT-002-m1-identity.md)'s and
+[FEAT-003](../features/FEAT-003-m2-circles.md)'s coverage tables, and the coverage notes in
+[TP-002](../features/TP-002-m1-identity.md) and [TP-003](../features/TP-003-m2-circles.md).

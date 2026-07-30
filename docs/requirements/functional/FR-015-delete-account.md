@@ -2,7 +2,7 @@
 id: FR-015
 title: Delete the account
 type: functional
-status: Approved
+status: Implemented
 priority: Must
 source: UC-MAIN-006
 verification: test
@@ -95,12 +95,21 @@ And the user is not told their data is gone
   [ADR-0017](../../adr/0017-anonymous-to-account-claim.md),
   [ADR-0018](../../adr/0018-circle-and-sharing-model.md),
   [ADR-0019](../../adr/0019-member-user-linking.md)
-- **Answered in M2 (2026-07-29):** what happens to [Managed members](../../glossary/managed-member.md)
-  created by a departing user — they are circle data and survive with the circle, as ADR-0022's
-  principle implied and [FR-019](FR-019-manage-managed-members.md) now states outright. The
-  sole-circle-owner guard is specified by [FR-022](FR-022-delete-circle.md) (delete the circle) and
-  [FR-020](FR-020-manage-circle-roles-and-membership.md) (transfer ownership); it remains unbuilt
-  until M2 ships.
+- **Closed in M2 (2026-07-30):** [Managed members](../../glossary/managed-member.md) created by a
+  departing user are circle data and survive with the circle, as ADR-0022's principle implied and
+  [FR-019](FR-019-manage-managed-members.md) states outright. The **sole-circle-owner guard is built**
+  as `SoleOwnerCircleGuard` behind M1's `IAccountDeletionGuard`, and this requirement is now
+  `Implemented`. Two details are worth carrying forward:
+  - it blocks on **every** circle the account owns, not only those nobody else could own — deleting
+    the owner's own membership would otherwise leave a circle with no owner, a state the domain never
+    defines because `Circle.Leave` guarantees it cannot occur. Each blocker names itself and carries
+    the way out that fits it: transfer ([FR-020](FR-020-manage-circle-roles-and-membership.md)) when
+    somebody else could take it, deletion ([FR-022](FR-022-delete-circle.md)) when nobody could;
+  - deletion needed a **second seam**. `IAccountDeletionGuard` answers *may this be deleted*; the new
+    `IAccountDeletionCleanup` removes the account's remaining memberships and the invitations it sent,
+    or the people list would keep a person who is nobody. The two run in a fixed **order** rather than
+    one transaction — guards, sessions, cleanups, then the account row — so a partial failure leaves
+    the recoverable state ([arc42 ch. 8](../../arc42/08-crosscutting-concepts.md)).
 - Glossary: [User](../../glossary/user.md), [Member](../../glossary/member.md),
   [Draw](../../glossary/draw.md), [Circle](../../glossary/circle.md),
   [Passkey](../../glossary/passkey.md)

@@ -523,6 +523,10 @@
   <data name="CircleLeaveConfirm" xml:space="preserve">
     <value>Leave this circle? You will need a new invitation to come back.</value>
   </data>
+  <data name="CircleLeaveKeeps" xml:space="preserve">
+    <value>Your account stays, and your own Secret-Santa groups, their members and any completed draws are untouched.</value>
+    <comment>FR-021: the confirmation has to say what leaving does NOT take, not only what it ends.</comment>
+  </data>
   <data name="CircleLeft" xml:space="preserve">
     <value>You have left the circle.</value>
   </data>
@@ -530,7 +534,23 @@
     <value>Delete this circle</value>
   </data>
   <data name="CircleDeleteLead" xml:space="preserve">
-    <value>This removes the circle for everyone in it, along with everyone without an account and every open invitation. It cannot be undone.</value>
+    <value>Every open invitation is withdrawn as well, and none of this can be undone.</value>
+  </data>
+  <data name="CircleDeleteNames" xml:space="preserve">
+    <value>This deletes the circle {0}.</value>
+    <comment>FR-022: the confirmation names the circle. {0} is the circle's name as stored — never translated.</comment>
+  </data>
+  <data name="CircleDeleteLosesAccess" xml:space="preserve">
+    <value>{0} people will lose access to it.</value>
+    <comment>FR-022: how many people lose access. {0} is a count.</comment>
+  </data>
+  <data name="CircleDeleteManagedNamed" xml:space="preserve">
+    <value>These people without an account are deleted with it:</value>
+    <comment>FR-022: every managed member is named. The names follow as data, never substituted into the sentence.</comment>
+  </data>
+  <data name="CircleDeleteKeeps" xml:space="preserve">
+    <value>Your Secret-Santa groups, their draws and any reveal links you shared are unaffected.</value>
+    <comment>FR-022: what deletion does not reach.</comment>
   </data>
   <data name="CircleDeleteConfirmPrompt" xml:space="preserve">
     <value>Type the circle's name to confirm.</value>

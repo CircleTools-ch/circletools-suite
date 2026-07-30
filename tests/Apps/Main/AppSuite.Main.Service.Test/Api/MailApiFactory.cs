@@ -77,6 +77,14 @@ public sealed class MailApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         builder.UseSetting("Circles:Limits:InvitationsPerInviterPerDay", "100000");
         builder.UseSetting("Circles:Limits:InvitationsPerRecipientPerDay", "100000");
 
+        // Same reasoning for the creation limits: CircleRoleMatrixTests builds a fresh circle for
+        // every permitted row so that no row can depend on another's leftovers, and one owner
+        // therefore creates far more than a person would in a day. The limits themselves are covered
+        // where they are enforced — Circles.Core.Test's CreateCircle_BeyondTheDailyRate_IsRefused and
+        // Create_BeyondTheOwnedCircleCap_IsRefused.
+        builder.UseSetting("Circles:Limits:OwnedCirclesPerUser", "100000");
+        builder.UseSetting("Circles:Limits:CircleCreationsPerDay", "100000");
+
         builder.UseSetting("Auth:Jwt:SigningKey", "integration-test-signing-key-long-enough-for-hmac");
         builder.UseSetting("Mail:Host", _mailpit.Hostname);
         builder.UseSetting("Mail:Port", _mailpit.GetMappedPublicPort(MailpitSmtpPort).ToString(System.Globalization.CultureInfo.InvariantCulture));

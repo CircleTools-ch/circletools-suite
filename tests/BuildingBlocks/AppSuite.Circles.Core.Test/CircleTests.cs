@@ -160,6 +160,80 @@ public sealed class CircleTests
         Assert.NotNull(circle.FindInvitationByHandle(freshHandle));
     }
 
+    /// <summary>
+    /// Revoking is how an admin takes back an invitation sent to the wrong address (FR-017). It
+    /// deletes rather than flags, so the link stops resolving and the address is free to be invited
+    /// again — a revoked invitation left lying around as a row would keep holding an address the
+    /// circle has no further business with (NFR-004).
+    /// </summary>
+    [Fact]
+    public void Revoke_DeletesTheInvitation_SoItsLinkStopsWorkingAndTheAddressIsFreeAgain()
+    {
+        var circle = CircleFactory.WithOwner(_owner);
+        var invitation = CircleFactory.Invite(circle, _owner, "carla@example.com");
+        var handle = invitation.SecretHandle;
+
+        var revoked = circle.Revoke(_owner, invitation.Id);
+
+        Assert.Null(revoked.Error);
+        Assert.Empty(circle.Invitations);
+        Assert.Null(circle.FindInvitationByHandle(handle));
+
+        // Free again: the "one pending invitation per address" rule has nothing left to collide with.
+        var again = CircleFactory.Invite(circle, _owner, "carla@example.com");
+        Assert.NotEqual(invitation.Id, again.Id);
+    }
+
+    /// <summary>A revoked invitation is gone, so revoking it twice is not a second success.</summary>
+    [Fact]
+    public void Revoke_AnInvitationThatIsAlreadyGone_IsRefusedRatherThanSilentlyAccepted()
+    {
+        var circle = CircleFactory.WithOwner(_owner);
+        var invitation = CircleFactory.Invite(circle, _owner, "carla@example.com");
+
+        circle.Revoke(_owner, invitation.Id);
+        var second = circle.Revoke(_owner, invitation.Id);
+
+        Assert.Equal(CircleError.InvitationNotFound, second.Error);
+    }
+
+    /// <summary>
+    /// A member may not take back somebody else's invitation. The route filter already refuses them
+    /// (FR-017 makes this owner-and-admin), and the aggregate refuses too — the check has to hold
+    /// where the rule lives, not only where the request arrives.
+    /// </summary>
+    [Fact]
+    public void Revoke_ByAMember_IsRefused()
+    {
+        var circle = CircleFactory.WithOwner(_owner);
+        CircleFactory.Join(circle, _owner, _member, "ben@example.com", "Ben");
+        var invitation = CircleFactory.Invite(circle, _owner, "carla@example.com");
+
+        var refused = circle.Revoke(_member, invitation.Id);
+
+        Assert.Equal(CircleError.RoleNotPermitted, refused.Error);
+        Assert.Single(circle.Invitations);
+    }
+
+    /// <summary>
+    /// FR-018's "an abandoned sign-up leaves the invitation pending": nothing but accepting or
+    /// declining consumes an invitation, so someone who opens the link, starts registering and never
+    /// finishes still has it waiting.
+    /// </summary>
+    [Fact]
+    public void AnInvitationNobodyAnswered_StaysPendingAndItsLinkKeepsWorking()
+    {
+        var circle = CircleFactory.WithOwner(_owner);
+        var invitation = CircleFactory.Invite(circle, _owner, "carla@example.com");
+
+        // Time passes — but less than the lifetime — and the circle is loaded again, which is where
+        // expiry is swept.
+        circle.PurgeExpiredInvitations(CircleFactory.Now.AddDays(13));
+
+        Assert.Single(circle.Invitations);
+        Assert.NotNull(circle.FindInvitationByHandle(invitation.SecretHandle));
+    }
+
     [Fact]
     public void Invitation_PastItsExpiry_LeavesThePendingListAndFreesTheAddress()
     {

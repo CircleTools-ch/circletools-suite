@@ -2,7 +2,7 @@
 id: FR-021
 title: Leave a circle
 type: functional
-status: Approved
+status: Implemented
 priority: Must
 source: UC-MAIN-013
 verification: test

@@ -5,7 +5,7 @@ Idea stubs and work items, newest-first. Promote items into
 
 ## Ideas
 
-### IDEA-002 — Circle (shared people across the suite) · _status: in progress (M2) — domain & application built_
+### IDEA-002 — Circle (shared people across the suite) · _status: built & closed (M2, 2026-07-30) — M4 consumes it_
 - **Problem:** every app re-asks who your people are. A family or friend-group has no lasting
   existence in the suite — each Secret-Santa group is typed in from scratch, and nobody but the
   organizer can contribute.
@@ -13,7 +13,7 @@ Idea stubs and work items, newest-first. Promote items into
 - **Value:** one standing set of people, reusable across apps and years. A Secret-Santa group can be
   created **from** a circle instead of retyped; linked people see their own assignment on their own
   device and keep their own [wishlist](../glossary/wishlist.md).
-- **Scope (designed, not built):** create a circle and label it; roles (owner/admin/member);
+- **Scope (built):** create a circle and label it; roles (owner/admin/member);
   invitations by email that never leak whether an address has an account; managed members without an
   account (children); a user in several circles.
 - **Naming:** the canonical code name is **`Circle`**; the UI label is chosen per circle and defaults
@@ -49,7 +49,7 @@ Idea stubs and work items, newest-first. Promote items into
   mechanics. This closes the last follow-up ADR-0018 recorded; **no new ADR was needed** — the
   packaging follows M1's precedent rather than deciding anything new.
 - **Feature spec & test plan written (2026-07-29):** [FEAT-003](../features/FEAT-003-m2-circles.md) and
-  [TP-003](../features/TP-003-m2-circles.md), both *Draft*. The spec fixes every number the
+  [TP-003](../features/TP-003-m2-circles.md). The spec fixes every number the
   requirements deferred to it — **14-day invitations** (a resend replaces the live link rather than
   adding one), rate limits keyed on the **inviter**, the **recipient address** (the only one that
   protects the third party) and the **circle**, a **7-day silent** cooldown after a decline, and caps
@@ -72,11 +72,36 @@ Idea stubs and work items, newest-first. Promote items into
   (an invite request must carry an address, and a pending-invitation list is unusable without one);
   and the invitation mail leaves through an `IInvitationMailer` **port** rather than `Circles.Core`
   referencing `AppSuite.Infrastructure`, which would have pulled MailKit into the domain project.
-- **Next:** `AppSuite.Circles.Repository` (the `circles` schema, its migration and `xmin`
-  concurrency), then the endpoints and `CircleRoleFilter` in `Main.Service`, the two deletion seams,
-  the invitation mail template, and the Main UI. Deleting an account needs that **second seam**
-  alongside M1's `IAccountDeletionGuard` — `PurgeAccountFromCirclesCommand` is written and waiting
-  for an `IAccountDeletionCleanup` to call it, or the people list keeps a person who is nobody.
+- **Built and closed (2026-07-30):** the rest of the slice landed — `AppSuite.Circles.Repository`
+  (the `circles` schema and its migration, `xmin` concurrency marked on the circle row so the token
+  covers child changes, and `IInvitationRateLimiter` over rolling-window `invitation_attempts` rows),
+  `/api/v1/circles` + `/api/v1/invitations` behind `CircleRoleFilter`, `OutboxInvitationMailer`, both
+  account-deletion seams (`SoleOwnerCircleGuard` for M1's `IAccountDeletionGuard`, and the new
+  `IAccountDeletionCleanup`), the DE/EN/FR invitation mail, and four `Main.Ui` pages. **537 tests
+  green across 12 projects.** Two further spec corrections are recorded in
+  [FEAT-003](../features/FEAT-003-m2-circles.md): `IInvitationRateLimiter` belongs to
+  `Circles.Repository`, not the host (its counters are `circles` tables), and the in-app invitation
+  path needed routes of its own, because `CircleRoleFilter` answers `404` to exactly the people those
+  routes exist for.
+- **What closing it found, and the lesson:** the four checks below were missing while everything
+  around them looked finished, and a green suite said nothing about any of them.
+  - the NFR-006 endpoint-guard fitness function — `CircleRoleRequirement` had been built as endpoint
+    *metadata* specifically so a test could read it back, with a comment saying so, and no test did;
+  - the "role matrix" was three spot checks, not 14 routes × 5 caller kinds;
+  - revoking an invitation had no functional test, only its route filter;
+  - **two acceptance criteria were unmet in the product**: FR-021's leave confirmation never said the
+    account and the user's own Secret-Santa data survive, and FR-022's delete confirmation never
+    named the circle, counted who loses access, or named the managed members. Both were found by
+    reading the criteria against the screen rather than against the tests.
+
+  All four were fixed at close. The transferable lesson for **M3**: a test-plan row is not evidence,
+  and a fitness function that is designed but never written leaves its design comment behind as false
+  reassurance.
+- **Carried, with reasons:** deliverability of the invitation (FR-017) waits on the
+  transactional-email provider — invitations make that decision onboarding-critical, not merely
+  account-critical; FR-019's and FR-022's Secret-Santa halves wait on **M4**, when something first
+  copies a circle into a group. The two confirmation screens changed at close still want a look in a
+  real browser.
 
 ### IDEA-001 — Secret-Santa app (first app) · _status: MVP defined_
 - **Problem:** Organizing a Secret-Santa (Wichteln) by hand is fiddly — drawing names fairly,
@@ -181,13 +206,16 @@ Idea stubs and work items, newest-first. Promote items into
   - **A CI pipeline.** There is none, so the Definition of Done's "CI green" cannot be satisfied by
     any milestone until one exists. The CI/CD choice is still an open item in the
     [ADR register](../adr/index.md#open-decisions-backlog) and needs an ADR before the pipeline.
-- **M2 phases 3 & 4 done (2026-07-29):** the circle use cases and requirements are written and
-  registered, arc42 ch. 5 has the Circles bounded context, and
-  [FEAT-003](../features/FEAT-003-m2-circles.md) + [TP-003](../features/TP-003-m2-circles.md) are
-  written — see `IDEA-002` above for what they decided and for what has since been built.
-- **Three acceptance criteria cannot close in M1** and are recorded as deferred in FEAT-002: MAUI
-  cross-client passkeys (needs the real domain), the *offline* language change (needs M3 sync), and
-  the sole-circle-owner deletion guard (needs M2 circles).
+- **M2 written, built and closed (2026-07-29 → 2026-07-30):** the circle use cases and requirements,
+  arc42 ch. 5's Circles context, [FEAT-003](../features/FEAT-003-m2-circles.md) (*Done*) and
+  [TP-003](../features/TP-003-m2-circles.md) (*Reviewed*) — see `IDEA-002` above for what they decided,
+  what was built, and what closing the milestone turned up.
+- **Two of M1's three deferred criteria still stand**, and are recorded as deferred in FEAT-002: MAUI
+  cross-client passkeys (needs the real domain) and the *offline* language change (needs M3 sync).
+  The third — **the sole-circle-owner deletion guard — closed with M2** as `SoleOwnerCircleGuard`,
+  verified end to end through real account deletion. It blocks on **every** circle the account owns
+  rather than only the ones nobody else could own: deleting the owner's own membership would otherwise
+  leave a circle with no owner, a state the domain does not define.
 - **Blocked on deployment ADRs — M1 cannot ship without them:**
   - **Transactional email provider.** FR-007 (verification), FR-009 (reset) and FR-013 (email change)
     all depend on delivery. The ADR register currently justifies deferring this behind M2 invitations;

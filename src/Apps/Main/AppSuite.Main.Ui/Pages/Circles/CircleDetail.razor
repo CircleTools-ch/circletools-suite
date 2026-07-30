@@ -272,6 +272,13 @@
                     {
                         <div class="alert alert-warning mt-3" role="alert">
                             <p>@leaving.Question</p>
+
+                            @* FR-021 requires the confirmation to say what leaving does *not* take.
+                               The fear at this moment is losing the groups and draws you organised,
+                               and they live in a different app entirely — so the reassurance has to
+                               be here, where the decision is made. *@
+                            <p class="small mb-2">@L["CircleLeaveKeeps"]</p>
+
                             <div class="d-flex gap-2">
                                 <BusyButton Type="button"
                                             CssClass="btn btn-sm btn-danger"
@@ -291,7 +298,34 @@
                 {
                     <section class="appsuite-danger">
                         <h2 class="h5">@L["CircleDeleteTitle"]</h2>
-                        <p class="small">@L["CircleDeleteLead"]</p>
+
+                        @* FR-022 asks this confirmation to be specific rather than merely stern: the
+                           circle by name, how many people lose access, and every managed member by
+                           name — they are the only data here nobody else can recreate. The counts
+                           come from the response, never from a cached number. *@
+                        <p class="small mb-1">
+                            @string.Format(CultureInfo.CurrentCulture, L["CircleDeleteNames"], _circle.Name)
+                        </p>
+                        <p class="small mb-1">
+                            @string.Format(
+                                CultureInfo.CurrentCulture,
+                                L["CircleDeleteLosesAccess"],
+                                _circle.People.Count(person => !person.IsManaged))
+                        </p>
+
+                        @if (ManagedNames is { Length: > 0 } managedNames)
+                        {
+                            @* The names are appended as data rather than substituted into the
+                               sentence. A managed member's name is user data in the same way the
+                               label is, and keeping it out of the format string is what guarantees
+                               it is rendered verbatim in every language. *@
+                            <p class="small mb-1">
+                                @L["CircleDeleteManagedNamed"] <span>@managedNames</span>
+                            </p>
+                        }
+
+                        <p class="small mb-1">@L["CircleDeleteLead"]</p>
+                        <p class="small">@L["CircleDeleteKeeps"]</p>
 
                         <form class="appsuite-form" @onsubmit="DeleteAsync" @onsubmit:preventDefault="true">
                             <div>
@@ -356,6 +390,14 @@
     private bool _gone;
 
     private bool IsOwner => string.Equals(_circle?.Role, "Owner", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The managed members, by name, for the deletion confirmation (FR-022). Empty when the circle
+    /// has none, so the sentence naming them is left out rather than shown empty.
+    /// </summary>
+    private string ManagedNames => string.Join(
+        ", ",
+        _circle?.People.Where(person => person.IsManaged).Select(person => person.DisplayName) ?? []);
 
     private bool CanAdminister => IsOwner || IsAdminRole(_circle?.Role);
 

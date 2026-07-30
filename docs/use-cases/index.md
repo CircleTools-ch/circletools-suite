@@ -40,8 +40,9 @@ _Add a row per use case._
 - **UC-MAIN-001..007** — **M1 — Identity in Main**: sign-up, sign-in, passkeys, profile, deletion &
   export, password reset. Built and closed as [FEAT-002](../features/FEAT-002-m1-identity.md).
 - **UC-MAIN-008..014** — **M2 — Circles**: create a circle, invite, accept/decline, managed members,
-  roles & ownership, leave, delete. Input for [FR-016..022 and NFR-006](../requirements/index.md) and
-  the M2 feature spec. Two of them close loose ends M1 left: UC-MAIN-014 unblocks
+  roles & ownership, leave, delete. Realised by [FR-016..022 and NFR-006](../requirements/index.md);
+  built and closed as [FEAT-003](../features/FEAT-003-m2-circles.md). Two of them close loose ends M1
+  left: UC-MAIN-014 unblocks
   [FR-015](../requirements/functional/FR-015-delete-account.md)'s sole-circle-owner guard, and
   UC-MAIN-011 answers what happens to managed members when their creator leaves.
 - Still to write: `UC-SS-007+` for **M3/M4** (claim a group, create a group from a circle, link a

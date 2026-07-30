@@ -159,9 +159,14 @@
   <data name="CircleConfirmNo" xml:space="preserve"><value>Annuler</value></data>
   <data name="CircleLeave" xml:space="preserve"><value>Quitter ce cercle</value></data>
   <data name="CircleLeaveConfirm" xml:space="preserve"><value>Quitter ce cercle ? Il vous faudra une nouvelle invitation pour revenir.</value></data>
+  <data name="CircleLeaveKeeps" xml:space="preserve"><value>Votre compte reste, et vos propres groupes Secret-Santa, leurs membres et les tirages déjà effectués ne sont pas touchés.</value></data>
   <data name="CircleLeft" xml:space="preserve"><value>Vous avez quitté le cercle.</value></data>
   <data name="CircleDeleteTitle" xml:space="preserve"><value>Supprimer ce cercle</value></data>
-  <data name="CircleDeleteLead" xml:space="preserve"><value>Cela supprime le cercle pour tout le monde, y compris les personnes sans compte et les invitations en attente. C'est irréversible.</value></data>
+  <data name="CircleDeleteLead" xml:space="preserve"><value>Toutes les invitations en attente sont également retirées, et rien de tout cela n'est réversible.</value></data>
+  <data name="CircleDeleteNames" xml:space="preserve"><value>Cela supprime le cercle {0}.</value></data>
+  <data name="CircleDeleteLosesAccess" xml:space="preserve"><value>{0} personnes en perdront l'accès.</value></data>
+  <data name="CircleDeleteManagedNamed" xml:space="preserve"><value>Ces personnes sans compte sont supprimées avec lui :</value></data>
+  <data name="CircleDeleteKeeps" xml:space="preserve"><value>Vos groupes Secret-Santa, leurs tirages et les liens que vous avez partagés ne sont pas touchés.</value></data>
   <data name="CircleDeleteConfirmPrompt" xml:space="preserve"><value>Tapez le nom du cercle pour confirmer.</value></data>
   <data name="CircleDeleteSubmit" xml:space="preserve"><value>Supprimer le cercle</value></data>
   <data name="CircleDeleted" xml:space="preserve"><value>Le cercle a été supprimé.</value></data>
