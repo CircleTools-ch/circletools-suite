@@ -1,0 +1,143 @@
+@page "/circles"
+@inject IStringLocalizer<AppStrings> L
+@inject CirclesApiClient Api
+@inject NavigationManager Nav
+
+<PageTitle>@L["CirclesTitle"]</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="appsuite-page">
+            <h1 class="h4">@L["CirclesTitle"]</h1>
+            <p class="text-body-secondary">@L["CirclesLead"]</p>
+
+            <ProblemAlert Message="@_error" />
+
+            @if (_circles is null)
+            {
+                <p class="text-body-secondary">@L["CircleLoading"]</p>
+            }
+            else if (_circles.Count == 0)
+            {
+                <p class="text-body-secondary">@L["CirclesEmpty"]</p>
+            }
+            else
+            {
+                <ul class="list-group mb-4">
+                    @foreach (var circle in _circles)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                @* The label is user data, shown exactly as it was stored. It is never
+                                   looked up in a resource file - that would silently retranslate a
+                                   circle someone named themselves (FR-016). *@
+                                <strong>@circle.Name</strong>
+                                <span class="text-body-secondary small ms-2">@circle.Label</span>
+                                <span class="text-body-secondary small ms-2">
+                                    @string.Format(Culture, L["CirclesPeopleCount"], circle.PeopleCount)
+                                </span>
+                                @if (RoleBadge(circle.Role) is { } badge)
+                                {
+                                    <span class="badge text-bg-secondary ms-2">@badge</span>
+                                }
+                            </span>
+                            <a class="btn btn-sm btn-outline-primary" href="@($"circles/{circle.Id}")">
+                                @L["CirclesOpen"]
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+
+            <section>
+                <h2 class="h5">@L["CirclesCreateTitle"]</h2>
+
+                <form class="appsuite-form" @onsubmit="CreateAsync" @onsubmit:preventDefault="true">
+                    <ProblemAlert Message="@_createError" />
+
+                    <div>
+                        <label class="form-label" for="circle-name">@L["CircleNameField"]</label>
+                        <input id="circle-name" class="form-control" required
+                               @bind="_name" @bind:event="oninput" />
+                    </div>
+
+                    <div>
+                        <label class="form-label" for="circle-label">@L["CircleLabelField"]</label>
+                        <input id="circle-label" class="form-control" @bind="_label" @bind:event="oninput" />
+                        <div class="form-text">@L["CircleLabelHint"]</div>
+                    </div>
+
+                    <BusyButton CssClass="btn btn-primary"
+                                Label="@L["CirclesCreateSubmit"]"
+                                Busy="_creating"
+                                Disabled="@(_name.Trim().Length == 0)" />
+                </form>
+            </section>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private IReadOnlyList<CircleSummaryResponse>? _circles;
+    private string _name = string.Empty;
+    private string _label = string.Empty;
+    private string? _error;
+    private string? _createError;
+    private bool _creating;
+
+    private static CultureInfo Culture => CultureInfo.CurrentCulture;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Prefilled from the current language, and only here. Once the circle exists its label is
+        // user data: never re-defaulted, never re-translated (FR-016).
+        _label = L["CircleLabelDefault"];
+
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var result = await Api.GetMineAsync();
+
+        if (result.Value is { } circles)
+        {
+            _circles = circles;
+            _error = null;
+        }
+        else
+        {
+            _error = CircleErrorText.Describe(L, result.Error);
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        _creating = true;
+        _createError = null;
+
+        var result = await Api.CreateAsync(new CreateCircleRequest(_name.Trim(), _label.Trim()));
+
+        _creating = false;
+
+        if (result.Value is { } created)
+        {
+            Nav.NavigateTo($"circles/{created.Id}");
+            return;
+        }
+
+        _createError = CircleErrorText.Describe(L, result.Error);
+    }
+
+    private string? RoleBadge(string role) => role.ToUpperInvariant() switch
+    {
+        // Owner and admin only. Badging all three roles makes the list noise; what matters at a
+        // glance is who else can act (FEAT-003).
+        "OWNER" => L["CircleRoleOwner"].Value,
+        "ADMIN" => L["CircleRoleAdmin"].Value,
+        _ => null,
+    };
+}

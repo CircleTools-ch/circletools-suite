@@ -55,13 +55,13 @@
   <data name="RunDraw" xml:space="preserve"><value>Auslosen</value></data>
   <data name="DrawSuccess" xml:space="preserve"><value>Auslosung abgeschlossen.</value></data>
   <data name="DrawAssignmentCount" xml:space="preserve"><value>{0} Zuordnungen wurden erstellt.</value></data>
-  <data name="DrawFailedOverConstrained" xml:space="preserve"><value>Mit den aktuellen Ausschlüssen ist keine gültige Auslosung möglich. Entfernen Sie einige davon.</value></data>
-  <data name="DrawFailedTwoMember" xml:space="preserve"><value>Eine Zweiergruppe lässt sich nicht auslosen, ohne dass sich beide gegenseitig beschenken. Fügen Sie weitere Mitglieder hinzu.</value></data>
-  <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Fügen Sie mindestens zwei Mitglieder hinzu, um auszulosen.</value></data>
-  <data name="DrawSpoilerNote" xml:space="preserve"><value>Die Zuordnungen werden hier nicht angezeigt, um nichts zu verraten. Teilen Sie stattdessen die Links.</value></data>
+  <data name="DrawFailedOverConstrained" xml:space="preserve"><value>Mit den aktuellen Ausschlüssen ist keine gültige Auslosung möglich. Entferne einige davon.</value></data>
+  <data name="DrawFailedTwoMember" xml:space="preserve"><value>Eine Zweiergruppe lässt sich nicht auslosen, ohne dass sich beide gegenseitig beschenken. Füge weitere Mitglieder hinzu.</value></data>
+  <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Füge mindestens zwei Mitglieder hinzu, um auszulosen.</value></data>
+  <data name="DrawSpoilerNote" xml:space="preserve"><value>Die Zuordnungen werden hier nicht angezeigt, um nichts zu verraten. Teile stattdessen die Links.</value></data>
   <data name="ShareTitle" xml:space="preserve"><value>Links teilen</value></data>
-  <data name="ShareHint" xml:space="preserve"><value>Senden Sie jeder Person ihren eigenen Link. Nur die empfangende Person sieht, wen sie beschenkt.</value></data>
-  <data name="NoDrawYet" xml:space="preserve"><value>Losen Sie zuerst aus, um Links zu erzeugen.</value></data>
+  <data name="ShareHint" xml:space="preserve"><value>Sende jeder Person ihren eigenen Link. Nur die empfangende Person sieht, wen sie beschenkt.</value></data>
+  <data name="NoDrawYet" xml:space="preserve"><value>Lose zuerst aus, um Links zu erzeugen.</value></data>
   <data name="DrawInvalidatedNotice" xml:space="preserve"><value>Die Mitglieder haben sich geändert, daher gilt die frühere Auslosung nicht mehr. Bitte erneut auslosen.</value></data>
   <data name="RedrawWarning" xml:space="preserve"><value>Diese Gruppe wurde bereits ausgelost. Ein erneutes Auslosen ersetzt alle Zuordnungen - bereits verschickte Links zeigen dann die falsche Person.</value></data>
   <data name="RedrawConfirm" xml:space="preserve"><value>Trotzdem erneut auslosen</value></data>
@@ -71,10 +71,10 @@
   <data name="ConfirmYes" xml:space="preserve"><value>Ja, löschen</value></data>
   <data name="ConfirmRemove" xml:space="preserve"><value>Ja, entfernen</value></data>
   <data name="ExclusionSelfNotAllowed" xml:space="preserve"><value>Eine Person kann nicht von sich selbst ausgeschlossen werden - sie wird sich ohnehin nie selbst zugelost.</value></data>
-  <data name="ExclusionPickBoth" xml:space="preserve"><value>Wählen Sie eine schenkende und eine beschenkte Person.</value></data>
+  <data name="ExclusionPickBoth" xml:space="preserve"><value>Wähle eine schenkende und eine beschenkte Person.</value></data>
   <data name="NotFoundTitle" xml:space="preserve"><value>Nicht gefunden</value></data>
   <data name="NotFoundBody" xml:space="preserve"><value>Diesen Inhalt gibt es leider nicht.</value></data>
-  <data name="ShareLinkTooLong" xml:space="preserve"><value>Dieser Link ist lang und könnte von manchen Chat-Apps gekürzt oder abgeschnitten werden. Kürzen Sie ggf. die Wunschlisteneinträge.</value></data>
+  <data name="ShareLinkTooLong" xml:space="preserve"><value>Dieser Link ist lang und könnte von manchen Chat-Apps gekürzt oder abgeschnitten werden. Kürze ggf. die Wunschlisteneinträge.</value></data>
   <data name="ForLabel" xml:space="preserve"><value>Für</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Dein Wichtel</value></data>
   <data name="RevealGreeting" xml:space="preserve"><value>Hallo {0}!</value></data>

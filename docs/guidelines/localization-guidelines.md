@@ -39,11 +39,30 @@
 - When a signed-in user's account carries a language, it wins over whatever this browser last
   remembered.
 
-## 5. Glossary vs. UI terms
+## 5. Tone of voice
+
+Decided in [ADR-0032](../adr/0032-ui-tone-of-voice-and-gender-neutral-terms.md). The register is
+**per language**, because German and French do not draw the formal/informal line in the same place.
+
+| Language | Address the reader as | Example |
+|----------|-----------------------|---------|
+| German (`de-CH`) | **informal `du`** | *"Gib zur Bestätigung dein Passwort ein."* |
+| French (`fr-CH`) | **formal `vous`** | *"Saisissez votre mot de passe pour confirmer."* |
+| English (`en`) | no distinction — plain second person | *"Enter your password to confirm."* |
+
+This covers **everything the user reads**, transactional mail included — the mail is the same voice
+as the screen that triggered it.
+
+**Never imply the reader's gender.** The UI knows nothing about it. German agent nouns take the
+colon form (`Besitzer:in`), and a sentence that would need a gendered article is rewritten around it
+(*"die einzige Person, die…"*, not *"die Einzige, die…"*). Terms already epicene in German usage —
+`Admin` — stay as they are. French `propriétaire` is epicene and needs nothing.
+
+## 6. Glossary vs. UI terms
 - The [glossary](../glossary/index.md) holds canonical **English** domain terms (code names). It
   may list DE/EN/FR **display** terms for reference; those are not code identifiers.
 
-## 6. Decided
+## 7. Decided
 - Resource format and culture routing: **RESX + `IStringLocalizer`**, cultures `de-CH` (default),
   `en` and `fr-CH` — [ADR-0011](../adr/0011-localization-format-and-culture.md). The shared
   implementation lives in `AppSuite.Localization`

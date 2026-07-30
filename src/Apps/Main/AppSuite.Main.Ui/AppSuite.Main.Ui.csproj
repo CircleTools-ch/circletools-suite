@@ -14,6 +14,7 @@
        Identity, EF or Main.Service.Core - see docs/guidelines/architecture-guidelines.md §4. -->
   <ItemGroup>
     <ProjectReference Include="..\AppSuite.Main.Contracts\AppSuite.Main.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\AppSuite.Circles.Contracts\AppSuite.Circles.Contracts.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\AppSuite.ApiClient\AppSuite.ApiClient.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\AppSuite.Ui.Shared\AppSuite.Ui.Shared.csproj" />
   </ItemGroup>

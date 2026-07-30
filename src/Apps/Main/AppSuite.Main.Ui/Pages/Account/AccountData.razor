@@ -124,7 +124,12 @@ else
 
         if (!result.IsSuccess)
         {
-            _deleteError = ApiErrorText.Describe(L, result.Error);
+            // CircleErrorText, not ApiErrorText: the sole-owner guard (FR-015) refuses this with a
+            // 409 carrying `circles_still_owned`, and the status alone would say only "there was a
+            // conflict" — leaving the user with no idea that the way out is to hand a circle over.
+            // Every other refusal here carries no circle code and falls through to the same
+            // status-based sentence as before.
+            _deleteError = CircleErrorText.Describe(L, result.Error);
             _deleteDetails = ApiErrorText.Details(L, result.Error);
             return;
         }

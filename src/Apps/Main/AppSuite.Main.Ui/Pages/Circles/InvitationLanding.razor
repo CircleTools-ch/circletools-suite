@@ -1,0 +1,155 @@
+@page "/invitation/{Token}"
+@inject IStringLocalizer<AppStrings> L
+@inject CirclesApiClient Api
+@inject NavigationManager Nav
+
+@* Where a mail link lands (FR-018). Rendered for anyone holding the link, signed in or not.
+
+   It offers signing in *and* signing up, side by side, and never says which one applies. That is
+   the whole point: telling the holder "you already have an account" would make the invitation an
+   account-existence oracle, which is the leak ADR-0018 paid real UX to avoid (NFR-005). *@
+
+<PageTitle>@L["InvitationLandingTitle"]</PageTitle>
+
+<AuthCard Title="@L["InvitationLandingTitle"]">
+    <ChildContent>
+        <ProblemAlert Message="@_error" />
+
+        @if (_notice is { Length: > 0 })
+        {
+            <p class="mb-0">@_notice</p>
+        }
+        else if (_invalid)
+        {
+            <p class="mb-0">@L["InvitationInvalid"]</p>
+        }
+        else if (_preview is null)
+        {
+            <p class="mb-0 text-body-secondary">@L["CircleLoading"]</p>
+        }
+        else
+        {
+            <p>
+                @string.Format(
+                    CultureInfo.CurrentCulture,
+                    L["InvitationLandingLead"],
+                    _preview.InviterDisplayName,
+                    _preview.CircleName)
+            </p>
+            <p class="text-body-secondary small">@_preview.CircleLabel</p>
+
+            <AuthorizeView>
+                <Authorized>
+                    <p class="text-body-secondary small">@L["InvitationLandingHint"]</p>
+                    <div class="d-flex gap-2">
+                        <BusyButton Type="button"
+                                    CssClass="btn btn-primary"
+                                    Label="@L["InvitationAccept"]"
+                                    Busy="_busy"
+                                    OnClick="AcceptAsync" />
+                        <BusyButton Type="button"
+                                    CssClass="btn btn-outline-secondary"
+                                    Label="@L["InvitationDecline"]"
+                                    Busy="_busy"
+                                    OnClick="DeclineAsync" />
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <p class="text-body-secondary small">@L["InvitationLandingHint"]</p>
+                    <div class="d-flex flex-column gap-2">
+                        @* Both offered, always. Which one the recipient needs is theirs to know. *@
+                        <a class="btn btn-primary" href="@SignInLink">@L["InvitationLandingSignIn"]</a>
+                        <a class="btn btn-outline-secondary" href="@RegisterLink">
+                            @L["InvitationLandingRegister"]
+                        </a>
+
+                        @* Declining needs no account, on purpose. Requiring one would make a
+                           decline prove the address has one (FR-018). *@
+                        <BusyButton Type="button"
+                                    CssClass="btn btn-link"
+                                    Label="@L["InvitationDecline"]"
+                                    Busy="_busy"
+                                    OnClick="DeclineAsync" />
+                    </div>
+                </NotAuthorized>
+            </AuthorizeView>
+        }
+    </ChildContent>
+    <Footer>
+        <a href="">@L["NavDashboard"]</a>
+    </Footer>
+</AuthCard>
+
+@code {
+    /// <summary>The secret from the mail link.</summary>
+    [Parameter]
+    public string Token { get; set; } = string.Empty;
+
+    private InvitationPreviewResponse? _preview;
+    private string? _error;
+    private string? _notice;
+    private bool _invalid;
+    private bool _busy;
+
+    // The token rides along so the flow resumes here after signing in or signing up, which is what
+    // keeps acceptance a single code path rather than a side effect of email verification (FR-018).
+    private string Returned => Uri.EscapeDataString($"invitation/{Token}");
+
+    private string SignInLink => $"account/login?returnUrl={Returned}";
+
+    // No returnUrl: signing up needs an email round-trip to verify the address, and no query
+    // parameter survives that. It does not need to — once the address is verified, this very
+    // invitation is waiting at /invitations, which is what the in-app path exists for (FR-018).
+    private const string RegisterLink = "account/register";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var result = await Api.PreviewInvitationAsync(Token);
+
+        if (result.Value is { } preview)
+        {
+            _preview = preview;
+            _invalid = false;
+            return;
+        }
+
+        // Expired, revoked, consumed or never existed — all one answer, deliberately.
+        _invalid = true;
+    }
+
+    private async Task AcceptAsync()
+    {
+        _busy = true;
+        _error = null;
+
+        var result = await Api.AcceptInvitationAsync(Token);
+
+        _busy = false;
+
+        if (result.IsSuccess)
+        {
+            Nav.NavigateTo("circles");
+            return;
+        }
+
+        _error = CircleErrorText.Describe(L, result.Error);
+    }
+
+    private async Task DeclineAsync()
+    {
+        _busy = true;
+        _error = null;
+
+        var result = await Api.DeclineInvitationAsync(Token);
+
+        _busy = false;
+
+        if (result.IsSuccess)
+        {
+            _notice = L["InvitationDeclined"];
+            return;
+        }
+
+        _error = CircleErrorText.Describe(L, result.Error);
+    }
+}

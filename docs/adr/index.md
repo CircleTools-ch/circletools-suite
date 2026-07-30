@@ -114,6 +114,18 @@ path.
 Both are governed by [NFR-007](../requirements/non-functional/NFR-007-store-distributability.md),
 which states the recurring platform obligations that outlive any single release.
 
+### Recently closed (M2 circles — 2026-07-30)
+
+Raised by driving M2's circle screens in a real browser. The Circles strings had been written
+informally while M1's account strings were formal, and the sole-owner refusal put both registers in
+one red panel — a defect no test could see.
+
+- ✅ **UI tone of voice & gender-neutral role terms** →
+  [ADR-0032](0032-ui-tone-of-voice-and-gender-neutral-terms.md) (German `du`, French `vous`, colon
+  form for German agent nouns). The convention is recorded in the
+  [localization guidelines](../guidelines/localization-guidelines.md) so new strings follow it
+  without rediscovering the ADR.
+
 ### Depends on deployment (genuinely open)
 
 > [ADR-0023](0023-local-dev-infrastructure-in-apphost.md) lets **implementation** proceed without

@@ -25,4 +25,14 @@ public static class MainApiClients
 
     /// <summary>The version-prefixed route base every account endpoint sits under (ADR-0010).</summary>
     public const string AccountRoute = "api/v1/account";
+
+    /// <summary>The route base for circles (FEAT-003).</summary>
+    public const string CirclesRoute = "api/v1/circles";
+
+    /// <summary>
+    /// The route base for invitations (FEAT-003). Separate from <see cref="CirclesRoute"/> because
+    /// its routes exist for people who are <em>not</em> in the circle yet, and the role filter on the
+    /// circles group answers <c>404</c> to exactly them.
+    /// </summary>
+    public const string InvitationsRoute = "api/v1/invitations";
 }

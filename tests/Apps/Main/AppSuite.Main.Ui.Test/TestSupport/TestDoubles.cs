@@ -67,6 +67,32 @@ public sealed class StubApiHandler : HttpMessageHandler
         return this;
     }
 
+    /// <summary>
+    /// Answers a route with a <c>ProblemDetails</c> carrying a stable refusal code, the way the
+    /// circle endpoints refuse (FEAT-003, ADR-0011).
+    /// </summary>
+    /// <param name="method">The HTTP method.</param>
+    /// <param name="path">The path, without a leading slash.</param>
+    /// <param name="status">The status to answer with.</param>
+    /// <param name="code">The refusal code the UI translates.</param>
+    /// <returns>The same handler, for chaining.</returns>
+    public StubApiHandler RespondProblem(
+        HttpMethod method,
+        string path,
+        HttpStatusCode status,
+        string code)
+    {
+        _routes[Key(method, path)] = () => new HttpResponseMessage(status)
+        {
+            Content = new StringContent(
+                JsonSerializer.Serialize(new { title = "Refused.", code }, _json),
+                Encoding.UTF8,
+                "application/problem+json"),
+        };
+
+        return this;
+    }
+
     /// <inheritdoc />
     protected override Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,

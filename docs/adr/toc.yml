@@ -62,5 +62,7 @@
   href: 0030-mobile-store-publisher-identity.md
 - name: ADR-0031 iOS build host
   href: 0031-ios-build-host.md
+- name: ADR-0032 UI tone of voice and gender-neutral role terms
+  href: 0032-ui-tone-of-voice-and-gender-neutral-terms.md
 - name: Template
   href: _template-adr.md

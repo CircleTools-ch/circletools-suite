@@ -32,7 +32,7 @@ public sealed class MailTemplateRendererTests
         });
 
     [Theory]
-    [InlineData("de-CH", "Bestätigen")]
+    [InlineData("de-CH", "Bestätige")]
     [InlineData("fr-CH", "Confirmez")]
     [InlineData("en", "Confirm")]
     public void Verification_RendersInTheAccountsLanguage(string language, string expected)
@@ -76,7 +76,7 @@ public sealed class MailTemplateRendererTests
     }
 
     [Theory]
-    [InlineData("de-CH", "lädt Sie")]
+    [InlineData("de-CH", "lädt dich")]
     [InlineData("fr-CH", "vous invite")]
     [InlineData("en", "invites you")]
     public void InvitationTemplate_RendersInAllThreeLanguages(string language, string expected)

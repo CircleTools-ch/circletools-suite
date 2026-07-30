@@ -43,6 +43,7 @@ public static class MainUiServiceCollectionExtensions
 
         services.AddScoped<ISessionRefresher, SessionRefresher>();
         services.AddScoped<AccountApiClient>();
+        services.AddScoped<CirclesApiClient>();
         services.AddScoped<AccountSession>();
 
         return services;

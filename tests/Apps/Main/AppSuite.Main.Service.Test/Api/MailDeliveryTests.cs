@@ -23,7 +23,7 @@ public sealed class MailDeliveryTests(MailApiFactory factory)
     private static string UniqueEmail() => $"mail-{Guid.CreateVersion7():N}@example.test";
 
     [Theory]
-    [InlineData("de-CH", "Bestätigen Sie Ihre E-Mail-Adresse")]
+    [InlineData("de-CH", "Bestätige deine E-Mail-Adresse")]
     [InlineData("fr-CH", "Confirmez votre adresse e-mail")]
     [InlineData("en", "Confirm your email address")]
     public async Task Registering_DeliversTheVerificationMailInTheChosenLanguage(string language, string subject)
