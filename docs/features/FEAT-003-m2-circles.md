@@ -353,15 +353,15 @@ that no Circles contract type has an email field.
 
 - [ ] Meets acceptance criteria of all covered requirements, except the one recorded as deferred
       above and in [TP-003](TP-003-m2-circles.md)
-- [ ] Builds clean under analyzers (warnings = errors)
-- [ ] Tests per TP-003 pass
-- [ ] Architecture boundaries respected — `Circles.Core` free of ASP.NET and EF; no Secret-Santa
+- [x] Builds clean under analyzers (warnings = errors)
+- [x] Tests per TP-003 pass
+- [x] Architecture boundaries respected — `Circles.Core` free of ASP.NET and EF; no Secret-Santa
       project references Circles; no Circles project references `AppSuite.Identity`
 - [ ] Docs and API comments updated; [arc42 ch. 5](../arc42/05-building-block-view.md) and
       [ch. 8](../arc42/08-crosscutting-concepts.md) reflect the built shape
-- [ ] Localized strings provided (DE/EN/FR), including the invitation mail
-- [ ] **Verified in a real browser** across DE/EN/FR with a clean console — create → invite → accept
+- [x] Localized strings provided (DE/EN/FR), including the invitation mail
+- [x] **Verified in a real browser** across DE/EN/FR with a clean console — create → invite → accept
       on both paths → decline → managed member → promote → role change → transfer → leave → delete
-- [ ] FR-015's sole-owner guard demonstrated end to end, closing the criterion M1 carried
+- [x] FR-015's sole-owner guard demonstrated end to end, closing the criterion M1 carried
 - [ ] Traceability links closed — every row of TP-003's matrix names a test class that exists
       (the M1 lesson: plan-time names drift, and the matrix must be reconciled at close)
