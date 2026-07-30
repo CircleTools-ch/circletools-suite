@@ -16,6 +16,15 @@
 - Keys are English, descriptive, and stable; one resource entry per concept.
 - Formatting (dates, numbers, currency) via `CultureInfo` — Swiss conventions; never in the domain.
 - New feature strings must ship with **DE + EN + FR** (see the feature-spec checklist).
+- **A string that interpolates a count needs a second entry for one.** There is no pluralization
+  library here, and `string.Format` cannot inflect: DE, EN and FR all change the noun *and* the verb
+  between one and many. Give the singular its own key with the `One` suffix — it carries **no**
+  placeholder, so the translator writes the number the way that language wants it — and pick it at
+  the call site. Two M2 strings shipped without this and read *"1 Personen"*, *"1 people"*,
+  *"1 personnes"*: the circle list's size fragment, and FR-022's delete confirmation — both in the
+  state every circle is in the moment it is created
+  ([FEAT-003](../features/FEAT-003-m2-circles.md)). Test the count at **one**, not only at three —
+  the component tests covering both rendered three people and saw nothing.
 
 ## 4. Culture selection
 - Selected culture is a **user preference**, persisted locally and synced across devices.

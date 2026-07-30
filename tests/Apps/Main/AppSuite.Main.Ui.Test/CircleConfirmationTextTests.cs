@@ -82,6 +82,53 @@ public sealed class CircleConfirmationTextTests
     }
 
     /// <summary>
+    /// FR-022 at a count of one — the owner alone in their circle, which is the state every circle
+    /// starts in and the one the browser walk-through hit first.
+    /// </summary>
+    /// <remarks>
+    /// The plural test above uses three people and so cannot see this: German, English and French all
+    /// inflect the noun and the verb, and a single format string produced "1 Personen verlieren",
+    /// "1 people will lose" and "1 personnes en perdront" in the running app. Asserting the digit is
+    /// absent is what pins it — the singular sentence spells the number as a word in all three.
+    /// </remarks>
+    [Theory]
+    [InlineData("de-CH")]
+    [InlineData("en")]
+    [InlineData("fr-CH")]
+    public void DeleteConfirmation_UsesTheSingular_WhenOnlyTheOwnerLosesAccess(string language)
+    {
+        using var scope = new CultureScope(language);
+        using var context = RealTextContext();
+
+        var circleId = Guid.CreateVersion7();
+        context.Api.RespondJson(
+            HttpMethod.Get,
+            $"api/v1/circles/{circleId}",
+            new CircleDetailResponse(
+                circleId,
+                "Müller",
+                "Familie",
+                "Owner",
+                [Person("Anna", "Owner", isYou: true), Person("Grosi", isManaged: true)]));
+        context.Api.RespondJson(
+            HttpMethod.Get,
+            $"api/v1/circles/{circleId}/invitations",
+            Array.Empty<PendingInvitationResponse>());
+
+        var text = Normalize(RenderDetail(context, circleId).Find("section.appsuite-danger").TextContent);
+
+        // The managed member is deleted, not counted among those losing access — so a "2" here would
+        // mean the count had started including people who never had access.
+        Assert.DoesNotContain("2", text, StringComparison.Ordinal);
+
+        // No bare count at all: at one, the sentence says it in words.
+        Assert.DoesNotMatch(@"(^|\s)1(\s|$)", text);
+
+        // Grosi is still named as deleted — the singular sentence replaces the count, not the rest.
+        Assert.Contains("Grosi", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// FR-021: the leave confirmation says what leaving does not take. The words differ per language;
     /// that all three say something about the account and about Secret-Santa is what is checked here,
     /// and the exact prose is a translation review.

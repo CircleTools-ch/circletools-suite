@@ -402,6 +402,11 @@
   </data>
   <data name="CirclesPeopleCount" xml:space="preserve">
     <value>{0} people</value>
+    <comment>The size of a circle in the list. {0} is a count, and is never one — see CirclesPeopleCountOne.</comment>
+  </data>
+  <data name="CirclesPeopleCountOne" xml:space="preserve">
+    <value>1 person</value>
+    <comment>The same fragment at a count of one, where the noun inflects. A circle just created shows this.</comment>
   </data>
   <data name="CirclesOpen" xml:space="preserve">
     <value>Open</value>
@@ -542,7 +547,11 @@
   </data>
   <data name="CircleDeleteLosesAccess" xml:space="preserve">
     <value>{0} people will lose access to it.</value>
-    <comment>FR-022: how many people lose access. {0} is a count.</comment>
+    <comment>FR-022: how many people lose access. {0} is a count, and is never one — see CircleDeleteLosesAccessOne.</comment>
+  </data>
+  <data name="CircleDeleteLosesAccessOne" xml:space="preserve">
+    <value>One person will lose access to it.</value>
+    <comment>FR-022: the same sentence at a count of one, where noun and verb both inflect. No placeholder — "one" belongs inside the sentence in every language.</comment>
   </data>
   <data name="CircleDeleteManagedNamed" xml:space="preserve">
     <value>These people without an account are deleted with it:</value>

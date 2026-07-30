@@ -365,12 +365,23 @@ that no Circles contract type has an email field.
       limiter in `Circles.Repository`, both deletion seams and their ordering, `CircleRoleFilter` as
       readable metadata, `ApiError.Code`, and the four `Main.Ui` pages
 - [x] Localized strings provided (DE/EN/FR), including the invitation mail and the confirmation
-      sentences added at close
-- [ ] **Verified in a real browser** across DE/EN/FR with a clean console — create → invite → accept
+      sentences added at close — and, after the browser walk, the **singular** of both counted
+      strings: FR-022's delete sentence (`CircleDeleteLosesAccessOne`) and FR-016's circle-list size
+      (`CirclesPeopleCountOne`). One format string cannot carry both cases in any of the three
+      languages: German, English and French all inflect, so *"{0} people"* renders *"1 people"* for a
+      circle whose owner is its only account-backed person — which is every circle at the moment it is
+      created, and in the list it is the first thing a new user sees. The pages pick the singular
+      entry; the plural keeps the placeholder. Nothing here is a pluralization library: one extra
+      resource entry is what a translator would write, and M2 is the wrong place to introduce plural
+      machinery for two strings. The rule is now in the
+      [localization guidelines](../guidelines/localization-guidelines.md) so the next counted string
+      does not repeat it
+- [x] **Verified in a real browser** across DE/EN/FR with a clean console — create → invite → accept
       on both paths → decline → managed member → promote → role change → transfer → leave → delete.
-      Done for the milestone; **the two confirmation screens changed at close still need a look**.
-      Their prose is asserted against the real DE/EN/FR resources by
-      `CircleConfirmationTextTests`, which is evidence about the sentences and not about the screen
+      Done for the milestone, and the two confirmation screens changed at close were walked again on
+      **2026-07-30**. Their prose is asserted against the real DE/EN/FR resources by
+      `CircleConfirmationTextTests`, which is evidence about the sentences and not about the screen —
+      and the screen had one more defect in it, below
 - [x] FR-015's sole-owner guard demonstrated end to end, closing the criterion M1 carried
 - [x] Traceability links closed — every row of TP-003's matrix names a test class that exists
       (the M1 lesson held, and cost more than expected: see TP-003's closing notes)
