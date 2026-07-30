@@ -18,20 +18,35 @@ app behaves exactly as it does today
 
 ## Mechanism
 
-- The **aggregate is the unit of sync** — a Secret-Santa [Group](group.md), a [Circle](circle.md).
-  Aggregates are never merged field-by-field.
-- Each aggregate carries a **version token**; deletes leave **tombstones** so they propagate instead
-  of resurrecting.
-- Changes move as a **delta pull/push**, triggered on app start and on change (continuous background
-  sync is parked).
-- Conflicts resolve **last-write-wins per aggregate**, with an escalation hook for the rare genuine
-  collision. A conflict-resolution UI is parked until collisions are observed in practice.
+- The **aggregate is the unit of sync**. Aggregates are never merged field-by-field.
+- Each aggregate carries a **version token**; deletes leave [tombstones](tombstone.md) so they
+  propagate instead of resurrecting.
+- The client keeps a **cursor** — the server state it last saw — and changes move as a **delta
+  pull/push**, triggered on app start, on change, and when connectivity returns (continuous
+  background sync is parked).
+- Conflicts resolve **last-write-wins per aggregate**, decided by **server-recorded** time, with an
+  escalation hook for the rare genuine collision. A conflict-resolution UI is parked until collisions
+  are observed in practice — which is why the hook must emit telemetry rather than merely exist.
+
+## What syncs
+
+- **Secret-Santa [Groups](group.md)** that have been [claimed](claim.md) into an account — the whole
+  aggregate, including the [Draw](draw.md) and its [Assignments](assignment.md).
+- **Profile preferences** — display name and preferred language.
+- **Not [Circles](circle.md).** Circle data is server-authoritative and online-only: last-write-wins
+  would discard *other people's* edits on data several admins share, and an offline circle write
+  cannot take the server-side authorization decision
+  ([NFR-006](../requirements/non-functional/NFR-006-circle-authorization.md)) that every circle
+  mutation requires. This narrows [ADR-0016](../adr/0016-sync-and-conflict-resolution.md), which names
+  the circle as a sync unit, and is pending an ADR of its own.
 
 ## Claim
 
-The first sign-in on a device holding anonymous local data triggers a **claim**: the user is shown
-their existing local groups and chooses **per group** which ones to take into the account. Claiming is
-explicit, never automatic (decision D4).
+The first sign-in on a device holding anonymous local data triggers a [**claim**](claim.md): the user
+is shown their existing local groups and chooses **per group** which ones to take into the account.
+Claiming is explicit, never automatic (decision D4), and the local copy is kept afterwards. Taking a
+group back out of the account deletes the server copy only — it is not a delete, and it is not a
+tombstone.
 
 ## Bounded context(s)
 
@@ -56,7 +71,8 @@ explicit, never automatic (decision D4).
 
 ## Related terms
 
-- [User](user.md), [Circle](circle.md), [Group](group.md), [Assignment](assignment.md)
+- [User](user.md), [Circle](circle.md), [Group](group.md), [Assignment](assignment.md),
+  [Claim](claim.md), [Tombstone](tombstone.md)
 
 ## First appearance
 

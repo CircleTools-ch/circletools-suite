@@ -83,6 +83,9 @@ Then no other member's email address is shown
 - Related: [FR-013](FR-013-change-email-address.md),
   [NFR-003](../non-functional/NFR-003-multilingual-de-en-fr.md),
   [NFR-005](../non-functional/NFR-005-account-enumeration-resistance.md)
+- **Carried criterion** — changing the language *offline*, pushed on the next sync — is specified by
+  [FR-023](FR-023-sync-across-devices.md) and
+  [FR-024](FR-024-offline-editing-and-reconciliation.md), and closes when M3 is built
 - Governing ADRs: [ADR-0011](../../adr/0011-localization-format-and-culture.md),
   [ADR-0016](../../adr/0016-sync-and-conflict-resolution.md),
   [ADR-0018](../../adr/0018-circle-and-sharing-model.md)

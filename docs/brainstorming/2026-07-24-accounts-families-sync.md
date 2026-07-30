@@ -399,8 +399,15 @@ Glossary first — no code may use these terms before they exist (`CLAUDE.md` ru
       and ownership transfer · [UC-MAIN-013](../use-cases/main/UC-MAIN-013-leave-circle.md) leave ·
       [UC-MAIN-014](../use-cases/main/UC-MAIN-014-delete-circle.md) delete a circle. *(Numbering
       starts at 008 — `UC-MAIN-007` is M1's password reset.)*
-- [ ] Use cases (Secret-Santa): create a group from a circle; link a member to an account; see my
-      assignment while logged in; edit my own wishlist → `UC-SS-007…`.
+- [x] Use cases (**M3 — Sync & claim**) written and registered (2026-07-30):
+      [UC-MAIN-015](../use-cases/main/UC-MAIN-015-sync-across-devices.md) see my data on every device ·
+      [UC-MAIN-016](../use-cases/main/UC-MAIN-016-work-offline-and-reconcile.md) work offline and
+      reconcile · [UC-SS-007](../use-cases/secret-santa/UC-SS-007-claim-local-groups.md) take my
+      existing groups into my account (D4) ·
+      [UC-SS-008](../use-cases/secret-santa/UC-SS-008-remove-group-from-account.md) take one back out.
+      Glossary gained [Claim](../glossary/claim.md) and [Tombstone](../glossary/tombstone.md).
+- [ ] Use cases (Secret-Santa, **M4**): create a group from a circle; link a member to an account; see
+      my assignment while logged in; edit my own wishlist → `UC-SS-009…` (M3 took 007–008).
 - [x] **Amend [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)** per D1 —
       the “zero assignments server-side” target now scopes to account-free mode; account mode gets an
       authorization target with its own acceptance criteria.
@@ -416,7 +423,15 @@ Glossary first — no code may use these terms before they exist (`CLAUDE.md` ru
       [NFR-006](../requirements/non-functional/NFR-006-circle-authorization.md) circle data
       authorization — the M2 counterpart to NFR-005, stating once that circle data belongs to *other
       people* and is authorized per request against current membership, never from a token claim.
-- [ ] Requirements (**M3**): FRs per sync use case; **sync convergence** NFR.
+- [x] Requirements (**M3 — Sync & claim**) written and registered (2026-07-30):
+      [FR-023..FR-026](../requirements/index.md) per sync use case, plus
+      [NFR-008](../requirements/non-functional/NFR-008-sync-convergence-and-data-safety.md) sync
+      convergence & data safety — the convergence NFR this list asked for, stated together with the
+      data-safety half, because both fail silently and neither is visible in a green test run unless a
+      test was written to look for exactly it. **One decision came out of writing them and is still
+      open:** the requirements exclude [Circle](../glossary/circle.md) data from sync, which narrows
+      [ADR-0016](../adr/0016-sync-and-conflict-resolution.md) and needs an ADR before M3 is built
+      ([ADR backlog](../adr/index.md#open-decisions-backlog)).
 - [x] ADRs written and **Accepted** (2026-07-27):
       [ADR-0016](../adr/0016-sync-and-conflict-resolution.md) sync & conflict resolution (incl. the
       client-storage sub-decision) · [ADR-0017](../adr/0017-anonymous-to-account-claim.md)

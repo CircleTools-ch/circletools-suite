@@ -17,6 +17,7 @@ only — they are **not** code names.
 | [Budget](budget.md) | Secret-Santa | The agreed spending limit for gifts in a group. |
 | [Circle](circle.md) | Circles | A persistent named set of people sharing apps and data; UI label is user-chosen. |
 | [Circle membership](circle-membership.md) | Circles | A person's link to a circle, carrying their role (owner/admin/member). |
+| [Claim](claim.md) | Platform · Secret-Santa | Taking account-free local data into a user's account, per aggregate and by explicit choice. |
 | [Draw](draw.md) | Secret-Santa | The act/result of randomly assigning gift-givers to recipients under the draw rules. |
 | [Event details](event-details.md) | Secret-Santa | A group's occasion info: date, location, notes. |
 | [Exclusion](exclusion.md) | Secret-Santa | A one-directional rule preventing a giver from being matched to a recipient. |
@@ -27,6 +28,7 @@ only — they are **not** code names.
 | [Passkey](passkey.md) | Identity | A WebAuthn credential letting a user sign in without a password. |
 | [Reveal link](reveal-link.md) | Secret-Santa | A self-contained encoded link that reveals one giver's assignment client-side. |
 | [Sync](sync.md) | Platform | Local-first reconciliation of on-device data with the server for a signed-in user. |
+| [Tombstone](tombstone.md) | Platform | The record that an aggregate was deleted, so the deletion travels instead of resurrecting. |
 | [User](user.md) | Identity | A person with an authenticated account, shared across all apps in the suite. |
 | [Wishlist](wishlist.md) | Secret-Santa | A member's optional list of gift ideas. |
 

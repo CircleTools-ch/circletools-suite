@@ -53,4 +53,8 @@ Then no request is made to obtain an account, or to store or fetch group, draw, 
 
 - Derived from: [UC-SS-001](../../use-cases/secret-santa/UC-SS-001-create-group.md), [UC-SS-004](../../use-cases/secret-santa/UC-SS-004-run-draw.md), [UC-SS-006](../../use-cases/secret-santa/UC-SS-006-open-reveal-link.md)
 - Related: [FR-001](../functional/FR-001-create-secret-santa-group.md), [FR-004](../functional/FR-004-run-fair-draw.md), [FR-005](../functional/FR-005-generate-reveal-links.md), [FR-006](../functional/FR-006-reveal-page-decode.md), [NFR-002](NFR-002-assignment-privacy.md)
+- **Extended to signed-in mode by M3**: [FR-024](../functional/FR-024-offline-editing-and-reconciliation.md)
+  requires every flow above to work offline **while signed in** as well, so having an account never
+  makes the app less usable than not having one; [NFR-008](NFR-008-sync-convergence-and-data-safety.md)
+  states that no account action removes local data
 - Related quality goal: Q1 (local-first) — [arc42 ch. 1](../../arc42/01-introduction-and-goals.md)
