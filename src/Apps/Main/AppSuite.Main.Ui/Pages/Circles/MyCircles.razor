@@ -33,8 +33,13 @@
                                    circle someone named themselves (FR-016). *@
                                 <strong>@circle.Name</strong>
                                 <span class="text-body-secondary small ms-2">@circle.Label</span>
+                                @* A circle always holds at least the person reading this, and a circle
+                                   just created holds nobody else - so one is the count this list shows
+                                   most often, and it needs its own entry rather than "1 Personen". *@
                                 <span class="text-body-secondary small ms-2">
-                                    @string.Format(Culture, L["CirclesPeopleCount"], circle.PeopleCount)
+                                    @(circle.PeopleCount == 1
+                                        ? L["CirclesPeopleCountOne"].Value
+                                        : string.Format(Culture, L["CirclesPeopleCount"], circle.PeopleCount))
                                 </span>
                                 @if (RoleBadge(circle.Role) is { } badge)
                                 {

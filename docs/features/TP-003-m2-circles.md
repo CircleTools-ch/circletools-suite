@@ -79,6 +79,7 @@ aggregate and are tested there, because that is where they are decided.
 | FR-016 label defaults per language | `CircleTests.Create_EmptyLabel_FallsBackToTheLanguageDefault` (DE/EN/FR + no language, as a theory); `CirclePageTests.MyCircles_PrefillsTheLabelForTheCurrentLanguage` | Unit / Component | ✅ |
 | FR-016 the label is user data | `CircleEndpointsTests.Label_IsNotRetranslatedForAViewerInAnotherLanguage`; `CircleTests.Create_KeepsTheLabelItWasGiven` + `.Update_WithABlankLabel_KeepsTheStoredOne`; `CirclePageTests.MyCircles_ShowsTheStoredLabel_NotOneLookedUpForTheViewer`; `MailTemplateRendererTests.Invitation_DoesNotRetranslateTheCirclesLabel` — the rule holds in the API, the aggregate, the page **and** the mail | Integration / Unit / Component | ✅ |
 | FR-016 name required | `CircleTests.Create_BlankName_IsRefused` | Unit | ✅ |
+| FR-016 the list's size fragment reads correctly at one | `CirclePageTests.MyCircles_UsesTheSingularSizeString_OnlyForACircleOfOne`. **Found on the screen** (2026-07-30), the same defect as FR-022's count sentence and in a worse place: a circle just created holds one person, so the first circle a new user ever sees was labelled *"1 Personen" / "1 people" / "1 personnes"*. Singular is now its own entry (`CirclesPeopleCountOne`) | Component | ✅ |
 | FR-016 verified address required | `CircleEndpointsTests.Create_UnverifiedAccount_IsRefusedWithAResendOffer` | Integration | ✅ |
 | FR-016 atomicity | `CircleRepositoryTests.FailedCreate_LeavesNeitherCircleNorMembership` | Repository | ✅ |
 | FR-016 / FR-019 the mapping is faithful | `CircleRepositoryTests.Circle_SurvivesARoundTripWholeWithEveryPersonInvitationAndDecline` — the aggregate reloaded from Postgres in a second context, managed member and all; `.Queries_FindCirclesByMembership_Ownership_InvitationHandleAndInvitedAddress` | Repository | ✅ |
@@ -124,6 +125,7 @@ aggregate and are tested there, because that is where they are decided.
 | FR-021 already removed | `CircleTests.Leave_WhenAlreadyRemoved_ReportsNotAMember` — *unit rather than the planned integration:* the endpoint's `404` for a non-member is one of `CircleRoleMatrixTests`' rows | Unit / Authorization | ✅ |
 | FR-022 deletion scope | `CircleRepositoryTests.Delete_TakesEveryPersonInvitationAndDeclineWithIt` + `.Delete_LeavesOtherCirclesUntouched` (what goes, and what does not); `CircleEndpointsTests.WhenTheCircleIsDeleted_ItsPendingInvitationIsGone_AndTheRecipientIsToldSo` (through the API, and no account is touched — both accounts keep working afterwards); `HandlerTests.DeleteCircle_NeedsTheNameTypedBack`. *The plan's `CircleDeletionTests` class does not exist* | Repository / Integration / Unit | ✅ |
 | FR-022 the confirmation | `CirclePageTests.DeleteConfirmation_NamesTheCircle_CountsWhoLosesAccess_AndNamesEveryManagedMember` + `.DeleteConfirmation_WithNoManagedMembers_LeavesThatSentenceOut` + `.DeleteButton_StaysDisabledUntilTheNameIsTypedBack`. **Also unmet in the product before close:** the section stated the scope of deletion generically. It now names the circle, counts who loses access, names every managed member, and states that Secret-Santa groups, draws and reveal links are unaffected (`CircleDeleteNames`, `CircleDeleteLosesAccess`, `CircleDeleteManagedNamed`, `CircleDeleteKeeps`) | Component | ✅ |
+| FR-022 the count reads correctly at one | `CircleConfirmationTextTests.DeleteConfirmation_UsesTheSingular_WhenOnlyTheOwnerLosesAccess`. **Found on the screen, not in a test** (2026-07-30): the count sentence was one format string, so a circle whose owner is its only account-backed person read *"1 Personen verlieren"*, *"1 people will lose"*, *"1 personnes en perdront"* — the state every circle is in the moment it is created. All three languages inflect the noun **and** the verb, so the singular is its own entry (`CircleDeleteLosesAccessOne`, no placeholder) chosen by the page. The tests above could not see it: each renders three account-backed people | Component | ✅ |
 | FR-022 admin cannot delete | `CircleRoleMatrixTests` row for `DELETE /circles/{id}`; `HandlerTests.DeleteCircle_ByAnAdmin_IsRefused`; `CirclePageTests.AnAdmin_CanInviteButCannotDeleteTheCircleOrChangeRoles` | Authorization / Unit / Component | ✅ |
 | FR-022 one transaction | `CircleRepositoryTests.FailedDelete_LeavesEverythingInPlace` — and it asserts the `DELETE` was actually issued before the failure, so it cannot pass vacuously; plus `.Delete_TakesEveryPersonInvitationAndDeclineWithIt` and `.Delete_LeavesOtherCirclesUntouched` for the cascade's scope | Repository | ✅ |
 | FR-022 dangling circle id tolerated | `CircleEndpointsTests.WhenTheCircleIsDeleted_ItsPendingInvitationIsGone_AndTheRecipientIsToldSo` — a circle id that resolves to nothing is answered `404`, not an error; the Secret-Santa half arrives with M4 (gap 2) | Integration | ⚠️ partial |
@@ -231,6 +233,15 @@ evidence, and a fitness function that is designed but not written leaves the des
 false reassurance.** The three checks that mattered most here were all cheap once written; what kept
 them missing was that everything around them looked finished.
 
+The browser walk-through that closed the last box added a second lesson, and it is about the test
+data rather than the tests. Both counted strings in the product — the circle list's size and FR-022's
+delete sentence — had **no singular**, and read *"1 Personen"*, *"1 people"*, *"1 personnes"*. Every
+test that touched them was correct and green: each had been written with three or four people in the
+circle, because that is what a realistic circle looks like. The value that broke them is the one the
+product starts at. **Counted strings need a test at one**, and the rule now lives in the
+[localization guidelines](../guidelines/localization-guidelines.md) rather than only here — this is a
+whole-product trap, not a Circles one.
+
 ## Exit criteria
 
 - [x] All acceptance criteria covered by automated tests except the gaps recorded above — and the two
@@ -246,10 +257,14 @@ them missing was that everything around them looked finished.
 - [x] Architecture fitness functions green, including the extended NFR-004 model review and the
       unplanned `CircleErrorCodeCoverageTests`
 - [x] Localization parity green, including the invitation mail and the new placeholder-parity check
-- [ ] Browser walkthrough completed in DE/EN/FR with a clean console — **two accounts, two browser
+- [x] Browser walkthrough completed in DE/EN/FR with a clean console — **two accounts, two browser
       profiles**: create → invite an address with no account → sign up from the link → invite an
       address that has one → accept in-app → decline → managed member → promote → role change →
-      transfer → leave → delete. The M2 walkthrough was completed before close; the **two confirmation
-      screens changed at close still have to be looked at** in all three languages
+      transfer → leave → delete. The M2 walkthrough was completed before close; the two confirmation
+      screens changed at close were **walked again on 2026-07-30**, in all three languages, against a
+      running AppHost (Postgres + Mailpit), driven over the DevTools protocol. It found two defects
+      the suite could not, both the same one — a counted string with no singular, in FR-022's
+      confirmation and in the circle list (rows above) — which is the third and fourth time in this
+      milestone that reading the screen beat reading the tests
 - [x] Matrix reconciled against the tests that actually exist, so every row names a real class
 - [x] Suite green locally; **"CI green" is carried to milestone 7**, not ticked

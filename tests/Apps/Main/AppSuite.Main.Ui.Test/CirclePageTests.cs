@@ -70,6 +70,40 @@ public sealed class CirclePageTests
     }
 
     /// <summary>
+    /// A circle's size is a counted string, and a circle that was just created holds exactly one
+    /// person — so the singular is the case this list shows most often, not an edge case.
+    /// </summary>
+    /// <remarks>
+    /// Found on screen during the M2 browser walk-through: DE, EN and FR all inflect the noun, and
+    /// one format string rendered "1 Personen", "1 people", "1 personnes". The fix is a second
+    /// resource entry, and this asserts the page picks between them — the wording itself is a
+    /// translation review.
+    /// </remarks>
+    [Theory]
+    [InlineData(1, "CirclesPeopleCountOne")]
+    [InlineData(4, "CirclesPeopleCount")]
+    public void MyCircles_UsesTheSingularSizeString_OnlyForACircleOfOne(int people, string expectedKey)
+    {
+        using var context = new AccountTestContext();
+        context.SignIn();
+        context.Api.RespondJson(
+            HttpMethod.Get,
+            CirclesRoute,
+            new[] { new CircleSummaryResponse(Guid.CreateVersion7(), "Müller", "Familie", "Owner", people) });
+
+        var list = context.RenderPage<MyCircles>().Find("ul.list-group").InnerHtml;
+
+        Assert.Contains(expectedKey, list, StringComparison.Ordinal);
+
+        // The plural key is a prefix of the singular one, so "contains" alone cannot tell them
+        // apart — at four people the singular entry must be absent outright.
+        if (people > 1)
+        {
+            Assert.DoesNotContain("CirclesPeopleCountOne", list, StringComparison.Ordinal);
+        }
+    }
+
+    /// <summary>
     /// Badging all three roles makes the list noise; what the owner needs at a glance is who
     /// <em>else</em> can act (FEAT-003).
     /// </summary>

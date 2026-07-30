@@ -306,12 +306,7 @@
                         <p class="small mb-1">
                             @string.Format(CultureInfo.CurrentCulture, L["CircleDeleteNames"], _circle.Name)
                         </p>
-                        <p class="small mb-1">
-                            @string.Format(
-                                CultureInfo.CurrentCulture,
-                                L["CircleDeleteLosesAccess"],
-                                _circle.People.Count(person => !person.IsManaged))
-                        </p>
+                        <p class="small mb-1">@LosesAccessSentence</p>
 
                         @if (ManagedNames is { Length: > 0 } managedNames)
                         {
@@ -398,6 +393,28 @@
     private string ManagedNames => string.Join(
         ", ",
         _circle?.People.Where(person => person.IsManaged).Select(person => person.DisplayName) ?? []);
+
+    /// <summary>
+    /// How many people lose access when the circle is deleted (FR-022) — the account-backed people
+    /// only. Managed members are deleted rather than losing access; they never had any.
+    /// </summary>
+    private int LosingAccess => _circle?.People.Count(person => !person.IsManaged) ?? 0;
+
+    /// <summary>
+    /// The sentence stating that count, singular or plural. Only the owner sees this section, so the
+    /// count is never below one — and at one it is the owner themselves.
+    /// </summary>
+    /// <remarks>
+    /// German, English and French all inflect both the noun and the verb here, so a single format
+    /// string cannot serve both cases: it reads "1 Personen verlieren", "1 people will lose",
+    /// "1 personnes en perdront". The app has no pluralization machinery and one circle-sized feature
+    /// is the wrong place to introduce one, so the singular is its own resource entry — the same way
+    /// a translator would write it. The singular carries no placeholder: "one" belongs to the
+    /// sentence in every language, not beside it.
+    /// </remarks>
+    private string LosesAccessSentence => LosingAccess == 1
+        ? L["CircleDeleteLosesAccessOne"].Value
+        : string.Format(CultureInfo.CurrentCulture, L["CircleDeleteLosesAccess"], LosingAccess);
 
     private bool CanAdminister => IsOwner || IsAdminRole(_circle?.Role);
 

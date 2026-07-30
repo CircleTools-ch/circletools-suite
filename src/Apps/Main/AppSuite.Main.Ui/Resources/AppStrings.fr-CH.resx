@@ -119,6 +119,7 @@
   <data name="CircleLabelDefault" xml:space="preserve"><value>Famille</value></data>
   <data name="CirclesCreateSubmit" xml:space="preserve"><value>Créer le cercle</value></data>
   <data name="CirclesPeopleCount" xml:space="preserve"><value>{0} personnes</value></data>
+  <data name="CirclesPeopleCountOne" xml:space="preserve"><value>1 personne</value></data>
   <data name="CirclesOpen" xml:space="preserve"><value>Ouvrir</value></data>
   <data name="CircleRoleOwner" xml:space="preserve"><value>Propriétaire</value></data>
   <data name="CircleRoleAdmin" xml:space="preserve"><value>Admin</value></data>
@@ -165,6 +166,7 @@
   <data name="CircleDeleteLead" xml:space="preserve"><value>Toutes les invitations en attente sont également retirées, et rien de tout cela n'est réversible.</value></data>
   <data name="CircleDeleteNames" xml:space="preserve"><value>Cela supprime le cercle {0}.</value></data>
   <data name="CircleDeleteLosesAccess" xml:space="preserve"><value>{0} personnes en perdront l'accès.</value></data>
+  <data name="CircleDeleteLosesAccessOne" xml:space="preserve"><value>Une personne en perdra l'accès.</value></data>
   <data name="CircleDeleteManagedNamed" xml:space="preserve"><value>Ces personnes sans compte sont supprimées avec lui :</value></data>
   <data name="CircleDeleteKeeps" xml:space="preserve"><value>Vos groupes Secret-Santa, leurs tirages et les liens que vous avez partagés ne sont pas touchés.</value></data>
   <data name="CircleDeleteConfirmPrompt" xml:space="preserve"><value>Tapez le nom du cercle pour confirmer.</value></data>
