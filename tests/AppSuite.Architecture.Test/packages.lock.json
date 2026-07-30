@@ -454,6 +454,7 @@
         "type": "Project",
         "dependencies": {
           "AppSuite.ApiClient": "[1.0.0, )",
+          "AppSuite.Circles.Contracts": "[1.0.0, )",
           "AppSuite.Main.Contracts": "[1.0.0, )",
           "AppSuite.Ui.Shared": "[1.0.0, )",
           "Microsoft.AspNetCore.Components.Authorization": "[10.0.10, )",

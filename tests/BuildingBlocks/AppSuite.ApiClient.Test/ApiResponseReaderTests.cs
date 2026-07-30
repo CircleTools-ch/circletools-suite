@@ -52,6 +52,45 @@ public sealed class ApiResponseReaderTests
         Assert.Equal(TimeSpan.FromSeconds(60), error.RetryAfter);
     }
 
+    /// <summary>
+    /// The refusal code is the only part of a <c>409</c> a DE/EN/FR client can act on: the status
+    /// cannot tell one conflict from another, and the title is English (ADR-0011, FEAT-003).
+    /// </summary>
+    [Fact]
+    public async Task ProblemDetails_KeepsTheRefusalCodeAlongsideTheEnglishTitle()
+    {
+        using var response = Json(
+            HttpStatusCode.Conflict,
+            """{"title":"This circle is full.","code":"circle_full"}""");
+
+        var error = await ApiResponseReader.ReadErrorAsync(response);
+
+        Assert.Equal(ApiFailure.Conflict, error.Failure);
+        Assert.Equal("circle_full", error.Code);
+    }
+
+    [Fact]
+    public async Task TheRateLimitersOwnShape_CarriesACodeToo()
+    {
+        using var response = Json(
+            HttpStatusCode.TooManyRequests,
+            """{"message":"Too many invitations.","code":"invitation_rate_limit_reached"}""");
+
+        var error = await ApiResponseReader.ReadErrorAsync(response);
+
+        Assert.Equal("invitation_rate_limit_reached", error.Code);
+    }
+
+    [Fact]
+    public async Task AFailureWithoutACode_LeavesItNull()
+    {
+        using var response = Json(HttpStatusCode.Conflict, """{"title":"Something went wrong."}""");
+
+        var error = await ApiResponseReader.ReadErrorAsync(response);
+
+        Assert.Null(error.Code);
+    }
+
     [Fact]
     public async Task NonJsonBody_IsReportedAsTheStatusAloneRatherThanGuessedAt()
     {

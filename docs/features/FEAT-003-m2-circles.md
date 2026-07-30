@@ -129,7 +129,8 @@ flat project.
 | `AppSuite.Main.Service` | **+** `/api/v1/circles` and `/api/v1/invitations`, the `CircleRoleFilter`, the circles rate-limit policies, DI composition, and the registration of `SoleOwnerCircleGuard`. |
 | `AppSuite.Main.Service.Core` | **+** `IAccountDeletionCleanup` — the second deletion seam (see below). |
 | `AppSuite.Infrastructure` | **+** the invitation mail template in DE/EN/FR — the fifth transactional mail, through the existing outbox. |
-| `AppSuite.Main.Ui` | **+** `CirclesApiClient` and the pages: my circles, create, circle detail & people, invite, pending invitations, managed member add/edit, role & removal actions, transfer, leave, delete, plus the two invitation landing pages (`/invitation/{token}` and the in-app join requests). |
+| `AppSuite.Main.Ui` | **+** `CirclesApiClient`, `CircleErrorText`, and the pages. *Corrected during implementation:* the list above reads as one page per action, and the build is **four** — `MyCircles` (list + create), `CircleDetail`, `JoinRequests` (`/invitations`) and `InvitationLanding` (`/invitation/{token}`). Everything from invite through delete is one change to one aggregate and one people list, so splitting them across routes would only mean reloading the circle to answer "who is in it" on each one. The two invitation pages stay separate because they are two different ways in: one carries a token from a mail, the other carries none. |
+| `AppSuite.ApiClient` | **+** `ApiError.Code` — *not foreseen*. Every circle refusal carries a stable code so a DE/EN/FR client can translate it, but the reader discarded it, so the UI could only ever have said "there was a conflict". See below. |
 | `AppSuite.Ui.Shared` | **+** only if a component is genuinely needed twice; M2 does **not** promote anything speculatively ([ADR-0025](../adr/0025-shared-ui-building-blocks.md)). |
 | `AppSuite.Circles.Core.Test`, `AppSuite.Circles.Repository.Test` | **NEW** — see [TP-003](TP-003-m2-circles.md). |
 

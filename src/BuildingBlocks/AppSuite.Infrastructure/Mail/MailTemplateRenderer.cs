@@ -101,9 +101,9 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
         var (subject, body) = language switch
         {
             "de" => (
-                "Bestätigen Sie Ihre E-Mail-Adresse",
-                $"Willkommen bei AppSuite.\n\nBitte bestätigen Sie Ihre E-Mail-Adresse:\n{link}\n\n" +
-                "Wenn Sie kein Konto erstellt haben, können Sie diese E-Mail ignorieren."),
+                "Bestätige deine E-Mail-Adresse",
+                $"Willkommen bei AppSuite.\n\nBitte bestätige deine E-Mail-Adresse:\n{link}\n\n" +
+                "Wenn du kein Konto erstellt hast, kannst du diese E-Mail ignorieren."),
             "fr" => (
                 "Confirmez votre adresse e-mail",
                 $"Bienvenue chez AppSuite.\n\nVeuillez confirmer votre adresse e-mail :\n{link}\n\n" +
@@ -129,9 +129,9 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
         {
             "de" => (
                 "Passwort zurücksetzen",
-                $"Sie haben angefordert, Ihr AppSuite-Passwort zurückzusetzen.\n\n{link}\n\n" +
-                "Der Link ist nur einmal und nur kurze Zeit gültig. Ihr aktuelles Passwort bleibt " +
-                "gültig, bis Sie ein neues setzen. Falls Sie das nicht angefordert haben, ist " +
+                $"Du hast angefordert, dein AppSuite-Passwort zurückzusetzen.\n\n{link}\n\n" +
+                "Der Link ist nur einmal und nur kurze Zeit gültig. Dein aktuelles Passwort bleibt " +
+                "gültig, bis du ein neues setzt. Falls du das nicht angefordert hast, ist " +
                 "nichts passiert."),
             "fr" => (
                 "Réinitialiser votre mot de passe",
@@ -162,8 +162,8 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
         {
             "de" => (
                 "Neue E-Mail-Adresse bestätigen",
-                $"Bestätigen Sie diese Adresse, um sie für Ihr AppSuite-Konto zu verwenden:\n{link}\n\n" +
-                "Bis zur Bestätigung bleibt Ihre bisherige Adresse aktiv."),
+                $"Bestätige diese Adresse, um sie für dein AppSuite-Konto zu verwenden:\n{link}\n\n" +
+                "Bis zur Bestätigung bleibt deine bisherige Adresse aktiv."),
             "fr" => (
                 "Confirmez votre nouvelle adresse e-mail",
                 $"Confirmez cette adresse pour l'utiliser avec votre compte AppSuite :\n{link}\n\n" +
@@ -202,12 +202,12 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
         var (subject, intro, action, closing) = language switch
         {
             "de" => (
-                $"{inviter} lädt Sie zu «{circleName}» ein",
-                $"{inviter} lädt Sie zu «{circleName}» ({circleLabel}) bei AppSuite ein.",
+                $"{inviter} lädt dich zu «{circleName}» ein",
+                $"{inviter} lädt dich zu «{circleName}» ({circleLabel}) bei AppSuite ein.",
                 hasAccount
-                    ? $"Die Einladung wartet in der App auf Sie:\n{link}"
-                    : $"Hier können Sie zusagen oder absagen:\n{link}",
-                "Wenn Sie nichts unternehmen, passiert nichts — die Einladung läuft von selbst ab."),
+                    ? $"Die Einladung wartet in der App auf dich:\n{link}"
+                    : $"Hier kannst du zusagen oder absagen:\n{link}",
+                "Wenn du nichts unternimmst, passiert nichts — die Einladung läuft von selbst ab."),
             "fr" => (
                 $"{inviter} vous invite à «{circleName}»",
                 $"{inviter} vous invite à rejoindre «{circleName}» ({circleLabel}) sur AppSuite.",
@@ -234,10 +234,10 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
         var (subject, body) = language switch
         {
             "de" => (
-                "Änderung Ihrer E-Mail-Adresse angefordert",
-                "Für Ihr AppSuite-Konto wurde eine neue E-Mail-Adresse angefordert.\n\n" +
-                "Ihre bisherige Adresse bleibt aktiv, bis die neue bestätigt wird. Falls Sie das " +
-                "nicht waren, ändern Sie bitte umgehend Ihr Passwort."),
+                "Änderung deiner E-Mail-Adresse angefordert",
+                "Für dein AppSuite-Konto wurde eine neue E-Mail-Adresse angefordert.\n\n" +
+                "Deine bisherige Adresse bleibt aktiv, bis die neue bestätigt wird. Falls du das " +
+                "nicht warst, ändere bitte umgehend dein Passwort."),
             "fr" => (
                 "Changement d'adresse e-mail demandé",
                 "Une nouvelle adresse e-mail a été demandée pour votre compte AppSuite.\n\n" +
@@ -262,10 +262,10 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
         var (subject, body) = language switch
         {
             "de" => (
-                "Anmeldeversuch mit Ihrer E-Mail-Adresse",
-                "Jemand hat versucht, ein AppSuite-Konto mit Ihrer E-Mail-Adresse zu erstellen.\n\n" +
-                "Sie haben bereits ein Konto — melden Sie sich stattdessen an. Falls Sie das nicht " +
-                "waren, ist nichts passiert und Sie müssen nichts unternehmen."),
+                "Anmeldeversuch mit deiner E-Mail-Adresse",
+                "Jemand hat versucht, ein AppSuite-Konto mit deiner E-Mail-Adresse zu erstellen.\n\n" +
+                "Du hast bereits ein Konto — melde dich stattdessen an. Falls du das nicht " +
+                "warst, ist nichts passiert und du musst nichts unternehmen."),
             "fr" => (
                 "Tentative d'inscription avec votre adresse e-mail",
                 "Quelqu'un a tenté de créer un compte AppSuite avec votre adresse e-mail.\n\n" +

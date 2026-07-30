@@ -45,11 +45,19 @@ public enum ApiFailure
 /// <param name="Errors">Per-field validation messages, keyed by field name. Empty unless
 /// <paramref name="Failure"/> is <see cref="ApiFailure.Validation"/>.</param>
 /// <param name="RetryAfter">How long to wait, when the server said so.</param>
+/// <param name="Code">
+/// The refusal's stable machine code, when the endpoint supplied one — <c>circle_full</c>,
+/// <c>owner_must_transfer_ownership</c> and so on. <b>This is the part that is for display</b>, by
+/// way of a lookup into the resource files: <see cref="ApiFailure"/> is too coarse to say anything
+/// useful about a <c>409</c>, and <paramref name="Detail"/> is English prose the product cannot show
+/// (NFR-003, ADR-0011). Null when the endpoint answered without one.
+/// </param>
 public sealed record ApiError(
     ApiFailure Failure,
     string? Detail = null,
     IReadOnlyDictionary<string, IReadOnlyList<string>>? Errors = null,
-    TimeSpan? RetryAfter = null)
+    TimeSpan? RetryAfter = null,
+    string? Code = null)
 {
     /// <summary>Per-field validation messages; never <see langword="null"/>.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> Errors { get; } =

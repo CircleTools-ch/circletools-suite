@@ -56,6 +56,7 @@ public sealed class AccountTestContext : Bunit.TestContext
         Services.AddSingleton<AuthenticationStateProvider>(sp => sp.GetRequiredService<TokenAuthStateProvider>());
         Services.AddSingleton<ISessionRefresher, SessionRefresher>();
         Services.AddSingleton<AccountApiClient>();
+        Services.AddSingleton<CirclesApiClient>();
         Services.AddSingleton<AccountSession>();
 
         // bUnit pre-registers placeholder authorization services that throw, to push tests towards

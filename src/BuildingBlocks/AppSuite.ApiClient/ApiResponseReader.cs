@@ -104,13 +104,18 @@ public static class ApiResponseReader
     }
 
     /// <summary>
-    /// Pulls the message and any per-field errors out of a failure body.
+    /// Pulls the message, the refusal code and any per-field errors out of a failure body.
     /// </summary>
     /// <remarks>
     /// Three shapes turn up: <c>ValidationProblem</c> (an <c>errors</c> map), plain
-    /// <c>ProblemDetails</c> (<c>title</c> / <c>detail</c>), and the rate limiter's bare
-    /// <c>{ "message": … }</c>. Anything else — an HTML error page from a proxy, an empty body — is
-    /// reported as the status code alone rather than guessed at.
+    /// <c>ProblemDetails</c> (<c>title</c> / <c>detail</c>, plus a <c>code</c> extension), and the
+    /// rate limiter's bare <c>{ "message": …, "code": … }</c>. Anything else — an HTML error page
+    /// from a proxy, an empty body — is reported as the status code alone rather than guessed at.
+    /// <para>
+    /// <c>code</c> is read from both shapes because it is the only part of a refusal a multilingual
+    /// client can act on: the status alone cannot tell "this circle is full" from "you already own
+    /// as many circles as you can", and the title is English (ADR-0011).
+    /// </para>
     /// </remarks>
     private static ApiError Parse(ApiFailure failure, string body, TimeSpan? retryAfter)
     {
@@ -131,7 +136,7 @@ public static class ApiResponseReader
             var detail = ReadString(root, "detail") ?? ReadString(root, "title") ?? ReadString(root, "message");
             var errors = ReadErrors(root);
 
-            return new ApiError(failure, detail, errors, retryAfter);
+            return new ApiError(failure, detail, errors, retryAfter, ReadString(root, "code"));
         }
         catch (JsonException)
         {

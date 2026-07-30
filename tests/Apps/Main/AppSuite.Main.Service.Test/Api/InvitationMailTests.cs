@@ -34,7 +34,7 @@ public sealed class InvitationMailTests(MailApiFactory factory)
 
         // Claude has an account and reads French; the stranger has none, so Anna's German is used.
         Assert.Contains("vous invite", toClaude.GetProperty("Subject").GetString()!, StringComparison.Ordinal);
-        Assert.Contains("lädt Sie", toStranger.GetProperty("Subject").GetString()!, StringComparison.Ordinal);
+        Assert.Contains("lädt dich", toStranger.GetProperty("Subject").GetString()!, StringComparison.Ordinal);
 
         var strangerBody = await factory.ReadBodyAsync(toStranger.GetProperty("ID").GetString()!);
         var claudeBody = await factory.ReadBodyAsync(toClaude.GetProperty("ID").GetString()!);
