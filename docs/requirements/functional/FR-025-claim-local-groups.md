@@ -116,6 +116,6 @@ Then the count reads as a singular in each language
   kept as cache; duplicates accepted), [ADR-0020](../../adr/0020-server-side-assignment-privacy.md),
   [ADR-0008](../../adr/0008-entity-id-strategy.md),
   [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md) (links stay self-contained)
-- Implemented by: FEAT-004 *(M3 — sync; not yet written)*
+- Implemented by: [FEAT-004](../../features/FEAT-004-m3-sync-and-claim.md) *(M3 — sync & claim; Draft, not yet built)*
 - Glossary: [Claim](../../glossary/claim.md), [Group](../../glossary/group.md),
   [Sync](../../glossary/sync.md)

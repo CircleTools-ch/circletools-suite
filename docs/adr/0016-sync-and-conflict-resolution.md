@@ -156,6 +156,8 @@ layer or an experimental WASM SQLite build.
 ## Links
 
 - Related ADRs: [ADR-0015](0015-mvp-client-offline-storage.md) (extended by this ADR),
+  [ADR-0033](0033-which-aggregates-sync.md) (**narrows this ADR** — the Secret-Santa `Group` and
+  profile preferences sync; the `Circle` does not),
   [ADR-0007](0007-persistence-approach.md), [ADR-0008](0008-entity-id-strategy.md),
   [ADR-0017](0017-anonymous-to-account-claim.md), [ADR-0020](0020-server-side-assignment-privacy.md),
   [ADR-0012](0012-observability-and-telemetry.md)

@@ -12,6 +12,10 @@
   href: FEAT-003-m2-circles.md
 - name: TP-003 M2 Circles test plan
   href: TP-003-m2-circles.md
+- name: FEAT-004 M3 Sync & Claim
+  href: FEAT-004-m3-sync-and-claim.md
+- name: TP-004 M3 Sync & Claim test plan
+  href: TP-004-m3-sync-and-claim.md
 - name: Templates
   items:
     - name: Feature spec template
