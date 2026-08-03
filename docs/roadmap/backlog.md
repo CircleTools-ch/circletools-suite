@@ -141,6 +141,18 @@ Idea stubs and work items, newest-first. Promote items into
   privacy consequence is worth stating where the Secret-Santa idea lives: **a claimed group carries
   its draw**, so M3 — not M4 — is when assignments first reach the server, and the claim screen has to
   say so before the upload rather than in a settings page afterwards.
+- **M3 unblocked & designed (2026-08-03):** the one open decision that blocked the build is closed —
+  [ADR-0033](../adr/0033-which-aggregates-sync.md) narrows [ADR-0016](../adr/0016-sync-and-conflict-resolution.md)
+  so the Secret-Santa `Group` and profile preferences sync but the `Circle` does not (server-authoritative,
+  online-only), and it parks an offline circle *read* cache as a separate, later decision. The slice now
+  has its feature spec and test plan: [FEAT-004](../features/FEAT-004-m3-sync-and-claim.md) (*Draft*) fixes
+  the numbers the requirements deferred — the `POST /api/v1/sync` delta shape, the per-account cursor,
+  tombstone/un-claim-marker retention below the slowest device's cursor, claim idempotency via
+  client-minted ids, and profile preferences as a per-account document — and
+  [TP-004](../features/TP-004-m3-sync-and-claim.md) (*Draft*) centres on a two-client harness for
+  NFR-008's two silent-failure properties (convergence, data safety) and on proving the LWW collision
+  hook actually emits telemetry rather than being a stub. **Build is next**; the same deployment ADRs
+  gate *shipping* but not *building* ([ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md)).
 - **Next:** `UC-SS-009+` use cases (create a group from a circle; link a member; see my assignment
   while logged in; edit my own wishlist) → FRs → the M4 feature spec. *(M3 took `UC-SS-007..008`.)*
 
@@ -227,11 +239,15 @@ Idea stubs and work items, newest-first. Promote items into
   [NFR-008](../requirements/non-functional/NFR-008-sync-convergence-and-data-safety.md) convergence &
   data safety — plus glossary entries for [Claim](../glossary/claim.md) (whose naming hazard is
   recorded: ASP.NET Identity already has a `Claim`) and [Tombstone](../glossary/tombstone.md) (which
-  is **not** a soft delete). **One decision is open and blocks the build:** the requirements exclude
-  circle data from sync, narrowing [ADR-0016](../adr/0016-sync-and-conflict-resolution.md), and that
-  narrowing needs an ADR — last-write-wins on data four admins share would discard other people's
-  edits, and an offline circle write cannot make the server-side authorization decision NFR-006
-  requires. FR-023 also carries **FR-012**'s offline language change.
+  is **not** a soft delete). **The one decision that blocked the build is now closed** (2026-08-03):
+  the requirements exclude circle data from sync, narrowing
+  [ADR-0016](../adr/0016-sync-and-conflict-resolution.md) — last-write-wins on data four admins share
+  would discard other people's edits, and an offline circle write cannot make the server-side
+  authorization decision NFR-006 requires — and that narrowing is recorded as
+  [ADR-0033](../adr/0033-which-aggregates-sync.md). The M3 feature spec and test plan
+  ([FEAT-004](../features/FEAT-004-m3-sync-and-claim.md) / [TP-004](../features/TP-004-m3-sync-and-claim.md),
+  both *Draft*) are written; see the `IDEA-001` M3 note above. FR-023 also carries **FR-012**'s offline
+  language change.
 - **Two of M1's three deferred criteria still stand**, and are recorded as deferred in FEAT-002: MAUI
   cross-client passkeys (needs the real domain) and the *offline* language change (needs M3 sync).
   The third — **the sole-circle-owner deletion guard — closed with M2** as `SoleOwnerCircleGuard`,

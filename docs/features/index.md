@@ -16,6 +16,8 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-002](TP-002-m1-identity.md) | Test plan — M1 Identity | Identity | Reviewed |
 | [FEAT-003](FEAT-003-m2-circles.md) | M2 — Circles in the Main shell | Circles | Done |
 | [TP-003](TP-003-m2-circles.md) | Test plan — M2 Circles | Circles | Reviewed |
+| [FEAT-004](FEAT-004-m3-sync-and-claim.md) | M3 — Sync & Claim | Platform | Draft |
+| [TP-004](TP-004-m3-sync-and-claim.md) | Test plan — M3 Sync & Claim | Platform | Draft |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and
@@ -43,3 +45,11 @@ built but never read back, a "role matrix" that was three spot checks, two accep
 the **product** (both destructive confirmations), and an invitation-revoke path with no functional test.
 [TP-003's closing notes](TP-003-m2-circles.md#what-the-reconciliation-found-2026-07-30) record how each
 stayed invisible; the short version is that a test-plan row is not evidence.
+
+**M3 is designed but not yet built.** [FEAT-004](FEAT-004-m3-sync-and-claim.md) and
+[TP-004](TP-004-m3-sync-and-claim.md) are `Draft`: the sync-and-claim slice is specified and its
+design is fixed (the wire format, the cursor, tombstone/marker retention, claim idempotency, and the
+`Group`-only sync catalogue from [ADR-0033](../adr/0033-which-aggregates-sync.md)), but no code exists.
+TP-004 is deliberately weighted toward NFR-008's two silent-failure properties — convergence and data
+safety — and centred on a two-client harness, because M2's close showed that is exactly where a green
+suite says nothing.

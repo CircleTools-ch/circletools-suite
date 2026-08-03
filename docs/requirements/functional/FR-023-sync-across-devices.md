@@ -6,7 +6,7 @@ status: Approved
 priority: Must
 source: UC-MAIN-015
 verification: test
-related: [UC-MAIN-015, UC-MAIN-016, UC-SS-007, UC-SS-008, FR-012, FR-024, FR-025, FR-026, NFR-001, NFR-002, NFR-008, ADR-0016, ADR-0020, FEAT-004]
+related: [UC-MAIN-015, UC-MAIN-016, UC-SS-007, UC-SS-008, FR-012, FR-024, FR-025, FR-026, NFR-001, NFR-002, NFR-008, ADR-0016, ADR-0020, ADR-0033, FEAT-004]
 ---
 
 # FR-023 — Sync account-scoped data across a user's devices
@@ -27,8 +27,9 @@ sign in on, without any manual transfer.
   language.
 
 **What does not sync in M3:** [Circle](../../glossary/circle.md) data. Circles stay
-server-authoritative and online-only as M2 built them (see *Dependencies* — this narrows
-[ADR-0016](../../adr/0016-sync-and-conflict-resolution.md) and needs an ADR before implementation).
+server-authoritative and online-only as M2 built them — this narrows
+[ADR-0016](../../adr/0016-sync-and-conflict-resolution.md), now recorded as
+[ADR-0033](../../adr/0033-which-aggregates-sync.md).
 
 **The mechanism**, per ADR-0016:
 
@@ -122,12 +123,12 @@ And the local copy on each device remains as account-free data
   tombstones, LWW, `localStorage` retained), [ADR-0020](../../adr/0020-server-side-assignment-privacy.md),
   [ADR-0021](../../adr/0021-web-auth-token-model.md),
   [ADR-0008](../../adr/0008-entity-id-strategy.md)
-- **Open architectural decision:** ADR-0016 names the **circle** as a sync unit; this requirement
+- **Resolved architectural decision:** ADR-0016 named the **circle** as a sync unit; this requirement
   excludes it. Last-write-wins is defensible for an aggregate one account owns and wrong for one that
   four people administer, and an offline circle write cannot take the server-side authorization
-  decision [NFR-006](../non-functional/NFR-006-circle-authorization.md) requires. The narrowing must
-  be recorded as an ADR before M3 is built — see the
-  [ADR backlog](../../adr/index.md#open-decisions-backlog).
-- Implemented by: FEAT-004 *(M3 — sync; not yet written)*
+  decision [NFR-006](../non-functional/NFR-006-circle-authorization.md) requires. The narrowing is now
+  recorded as [ADR-0033](../../adr/0033-which-aggregates-sync.md), which also parks an offline circle
+  *read* cache as a separate, later decision.
+- Implemented by: [FEAT-004](../../features/FEAT-004-m3-sync-and-claim.md) *(M3 — sync & claim; Draft, not yet built)*
 - Glossary: [Sync](../../glossary/sync.md), [Tombstone](../../glossary/tombstone.md),
   [Claim](../../glossary/claim.md), [Group](../../glossary/group.md)

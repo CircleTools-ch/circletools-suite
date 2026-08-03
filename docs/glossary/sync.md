@@ -38,7 +38,9 @@ app behaves exactly as it does today
   cannot take the server-side authorization decision
   ([NFR-006](../requirements/non-functional/NFR-006-circle-authorization.md)) that every circle
   mutation requires. This narrows [ADR-0016](../adr/0016-sync-and-conflict-resolution.md), which names
-  the circle as a sync unit, and is pending an ADR of its own.
+  the circle as a sync unit, and is recorded as
+  [ADR-0033](../adr/0033-which-aggregates-sync.md). An offline circle *read* cache is a separate,
+  parked decision — not offline circle *writes*, which stay excluded.
 
 ## Claim
 

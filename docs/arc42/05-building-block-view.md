@@ -140,7 +140,7 @@ until this chapter confirmed them; they are now **fixed**:
 | **Secret-Santa** | [Group](../glossary/group.md), [Member](../glossary/member.md), [Exclusion](../glossary/exclusion.md), [Draw](../glossary/draw.md), [Assignment](../glossary/assignment.md), [Wishlist](../glossary/wishlist.md), [Budget](../glossary/budget.md), [Event details](../glossary/event-details.md), [Reveal link](../glossary/reveal-link.md) | `AppSuite.SecretSanta.*` | shipped (FEAT-001) |
 | **Identity** | [User](../glossary/user.md), [Passkey](../glossary/passkey.md) — credentials, profile, account lifecycle | `AppSuite.Identity` + the Main service host; the client half in `AppSuite.Main.Ui` (`Auth/`, `Api/`) over `AppSuite.ApiClient` | **M1** ([FEAT-002](../features/FEAT-002-m1-identity.md)) |
 | **Circles** | [Circle](../glossary/circle.md), [Circle membership](../glossary/circle-membership.md), [Invitation](../glossary/invitation.md), [Managed member](../glossary/managed-member.md) | `AppSuite.Circles.Contracts/.Core/.Repository`, hosted by the Main service; the client half in `AppSuite.Main.Ui` | **M2** ([FEAT-003](../features/FEAT-003-m2-circles.md)) |
-| **Platform** | [Sync](../glossary/sync.md) — local↔server reconciliation | `AppSuite.Infrastructure` + per-app `LocalStore` | M3 |
+| **Platform** | [Sync](../glossary/sync.md) — local↔server reconciliation | `AppSuite.Infrastructure` + per-app `LocalStore` | **M3** ([FEAT-004](../features/FEAT-004-m3-sync-and-claim.md), Draft) — syncs the Secret-Santa `Group` and profile preferences; **not** the `Circle` ([ADR-0033](../adr/0033-which-aggregates-sync.md)) |
 
 **Neither Secret-Santa nor Circles depends on Identity, and Secret-Santa does not depend on Circles.**
 Both cross-context links are the same shape: a [Member](../glossary/member.md) carries an **optional
@@ -168,9 +168,11 @@ full inward-pointing split: `Core` owns the aggregate and the ports, `Repository
 
 It is **not an app-type**: it has no head, no `WebApp` and no `LocalStore`. The Main API host maps
 `/api/v1/circles` and `/api/v1/invitations`, and the client half is pages in `AppSuite.Main.Ui` —
-the same division of labour M1 used for Identity. Circles is **online-only** until sync (M3) decides
-whether a set of people that several devices edit belongs under last-write-wins at all
-([ADR-0016](../adr/0016-sync-and-conflict-resolution.md)).
+the same division of labour M1 used for Identity. Circles is **online-only**, and stays that way: M3
+decided that a set of people several devices edit does **not** belong under last-write-wins, so circle
+data is excluded from sync ([ADR-0033](../adr/0033-which-aggregates-sync.md), narrowing
+[ADR-0016](../adr/0016-sync-and-conflict-resolution.md)). An offline *read* cache for circles is a
+separate, parked decision.
 
 **What the host contributes**, since none of it may live in the context itself:
 
