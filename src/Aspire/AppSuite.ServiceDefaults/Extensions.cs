@@ -57,7 +57,11 @@ public static class Extensions
             {
                 metrics.AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddRuntimeInstrumentation();
+                    .AddRuntimeInstrumentation()
+                    // The sync collision counter (FEAT-004). Named by literal rather than a project
+                    // reference — ServiceDefaults sits below the app modules and must not depend up
+                    // into them; the name is mirrored by SyncCollisionTelemetry.MeterName.
+                    .AddMeter("AppSuite.Sync");
             })
             .WithTracing(tracing =>
             {

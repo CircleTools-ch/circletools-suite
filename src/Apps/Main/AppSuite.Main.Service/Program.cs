@@ -35,6 +35,10 @@ var mainConnectionString = builder.Configuration.GetConnectionString("maindb")
 
 builder.Services.AddMainRepository(mainConnectionString);
 
+// Sync (FEAT-004). A third context and schema in the same database, on the same seam as Circles —
+// the account-scoped store that carries a claimed group between a user's devices (ADR-0016/0033).
+builder.Services.AddSyncRepository(mainConnectionString);
+
 // Circles (FEAT-003). Its own DbContext and its own schema inside the same database — a modular
 // monolith with a visible seam, not a second database (ADR-0003).
 builder.Services.AddCirclesCore();
@@ -210,6 +214,7 @@ if (app.Environment.IsDevelopment())
     // histories, one database.
     using var scope = app.Services.CreateScope();
     scope.ServiceProvider.GetRequiredService<MainDbContext>().Database.Migrate();
+    scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.Migrate();
     scope.ServiceProvider.GetRequiredService<CirclesDbContext>().Database.Migrate();
 }
 
@@ -245,6 +250,13 @@ var invitations = app
     .MapToApiVersion(new ApiVersion(1, 0));
 
 invitations.MapInvitationEndpoints();
+
+var sync = app
+    .MapGroup("/api/v{version:apiVersion}/sync")
+    .WithApiVersionSet(versionSet)
+    .MapToApiVersion(new ApiVersion(1, 0));
+
+sync.MapSyncEndpoints();
 
 var heartbeats = app
     .MapGroup("/api/v{version:apiVersion}/heartbeats")
