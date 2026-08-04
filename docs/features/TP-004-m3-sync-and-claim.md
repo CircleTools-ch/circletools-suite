@@ -170,3 +170,57 @@ lesson: a plan-time name is a promise, not evidence).
       edit, offline reconcile, delete, un-claim, offline circle notice — with a clean console
 - [ ] Matrix reconciled against the tests that actually exist, so every row names a real class
 - [ ] Suite green locally; **"CI green" carried to milestone 7**, not ticked (no pipeline exists yet)
+
+## Build reconciliation — the two-client harness slice
+
+The load-bearing integration level (§ Test levels) is built and green:
+`tests/Apps/Main/AppSuite.Main.Service.Test/Sync/`. Two real client stores
+(`SyncClient`, each its own `deviceId` / cursor / change tracker over an in-memory `localStorage`
+stand-in) drive the **real** Secret-Santa client engine (`LocalSyncStore` + `SyncingGroupRepository`
++ `SyncService`) against the **real** Main API and Postgres `sync` schema (`TwoClientSyncFactory`).
+The collision hook is proven **observed, not stubbed**: the host's `ISyncTelemetry` is swapped for a
+`CapturingSyncTelemetry` the tests read.
+
+**Matrix rows now covered by a real class/method** (plan-time names reconciled to code):
+
+| Plan-time row | Actual class.method |
+|---------------|---------------------|
+| `ClaimedGroupOnA_AppearsOnB_...` | `TwoClientSyncTests.ClaimedGroupOnA_AppearsOnB_WithMembersWishlistsExclusionsAndDraw` |
+| `EditOnA_IsHeldByB_...` | `TwoClientSyncTests.EditOnA_IsHeldByB_AfterItsNextSync` |
+| `GroupDeletedOnA_...` / no-resurrection | `TwoClientSyncTests.GroupDeletedOnA_IsRemovedOnB_AndDoesNotReappear`, `.OnceEveryDeviceHasCycled_ADeletedGroupIsAbsentEverywhere_AndDoesNotReappearOnAnyLaterCycle` |
+| convergence in one cycle | `TwoClientSyncTests.AfterOneCycleWithNoFurtherEdits_BothDevicesHoldTheSameAggregatesAtTheSameVersions` |
+| pending change pushed on reconnect | `TwoClientSyncTests.PendingChange_IsPushedWithoutTheUserAsking_WhenConnectivityReturns_AndStatusClears` |
+| offline delete → tombstone | `TwoClientSyncTests.OfflineDelete_PushesATombstone_AndIsGoneOnOtherDevices` |
+| concurrent edit → one survivor | `TwoClientSyncTests.SameGroupEditedOfflineOnBoth_LaterServerTimeSurvivesInFull_OtherDiscardedInFull` |
+| LWW discard emits collision event | `SyncTelemetryTests.AnLwwDiscard_EmitsACollisionEvent_WithAggregateKindAndId` |
+| no-op cycle transfers no bodies | `SyncPayloadTests.NoChangeCycle_TransfersNoAggregateBodies_EitherDirection` |
+| replay idempotency (both rows) | `SyncIdempotencyTests.AlreadyAppliedPush_ReplayedAfterAnInterruption_ChangesNothingAndDuplicatesNothing`, `.AReplayedSequenceOfPushes_LeavesServerStateIdenticalToASingleCleanPush` |
+| all pending pushed within one cycle | `SyncOfflineTests.AfterBeingOfflineWithPendingChanges_AllPendingAggregatesArePushedWithinOneCycle` |
+| offline flow persists locally | `SyncOfflineTests.OfflineWithNoCycle_CreateAddMembersAndDraw_AllPersistLocally_AndSendNothing` |
+| no local loss around account actions (subset) | `LocalDataSafetyTests.NeitherTheInitialReconcileClaimNorASubsequentCycle_ChangesTheLocalGroupCount`, `.AGroupClaimedOnAnotherDevice_ArrivingHere_AddsToButNeverReplacesTheLocalGroups` |
+
+**Gaps recorded, not silently truncated** — these ride routes/slices not yet built and are *not*
+covered by this slice:
+
+- **Un-claim rows** (`UnclaimTests.*`, `TwoClientSyncTests.UnclaimOnA_StopsSyncOnB_...`,
+  `UnclaimPageTests.*`): the `DELETE /api/v1/sync/groups/{id}` route and its un-claim marker do not
+  exist yet (the delta exchange reads markers but nothing produces them). Blocked on that route.
+- **Account-deletion sync** (`AccountDeletionSyncTests.*`): needs deletion to cascade the `sync`
+  store. The `LocalDataSafetyTests` account-deletion count is therefore deferred with it.
+- **Claim-flow / claim-page / un-claim-page component rows** (`ClaimFlowTests.*`,
+  `ClaimIdempotencyTests.*`, `ClaimPageTests.*`): the claim **screen** and the dedicated
+  `POST …/claim` route land with the UI slice. This slice claims by scoping a local group and letting
+  the normal cycle push it (`SyncClient.ClaimAsync`), which exercises every convergence path a claimed
+  group rides but not the claim UI or its idempotent partial-retry route.
+- **Auth mid-sync** (`SyncAuthTests.*`): token-refresh-during-sync and refresh-failure sign-out.
+- **Perf gate** (`SyncPerformanceTests.*`, ⚠) and **localization parity** (`LocalizationParityTests.*`).
+
+**Finding surfaced by the harness — replay counted as a collision.** `SyncStore.ApplyChangeAsync`
+treats any push whose version is `<=` the stored version as a last-write-wins collision, including a
+byte-identical **replay** of an already-applied push (the interrupted-cycle case
+`SyncIdempotencyTests` reproduces). Convergence and no-duplication hold, so the suite is green — but
+the replay still emits a collision telemetry event, inflating the very counter the parked conflict UI
+is meant to be parked *on*. Suggested guard: when `change.Version == existing.Version` **and** the
+body is unchanged, treat it as an idempotent no-op (no collision, no counter increment); keep the
+collision path only for a same-or-lower version with a *different* body. Not fixed in this slice —
+flagged for a decision, with a ready assertion to add once guarded.
