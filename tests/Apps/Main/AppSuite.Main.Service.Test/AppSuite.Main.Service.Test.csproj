@@ -23,6 +23,17 @@
     <ProjectReference Include="..\..\..\..\src\Apps\Main\AppSuite.Main.Service.Core\AppSuite.Main.Service.Core.csproj" />
     <ProjectReference Include="..\..\..\..\src\Apps\Main\AppSuite.Main.Contracts\AppSuite.Main.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\src\Apps\Main\AppSuite.Main.Service\AppSuite.Main.Service.csproj" />
+
+    <!--
+      The two-client sync harness (FEAT-004 / TP-004) drives the real Secret-Santa client engine
+      against the real Main API, so this test assembly references both sides of the sync seam — the
+      same seam the shipped app spans (the Secret-Santa WASM client talking to the Main host).
+    -->
+    <ProjectReference Include="..\..\..\..\src\Apps\Main\AppSuite.Main.Service.Repository\AppSuite.Main.Service.Repository.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Apps\SecretSanta\AppSuite.SecretSanta.LocalStore\AppSuite.SecretSanta.LocalStore.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Apps\SecretSanta\AppSuite.SecretSanta.Core\AppSuite.SecretSanta.Core.csproj" />
+    <ProjectReference Include="..\..\..\..\src\BuildingBlocks\AppSuite.ApiClient\AppSuite.ApiClient.csproj" />
+    <ProjectReference Include="..\..\..\..\src\BuildingBlocks\AppSuite.Ui.Abstractions\AppSuite.Ui.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -718,6 +718,13 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
+      "appsuite.apiclient": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.Ui.Abstractions": "[1.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.10, )"
+        }
+      },
       "appsuite.application": {
         "type": "Project",
         "dependencies": {
@@ -807,6 +814,26 @@
           "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.0, )"
         }
       },
+      "appsuite.secretsanta.contracts": {
+        "type": "Project"
+      },
+      "appsuite.secretsanta.core": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.Application": "[1.0.0, )",
+          "AppSuite.SecretSanta.Contracts": "[1.0.0, )",
+          "AppSuite.SharedKernel": "[1.0.0, )"
+        }
+      },
+      "appsuite.secretsanta.localstore": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.ApiClient": "[1.0.0, )",
+          "AppSuite.Main.Contracts": "[1.0.0, )",
+          "AppSuite.SecretSanta.Core": "[1.0.0, )",
+          "AppSuite.Ui.Abstractions": "[1.0.0, )"
+        }
+      },
       "appsuite.servicedefaults": {
         "type": "Project",
         "dependencies": {
@@ -820,6 +847,9 @@
         }
       },
       "appsuite.sharedkernel": {
+        "type": "Project"
+      },
+      "appsuite.ui.abstractions": {
         "type": "Project"
       },
       "Asp.Versioning.Http": {
