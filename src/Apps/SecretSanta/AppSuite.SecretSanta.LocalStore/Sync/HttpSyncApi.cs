@@ -21,6 +21,9 @@ public sealed class HttpSyncApi(HttpClient client) : ISyncApi
     /// <summary>The delta-exchange route (ADR-0010 versioning).</summary>
     public const string Route = "api/v1/sync";
 
+    /// <summary>The un-claim route prefix; the group id is appended (FR-026).</summary>
+    public const string GroupsRoute = $"{Route}/groups";
+
     /// <inheritdoc />
     public async Task<ApiResult<SyncResponse>> ExchangeAsync(
         SyncRequest request,
@@ -53,6 +56,26 @@ public sealed class HttpSyncApi(HttpClient client) : ISyncApi
         catch (HttpRequestException)
         {
             return ApiResult.Failed<SyncResponse>(new ApiError(ApiFailure.Unreachable));
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult> UnclaimAsync(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(
+            HttpMethod.Delete,
+            $"{GroupsRoute}/{groupId}");
+
+        try
+        {
+            using var response = await client.SendAsync(message, cancellationToken);
+            return response.IsSuccessStatusCode
+                ? ApiResult.Ok()
+                : ApiResult.Failed(await ApiResponseReader.ReadErrorAsync(response, cancellationToken));
+        }
+        catch (HttpRequestException)
+        {
+            return ApiResult.Failed(new ApiError(ApiFailure.Unreachable));
         }
     }
 }

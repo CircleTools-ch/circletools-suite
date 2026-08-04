@@ -80,6 +80,58 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
         }
     }
 
+    /// <summary>
+    /// Removes a group from the account (FR-026): the out-of-cycle counterpart to a sync. Unlike an
+    /// offline edit, this requires a connection — it deletes the server copy and records an un-claim
+    /// marker for the account's other devices. The local copy is <strong>kept</strong> and becomes
+    /// account-free again; it is not a delete.
+    /// </summary>
+    /// <remarks>
+    /// The server is called first and the local account scope cleared only once it confirms, so the
+    /// scope is never dropped with an orphaned server copy behind it. If the server is unreachable the
+    /// removal is unavailable and nothing local changes. Idempotent: removing a group already account-free
+    /// here (an un-claim from another device arrived first) still confirms against the server and leaves
+    /// the kept local copy untouched, with no error.
+    /// </remarks>
+    /// <param name="accountId">The signed-in account the group is being removed from.</param>
+    /// <param name="groupId">The group to remove from the account.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>How it ended: <see cref="SyncStatus.Synced"/> once removed, or why it could not be.</returns>
+    public async Task<SyncOutcome> UnclaimAsync(
+        Guid accountId,
+        Guid groupId,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await api.UnclaimAsync(groupId, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return SyncOutcome.Incomplete(MapFailure(result.Error!.Failure));
+        }
+
+        try
+        {
+            var records = (await local.LoadGroupsAsync(cancellationToken)).ToList();
+            var index = records.FindIndex(r => r.State.Id == groupId);
+            if (index < 0 || records[index].AccountScope != accountId)
+            {
+                // Nothing scoped to this account to drop — the copy is kept exactly as it is. The server
+                // confirmed the removal, so this is a success, not an error (idempotent un-claim).
+                return new SyncOutcome(SyncStatus.Synced, 0, 0, 0, Unclaimed: 0, 0);
+            }
+
+            records[index] = records[index] with { AccountScope = null, Dirty = false };
+            await local.SaveGroupsAsync(records, cancellationToken);
+
+            return new SyncOutcome(SyncStatus.Synced, 0, 0, 0, Unclaimed: 1, 0);
+        }
+        catch (StorageUnavailableException)
+        {
+            // The server copy is already gone; the local scope could not be cleared. The kept local copy
+            // is untouched (no data lost); the next successful cycle reconciles the scope.
+            return SyncOutcome.Incomplete(SyncStatus.StorageUnavailable);
+        }
+    }
+
     private async Task<SyncOutcome> ReconcileAsync(
         Guid accountId,
         SyncResponse response,

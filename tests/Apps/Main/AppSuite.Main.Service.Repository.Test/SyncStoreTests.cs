@@ -132,6 +132,78 @@ public sealed class SyncStoreTests(SyncPostgresFixture fixture)
     }
 
     [Fact]
+    public async Task Unclaiming_DeletesTheServerCopy_AndRecordsAnUnclaimMarkerNotATombstone()
+    {
+        var account = Guid.NewGuid();
+        var groupId = Guid.NewGuid();
+
+        await ExchangeAsync(account, Push("A", 0, Change(groupId, 1, """{ "assignments": [1, 2] }""")));
+        await UnclaimAsync(account, groupId);
+
+        // A device that has never synced pulls the un-claim marker and no group body — the server copy
+        // (its in-body assignments with it) is gone, but the marker keeps the local copy on other devices.
+        var onB = await ExchangeAsync(account, new SyncRequest("B", 0, [], []));
+        Assert.DoesNotContain(onB.Changes, c => c.Id == groupId);
+        Assert.DoesNotContain(onB.Tombstones, t => t.Id == groupId);
+        Assert.Contains(onB.Unclaimed, u => u.Id == groupId);
+    }
+
+    [Fact]
+    public async Task Unclaiming_IsIdempotent_AndSurfacesNoError()
+    {
+        var account = Guid.NewGuid();
+        var groupId = Guid.NewGuid();
+
+        await ExchangeAsync(account, Push("A", 0, Change(groupId, 1, "{}")));
+        await UnclaimAsync(account, groupId);
+        // Un-claiming a group already removed elsewhere throws nothing and still leaves exactly one marker.
+        await UnclaimAsync(account, groupId);
+
+        await using var provider = fixture.CreateProvider();
+        var context = provider.GetRequiredService<SyncDbContext>();
+        var markers = await context.Markers
+            .Where(m => m.AccountId == account && m.AggregateId == groupId)
+            .ToListAsync();
+        var marker = Assert.Single(markers);
+        Assert.Equal(SyncMarkerType.Unclaim, marker.MarkerType);
+    }
+
+    [Fact]
+    public async Task AStandingTombstone_IsNotDowngradedByAnUnclaim()
+    {
+        var account = Guid.NewGuid();
+        var groupId = Guid.NewGuid();
+
+        await ExchangeAsync(account, Push("A", 0, Change(groupId, 1, "{}")));
+        await ExchangeAsync(account, new SyncRequest("A", 1, [], [new SyncTombstone("group", groupId, 2)]));
+
+        // A racing un-claim of the same group must not turn the delete into a keep-the-copy marker: the
+        // delete removes the group everywhere and would otherwise resurrect on a device that never saw it.
+        await UnclaimAsync(account, groupId);
+
+        var onB = await ExchangeAsync(account, new SyncRequest("B", 0, [], []));
+        Assert.Contains(onB.Tombstones, t => t.Id == groupId);
+        Assert.DoesNotContain(onB.Unclaimed, u => u.Id == groupId);
+    }
+
+    [Fact]
+    public async Task AReclaimAfterAnUnclaim_RecreatesTheAggregate_AndClearsTheStaleMarker()
+    {
+        var account = Guid.NewGuid();
+        var groupId = Guid.NewGuid();
+
+        await ExchangeAsync(account, Push("A", 0, Change(groupId, 1, """{ "v": 1 }""")));
+        await UnclaimAsync(account, groupId);
+
+        // Re-claiming pushes the body again; the un-claim marker (not a tombstone) does not block it.
+        await ExchangeAsync(account, Push("A", 0, Change(groupId, 1, """{ "v": 1 }""")));
+
+        var onC = await ExchangeAsync(account, new SyncRequest("C", 0, [], []));
+        Assert.Contains(onC.Changes, c => c.Id == groupId);
+        Assert.DoesNotContain(onC.Unclaimed, u => u.Id == groupId);
+    }
+
+    [Fact]
     public async Task ServerSequence_IsMonotonicPerAccount_AcrossConcurrentApplies()
     {
         var account = Guid.NewGuid();
@@ -193,6 +265,17 @@ public sealed class SyncStoreTests(SyncPostgresFixture fixture)
             clock ?? TimeProvider.System);
 
         return await store.ExchangeAsync(accountId, request);
+    }
+
+    private async Task UnclaimAsync(Guid accountId, Guid groupId)
+    {
+        await using var provider = fixture.CreateProvider();
+        var store = new SyncStore(
+            provider.GetRequiredService<SyncDbContext>(),
+            new CapturingSyncTelemetry(),
+            TimeProvider.System);
+
+        await store.UnclaimAsync(accountId, groupId);
     }
 
     private async Task<int> PruneAsync(Guid accountId, DateTimeOffset staleBefore)

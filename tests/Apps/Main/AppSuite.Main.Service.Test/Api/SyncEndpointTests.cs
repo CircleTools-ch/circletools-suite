@@ -80,6 +80,36 @@ public sealed class SyncEndpointTests(AccountApiFactory factory)
         Assert.DoesNotContain(body.Changes, c => c.Id == groupId);
     }
 
+    [Fact]
+    public async Task Unclaim_WithoutABearerToken_Is401()
+    {
+        var client = factory.CreateClient();
+
+        var response = await client.DeleteAsync($"/api/v1/sync/groups/{Guid.NewGuid()}");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Unclaim_RemovesTheServerCopy_AndPropagatesAnUnclaimMarker()
+    {
+        var client = await SignedInClientAsync();
+        var groupId = Guid.NewGuid();
+        await client.PostAsJsonAsync(
+            "/api/v1/sync",
+            new SyncRequest("device-a", 0, [new SyncChange("group", groupId, 1, Body("""{ "name": "Leaving" }"""))], []));
+
+        var removal = await client.DeleteAsync($"/api/v1/sync/groups/{groupId}");
+        Assert.Equal(HttpStatusCode.NoContent, removal.StatusCode);
+
+        // A device catching up pulls the un-claim marker and no group body — the server copy is gone.
+        var pull = await client.PostAsJsonAsync("/api/v1/sync", EmptyCycle("device-b"));
+        pull.EnsureSuccessStatusCode();
+        var body = (await pull.Content.ReadFromJsonAsync<SyncResponse>())!;
+        Assert.DoesNotContain(body.Changes, c => c.Id == groupId);
+        Assert.Contains(body.Unclaimed, u => u.Id == groupId);
+    }
+
     private static SyncRequest EmptyCycle(string deviceId) => new(deviceId, 0, [], []);
 
     private static JsonElement Body(string json) => JsonDocument.Parse(json).RootElement.Clone();

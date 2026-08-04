@@ -19,4 +19,15 @@ public interface ISyncApi
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The server delta and new cursor, or the failure (an unreachable server included).</returns>
     Task<ApiResult<SyncResponse>> ExchangeAsync(SyncRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes a group from the account (<c>DELETE /api/v1/sync/groups/{id}</c>, FR-026): deletes the
+    /// server copy and records an un-claim marker for the account's other devices. Requires a connection,
+    /// so an unreachable server is a failure the caller inspects — the local scope is only cleared once
+    /// the server has confirmed, never on an unreachable server.
+    /// </summary>
+    /// <param name="groupId">The group to remove from the account.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>Success once the server has recorded the removal, or the failure (unreachable included).</returns>
+    Task<ApiResult> UnclaimAsync(Guid groupId, CancellationToken cancellationToken = default);
 }

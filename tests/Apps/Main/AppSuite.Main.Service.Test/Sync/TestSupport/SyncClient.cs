@@ -117,6 +117,15 @@ public sealed class SyncClient
         await _local.SaveGroupsAsync(records);
     }
 
+    /// <summary>
+    /// Removes a group from the account (FR-026): calls the real un-claim route and, once the server
+    /// confirms, drops the local account scope while keeping the local copy. The counterpart to
+    /// <see cref="ClaimAsync"/>, driven through the real <see cref="SyncService"/>.
+    /// </summary>
+    /// <param name="id">The group to remove from the account.</param>
+    /// <returns>How the removal ended.</returns>
+    public Task<SyncOutcome> UnclaimAsync(Guid id) => _sync.UnclaimAsync(_accountId, id);
+
     /// <summary>Renames a group, going through the domain so the edit bumps the version and marks it dirty.</summary>
     /// <param name="id">The group to rename.</param>
     /// <param name="name">The new name.</param>

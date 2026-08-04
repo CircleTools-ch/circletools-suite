@@ -20,4 +20,22 @@ public interface ISyncStore
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>The delta above the cursor, the new cursor, and any last-write-wins collisions.</returns>
     Task<SyncResponse> ExchangeAsync(Guid accountId, SyncRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes a group from the account (FR-026, <c>DELETE /api/v1/sync/groups/{id}</c>): deletes the
+    /// server-side copy — its in-body assignments with it (ADR-0020) — and records an
+    /// <em>un-claim marker</em> so the account's other devices drop the account scope but keep their
+    /// local copy. An un-claim marker is deliberately not a tombstone: it must never delete a local copy.
+    /// </summary>
+    /// <remarks>
+    /// Idempotent: un-claiming a group already removed elsewhere writes the marker (or refreshes it) and
+    /// returns without error, so a caller can retry freely. A standing tombstone for the same id wins —
+    /// a delete removes the copy everywhere and must not be downgraded to a keep-the-copy un-claim, which
+    /// would let the deleted group survive on a device that had not yet seen the delete.
+    /// </remarks>
+    /// <param name="accountId">The calling account, taken from the bearer token — the only scope.</param>
+    /// <param name="groupId">The group to remove from the account.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns>A task that completes when the un-claim has been recorded.</returns>
+    Task UnclaimAsync(Guid accountId, Guid groupId, CancellationToken cancellationToken = default);
 }
