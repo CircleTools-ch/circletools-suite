@@ -27,6 +27,7 @@ public sealed class AccountApiFactory : WebApplicationFactory<Program>, IAsyncLi
 
         using var scope = Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<MainDbContext>().Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<CirclesDbContext>().Database.MigrateAsync();
     }
 

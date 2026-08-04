@@ -162,10 +162,12 @@ dotnet_diagnostic.CA1062.severity = suggestion
 generated_code = true
 dotnet_analyzer_diagnostic.severity = none
 
-[**/Migrations/*.cs]
+[**/Migrations/{*.cs,**/*.cs}]
 # EF Core scaffolds these; they are generated code and must not be held to the
 # hand-written style/quality rules (a scaffolded array argument tripped CA1861 under
 # TreatWarningsAsErrors). `generated_code` is what actually makes analyzers skip the
-# file — a bulk severity alone does not.
+# file — a bulk severity alone does not. The brace covers both a flat `Migrations/`
+# folder (Main, Circles) and a per-context subfolder (`Migrations/Sync/`), used where
+# one project hosts more than one DbContext.
 generated_code = true
 dotnet_analyzer_diagnostic.severity = none
