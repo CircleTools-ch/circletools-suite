@@ -2,6 +2,13 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
+      "appsuite.apiclient": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.Ui.Abstractions": "[1.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.10, )"
+        }
+      },
       "appsuite.application": {
         "type": "Project",
         "dependencies": {
@@ -9,6 +16,9 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.10, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.10, )"
         }
+      },
+      "appsuite.main.contracts": {
+        "type": "Project"
       },
       "appsuite.secretsanta.contracts": {
         "type": "Project"
