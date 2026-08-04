@@ -184,6 +184,49 @@ public sealed class TwoClientSyncTests(TwoClientSyncFactory factory)
         Assert.Equal("Bravo wins?", (await deviceB.GroupAsync(groupId))!.Name);
     }
 
+    [Fact]
+    public async Task UnclaimOnA_StopsSyncOnB_ButBKeepsItsLocalCopy()
+    {
+        var account = await factory.RegisterAccountAsync();
+        var (deviceA, deviceB, groupId) = await ClaimedOnBothAsync(account);
+
+        // A removes the group from the account. Its own local copy is kept, account-free.
+        var removal = await deviceA.UnclaimAsync(groupId);
+        Assert.Equal(SyncStatus.Synced, removal.Status);
+        Assert.NotNull(await deviceA.GroupAsync(groupId));
+        Assert.Null((await deviceA.RecordAsync(groupId))!.AccountScope);
+
+        // B cycles and applies the un-claim marker — not a tombstone: the group stays, the scope drops.
+        var onB = await deviceB.SyncAsync();
+        Assert.Equal(1, onB.Unclaimed);
+        Assert.NotNull(await deviceB.GroupAsync(groupId));
+        Assert.Null((await deviceB.RecordAsync(groupId))!.AccountScope);
+
+        // "Stops syncing": B edits its now-account-free copy and a further cycle pushes nothing, so A
+        // never hears of the edit — the group has genuinely left the account on both devices.
+        await deviceB.RenameGroupAsync(groupId, "Edited after removal");
+        await deviceB.SyncAsync();
+        await deviceA.SyncAsync();
+        Assert.NotEqual("Edited after removal", (await deviceA.GroupAsync(groupId))!.Name);
+    }
+
+    [Fact]
+    public async Task ReclaimAfterUnclaim_SyncsFromTheClaimingDevicesCopy()
+    {
+        var account = await factory.RegisterAccountAsync();
+        var (deviceA, deviceB, groupId) = await ClaimedOnBothAsync(account);
+
+        await deviceA.UnclaimAsync(groupId);
+        await deviceB.SyncAsync();
+
+        // A re-claims its kept copy and the normal cycle re-uploads it; B pulls it back, scoped again.
+        await deviceA.ClaimAsync(groupId);
+        await deviceA.SyncAsync();
+        await deviceB.SyncAsync();
+
+        Assert.Equal(account.AccountId, (await deviceB.RecordAsync(groupId))!.AccountScope);
+    }
+
     /// <summary>
     /// Sets up one claimed group visible on both devices: A creates and claims it, both cycle, and B
     /// holds it account-scoped and clean. The common starting point for the edit/delete/collision cases.

@@ -132,6 +132,61 @@ public sealed class SyncServiceTests
     }
 
     [Fact]
+    public async Task Unclaim_CallsTheServerFirst_ThenDropsTheScope_KeepingTheLocalCopy()
+    {
+        var account = Guid.NewGuid();
+        var (service, local, api) = NewService();
+        var state = SyncTestData.GroupWith("Leaving", "A");
+        await SeedAsync(local, new SyncedGroupRecord(state, 5, account, Dirty: true));
+
+        var outcome = await service.UnclaimAsync(account, state.Id, default);
+
+        Assert.Equal(SyncStatus.Synced, outcome.Status);
+        Assert.Equal(1, outcome.Unclaimed);
+        Assert.Equal(state.Id, Assert.Single(api.Unclaimed));
+
+        // The copy is kept — it is not a delete — but account-free again, so no cycle will push it.
+        var record = Assert.Single(await local.LoadGroupsAsync(default));
+        Assert.Null(record.AccountScope);
+        Assert.False(record.Dirty);
+    }
+
+    [Fact]
+    public async Task Unclaim_WhenTheServerIsUnreachable_ChangesNothingLocally()
+    {
+        var account = Guid.NewGuid();
+        var (service, local, api) = NewService();
+        var state = SyncTestData.GroupWith("Stay put", "A");
+        await SeedAsync(local, new SyncedGroupRecord(state, 5, account, Dirty: true));
+        api.UnclaimFails(ApiFailure.Unreachable);
+
+        var outcome = await service.UnclaimAsync(account, state.Id, default);
+
+        // Removal requires a connection (FR-026): the scope is not dropped with no server confirmation.
+        Assert.Equal(SyncStatus.Offline, outcome.Status);
+        var record = Assert.Single(await local.LoadGroupsAsync(default));
+        Assert.Equal(account, record.AccountScope);
+        Assert.True(record.Dirty);
+    }
+
+    [Fact]
+    public async Task Unclaim_IsIdempotent_WhenTheGroupIsAlreadyAccountFree()
+    {
+        var account = Guid.NewGuid();
+        var (service, local, api) = NewService();
+        // An un-claim from another device already dropped the scope; the local copy was kept.
+        var state = SyncTestData.GroupWith("Already free", "A");
+        await SeedAsync(local, new SyncedGroupRecord(state, 5, AccountScope: null, Dirty: false));
+
+        var outcome = await service.UnclaimAsync(account, state.Id, default);
+
+        Assert.Equal(SyncStatus.Synced, outcome.Status);
+        Assert.Equal(state.Id, Assert.Single(api.Unclaimed));
+        var record = Assert.Single(await local.LoadGroupsAsync(default));
+        Assert.Null(record.AccountScope);
+    }
+
+    [Fact]
     public async Task Collisions_AreSurfacedInTheOutcomeCount()
     {
         var account = Guid.NewGuid();

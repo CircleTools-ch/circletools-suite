@@ -33,4 +33,8 @@ public sealed class InterruptingSyncApi(ISyncApi inner) : ISyncApi
 
         return result;
     }
+
+    /// <inheritdoc />
+    public Task<ApiResult> UnclaimAsync(Guid groupId, CancellationToken cancellationToken = default) =>
+        inner.UnclaimAsync(groupId, cancellationToken);
 }

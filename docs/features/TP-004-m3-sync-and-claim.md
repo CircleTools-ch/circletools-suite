@@ -202,9 +202,6 @@ The collision hook is proven **observed, not stubbed**: the host's `ISyncTelemet
 **Gaps recorded, not silently truncated** — these ride routes/slices not yet built and are *not*
 covered by this slice:
 
-- **Un-claim rows** (`UnclaimTests.*`, `TwoClientSyncTests.UnclaimOnA_StopsSyncOnB_...`,
-  `UnclaimPageTests.*`): the `DELETE /api/v1/sync/groups/{id}` route and its un-claim marker do not
-  exist yet (the delta exchange reads markers but nothing produces them). Blocked on that route.
 - **Account-deletion sync** (`AccountDeletionSyncTests.*`): needs deletion to cascade the `sync`
   store. The `LocalDataSafetyTests` account-deletion count is therefore deferred with it.
 - **Claim-flow / claim-page / un-claim-page component rows** (`ClaimFlowTests.*`,
@@ -212,8 +209,36 @@ covered by this slice:
   `POST …/claim` route land with the UI slice. This slice claims by scoping a local group and letting
   the normal cycle push it (`SyncClient.ClaimAsync`), which exercises every convergence path a claimed
   group rides but not the claim UI or its idempotent partial-retry route.
+- **Un-claim *page* row** (`UnclaimPageTests.*`): the confirmation UI — distinct from delete,
+  offline-unavailable reason — lands with the claim/un-claim screen slice. The un-claim *behaviour* it
+  will drive is built and covered (below).
 - **Auth mid-sync** (`SyncAuthTests.*`): token-refresh-during-sync and refresh-failure sign-out.
 - **Perf gate** (`SyncPerformanceTests.*`, ⚠) and **localization parity** (`LocalizationParityTests.*`).
+
+## Build reconciliation — the un-claim slice (FR-026)
+
+The `DELETE /api/v1/sync/groups/{id}` route and its **un-claim marker** are now built: the server
+deletes the account-scoped copy (its in-body assignments with it, ADR-0020) and records an un-claim
+marker — never a tombstone — that the delta exchange already returned. The client engine gains
+`SyncService.UnclaimAsync`: it calls the server first and drops the local account scope only on
+confirmation, keeping the local copy; an unreachable server leaves everything untouched (FR-026
+requires a connection). A standing tombstone for the same id **outranks** an un-claim, so a delete is
+never downgraded into a keep-the-copy signal (no resurrection, NFR-008).
+
+**Matrix rows now covered by a real class/method** (plan-time names reconciled to code):
+
+| Plan-time row | Actual class.method |
+|---------------|---------------------|
+| un-claim: no server copy, still local, stops syncing | `UnclaimTests.RemoveFromAccount_LeavesNoServerCopy_KeepsTheLocalCopyUsable_AndStopsSyncing` |
+| drawn group's server assignments deleted | `UnclaimTests.RemovingADrawnGroup_DeletesTheServerSideAssignments` |
+| already removed elsewhere → clear scope, no error | `UnclaimTests.RemovingAGroupAlreadyRemovedElsewhere_ClearsTheLocalScope_AndSurfacesNoError` |
+| un-claim on A → B stops syncing, keeps local | `TwoClientSyncTests.UnclaimOnA_StopsSyncOnB_ButBKeepsItsLocalCopy` |
+| re-claim syncs from the claiming device | `TwoClientSyncTests.ReclaimAfterUnclaim_SyncsFromTheClaimingDevicesCopy` |
+| un-claim store behaviour, idempotency, tombstone precedence | `SyncStoreTests.Unclaiming_DeletesTheServerCopy_AndRecordsAnUnclaimMarkerNotATombstone`, `.Unclaiming_IsIdempotent_AndSurfacesNoError`, `.AStandingTombstone_IsNotDowngradedByAnUnclaim`, `.AReclaimAfterAnUnclaim_RecreatesTheAggregate_AndClearsTheStaleMarker` |
+| route wired, bearer-authorized | `SyncEndpointTests.Unclaim_WithoutABearerToken_Is401`, `.Unclaim_RemovesTheServerCopy_AndPropagatesAnUnclaimMarker` |
+| client un-claim decision logic (offline, idempotent, scope drop) | `SyncServiceTests.Unclaim_CallsTheServerFirst_ThenDropsTheScope_KeepingTheLocalCopy`, `.Unclaim_WhenTheServerIsUnreachable_ChangesNothingLocally`, `.Unclaim_IsIdempotent_WhenTheGroupIsAlreadyAccountFree` |
+
+Still deferred to the UI slice: the un-claim **confirmation screen** (`UnclaimPageTests.*`).
 
 **Finding surfaced by the harness — replay counted as a collision.** `SyncStore.ApplyChangeAsync`
 treats any push whose version is `<=` the stored version as a last-write-wins collision, including a
