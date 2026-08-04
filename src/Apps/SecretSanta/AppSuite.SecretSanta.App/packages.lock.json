@@ -1332,6 +1332,13 @@
           "Xamarin.Kotlin.StdLib": "2.2.0.1"
         }
       },
+      "appsuite.apiclient": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.Ui.Abstractions": "[1.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.10, )"
+        }
+      },
       "appsuite.application": {
         "type": "Project",
         "dependencies": {
@@ -1348,6 +1355,9 @@
           "Microsoft.Extensions.Localization": "[10.0.10, )"
         }
       },
+      "appsuite.main.contracts": {
+        "type": "Project"
+      },
       "appsuite.secretsanta.contracts": {
         "type": "Project"
       },
@@ -1362,8 +1372,11 @@
       "appsuite.secretsanta.localstore": {
         "type": "Project",
         "dependencies": {
+          "AppSuite.ApiClient": "[1.0.0, )",
+          "AppSuite.Main.Contracts": "[1.0.0, )",
           "AppSuite.SecretSanta.Core": "[1.0.0, )",
-          "AppSuite.Ui.Abstractions": "[1.0.0, )"
+          "AppSuite.Ui.Abstractions": "[1.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.10, )"
         }
       },
       "appsuite.secretsanta.ui": {
@@ -1827,6 +1840,13 @@
           "Microsoft.Windows.SDK.BuildTools": "10.0.22621.756"
         }
       },
+      "appsuite.apiclient": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.Ui.Abstractions": "[1.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.10, )"
+        }
+      },
       "appsuite.application": {
         "type": "Project",
         "dependencies": {
@@ -1843,6 +1863,9 @@
           "Microsoft.Extensions.Localization": "[10.0.10, )"
         }
       },
+      "appsuite.main.contracts": {
+        "type": "Project"
+      },
       "appsuite.secretsanta.contracts": {
         "type": "Project"
       },
@@ -1857,8 +1880,11 @@
       "appsuite.secretsanta.localstore": {
         "type": "Project",
         "dependencies": {
+          "AppSuite.ApiClient": "[1.0.0, )",
+          "AppSuite.Main.Contracts": "[1.0.0, )",
           "AppSuite.SecretSanta.Core": "[1.0.0, )",
-          "AppSuite.Ui.Abstractions": "[1.0.0, )"
+          "AppSuite.Ui.Abstractions": "[1.0.0, )",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.10, )"
         }
       },
       "appsuite.secretsanta.ui": {
