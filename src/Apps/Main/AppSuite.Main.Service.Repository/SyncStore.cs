@@ -111,6 +111,69 @@ public sealed class SyncStore(SyncDbContext context, ISyncTelemetry telemetry, T
     }
 
     /// <inheritdoc />
+    public async Task ClaimAsync(Guid accountId, SyncChange change, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(change);
+
+        var now = timeProvider.GetUtcNow();
+        var bodyText = change.Body.GetRawText();
+
+        await using var transaction = await context.Database
+            .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        var marker = await context.Markers
+            .FindAsync([accountId, change.Id], cancellationToken).ConfigureAwait(false);
+
+        // A delete already stands for this id: claiming an old copy at or below the tombstone's version
+        // must not resurrect the group (NFR-008). A genuine re-creation past that version is allowed and
+        // falls through to the upsert, clearing the marker as any re-creation does.
+        if (marker is { MarkerType: SyncMarkerType.Tombstone } && change.Version <= marker.Version)
+        {
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return;
+        }
+
+        var seq = await AllocateSequenceBlockAsync(accountId, 1, cancellationToken).ConfigureAwait(false);
+        var existing = await context.Aggregates
+            .FindAsync([accountId, change.Id], cancellationToken).ConfigureAwait(false);
+
+        // Re-creating the aggregate clears any stale marker standing for its id (an un-claim it is
+        // coming back from, or a superseded tombstone at a lower version).
+        if (marker is not null)
+        {
+            context.Markers.Remove(marker);
+        }
+
+        if (existing is null)
+        {
+            context.Aggregates.Add(new SyncAggregate
+            {
+                AccountId = accountId,
+                AggregateId = change.Id,
+                Kind = change.Kind,
+                Body = bodyText,
+                Version = change.Version,
+                ServerSeq = seq,
+                ServerModifiedAt = now,
+            });
+        }
+        else
+        {
+            // Idempotent re-claim (the retry after a partly-failed multi-group claim): update in place,
+            // never a collision. The version is monotonic so a re-claim of an equal or older copy does
+            // not roll the stored version backwards.
+            existing.Kind = change.Kind;
+            existing.Body = bodyText;
+            existing.Version = Math.Max(change.Version, existing.Version);
+            existing.ServerSeq = seq;
+            existing.ServerModifiedAt = now;
+        }
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task UnclaimAsync(Guid accountId, Guid groupId, CancellationToken cancellationToken = default)
     {
         await using var transaction = await context.Database

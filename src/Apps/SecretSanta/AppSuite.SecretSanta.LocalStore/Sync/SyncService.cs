@@ -132,6 +132,111 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
         }
     }
 
+    /// <summary>
+    /// Claims the given account-free local groups into the account (FR-025): the out-of-cycle first
+    /// upload the claim screen drives. Each group is uploaded through its own <c>/claim</c> route and,
+    /// only once the server confirms, marked account-scoped locally — its copy kept as a cache, never
+    /// replaced or removed (the action is additive). Groups already scoped, or not held locally, are
+    /// skipped silently.
+    /// </summary>
+    /// <remarks>
+    /// Groups are claimed one at a time and in order, so a claim that fails partway leaves the groups
+    /// that already arrived account-scoped and the rest purely local (FR-025). A retry re-claims only
+    /// the ones that did not arrive; re-claiming one that did updates it rather than duplicating it,
+    /// because ids are client-minted (ADR-0008). Nothing local is ever removed — an unreachable server
+    /// or a refused local write ends the claim without touching a group's usable local copy (NFR-001).
+    /// </remarks>
+    /// <param name="accountId">The signed-in account the groups are claimed into.</param>
+    /// <param name="groupIds">The groups to claim; account-free local groups among them are uploaded.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>How far it got: <see cref="SyncStatus.Synced"/> if every requested group was claimed, else why it stopped.</returns>
+    public async Task<ClaimOutcome> ClaimAsync(
+        Guid accountId,
+        IReadOnlyCollection<Guid> groupIds,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(groupIds);
+
+        var requested = groupIds.Count;
+        if (requested == 0)
+        {
+            return new ClaimOutcome(SyncStatus.Synced, 0, 0);
+        }
+
+        List<SyncedGroupRecord> records;
+        try
+        {
+            records = (await local.LoadGroupsAsync(cancellationToken)).ToList();
+        }
+        catch (StorageUnavailableException)
+        {
+            return ClaimOutcome.Incomplete(SyncStatus.StorageUnavailable, 0, requested);
+        }
+
+        var claimed = 0;
+        foreach (var groupId in groupIds)
+        {
+            var index = records.FindIndex(r => r.State.Id == groupId);
+
+            // Only an account-free local group can be claimed; anything already scoped (or not held
+            // here) is left exactly as it is.
+            if (index < 0 || records[index].AccountScope is not null)
+            {
+                continue;
+            }
+
+            var record = records[index];
+            var body = JsonSerializer.SerializeToElement(record.State, SyncJsonContext.Default.GroupState);
+            var result = await api.ClaimAsync(groupId, new ClaimGroupRequest(record.Version, body), cancellationToken);
+            if (!result.IsSuccess)
+            {
+                // Persist the groups already claimed so the arrived ones stay account-scoped and a retry
+                // re-claims only the rest (FR-025). The failing group keeps its account-free local copy.
+                await PersistIfAnyClaimedAsync(records, claimed, cancellationToken).ConfigureAwait(false);
+                return ClaimOutcome.Incomplete(MapFailure(result.Error!.Failure), claimed, requested);
+            }
+
+            // Stored on the server and account-scoped now; the local copy is kept as a cache. Not dirty —
+            // the claim route uploaded exactly this version, so the next cycle re-pulls it harmlessly.
+            records[index] = record with { AccountScope = accountId, Dirty = false };
+            claimed++;
+        }
+
+        try
+        {
+            await local.SaveGroupsAsync(records, cancellationToken);
+        }
+        catch (StorageUnavailableException)
+        {
+            // Every selected group reached the server, but the local scope could not be recorded. The
+            // groups are safe on the server; a later cycle re-scopes their kept local copies.
+            return ClaimOutcome.Incomplete(SyncStatus.StorageUnavailable, claimed, requested);
+        }
+
+        return new ClaimOutcome(SyncStatus.Synced, claimed, requested);
+    }
+
+    private async Task PersistIfAnyClaimedAsync(
+        IReadOnlyList<SyncedGroupRecord> records,
+        int claimed,
+        CancellationToken cancellationToken)
+    {
+        if (claimed == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            await local.SaveGroupsAsync(records, cancellationToken);
+        }
+        catch (StorageUnavailableException)
+        {
+            // The scopes could not be written down, but the groups are on the server; a later cycle
+            // reconciles their local scope. Nothing local is lost.
+        }
+    }
+
     private async Task<SyncOutcome> ReconcileAsync(
         Guid accountId,
         SyncResponse response,

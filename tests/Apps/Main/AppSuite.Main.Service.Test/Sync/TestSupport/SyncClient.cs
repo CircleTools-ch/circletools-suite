@@ -13,10 +13,13 @@ namespace AppSuite.Main.Service.Test.Sync.TestSupport;
 /// <remarks>
 /// Editing goes through the same repository the app uses, so a local edit bumps the version and marks
 /// the copy dirty exactly as it does in production; <see cref="SyncAsync"/> runs the same cycle every
-/// trigger runs. <see cref="ClaimAsync"/> is the one deliberate stand-in: the claim <em>screen</em>
-/// lands with a later slice, but claiming is only "scope this local group to the account and let the
-/// normal cycle push it", which is what the method does — enough to exercise every convergence path
-/// that a claimed group rides.
+/// trigger runs. <see cref="ClaimAsync"/> and <see cref="UnclaimAsync"/> drive the real
+/// <see cref="SyncService"/> claim and un-claim over the real routes — the only thing a later slice adds
+/// is the screen that calls them. <see cref="StageClaimAsync"/> is the one deliberate stand-in: it puts
+/// a group into the "claimed but not yet uploaded" local state <em>without</em> a network call, which
+/// the offline-drain and interrupted-replay cycle tests need as a precondition (that state also arises
+/// in production when a claimed group is edited offline). Nothing else here is a mock of the client; the
+/// sole test double is the in-memory stand-in for the browser's storage.
 /// </remarks>
 public sealed class SyncClient
 {
@@ -97,18 +100,37 @@ public sealed class SyncClient
 
     /// <summary>
     /// Claims the given local group (or every account-free group when <paramref name="id"/> is null)
-    /// into the account: scope it and mark it dirty, so the next cycle pushes it. The stand-in for the
-    /// claim screen — see the type remarks.
+    /// into the account through the real <see cref="SyncService.ClaimAsync"/> and its <c>/claim</c>
+    /// route: each group is uploaded, and its kept local copy marked account-scoped once the server
+    /// confirms. The counterpart to <see cref="UnclaimAsync"/>.
     /// </summary>
     /// <param name="id">The group to claim, or null for all account-free groups.</param>
-    public async Task ClaimAsync(Guid? id = null)
+    /// <returns>How far the claim got.</returns>
+    public async Task<ClaimOutcome> ClaimAsync(Guid? id = null)
+    {
+        var records = await _local.LoadGroupsAsync();
+        var ids = records
+            .Where(r => r.AccountScope is null && (id is null || r.State.Id == id))
+            .Select(r => r.State.Id)
+            .ToList();
+
+        return await _sync.ClaimAsync(_accountId, ids);
+    }
+
+    /// <summary>
+    /// Stages a claim locally without any network call: scopes the given account-free group (or every
+    /// one when <paramref name="id"/> is null) to the account and marks it dirty, so the <em>cycle</em>
+    /// is what pushes it. The deliberate stand-in described in the type remarks — used only where a test
+    /// needs a pending, dirty, claimed group as a precondition (offline drain, interrupted replay).
+    /// </summary>
+    /// <param name="id">The group to stage, or null for every account-free group.</param>
+    public async Task StageClaimAsync(Guid? id = null)
     {
         var records = (await _local.LoadGroupsAsync()).ToList();
         for (var i = 0; i < records.Count; i++)
         {
             var record = records[i];
-            var applies = record.AccountScope is null && (id is null || record.State.Id == id);
-            if (applies)
+            if (record.AccountScope is null && (id is null || record.State.Id == id))
             {
                 records[i] = record with { AccountScope = _accountId, Dirty = true };
             }

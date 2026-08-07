@@ -132,6 +132,50 @@ public sealed class SyncStoreTests(SyncPostgresFixture fixture)
     }
 
     [Fact]
+    public async Task AClaim_CreatesTheAccountScopedGroup_AndARetryUpdatesItWithoutACollision()
+    {
+        var account = Guid.NewGuid();
+        var groupId = Guid.NewGuid();
+        var telemetry = new CapturingSyncTelemetry();
+
+        // First claim creates the account-scoped copy.
+        await ClaimAsync(account, groupId, 1, """{ "name": "Family" }""", telemetry);
+
+        // A retry after a partly-failed multi-group claim re-sends the same group. It updates in place —
+        // one aggregate, not two — and, being the user's explicit act rather than a concurrent edit, it
+        // raises no collision (the signal the parked conflict UI depends on must stay honest).
+        await ClaimAsync(account, groupId, 1, """{ "name": "Family (again)" }""", telemetry);
+
+        Assert.Empty(telemetry.Collisions);
+
+        var onB = await ExchangeAsync(account, new SyncRequest("B", 0, [], []));
+        var seen = onB.Changes.Single(c => c.Id == groupId);
+        Assert.Equal("Family (again)", seen.Body.GetProperty("name").GetString());
+
+        await using var provider = fixture.CreateProvider();
+        var context = provider.GetRequiredService<SyncDbContext>();
+        var count = await context.Aggregates.CountAsync(a => a.AccountId == account && a.AggregateId == groupId);
+        Assert.Equal(1, count);
+    }
+
+    [Fact]
+    public async Task AClaim_OfAGroupAtOrBelowAStandingTombstone_DoesNotResurrectIt()
+    {
+        var account = Guid.NewGuid();
+        var groupId = Guid.NewGuid();
+
+        await ExchangeAsync(account, Push("A", 0, Change(groupId, 1, "{}")));
+        await ExchangeAsync(account, new SyncRequest("A", 1, [], [new SyncTombstone("group", groupId, 2)]));
+
+        // Claiming an old local copy of a group the account already deleted must not undo the delete.
+        await ClaimAsync(account, groupId, 2, """{ "resurrected": true }""");
+
+        var onB = await ExchangeAsync(account, new SyncRequest("B", 0, [], []));
+        Assert.DoesNotContain(onB.Changes, c => c.Id == groupId);
+        Assert.Contains(onB.Tombstones, t => t.Id == groupId);
+    }
+
+    [Fact]
     public async Task Unclaiming_DeletesTheServerCopy_AndRecordsAnUnclaimMarkerNotATombstone()
     {
         var account = Guid.NewGuid();
@@ -265,6 +309,22 @@ public sealed class SyncStoreTests(SyncPostgresFixture fixture)
             clock ?? TimeProvider.System);
 
         return await store.ExchangeAsync(accountId, request);
+    }
+
+    private async Task ClaimAsync(
+        Guid accountId,
+        Guid groupId,
+        long version,
+        string bodyJson,
+        ISyncTelemetry? telemetry = null)
+    {
+        await using var provider = fixture.CreateProvider();
+        var store = new SyncStore(
+            provider.GetRequiredService<SyncDbContext>(),
+            telemetry ?? new CapturingSyncTelemetry(),
+            TimeProvider.System);
+
+        await store.ClaimAsync(accountId, new SyncChange("group", groupId, version, Body(bodyJson)));
     }
 
     private async Task UnclaimAsync(Guid accountId, Guid groupId)

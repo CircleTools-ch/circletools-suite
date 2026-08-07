@@ -81,6 +81,37 @@ public sealed class SyncEndpointTests(AccountApiFactory factory)
     }
 
     [Fact]
+    public async Task Claim_WithoutABearerToken_Is401()
+    {
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/v1/sync/groups/{Guid.NewGuid()}/claim",
+            new ClaimGroupRequest(1, Body("""{ "name": "Family" }""")));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Claim_UploadsTheGroup_AndACatchingUpDevicePullsIt()
+    {
+        var client = await SignedInClientAsync();
+        var groupId = Guid.NewGuid();
+
+        var claim = await client.PostAsJsonAsync(
+            $"/api/v1/sync/groups/{groupId}/claim",
+            new ClaimGroupRequest(1, Body("""{ "name": "Claimed" }""")));
+        Assert.Equal(HttpStatusCode.NoContent, claim.StatusCode);
+
+        // The claimed group is now account-scoped and rides the normal cycle: a fresh device pulls it.
+        var pull = await client.PostAsJsonAsync("/api/v1/sync", EmptyCycle("device-b"));
+        pull.EnsureSuccessStatusCode();
+        var body = (await pull.Content.ReadFromJsonAsync<SyncResponse>())!;
+        var seen = body.Changes.Single(c => c.Id == groupId);
+        Assert.Equal("Claimed", seen.Body.GetProperty("name").GetString());
+    }
+
+    [Fact]
     public async Task Unclaim_WithoutABearerToken_Is401()
     {
         var client = factory.CreateClient();

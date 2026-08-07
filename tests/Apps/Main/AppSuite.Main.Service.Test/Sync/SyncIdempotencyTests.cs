@@ -19,7 +19,9 @@ public sealed class SyncIdempotencyTests(TwoClientSyncFactory factory)
         var flaky = account.NewDevice(api => new InterruptingSyncApi(api));
 
         var groupId = await flaky.CreateGroupAsync("Family", "Ada", "Bernd");
-        await flaky.ClaimAsync(groupId);
+        // Stage the claim locally so the push under test is a normal dirty-aggregate cycle — the one the
+        // interruption swallows. (Claiming online would upload out-of-band and leave nothing to replay.)
+        await flaky.StageClaimAsync(groupId);
 
         // First cycle: the server applies the push, but the response is swallowed, so the copy stays
         // dirty and the cursor unmoved.
@@ -48,7 +50,9 @@ public sealed class SyncIdempotencyTests(TwoClientSyncFactory factory)
         var clean = await factory.RegisterAccountAsync();
         var cleanDevice = clean.NewDevice();
         var cleanId = await cleanDevice.CreateGroupAsync("Reference", "Ada", "Bernd");
-        await cleanDevice.ClaimAsync(cleanId);
+        // Staged, then pushed by the cycle — the same mechanism as the replayed branch, so the two are
+        // compared like for like.
+        await cleanDevice.StageClaimAsync(cleanId);
         await cleanDevice.SyncAsync();
         var cleanState = await SoleGroupSeenByFreshReaderAsync(clean);
 
@@ -56,7 +60,7 @@ public sealed class SyncIdempotencyTests(TwoClientSyncFactory factory)
         var replayed = await factory.RegisterAccountAsync();
         var flaky = replayed.NewDevice(api => new InterruptingSyncApi(api));
         var replayId = await flaky.CreateGroupAsync("Reference", "Ada", "Bernd");
-        await flaky.ClaimAsync(replayId);
+        await flaky.StageClaimAsync(replayId);
         await flaky.SyncAsync(); // interrupted
         await flaky.SyncAsync(); // replay
         var replayedState = await SoleGroupSeenByFreshReaderAsync(replayed);
