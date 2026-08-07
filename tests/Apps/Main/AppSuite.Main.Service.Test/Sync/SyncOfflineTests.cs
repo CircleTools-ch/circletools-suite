@@ -45,7 +45,8 @@ public sealed class SyncOfflineTests(TwoClientSyncFactory factory)
             await author.CreateGroupAsync($"Group {i}", "Ada");
         }
 
-        await author.ClaimAsync();
+        // Stage the claims locally (no upload), so the cycle is what must drain every pending aggregate.
+        await author.StageClaimAsync();
         Assert.All(await author.RecordsAsync(), r => Assert.True(r.Dirty));
 
         // One cycle drains every pending aggregate.

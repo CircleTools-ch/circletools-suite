@@ -22,6 +22,25 @@ public interface ISyncStore
     Task<SyncResponse> ExchangeAsync(Guid accountId, SyncRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Claims a group into the account (FR-025, <c>POST /api/v1/sync/groups/{id}/claim</c>): the first
+    /// upload of a group that had no account behind it. It creates — or, on a retry, updates — the
+    /// account-scoped copy so that, after it, the group rides the normal <see cref="ExchangeAsync"/>
+    /// cycle like any other.
+    /// </summary>
+    /// <remarks>
+    /// A claim is the user's explicit act, not a concurrent edit to arbitrate: re-claiming the same
+    /// group (a retry after a partly-failed multi-group claim) upserts in place and raises <em>no</em>
+    /// collision — the id is client-minted, so the arrived copy is found and updated rather than
+    /// duplicated. A standing tombstone for the id still wins unless the claimed version moves past it,
+    /// so claiming an old local copy cannot silently undo a delete the account already made.
+    /// </remarks>
+    /// <param name="accountId">The calling account, taken from the bearer token — the only scope.</param>
+    /// <param name="change">The claimed group as a versioned opaque document (kind, id, version, body).</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns>A task that completes when the group is account-scoped on the server.</returns>
+    Task ClaimAsync(Guid accountId, SyncChange change, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Removes a group from the account (FR-026, <c>DELETE /api/v1/sync/groups/{id}</c>): deletes the
     /// server-side copy — its in-body assignments with it (ADR-0020) — and records an
     /// <em>un-claim marker</em> so the account's other devices drop the account scope but keep their

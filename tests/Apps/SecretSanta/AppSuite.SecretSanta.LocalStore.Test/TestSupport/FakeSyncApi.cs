@@ -12,9 +12,13 @@ public sealed class FakeSyncApi : ISyncApi
 {
     private readonly Queue<ApiResult<SyncResponse>> _responses = new();
     private readonly Queue<ApiResult> _unclaimResponses = new();
+    private readonly Queue<ApiResult> _claimResponses = new();
 
     /// <summary>Every request the service sent, in order.</summary>
     public List<SyncRequest> Requests { get; } = [];
+
+    /// <summary>Every group id passed to <see cref="ClaimAsync"/>, in order.</summary>
+    public List<Guid> Claimed { get; } = [];
 
     /// <summary>Every group id passed to <see cref="UnclaimAsync"/>, in order.</summary>
     public List<Guid> Unclaimed { get; } = [];
@@ -61,6 +65,33 @@ public sealed class FakeSyncApi : ISyncApi
         return _responses.Count > 0
             ? _responses.Dequeue()
             : ApiResult.Ok(Empty(request.Cursor));
+    }
+
+    /// <summary>Scripts the next <see cref="ClaimAsync"/> call to succeed. Order matters across calls.</summary>
+    /// <returns>This, for chaining.</returns>
+    public FakeSyncApi ClaimSucceeds()
+    {
+        _claimResponses.Enqueue(ApiResult.Ok());
+        return this;
+    }
+
+    /// <summary>Scripts the next <see cref="ClaimAsync"/> call to fail with <paramref name="failure"/>.</summary>
+    /// <param name="failure">The failure category.</param>
+    /// <returns>This, for chaining.</returns>
+    public FakeSyncApi ClaimFails(ApiFailure failure)
+    {
+        _claimResponses.Enqueue(ApiResult.Failed(new ApiError(failure)));
+        return this;
+    }
+
+    /// <inheritdoc />
+    public Task<ApiResult> ClaimAsync(
+        Guid groupId,
+        ClaimGroupRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        Claimed.Add(groupId);
+        return Task.FromResult(_claimResponses.Count > 0 ? _claimResponses.Dequeue() : ApiResult.Ok());
     }
 
     /// <summary>Scripts the next <see cref="UnclaimAsync"/> call to fail with <paramref name="failure"/>.</summary>

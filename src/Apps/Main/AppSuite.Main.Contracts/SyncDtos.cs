@@ -66,6 +66,19 @@ public sealed record SyncResponse(
 /// </param>
 public sealed record SyncChange(string Kind, Guid Id, long Version, JsonElement Body);
 
+/// <summary>
+/// The first upload of a not-yet-account-scoped group (FR-025, <c>POST /api/v1/sync/groups/{id}/claim</c>).
+/// The id is on the route; the body and version travel here. Because the id is client-minted
+/// (ADR-0008), re-sending a group that already arrived <em>updates</em> it rather than duplicating it,
+/// which is what makes a partly-failed multi-group claim safe to retry.
+/// </summary>
+/// <param name="Version">The per-aggregate version the client holds for the group being claimed.</param>
+/// <param name="Body">
+/// The group's full body as opaque JSON — the same shape a <see cref="SyncChange"/> carries. Platform
+/// stores it without deserializing it (ADR-0016, ADR-0033).
+/// </param>
+public sealed record ClaimGroupRequest(long Version, JsonElement Body);
+
 /// <summary>A deletion travelling as a tombstone: the aggregate is gone everywhere (FR-024).</summary>
 /// <param name="Kind">The aggregate kind the deletion applies to.</param>
 /// <param name="Id">The deleted aggregate's identity.</param>

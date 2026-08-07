@@ -187,6 +187,87 @@ public sealed class SyncServiceTests
     }
 
     [Fact]
+    public async Task Claim_UploadsTheGroup_AndMarksItAccountScoped_KeepingTheLocalCopy()
+    {
+        var account = Guid.NewGuid();
+        var (service, local, api) = NewService();
+        var state = SyncTestData.GroupWith("Family", "Alice");
+        await SeedAsync(local, new SyncedGroupRecord(state, Version: 3, AccountScope: null, Dirty: false));
+
+        var outcome = await service.ClaimAsync(account, [state.Id], default);
+
+        Assert.Equal(SyncStatus.Synced, outcome.Status);
+        Assert.Equal(1, outcome.Claimed);
+        Assert.Equal(state.Id, Assert.Single(api.Claimed));
+
+        // The local copy is kept and now account-scoped; not dirty — the claim route uploaded this version.
+        var record = Assert.Single(await local.LoadGroupsAsync(default));
+        Assert.Equal(account, record.AccountScope);
+        Assert.False(record.Dirty);
+        Assert.Equal(3, record.Version);
+    }
+
+    [Fact]
+    public async Task Claim_OnlyTouchesAccountFreeGroups_LeavingAlreadyScopedOnesUnchanged()
+    {
+        var account = Guid.NewGuid();
+        var (service, local, api) = NewService();
+        var free = SyncTestData.GroupWith("Local", "A");
+        var alreadyScoped = SyncTestData.GroupWith("Mine", "B");
+        await SeedAsync(
+            local,
+            new SyncedGroupRecord(free, 1, AccountScope: null, Dirty: false),
+            new SyncedGroupRecord(alreadyScoped, 2, AccountScope: account, Dirty: false));
+
+        var outcome = await service.ClaimAsync(account, [free.Id, alreadyScoped.Id], default);
+
+        // Only the account-free group is uploaded; the already-scoped one is neither re-sent nor changed.
+        Assert.Equal(1, outcome.Claimed);
+        Assert.Equal(free.Id, Assert.Single(api.Claimed));
+    }
+
+    [Fact]
+    public async Task Claim_StopsAtTheFirstFailure_ArrivedGroupsStayClaimed_TheRestStayLocal()
+    {
+        var account = Guid.NewGuid();
+        var (service, local, api) = NewService();
+        var first = SyncTestData.GroupWith("First", "A");
+        var second = SyncTestData.GroupWith("Second", "B");
+        await SeedAsync(
+            local,
+            new SyncedGroupRecord(first, 1, AccountScope: null, Dirty: false),
+            new SyncedGroupRecord(second, 1, AccountScope: null, Dirty: false));
+
+        // The first upload succeeds, the second cannot reach the server.
+        api.ClaimSucceeds().ClaimFails(ApiFailure.Unreachable);
+
+        var outcome = await service.ClaimAsync(account, [first.Id, second.Id], default);
+
+        Assert.Equal(SyncStatus.Offline, outcome.Status);
+        Assert.Equal(1, outcome.Claimed);
+        Assert.Equal(2, outcome.Requested);
+
+        var records = await local.LoadGroupsAsync(default);
+        // The arrived group is account-scoped; the one that failed is still purely local — and both copies
+        // are still on the device (FR-025).
+        Assert.Equal(account, records.Single(r => r.State.Id == first.Id).AccountScope);
+        Assert.Null(records.Single(r => r.State.Id == second.Id).AccountScope);
+    }
+
+    [Fact]
+    public async Task Claim_OfNothing_IsANoOpSuccess()
+    {
+        var account = Guid.NewGuid();
+        var (service, _, api) = NewService();
+
+        var outcome = await service.ClaimAsync(account, [], default);
+
+        Assert.Equal(SyncStatus.Synced, outcome.Status);
+        Assert.Equal(0, outcome.Claimed);
+        Assert.Empty(api.Claimed);
+    }
+
+    [Fact]
     public async Task Collisions_AreSurfacedInTheOutcomeCount()
     {
         var account = Guid.NewGuid();

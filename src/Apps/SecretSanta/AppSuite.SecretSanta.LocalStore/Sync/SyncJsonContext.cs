@@ -21,4 +21,5 @@ namespace AppSuite.SecretSanta.LocalStore;
 [JsonSerializable(typeof(GroupState))]
 [JsonSerializable(typeof(SyncRequest))]
 [JsonSerializable(typeof(SyncResponse))]
+[JsonSerializable(typeof(ClaimGroupRequest))]
 public sealed partial class SyncJsonContext : JsonSerializerContext;
