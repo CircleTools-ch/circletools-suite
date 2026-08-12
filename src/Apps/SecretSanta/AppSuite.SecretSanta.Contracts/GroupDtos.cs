@@ -28,7 +28,11 @@ public sealed record EventDetailsDto(DateTimeOffset? Date, string Location, stri
 /// <param name="Id">The member identity.</param>
 /// <param name="Name">The member name.</param>
 /// <param name="Wishlist">The member's wishlist items.</param>
-public sealed record MemberDto(Guid Id, string Name, IReadOnlyList<string> Wishlist);
+/// <param name="UserId">
+/// The account this member is linked to, or <see langword="null"/> when unlinked. Lets list and
+/// editor screens show link state without a second lookup.
+/// </param>
+public sealed record MemberDto(Guid Id, string Name, IReadOnlyList<string> Wishlist, Guid? UserId = null);
 
 /// <summary>A directed exclusion: <paramref name="GiverMemberId"/> must not draw <paramref name="RecipientMemberId"/>.</summary>
 /// <param name="GiverMemberId">The giver member identity.</param>

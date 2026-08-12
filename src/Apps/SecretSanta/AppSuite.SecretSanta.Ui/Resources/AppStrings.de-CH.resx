@@ -118,4 +118,65 @@
   <data name="UnclaimOfflineUnavailable" xml:space="preserve"><value>Du bist offline. Vom Konto entfernen braucht eine Verbindung; nichts wurde geändert.</value></data>
   <data name="UnclaimSuccess" xml:space="preserve"><value>Von deinem Konto entfernt. Die Kopie auf diesem Gerät bleibt erhalten.</value></data>
   <data name="UnclaimFailed" xml:space="preserve"><value>Das konnte nicht abgeschlossen werden. Bitte versuche es erneut.</value></data>
+  <!-- M4 — Linking (FEAT-005) -->
+  <data name="FromCircleTitle" xml:space="preserve"><value>Gruppe aus einem Kreis erstellen</value></data>
+  <data name="FromCircleLead" xml:space="preserve"><value>Bring die Personen aus einem deiner Kreise als Mitglieder ein. Die Gruppe ist eine Momentaufnahme – spätere Änderungen am Kreis wirken sich nicht auf sie aus.</value></data>
+  <data name="FromCircleNoCircles" xml:space="preserve"><value>Du hast noch keine Kreise. Erstelle zuerst einen in der Konto-App.</value></data>
+  <data name="FromCircleChooseLabel" xml:space="preserve"><value>Kreis auswählen</value></data>
+  <data name="FromCircleGroupNameLabel" xml:space="preserve"><value>Gruppenname</value></data>
+  <data name="FromCircleManagedBadge" xml:space="preserve"><value>verwaltet</value></data>
+  <data name="FromCircleLinkedBadge" xml:space="preserve"><value>hat ein Konto</value></data>
+  <data name="FromCircleCreate" xml:space="preserve"><value>Gruppe erstellen</value></data>
+  <data name="FromCircleBack" xml:space="preserve"><value>Zurück</value></data>
+  <data name="FromCircleOffline" xml:space="preserve"><value>Du bist offline. Zum Lesen deiner Kreise braucht es eine Verbindung.</value></data>
+  <data name="FromCircleReadFailed" xml:space="preserve"><value>Deine Kreise konnten nicht gelesen werden. Bitte versuche es erneut.</value></data>
+  <data name="FromCircleCreated" xml:space="preserve"><value>Die Gruppe wurde erstellt.</value></data>
+  <data name="FromCircleDuplicateAccountNotice" xml:space="preserve"><value>Ohne Verknüpfung übernommen, weil jemand anderes dieses Konto bereits nutzt: {0}.</value></data>
+  <data name="FromCircleOpenGroup" xml:space="preserve"><value>Gruppe öffnen</value></data>
+  <data name="FromCirclePeopleCountSingular" xml:space="preserve"><value>{0} Person</value></data>
+  <data name="FromCirclePeopleCountPlural" xml:space="preserve"><value>{0} Personen</value></data>
+  <data name="MyAssignmentsTitle" xml:space="preserve"><value>Meine Zuteilungen</value></data>
+  <data name="MyAssignmentsLead" xml:space="preserve"><value>Wen du in jeder Gruppe beschenkst, an der du teilnimmst.</value></data>
+  <data name="MyAssignmentsOperatorPrivacyNote" xml:space="preserve"><value>Wenn du angemeldet bist, wird deine Zuteilung auf dem Server gespeichert und dadurch geschützt, wer du bist – die Betreiberin kann sie technisch lesen.</value></data>
+  <data name="MyAssignmentsNone" xml:space="preserve"><value>Du hast noch keine Zuteilungen. Sie erscheinen, sobald eine Organisatorin eine Gruppe ausgelost hat, in der du verknüpft bist.</value></data>
+  <data name="MyAssignmentsOffline" xml:space="preserve"><value>Du bist offline. Für deine Zuteilungen braucht es eine Verbindung.</value></data>
+  <data name="MyAssignmentsReadFailed" xml:space="preserve"><value>Deine Zuteilungen konnten nicht gelesen werden. Bitte versuche es erneut.</value></data>
+  <data name="MyWishlistsTitle" xml:space="preserve"><value>Meine Wunschlisten</value></data>
+  <data name="MyWishlistsLead" xml:space="preserve"><value>Deine eigene Wunschliste in jeder Gruppe, in der du verknüpft bist. Nur du kannst sie bearbeiten.</value></data>
+  <data name="MyWishlistsRevealLinkCaveat" xml:space="preserve"><value>In der App sieht die schenkende Person immer die aktuelle Version. Ein bereits geteilter Link zeigt die Wunschliste weiterhin so, wie sie beim Erstellen des Links war, bis ein neuer Link erstellt wird.</value></data>
+  <data name="MyWishlistsNoMemberships" xml:space="preserve"><value>Du bist noch in keiner Gruppe verknüpft.</value></data>
+  <data name="MyWishlistsCopyOfferLabel" xml:space="preserve"><value>Übernehmen von:</value></data>
+  <data name="MyWishlistsAddPlaceholder" xml:space="preserve"><value>Wunsch hinzufügen</value></data>
+  <data name="MyWishlistsAdd" xml:space="preserve"><value>Hinzufügen</value></data>
+  <data name="MyWishlistsSave" xml:space="preserve"><value>Speichern</value></data>
+  <data name="MyWishlistsSaved" xml:space="preserve"><value>Gespeichert.</value></data>
+  <data name="MyWishlistsOffline" xml:space="preserve"><value>Du bist offline. Zum Speichern braucht es eine Verbindung.</value></data>
+  <data name="MyWishlistsReadFailed" xml:space="preserve"><value>Deine Wunschlisten konnten nicht gelesen werden. Bitte versuche es erneut.</value></data>
+  <data name="MyWishlistsSaveFailed" xml:space="preserve"><value>Das konnte nicht gespeichert werden. Bitte versuche es erneut.</value></data>
+  <data name="MyLinksTitle" xml:space="preserve"><value>Verknüpfungsanfragen</value></data>
+  <data name="MyLinksLead" xml:space="preserve"><value>Eine Organisatorin möchte dich mit einem Mitglied ihrer Gruppe verknüpfen. Wenn du zusagst, besitzt du dessen Wunschliste und siehst deine eigene Zuteilung.</value></data>
+  <data name="MyLinksNone" xml:space="preserve"><value>Du hast keine Verknüpfungsanfragen.</value></data>
+  <data name="MyLinksRequestText" xml:space="preserve"><value>Du wurdest gebeten, «{0}» in «{1}» zu sein.</value></data>
+  <data name="MyLinksAccept" xml:space="preserve"><value>Annehmen</value></data>
+  <data name="MyLinksDecline" xml:space="preserve"><value>Ablehnen</value></data>
+  <data name="MyLinksOffline" xml:space="preserve"><value>Du bist offline. Für Verknüpfungsanfragen braucht es eine Verbindung.</value></data>
+  <data name="MyLinksAccepted" xml:space="preserve"><value>Du bist jetzt in «{0}» verknüpft.</value></data>
+  <data name="MyLinksAlreadyLinked" xml:space="preserve"><value>Du bist bereits mit einem Mitglied von «{0}» verknüpft.</value></data>
+  <data name="MyLinksManagedRefused" xml:space="preserve"><value>Dieses Mitglied kann nicht direkt verknüpft werden.</value></data>
+  <data name="MyLinksActionFailed" xml:space="preserve"><value>Das konnte nicht abgeschlossen werden. Bitte versuche es erneut.</value></data>
+  <data name="MyLinksDeclined" xml:space="preserve"><value>Die Anfrage wurde abgelehnt.</value></data>
+  <data name="MemberLinkedTitle" xml:space="preserve"><value>Dieses Mitglied ist mit einem Konto verknüpft.</value></data>
+  <data name="MemberLinkedBadge" xml:space="preserve"><value>verknüpft</value></data>
+  <data name="MemberUnlink" xml:space="preserve"><value>Verknüpfung lösen</value></data>
+  <data name="MemberLink" xml:space="preserve"><value>Verknüpfen…</value></data>
+  <data name="MemberLinkEmailLabel" xml:space="preserve"><value>E-Mail-Adresse zum Einladen</value></data>
+  <data name="MemberLinkSend" xml:space="preserve"><value>Anfrage senden</value></data>
+  <data name="MemberLinkSelfLinked" xml:space="preserve"><value>Mit deinem Konto verknüpft.</value></data>
+  <data name="MemberLinkRequestSent" xml:space="preserve"><value>Anfrage gesendet. Falls diese Adresse ein Konto hat, erscheint sie dort.</value></data>
+  <data name="MemberLinkFailed" xml:space="preserve"><value>Das konnte nicht abgeschlossen werden. Bitte versuche es erneut.</value></data>
+  <data name="MemberUnlinked" xml:space="preserve"><value>Verknüpfung gelöst. Mitglied und Wunschliste bleiben erhalten.</value></data>
+  <data name="NavMyLinks" xml:space="preserve"><value>Verknüpfungsanfragen</value></data>
+  <data name="NavMyAssignments" xml:space="preserve"><value>Meine Zuteilungen</value></data>
+  <data name="NavMyWishlists" xml:space="preserve"><value>Meine Wunschlisten</value></data>
+  <data name="CreateFromCircleAction" xml:space="preserve"><value>Aus einem Kreis erstellen</value></data>
 </root>

@@ -291,6 +291,9 @@
           "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.0, )"
         }
       },
+      "appsuite.secretsanta.contracts": {
+        "type": "Project"
+      },
       "appsuite.servicedefaults": {
         "type": "Project",
         "dependencies": {

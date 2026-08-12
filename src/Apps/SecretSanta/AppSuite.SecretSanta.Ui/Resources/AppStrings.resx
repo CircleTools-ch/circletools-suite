@@ -173,4 +173,65 @@
   <data name="UnclaimOfflineUnavailable" xml:space="preserve"><value>You are offline. Removing from your account needs a connection; nothing changed.</value></data>
   <data name="UnclaimSuccess" xml:space="preserve"><value>Removed from your account. The copy on this device is kept.</value></data>
   <data name="UnclaimFailed" xml:space="preserve"><value>That could not be completed. Please try again.</value></data>
+  <!-- M4 — Linking (FEAT-005) -->
+  <data name="FromCircleTitle" xml:space="preserve"><value>Create a group from a circle</value></data>
+  <data name="FromCircleLead" xml:space="preserve"><value>Bring the people from one of your circles in as members. The group is a snapshot — changing the circle later won't change it.</value></data>
+  <data name="FromCircleNoCircles" xml:space="preserve"><value>You have no circles yet. Create one in the account app first.</value></data>
+  <data name="FromCircleChooseLabel" xml:space="preserve"><value>Choose a circle</value></data>
+  <data name="FromCircleGroupNameLabel" xml:space="preserve"><value>Group name</value></data>
+  <data name="FromCircleManagedBadge" xml:space="preserve"><value>managed</value></data>
+  <data name="FromCircleLinkedBadge" xml:space="preserve"><value>has an account</value></data>
+  <data name="FromCircleCreate" xml:space="preserve"><value>Create group</value></data>
+  <data name="FromCircleBack" xml:space="preserve"><value>Back</value></data>
+  <data name="FromCircleOffline" xml:space="preserve"><value>You are offline. Reading your circles needs a connection.</value></data>
+  <data name="FromCircleReadFailed" xml:space="preserve"><value>Your circles could not be read. Please try again.</value></data>
+  <data name="FromCircleCreated" xml:space="preserve"><value>The group was created.</value></data>
+  <data name="FromCircleDuplicateAccountNotice" xml:space="preserve"><value>Brought in without a link because someone else already uses that account: {0}.</value><comment>{0} is a comma-separated list of names.</comment></data>
+  <data name="FromCircleOpenGroup" xml:space="preserve"><value>Open the group</value></data>
+  <data name="FromCirclePeopleCountSingular" xml:space="preserve"><value>{0} person</value><comment>The count at exactly one. Chosen in code by count == 1 so the noun is singular in every language.</comment></data>
+  <data name="FromCirclePeopleCountPlural" xml:space="preserve"><value>{0} people</value><comment>The count for two or more; never used at one.</comment></data>
+  <data name="MyAssignmentsTitle" xml:space="preserve"><value>My assignments</value></data>
+  <data name="MyAssignmentsLead" xml:space="preserve"><value>Who you are giving to, in each group you take part in.</value></data>
+  <data name="MyAssignmentsOperatorPrivacyNote" xml:space="preserve"><value>When you are signed in, your assignment is stored on the server and protected by who you are — the operator can technically read it.</value><comment>States the ADR-0020 operator-readable fact plainly.</comment></data>
+  <data name="MyAssignmentsNone" xml:space="preserve"><value>You have no assignments yet. They appear once an organizer has drawn a group you are linked in.</value></data>
+  <data name="MyAssignmentsOffline" xml:space="preserve"><value>You are offline. Your assignments need a connection.</value></data>
+  <data name="MyAssignmentsReadFailed" xml:space="preserve"><value>Your assignments could not be read. Please try again.</value></data>
+  <data name="MyWishlistsTitle" xml:space="preserve"><value>My wishlists</value></data>
+  <data name="MyWishlistsLead" xml:space="preserve"><value>Your own wishlist in each group you are linked in. Only you can edit it.</value></data>
+  <data name="MyWishlistsRevealLinkCaveat" xml:space="preserve"><value>In the app your giver always sees the latest. A share link that was already sent keeps showing the wishlist as it was when the link was made, until a new link is issued.</value><comment>The reveal-link snapshot caveat (FR-030).</comment></data>
+  <data name="MyWishlistsNoMemberships" xml:space="preserve"><value>You are not linked in any group yet.</value></data>
+  <data name="MyWishlistsCopyOfferLabel" xml:space="preserve"><value>Copy from:</value></data>
+  <data name="MyWishlistsAddPlaceholder" xml:space="preserve"><value>Add a wish</value></data>
+  <data name="MyWishlistsAdd" xml:space="preserve"><value>Add</value></data>
+  <data name="MyWishlistsSave" xml:space="preserve"><value>Save</value></data>
+  <data name="MyWishlistsSaved" xml:space="preserve"><value>Saved.</value></data>
+  <data name="MyWishlistsOffline" xml:space="preserve"><value>You are offline. Saving needs a connection.</value></data>
+  <data name="MyWishlistsReadFailed" xml:space="preserve"><value>Your wishlists could not be read. Please try again.</value></data>
+  <data name="MyWishlistsSaveFailed" xml:space="preserve"><value>That could not be saved. Please try again.</value></data>
+  <data name="MyLinksTitle" xml:space="preserve"><value>Link requests</value></data>
+  <data name="MyLinksLead" xml:space="preserve"><value>An organizer has asked to link you to a member of their group. Accepting lets you own that member's wishlist and see your own assignment.</value></data>
+  <data name="MyLinksNone" xml:space="preserve"><value>You have no link requests.</value></data>
+  <data name="MyLinksRequestText" xml:space="preserve"><value>You were asked to be "{0}" in "{1}".</value><comment>{0} member display name, {1} group name.</comment></data>
+  <data name="MyLinksAccept" xml:space="preserve"><value>Accept</value></data>
+  <data name="MyLinksDecline" xml:space="preserve"><value>Decline</value></data>
+  <data name="MyLinksOffline" xml:space="preserve"><value>You are offline. Link requests need a connection.</value></data>
+  <data name="MyLinksAccepted" xml:space="preserve"><value>You are now linked in "{0}".</value><comment>{0} group name.</comment></data>
+  <data name="MyLinksAlreadyLinked" xml:space="preserve"><value>You are already linked to a member of "{0}".</value><comment>{0} group name.</comment></data>
+  <data name="MyLinksManagedRefused" xml:space="preserve"><value>That member cannot be linked directly.</value></data>
+  <data name="MyLinksActionFailed" xml:space="preserve"><value>That could not be completed. Please try again.</value></data>
+  <data name="MyLinksDeclined" xml:space="preserve"><value>The request was declined.</value></data>
+  <data name="MemberLinkedTitle" xml:space="preserve"><value>This member is linked to an account.</value></data>
+  <data name="MemberLinkedBadge" xml:space="preserve"><value>linked</value></data>
+  <data name="MemberUnlink" xml:space="preserve"><value>Unlink</value></data>
+  <data name="MemberLink" xml:space="preserve"><value>Link…</value></data>
+  <data name="MemberLinkEmailLabel" xml:space="preserve"><value>Email address to invite</value></data>
+  <data name="MemberLinkSend" xml:space="preserve"><value>Send request</value></data>
+  <data name="MemberLinkSelfLinked" xml:space="preserve"><value>Linked to your account.</value></data>
+  <data name="MemberLinkRequestSent" xml:space="preserve"><value>Request sent. If that address has an account, it will appear there.</value><comment>Phrased so decline and expiry stay indistinguishable (NFR-005).</comment></data>
+  <data name="MemberLinkFailed" xml:space="preserve"><value>That could not be completed. Please try again.</value></data>
+  <data name="MemberUnlinked" xml:space="preserve"><value>Unlinked. The member and wishlist are kept.</value></data>
+  <data name="NavMyLinks" xml:space="preserve"><value>Link requests</value></data>
+  <data name="NavMyAssignments" xml:space="preserve"><value>My assignments</value></data>
+  <data name="NavMyWishlists" xml:space="preserve"><value>My wishlists</value></data>
+  <data name="CreateFromCircleAction" xml:space="preserve"><value>Create from a circle</value></data>
 </root>

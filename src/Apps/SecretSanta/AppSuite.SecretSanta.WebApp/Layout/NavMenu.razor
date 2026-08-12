@@ -43,6 +43,11 @@
                         <span class="bi bi-cloud-upload-nav-menu" aria-hidden="true"></span> @L["ClaimNav"]
                     </NavLink>
 
+                    @* M4 linking (FEAT-005): the linked-member screens. Inert for anyone not linked. *@
+                    <NavLink class="nav-link" href="my-links">@L["NavMyLinks"]</NavLink>
+                    <NavLink class="nav-link" href="my-assignments">@L["NavMyAssignments"]</NavLink>
+                    <NavLink class="nav-link" href="my-wishlists">@L["NavMyWishlists"]</NavLink>
+
                     <button class="btn btn-sm btn-link text-white w-100 text-start px-0"
                             @onclick="SignOutAsync">
                         @L["SignOut"]

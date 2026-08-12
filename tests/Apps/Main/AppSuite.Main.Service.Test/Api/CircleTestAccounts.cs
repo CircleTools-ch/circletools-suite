@@ -21,7 +21,7 @@ public sealed record CircleTestAccount(string Email, string DisplayName, HttpCli
 /// </remarks>
 internal static class CircleTestAccounts
 {
-    private const string Password = "correct-horse-battery";
+    internal const string Password = "correct-horse-battery";
 
     /// <summary>Registers, verifies and signs in a fresh account.</summary>
     /// <param name="factory">The API fixture.</param>

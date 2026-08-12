@@ -155,6 +155,9 @@
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.10, )"
         }
       },
+      "appsuite.circles.contracts": {
+        "type": "Project"
+      },
       "appsuite.localization": {
         "type": "Project",
         "dependencies": {
@@ -181,6 +184,7 @@
         "type": "Project",
         "dependencies": {
           "AppSuite.ApiClient": "[1.0.0, )",
+          "AppSuite.Circles.Contracts": "[1.0.0, )",
           "AppSuite.Main.Contracts": "[1.0.0, )",
           "AppSuite.SecretSanta.Core": "[1.0.0, )",
           "AppSuite.Ui.Abstractions": "[1.0.0, )"

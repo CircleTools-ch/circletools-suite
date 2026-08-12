@@ -1,0 +1,109 @@
+@page "/my-links"
+@using AppSuite.ApiClient
+@using AppSuite.SecretSanta.Contracts
+@using AppSuite.SecretSanta.LocalStore.Linking
+@inject ILinkingApi Linking
+@inject IStringLocalizer<AppStrings> L
+
+@*
+    Resolve a member-link request (FR-028): an organizer asked to link you to a member of their group.
+    Accepting means you own that member's wishlist and see your own assignment. Declining is silent —
+    the organizer cannot tell a decline from a request that simply expired.
+*@
+
+<PageTitle>@L["MyLinksTitle"]</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <h1>@L["MyLinksTitle"]</h1>
+        <p class="text-body-secondary">@L["MyLinksLead"]</p>
+
+        @if (_message is not null)
+        {
+            <div class="alert alert-info" role="status">@_message</div>
+        }
+
+        @if (_pending is null)
+        {
+            <p>@L["Loading"]</p>
+        }
+        else if (_pending.Count == 0)
+        {
+            <p>@L["MyLinksNone"]</p>
+        }
+        else
+        {
+            <ul class="list-group">
+                @foreach (var request in _pending)
+                {
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>@L["MyLinksRequestText", request.MemberDisplayName, request.GroupName]</span>
+                            <span>
+                                <button class="btn btn-sm btn-primary" @onclick="() => AcceptAsync(request)" disabled="@_busy">
+                                    @L["MyLinksAccept"]
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="() => DeclineAsync(request)" disabled="@_busy">
+                                    @L["MyLinksDecline"]
+                                </button>
+                            </span>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private IReadOnlyList<PendingMemberLinkResponse>? _pending;
+    private bool _busy;
+    private string? _message;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var result = await Linking.GetPendingAsync();
+        _pending = result.IsSuccess ? result.Value : [];
+        if (!result.IsSuccess && result.Error!.Failure == ApiFailure.Unreachable)
+        {
+            _message = L["MyLinksOffline"];
+        }
+    }
+
+    private async Task AcceptAsync(PendingMemberLinkResponse request)
+    {
+        _busy = true;
+        _message = null;
+
+        var result = await Linking.AcceptAsync(request.Id);
+        _busy = false;
+
+        _message = result.IsSuccess
+            ? result.Value!.Outcome switch
+            {
+                AcceptMemberLinkOutcome.Linked => L["MyLinksAccepted", request.GroupName],
+                AcceptMemberLinkOutcome.AlreadyLinked => L["MyLinksAlreadyLinked", request.GroupName],
+                _ => L["MyLinksManagedRefused"],
+            }
+            : L["MyLinksActionFailed"];
+
+        await LoadAsync();
+    }
+
+    private async Task DeclineAsync(PendingMemberLinkResponse request)
+    {
+        _busy = true;
+        _message = null;
+
+        var result = await Linking.DeclineAsync(request.Id);
+        _busy = false;
+        _message = result.IsSuccess ? L["MyLinksDeclined"] : L["MyLinksActionFailed"];
+
+        await LoadAsync();
+    }
+}

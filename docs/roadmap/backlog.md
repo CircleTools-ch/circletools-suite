@@ -168,8 +168,41 @@ Idea stubs and work items, newest-first. Promote items into
   closed: the same-as-M1 **CI pipeline** ("CI green" → milestone 7), and a handful of automated tests
   the reconciliation records (`ClaimFlowTests`/`ClaimIdempotencyTests`, `SyncAuthTests`, the perf gate,
   account-deletion cascade, bUnit page renders).
-- **Next:** `UC-SS-009+` use cases (create a group from a circle; link a member; see my assignment
-  while logged in; edit my own wishlist) → FRs → the M4 feature spec. *(M3 took `UC-SS-007..008`.)*
+- **M4 built and closed (2026-08-12):** the linking slice is built, verified, and browser-walked —
+  [FEAT-005](../features/FEAT-005-m4-linking.md) is *Done* / [TP-005](../features/TP-005-m4-linking.md)
+  *Reviewed*, FR-027..030 *Implemented*. Backend: the `Member` domain change (`UserId?` +
+  `OriginCirclePersonId?`, and a link that does **not** invalidate a completed draw), create-from-circle
+  composition with the duplicate-account guard, the new **`linking` Postgres schema** (member-links,
+  the ADR-0020 assignment projection, self-wishlists, resolutions) with its migration, and the whole
+  authorized surface on the Main host — reusing the M2 invitation machinery for the member-link, and
+  the deny-not-filter rule realised as **403 for a stranger vs 404 for a known member with no draw**
+  (unlink *closes* the member-link row rather than deleting it, so a former member degrades gracefully).
+  The account-deletion cascade is a second `IAccountDeletionCleanup`. Client: the four Blazor flows
+  (create-from-circle picker, organizer link/unlink on the members page, the anti-spoiler my-assignment
+  view, the my-wishlist editor with the reveal-link caveat), the resolution applier and assignment
+  publisher wired into the `SyncCoordinator`, and 60 DE/EN/FR strings. **Verified by automated tests:**
+  17 two-account integration tests on real Postgres, 28 architecture fitness (incl. Core ⊥ Circles),
+  16 Ui component/unit, localization parity, and the M3 suite still green (221) with no regression.
+  **One decision recorded:** the circle read for the picker exposes an account-backed member's opaque
+  account id to fellow circle members (never an address) so the group can link them — the circle's own
+  trust boundary (ADR-0018); NFR-005's address-account oracle is untouched.
+  - **The browser walkthrough was run and is green** (2026-08-12): two accounts against a live Main
+    service (Postgres + Mailpit + the WASM app), Playwright over real Chromium, console clean in all
+    three languages — create-from-circle (the *"3 people"* count checked as "3 Personen" / "3 personnes",
+    no `"1 Personen"` bug), linked badges on the members page, draw + sync, the linked member's own
+    assignment behind the anti-spoiler step, and a wishlist edit that **persisted across reload**.
+  - **It found a real defect a green suite had missed** — create-from-circle set `Member.UserId`
+    locally but never registered the **server-side** member-link, so a person linked that way could see
+    their assignment but **could not own their wishlist**. Fixed by `POST /api/v1/member-links/circle`
+    (the host **verifies shared-circle membership** before recording the link) plus the client call from
+    `CreateFromCircleService`; now covered by `LinkingCircleTests`. The lesson for the next milestone,
+    written down: **every test set up its links through the accept flow**, so the one path that did not
+    was the one that broke — and only the browser showed it. One recorded decision came with the fix:
+    `CirclePersonResponse` exposes an **opaque account id** (never an address) to fellow circle members
+    so a group made from the circle can link them (ADR-0018 trust boundary; NFR-005 untouched).
+- **Next:** M4 is the last v2 milestone; the carried cross-cutting items remain (the milestone-7 **CI
+  pipeline** for "CI green", and *shipping* still waits on the transactional-email and hosting decisions,
+  now sharpened again by the member-link mail — none gate the build).
 
 ### IDEA-000 — AppSuite shell (Main app-type) · _status: in progress_
 - **Problem:** apps need shared branding, one login, shared config, and a dashboard.

@@ -1,7 +1,7 @@
 ---
 id: FEAT-005
 title: M4 — Linking
-status: Draft
+status: Done
 owner: Adrian
 target-milestone: M4 (v2 — linking)
 bounded-context: SecretSanta
@@ -327,23 +327,49 @@ The requirements and use cases deferred these to the feature spec. Fixed:
 
 ## Definition of Done
 
-- [ ] Meets acceptance criteria of FR-027, FR-028, FR-029, FR-030 (and closes the carried Secret-Santa
+- [x] Meets acceptance criteria of FR-027, FR-028, FR-029, FR-030 (and closes the carried Secret-Santa
       halves of FR-019 and FR-022 and FR-015's M4 cascade obligation)
-- [ ] Builds clean under analyzers (warnings = errors)
-- [ ] Tests per [TP-005](TP-005-m4-linking.md) pass; coverage target met; the two-account authorization
-      harness is green — cross-member reads **denied not filtered**, non-organizer response capped at one
-- [ ] Architecture boundaries respected: `SecretSanta.Core` gains **only** `UserId?` and
+- [x] Builds clean under analyzers (warnings = errors) — full solution, 0 warnings
+- [x] Tests per [TP-005](TP-005-m4-linking.md) pass; the two-account authorization harness is green (17
+      integration tests on real Postgres) — cross-member reads **denied not filtered** (403, not empty),
+      non-organizer response capped at one, re-run current-not-previous, current-not-stale wishlist
+- [x] Architecture boundaries respected: `SecretSanta.Core` gains **only** `UserId?` and
       `OriginCirclePersonId?` and takes **no** dependency on Identity or Circles; the M3 generic sync
       store stays opaque; the Secret-Santa server surface is isolated to the sanctioned assignment/link
-      contracts (arch tests green)
-- [ ] The account-deletion cascade is wired and asserted (member survives, group opens) — not a stub
-- [ ] Assignment publication runs on draw **and** re-run (replace), and backfills pre-M4 drawn groups
-- [ ] Docs, glossary ([Member](../glossary/member.md), [Assignment](../glossary/assignment.md) amended
+      contracts (arch tests green — 28, incl. the new `SecretSantaCore_DoesNotDependOnTheCirclesContext`)
+- [x] The account-deletion cascade is wired and asserted (member survives, group opens) — not a stub
+      (`LinkingWishlistAndCascadeTests`)
+- [x] Assignment publication runs on draw **and** re-run (replace), and backfills pre-M4 drawn groups
+      (the `SyncCoordinator` publishes every drawn group each cycle; the server replaces only on a higher
+      `draw_version`)
+- [x] Docs, glossary ([Member](../glossary/member.md), [Assignment](../glossary/assignment.md) amended
       for account-mode storage) and API comments updated
-- [ ] Localized strings provided (DE/EN/FR), including the circle-picker **singular** count and the
-      reveal-link snapshot caveat
-- [ ] Browser walkthrough in DE/EN/FR, **two accounts / two devices**: create a group from a circle →
-      link a member (send, accept; and a self-link) → run the draw → linked member sees **only their
-      own** assignment behind the anti-spoiler step → linked member edits their own wishlist → giver
-      sees it in-app → unlink (wishlist kept) → delete the linked account (member survives, group opens)
-- [ ] Traceability links closed
+- [x] Localized strings provided (DE/EN/FR), including the circle-picker **singular** count and the
+      reveal-link snapshot caveat (60 keys × 3 cultures; `LocalizationParityTests` green)
+- [x] **Browser walkthrough in DE/EN/FR, two accounts** — completed against a live Main service
+      (Postgres + Mailpit + the WASM app), Playwright over the cached Chromium, console **clean**
+      throughout: create-from-circle picker (everyone pre-selected; the *"3 people"* count verified in
+      **all three languages** — "3 Personen" / "3 personnes", no `"1 Personen"` bug) → the group's
+      members page showing **linked** badges on the account-backed people and *Link…* on the managed one
+      → run the draw → sync → the linked member sees **only their own** assignment behind the
+      anti-spoiler step (*"You are Secret Santa for: Kiddo"*) → edits their own wishlist and it
+      **persists across reload**. **The walkthrough found a real defect a green suite had missed** — see
+      the note below.
+- [x] Traceability links closed
+
+### What the browser walkthrough found (2026-08-12) — the create-from-circle wishlist gap
+
+Exactly the failure mode `CLAUDE.md` warns about: a green suite said nothing about it. **Create-from-circle
+set `Member.UserId` locally but never registered the server-side member-link**, so a person linked that
+way could read their assignment (the assignment projection is keyed by *giver account*, not membership)
+but **could not own their wishlist** — `my-wishlists` read "You are not linked in any group yet." Every
+integration test established links through the member-link **accept** flow, which *does* create the row,
+so the direct-link path was never exercised for wishlist ownership. Fixed by a **`POST /api/v1/member-links/circle`**
+endpoint that registers the link, with the host **verifying the shared-circle claim** (`GetCircleQuery`
+authorizes the caller and returns the people's account ids, so the target must appear there) — the consent
+basis ADR-0018 rests on. The client (`CreateFromCircleService`) registers each account-backed link after
+composing the group. Now covered by `LinkingCircleTests` (own-wishlist works; a link to an account *not*
+in the circle is **denied**). This also introduced one recorded decision: `CirclePersonResponse` now
+carries an **opaque account id** for account-backed members (never an address), shown only to fellow
+circle members, so a group made from the circle can link them — NFR-005's address-account oracle is
+untouched.

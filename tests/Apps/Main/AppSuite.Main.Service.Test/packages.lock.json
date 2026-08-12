@@ -789,6 +789,7 @@
           "AppSuite.Main.Contracts": "[1.0.0, )",
           "AppSuite.Main.Service.Core": "[1.0.0, )",
           "AppSuite.Main.Service.Repository": "[1.0.0, )",
+          "AppSuite.SecretSanta.Contracts": "[1.0.0, )",
           "AppSuite.ServiceDefaults": "[1.0.0, )",
           "Asp.Versioning.Http": "[10.0.0, )",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[10.0.10, )",
@@ -829,6 +830,7 @@
         "type": "Project",
         "dependencies": {
           "AppSuite.ApiClient": "[1.0.0, )",
+          "AppSuite.Circles.Contracts": "[1.0.0, )",
           "AppSuite.Main.Contracts": "[1.0.0, )",
           "AppSuite.SecretSanta.Core": "[1.0.0, )",
           "AppSuite.Ui.Abstractions": "[1.0.0, )"

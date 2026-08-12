@@ -1,5 +1,8 @@
 @page "/groups/{GroupId:guid}/members"
+@using AppSuite.SecretSanta.Contracts
+@using AppSuite.SecretSanta.LocalStore.Linking
 @inject ISender Sender
+@inject ILinkingApi Linking
 @inject IStringLocalizer<AppStrings> L
 
 <PageTitle>@L["MembersTitle"]</PageTitle>
@@ -72,10 +75,41 @@ else
                             }
                         </div>
                         <div>
-                            <button class="btn btn-sm btn-outline-primary" @onclick="() => BeginEdit(member)">@L["Edit"]</button>
+                            @if (member.UserId is not null)
+                            {
+                                <span class="badge bg-info text-dark me-1" title="@L["MemberLinkedTitle"]">@L["MemberLinkedBadge"]</span>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => UnlinkAsync(member.Id)" disabled="@_linkBusy">@L["MemberUnlink"]</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-sm btn-outline-info" @onclick="() => BeginLink(member.Id)">@L["MemberLink"]</button>
+                            }
+                            <button class="btn btn-sm btn-outline-primary ms-1" @onclick="() => BeginEdit(member)">@L["Edit"]</button>
                             <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => AskRemove(member.Id)">@L["Remove"]</button>
                         </div>
                     </div>
+
+                    @* Send a member-link request: the member owns their wishlist and sees their own
+                       assignment once they accept. The response reveals nothing about the address. *@
+                    @if (_linkingMemberId == member.Id)
+                    {
+                        <div class="alert alert-light border mt-2 mb-0">
+                            <label class="form-label" for="link-email-@member.Id">@L["MemberLinkEmailLabel"]</label>
+                            <div class="input-group">
+                                <input id="link-email-@member.Id" class="form-control" type="email" @bind="_linkEmail" @bind:event="oninput" />
+                                <button class="btn btn-primary" @onclick="() => SendLinkAsync(member)" disabled="@(_linkBusy || string.IsNullOrWhiteSpace(_linkEmail))">
+                                    @L["MemberLinkSend"]
+                                </button>
+                                <button class="btn btn-outline-secondary" @onclick="CancelLink">@L["Cancel"]</button>
+                            </div>
+                        </div>
+                    }
+
+                    @if (_linkMessageId == member.Id && _linkMessage is not null)
+                    {
+                        <div class="alert alert-info mt-2 mb-0" role="status">@_linkMessage</div>
+                    }
+
                     @if (_pendingRemoveId == member.Id)
                     {
                         <div class="alert alert-warning mt-2 mb-0" role="alert">
@@ -105,6 +139,13 @@ else
     private string _editWishlist = string.Empty;
     private Guid? _pendingRemoveId;
     private bool _hasCurrentDraw;
+    private string _groupName = string.Empty;
+
+    private Guid? _linkingMemberId;
+    private string _linkEmail = string.Empty;
+    private bool _linkBusy;
+    private Guid? _linkMessageId;
+    private string? _linkMessage;
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
@@ -113,6 +154,59 @@ else
         var group = await Sender.Send(new GetGroupQuery(GroupId));
         _members = group?.Members ?? [];
         _hasCurrentDraw = group?.HasCurrentDraw ?? false;
+        _groupName = group?.Name ?? string.Empty;
+    }
+
+    private void BeginLink(Guid memberId)
+    {
+        _linkingMemberId = memberId;
+        _linkEmail = string.Empty;
+        _linkMessage = null;
+    }
+
+    private void CancelLink() => _linkingMemberId = null;
+
+    private async Task SendLinkAsync(MemberDto member)
+    {
+        if (_linkBusy || string.IsNullOrWhiteSpace(_linkEmail))
+        {
+            return;
+        }
+
+        _linkBusy = true;
+        var result = await Linking.SendMemberLinkAsync(
+            new SendMemberLinkRequest(GroupId, _groupName, member.Id, member.Name, _linkEmail.Trim()));
+        _linkBusy = false;
+        _linkingMemberId = null;
+        _linkMessageId = member.Id;
+
+        // "Request sent" whether or not the address has an account (NFR-005). A self-link says so and
+        // will apply on the next sync.
+        _linkMessage = result.IsSuccess
+            ? result.Value!.Outcome == MemberLinkOutcome.SelfLinked ? L["MemberLinkSelfLinked"] : L["MemberLinkRequestSent"]
+            : L["MemberLinkFailed"];
+    }
+
+    private async Task UnlinkAsync(Guid memberId)
+    {
+        _linkBusy = true;
+        _linkMessageId = memberId;
+
+        // Tell the server (it clears the account's rows and emits the unlink resolution), then clear the
+        // link locally now so the roster reflects it immediately; the resolution re-applies idempotently.
+        var result = await Linking.UnlinkMemberAsync(GroupId, memberId);
+        if (result.IsSuccess)
+        {
+            await Sender.Send(new UnlinkMemberCommand(GroupId, memberId));
+            _linkMessage = L["MemberUnlinked"];
+        }
+        else
+        {
+            _linkMessage = L["MemberLinkFailed"];
+        }
+
+        _linkBusy = false;
+        await LoadAsync();
     }
 
     private static IReadOnlyList<string> ParseWishlist(string text) =>

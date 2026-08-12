@@ -17,6 +17,9 @@
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.10, )"
         }
       },
+      "appsuite.circles.contracts": {
+        "type": "Project"
+      },
       "appsuite.main.contracts": {
         "type": "Project"
       },

@@ -54,12 +54,20 @@ public sealed record CircleDetailResponse(
 /// True for a managed member — someone with a profile but no account, who can never sign in.
 /// </param>
 /// <param name="IsYou">True when this membership is the caller's own.</param>
+/// <param name="AccountId">
+/// The opaque account identifier of an account-backed member, or <see langword="null"/> for a managed
+/// member. It is shown only to fellow circle members (the endpoint is member-authorized) and carries
+/// no address — NFR-005's "does this address have an account" oracle is untouched. It exists so a
+/// group created <em>from</em> this circle (FR-027, M4) can link an account-backed person it already
+/// shares the circle with, which is the established relationship ADR-0018 is built on. Never an email.
+/// </param>
 public sealed record CirclePersonResponse(
     Guid MembershipId,
     string DisplayName,
     string Role,
     bool IsManaged,
-    bool IsYou);
+    bool IsYou,
+    Guid? AccountId = null);
 
 /// <summary>Addition of a managed member (FR-019). Owner and admin only.</summary>
 /// <param name="DisplayName">Required. Not unique — two people may share a name.</param>

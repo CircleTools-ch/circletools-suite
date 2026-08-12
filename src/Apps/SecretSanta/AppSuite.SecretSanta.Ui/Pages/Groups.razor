@@ -17,6 +17,16 @@
     </button>
 </div>
 
+@* Create a group from a circle (FR-027): only offered while signed in, since it reads the account's
+   circles. The account-free flow above is unchanged. *@
+<AuthorizeView>
+    <Authorized>
+        <p class="mb-3">
+            <a class="btn btn-outline-secondary btn-sm" href="groups/from-circle">@L["CreateFromCircleAction"]</a>
+        </p>
+    </Authorized>
+</AuthorizeView>
+
 @if (_groups is null)
 {
     <p>@L["Loading"]</p>
