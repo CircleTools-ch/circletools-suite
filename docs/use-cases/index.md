@@ -35,6 +35,10 @@ Use cases describe how actors achieve goals with the system. They are the bridge
 | [UC-MAIN-016](main/UC-MAIN-016-work-offline-and-reconcile.md) | Work offline while signed in, and reconcile when back online | Main | Approved |
 | [UC-SS-007](secret-santa/UC-SS-007-claim-local-groups.md) | Take my existing groups into my account | Secret-Santa | Approved |
 | [UC-SS-008](secret-santa/UC-SS-008-remove-group-from-account.md) | Take a group back out of my account | Secret-Santa | Approved |
+| [UC-SS-009](secret-santa/UC-SS-009-create-group-from-circle.md) | Create a group from a circle | Secret-Santa | Draft |
+| [UC-SS-010](secret-santa/UC-SS-010-link-member-to-account.md) | Link a member to an account | Secret-Santa | Draft |
+| [UC-SS-011](secret-santa/UC-SS-011-see-my-assignment.md) | See my assignment while signed in | Secret-Santa | Draft |
+| [UC-SS-012](secret-santa/UC-SS-012-edit-my-wishlist.md) | Edit my own wishlist | Secret-Santa | Draft |
 
 _Add a row per use case._
 
@@ -57,6 +61,16 @@ _Add a row per use case._
   [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)'s amended account-mode half
   first becomes visible to a user — the claim screen is the moment a completed
   [Draw](../glossary/draw.md) leaves the device.
-- Still to write: `UC-SS-009+` for **M4** (create a group from a circle, link a member to an account,
-  see my assignment while signed in, edit my own wishlist). *(M3 took `UC-SS-007..008`, so M4's
-  Secret-Santa use cases start at 009.)*
+- **UC-SS-009..012** — **M4 — Linking**: create a group from a circle, link a member to an account,
+  see my assignment while signed in, edit my own wishlist. This is the slice where the M1–M3
+  foundations (accounts, circles, sync) turn into product value: a linked member sees their own
+  [Assignment](../glossary/assignment.md) in-app ([UC-SS-011](secret-santa/UC-SS-011-see-my-assignment.md),
+  the amended [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md) in action) and
+  owns their own [Wishlist](../glossary/wishlist.md). Two of them close the Secret-Santa halves M2
+  carried: [UC-SS-009](secret-santa/UC-SS-009-create-group-from-circle.md) is where a
+  [Circle](../glossary/circle.md) is first copied into a
+  [Group](../glossary/group.md), which is the missing "copy" behind
+  [FR-019](../requirements/functional/FR-019-manage-managed-members.md)'s and
+  [FR-022](../requirements/functional/FR-022-delete-circle.md)'s open criteria. To be realised by
+  `FR-027..030` (in drafting) and [FEAT-005](../features/index.md). *(M3 took `UC-SS-007..008`, so M4
+  starts at 009.)*
