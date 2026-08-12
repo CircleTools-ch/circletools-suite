@@ -15,6 +15,7 @@ using AppSuite.Main.Service.Core;
 using AppSuite.Main.Service.Core.Application;
 using AppSuite.Main.Service.Core.Domain;
 using AppSuite.Main.Service.Repository;
+using AppSuite.Main.Service.Repository.Linking;
 using AppSuite.Circles.Core;
 using AppSuite.Circles.Core.Domain;
 using AppSuite.Circles.Repository;
@@ -39,6 +40,11 @@ builder.Services.AddMainRepository(mainConnectionString);
 // the account-scoped store that carries a claimed group between a user's devices (ADR-0016/0033).
 builder.Services.AddSyncRepository(mainConnectionString);
 
+// Linking (FEAT-005). A fourth context and schema — the one server-side, per-caller-authorized store
+// ADR-0020 sanctioned (member-links, the assignment projection, self-owned wishlists). It sits beside
+// the opaque sync store, and is the only place the host understands the Secret-Santa schema.
+builder.Services.AddLinkingRepository(mainConnectionString);
+
 // Circles (FEAT-003). Its own DbContext and its own schema inside the same database — a modular
 // monolith with a visible seam, not a second database (ADR-0003).
 builder.Services.AddCirclesCore();
@@ -56,6 +62,11 @@ builder.Services.AddScoped<IInvitationMailer, OutboxInvitationMailer>();
 // half, without which a deleted account leaves memberships pointing at nobody.
 builder.Services.AddScoped<IAccountDeletionGuard, SoleOwnerCircleGuard>();
 builder.Services.AddScoped<IAccountDeletionCleanup, CircleMembershipCleanup>();
+
+// The linking context's half of account deletion (FR-015): a second cleanup that unlinks every member
+// the departing account backed, so no group is left with a dangling UserId. The delete flow resolves
+// the whole set of cleanups and runs each.
+builder.Services.AddScoped<IAccountDeletionCleanup, LinkingAccountCleanup>();
 
 // Identity, sessions and bearer-token validation — ADR-0009, ADR-0021.
 // AddDefaultTokenProviders must be applied here: it lives in the ASP.NET Core framework
@@ -216,6 +227,7 @@ if (app.Environment.IsDevelopment())
     scope.ServiceProvider.GetRequiredService<MainDbContext>().Database.Migrate();
     scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.Migrate();
     scope.ServiceProvider.GetRequiredService<CirclesDbContext>().Database.Migrate();
+    scope.ServiceProvider.GetRequiredService<LinkingDbContext>().Database.Migrate();
 }
 
 app.UseHttpsRedirection();
@@ -257,6 +269,28 @@ var sync = app
     .MapToApiVersion(new ApiVersion(1, 0));
 
 sync.MapSyncEndpoints();
+
+// Linking (FEAT-005): member-links, the group-scoped assignment/wishlist/publish routes, and the two
+// cross-group overviews. All bearer-authorized and per-caller-scoped on this same host.
+app.MapGroup("/api/v{version:apiVersion}/member-links")
+    .WithApiVersionSet(versionSet).MapToApiVersion(new ApiVersion(1, 0))
+    .MapMemberLinkEndpoints();
+
+app.MapGroup("/api/v{version:apiVersion}/groups")
+    .WithApiVersionSet(versionSet).MapToApiVersion(new ApiVersion(1, 0))
+    .MapGroupLinkingEndpoints();
+
+app.MapGroup("/api/v{version:apiVersion}/my-assignments")
+    .WithApiVersionSet(versionSet).MapToApiVersion(new ApiVersion(1, 0))
+    .MapMyAssignmentsEndpoint();
+
+app.MapGroup("/api/v{version:apiVersion}/my-wishlists")
+    .WithApiVersionSet(versionSet).MapToApiVersion(new ApiVersion(1, 0))
+    .MapMyWishlistsEndpoint();
+
+app.MapGroup("/api/v{version:apiVersion}/my-memberships")
+    .WithApiVersionSet(versionSet).MapToApiVersion(new ApiVersion(1, 0))
+    .MapMyMembershipsEndpoint();
 
 var heartbeats = app
     .MapGroup("/api/v{version:apiVersion}/heartbeats")

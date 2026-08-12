@@ -50,7 +50,10 @@ internal static class CircleMapper
             membership.DisplayName,
             NameOf(membership.Role),
             membership.IsManaged,
-            membership.UserId == viewerUserId);
+            membership.UserId == viewerUserId,
+            // Account-backed members expose their opaque account id (never an address) so a group made
+            // from this circle can link them; managed members have no account (FR-027, M4).
+            membership.IsManaged ? null : membership.UserId);
 
     /// <summary>
     /// The pending list, without the ones that have quietly lapsed. Expired invitations are removed

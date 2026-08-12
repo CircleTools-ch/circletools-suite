@@ -107,6 +107,62 @@ public sealed class Group : AggregateRoot
         return member.Id;
     }
 
+    /// <summary>
+    /// Adds a member copied from a circle person, optionally linked to an account. Used only by the
+    /// create-from-circle flow; the ordinary <see cref="AddMember"/> path stays account-free. The
+    /// origin id is recorded and never dereferenced (FR-027).
+    /// </summary>
+    /// <param name="name">A non-empty, group-unique member name.</param>
+    /// <param name="wishlist">The member's wishlist.</param>
+    /// <param name="userId">The account to link the member to, or <see langword="null"/> to leave it unlinked.</param>
+    /// <param name="originCirclePersonId">The circle person copied from, or <see langword="null"/>.</param>
+    /// <returns>The identity of the added member.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the name duplicates an existing member, or when <paramref name="userId"/> is
+    /// already linked to another member of this group.
+    /// </exception>
+    public Guid AddMemberFromCircle(string name, Wishlist wishlist, Guid? userId, Guid? originCirclePersonId)
+    {
+        ArgumentNullException.ThrowIfNull(wishlist);
+
+        var member = Member.CreateFromCircle(name, wishlist, userId, originCirclePersonId);
+        GuardUniqueName(member.Name, excludingMemberId: null);
+        if (userId is { } linkedUser)
+        {
+            GuardUniqueUser(linkedUser, excludingMemberId: member.Id);
+        }
+
+        _members.Add(member);
+        InvalidateDraws();
+        return member.Id;
+    }
+
+    /// <summary>
+    /// Links a member to an account. Linking changes how a member is <em>served</em> (their own
+    /// assignment and wishlist ownership), not the participant set, so it does <strong>not</strong>
+    /// invalidate a completed draw.
+    /// </summary>
+    /// <param name="memberId">The member to link.</param>
+    /// <param name="userId">The account to link the member to.</param>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the member is unknown, or when <paramref name="userId"/> already backs another
+    /// member of this group (one user backs at most one member per group).
+    /// </exception>
+    public void LinkMember(Guid memberId, Guid userId)
+    {
+        var member = RequireMember(memberId);
+        GuardUniqueUser(userId, excludingMemberId: memberId);
+        member.Link(userId);
+    }
+
+    /// <summary>
+    /// Clears a member's account link, reverting it to unlinked. The member, its name and its
+    /// wishlist survive; only how it is served changes. Does <strong>not</strong> invalidate a draw.
+    /// </summary>
+    /// <param name="memberId">The member to unlink.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the member is unknown.</exception>
+    public void UnlinkMember(Guid memberId) => RequireMember(memberId).Unlink();
+
     /// <summary>Edits an existing member's name and wishlist.</summary>
     /// <param name="memberId">The member to edit.</param>
     /// <param name="name">The new (non-empty, unique) name.</param>
@@ -197,7 +253,7 @@ public sealed class Group : AggregateRoot
         Name,
         Budget is null ? null : new BudgetState(Budget.Amount, Budget.Currency),
         EventDetails is null ? null : new EventDetailsState(EventDetails.Date, EventDetails.Location, EventDetails.Description),
-        _members.Select(m => new MemberState(m.Id, m.Name, [.. m.Wishlist.Items])).ToList(),
+        _members.Select(m => new MemberState(m.Id, m.Name, [.. m.Wishlist.Items], m.UserId, m.OriginCirclePersonId)).ToList(),
         _exclusions.Select(e => new ExclusionState(e.GiverMemberId, e.RecipientMemberId)).ToList(),
         _draws.Select(d => new DrawState(
             d.Id,
@@ -213,7 +269,7 @@ public sealed class Group : AggregateRoot
         ArgumentNullException.ThrowIfNull(state);
 
         var members = state.Members
-            .Select(m => Member.Restore(m.Id, m.Name, Wishlist.Create(m.Wishlist)))
+            .Select(m => Member.Restore(m.Id, m.Name, Wishlist.Create(m.Wishlist), m.UserId, m.OriginCirclePersonId))
             .ToList();
 
         var exclusions = state.Exclusions
@@ -263,6 +319,16 @@ public sealed class Group : AggregateRoot
     private Member RequireMember(Guid memberId) =>
         _members.FirstOrDefault(m => m.Id == memberId)
         ?? throw new InvalidOperationException($"Member '{memberId}' is not part of this group.");
+
+    private void GuardUniqueUser(Guid userId, Guid excludingMemberId)
+    {
+        var duplicate = _members.Any(m => m.Id != excludingMemberId && m.UserId == userId);
+        if (duplicate)
+        {
+            throw new InvalidOperationException(
+                $"Account '{userId}' is already linked to another member of this group.");
+        }
+    }
 
     private void GuardUniqueName(string name, Guid? excludingMemberId)
     {

@@ -46,10 +46,10 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-025](functional/FR-025-claim-local-groups.md) | Claim local groups into the account | Functional | Must | Implemented |
 | [FR-026](functional/FR-026-remove-group-from-account.md) | Remove a group from the account | Functional | Should | Implemented |
 | [NFR-008](non-functional/NFR-008-sync-convergence-and-data-safety.md) | Sync convergence & data safety | Non-functional | Must | Implemented |
-| [FR-027](functional/FR-027-create-group-from-circle.md) | Create a group from a circle | Functional | Must | Draft |
-| [FR-028](functional/FR-028-link-member-to-account.md) | Link a member to an account | Functional | Must | Draft |
-| [FR-029](functional/FR-029-see-my-assignment.md) | See my assignment while signed in | Functional | Must | Draft |
-| [FR-030](functional/FR-030-edit-my-wishlist.md) | Edit my own wishlist | Functional | Should | Draft |
+| [FR-027](functional/FR-027-create-group-from-circle.md) | Create a group from a circle | Functional | Must | Implemented |
+| [FR-028](functional/FR-028-link-member-to-account.md) | Link a member to an account | Functional | Must | Implemented |
+| [FR-029](functional/FR-029-see-my-assignment.md) | See my assignment while signed in | Functional | Must | Implemented |
+| [FR-030](functional/FR-030-edit-my-wishlist.md) | Edit my own wishlist | Functional | Should | Implemented |
 
 _Add a row per requirement._
 

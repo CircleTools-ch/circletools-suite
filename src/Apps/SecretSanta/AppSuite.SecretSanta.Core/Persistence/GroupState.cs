@@ -15,7 +15,21 @@ public sealed record EventDetailsState(DateTimeOffset? Date, string Location, st
 /// <param name="Id">The member identity.</param>
 /// <param name="Name">The member name.</param>
 /// <param name="Wishlist">The wishlist items.</param>
-public sealed record MemberState(Guid Id, string Name, IReadOnlyList<string> Wishlist);
+/// <param name="UserId">
+/// The account this member is linked to, or <see langword="null"/> when unlinked. Snapshots written
+/// before this field existed deserialize to <see langword="null"/> (unlinked), so no group is lost
+/// by the schema bump.
+/// </param>
+/// <param name="OriginCirclePersonId">
+/// The circle person this member was copied from, or <see langword="null"/>. Recorded at create time
+/// and never dereferenced; older snapshots deserialize to <see langword="null"/>.
+/// </param>
+public sealed record MemberState(
+    Guid Id,
+    string Name,
+    IReadOnlyList<string> Wishlist,
+    Guid? UserId = null,
+    Guid? OriginCirclePersonId = null);
 
 /// <summary>Serializable snapshot of an <c>Exclusion</c>.</summary>
 /// <param name="GiverMemberId">The giver member identity.</param>

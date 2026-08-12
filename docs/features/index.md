@@ -18,8 +18,8 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-003](TP-003-m2-circles.md) | Test plan — M2 Circles | Circles | Reviewed |
 | [FEAT-004](FEAT-004-m3-sync-and-claim.md) | M3 — Sync & Claim | Platform | Done |
 | [TP-004](TP-004-m3-sync-and-claim.md) | Test plan — M3 Sync & Claim | Platform | Reviewed |
-| [FEAT-005](FEAT-005-m4-linking.md) | M4 — Linking | SecretSanta | Draft |
-| [TP-005](TP-005-m4-linking.md) | Test plan — M4 Linking | SecretSanta | Draft |
+| [FEAT-005](FEAT-005-m4-linking.md) | M4 — Linking | SecretSanta | Done |
+| [TP-005](TP-005-m4-linking.md) | Test plan — M4 Linking | SecretSanta | Reviewed |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and

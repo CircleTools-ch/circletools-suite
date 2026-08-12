@@ -3,6 +3,7 @@ using AppSuite.Application;
 using AppSuite.SecretSanta.Core;
 using AppSuite.SecretSanta.Core.Reveal;
 using AppSuite.SecretSanta.LocalStore;
+using AppSuite.SecretSanta.LocalStore.Linking;
 using AppSuite.SecretSanta.Ui;
 using AppSuite.SecretSanta.WebApp;
 using AppSuite.SecretSanta.WebApp.Http;
@@ -63,6 +64,16 @@ builder.Services.AddSecretSantaSyncEngine();
 // a running sync cycle ever reach for it, and only once signed in.
 builder.Services.AddScoped<ISyncApi>(sp =>
     new HttpSyncApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized)));
+
+// The M4 linking surface over the same authorized client (FEAT-005): member-links, the assignment
+// projection and self-owned wishlists. Inert for account-free users and unlinked members (NFR-001).
+builder.Services.AddScoped<ILinkingApi>(sp =>
+    new HttpLinkingApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized)));
+
+// The read-only circle directory for the create-from-circle picker (FEAT-005): an authorized read of
+// the caller's circles on the Main API (NFR-006). No circle data is written locally (ADR-0033).
+builder.Services.AddScoped<ICircleDirectoryApi>(sp =>
+    new HttpCircleDirectoryApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized)));
 
 // The shared account/session UI (ADR-0034), under this app's own refresh-token key so a device that
 // hosts more than one app never crosses their sessions (ADR-0026).

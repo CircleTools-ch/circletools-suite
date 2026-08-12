@@ -46,6 +46,14 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
     /// </remarks>
     public const string InvitationType = "mail.circle-invitation";
 
+    /// <summary>Outbox type for the member-link request (FR-028, M4 — Linking).</summary>
+    /// <remarks>
+    /// The Secret-Santa variant of the invitation: it asks the recipient to claim a member of a group
+    /// so they own their wishlist and see their own assignment. Like the circle invitation it says only
+    /// the group's name, the member's display name and the inviter — never the roster or the draw.
+    /// </remarks>
+    public const string MemberLinkType = "mail.member-link";
+
     private static readonly string[] SupportedLanguages = ["de", "fr", "en"];
 
     /// <inheritdoc />
@@ -72,6 +80,7 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
             EmailChangeType => RenderEmailChange(root, email, language),
             EmailChangeNoticeType => RenderEmailChangeNotice(email, language),
             InvitationType => RenderInvitation(root, email, language),
+            MemberLinkType => RenderMemberLink(root, email, language),
             _ => null,
         };
     }
@@ -222,6 +231,41 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
                     ? $"The invitation is waiting for you in the app:\n{link}"
                     : $"You can accept or decline here:\n{link}",
                 "If you do nothing, nothing happens — the invitation expires on its own."),
+        };
+
+        return new OutboundMail(email, subject, $"{intro}\n\n{action}\n\n{closing}");
+    }
+
+    private OutboundMail RenderMemberLink(JsonElement root, string email, string language)
+    {
+        // Group name and member display name are user data, rendered exactly as written and never
+        // re-translated, whatever language the mail is in.
+        var groupName = root.GetProperty("groupName").GetString();
+        var memberDisplayName = root.GetProperty("memberDisplayName").GetString();
+        var inviter = root.GetProperty("inviterDisplayName").GetString();
+        var link = string.Create(CultureInfo.InvariantCulture, $"{options.Value.ClientBaseUrl.TrimEnd('/')}/my-links");
+
+        var (subject, intro, action, closing) = language switch
+        {
+            "de" => (
+                $"{inviter} möchte dich mit «{groupName}» verbinden",
+                $"{inviter} möchte dich als «{memberDisplayName}» mit dem Wichtel-Anlass «{groupName}» " +
+                "verbinden. So besitzt du deine eigene Wunschliste und siehst nur deine eigene Zuteilung.",
+                $"Die Anfrage wartet in der App auf dich:\n{link}",
+                "Wenn du nichts unternimmst, passiert nichts — die Anfrage läuft von selbst ab."),
+            "fr" => (
+                $"{inviter} souhaite vous associer à «{groupName}»",
+                $"{inviter} souhaite vous associer en tant que «{memberDisplayName}» à l'événement " +
+                $"«{groupName}». Vous posséderez ainsi votre propre liste de souhaits et ne verrez que " +
+                "votre propre attribution.",
+                $"La demande vous attend dans l'application :\n{link}",
+                "Si vous ne faites rien, rien ne se passe — la demande expire d'elle-même."),
+            _ => (
+                $"{inviter} wants to link you to “{groupName}”",
+                $"{inviter} wants to link you as “{memberDisplayName}” to the Secret-Santa event " +
+                $"“{groupName}”. You'll then own your own wishlist and see only your own assignment.",
+                $"The request is waiting for you in the app:\n{link}",
+                "If you do nothing, nothing happens — the request expires on its own."),
         };
 
         return new OutboundMail(email, subject, $"{intro}\n\n{action}\n\n{closing}");

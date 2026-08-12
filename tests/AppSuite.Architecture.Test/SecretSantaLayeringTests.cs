@@ -19,7 +19,9 @@ public sealed class SecretSantaLayeringTests
             typeof(AppSuite.SecretSanta.Core.Domain.Group).Assembly,
             typeof(AppSuite.SecretSanta.LocalStore.GroupRepository).Assembly,
             typeof(AppSuite.SecretSanta.Ui.AppStrings).Assembly,
-            typeof(AppSuite.Identity.AppSuiteUser).Assembly)
+            typeof(AppSuite.Identity.AppSuiteUser).Assembly,
+            typeof(AppSuite.Circles.Contracts.InviteRequest).Assembly,
+            typeof(AppSuite.Circles.Core.Domain.Circle).Assembly)
         .Build();
 
     private static readonly IObjectProvider<IType> _efCore =
@@ -42,6 +44,9 @@ public sealed class SecretSantaLayeringTests
 
     private static readonly IObjectProvider<IType> _identity =
         Types().That().ResideInNamespaceMatching("^AppSuite\\.Identity").As("AppSuite.Identity");
+
+    private static readonly IObjectProvider<IType> _circles =
+        Types().That().ResideInNamespaceMatching("^AppSuite\\.Circles").As("AppSuite.Circles");
 
     private static readonly IObjectProvider<IType> _secretSantaTypes =
         Types().That().ResideInNamespaceMatching("^AppSuite\\.SecretSanta").As("Secret-Santa");
@@ -83,6 +88,24 @@ public sealed class SecretSantaLayeringTests
     public void SecretSanta_DoesNotDependOnTheIdentityModel() =>
         Types().That().Are(_secretSantaTypes)
             .Should().NotDependOnAny(_identity)
+            .Check(_architecture);
+
+    /// <summary>
+    /// The Secret-Santa <strong>core</strong> (domain + application) must reference neither the Circles
+    /// context nor its contracts (ADR-0019, FEAT-005 DoD).
+    /// </summary>
+    /// <remarks>
+    /// Create-from-circle <em>reads</em> a circle, but only the client layer does: it translates circle
+    /// DTOs into the Secret-Santa-owned <c>CirclePersonInput</c> so the core is told an account
+    /// identifier and an opaque origin id, never a circle. The rule is scoped to Core on purpose — the
+    /// client (LocalStore/Ui) legitimately references <c>Circles.Contracts</c> to read the picker — but
+    /// if the core reached into the Circles model, a deleted circle could make a group fail to open
+    /// (FR-022) and the snapshot semantics would quietly become a live link.
+    /// </remarks>
+    [Fact]
+    public void SecretSantaCore_DoesNotDependOnTheCirclesContext() =>
+        Types().That().Are(_coreTypes)
+            .Should().NotDependOnAny(_circles)
             .Check(_architecture);
 
     [Fact]

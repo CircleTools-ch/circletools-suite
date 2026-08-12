@@ -40,6 +40,13 @@ public static class SecretSantaUiServiceCollectionExtensions
         services.Replace(ServiceDescriptor.Scoped<IProfileWriter>(sp => sp.GetRequiredService<OfflineProfileWriter>()));
         services.AddScoped<SyncCoordinator>();
 
+        // M4 linking (FEAT-005): the resolution applier and assignment publisher the SyncCoordinator
+        // runs, and the create-from-circle service the picker uses. The host must still register the
+        // ILinkingApi and ICircleDirectoryApi ports over its authorized HttpClient.
+        services.AddScoped<LinkResolutionApplier>();
+        services.AddScoped<AssignmentPublisher>();
+        services.AddScoped<CreateFromCircleService>();
+
         return services;
     }
 }
