@@ -56,5 +56,15 @@
       href: secret-santa/UC-SS-007-claim-local-groups.md
     - name: UC-SS-008 Take a group back out of my account
       href: secret-santa/UC-SS-008-remove-group-from-account.md
+- name: Linking (M4)
+  items:
+    - name: UC-SS-009 Create a group from a circle
+      href: secret-santa/UC-SS-009-create-group-from-circle.md
+    - name: UC-SS-010 Link a member to an account
+      href: secret-santa/UC-SS-010-link-member-to-account.md
+    - name: UC-SS-011 See my assignment while signed in
+      href: secret-santa/UC-SS-011-see-my-assignment.md
+    - name: UC-SS-012 Edit my own wishlist
+      href: secret-santa/UC-SS-012-edit-my-wishlist.md
 - name: Template
   href: _template-use-case.md
