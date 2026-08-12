@@ -1,10 +1,10 @@
 using System.Net.Http.Json;
 using AppSuite.ApiClient;
 using AppSuite.Main.Contracts;
-using AppSuite.Main.Ui.Api;
+using AppSuite.Ui.Account.Api;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AppSuite.Main.Ui.Auth;
+namespace AppSuite.Ui.Account.Auth;
 
 /// <summary>
 /// Exchanges the stored refresh token for a new access token (ADR-0021).
@@ -12,7 +12,7 @@ namespace AppSuite.Main.Ui.Auth;
 /// <remarks>
 /// <para>
 /// Deliberately tiny and deliberately separate from <see cref="AccountSession"/>. It talks to the
-/// API through the <see cref="MainApiClients.Anonymous"/> client, because the refresh call is the
+/// API through the <see cref="AccountApiClients.Anonymous"/> client, because the refresh call is the
 /// one request that must never pass through the handler that triggers refreshes.
 /// </para>
 /// <para>
@@ -26,7 +26,7 @@ namespace AppSuite.Main.Ui.Auth;
 /// <param name="refreshTokens">Where the refresh token is remembered.</param>
 /// <param name="auth">The provider to notify when the session starts or ends.</param>
 public sealed class SessionRefresher(
-    [FromKeyedServices(MainApiClients.Anonymous)] HttpClient http,
+    [FromKeyedServices(AccountApiClients.Anonymous)] HttpClient http,
     IAccessTokenStore tokens,
     IRefreshTokenStore refreshTokens,
     TokenAuthStateProvider auth) : ISessionRefresher
@@ -47,7 +47,7 @@ public sealed class SessionRefresher(
         try
         {
             using var response = await http.PostAsJsonAsync(
-                $"{MainApiClients.AccountRoute}/refresh",
+                $"{AccountApiClients.AccountRoute}/refresh",
                 new RefreshRequest(refreshToken),
                 cancellationToken);
 

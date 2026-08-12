@@ -4,7 +4,7 @@ using System.Text.Json;
 using AppSuite.ApiClient;
 using Microsoft.AspNetCore.Components.Authorization;
 
-namespace AppSuite.Main.Ui.Auth;
+namespace AppSuite.Ui.Account.Auth;
 
 /// <summary>
 /// Derives the current <see cref="ClaimsPrincipal"/> from the in-memory access token (ADR-0021).
@@ -22,9 +22,8 @@ namespace AppSuite.Main.Ui.Auth;
 /// A forged token buys nothing but a misleading UI on the attacker's own screen.
 /// </para>
 /// <para>
-/// This lives in the feature assembly rather than the WebAssembly host on purpose: nothing about it
-/// is browser-specific, so a future MAUI head reuses it as-is. FEAT-002 sketches it in the host;
-/// that placement is the deviation, and this is the reason for it.
+/// This lives in a shared building block rather than any host on purpose: nothing about it is
+/// browser-specific, so a MAUI head reuses it as-is (ADR-0034).
 /// </para>
 /// </remarks>
 /// <param name="tokens">The in-memory access-token store.</param>

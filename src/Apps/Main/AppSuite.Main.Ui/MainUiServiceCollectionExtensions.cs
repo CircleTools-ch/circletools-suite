@@ -1,7 +1,5 @@
-using AppSuite.ApiClient;
 using AppSuite.Main.Ui.Api;
-using AppSuite.Main.Ui.Auth;
-using Microsoft.AspNetCore.Components.Authorization;
+using AppSuite.Ui.Account;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AppSuite.Main.Ui;
@@ -16,13 +14,16 @@ public static class MainUiServiceCollectionExtensions
     public const string CultureStorageKey = "main.culture";
 
     /// <summary>
-    /// Adds the account API client, the token stores and the authentication state provider.
+    /// Adds the shared account/session services (ADR-0034) plus the Main-only circles client.
     /// </summary>
     /// <remarks>
-    /// The host must still register an <see cref="AppSuite.Ui.Abstractions.IKeyValueStore"/>, an
+    /// The account/session plumbing and pages live in <c>AppSuite.Ui.Account</c> now; this delegates
+    /// to <see cref="AccountUiServiceCollectionExtensions.AddAccountUi"/> under the Main app's own
+    /// refresh-token key and adds <see cref="CirclesApiClient"/>, which is Main-only (ADR-0033). The
+    /// host must still register an <see cref="AppSuite.Ui.Abstractions.IKeyValueStore"/>, an
     /// <see cref="AppSuite.Ui.Abstractions.IPasskeyCeremony"/>, and the two keyed
-    /// <see cref="HttpClient"/>s named in <see cref="MainApiClients"/> — those are the parts that
-    /// differ between a browser and a device, which is the whole reason they are seams.
+    /// <see cref="HttpClient"/>s named in <c>AccountApiClients</c> — the parts that differ between a
+    /// browser and a device, which is the whole reason they are seams.
     /// </remarks>
     /// <param name="services">The service collection.</param>
     /// <returns>The same service collection, for chaining.</returns>
@@ -30,21 +31,8 @@ public static class MainUiServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
 
-        services.AddAuthorizationCore();
-
-        services.AddScoped<IAccessTokenStore>(_ => new InMemoryAccessTokenStore(TimeProvider.System));
-        services.AddSingleton(new RefreshTokenStoreOptions(RefreshTokenStorageKey));
-        services.AddScoped<IRefreshTokenStore, RefreshTokenStore>();
-
-        // Registered twice on purpose: AuthorizeView resolves the base type, while the session
-        // classes need the concrete one to announce a change. Both must be the same instance.
-        services.AddScoped<TokenAuthStateProvider>();
-        services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<TokenAuthStateProvider>());
-
-        services.AddScoped<ISessionRefresher, SessionRefresher>();
-        services.AddScoped<AccountApiClient>();
+        services.AddAccountUi(RefreshTokenStorageKey);
         services.AddScoped<CirclesApiClient>();
-        services.AddScoped<AccountSession>();
 
         return services;
     }

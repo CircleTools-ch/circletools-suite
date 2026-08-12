@@ -164,6 +164,19 @@
       "appsuite.ui.abstractions": {
         "type": "Project"
       },
+      "appsuite.ui.account": {
+        "type": "Project",
+        "dependencies": {
+          "AppSuite.ApiClient": "[1.0.0, )",
+          "AppSuite.Localization": "[1.0.0, )",
+          "AppSuite.Main.Contracts": "[1.0.0, )",
+          "AppSuite.Ui.Abstractions": "[1.0.0, )",
+          "AppSuite.Ui.Shared": "[1.0.0, )",
+          "Microsoft.AspNetCore.Components.Authorization": "[10.0.10, )",
+          "Microsoft.AspNetCore.Components.Web": "[10.0.10, )",
+          "Microsoft.Extensions.Localization": "[10.0.10, )"
+        }
+      },
       "appsuite.ui.shared": {
         "type": "Project",
         "dependencies": {

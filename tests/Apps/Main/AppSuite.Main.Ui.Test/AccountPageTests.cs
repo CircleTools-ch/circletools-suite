@@ -1,9 +1,9 @@
 using System.Net;
 using AppSuite.Main.Contracts;
-using AppSuite.Main.Ui.Components;
-using AppSuite.Main.Ui.Pages;
 using AppSuite.Main.Ui.Pages.Account;
 using AppSuite.Main.Ui.Test.TestSupport;
+using AppSuite.Ui.Account.Components;
+using AppSuite.Ui.Account.Pages;
 using Bunit;
 
 namespace AppSuite.Main.Ui.Test;

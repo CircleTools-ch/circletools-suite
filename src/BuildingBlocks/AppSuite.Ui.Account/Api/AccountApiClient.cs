@@ -3,7 +3,7 @@ using AppSuite.ApiClient;
 using AppSuite.Main.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace AppSuite.Main.Ui.Api;
+namespace AppSuite.Ui.Account.Api;
 
 /// <summary>
 /// The typed client over <c>/api/v1/account</c> (FEAT-002).
@@ -18,10 +18,10 @@ namespace AppSuite.Main.Ui.Api;
 /// <param name="authorized">The client that carries the bearer token.</param>
 /// <param name="anonymous">The client used before there is a session.</param>
 public sealed class AccountApiClient(
-    [FromKeyedServices(MainApiClients.Authorized)] HttpClient authorized,
-    [FromKeyedServices(MainApiClients.Anonymous)] HttpClient anonymous)
+    [FromKeyedServices(AccountApiClients.Authorized)] HttpClient authorized,
+    [FromKeyedServices(AccountApiClients.Anonymous)] HttpClient anonymous)
 {
-    private const string Route = MainApiClients.AccountRoute;
+    private const string Route = AccountApiClients.AccountRoute;
 
     /// <summary>Signs up and triggers the verification mail (FR-007).</summary>
     /// <param name="request">The sign-up details.</param>

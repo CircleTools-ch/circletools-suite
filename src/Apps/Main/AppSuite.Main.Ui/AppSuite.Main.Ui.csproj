@@ -16,6 +16,7 @@
     <ProjectReference Include="..\AppSuite.Main.Contracts\AppSuite.Main.Contracts.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\AppSuite.Circles.Contracts\AppSuite.Circles.Contracts.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\AppSuite.ApiClient\AppSuite.ApiClient.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\AppSuite.Ui.Account\AppSuite.Ui.Account.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\AppSuite.Ui.Shared\AppSuite.Ui.Shared.csproj" />
   </ItemGroup>
 

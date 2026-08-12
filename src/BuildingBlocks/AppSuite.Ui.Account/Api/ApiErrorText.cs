@@ -1,7 +1,7 @@
 using AppSuite.ApiClient;
 using Microsoft.Extensions.Localization;
 
-namespace AppSuite.Main.Ui.Api;
+namespace AppSuite.Ui.Account.Api;
 
 /// <summary>
 /// Turns an <see cref="ApiError"/> into a sentence in the user's language.

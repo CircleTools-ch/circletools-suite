@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="NavSignIn" xml:space="preserve"><value>Se connecter</value></data>
+  <data name="NavRegister" xml:space="preserve"><value>Créer un compte</value></data>
+  <data name="NavSecurity" xml:space="preserve"><value>Sécurité</value></data>
+  <data name="FieldEmail" xml:space="preserve"><value>Adresse e-mail</value></data>
+  <data name="FieldNewEmail" xml:space="preserve"><value>Nouvelle adresse e-mail</value></data>
+  <data name="FieldPassword" xml:space="preserve"><value>Mot de passe</value></data>
+  <data name="FieldNewPassword" xml:space="preserve"><value>Nouveau mot de passe</value></data>
+  <data name="FieldDisplayName" xml:space="preserve"><value>Nom affiché</value></data>
+  <data name="FieldLanguage" xml:space="preserve"><value>Langue</value></data>
+  <data name="FieldPasskeyLabel" xml:space="preserve"><value>Nom de cet appareil</value></data>
+  <data name="PasswordHint" xml:space="preserve"><value>Au moins 12 caractères. C'est la longueur qui compte — une phrase dont vous vous souvenez vaut mieux qu'une suite courte et compliquée.</value></data>
+  <data name="PasswordErrorTooShort" xml:space="preserve"><value>Ce mot de passe est trop court. Veuillez utiliser au moins 12 caractères.</value></data>
+  <data name="PasswordErrorBreached" xml:space="preserve"><value>Ce mot de passe figure dans une liste publique de mots de passe divulgués lors de fuites de données. Veuillez en choisir un autre.</value></data>
+  <data name="PasswordErrorInvalidToken" xml:space="preserve"><value>Ce lien n'est plus valable. Veuillez en demander un nouveau.</value></data>
+  <data name="DisplayNameHint" xml:space="preserve"><value>C'est ce que voient les personnes avec qui vous partagez.</value></data>
+  <data name="ActionSave" xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="ErrorValidation" xml:space="preserve"><value>Veuillez vérifier les informations saisies.</value></data>
+  <data name="ErrorUnauthorized" xml:space="preserve"><value>Cela n'a pas fonctionné. Vérifiez vos informations et réessayez.</value></data>
+  <data name="ErrorForbidden" xml:space="preserve"><value>Vous n'êtes pas autorisé à faire cela.</value></data>
+  <data name="ErrorNotFound" xml:space="preserve"><value>Nous n'avons pas trouvé cet élément.</value></data>
+  <data name="ErrorConflict" xml:space="preserve"><value>Cela entre en conflit avec l'état actuel de votre compte.</value></data>
+  <data name="ErrorRateLimited" xml:space="preserve"><value>Trop de tentatives. Patientez un instant et réessayez.</value></data>
+  <data name="ErrorUnreachable" xml:space="preserve"><value>Le serveur est injoignable. Vérifiez votre connexion.</value></data>
+  <data name="ErrorUnexpected" xml:space="preserve"><value>Une erreur s'est produite. Veuillez réessayer.</value></data>
+  <data name="VerifyBannerText" xml:space="preserve"><value>Votre adresse e-mail n'est pas encore confirmée. Le lien se trouve dans votre boîte de réception.</value></data>
+  <data name="VerifyBannerResend" xml:space="preserve"><value>Renvoyer</value></data>
+  <data name="VerifyBannerSent" xml:space="preserve"><value>Envoyé — consultez votre boîte de réception.</value></data>
+  <data name="RegisterTitle" xml:space="preserve"><value>Créer votre compte</value></data>
+  <data name="RegisterLead" xml:space="preserve"><value>Un compte vous permet de synchroniser vos appareils et de partager avec votre famille. Vous pouvez continuer à utiliser les applications sans compte.</value></data>
+  <data name="RegisterSubmit" xml:space="preserve"><value>Créer le compte</value></data>
+  <data name="RegisterDoneTitle" xml:space="preserve"><value>Consultez votre boîte de réception</value></data>
+  <data name="RegisterDoneText" xml:space="preserve"><value>Si cette adresse peut être enregistrée, un e-mail de vérification est en route. Ouvrez le lien qu'il contient pour terminer.</value></data>
+  <data name="RegisterHaveAccount" xml:space="preserve"><value>Vous avez déjà un compte ?</value></data>
+  <data name="VerifyTitle" xml:space="preserve"><value>Confirmation de votre adresse</value></data>
+  <data name="VerifyWorking" xml:space="preserve"><value>Un instant…</value></data>
+  <data name="VerifyDoneTitle" xml:space="preserve"><value>Adresse confirmée</value></data>
+  <data name="VerifyDoneText" xml:space="preserve"><value>Votre compte est prêt. Vous pouvez maintenant vous connecter.</value></data>
+  <data name="VerifyFailedTitle" xml:space="preserve"><value>Ce lien n'a pas fonctionné</value></data>
+  <data name="VerifyFailedText" xml:space="preserve"><value>Le lien a peut-être expiré ou a déjà été utilisé. Connectez-vous et nous vous en enverrons un nouveau.</value></data>
+  <data name="LoginTitle" xml:space="preserve"><value>Se connecter</value></data>
+  <data name="LoginLead" xml:space="preserve"><value>Content de vous revoir.</value></data>
+  <data name="LoginSubmit" xml:space="preserve"><value>Se connecter</value></data>
+  <data name="LoginStaySignedIn" xml:space="preserve"><value>Rester connecté sur cet appareil</value></data>
+  <data name="LoginStaySignedInHint" xml:space="preserve"><value>Ne cochez cette case que sur un appareil qui vous appartient.</value></data>
+  <data name="LoginPasskey" xml:space="preserve"><value>Se connecter avec une passkey</value></data>
+  <data name="LoginOr" xml:space="preserve"><value>ou</value></data>
+  <data name="LoginForgot" xml:space="preserve"><value>Mot de passe oublié ?</value></data>
+  <data name="LoginNoAccount" xml:space="preserve"><value>Pas encore de compte ?</value></data>
+  <data name="LoginPasskeyUnsupported" xml:space="preserve"><value>Ce navigateur ne prend pas en charge les passkeys.</value></data>
+  <data name="ForgotTitle" xml:space="preserve"><value>Réinitialiser votre mot de passe</value></data>
+  <data name="ForgotLead" xml:space="preserve"><value>Saisissez votre adresse et nous vous enverrons un lien pour choisir un nouveau mot de passe.</value></data>
+  <data name="ForgotSubmit" xml:space="preserve"><value>Envoyer le lien</value></data>
+  <data name="ForgotDoneTitle" xml:space="preserve"><value>Consultez votre boîte de réception</value></data>
+  <data name="ForgotDoneText" xml:space="preserve"><value>Si un compte est associé à cette adresse, un lien est en route. Votre mot de passe actuel reste valable jusqu'à ce que vous l'utilisiez.</value></data>
+  <data name="ResetTitle" xml:space="preserve"><value>Choisir un nouveau mot de passe</value></data>
+  <data name="ResetSubmit" xml:space="preserve"><value>Enregistrer le nouveau mot de passe</value></data>
+  <data name="ResetDoneTitle" xml:space="preserve"><value>Mot de passe modifié</value></data>
+  <data name="ResetDoneText" xml:space="preserve"><value>Par sécurité, nous avons déconnecté tous vos appareils. Veuillez vous reconnecter.</value></data>
+  <data name="ResetInvalidLink" xml:space="preserve"><value>Ce lien est incomplet. Veuillez rouvrir le lien reçu par e-mail.</value></data>
+  <data name="ProfileTitle" xml:space="preserve"><value>Profil</value></data>
+  <data name="ProfileLead" xml:space="preserve"><value>Voici comment vous apparaissez aux personnes avec qui vous partagez.</value></data>
+  <data name="ProfileSaved" xml:space="preserve"><value>Enregistré.</value></data>
+  <data name="SecurityTitle" xml:space="preserve"><value>Sécurité</value></data>
+  <data name="SecurityLead" xml:space="preserve"><value>Comment vous vous connectez et l'adresse associée à votre compte.</value></data>
+  <data name="PasskeysTitle" xml:space="preserve"><value>Passkeys</value></data>
+  <data name="PasskeysLead" xml:space="preserve"><value>Une passkey vous connecte avec votre empreinte, votre visage ou le code de votre appareil. Votre mot de passe continue de fonctionner.</value></data>
+  <data name="PasskeysEmpty" xml:space="preserve"><value>Vous n'avez pas encore ajouté de passkey.</value></data>
+  <data name="PasskeyAdd" xml:space="preserve"><value>Ajouter une passkey</value></data>
+  <data name="PasskeyAdded" xml:space="preserve"><value>Passkey ajoutée.</value></data>
+  <data name="PasskeyRemove" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="PasskeyRemoved" xml:space="preserve"><value>Passkey supprimée.</value></data>
+  <data name="PasskeyAddedOn" xml:space="preserve"><value>Ajoutée le {0}</value></data>
+  <data name="PasskeyUnsupported" xml:space="preserve"><value>Ce navigateur ne peut pas créer de passkeys.</value></data>
+  <data name="ChangeEmailTitle" xml:space="preserve"><value>Adresse e-mail</value></data>
+  <data name="ChangeEmailLead" xml:space="preserve"><value>Votre compte conserve son adresse actuelle jusqu'à ce que vous confirmiez la nouvelle.</value></data>
+  <data name="ChangeEmailCurrent" xml:space="preserve"><value>Adresse actuelle : {0}</value></data>
+  <data name="ChangeEmailSubmit" xml:space="preserve"><value>Envoyer la confirmation</value></data>
+  <data name="ChangeEmailSent" xml:space="preserve"><value>Si cette adresse peut être utilisée, un e-mail de confirmation lui est envoyé.</value></data>
+  <data name="ConfirmEmailTitle" xml:space="preserve"><value>Confirmation de votre nouvelle adresse</value></data>
+  <data name="ConfirmEmailDoneTitle" xml:space="preserve"><value>Adresse modifiée</value></data>
+  <data name="ConfirmEmailDoneText" xml:space="preserve"><value>Votre compte utilise désormais cette adresse. Connectez-vous avec celle-ci dorénavant.</value></data>
+  <data name="ConfirmEmailSignedOut" xml:space="preserve"><value>Connectez-vous d'abord avec votre adresse actuelle, puis rouvrez ce lien.</value></data>
+  <data name="ConfirmEmailWrongAccount" xml:space="preserve"><value>Ce lien appartient à un autre compte. Déconnectez-vous et connectez-vous avec le compte qui a demandé le changement.</value></data>
+  <data name="ConfirmEmailFailed" xml:space="preserve"><value>Ce lien n'a pas fonctionné. Il a peut-être expiré ou a déjà été utilisé.</value></data>
+</root>

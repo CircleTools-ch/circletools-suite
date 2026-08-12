@@ -1,6 +1,6 @@
 using AppSuite.ApiClient;
-using AppSuite.Main.Ui.Auth;
 using AppSuite.Main.Ui.Test.TestSupport;
+using AppSuite.Ui.Account.Auth;
 
 namespace AppSuite.Main.Ui.Test;
 

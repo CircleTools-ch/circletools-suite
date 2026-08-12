@@ -2,6 +2,8 @@
 @inject ISender Sender
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
+@inject ClaimableGroupsService Claimable
+@inject SyncService Sync
 
 <PageTitle>@L["GroupsTitle"]</PageTitle>
 
@@ -41,12 +43,17 @@ else
                         {
                             <span class="badge bg-warning text-dark ms-2">@L["DrawInvalidatedBadge"]</span>
                         }
+                        @if (IsOnAccount(group.Id))
+                        {
+                            <span class="badge bg-info text-dark ms-2">@L["SyncedBadge"]</span>
+                        }
                     </span>
                     <span>
                         <button class="btn btn-sm btn-outline-primary" @onclick="() => Open(group.Id)">@L["Open"]</button>
                         <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => AskDelete(group.Id)">@L["Delete"]</button>
                     </span>
                 </div>
+
                 @if (_pendingDeleteId == group.Id)
                 {
                     <div class="alert alert-warning mt-2 mb-0" role="alert">
@@ -55,20 +62,89 @@ else
                         <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="CancelDelete">@L["Cancel"]</button>
                     </div>
                 }
+
+                @* Un-claim (FR-026): only for a group on the account, and only while signed in. Kept
+                   visually and textually distinct from Delete — it removes the group from the account
+                   but keeps the copy on this device. *@
+                @if (_accountId != Guid.Empty && IsOnAccount(group.Id))
+                {
+                    <div class="mt-2">
+                        @if (_pendingUnclaimId == group.Id)
+                        {
+                            <div class="alert alert-info mb-0" role="alert">
+                                <p class="mb-1">@L["UnclaimConfirmPrompt", group.Name]</p>
+                                <p class="small mb-1">@L["UnclaimKeepsLocalCopyNote"]</p>
+                                <p class="small mb-2">@L["UnclaimDistinctFromDeleteNote"]</p>
+                                <button class="btn btn-sm btn-primary" @onclick="() => UnclaimAsync(group.Id)">
+                                    @L["UnclaimConfirm"]
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="CancelUnclaim">
+                                    @L["Cancel"]
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm btn-link px-0" @onclick="() => AskUnclaim(group.Id)">
+                                @L["UnclaimAction"]
+                            </button>
+                        }
+                    </div>
+                }
+
+                @if (_unclaimMessageId == group.Id && _unclaimStatus is not null)
+                {
+                    <div class="@UnclaimCss mt-2 mb-0" role="@UnclaimRole">@UnclaimText</div>
+                }
             </li>
         }
     </ul>
 }
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthStateTask { get; set; }
+
     private IReadOnlyList<GroupSummaryDto>? _groups;
+    private HashSet<Guid> _onAccount = [];
+    private Guid _accountId;
     private string _newName = string.Empty;
     private bool _busy;
     private Guid? _pendingDeleteId;
+    private Guid? _pendingUnclaimId;
+    private Guid? _unclaimMessageId;
+    private SyncStatus? _unclaimStatus;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
-    private async Task LoadAsync() => _groups = await Sender.Send(new GetGroupsQuery());
+    protected override async Task OnParametersSetAsync()
+    {
+        if (AuthStateTask is not null)
+        {
+            var state = await AuthStateTask;
+            _accountId = state.User.UserId();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _groups = await Sender.Send(new GetGroupsQuery());
+
+        // The account scope is sync metadata, so it comes from the LocalStore read-model rather than
+        // the domain summary (ADR-0016). A storage failure just leaves the badges off — the list still
+        // renders from the domain query.
+        try
+        {
+            var claimable = await Claimable.GetAllAsync();
+            _onAccount = [.. claimable.Where(g => !g.IsAccountFree).Select(g => g.Id)];
+        }
+        catch (StorageUnavailableException)
+        {
+            _onAccount = [];
+        }
+    }
+
+    private bool IsOnAccount(Guid id) => _onAccount.Contains(id);
 
     private async Task OnNewNameKeyDown(KeyboardEventArgs args)
     {
@@ -98,7 +174,11 @@ else
         }
     }
 
-    private void AskDelete(Guid id) => _pendingDeleteId = id;
+    private void AskDelete(Guid id)
+    {
+        _pendingDeleteId = id;
+        _pendingUnclaimId = null;
+    }
 
     private void CancelDelete() => _pendingDeleteId = null;
 
@@ -108,6 +188,43 @@ else
         await Sender.Send(new DeleteGroupCommand(id));
         await LoadAsync();
     }
+
+    private void AskUnclaim(Guid id)
+    {
+        _pendingUnclaimId = id;
+        _pendingDeleteId = null;
+        _unclaimMessageId = null;
+        _unclaimStatus = null;
+    }
+
+    private void CancelUnclaim() => _pendingUnclaimId = null;
+
+    private async Task UnclaimAsync(Guid id)
+    {
+        _pendingUnclaimId = null;
+        _unclaimMessageId = id;
+
+        var outcome = await Sync.UnclaimAsync(_accountId, id);
+        _unclaimStatus = outcome.Status;
+
+        // On success the group is account-free again; refresh the badges. Nothing local was removed.
+        if (outcome.IsSuccess)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private string UnclaimText => _unclaimStatus switch
+    {
+        SyncStatus.Synced => L["UnclaimSuccess"],
+        SyncStatus.Offline => L["UnclaimOfflineUnavailable"],
+        SyncStatus.StorageUnavailable => L["SyncStatusStorageUnavailable"],
+        _ => L["UnclaimFailed"],
+    };
+
+    private string UnclaimCss => _unclaimStatus == SyncStatus.Synced ? "alert alert-success" : "alert alert-warning";
+
+    private string UnclaimRole => _unclaimStatus == SyncStatus.StorageUnavailable ? "alert" : "status";
 
     private void Open(Guid id) => Navigation.NavigateTo($"groups/{id}");
 }

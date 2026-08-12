@@ -5,14 +5,22 @@
     reloaded the page instead.
 *@
 
-<CultureBoundary Context="culture">
-    <Router @key="culture"
-            AppAssembly="@typeof(App).Assembly"
-            AdditionalAssemblies="new[] { typeof(AppSuite.SecretSanta.Ui.AppStrings).Assembly }"
-            NotFoundPage="typeof(Pages.NotFound)">
-        <Found Context="routeData">
-            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-        </Found>
-    </Router>
-</CultureBoundary>
+@*
+    CascadingAuthenticationState feeds AuthorizeView from the access token (ADR-0021). The app stays
+    fully usable signed out (NFR-001); the cascade only unlocks the account-scoped screens (sync,
+    claim, profile) that the shared account block (ADR-0034) brings in.
+*@
+
+<CascadingAuthenticationState>
+    <CultureBoundary Context="culture">
+        <Router @key="culture"
+                AppAssembly="@typeof(App).Assembly"
+                AdditionalAssemblies="new[] { typeof(AppSuite.SecretSanta.Ui.AppStrings).Assembly, typeof(AppSuite.Ui.Account.AccountStrings).Assembly }"
+                NotFoundPage="typeof(Pages.NotFound)">
+            <Found Context="routeData">
+                <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+                <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+            </Found>
+        </Router>
+    </CultureBoundary>
+</CascadingAuthenticationState>

@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using AppSuite.ApiClient;
 using AppSuite.Circles.Contracts;
+using AppSuite.Ui.Account.Api;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AppSuite.Main.Ui.Api;
@@ -24,11 +25,11 @@ namespace AppSuite.Main.Ui.Api;
 /// <param name="authorized">The client that carries the bearer token.</param>
 /// <param name="anonymous">The client used for the two routes that precede any session.</param>
 public sealed class CirclesApiClient(
-    [FromKeyedServices(MainApiClients.Authorized)] HttpClient authorized,
-    [FromKeyedServices(MainApiClients.Anonymous)] HttpClient anonymous)
+    [FromKeyedServices(AccountApiClients.Authorized)] HttpClient authorized,
+    [FromKeyedServices(AccountApiClients.Anonymous)] HttpClient anonymous)
 {
-    private const string Circles = MainApiClients.CirclesRoute;
-    private const string Invitations = MainApiClients.InvitationsRoute;
+    private const string Circles = MainApiRoutes.CirclesRoute;
+    private const string Invitations = MainApiRoutes.InvitationsRoute;
 
     /// <summary>Lists the circles the caller belongs to (FR-016).</summary>
     /// <param name="cancellationToken">Cancels the call.</param>

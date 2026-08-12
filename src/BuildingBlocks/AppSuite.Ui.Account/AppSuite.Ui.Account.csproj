@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <!-- The account/session client (ADR-0034): the shared UI for the Main service's account API, used by
+       every frontend. Depends on the shared blocks plus AppSuite.Main.Contracts — the backend's account
+       contract, the same cross-app edge AppSuite.SecretSanta.LocalStore already has for sync. Never the
+       server, Identity or EF (see Ui.AccountLayeringTests). -->
+  <ItemGroup>
+    <ProjectReference Include="..\AppSuite.ApiClient\AppSuite.ApiClient.csproj" />
+    <ProjectReference Include="..\AppSuite.Localization\AppSuite.Localization.csproj" />
+    <ProjectReference Include="..\AppSuite.Ui.Abstractions\AppSuite.Ui.Abstractions.csproj" />
+    <ProjectReference Include="..\AppSuite.Ui.Shared\AppSuite.Ui.Shared.csproj" />
+    <ProjectReference Include="..\..\Apps\Main\AppSuite.Main.Contracts\AppSuite.Main.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" />
+    <PackageReference Include="Microsoft.Extensions.Localization" />
+  </ItemGroup>
+
+</Project>
