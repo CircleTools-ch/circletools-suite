@@ -46,6 +46,10 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-025](functional/FR-025-claim-local-groups.md) | Claim local groups into the account | Functional | Must | Implemented |
 | [FR-026](functional/FR-026-remove-group-from-account.md) | Remove a group from the account | Functional | Should | Implemented |
 | [NFR-008](non-functional/NFR-008-sync-convergence-and-data-safety.md) | Sync convergence & data safety | Non-functional | Must | Implemented |
+| [FR-027](functional/FR-027-create-group-from-circle.md) | Create a group from a circle | Functional | Must | Draft |
+| [FR-028](functional/FR-028-link-member-to-account.md) | Link a member to an account | Functional | Must | Draft |
+| [FR-029](functional/FR-029-see-my-assignment.md) | See my assignment while signed in | Functional | Must | Draft |
+| [FR-030](functional/FR-030-edit-my-wishlist.md) | Edit my own wishlist | Functional | Should | Draft |
 
 _Add a row per requirement._
 
@@ -70,6 +74,16 @@ _Add a row per requirement._
   FR-023 **excludes circle data from sync** — was settled as
   [ADR-0033](../adr/0033-which-aggregates-sync.md), narrowing
   [ADR-0016](../adr/0016-sync-and-conflict-resolution.md).
+- **FR-027..030** — **M4 — Linking**, derived from
+  [UC-SS-009..012](../use-cases/index.md). This is the slice where the M1–M3 foundations turn into
+  product value: create a group from a circle (FR-027), link a member to an account (FR-028), see your
+  own assignment in-app (FR-029, the amended NFR-002 in action), and own your wishlist (FR-030).
+  FR-027 also **closes the carried Secret-Santa halves of FR-019 and FR-022** — it is the first thing
+  that copies a circle into a group, which is exactly the "copy" those two criteria were waiting on.
+  M4 needs **no new NFR**: assignment privacy is already governed by the amended
+  [NFR-002](non-functional/NFR-002-assignment-privacy.md), and the link request's
+  enumeration resistance by [NFR-005](non-functional/NFR-005-account-enumeration-resistance.md). To be
+  realised by [FEAT-005](../features/index.md) *(not yet written)*.
 - **NFR-008** is the M3 counterpart to NFR-005 and NFR-006: convergence and data safety are one
   property that every syncing aggregate must hold, and both of its failure modes — a device that
   quietly stops converging, an edit that disappears — are silent. Stating it once gives it one test
