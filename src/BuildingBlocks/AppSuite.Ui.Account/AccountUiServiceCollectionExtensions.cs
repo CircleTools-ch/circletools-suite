@@ -3,6 +3,7 @@ using AppSuite.Ui.Account.Api;
 using AppSuite.Ui.Account.Auth;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace AppSuite.Ui.Account;
 
@@ -45,6 +46,11 @@ public static class AccountUiServiceCollectionExtensions
         services.AddScoped<ISessionRefresher, SessionRefresher>();
         services.AddScoped<AccountApiClient>();
         services.AddScoped<AccountSession>();
+
+        // The default is the direct-online writer (ADR-0035): a profile edit is a PUT, which is the
+        // whole behaviour for a host with no offline story. TryAdd so a host that works offline can
+        // register its own queueing writer instead — the Secret-Santa app does exactly that.
+        services.TryAddScoped<IProfileWriter, OnlineProfileWriter>();
 
         return services;
     }

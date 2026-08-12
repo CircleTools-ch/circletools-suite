@@ -1,5 +1,7 @@
 using AppSuite.Localization;
+using AppSuite.Ui.Account.Api;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace AppSuite.SecretSanta.Ui;
 
@@ -30,6 +32,13 @@ public static class SecretSantaUiServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddAppSuiteLocalization(CultureStorageKey);
+
+        // Replace the account block's default online profile writer with the offline-capable one
+        // (ADR-0035): a profile edit made offline is queued locally and PUT-flushed on the next sync,
+        // which the SyncCoordinator runs alongside the group cycle.
+        services.AddScoped<OfflineProfileWriter>();
+        services.Replace(ServiceDescriptor.Scoped<IProfileWriter>(sp => sp.GetRequiredService<OfflineProfileWriter>()));
+        services.AddScoped<SyncCoordinator>();
 
         return services;
     }

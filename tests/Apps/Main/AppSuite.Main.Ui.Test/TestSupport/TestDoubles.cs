@@ -35,6 +35,12 @@ public sealed class StubApiHandler : HttpMessageHandler
     /// <summary>The routes that were called, as <c>METHOD /path</c>, in order.</summary>
     public List<string> Calls { get; } = [];
 
+    /// <summary>
+    /// When set, every call throws as an unreachable server does — the client turns it into
+    /// <c>ApiFailure.Unreachable</c>, which is how a page tells "offline" from a real failure.
+    /// </summary>
+    public bool Offline { get; set; }
+
     /// <summary>Answers a route with a status and no body.</summary>
     /// <param name="method">The HTTP method.</param>
     /// <param name="path">The path, without a leading slash.</param>
@@ -98,6 +104,11 @@ public sealed class StubApiHandler : HttpMessageHandler
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
+        if (Offline)
+        {
+            throw new HttpRequestException("The stub is offline.");
+        }
+
         var key = Key(request.Method, request.RequestUri!.AbsolutePath.TrimStart('/'));
         Calls.Add(key);
 

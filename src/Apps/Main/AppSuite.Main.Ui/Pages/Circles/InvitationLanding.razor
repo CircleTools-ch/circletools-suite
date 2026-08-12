@@ -14,10 +14,15 @@
 <AuthCard Title="@L["InvitationLandingTitle"]">
     <ChildContent>
         <ProblemAlert Message="@_error" />
+        <ConnectivityRequired Message="@(_offline ? L["CircleOfflineNotice"].Value : null)" />
 
         @if (_notice is { Length: > 0 })
         {
             <p class="mb-0">@_notice</p>
+        }
+        else if (_offline)
+        {
+            @* Online-only (ADR-0033); the notice above is the whole screen while offline. *@
         }
         else if (_invalid)
         {
@@ -90,6 +95,7 @@
     private string? _notice;
     private bool _invalid;
     private bool _busy;
+    private bool _offline;
 
     // The token rides along so the flow resumes here after signing in or signing up, which is what
     // keeps acceptance a single code path rather than a side effect of email verification (FR-018).
@@ -110,11 +116,22 @@
         {
             _preview = preview;
             _invalid = false;
+            _offline = false;
+            return;
+        }
+
+        if (result.Error?.Failure == ApiFailure.Unreachable)
+        {
+            // Offline is not the same as an invalid link: say the screen needs a connection instead of
+            // telling the holder their invitation is invalid (ADR-0033).
+            _offline = true;
+            _invalid = false;
             return;
         }
 
         // Expired, revoked, consumed or never existed — all one answer, deliberately.
         _invalid = true;
+        _offline = false;
     }
 
     private async Task AcceptAsync()

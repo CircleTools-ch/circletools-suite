@@ -68,5 +68,7 @@
   href: 0033-which-aggregates-sync.md
 - name: ADR-0034 Shared account/session UI building block
   href: 0034-shared-account-session-ui-block.md
+- name: ADR-0035 Profile-sync seam
+  href: 0035-profile-sync-seam.md
 - name: Template
   href: _template-adr.md

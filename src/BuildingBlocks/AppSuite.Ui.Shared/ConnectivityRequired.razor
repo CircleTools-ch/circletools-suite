@@ -1,0 +1,23 @@
+@*
+    Says a screen needs a live connection, distinctly from a failure.
+
+    Circles are online-only and server-authoritative (ADR-0033): when the API cannot be reached the
+    screen must state that it needs a connection, not fail opaquely as if something went wrong. This is
+    that notice — informational, not an error, so role="status" and a calm variant rather than the red
+    ProblemAlert. Nothing renders when Message is empty, so a page can bind it to a condition and place
+    it unconditionally.
+*@
+
+@if (!string.IsNullOrWhiteSpace(Message))
+{
+    <div class="alert alert-info d-flex align-items-center gap-2" role="status">
+        <span class="bi bi-wifi-off" aria-hidden="true"></span>
+        <div>@Message</div>
+    </div>
+}
+
+@code {
+    /// <summary>The localized "needs a connection" sentence. Nothing renders when empty.</summary>
+    [Parameter]
+    public string? Message { get; set; }
+}

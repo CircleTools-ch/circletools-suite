@@ -296,8 +296,9 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
         var applied = 0;
         foreach (var change in changes)
         {
-            // Profile documents ride the same cycle in a later slice; groups are all this engine
-            // produces or consumes today. An unknown kind is left for that slice, not dropped loudly.
+            // Groups are all this engine produces or consumes over the sync store. A profile change is
+            // never carried here (ADR-0035 keeps profile on the authoritative /profile endpoint, not the
+            // opaque sync store); an unknown kind is left, not dropped loudly, for whoever adds it.
             if (change.Kind != SyncKinds.Group || pendingDeletes.Contains(change.Id))
             {
                 continue;

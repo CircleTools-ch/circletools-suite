@@ -1,6 +1,6 @@
 @page "/account/profile"
 @inject IStringLocalizer<AccountStrings> L
-@inject AccountApiClient Api
+@inject IProfileWriter Profiles
 @inject ICultureProvider Culture
 @inject NavigationManager Navigation
 
@@ -68,7 +68,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var result = await Api.GetProfileAsync();
+        var result = await Profiles.LoadAsync();
 
         if (result.Value is { } profile)
         {
@@ -87,7 +87,7 @@
         _error = null;
         _details = null;
 
-        var result = await Api.UpdateProfileAsync(new UpdateProfileRequest(_displayName, _language));
+        var result = await Profiles.SaveAsync(new UpdateProfileRequest(_displayName, _language));
 
         _busy = false;
 

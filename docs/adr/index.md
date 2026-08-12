@@ -43,6 +43,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0032](0032-ui-tone-of-voice-and-gender-neutral-terms.md) | UI tone of voice & gender-neutral role terms | Accepted | 2026-07-30 |
 | [0033](0033-which-aggregates-sync.md) | Which aggregates sync (narrows ADR-0016 — Group + profile; Circle excluded) | Accepted | 2026-08-03 |
 | [0034](0034-shared-account-session-ui-block.md) | Shared account/session UI building block (`Ui.Account`) | Accepted | 2026-08-11 |
+| [0035](0035-profile-sync-seam.md) | Profile-sync seam (host-supplied profile writer; offline edits flushed to `/profile`) | Accepted | 2026-08-12 |
 
 ## Open decisions backlog
 
@@ -142,6 +143,20 @@ Raised by writing the M3 sync requirements, and closed before the M3 build begin
   requires on every mutation. ADR-0033 **narrows** ADR-0016 (which stays Accepted) rather than leaving a
   divergence, and records the one axis that could bring circles back later: an offline **read cache** is
   a separate decision from offline **writes**, and is parked below.
+
+### Recently closed (M3 build — 2026-08-12)
+
+Raised while building the M3 profile-sync slice, and closed before it is implemented.
+
+- ✅ **Profile-sync seam** → [ADR-0035](0035-profile-sync-seam.md). The client sync engine lives only
+  in the Secret-Santa app, but the profile screen lives in the shared
+  [account block](0034-shared-account-session-ui-block.md), and the authoritative profile (which drives
+  the JWT locale and the Main app) lives on the Main service's `/account/profile` endpoint — not the
+  opaque sync store. A host-supplied `IProfileWriter` port lets the Main app keep its direct online
+  write while the Secret-Santa app queues an offline edit locally and `PUT`-flushes it to `/profile` on
+  the next sync trigger — closing [FR-012](../requirements/functional/FR-012-manage-profile.md)'s offline
+  language change and [FR-023](../requirements/functional/FR-023-sync-across-devices.md)'s profile sync
+  with the Identity profile as the single source of truth.
 
 ### Depends on deployment (genuinely open)
 

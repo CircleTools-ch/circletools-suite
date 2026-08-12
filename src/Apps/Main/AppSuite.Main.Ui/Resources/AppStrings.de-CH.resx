@@ -213,4 +213,5 @@
   <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Übergib oder lösche die Kreise, die dir gehören, bevor du dein Konto löschst.</value></data>
   <data name="CircleErrorRefused" xml:space="preserve"><value>Das ist nicht erlaubt.</value></data>
   <data name="CircleLoading" xml:space="preserve"><value>Wird geladen...</value></data>
+  <data name="CircleOfflineNotice" xml:space="preserve"><value>Für Kreise brauchst du eine Verbindung. Sobald du wieder online bist, siehst und verwaltest du sie – offline wird hier nichts gespeichert.</value></data>
 </root>

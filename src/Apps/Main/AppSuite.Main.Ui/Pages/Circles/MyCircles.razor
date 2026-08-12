@@ -12,8 +12,13 @@
             <p class="text-body-secondary">@L["CirclesLead"]</p>
 
             <ProblemAlert Message="@_error" />
+            <ConnectivityRequired Message="@(_offline ? L["CircleOfflineNotice"].Value : null)" />
 
-            @if (_circles is null)
+            @if (_offline)
+            {
+                @* Circles are online-only (ADR-0033); the notice above is the whole screen while offline. *@
+            }
+            else if (_circles is null)
             {
                 <p class="text-body-secondary">@L["CircleLoading"]</p>
             }
@@ -54,6 +59,8 @@
                 </ul>
             }
 
+            @if (!_offline)
+            {
             <section>
                 <h2 class="h5">@L["CirclesCreateTitle"]</h2>
 
@@ -78,6 +85,7 @@
                                 Disabled="@(_name.Trim().Length == 0)" />
                 </form>
             </section>
+            }
         </div>
     </Authorized>
     <NotAuthorized>
@@ -92,6 +100,7 @@
     private string? _error;
     private string? _createError;
     private bool _creating;
+    private bool _offline;
 
     private static CultureInfo Culture => CultureInfo.CurrentCulture;
 
@@ -112,10 +121,19 @@
         {
             _circles = circles;
             _error = null;
+            _offline = false;
+        }
+        else if (result.Error?.Failure == ApiFailure.Unreachable)
+        {
+            // Circles are online-only (ADR-0033): say the screen needs a connection rather than
+            // showing it as a generic failure.
+            _offline = true;
+            _error = null;
         }
         else
         {
             _error = CircleErrorText.Describe(L, result.Error);
+            _offline = false;
         }
     }
 

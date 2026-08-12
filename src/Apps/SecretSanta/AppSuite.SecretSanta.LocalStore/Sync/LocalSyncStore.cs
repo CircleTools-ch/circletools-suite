@@ -18,6 +18,9 @@ public sealed class LocalSyncStore(IKeyValueStore store) : ILocalSyncStore
     /// <summary>The key holding the device sync state (device id, cursors, pending tombstones).</summary>
     public const string StateKey = "appsuite.secretsanta.sync.state";
 
+    /// <summary>The key holding the per-account profile document (display name, language, sync metadata).</summary>
+    public const string ProfileKey = "appsuite.secretsanta.sync.profile";
+
     /// <inheritdoc />
     public async Task<IReadOnlyList<SyncedGroupRecord>> LoadGroupsAsync(CancellationToken cancellationToken = default)
     {
@@ -79,6 +82,27 @@ public sealed class LocalSyncStore(IKeyValueStore store) : ILocalSyncStore
 
         var json = JsonSerializer.Serialize(state, SyncJsonContext.Default.SyncState);
         await WriteOrThrowAsync(StateKey, json, "The sync state could not be saved", cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<SyncedProfileRecord?> LoadProfileAsync(CancellationToken cancellationToken = default)
+    {
+        var json = await store.GetAsync(StorageScope.Durable, ProfileKey, cancellationToken);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        return JsonSerializer.Deserialize(json, SyncJsonContext.Default.SyncedProfileRecord);
+    }
+
+    /// <inheritdoc />
+    public async Task SaveProfileAsync(SyncedProfileRecord profile, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+
+        var json = JsonSerializer.Serialize(profile, SyncJsonContext.Default.SyncedProfileRecord);
+        await WriteOrThrowAsync(ProfileKey, json, "The profile could not be saved", cancellationToken);
     }
 
     private async Task WriteOrThrowAsync(string key, string json, string message, CancellationToken cancellationToken)
