@@ -2,7 +2,7 @@
 id: FR-012
 title: Manage profile and preferred language
 type: functional
-status: Approved
+status: Implemented
 priority: Must
 source: UC-MAIN-005
 verification: test

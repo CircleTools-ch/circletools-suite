@@ -16,8 +16,8 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-002](TP-002-m1-identity.md) | Test plan — M1 Identity | Identity | Reviewed |
 | [FEAT-003](FEAT-003-m2-circles.md) | M2 — Circles in the Main shell | Circles | Done |
 | [TP-003](TP-003-m2-circles.md) | Test plan — M2 Circles | Circles | Reviewed |
-| [FEAT-004](FEAT-004-m3-sync-and-claim.md) | M3 — Sync & Claim | Platform | Draft |
-| [TP-004](TP-004-m3-sync-and-claim.md) | Test plan — M3 Sync & Claim | Platform | Draft |
+| [FEAT-004](FEAT-004-m3-sync-and-claim.md) | M3 — Sync & Claim | Platform | Done |
+| [TP-004](TP-004-m3-sync-and-claim.md) | Test plan — M3 Sync & Claim | Platform | Reviewed |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and
@@ -46,10 +46,22 @@ the **product** (both destructive confirmations), and an invitation-revoke path 
 [TP-003's closing notes](TP-003-m2-circles.md#what-the-reconciliation-found-2026-07-30) record how each
 stayed invisible; the short version is that a test-plan row is not evidence.
 
-**M3 is designed but not yet built.** [FEAT-004](FEAT-004-m3-sync-and-claim.md) and
-[TP-004](TP-004-m3-sync-and-claim.md) are `Draft`: the sync-and-claim slice is specified and its
-design is fixed (the wire format, the cursor, tombstone/marker retention, claim idempotency, and the
-`Group`-only sync catalogue from [ADR-0033](../adr/0033-which-aggregates-sync.md)), but no code exists.
-TP-004 is deliberately weighted toward NFR-008's two silent-failure properties — convergence and data
-safety — and centred on a two-client harness, because M2's close showed that is exactly where a green
-suite says nothing.
+**M3 is built and closed (2026-08-12).** [FEAT-004](FEAT-004-m3-sync-and-claim.md) is `Done` and
+[TP-004](TP-004-m3-sync-and-claim.md) `Reviewed`: the sync-and-claim slice is built to the fixed design
+(the wire format, the cursor, tombstone/marker retention, claim idempotency, and the `Group`-only sync
+catalogue from [ADR-0033](../adr/0033-which-aggregates-sync.md)), the two-client harness is green, and
+the verification `CLAUDE.md` insists on — a **two-device, DE/EN/FR browser walkthrough against a live
+Main service** — was completed: convergence (members, wishlists, exclusions and the draw reach the
+second device; the unclaimed group does not), data safety (no account action drops a local group), LWW
+(one survivor **and** a reported collision on a genuine conflict, none on replays), delete without
+resurrection, un-claim as a marker not a tombstone, FR-012's cross-device language change, and the
+claim-list **singular count** in all three languages. TP-004 was deliberately weighted toward NFR-008's
+two silent-failure properties — convergence and data safety — and centred on the two-client harness,
+because M2's close showed that is exactly where a green suite says nothing.
+
+Closing M3 turned up no product defects; two behaviour questions were noted for a later decision (first
+sign-in surfaces the claim screen via a nav link rather than an automatic prompt; the signed-in nav
+language picker is local-only and is reverted to the profile preference on the next reconcile). As with
+M1 and M2, **"CI green" is carried to milestone 7** — no pipeline exists yet — and *shipping* still
+waits on the transactional-email and hosting/residency decisions, though neither gates the build
+([ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md)).

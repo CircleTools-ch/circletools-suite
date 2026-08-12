@@ -2,7 +2,7 @@
 id: FR-024
 title: Offline editing and reconciliation for signed-in users
 type: functional
-status: Approved
+status: Implemented
 priority: Must
 source: UC-MAIN-016
 verification: test

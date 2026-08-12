@@ -2,7 +2,7 @@
 id: FR-025
 title: Claim local groups into the account
 type: functional
-status: Approved
+status: Implemented
 priority: Must
 source: UC-SS-007
 verification: test

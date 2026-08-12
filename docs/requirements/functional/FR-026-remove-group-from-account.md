@@ -2,7 +2,7 @@
 id: FR-026
 title: Remove a group from the account
 type: functional
-status: Approved
+status: Implemented
 priority: Should
 source: UC-SS-008
 verification: test

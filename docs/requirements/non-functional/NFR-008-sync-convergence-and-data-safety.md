@@ -2,7 +2,7 @@
 id: NFR-008
 title: Sync convergence & data safety
 type: non-functional
-status: Approved
+status: Implemented
 priority: Must
 source: UC-MAIN-015, UC-MAIN-016, ADR-0016
 verification: test

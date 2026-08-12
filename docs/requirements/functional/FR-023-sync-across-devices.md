@@ -2,7 +2,7 @@
 id: FR-023
 title: Sync account-scoped data across a user's devices
 type: functional
-status: Approved
+status: Implemented
 priority: Must
 source: UC-MAIN-015
 verification: test

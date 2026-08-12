@@ -151,8 +151,23 @@ Idea stubs and work items, newest-first. Promote items into
   client-minted ids, and profile preferences as a per-account document — and
   [TP-004](../features/TP-004-m3-sync-and-claim.md) (*Draft*) centres on a two-client harness for
   NFR-008's two silent-failure properties (convergence, data safety) and on proving the LWW collision
-  hook actually emits telemetry rather than being a stub. **Build is next**; the same deployment ADRs
+  hook actually emits telemetry rather than being a stub. The same deployment ADRs
   gate *shipping* but not *building* ([ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md)).
+- **M3 built & closed (2026-08-12):** the whole slice is built and
+  [FEAT-004](../features/FEAT-004-m3-sync-and-claim.md) is *Done* / [TP-004](../features/TP-004-m3-sync-and-claim.md)
+  *Reviewed*; FR-023..026 and NFR-008 are `Implemented`, and **FR-012's carried offline-language
+  criterion closed with them**. The verification `CLAUDE.md` insists on — a **two-device, DE/EN/FR
+  browser walkthrough against a live Main service** — was completed and is green (Playwright over real
+  Chrome, two isolated contexts as two devices, 37 assertions): convergence, data safety, LWW with a
+  reported collision, delete-without-resurrection, un-claim-as-marker, the FR-012 cross-device language
+  change, the claim-list singular count in all three languages, and the offline circle notice, all
+  confirmed on screen with a clean console. **No product defects were found.** Two behaviour questions
+  were recorded, not fixed: first sign-in surfaces the claim screen via a nav link rather than an
+  automatic prompt; and the **signed-in nav language picker is local-only** and is reverted to the
+  profile preference on the next reconcile (the Profile page is the synced path). What is carried, not
+  closed: the same-as-M1 **CI pipeline** ("CI green" → milestone 7), and a handful of automated tests
+  the reconciliation records (`ClaimFlowTests`/`ClaimIdempotencyTests`, `SyncAuthTests`, the perf gate,
+  account-deletion cascade, bUnit page renders).
 - **Next:** `UC-SS-009+` use cases (create a group from a circle; link a member; see my assignment
   while logged in; edit my own wishlist) → FRs → the M4 feature spec. *(M3 took `UC-SS-007..008`.)*
 
@@ -245,12 +260,14 @@ Idea stubs and work items, newest-first. Promote items into
   would discard other people's edits, and an offline circle write cannot make the server-side
   authorization decision NFR-006 requires — and that narrowing is recorded as
   [ADR-0033](../adr/0033-which-aggregates-sync.md). The M3 feature spec and test plan
-  ([FEAT-004](../features/FEAT-004-m3-sync-and-claim.md) / [TP-004](../features/TP-004-m3-sync-and-claim.md),
-  both *Draft*) are written; see the `IDEA-001` M3 note above. FR-023 also carries **FR-012**'s offline
-  language change.
-- **Two of M1's three deferred criteria still stand**, and are recorded as deferred in FEAT-002: MAUI
-  cross-client passkeys (needs the real domain) and the *offline* language change (needs M3 sync).
-  The third — **the sole-circle-owner deletion guard — closed with M2** as `SoleOwnerCircleGuard`,
+  ([FEAT-004](../features/FEAT-004-m3-sync-and-claim.md) *Done* / [TP-004](../features/TP-004-m3-sync-and-claim.md)
+  *Reviewed*) were written, built and closed 2026-08-12 — see the `IDEA-001` M3 note above for the
+  build and the browser walkthrough. FR-023 also carried **FR-012**'s offline language change, now
+  closed.
+- **Of M1's three deferred criteria, one still stands**, recorded as deferred in FEAT-002: MAUI
+  cross-client passkeys (needs the real domain). The *offline* language change **closed with M3**
+  (FR-012, via FR-023/024 — verified cross-device in the M3 browser walkthrough). The remaining one —
+  **the sole-circle-owner deletion guard — closed with M2** as `SoleOwnerCircleGuard`,
   verified end to end through real account deletion. It blocks on **every** circle the account owns
   rather than only the ones nobody else could own: deleting the owner's own membership would otherwise
   leave a circle with no owner, a state the domain does not define.

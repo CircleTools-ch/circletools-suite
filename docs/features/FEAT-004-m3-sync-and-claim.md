@@ -1,7 +1,7 @@
 ---
 id: FEAT-004
 title: M3 — Sync & Claim
-status: Draft
+status: Done
 owner: Adrian
 target-milestone: M3 (v2 — sync & claim)
 bounded-context: Platform
@@ -229,15 +229,15 @@ tombstone retention here). Fixed:
 
 ## Definition of Done
 
-- [ ] Meets acceptance criteria of FR-023, FR-024, FR-025, FR-026, NFR-008 (and closes FR-012's carried
+- [x] Meets acceptance criteria of FR-023, FR-024, FR-025, FR-026, NFR-008 (and closes FR-012's carried
       offline-language criterion)
-- [ ] Builds clean under analyzers (warnings = errors)
-- [ ] Tests per [TP-004](TP-004-m3-sync-and-claim.md) pass; coverage target met; the two-client harness green
-- [ ] Architecture boundaries respected — sync stays behind the ports; `SecretSanta.Core` unchanged;
+- [x] Builds clean under analyzers (warnings = errors)
+- [x] Tests per [TP-004](TP-004-m3-sync-and-claim.md) pass; coverage target met; the two-client harness green
+- [x] Architecture boundaries respected — sync stays behind the ports; `SecretSanta.Core` unchanged;
       Platform stores app aggregates as opaque documents (arch tests green)
-- [ ] The collision telemetry hook is wired and asserted (not a stub)
-- [ ] Docs, glossary (Sync/Claim/Tombstone), and API comments updated
-- [ ] Localized strings provided (DE/EN/FR), including the claim-screen **singular** count
-- [ ] Browser walkthrough in DE/EN/FR, **two devices / two profiles**: claim → edit on A → see on B →
+- [x] The collision telemetry hook is wired and asserted (not a stub)
+- [x] Docs, glossary (Sync/Claim/Tombstone), and API comments updated
+- [x] Localized strings provided (DE/EN/FR), including the claim-screen **singular** count
+- [x] Browser walkthrough in DE/EN/FR, **two devices / two profiles**: claim → edit on A → see on B →
       edit offline on both → reconcile → delete → un-claim → offline circle notice
-- [ ] Traceability links closed
+- [x] Traceability links closed
