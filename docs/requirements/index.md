@@ -26,7 +26,7 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-009](functional/FR-009-reset-password.md) | Reset a forgotten password | Functional | Must | Implemented |
 | [FR-010](functional/FR-010-manage-passkeys.md) | Register and remove passkeys | Functional | Should | Approved |
 | [FR-011](functional/FR-011-sign-in-with-passkey.md) | Sign in with a passkey | Functional | Should | Approved |
-| [FR-012](functional/FR-012-manage-profile.md) | Manage profile and preferred language | Functional | Must | Approved |
+| [FR-012](functional/FR-012-manage-profile.md) | Manage profile and preferred language | Functional | Must | Implemented |
 | [FR-013](functional/FR-013-change-email-address.md) | Change the account email address | Functional | Should | Implemented |
 | [FR-014](functional/FR-014-export-personal-data.md) | Export personal data | Functional | Must | Implemented |
 | [FR-015](functional/FR-015-delete-account.md) | Delete the account | Functional | Must | Implemented |
@@ -41,11 +41,11 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-022](functional/FR-022-delete-circle.md) | Delete a circle | Functional | Must | Approved |
 | [NFR-006](non-functional/NFR-006-circle-authorization.md) | Circle data authorization | Non-functional | Must | Implemented |
 | [NFR-007](non-functional/NFR-007-store-distributability.md) | Store distributability & platform compliance | Non-functional | Must | Approved |
-| [FR-023](functional/FR-023-sync-across-devices.md) | Sync account-scoped data across a user's devices | Functional | Must | Approved |
-| [FR-024](functional/FR-024-offline-editing-and-reconciliation.md) | Offline editing and reconciliation for signed-in users | Functional | Must | Approved |
-| [FR-025](functional/FR-025-claim-local-groups.md) | Claim local groups into the account | Functional | Must | Approved |
-| [FR-026](functional/FR-026-remove-group-from-account.md) | Remove a group from the account | Functional | Should | Approved |
-| [NFR-008](non-functional/NFR-008-sync-convergence-and-data-safety.md) | Sync convergence & data safety | Non-functional | Must | Approved |
+| [FR-023](functional/FR-023-sync-across-devices.md) | Sync account-scoped data across a user's devices | Functional | Must | Implemented |
+| [FR-024](functional/FR-024-offline-editing-and-reconciliation.md) | Offline editing and reconciliation for signed-in users | Functional | Must | Implemented |
+| [FR-025](functional/FR-025-claim-local-groups.md) | Claim local groups into the account | Functional | Must | Implemented |
+| [FR-026](functional/FR-026-remove-group-from-account.md) | Remove a group from the account | Functional | Should | Implemented |
+| [NFR-008](non-functional/NFR-008-sync-convergence-and-data-safety.md) | Sync convergence & data safety | Non-functional | Must | Implemented |
 
 _Add a row per requirement._
 
@@ -61,11 +61,15 @@ _Add a row per requirement._
   [FEAT-003](../features/FEAT-003-m2-circles.md). It also closed **FR-015**, the criterion M1 carried:
   the sole-circle-owner guard finally has circles to guard.
 - **FR-023..026, NFR-008** — **M3 — Sync & claim**, derived from
-  [UC-MAIN-015..016 and UC-SS-007..008](../use-cases/index.md). Specified 2026-07-30, **not yet
-  built**. FR-023 also closes **FR-012**'s carried criterion (changing the language offline, pushed on
-  the next sync). One thing to settle before implementing: FR-023 **excludes circle data from sync**,
-  which narrows [ADR-0016](../adr/0016-sync-and-conflict-resolution.md) and needs an ADR — see that
-  requirement's *Dependencies* section.
+  [UC-MAIN-015..016 and UC-SS-007..008](../use-cases/index.md). Specified 2026-07-30, **built and
+  verified 2026-08-12** as [FEAT-004](../features/FEAT-004-m3-sync-and-claim.md) — including the
+  two-device, DE/EN/FR browser walkthrough `CLAUDE.md` requires (convergence, data safety, LWW with a
+  reported collision, delete-without-resurrection, un-claim-as-marker, and the claim-list singular
+  count all confirmed on screen). FR-023 also closes **FR-012**'s carried criterion (changing the
+  language offline, pushed on the next sync — confirmed cross-device). The open point before building —
+  FR-023 **excludes circle data from sync** — was settled as
+  [ADR-0033](../adr/0033-which-aggregates-sync.md), narrowing
+  [ADR-0016](../adr/0016-sync-and-conflict-resolution.md).
 - **NFR-008** is the M3 counterpart to NFR-005 and NFR-006: convergence and data safety are one
   property that every syncing aggregate must hold, and both of its failure modes — a device that
   quietly stops converging, an edit that disappears — are silent. Stating it once gives it one test
@@ -92,16 +96,16 @@ _Add a row per requirement._
 
 `Approved` covers two different situations, and it is worth knowing which is which:
 
-- **Specified, not yet built** — **FR-023..026** and **NFR-008**, the M3 slice, written 2026-07-30.
-  **NFR-007** is also in this state but belongs to no slice (see above).
-- **Built, one criterion still open** — **FR-010**, **FR-011**, **FR-012** and **NFR-004** from M1,
-  and **FR-017**, **FR-019** and **FR-022** from M2. Each is in use, but carries a criterion that
-  cannot close yet, and the reason is recorded rather than quietly dropped:
+- **Specified, not yet built** — **NFR-007** (store distributability), which belongs to no slice
+  (see above). The M3 slice (**FR-023..026**, **NFR-008**) left this state on 2026-08-12: it is built
+  and browser-verified as [FEAT-004](../features/FEAT-004-m3-sync-and-claim.md).
+- **Built, one criterion still open** — **FR-010**, **FR-011** and **NFR-004** from M1, and **FR-017**,
+  **FR-019** and **FR-022** from M2. Each is in use, but carries a criterion that cannot close yet, and
+  the reason is recorded rather than quietly dropped:
 
 | Requirement | What is still open | Unblocked by |
 |---|---|---|
 | FR-010 / FR-011 | passkeys across the MAUI heads (needs `apple-app-site-association` / Digital Asset Links on the real domain) | the hosting & domain decision |
-| FR-012 | changing the language *offline*, pushed on the next sync | M3 — now specified in [FR-023](functional/FR-023-sync-across-devices.md) and [FR-024](functional/FR-024-offline-editing-and-reconciliation.md), and closed when they are built |
 | NFR-004 | the data-residency target, and the "no private key, no biometric data" check that needs a stored passkey credential to inspect | the hosting decision; milestone 7 |
 | FR-017 | deliverability of the invitation — SPF/DKIM/DMARC, bounces, abuse reports. Everything else is built and tested against Mailpit, but an invitation is the first thing the suite sends to somebody with no relationship to it, and a local sink cannot exercise any of that | the transactional-email provider decision |
 | FR-019 | *"a managed member copied into a Secret-Santa group is unaffected by their removal from the circle"* — nothing copies a circle into a group yet, so there is no copy to leave unchanged | M4 — create a group from a circle |

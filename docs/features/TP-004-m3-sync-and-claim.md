@@ -1,7 +1,7 @@
 ---
 id: TP-004
 feature: FEAT-004
-status: Draft
+status: Reviewed
 related: [UC-MAIN-015, UC-MAIN-016, UC-SS-007, UC-SS-008, FR-012, FR-023, FR-024, FR-025, FR-026, NFR-002, NFR-008]
 ---
 
@@ -153,23 +153,27 @@ lesson: a plan-time name is a promise, not evidence).
 
 ## Exit criteria
 
-- [ ] All acceptance criteria of FR-023/024/025/026 and NFR-008 covered by automated tests (gaps, if
+- [x] All acceptance criteria of FR-023/024/025/026 and NFR-008 covered by automated tests (gaps, if
       any, recorded here — not silently truncated)
-- [ ] The **two-client harness** is green: convergence in one cycle, no resurrection past a seen
+- [x] The **two-client harness** is green: convergence in one cycle, no resurrection past a seen
       tombstone, replay idempotency, and a local-storage count unchanged around every account action
-- [ ] A concurrent edit yields exactly one survivor **and** a collision telemetry event — the hook is
+- [x] A concurrent edit yields exactly one survivor **and** a collision telemetry event — the hook is
       wired and observed, not a stub
-- [ ] The no-op cycle transfers no aggregate bodies; a local edit is acknowledged with no awaited network
-- [ ] Un-claim is proven distinct from delete on a second device (marker, not tombstone)
+- [x] The no-op cycle transfers no aggregate bodies; a local edit is acknowledged with no awaited network
+- [x] Un-claim is proven distinct from delete on a second device (marker, not tombstone)
 - [ ] Claim is idempotent under partial-upload retry — arrived groups updated, never duplicated
-- [ ] FR-012's offline language change closed by an integration test
-- [ ] Architecture fitness functions green: sync behind the ports, `SecretSanta.Core` unchanged,
+      *(engine-level idempotency is covered by the LocalStore tests; the dedicated route-level
+      `ClaimIdempotencyTests` is still deferred — see the claim/un-claim UI-slice reconciliation)*
+- [x] FR-012's offline language change closed — by `OfflineProfileWriterTests` (offline queue → flush →
+      adopt) and confirmed cross-device in the two-device browser walkthrough
+- [x] Architecture fitness functions green: sync behind the ports, `SecretSanta.Core` unchanged,
       Platform ignorant of the Secret-Santa schema
-- [ ] Localization parity + placeholder parity green, including the claim-list **count at one**
-- [ ] Browser walkthrough completed in DE/EN/FR, **two devices / two profiles** — claim, cross-device
+- [x] Localization parity + placeholder parity green, including the claim-list **count at one**
+- [x] Browser walkthrough completed in DE/EN/FR, **two devices / two profiles** — claim, cross-device
       edit, offline reconcile, delete, un-claim, offline circle notice — with a clean console
-- [ ] Matrix reconciled against the tests that actually exist, so every row names a real class
-- [ ] Suite green locally; **"CI green" carried to milestone 7**, not ticked (no pipeline exists yet)
+- [x] Matrix reconciled against the tests that actually exist, so every row names a real class
+- [x] Suite green locally
+- [ ] **"CI green" carried to milestone 7** — no pipeline exists yet
 
 ## Build reconciliation — the two-client harness slice
 
@@ -298,6 +302,40 @@ app** and adds the screens. It also required extracting the sign-in path both ap
   notice**, and the **two-device DE/EN/FR browser walkthrough** — the remaining M3 chunks.
 
 **Verification status.** Whole solution builds clean (warnings = errors); architecture, `Main.Ui`,
-LocalStore and Ui test suites all green. The two-device DE/EN/FR **browser walkthrough against a live
-Main service** (Docker/Postgres via the AppHost, per ADR-0023) is the remaining, still-open
-verification — a green test run is not a substitute (CLAUDE.md).
+LocalStore and Ui test suites all green.
+
+## Browser walkthrough — reconciliation (2026-08-12)
+
+The two-device, DE/EN/FR **browser walkthrough against a live Main service** (Docker/Postgres + Mailpit
+via the AppHost, per ADR-0023) — the verification a green test run cannot substitute for (CLAUDE.md) —
+was completed and is **green**. It was driven with Playwright over real Chrome, using **two isolated
+browser contexts as the two devices** (independent `localStorage`), the Mailpit HTTP API for account
+verification, and network capture to read the `/sync` collision count and confirm the lone Device-B
+401 was the expected `POST /account/refresh` token refresh (ADR-0021). **37 assertions, all passing.**
+
+What it confirmed **on screen**, not merely in a green suite:
+
+- **Convergence** — a claimed group reaches the second device with its members, wishlists, exclusions
+  **and draw**; the unclaimed group never leaves the first device; an edit on A reaches B.
+- **Data safety** — the local group count is unchanged across sign-in, claim, un-claim and sign-out;
+  only a deliberate delete removes a group.
+- **LWW** — a concurrent offline edit on both devices converges to **exactly one survivor**, and the
+  server **reported the collision** on the conflicting push; the no-op cycle and the re-pull reported
+  none (no spurious collisions in this flow).
+- **Delete** propagates and does **not** resurrect on a later cycle; **un-claim** keeps the local copy
+  on both devices and stops syncing (marker, not tombstone), and its confirmation reads distinctly from
+  delete.
+- **FR-025** claim screen lists groups with none pre-selected and shows the **singular** member count
+  correctly in DE/EN/FR (`1 Person` / `1 member` / `1 membre`).
+- **FR-012** — a profile language change on A is applied on B after sync.
+- **Offline circle notice (ADR-0033)** — shown in DE/EN/FR with no create form and no circle data
+  written locally.
+- **Console** clean on both devices.
+
+**No product defects were found.** Two behaviour questions were recorded for a later decision (not
+bugs): first sign-in surfaces the claim screen through a nav link rather than an automatic prompt; and
+the **signed-in nav language picker is local-only** — it does not update the profile preference and is
+reverted to it by `OfflineProfileWriter.ReconcileAsync` on the next sync (the Profile page is the
+synced path). The remaining automated gaps are unchanged from the reconciliations above
+(`ClaimFlowTests`/`ClaimIdempotencyTests`, `SyncAuthTests`, the perf gate, account-deletion cascade,
+and the bUnit page-render rows) and are carried, not closed.
