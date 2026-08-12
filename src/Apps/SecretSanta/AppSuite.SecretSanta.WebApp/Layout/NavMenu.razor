@@ -1,4 +1,7 @@
 @inject IStringLocalizer<AppStrings> L
+@inject AccountSession Session
+@inject SyncService Sync
+@inject NavigationManager Navigation
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -16,6 +19,43 @@
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> @L["NavGroups"]
             </NavLink>
         </div>
+
+        @* Stop propagation so acting in the account section does not also collapse the menu. *@
+        <div class="nav-item px-3 mt-3" @onclick:stopPropagation="true">
+            <AuthorizeView>
+                <Authorized>
+                    <div class="text-white-50 small mb-2">@L["SignedInAs", context.User.DisplayName()]</div>
+
+                    @if (_syncStatus is not null)
+                    {
+                        <div class="small text-white-50 mb-2"
+                             role="@(_syncStatus == SyncStatus.StorageUnavailable ? "alert" : "status")">
+                            @SyncStatusText
+                        </div>
+                    }
+
+                    <button class="btn btn-sm btn-outline-light w-100 mb-2"
+                            @onclick="() => SyncNowAsync(context.User.UserId())" disabled="@_syncing">
+                        @L[_syncing ? "SyncStatusSyncing" : "SyncNow"]
+                    </button>
+
+                    <NavLink class="nav-link" href="claim">
+                        <span class="bi bi-cloud-upload-nav-menu" aria-hidden="true"></span> @L["ClaimNav"]
+                    </NavLink>
+
+                    <button class="btn btn-sm btn-link text-white w-100 text-start px-0"
+                            @onclick="SignOutAsync">
+                        @L["SignOut"]
+                    </button>
+                </Authorized>
+                <NotAuthorized>
+                    <a class="nav-link px-0" href="account/login">
+                        <span class="bi bi-person-fill-nav-menu" aria-hidden="true"></span> @L["SignIn"]
+                    </a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+
         @* Stop propagation so picking a language does not also collapse the menu. *@
         <div class="nav-item px-3 mt-3" @onclick:stopPropagation="true">
             <CultureSelector />
@@ -25,8 +65,39 @@
 
 @code {
     private bool collapseNavMenu = true;
+    private bool _syncing;
+    private SyncStatus? _syncStatus;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
     private void ToggleNavMenu() => collapseNavMenu = !collapseNavMenu;
+
+    private async Task SyncNowAsync(Guid accountId)
+    {
+        _syncing = true;
+        _syncStatus = null;
+
+        var outcome = await Sync.SyncNowAsync(accountId);
+
+        _syncStatus = outcome.Status;
+        _syncing = false;
+    }
+
+    // Every outcome is phrased as a fact. Only a storage failure reads as an alert (TP-004); an
+    // offline or refused cycle left the local data untouched and simply retries later.
+    private string SyncStatusText => _syncStatus switch
+    {
+        SyncStatus.Synced => L["SyncStatusSynced"],
+        SyncStatus.Offline => L["SyncStatusOffline"],
+        SyncStatus.StorageUnavailable => L["SyncStatusStorageUnavailable"],
+        _ => L["SyncStatusFailed"],
+    };
+
+    private async Task SignOutAsync()
+    {
+        await Session.SignOutAsync();
+
+        // Leave any account-scoped screen; the app stays fully usable signed out (NFR-001).
+        Navigation.NavigateTo("");
+    }
 }

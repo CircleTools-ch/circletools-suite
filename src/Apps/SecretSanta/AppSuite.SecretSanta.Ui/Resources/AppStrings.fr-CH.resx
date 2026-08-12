@@ -86,4 +86,36 @@
   <data name="RevealNoWishlist" xml:space="preserve"><value>Aucune liste de souhaits fournie.</value></data>
   <data name="RevealMalformed" xml:space="preserve"><value>Ce lien est invalide ou incomplet.</value></data>
   <data name="RevealSpoilerNote" xml:space="preserve"><value>Appuyez sur le bouton quand vous êtes prêt - pas de triche !</value></data>
+  <data name="SignIn" xml:space="preserve"><value>Se connecter</value></data>
+  <data name="SignOut" xml:space="preserve"><value>Se déconnecter</value></data>
+  <data name="SignedInAs" xml:space="preserve"><value>Connecté en tant que {0}</value></data>
+  <data name="SyncStatusSynced" xml:space="preserve"><value>À jour</value></data>
+  <data name="SyncStatusSyncing" xml:space="preserve"><value>Synchronisation…</value></data>
+  <data name="SyncStatusOffline" xml:space="preserve"><value>Hors ligne — les changements se synchroniseront plus tard</value></data>
+  <data name="SyncStatusFailed" xml:space="preserve"><value>La synchronisation ne s'est pas terminée</value></data>
+  <data name="SyncStatusStorageUnavailable" xml:space="preserve"><value>Le stockage de cet appareil est plein</value></data>
+  <data name="SyncNow" xml:space="preserve"><value>Synchroniser maintenant</value></data>
+  <data name="ClaimNav" xml:space="preserve"><value>Ajouter au compte</value></data>
+  <data name="ClaimTitle" xml:space="preserve"><value>Ajouter des groupes à votre compte</value></data>
+  <data name="ClaimLead" xml:space="preserve"><value>Choisissez les groupes à conserver sur votre compte et à synchroniser sur vos autres appareils.</value></data>
+  <data name="ClaimLocalCopyStaysNote" xml:space="preserve"><value>La copie sur cet appareil est toujours conservée.</value></data>
+  <data name="ClaimUnclaimedLiveHereOnlyNote" xml:space="preserve"><value>Les groupes non sélectionnés restent uniquement sur cet appareil.</value></data>
+  <data name="ClaimDrawnUploadsAssignmentsWarning" xml:space="preserve"><value>Déjà tiré — ses attributions seront aussi téléversées.</value></data>
+  <data name="ClaimConfirm" xml:space="preserve"><value>Ajouter la sélection à mon compte</value></data>
+  <data name="ClaimNoGroups" xml:space="preserve"><value>Chaque groupe de cet appareil est déjà sur votre compte.</value></data>
+  <data name="ClaimMemberCountSingular" xml:space="preserve"><value>{0} membre</value></data>
+  <data name="ClaimMemberCountPlural" xml:space="preserve"><value>{0} membres</value></data>
+  <data name="ClaimSuccess" xml:space="preserve"><value>Ajouté à votre compte.</value></data>
+  <data name="ClaimPartial" xml:space="preserve"><value>Certains groupes ont été ajoutés ; vous pouvez réessayer pour les autres.</value></data>
+  <data name="ClaimOffline" xml:space="preserve"><value>Vous êtes hors ligne. L'ajout au compte nécessite une connexion ; rien n'a changé.</value></data>
+  <data name="ClaimFailed" xml:space="preserve"><value>L'opération n'a pas pu aboutir. Veuillez réessayer.</value></data>
+  <data name="SyncedBadge" xml:space="preserve"><value>Sur votre compte</value></data>
+  <data name="UnclaimAction" xml:space="preserve"><value>Retirer du compte</value></data>
+  <data name="UnclaimConfirmPrompt" xml:space="preserve"><value>Retirer « {0} » de votre compte ?</value></data>
+  <data name="UnclaimKeepsLocalCopyNote" xml:space="preserve"><value>La copie sur cet appareil est conservée — elle cesse simplement de se synchroniser.</value></data>
+  <data name="UnclaimDistinctFromDeleteNote" xml:space="preserve"><value>Ce n'est pas comme Supprimer, qui retire le groupe partout.</value></data>
+  <data name="UnclaimConfirm" xml:space="preserve"><value>Oui, retirer du compte</value></data>
+  <data name="UnclaimOfflineUnavailable" xml:space="preserve"><value>Vous êtes hors ligne. Retirer du compte nécessite une connexion ; rien n'a changé.</value></data>
+  <data name="UnclaimSuccess" xml:space="preserve"><value>Retiré de votre compte. La copie sur cet appareil est conservée.</value></data>
+  <data name="UnclaimFailed" xml:space="preserve"><value>L'opération n'a pas pu aboutir. Veuillez réessayer.</value></data>
 </root>

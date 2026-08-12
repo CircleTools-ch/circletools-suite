@@ -140,4 +140,37 @@
   <data name="RevealNoWishlist" xml:space="preserve"><value>No wishlist provided.</value></data>
   <data name="RevealMalformed" xml:space="preserve"><value>This reveal link is invalid or incomplete.</value></data>
   <data name="RevealSpoilerNote" xml:space="preserve"><value>Tap the button when you are ready - no peeking!</value></data>
+  <!-- M3 sync & claim (FEAT-004): sign-in, sync status, claim and un-claim. -->
+  <data name="SignIn" xml:space="preserve"><value>Sign in</value></data>
+  <data name="SignOut" xml:space="preserve"><value>Sign out</value></data>
+  <data name="SignedInAs" xml:space="preserve"><value>Signed in as {0}</value></data>
+  <data name="SyncStatusSynced" xml:space="preserve"><value>Up to date</value></data>
+  <data name="SyncStatusSyncing" xml:space="preserve"><value>Syncing…</value></data>
+  <data name="SyncStatusOffline" xml:space="preserve"><value>Offline — changes will sync later</value></data>
+  <data name="SyncStatusFailed" xml:space="preserve"><value>Sync did not finish</value></data>
+  <data name="SyncStatusStorageUnavailable" xml:space="preserve"><value>This device's storage is full</value></data>
+  <data name="SyncNow" xml:space="preserve"><value>Sync now</value></data>
+  <data name="ClaimNav" xml:space="preserve"><value>Add to account</value></data>
+  <data name="ClaimTitle" xml:space="preserve"><value>Add groups to your account</value></data>
+  <data name="ClaimLead" xml:space="preserve"><value>Choose which groups to keep on your account and sync to your other devices.</value></data>
+  <data name="ClaimLocalCopyStaysNote" xml:space="preserve"><value>The copy on this device is always kept.</value></data>
+  <data name="ClaimUnclaimedLiveHereOnlyNote" xml:space="preserve"><value>Groups you leave unselected stay on this device only.</value></data>
+  <data name="ClaimDrawnUploadsAssignmentsWarning" xml:space="preserve"><value>Already drawn — its assignments will be uploaded too.</value></data>
+  <data name="ClaimConfirm" xml:space="preserve"><value>Add selected to my account</value></data>
+  <data name="ClaimNoGroups" xml:space="preserve"><value>Every group on this device is already on your account.</value></data>
+  <data name="ClaimMemberCountSingular" xml:space="preserve"><value>{0} member</value><comment>The member count on the claim list at exactly one, where the noun is singular. {0} is always 1 here — see ClaimMemberCountPlural for every other count (TP-004 count-at-one).</comment></data>
+  <data name="ClaimMemberCountPlural" xml:space="preserve"><value>{0} members</value><comment>The member count for two or more. Chosen in code by count == 1; never used at one.</comment></data>
+  <data name="ClaimSuccess" xml:space="preserve"><value>Added to your account.</value></data>
+  <data name="ClaimPartial" xml:space="preserve"><value>Some groups were added; you can retry the rest.</value></data>
+  <data name="ClaimOffline" xml:space="preserve"><value>You are offline. Adding to your account needs a connection; nothing changed.</value></data>
+  <data name="ClaimFailed" xml:space="preserve"><value>That could not be completed. Please try again.</value></data>
+  <data name="SyncedBadge" xml:space="preserve"><value>On your account</value></data>
+  <data name="UnclaimAction" xml:space="preserve"><value>Remove from account</value></data>
+  <data name="UnclaimConfirmPrompt" xml:space="preserve"><value>Remove "{0}" from your account?</value></data>
+  <data name="UnclaimKeepsLocalCopyNote" xml:space="preserve"><value>The copy on this device is kept — it just stops syncing.</value></data>
+  <data name="UnclaimDistinctFromDeleteNote" xml:space="preserve"><value>This is not the same as Delete, which removes the group everywhere.</value></data>
+  <data name="UnclaimConfirm" xml:space="preserve"><value>Yes, remove from account</value></data>
+  <data name="UnclaimOfflineUnavailable" xml:space="preserve"><value>You are offline. Removing from your account needs a connection; nothing changed.</value></data>
+  <data name="UnclaimSuccess" xml:space="preserve"><value>Removed from your account. The copy on this device is kept.</value></data>
+  <data name="UnclaimFailed" xml:space="preserve"><value>That could not be completed. Please try again.</value></data>
 </root>

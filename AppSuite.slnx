@@ -46,6 +46,7 @@
     <Project Path="src/BuildingBlocks/AppSuite.Localization/AppSuite.Localization.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.SharedKernel/AppSuite.SharedKernel.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.Ui.Abstractions/AppSuite.Ui.Abstractions.csproj" />
+    <Project Path="src/BuildingBlocks/AppSuite.Ui.Account/AppSuite.Ui.Account.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.Ui.Shared/AppSuite.Ui.Shared.csproj" />
     <Project Path="src/BuildingBlocks/AppSuite.Ui.Web/AppSuite.Ui.Web.csproj" />
   </Folder>

@@ -1,0 +1,142 @@
+@page "/claim"
+@inject IStringLocalizer<AppStrings> L
+@inject ClaimableGroupsService Claimable
+@inject SyncService Sync
+
+@*
+    The claim screen (FR-025): pick the account-free groups to add to the signed-in account. Nothing is
+    pre-selected, the local copy is always kept, and a drawn group says its assignments will be uploaded.
+*@
+
+<PageTitle>@L["ClaimTitle"]</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <h1>@L["ClaimTitle"]</h1>
+        <p class="text-body-secondary">@L["ClaimLead"]</p>
+
+        @if (_outcome is not null)
+        {
+            <div class="@OutcomeCss" role="@OutcomeRole">@OutcomeText</div>
+        }
+
+        @if (_groups is null)
+        {
+            <p>@L["Loading"]</p>
+        }
+        else if (_groups.Count == 0)
+        {
+            <p>@L["ClaimNoGroups"]</p>
+        }
+        else
+        {
+            <ul class="list-group mb-3">
+                @foreach (var group in _groups)
+                {
+                    <li class="list-group-item">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="claim-@group.Id"
+                                   checked="@_selected.Contains(group.Id)"
+                                   @onchange="args => Toggle(group.Id, (bool)args.Value!)" />
+                            <label class="form-check-label" for="claim-@group.Id">
+                                <strong>@group.Name</strong>
+                                <span class="text-body-secondary ms-2">@MemberCount(group.MemberCount)</span>
+                            </label>
+                        </div>
+                        @if (group.HasCurrentDraw)
+                        {
+                            <div class="form-text text-warning-emphasis ms-4">
+                                @L["ClaimDrawnUploadsAssignmentsWarning"]
+                            </div>
+                        }
+                    </li>
+                }
+            </ul>
+
+            <p class="small text-body-secondary">
+                @L["ClaimLocalCopyStaysNote"] @L["ClaimUnclaimedLiveHereOnlyNote"]
+            </p>
+
+            <button class="btn btn-primary" @onclick="() => ClaimAsync(context.User.UserId())"
+                    disabled="@(_busy || _selected.Count == 0)">
+                @L["ClaimConfirm"]
+            </button>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private IReadOnlyList<ClaimableGroup>? _groups;
+    private readonly HashSet<Guid> _selected = [];
+    private bool _busy;
+    private ClaimOutcome? _outcome;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            _groups = await Claimable.GetAccountFreeAsync();
+        }
+        catch (StorageUnavailableException)
+        {
+            _groups = [];
+            _outcome = ClaimOutcome.Incomplete(SyncStatus.StorageUnavailable, 0, 0);
+        }
+    }
+
+    private void Toggle(Guid id, bool on)
+    {
+        if (on)
+        {
+            _selected.Add(id);
+        }
+        else
+        {
+            _selected.Remove(id);
+        }
+    }
+
+    // The count-at-one string is a distinct key, not "{0} members" with a swapped number: at one the
+    // noun is singular in every language this app speaks (TP-004).
+    private string MemberCount(int count) =>
+        count == 1 ? L["ClaimMemberCountSingular", count] : L["ClaimMemberCountPlural", count];
+
+    private async Task ClaimAsync(Guid accountId)
+    {
+        if (_busy || _selected.Count == 0)
+        {
+            return;
+        }
+
+        _busy = true;
+        _outcome = null;
+
+        _outcome = await Sync.ClaimAsync(accountId, _selected.ToList());
+
+        _busy = false;
+        _selected.Clear();
+
+        // Re-read so the just-claimed groups drop off the list (they are no longer account-free).
+        await LoadAsync();
+    }
+
+    // Stated as a fact, not an error: a partial or offline claim left the local copies untouched and can
+    // be retried. Only a storage failure is an alert (TP-004 accessibility).
+    private string OutcomeText => _outcome!.Status switch
+    {
+        SyncStatus.Synced => L["ClaimSuccess"],
+        _ when _outcome.Claimed > 0 => L["ClaimPartial"],
+        SyncStatus.Offline => L["ClaimOffline"],
+        SyncStatus.StorageUnavailable => L["SyncStatusStorageUnavailable"],
+        _ => L["ClaimFailed"],
+    };
+
+    private string OutcomeCss => _outcome!.IsSuccess ? "alert alert-success" : "alert alert-warning";
+
+    private string OutcomeRole => _outcome!.Status == SyncStatus.StorageUnavailable ? "alert" : "status";
+}

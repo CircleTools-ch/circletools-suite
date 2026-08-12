@@ -66,5 +66,7 @@
   href: 0032-ui-tone-of-voice-and-gender-neutral-terms.md
 - name: ADR-0033 Which aggregates sync
   href: 0033-which-aggregates-sync.md
+- name: ADR-0034 Shared account/session UI building block
+  href: 0034-shared-account-session-ui-block.md
 - name: Template
   href: _template-adr.md

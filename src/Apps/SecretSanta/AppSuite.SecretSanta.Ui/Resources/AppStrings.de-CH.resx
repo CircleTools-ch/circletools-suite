@@ -86,4 +86,36 @@
   <data name="RevealNoWishlist" xml:space="preserve"><value>Keine Wunschliste angegeben.</value></data>
   <data name="RevealMalformed" xml:space="preserve"><value>Dieser Link ist ungültig oder unvollständig.</value></data>
   <data name="RevealSpoilerNote" xml:space="preserve"><value>Tippe auf die Schaltfläche, wenn du bereit bist - nicht schummeln!</value></data>
+  <data name="SignIn" xml:space="preserve"><value>Anmelden</value></data>
+  <data name="SignOut" xml:space="preserve"><value>Abmelden</value></data>
+  <data name="SignedInAs" xml:space="preserve"><value>Angemeldet als {0}</value></data>
+  <data name="SyncStatusSynced" xml:space="preserve"><value>Aktuell</value></data>
+  <data name="SyncStatusSyncing" xml:space="preserve"><value>Wird synchronisiert…</value></data>
+  <data name="SyncStatusOffline" xml:space="preserve"><value>Offline — Änderungen folgen später</value></data>
+  <data name="SyncStatusFailed" xml:space="preserve"><value>Synchronisierung unterbrochen</value></data>
+  <data name="SyncStatusStorageUnavailable" xml:space="preserve"><value>Der Speicher dieses Geräts ist voll</value></data>
+  <data name="SyncNow" xml:space="preserve"><value>Jetzt synchronisieren</value></data>
+  <data name="ClaimNav" xml:space="preserve"><value>Zum Konto hinzufügen</value></data>
+  <data name="ClaimTitle" xml:space="preserve"><value>Gruppen zu deinem Konto hinzufügen</value></data>
+  <data name="ClaimLead" xml:space="preserve"><value>Wähle, welche Gruppen du auf deinem Konto behältst und auf deine anderen Geräte synchronisierst.</value></data>
+  <data name="ClaimLocalCopyStaysNote" xml:space="preserve"><value>Die Kopie auf diesem Gerät bleibt immer erhalten.</value></data>
+  <data name="ClaimUnclaimedLiveHereOnlyNote" xml:space="preserve"><value>Nicht ausgewählte Gruppen bleiben nur auf diesem Gerät.</value></data>
+  <data name="ClaimDrawnUploadsAssignmentsWarning" xml:space="preserve"><value>Bereits ausgelost — die Zuordnungen werden mit hochgeladen.</value></data>
+  <data name="ClaimConfirm" xml:space="preserve"><value>Ausgewählte zu meinem Konto hinzufügen</value></data>
+  <data name="ClaimNoGroups" xml:space="preserve"><value>Jede Gruppe auf diesem Gerät ist bereits auf deinem Konto.</value></data>
+  <data name="ClaimMemberCountSingular" xml:space="preserve"><value>{0} Person</value></data>
+  <data name="ClaimMemberCountPlural" xml:space="preserve"><value>{0} Personen</value></data>
+  <data name="ClaimSuccess" xml:space="preserve"><value>Zu deinem Konto hinzugefügt.</value></data>
+  <data name="ClaimPartial" xml:space="preserve"><value>Einige Gruppen wurden hinzugefügt; den Rest kannst du erneut versuchen.</value></data>
+  <data name="ClaimOffline" xml:space="preserve"><value>Du bist offline. Zum Konto hinzufügen braucht eine Verbindung; nichts wurde geändert.</value></data>
+  <data name="ClaimFailed" xml:space="preserve"><value>Das konnte nicht abgeschlossen werden. Bitte versuche es erneut.</value></data>
+  <data name="SyncedBadge" xml:space="preserve"><value>Auf deinem Konto</value></data>
+  <data name="UnclaimAction" xml:space="preserve"><value>Vom Konto entfernen</value></data>
+  <data name="UnclaimConfirmPrompt" xml:space="preserve"><value>"{0}" von deinem Konto entfernen?</value></data>
+  <data name="UnclaimKeepsLocalCopyNote" xml:space="preserve"><value>Die Kopie auf diesem Gerät bleibt erhalten — sie wird nur nicht mehr synchronisiert.</value></data>
+  <data name="UnclaimDistinctFromDeleteNote" xml:space="preserve"><value>Das ist nicht dasselbe wie Löschen, das die Gruppe überall entfernt.</value></data>
+  <data name="UnclaimConfirm" xml:space="preserve"><value>Ja, vom Konto entfernen</value></data>
+  <data name="UnclaimOfflineUnavailable" xml:space="preserve"><value>Du bist offline. Vom Konto entfernen braucht eine Verbindung; nichts wurde geändert.</value></data>
+  <data name="UnclaimSuccess" xml:space="preserve"><value>Von deinem Konto entfernt. Die Kopie auf diesem Gerät bleibt erhalten.</value></data>
+  <data name="UnclaimFailed" xml:space="preserve"><value>Das konnte nicht abgeschlossen werden. Bitte versuche es erneut.</value></data>
 </root>

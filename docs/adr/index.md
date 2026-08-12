@@ -42,6 +42,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0031](0031-ios-build-host.md) | iOS build host (own Apple-silicon Mac) | Accepted | 2026-07-29 |
 | [0032](0032-ui-tone-of-voice-and-gender-neutral-terms.md) | UI tone of voice & gender-neutral role terms | Accepted | 2026-07-30 |
 | [0033](0033-which-aggregates-sync.md) | Which aggregates sync (narrows ADR-0016 — Group + profile; Circle excluded) | Accepted | 2026-08-03 |
+| [0034](0034-shared-account-session-ui-block.md) | Shared account/session UI building block (`Ui.Account`) | Accepted | 2026-08-11 |
 
 ## Open decisions backlog
 

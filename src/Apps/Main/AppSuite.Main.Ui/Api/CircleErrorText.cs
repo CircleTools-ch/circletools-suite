@@ -1,4 +1,5 @@
 using AppSuite.ApiClient;
+using AppSuite.Ui.Account.Api;
 using Microsoft.Extensions.Localization;
 
 namespace AppSuite.Main.Ui.Api;

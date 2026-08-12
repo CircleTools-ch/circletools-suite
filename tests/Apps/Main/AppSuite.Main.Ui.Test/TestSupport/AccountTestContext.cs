@@ -4,8 +4,9 @@ using System.Text.Json;
 using AppSuite.ApiClient;
 using AppSuite.Localization;
 using AppSuite.Main.Ui.Api;
-using AppSuite.Main.Ui.Auth;
 using AppSuite.Ui.Abstractions;
+using AppSuite.Ui.Account.Api;
+using AppSuite.Ui.Account.Auth;
 using Bunit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
@@ -70,10 +71,10 @@ public sealed class AccountTestContext : Bunit.TestContext
         // Both keys point at the same stub; the split only matters for the refresh loop, which is
         // covered where it lives (AppSuite.ApiClient.Test).
         Services.AddKeyedSingleton(
-            MainApiClients.Anonymous,
+            AccountApiClients.Anonymous,
             (_, _) => new HttpClient(Api) { BaseAddress = baseAddress });
         Services.AddKeyedSingleton(
-            MainApiClients.Authorized,
+            AccountApiClients.Authorized,
             (_, _) => new HttpClient(Api) { BaseAddress = baseAddress });
     }
 

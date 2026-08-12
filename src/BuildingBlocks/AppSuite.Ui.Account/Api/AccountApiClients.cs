@@ -1,7 +1,8 @@
-namespace AppSuite.Main.Ui.Api;
+namespace AppSuite.Ui.Account.Api;
 
 /// <summary>
-/// The two <see cref="HttpClient"/> registrations the Main app uses, told apart by a DI key.
+/// The two <see cref="HttpClient"/> registrations the account API uses, told apart by a DI key
+/// (ADR-0034; moved here from the Main app's <c>MainApiClients</c>).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -14,25 +15,19 @@ namespace AppSuite.Main.Ui.Api;
 /// refreshes — that is a loop — and the composition root would otherwise have a genuine dependency
 /// cycle: client → handler → refresher → client. Keying them apart is what breaks it.
 /// </para>
+/// <para>
+/// The keys are shared by every client over this API (account here, and the Main app's circles
+/// client), so they live in this block rather than in any one app.
+/// </para>
 /// </remarks>
-public static class MainApiClients
+public static class AccountApiClients
 {
     /// <summary>Service key for the client that attaches the bearer token and renews it.</summary>
-    public const string Authorized = "AppSuite.Main.Api";
+    public const string Authorized = "AppSuite.Account.Api";
 
     /// <summary>Service key for the plain client used by sign-in, sign-up and refresh.</summary>
-    public const string Anonymous = "AppSuite.Main.Api.Anonymous";
+    public const string Anonymous = "AppSuite.Account.Api.Anonymous";
 
     /// <summary>The version-prefixed route base every account endpoint sits under (ADR-0010).</summary>
     public const string AccountRoute = "api/v1/account";
-
-    /// <summary>The route base for circles (FEAT-003).</summary>
-    public const string CirclesRoute = "api/v1/circles";
-
-    /// <summary>
-    /// The route base for invitations (FEAT-003). Separate from <see cref="CirclesRoute"/> because
-    /// its routes exist for people who are <em>not</em> in the circle yet, and the role filter on the
-    /// circles group answers <c>404</c> to exactly them.
-    /// </summary>
-    public const string InvitationsRoute = "api/v1/invitations";
 }

@@ -1,10 +1,10 @@
 using AppSuite.ApiClient;
 using AppSuite.Localization;
 using AppSuite.Main.Contracts;
-using AppSuite.Main.Ui.Api;
+using AppSuite.Ui.Account.Api;
 using AppSuite.Ui.Abstractions;
 
-namespace AppSuite.Main.Ui.Auth;
+namespace AppSuite.Ui.Account.Auth;
 
 /// <summary>
 /// Starts, restores and ends the signed-in session — the one place that writes the token stores.

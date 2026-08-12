@@ -249,3 +249,55 @@ is meant to be parked *on*. Suggested guard: when `change.Version == existing.Ve
 body is unchanged, treat it as an idempotent no-op (no collision, no counter increment); keep the
 collision path only for a same-or-lower version with a *different* body. Not fixed in this slice —
 flagged for a decision, with a ready assertion to add once guarded.
+
+## Build reconciliation — the claim / un-claim UI slice (FR-025, FR-026)
+
+The client engine and server were already built; this slice makes them **usable from the Secret-Santa
+app** and adds the screens. It also required extracting the sign-in path both apps now share.
+
+- **Shared account/session UI block** ([ADR-0034](../adr/0034-shared-account-session-ui-block.md),
+  Accepted). `AccountSession`, `AccountApiClient`, `TokenAuthStateProvider`, `SessionRefresher` and the
+  account pages (`Login`, `Register`, `ForgotPassword`, `ResetPassword`, `VerifyEmail`,
+  `ConfirmEmailChange`, `Profile`, `Security`) moved from `AppSuite.Main.Ui` into a new
+  `AppSuite.Ui.Account` building block with its own DE/EN/FR `AccountStrings`. `Main.Ui` re-points to
+  it (`AccountData` stays there — it depends on `CircleErrorText`). Guarded by a new
+  `UiAccountLayeringTests`; all 59 `Main.Ui.Test` tests stay green through the move.
+- **Host wiring.** `SecretSanta.WebApp` now registers `AddSecretSantaSyncEngine()` (was the
+  non-syncing repo), the anonymous/authorized `HttpClient`s to the Main API (`ApiBaseUrl`),
+  `HttpSyncApi` as `ISyncApi`, `AddAccountUi("secretsanta.refreshToken")`, the browser passkey seam and
+  `AccountSession.RestoreAsync()` at startup. The app stays fully usable signed out (NFR-001).
+- **Read-model.** `ClaimableGroupsService` (LocalStore, behind `ILocalSyncStore`) surfaces per group:
+  name, member count, current-draw flag, account-free flag — the account scope the domain deliberately
+  does not carry (ADR-0016). `SyncLayeringTests` stays green.
+- **Screens.** `Claim.razor` (`/claim`): lists account-free groups, **nothing pre-selected** (FR-025),
+  a per-drawn-group "assignments will be uploaded" note (NFR-002), outcome as a fact. Un-claim
+  confirmation on `Groups.razor`: visually and textually **distinct from delete** — states the local
+  copy is kept, names the difference from deleting, offline reason stated (FR-026). Sign-in/out and a
+  `role="status"` sync indicator with "Sync now" in the nav.
+- **Strings (DE/EN/FR).** Sign-in/sync/claim/un-claim keys, including the **singular/plural member-count
+  pair** selected in code by `count == 1` — the M2 "1 Personen" trap.
+
+**Matrix rows now covered by a real class/method:**
+
+| Plan-time row | Actual class.method |
+|---------------|---------------------|
+| claim list read-model (member count incl. one, drawn, account-free) | `ClaimableGroupsServiceTests.*` (LocalStore.Test) |
+| claim-screen singular count, DE/EN/FR | `ClaimMemberCountTests.MemberCount_UsesTheSingularAtOne_AndThePluralAboveOne` (Ui.Test) |
+| localization parity for every new key | `LocalizationParityTests.EverySupportedCulture_DefinesEveryNeutralKey` (auto-covers the new keys) |
+
+**Still deferred, recorded not truncated:**
+
+- **bUnit page-render rows** (`ClaimPageTests.*`, `UnclaimPageTests.*`): rendering the claim list with
+  none pre-selected, the drawn warning, and the distinct-from-delete confirmation. The claim *count*
+  and read-model are covered above; rendering them needs LocalStore + account-block fakes wired into a
+  bUnit context — the remaining Ui.Test infrastructure.
+- **Integration via the dedicated `/claim` route** (`ClaimFlowTests.*`, `ClaimIdempotencyTests.*`): this
+  slice drives `SyncService.ClaimAsync`, whose per-group partial-retry and idempotency the LocalStore
+  engine tests already cover; the two-client route-level flow is a follow-up.
+- **`SyncAuthTests.*`, perf gate, account-deletion cascade, profile sync (FR-012), the offline circle
+  notice**, and the **two-device DE/EN/FR browser walkthrough** — the remaining M3 chunks.
+
+**Verification status.** Whole solution builds clean (warnings = errors); architecture, `Main.Ui`,
+LocalStore and Ui test suites all green. The two-device DE/EN/FR **browser walkthrough against a live
+Main service** (Docker/Postgres via the AppHost, per ADR-0023) is the remaining, still-open
+verification — a green test run is not a substitute (CLAUDE.md).

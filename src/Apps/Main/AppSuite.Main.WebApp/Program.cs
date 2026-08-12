@@ -1,8 +1,8 @@
 using AppSuite.ApiClient;
 using AppSuite.Localization;
 using AppSuite.Main.Ui;
-using AppSuite.Main.Ui.Api;
-using AppSuite.Main.Ui.Auth;
+using AppSuite.Ui.Account.Api;
+using AppSuite.Ui.Account.Auth;
 using AppSuite.Main.WebApp;
 using AppSuite.Main.WebApp.Http;
 using AppSuite.Main.WebApp.Interop;
@@ -28,15 +28,15 @@ builder.Services.AddScoped<BrowserPasskeyCeremony>();
 builder.Services.AddScoped<IPasskeyCeremony>(sp => sp.GetRequiredService<BrowserPasskeyCeremony>());
 
 // Two clients over the same API, differing only in whether the authorizing handler is in the chain.
-// See MainApiClients for why they are separate; the short version is that refreshing a session must
-// not run through the handler that triggers refreshes.
-builder.Services.AddKeyedScoped<HttpClient>(MainApiClients.Anonymous, (_, _) =>
+// See AccountApiClients for why they are separate; the short version is that refreshing a session
+// must not run through the handler that triggers refreshes.
+builder.Services.AddKeyedScoped<HttpClient>(AccountApiClients.Anonymous, (_, _) =>
     new HttpClient(new BrowserCredentialsHandler { InnerHandler = new HttpClientHandler() })
     {
         BaseAddress = apiBaseUrl,
     });
 
-builder.Services.AddKeyedScoped<HttpClient>(MainApiClients.Authorized, (sp, _) =>
+builder.Services.AddKeyedScoped<HttpClient>(AccountApiClients.Authorized, (sp, _) =>
 {
     var handler = new AuthorizedHttpMessageHandler(
         sp.GetRequiredService<IAccessTokenStore>(),
@@ -50,7 +50,7 @@ builder.Services.AddKeyedScoped<HttpClient>(MainApiClients.Authorized, (sp, _) =
 
 // The unkeyed HttpClient the Heartbeat sample injects. It is the authorized one, so anything added
 // later that reaches for a plain HttpClient gets a session rather than silent 401s.
-builder.Services.AddScoped(sp => sp.GetRequiredKeyedService<HttpClient>(MainApiClients.Authorized));
+builder.Services.AddScoped(sp => sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized));
 
 // Every AuthorizeView an anonymous visitor renders logs "Authorization failed:
 // DenyAnonymousAuthorizationRequirement" at Information level. Being signed out is the normal state
