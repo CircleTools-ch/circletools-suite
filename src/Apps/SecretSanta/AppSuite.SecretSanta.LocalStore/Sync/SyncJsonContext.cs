@@ -18,6 +18,7 @@ namespace AppSuite.SecretSanta.LocalStore;
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(SyncGroupDocument))]
 [JsonSerializable(typeof(SyncState))]
+[JsonSerializable(typeof(SyncedProfileRecord))]
 [JsonSerializable(typeof(GroupState))]
 [JsonSerializable(typeof(SyncRequest))]
 [JsonSerializable(typeof(SyncResponse))]

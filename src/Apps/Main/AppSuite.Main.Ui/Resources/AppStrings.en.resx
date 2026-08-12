@@ -213,4 +213,5 @@
   <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Hand over or delete the circles you own before deleting your account.</value></data>
   <data name="CircleErrorRefused" xml:space="preserve"><value>That is not allowed.</value></data>
   <data name="CircleLoading" xml:space="preserve"><value>Loading...</value></data>
+  <data name="CircleOfflineNotice" xml:space="preserve"><value>Circles need a connection. Reconnect to see and manage them — nothing is saved offline here.</value></data>
 </root>

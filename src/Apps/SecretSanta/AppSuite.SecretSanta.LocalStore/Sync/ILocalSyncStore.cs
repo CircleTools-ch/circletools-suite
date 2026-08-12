@@ -41,4 +41,18 @@ public interface ILocalSyncStore
     /// <param name="cancellationToken">Cancels the write.</param>
     /// <returns>A task that completes when the write has stuck.</returns>
     Task SaveStateAsync(SyncState state, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Loads the locally-held profile document (display name, preferred language and sync metadata), or
+    /// <see langword="null"/> if none has been stored on this device yet (FEAT-004, ADR-0035).
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    /// <returns>The stored profile document, or <see langword="null"/>.</returns>
+    Task<SyncedProfileRecord?> LoadProfileAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Writes the profile document (FEAT-004, ADR-0035).</summary>
+    /// <param name="profile">The profile document to persist.</param>
+    /// <param name="cancellationToken">Cancels the write.</param>
+    /// <returns>A task that completes when the write has stuck.</returns>
+    Task SaveProfileAsync(SyncedProfileRecord profile, CancellationToken cancellationToken = default);
 }

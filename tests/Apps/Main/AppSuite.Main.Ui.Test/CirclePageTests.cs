@@ -46,6 +46,23 @@ public sealed class CirclePageTests
     }
 
     /// <summary>
+    /// Circles are online-only (ADR-0033): an offline load must say the screen needs a connection —
+    /// distinctly from a failure — and must not offer the create form, which would fail offline.
+    /// </summary>
+    [Fact]
+    public void MyCircles_WhenOffline_ShowsTheConnectivityNotice_AndHidesTheCreateForm()
+    {
+        using var context = new AccountTestContext();
+        context.SignIn();
+        context.Api.Offline = true;
+
+        var page = context.RenderPage<MyCircles>();
+
+        Assert.Contains("CircleOfflineNotice", page.Markup, StringComparison.Ordinal);
+        Assert.DoesNotContain("CirclesCreateTitle", page.Markup, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// The label is user data. Rendering it from the response — never from a resource lookup — is
     /// what stops a circle somebody named "Familie" turning into "Family" for an English viewer
     /// (FR-016).

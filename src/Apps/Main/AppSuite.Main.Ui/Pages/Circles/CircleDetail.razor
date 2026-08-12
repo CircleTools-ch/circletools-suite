@@ -15,10 +15,15 @@
             <p><a href="circles">@L["CircleBackToCircles"]</a></p>
 
             <ProblemAlert Message="@_error" />
+            <ConnectivityRequired Message="@(_offline ? L["CircleOfflineNotice"].Value : null)" />
 
             @if (_gone)
             {
                 <p class="text-body-secondary">@_goneMessage</p>
+            }
+            else if (_offline)
+            {
+                @* Online-only (ADR-0033); the notice above is the whole screen while offline. *@
             }
             else if (_circle is null)
             {
@@ -383,6 +388,7 @@
     private bool _inviting;
     private bool _busy;
     private bool _gone;
+    private bool _offline;
 
     private bool IsOwner => string.Equals(_circle?.Role, "Owner", StringComparison.OrdinalIgnoreCase);
 
@@ -437,6 +443,7 @@
             _editName = circle.Name;
             _editLabel = circle.Label;
             _error = null;
+            _offline = false;
 
             if (CanAdminister)
             {
@@ -447,9 +454,19 @@
             return;
         }
 
+        if (result.Error?.Failure == ApiFailure.Unreachable)
+        {
+            // Circles are online-only (ADR-0033): say the screen needs a connection.
+            _offline = true;
+            _error = null;
+            _circle = null;
+            return;
+        }
+
         // A 404 here is both "no such circle" and "you are not in it" — the API refuses to say which
         // (NFR-006), and so does this page.
         _error = CircleErrorText.Describe(L, result.Error);
+        _offline = false;
         _circle = null;
     }
 

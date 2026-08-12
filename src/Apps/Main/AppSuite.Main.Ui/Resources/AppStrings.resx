@@ -693,4 +693,7 @@
   <data name="CircleLoading" xml:space="preserve">
     <value>Loading...</value>
   </data>
+  <data name="CircleOfflineNotice" xml:space="preserve">
+    <value>Circles need a connection. Reconnect to see and manage them — nothing is saved offline here.</value>
+  </data>
 </root>

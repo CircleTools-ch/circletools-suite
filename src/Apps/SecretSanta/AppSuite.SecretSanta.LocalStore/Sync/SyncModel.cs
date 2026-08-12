@@ -63,6 +63,29 @@ public sealed record SyncGroupDocument(int SchemaVersion, IReadOnlyList<SyncedGr
 }
 
 /// <summary>
+/// The account's profile preferences held locally, so an edit made offline survives a reload and can
+/// be pushed on reconnect (FEAT-004, ADR-0035). Unlike a group this is not a sync-store aggregate: the
+/// authoritative profile lives on the Main service's <c>/account/profile</c> endpoint (which drives the
+/// JWT locale and the Main app), and <see cref="Dirty"/> marks an offline edit waiting to be
+/// <c>PUT</c>-flushed there on the next sync trigger.
+/// </summary>
+/// <remarks>
+/// There is exactly one profile per account. A different account signing in on the same device gets its
+/// own record — the <see cref="AccountScope"/> guards a pending edit from being flushed to the wrong
+/// account (FR-024). When no offline edit is pending the record simply is not stored; its presence with
+/// <see cref="Dirty"/> set is the queued change FR-012 asks for.
+/// </remarks>
+/// <param name="AccountScope">The account these preferences belong to.</param>
+/// <param name="DisplayName">The name others sharing a circle see.</param>
+/// <param name="Language">The preferred language (<c>de-CH</c>, <c>en</c>, <c>fr-CH</c>).</param>
+/// <param name="Dirty">Whether this holds an offline edit not yet accepted by the server.</param>
+public sealed record SyncedProfileRecord(
+    Guid AccountScope,
+    string DisplayName,
+    string Language,
+    bool Dirty);
+
+/// <summary>
 /// A deletion made locally and not yet pushed (FEAT-004). Travels to the server as a tombstone so the
 /// delete propagates to the account's other devices; it carries no body.
 /// </summary>

@@ -14,13 +14,18 @@
             <p class="text-body-secondary">@L["InvitationsLead"]</p>
 
             <ProblemAlert Message="@_error" />
+            <ConnectivityRequired Message="@(_offline ? L["CircleOfflineNotice"].Value : null)" />
 
             @if (_notice is { Length: > 0 })
             {
                 <div class="alert alert-success" role="status">@_notice</div>
             }
 
-            @if (_requests is null)
+            @if (_offline)
+            {
+                @* Online-only (ADR-0033); the notice above is the whole screen while offline. *@
+            }
+            else if (_requests is null)
             {
                 <p class="text-body-secondary">@L["CircleLoading"]</p>
             }
@@ -72,6 +77,7 @@
     private string? _error;
     private string? _notice;
     private bool _busy;
+    private bool _offline;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
 
@@ -83,10 +89,19 @@
         {
             _requests = requests;
             _error = null;
+            _offline = false;
+            return;
+        }
+
+        if (result.Error?.Failure == ApiFailure.Unreachable)
+        {
+            _offline = true;
+            _error = null;
             return;
         }
 
         _error = CircleErrorText.Describe(L, result.Error);
+        _offline = false;
     }
 
     private Task AcceptAsync(JoinRequestResponse request) =>
