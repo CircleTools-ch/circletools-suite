@@ -54,6 +54,14 @@
       href: functional/FR-025-claim-local-groups.md
     - name: FR-026 Remove a group from the account
       href: functional/FR-026-remove-group-from-account.md
+    - name: FR-027 Create a group from a circle
+      href: functional/FR-027-create-group-from-circle.md
+    - name: FR-028 Link a member to an account
+      href: functional/FR-028-link-member-to-account.md
+    - name: FR-029 See my assignment while signed in
+      href: functional/FR-029-see-my-assignment.md
+    - name: FR-030 Edit my own wishlist
+      href: functional/FR-030-edit-my-wishlist.md
 - name: Non-functional
   items:
     - name: NFR-001 Local-first & offline
