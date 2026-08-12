@@ -120,9 +120,11 @@ Then the unlinked members receive reveal links exactly as before
   duplicate-link guard, deletion cascade), [ADR-0020](../../adr/0020-server-side-assignment-privacy.md)
   (what the link grants), [ADR-0018](../../adr/0018-circle-and-sharing-model.md) (managed-member
   promotion)
-- Implemented by: [FEAT-005](../../features/FEAT-005-m4-linking.md) *(M4 — linking; not yet written)*
-- Open for the feature spec: whether the link request **reuses the M2
+- Implemented by: [FEAT-005](../../features/FEAT-005-m4-linking.md) *(M4 — linking; designed, `Draft`)*, verified by [TP-005](../../features/TP-005-m4-linking.md)
+- ~~Open for the feature spec: whether the link request **reuses the M2
   [Invitation](../../glossary/invitation.md) infrastructure** (rate limits, expiry, revoke) or gets a
-  member-link variant of it.
+  member-link variant of it.~~ **Settled in [FEAT-005](../../features/FEAT-005-m4-linking.md):** it
+  **reuses** the invitation machinery (outbox mail, expiry, revoke, constant-time account lookup) as a
+  member-link variant scoped to a member rather than a circle join — not a parallel system.
 - Glossary: [Member](../../glossary/member.md), [User](../../glossary/user.md),
   [Wishlist](../../glossary/wishlist.md), [Assignment](../../glossary/assignment.md)

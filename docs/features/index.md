@@ -18,6 +18,8 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-003](TP-003-m2-circles.md) | Test plan — M2 Circles | Circles | Reviewed |
 | [FEAT-004](FEAT-004-m3-sync-and-claim.md) | M3 — Sync & Claim | Platform | Done |
 | [TP-004](TP-004-m3-sync-and-claim.md) | Test plan — M3 Sync & Claim | Platform | Reviewed |
+| [FEAT-005](FEAT-005-m4-linking.md) | M4 — Linking | SecretSanta | Draft |
+| [TP-005](TP-005-m4-linking.md) | Test plan — M4 Linking | SecretSanta | Draft |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and
@@ -65,3 +67,20 @@ language picker is local-only and is reverted to the profile preference on the n
 M1 and M2, **"CI green" is carried to milestone 7** — no pipeline exists yet — and *shipping* still
 waits on the transactional-email and hosting/residency decisions, though neither gates the build
 ([ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md)).
+
+**M4 is designed (2026-08-12), not yet built.** [FEAT-005](FEAT-005-m4-linking.md) and its paired
+[TP-005](TP-005-m4-linking.md) are `Draft`: the linking slice — create a group from a circle, link and
+unlink a member with consent, see my own assignment while signed in, edit my own wishlist — realises
+FR-027..030 under the already-accepted M4 ADRs ([ADR-0018](../adr/0018-circle-and-sharing-model.md),
+[ADR-0019](../adr/0019-member-user-linking.md), [ADR-0020](../adr/0020-server-side-assignment-privacy.md)),
+so Phase 4 is a no-op here. M4 is the **first cross-account milestone**: everything through M3 was
+single-account (a user's own devices), whereas linking is the first time a *second* account — a linked
+member — reads and writes one slice of an organizer-owned group. The spec fixes the load-bearing new
+piece for that: a **structured, per-caller-authorized surface** beside M3's opaque single-account sync,
+the surface ADR-0020 sanctioned. TP-005 is deliberately weighted toward **assignment authorization** —
+a cross-member read must be **denied, not filtered**, and a non-organizer response capped at one — for
+the same reason M3's plan centred on convergence and M2's on enumeration resistance: it is the sharpest
+silent-failure surface in the suite, where one wrong rule leaks the exact secret the app exists to keep.
+The spec also settles the numbers the requirements deferred (reuse the M2 invitation machinery for the
+member-link request; self-link auto-accepts; one user per group; per-group wishlists with a copy-previous
+offer; snapshot-at-create timing) in its *numbers* table.

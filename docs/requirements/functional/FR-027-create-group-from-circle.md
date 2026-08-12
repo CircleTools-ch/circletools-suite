@@ -118,6 +118,6 @@ Then the count reads as a singular in each language
   managed members), [ADR-0019](../../adr/0019-member-user-linking.md) (optional `UserId`,
   duplicate-link guard), [ADR-0033](../../adr/0033-which-aggregates-sync.md) (the circle itself does
   not sync)
-- Implemented by: [FEAT-005](../../features/FEAT-005-m4-linking.md) *(M4 — linking; not yet written)*
+- Implemented by: [FEAT-005](../../features/FEAT-005-m4-linking.md) *(M4 — linking; designed, `Draft`)*, verified by [TP-005](../../features/TP-005-m4-linking.md)
 - Glossary: [Group](../../glossary/group.md), [Circle](../../glossary/circle.md),
   [Member](../../glossary/member.md), [Managed member](../../glossary/managed-member.md)

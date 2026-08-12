@@ -16,6 +16,10 @@
   href: FEAT-004-m3-sync-and-claim.md
 - name: TP-004 M3 Sync & Claim test plan
   href: TP-004-m3-sync-and-claim.md
+- name: FEAT-005 M4 Linking
+  href: FEAT-005-m4-linking.md
+- name: TP-005 M4 Linking test plan
+  href: TP-005-m4-linking.md
 - name: Templates
   items:
     - name: Feature spec template
