@@ -88,6 +88,23 @@ explicitly deferred branding, keeping that exit cheap is worth more than the pol
 - **New risks:** the theme can accrete app-specific rules if the "shared vs component" line is not
   held. The check is cheap: anything in `circletools.css` that names a single app's concept is misplaced.
 
+## Amendment (2026-08-13) — brand landed
+
+The brand is now decided (**CircleTools**, `circletools.ch`) and drawn, so the deferral in this ADR is
+resolved. As promised under *Follow-ups*, the identity lands in the theme layer rather than in a
+successor ADR:
+
+- **Brand mark:** a **ring of five people** (the figures form the circle). Per app the ring is kept and
+  its shapes + accent are swapped — Secret-Santa is a **ring of five gifts** (red `#7a1f2b`, gold
+  `#e3a92e` ribbon/bow, cream `#f7ede1` ground). Full spec and asset locations:
+  [naming § Visual identity](../process/naming.md).
+- **Palette:** the neutral `--circletools-brand` is confirmed as the committed brand navy **`#03173d`**
+  with accent **`#3c6fd1`** (already the values in `circletools.css`). Divergent placeholders were
+  reconciled to these — notably the DocFX `--bs-primary`, previously a `#1168bd` placeholder.
+- **What does not change:** the layering, the "no inline `style`/`<script>`" CSP rule, and "colour
+  never carries meaning alone" all still hold — every brand mark is monochrome-safe by construction, so
+  that accessibility rule is met by the mark itself, not only by the UI around it.
+
 ## Pros and cons of the options
 
 ### 1. Bootstrap + thin theme + CSS isolation (chosen)

@@ -1,0 +1,66 @@
+<Solution>
+  <!--
+    CI build/test solution: every project in CircleTools.slnx EXCEPT the MAUI head
+    (CircleTools.SecretSanta.App), which needs the MAUI workload and cannot build on a
+    plain Linux runner. Used by the `build-test` job in .github/workflows/ci.yml so the
+    core build/test gate stays fast and workload-free (ADR-0038).
+
+    KEEP IN SYNC with CircleTools.slnx: when a non-MAUI project is added or removed there,
+    mirror it here. An out-of-sync list fails the CI build loudly, which is the intended guard.
+    The MAUI head is built separately by the `build-maui` job (Android + Windows heads).
+  -->
+  <Folder Name="/src/Apps/Main/">
+    <Project Path="src/Apps/Main/CircleTools.Main.Contracts/CircleTools.Main.Contracts.csproj" />
+    <Project Path="src/Apps/Main/CircleTools.Main.Service.Core/CircleTools.Main.Service.Core.csproj" />
+    <Project Path="src/Apps/Main/CircleTools.Main.Service.Repository/CircleTools.Main.Service.Repository.csproj" />
+    <Project Path="src/Apps/Main/CircleTools.Main.Service/CircleTools.Main.Service.csproj" />
+    <Project Path="src/Apps/Main/CircleTools.Main.Ui/CircleTools.Main.Ui.csproj" />
+    <Project Path="src/Apps/Main/CircleTools.Main.WebApp/CircleTools.Main.WebApp.csproj" />
+  </Folder>
+  <Folder Name="/src/Apps/SecretSanta/">
+    <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.Contracts/CircleTools.SecretSanta.Contracts.csproj" />
+    <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.Core/CircleTools.SecretSanta.Core.csproj" />
+    <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.LocalStore/CircleTools.SecretSanta.LocalStore.csproj" />
+    <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.Ui/CircleTools.SecretSanta.Ui.csproj" />
+    <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.WebApp/CircleTools.SecretSanta.WebApp.csproj" />
+  </Folder>
+  <Folder Name="/src/Aspire/">
+    <Project Path="src/Aspire/CircleTools.AppHost/CircleTools.AppHost.csproj" />
+    <Project Path="src/Aspire/CircleTools.ServiceDefaults/CircleTools.ServiceDefaults.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/">
+    <Project Path="src/BuildingBlocks/CircleTools.ApiClient/CircleTools.ApiClient.csproj" />
+    <Project Path="src/BuildingBlocks/CircleTools.Application/CircleTools.Application.csproj" />
+    <Project Path="src/BuildingBlocks/CircleTools.Circles.Contracts/CircleTools.Circles.Contracts.csproj" />
+    <Project Path="src/BuildingBlocks/CircleTools.Circles.Core/CircleTools.Circles.Core.csproj" />
+    <Project Path="src/BuildingBlocks/CircleTools.Circles.Repository/CircleTools.Circles.Repository.csproj" />
+    <Project Path="src/BuildingBlocks/CircleTools.Identity/CircleTools.Identity.csproj" />
+    <Project Path="src/BuildingBlocks/CircleTools.Infrastructure/CircleTools.Infrastructure.csproj" />
+    <Project Path="src/BuildingBlocks/CircleTools.Localization/CircleTools.Localization.csproj" />
+    <Project Path="src/BuildingBlocks/CircleTools.SharedKernel/CircleTools.SharedKernel.csproj" />
+    <Project Path="src/BuildingBlocks/CircleTools.Ui.Abstractions/CircleTools.Ui.Abstractions.csproj" />
+    <Project Path="src/BuildingBlocks/CircleTools.Ui.Account/CircleTools.Ui.Account.csproj" />
+    <Project Path="src/BuildingBlocks/CircleTools.Ui.Shared/CircleTools.Ui.Shared.csproj" />
+    <Project Path="src/BuildingBlocks/CircleTools.Ui.Web/CircleTools.Ui.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CircleTools.Architecture.Test/CircleTools.Architecture.Test.csproj" />
+  </Folder>
+  <Folder Name="/tests/BuildingBlocks/">
+    <Project Path="tests/BuildingBlocks/CircleTools.ApiClient.Test/CircleTools.ApiClient.Test.csproj" />
+    <Project Path="tests/BuildingBlocks/CircleTools.Circles.Core.Test/CircleTools.Circles.Core.Test.csproj" />
+    <Project Path="tests/BuildingBlocks/CircleTools.Circles.Repository.Test/CircleTools.Circles.Repository.Test.csproj" />
+    <Project Path="tests/BuildingBlocks/CircleTools.Identity.Test/CircleTools.Identity.Test.csproj" />
+    <Project Path="tests/BuildingBlocks/CircleTools.Ui.Shared.Test/CircleTools.Ui.Shared.Test.csproj" />
+  </Folder>
+  <Folder Name="/tests/Apps/Main/">
+    <Project Path="tests/Apps/Main/CircleTools.Main.Service.Test/CircleTools.Main.Service.Test.csproj" />
+    <Project Path="tests/Apps/Main/CircleTools.Main.Service.Repository.Test/CircleTools.Main.Service.Repository.Test.csproj" />
+    <Project Path="tests/Apps/Main/CircleTools.Main.Ui.Test/CircleTools.Main.Ui.Test.csproj" />
+  </Folder>
+  <Folder Name="/tests/Apps/SecretSanta/">
+    <Project Path="tests/Apps/SecretSanta/CircleTools.SecretSanta.Core.Test/CircleTools.SecretSanta.Core.Test.csproj" />
+    <Project Path="tests/Apps/SecretSanta/CircleTools.SecretSanta.LocalStore.Test/CircleTools.SecretSanta.LocalStore.Test.csproj" />
+    <Project Path="tests/Apps/SecretSanta/CircleTools.SecretSanta.Ui.Test/CircleTools.SecretSanta.Ui.Test.csproj" />
+  </Folder>
+</Solution>
