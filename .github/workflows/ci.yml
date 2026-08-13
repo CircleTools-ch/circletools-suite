@@ -1,0 +1,94 @@
+# Continuous integration gate for the CircleTools suite (ADR-0038).
+# Build under analyzers (warnings-as-errors), run the full test suite, and build the
+# link-checked DocFX site on every push and PR to main. The MAUI head (Android + Windows)
+# builds on a Windows runner; iOS is deferred to a future macOS runner (ADR-0031).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Newer pushes to the same branch/PR cancel superseded runs.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET (from global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+
+      # Everything except the MAUI head, which needs the MAUI workload (ADR-0038).
+      # Not --locked-mode: some packages resolve per-OS (the RID-specific Aspire dashboard SDK) or
+      # per-SDK-patch (Microsoft.NET.ILLink.Tasks), so a lock file committed from one machine cannot
+      # satisfy a strict restore on another. The committed lock files still pin versions for local devs.
+      - name: Restore
+        run: dotnet restore CircleTools.NoMaui.slnx
+
+      - name: Build
+        run: dotnet build CircleTools.NoMaui.slnx --no-restore -c Release
+
+      - name: Test
+        run: dotnet test CircleTools.NoMaui.slnx --no-build -c Release --verbosity normal
+
+  docs:
+    name: docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET (from global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+
+      # DocFX metadata is scoped to the library projects (docfx/docfx.json); restore so its
+      # Roslyn workspace can load them. (Not --locked-mode — see the build-test job.)
+      - name: Restore
+        run: dotnet restore CircleTools.NoMaui.slnx
+
+      - name: Restore local tools (DocFX)
+        run: dotnet tool restore
+
+      # Fails on broken links / unresolved xrefs (ADR-0002).
+      - name: Build docs site
+        run: dotnet docfx docfx/docfx.json
+
+  build-maui:
+    name: build-maui
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET (from global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # Install the MAUI workloads this project needs (Android + Windows on a Windows runner).
+      - name: Restore MAUI workloads
+        run: dotnet workload restore src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj
+
+      # Builds the Android and Windows heads (the TFMs the csproj enables on Windows).
+      # iOS/MacCatalyst are macOS-only and deferred to a future macOS runner (ADR-0031).
+      # No --no-restore / no separate restore step: the Windows head is RID-specific
+      # (<RuntimeIdentifier>win-x64</RuntimeIdentifier>), and its runtime pack is fetched during
+      # build, not by `dotnet restore` — so build must run its own restore (NETSDK1112 otherwise).
+      - name: Build MAUI heads (Android + Windows)
+        run: dotnet build src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj -c Release

@@ -1,6 +1,6 @@
-# AppSuite Documentation
+# CircleTools Documentation
 
-Welcome to the documentation for **AppSuite** — an app suite for families and groups of
+Welcome to the documentation for **CircleTools** — an app suite for families and groups of
 friends. Everything about how this product is conceived, decided, built, tested, and shipped
 lives here as Markdown and is published as this site via DocFX.
 
@@ -13,7 +13,7 @@ lives here as Markdown and is published as this site via DocFX.
 - **[Glossary](glossary/index.md)** — the ubiquitous language of the domain.
 - **[Roadmap & backlog](roadmap/roadmap.md)** — where we are and what's next.
 
-## What is AppSuite?
+## What is CircleTools?
 
 A suite of small apps under one brand, one login, and shared configuration, with a global
 dashboard over every app. The first app is **Secret-Santa**. Each app runs **offline with no
@@ -23,7 +23,7 @@ Android/iOS (MAUI Blazor Hybrid) + Web (Blazor) share the same feature code.
 Swiss-first audience; product languages **German, French, English**; code and documentation
 are **English**.
 
-> **Note:** AppSuite is a placeholder brand name. Choosing the final name and domain is the
+> **Note:** CircleTools is a placeholder brand name. Choosing the final name and domain is the
 > first tracked step — see [naming](process/naming.md).
 
 ## How this site is organized

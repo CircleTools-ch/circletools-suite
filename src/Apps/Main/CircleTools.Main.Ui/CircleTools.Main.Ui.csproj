@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <!-- Feature code only: Contracts for the API's DTOs, and the shared UI building blocks. Never
+       Identity, EF or Main.Service.Core - see docs/guidelines/architecture-guidelines.md §4. -->
+  <ItemGroup>
+    <ProjectReference Include="..\CircleTools.Main.Contracts\CircleTools.Main.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\CircleTools.Circles.Contracts\CircleTools.Circles.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\CircleTools.ApiClient\CircleTools.ApiClient.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\CircleTools.Ui.Account\CircleTools.Ui.Account.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\CircleTools.Ui.Shared\CircleTools.Ui.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" />
+    <PackageReference Include="Microsoft.Extensions.Localization" />
+  </ItemGroup>
+
+</Project>

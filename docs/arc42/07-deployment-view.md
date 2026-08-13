@@ -1,9 +1,10 @@
 # 7. Deployment View
 
 > The cloud provider and topology are **decided** in
-> [ADR-0036](../adr/0036-cloud-provider-and-hosting.md) (Infomaniak VPS + Docker Compose) and the
-> transactional email sender in [ADR-0037](../adr/0037-transactional-email-provider.md); the CI/CD
-> **pipeline** remains an open ADR. This chapter captures the shape.
+> [ADR-0036](../adr/0036-cloud-provider-and-hosting.md) (Infomaniak VPS + Docker Compose), the
+> transactional email sender in [ADR-0037](../adr/0037-transactional-email-provider.md), and the CI/CD
+> **pipeline** in [ADR-0038](../adr/0038-ci-cd-pipeline.md) (GitHub Actions — the CI gate is built; CD
+> to the VPS lands at milestone 8). This chapter captures the shape.
 
 ## 7.1 Environments
 
@@ -15,12 +16,12 @@
 
 ## 7.2 Local development (today)
 
-> **Implemented (M5):** `dotnet run --project src/Aspire/AppSuite.AppHost` starts the Aspire dashboard,
+> **Implemented (M5):** `dotnet run --project src/Aspire/CircleTools.AppHost` starts the Aspire dashboard,
 > a `postgres` container, the `main-api` service, and the `main-web` WASM PWA. Verified working.
 
 ```mermaid
 flowchart LR
-    Dev[Developer] --> AppHost[AppSuite.AppHost]
+    Dev[Developer] --> AppHost[CircleTools.AppHost]
     AppHost --> API[Service hosts]
     AppHost --> Web[WebApp hosts]
     AppHost --> PG[(PostgreSQL container)]
@@ -37,8 +38,9 @@ flowchart LR
 - **Transactional email:** **Brevo** (EU) behind the invitation outbox port
   ([ADR-0037](../adr/0037-transactional-email-provider.md)).
 - **Static docs:** the DocFX site published to a static host / Pages.
-- Data at rest stays in Switzerland; recurring cost ≈ CHF 12–14/mo. **CI/CD** is still an open ADR, and
-  *execution* is gated on the [brand & domain](../process/naming.md).
+- Data at rest stays in Switzerland; recurring cost ≈ CHF 12–14/mo. **CI** runs on GitHub Actions
+  ([ADR-0038](../adr/0038-ci-cd-pipeline.md)); the **CD** step to this VPS is built at milestone 8 once
+  it is provisioned (SSH → `compose pull && up`).
 
 ## 7.4 App stores
 

@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for working on AppSuite. This project is run deliberately — like a professional
+Thanks for working on CircleTools. This project is run deliberately — like a professional
 product, not a weekend hack. Please take a few minutes to read this and
 [`CLAUDE.md`](CLAUDE.md) before contributing.
 
@@ -19,7 +19,7 @@ Verify your setup:
 dotnet --version                 # resolves the pinned .NET 10 SDK
 dotnet tool restore
 dotnet docfx docfx/docfx.json    # docs site builds
-dotnet build AppSuite.slnx          # solution builds
+dotnet build CircleTools.slnx          # solution builds
 ```
 
 ## How we work

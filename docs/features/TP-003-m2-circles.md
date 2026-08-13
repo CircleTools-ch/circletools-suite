@@ -33,11 +33,11 @@ notifications of any kind (not built).
 
 ## Test levels
 
-- **Unit (`AppSuite.Circles.Core.Test`)** — the `Circle` aggregate and the handlers, with no I/O:
+- **Unit (`CircleTools.Circles.Core.Test`)** — the `Circle` aggregate and the handlers, with no I/O:
   role transitions, the ownership invariant, transfer atomicity, managed-member rules, promotion by
   linking, invitation lifecycle and the caps. Clock injected via `TimeProvider`; **no wall-clock
   waits** for the 14-day expiry or the 7-day cooldown.
-- **Integration (`AppSuite.Main.Service.Test`)** — endpoints against **real Postgres** and **real
+- **Integration (`CircleTools.Main.Service.Test`)** — endpoints against **real Postgres** and **real
   SMTP** (Mailpit, [ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md)), asserting on mail
   actually delivered rather than on a mocked sender, as M1 does.
 - **Authorization (role matrix)** — one parameterised suite over **every** circle route × {owner,
@@ -46,15 +46,15 @@ notifications of any kind (not built).
 - **Security / timing** — paired enumeration tests for `POST /invitations`: an address with an
   account, one without, and one already in the circle must be indistinguishable in body, status and
   timing distribution.
-- **Repository (`AppSuite.Circles.Repository.Test`)** — the `circles` schema mapping, the optimistic
+- **Repository (`CircleTools.Circles.Repository.Test`)** — the `circles` schema mapping, the optimistic
   concurrency token, cascade behaviour on deletion, the retention sweeps and the three invitation
   rate limits, against real Postgres. Applying the migration is itself part of the suite: `xmin` is a
   system column that cannot be created, and every test here fails at startup if the provider ever
   stops filtering it out of the generated SQL. Two providers per test are two concurrent callers —
   the concurrency assertions are worthless against a single change tracker.
 - **Architecture** — `Circles.Core` free of ASP.NET/EF; no Secret-Santa project references Circles;
-  no Circles project references `AppSuite.Identity`; plus the two NFR-006 fitness functions.
-- **UI/component (bUnit, `AppSuite.Main.Ui.Test`)** — the circle pages over a stub transport, as M1's
+  no Circles project references `CircleTools.Identity`; plus the two NFR-006 fitness functions.
+- **UI/component (bUnit, `CircleTools.Main.Ui.Test`)** — the circle pages over a stub transport, as M1's
   account pages are. The themes: the deliberately uninformative invite confirmation, the destructive
   confirmations, and role-dependent rendering.
 - **Localization** — key parity across `de-CH`/`en`/`fr-CH`, plus the invitation mail template.
@@ -131,7 +131,7 @@ aggregate and are tested there, because that is where they are decided.
 | FR-022 dangling circle id tolerated | `CircleEndpointsTests.WhenTheCircleIsDeleted_ItsPendingInvitationIsGone_AndTheRecipientIsToldSo` — a circle id that resolves to nothing is answered `404`, not an error; the Secret-Santa half arrives with M4 (gap 2) | Integration | ⚠️ partial |
 | FR-022 pending invitation dies with it | `CircleEndpointsTests.WhenTheCircleIsDeleted_ItsPendingInvitationIsGone_AndTheRecipientIsToldSo` — the join request disappears from the recipient's list and accepting it answers *no such invitation*. *Written at close* | Integration | ✅ |
 | **FR-015 sole-owner guard** | `SoleOwnerCircleGuardTests.AnAccountThatOwnsNothing_MayBeDeleted`, `.ACircleSomebodyElseCouldOwn_IsStillABlocker_AndIsOfferedTransfer`, `.ACircleNobodyElseCouldOwn_IsOfferedDeletion`, `.EveryOwnedCircleIsNamedAndIdentified_SoTheUserIsNotSentHunting`; `AccountDeletionCleanupTests` (`.Deletion_IsRefusedWhileTheAccountOwnsACircle`, `.WithOthersInTheCircle_TheRefusalOffersTransferInstead`, `.OnceOwnershipIsHandedOver_TheAccountCanBeDeleted`, `.DeletingTheCircleFirst_UnblocksTheAccount`, `.Deletion_RemovesTheAccountFromOtherPeoplesCircles`, `.Deletion_LeavesTheManagedMembersTheAccountAdded`, `.Deletion_WithdrawsTheInvitationsTheAccountSent`, `.ARefusedDeletion_ChangesNothing`) | Unit / Integration | ✅ |
-| NFR-004 managed-member minimisation | `AppSuite.Circles.Repository.Test.PersistedModelReviewTests.NoPersistedProperty_HoldsDataTheSuitePromisedNotToKeep` — the same scan for birth-date/postal/phone/payment fragments the Main model has carried since M1, over a model describing people who did not enter their own data — plus `.AManagedMember_PersistsNothingBeyondANameAndALanguage` pinned as an exact column list. A sibling class rather than an extension of Main's: the two contexts have separate models, and coupling Main's test project to Circles to share one list would breach the layering this milestone is enforcing | Architecture | ✅ |
+| NFR-004 managed-member minimisation | `CircleTools.Circles.Repository.Test.PersistedModelReviewTests.NoPersistedProperty_HoldsDataTheSuitePromisedNotToKeep` — the same scan for birth-date/postal/phone/payment fragments the Main model has carried since M1, over a model describing people who did not enter their own data — plus `.AManagedMember_PersistsNothingBeyondANameAndALanguage` pinned as an exact column list. A sibling class rather than an extension of Main's: the two contexts have separate models, and coupling Main's test project to Circles to share one list would breach the layering this milestone is enforcing | Architecture | ✅ |
 | NFR-004 invitation retention | `InvitationPurgeTests.ExpiredInvitations_ArePurged_AndPendingOnesAreNot`, `.ADeclineIsSwept_OnceItSuppressesNothing`, `.CountedInvitationAttempts_AreSweptOnceNoLimitCountsThem`, `.Purge_IsSafeWhenNothingHasExpired` (virtual clock, real Postgres) | Repository | ✅ |
 | NFR-004 declines keep no address | `CircleTests.ADecline_StoresOnlyAHash`; `CircleRepositoryTests.ADeclinedInvitation_LeavesARowThatHoldsNoAddress` + `.ASecondDeclineByTheSameAddress_ReplacesTheRecordRatherThanColliding` — the domain's intent, and then what is actually in the row | Unit / Repository | ✅ |
 | NFR-004 the invitation secret is never stored | `PersistedModelReviewTests.AnInvitation_StoresTheHandleOfItsSecretAndNeverTheSecret`; `.TheCounters_HoldAHashOfTheRecipient_NotTheAddress` | Architecture | ✅ |

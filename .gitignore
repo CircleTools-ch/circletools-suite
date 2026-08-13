@@ -43,7 +43,7 @@ docfx/log.txt
 *.ipa
 # macOS/iOS .app bundles are build output and already covered by bin/ and obj/. A bare "*.app/"
 # pattern must not come back: git matches ignore patterns case-insensitively on Windows
-# (core.ignorecase=true), so it also swallowed src/Apps/SecretSanta/AppSuite.SecretSanta.App/ —
+# (core.ignorecase=true), so it also swallowed src/Apps/SecretSanta/CircleTools.SecretSanta.App/ —
 # the entire MAUI head went untracked, and only on Windows.
 Platforms/**/bin/
 Platforms/**/obj/

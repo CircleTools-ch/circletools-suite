@@ -74,5 +74,7 @@
   href: 0036-cloud-provider-and-hosting.md
 - name: ADR-0037 Transactional email provider
   href: 0037-transactional-email-provider.md
+- name: ADR-0038 CI/CD pipeline
+  href: 0038-ci-cd-pipeline.md
 - name: Template
   href: _template-adr.md

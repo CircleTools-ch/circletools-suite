@@ -1,0 +1,136 @@
+@page "/invitations"
+@inject IStringLocalizer<AppStrings> L
+@inject CirclesApiClient Api
+
+@* The in-app half of FR-018. It carries no token from any mail: what admits the caller is that
+   their verified address is the invited one, which is the same check the link path makes. *@
+
+<PageTitle>@L["InvitationsTitle"]</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="circletools-page">
+            <h1 class="h4">@L["InvitationsTitle"]</h1>
+            <p class="text-body-secondary">@L["InvitationsLead"]</p>
+
+            <ProblemAlert Message="@_error" />
+            <ConnectivityRequired Message="@(_offline ? L["CircleOfflineNotice"].Value : null)" />
+
+            @if (_notice is { Length: > 0 })
+            {
+                <div class="alert alert-success" role="status">@_notice</div>
+            }
+
+            @if (_offline)
+            {
+                @* Online-only (ADR-0033); the notice above is the whole screen while offline. *@
+            }
+            else if (_requests is null)
+            {
+                <p class="text-body-secondary">@L["CircleLoading"]</p>
+            }
+            else if (_requests.Count == 0)
+            {
+                <p class="text-body-secondary">@L["InvitationsEmpty"]</p>
+            }
+            else
+            {
+                <ul class="list-group">
+                    @foreach (var request in _requests)
+                    {
+                        <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
+                            <span>
+                                <strong>@request.CircleName</strong>
+                                <span class="text-body-secondary small ms-2">@request.CircleLabel</span>
+                                <div class="text-body-secondary small">
+                                    @string.Format(
+                                        CultureInfo.CurrentCulture,
+                                        L["InvitationFrom"],
+                                        request.InviterDisplayName)
+                                </div>
+                            </span>
+                            <span class="d-flex gap-1">
+                                <button type="button" class="btn btn-sm btn-primary"
+                                        disabled="@_busy"
+                                        @onclick="@(() => AcceptAsync(request))">
+                                    @L["InvitationAccept"]
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        disabled="@_busy"
+                                        @onclick="@(() => DeclineAsync(request))">
+                                    @L["InvitationDecline"]
+                                </button>
+                            </span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private IReadOnlyList<JoinRequestResponse>? _requests;
+    private string? _error;
+    private string? _notice;
+    private bool _busy;
+    private bool _offline;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var result = await Api.GetJoinRequestsAsync();
+
+        if (result.Value is { } requests)
+        {
+            _requests = requests;
+            _error = null;
+            _offline = false;
+            return;
+        }
+
+        if (result.Error?.Failure == ApiFailure.Unreachable)
+        {
+            _offline = true;
+            _error = null;
+            return;
+        }
+
+        _error = CircleErrorText.Describe(L, result.Error);
+        _offline = false;
+    }
+
+    private Task AcceptAsync(JoinRequestResponse request) =>
+        RespondAsync(
+            () => Api.AcceptJoinRequestAsync(request.CircleId, request.InvitationId),
+            L["InvitationAccepted"]);
+
+    private Task DeclineAsync(JoinRequestResponse request) =>
+        RespondAsync(
+            () => Api.DeclineJoinRequestAsync(request.CircleId, request.InvitationId),
+            L["InvitationDeclined"]);
+
+    private async Task RespondAsync(Func<Task<ApiResult>> action, string notice)
+    {
+        _busy = true;
+        _error = null;
+        _notice = null;
+
+        var result = await action();
+
+        _busy = false;
+
+        if (result.IsSuccess)
+        {
+            _notice = notice;
+            await LoadAsync();
+            return;
+        }
+
+        _error = CircleErrorText.Describe(L, result.Error);
+    }
+}

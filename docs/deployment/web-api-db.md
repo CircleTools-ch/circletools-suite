@@ -61,8 +61,9 @@ needed.
 
 ## Open sub-decisions (still to record)
 
-- **CI/CD pipeline** — how images build and reach the VM (likely GitHub Actions → `compose pull && up`).
-  Needs its own ADR ([backlog](../adr/index.md#depends-on-deployment-genuinely-open)).
+- **CI/CD pipeline** — ✅ decided in [ADR-0038](../adr/0038-ci-cd-pipeline.md) (GitHub Actions). The CI
+  gate (build/test/docs + MAUI heads) is built; the **CD** step to this VM (SSH → `compose pull && up`,
+  with EF Core migrations as an explicit release step) is built here at milestone 8 once the VM exists.
 - **Secrets management** — DB credentials, the Brevo API key, signing assets; host/CI secret store,
   never in the repo.
 - **Production observability backend** — the Aspire dashboard

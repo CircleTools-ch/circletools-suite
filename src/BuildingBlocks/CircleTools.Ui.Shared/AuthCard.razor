@@ -1,0 +1,43 @@
+@*
+    The centred card every account screen sits in, so sign-up, sign-in and reset read as one flow
+    rather than three separately styled pages.
+*@
+
+<div class="circletools-auth">
+    <div class="card circletools-auth__card">
+        <div class="card-body">
+            <h1 class="h4 mb-1">@Title</h1>
+            @if (!string.IsNullOrWhiteSpace(Lead))
+            {
+                <p class="text-body-secondary small">@Lead</p>
+            }
+            @ChildContent
+        </div>
+    </div>
+    @if (Footer is not null)
+    {
+        <div class="circletools-auth__footer small">
+            @Footer
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The screen's heading. Rendered as the page's single h1.</summary>
+    [Parameter]
+    [EditorRequired]
+    public string? Title { get; set; }
+
+    /// <summary>An optional sentence under the heading explaining what happens next.</summary>
+    [Parameter]
+    public string? Lead { get; set; }
+
+    /// <summary>The form itself.</summary>
+    [Parameter]
+    [EditorRequired]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Links out of this screen — "already have an account?" and the like.</summary>
+    [Parameter]
+    public RenderFragment? Footer { get; set; }
+}

@@ -446,7 +446,7 @@ Glossary first — no code may use these terms before they exist (`CLAUDE.md` ru
       *Amended / partly superseded* table) updated.
 - [x] arc42 **ch. 5** §5.3 now maps the four bounded contexts (**Secret-Santa, Identity, Circles,
       Platform**) to their projects and milestones, **fixing** the provisional glossary labels, and
-      records why `AppSuite.Identity` is a shared building block rather than part of `Main`
+      records why `CircleTools.Identity` is a shared building block rather than part of `Main`
       (2026-07-27).
 - [ ] Deployment-phase ADRs now genuinely due: cloud provider & hosting (Swiss data residency),
       transactional email provider, CI/CD → [deployment](../deployment/index.md).

@@ -6,7 +6,7 @@ Read it before generating code or documentation. The guideline documents it poin
 
 ## What this project is
 
-AppSuite is a **.NET 10 / Aspire / DDD** app suite for families and groups of friends
+CircleTools is a **.NET 10 / Aspire / DDD** app suite for families and groups of friends
 (first app: Secret-Santa). It is **local-first** (works offline with no account) with
 **optional account-based sync**. Targets: Web (Blazor) + native Android/iOS (MAUI Blazor
 Hybrid), sharing feature code. Swiss-first; product is multilingual (DE/EN/FR); **all code
@@ -39,15 +39,14 @@ and docs are English**. See [`README.md`](README.md).
    memory files or any store outside the repo to hold project knowledge. If something needs to be
    remembered, write it into the right in-repo doc (backlog, ADR, glossary, feature spec, arc42, …).
 
-## Placeholder & naming convention
+## Naming convention
 
-- **AppSuite** is a neutral **working name**, not a brand. It is the solution / project /
-  namespace prefix (e.g. `AppSuite.AppHost`, `AppSuite.Main.Service.Core`) and the placeholder used
-  in prose. The final brand is **deliberately deferred** (branding may change) — do **not** bake a
-  brand into project/namespace names yet. Leading candidate: **Walf** (*We Are Like Family*).
-- Individual apps become **subdomains** of the (future) suite domain (e.g. `secretsanta.<suite-domain>`).
+- **CircleTools** is the **brand** and the solution / project / namespace prefix (e.g.
+  `CircleTools.AppHost`, `CircleTools.Main.Service.Core`). Brand and domain (`circletools.ch`) were
+  chosen **2026-08-13**; the earlier neutral working name `AppSuite` was renamed away repo-wide.
+- Individual apps become **subdomains** of the suite domain (e.g. `secretsanta.circletools.ch`).
   App brand names are decided per app during that app's idea/branding step.
-- Candidate names + domain findings live in [`docs/process/naming.md`](docs/process/naming.md).
+- Naming history + domain findings live in [`docs/process/naming.md`](docs/process/naming.md).
 
 ## Where the guidelines live (authoritative — read before you build)
 
@@ -84,7 +83,7 @@ the docs site, and link it into the traceability chain (backward + forward by ID
 dotnet tool restore                          # install DocFX (local tool)
 dotnet docfx docfx/docfx.json                # build the docs site (fails on broken links/xrefs)
 dotnet docfx docfx/docfx.json --serve        # build + serve locally
-dotnet build AppSuite.slnx                      # build the solution
+dotnet build CircleTools.slnx                      # build the solution
 dotnet test                                  # run tests (once test projects exist)
 ```
 
@@ -100,7 +99,7 @@ a badge whose text said the opposite of its condition) all passed the unit tests
 visible on screen.
 
 ```bash
-dotnet run --project src/Apps/SecretSanta/AppSuite.SecretSanta.WebApp --launch-profile http
+dotnet run --project src/Apps/SecretSanta/CircleTools.SecretSanta.WebApp --launch-profile http
 # → http://localhost:5081   (the http profile avoids dev-certificate prompts)
 ```
 

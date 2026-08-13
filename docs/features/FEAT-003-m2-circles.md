@@ -88,12 +88,12 @@ flowchart LR
       Ep["/api/v1/circles + /api/v1/invitations\nCircleRoleFilter"]
       Guard[SoleOwnerCircleGuard\n→ IAccountDeletionGuard]
     end
-    subgraph Ctx["AppSuite.Circles — NEW bounded context"]
+    subgraph Ctx["CircleTools.Circles — NEW bounded context"]
       Core[Circles.Core\nCircle aggregate + handlers]
       Repo[Circles.Repository\nEF Core → schema circles\nIInvitationRateLimiter]
     end
     Adapters[Main.Service adapters\nIAccountDirectory · IInvitationMailer]
-    Infra[AppSuite.Infrastructure\noutbox + SMTP]
+    Infra[CircleTools.Infrastructure\noutbox + SMTP]
     Db[(Postgres — maindb)]
 
     Pages --> Ep --> Core --> Repo --> Db
@@ -103,7 +103,7 @@ flowchart LR
 
 **The mail goes out through a port, not through `IOutbox` directly.** `Circles.Core` names what it
 needs — `IInvitationMailer.QueueAsync`, whose contract is *enqueue and return, never send inline* —
-and the API host implements it over the existing outbox. Referencing `AppSuite.Infrastructure` from
+and the API host implements it over the existing outbox. Referencing `CircleTools.Infrastructure` from
 the domain project would have pulled MailKit into it for one call, and the timing property that
 matters (NFR-005) is stated more clearly as a rule on the port than as a habit at the call site.
 
@@ -113,7 +113,7 @@ it is not Main's private data either: [ADR-0018](../adr/0018-circle-and-sharing-
 circle the standing set of people that *every* app reuses, so putting it under `Main` would have to be
 undone by the first app that reads it.
 
-It differs from `AppSuite.Identity` in one way that decides the project layout. Identity is a
+It differs from `CircleTools.Identity` in one way that decides the project layout. Identity is a
 **supporting** subdomain wrapping a framework; Circles is a real domain with invariants that must hold
 transactionally — exactly one owner, no managed admin, one pending invitation per address. So it gets
 the full inward-pointing layering (`Core` → ports, `Repository` → EF adapter) rather than a single
@@ -123,16 +123,16 @@ flat project.
 
 | Project | Change |
 |---------|--------|
-| `AppSuite.Circles.Contracts` | **NEW** — request/response DTOs. **No DTO describing a person carries an email field**, and an architecture test says so with a two-name exemption list (NFR-006). *Corrected during implementation:* "no email field anywhere" is unachievable — `InviteRequest` is an address going **in**, and the pending-invitation list is unusable without showing which address each entry is for. Neither is what NFR-006 forbids: no *member's* address is ever returned, and neither reveals whether an address has an account. The exemption list is what keeps a third one from appearing unnoticed. |
-| `AppSuite.Circles.Core` | **NEW** — the `Circle` aggregate, `CircleMembership`, `Invitation`, `DeclineRecord`, roles, the application handlers, and four **ports**: `ICircleRepository`, `IAccountDirectory` (the one crossing to Identity), `IInvitationMailer` and `IInvitationRateLimiter`. No ASP.NET, no EF. |
-| `AppSuite.Circles.Repository` | **NEW** — EF Core adapter, own `CirclesDbContext`, own migrations, **own Postgres schema `circles`** in the existing `maindb`. Implements `ICircleRepository` and — *corrected during implementation* — `IInvitationRateLimiter` as well: the table below assigned that port to the API host, but FR-017's counters were always specified as part of the `circles` schema, and an adapter in `Main.Service` would have meant the host writing directly into another context's tables. The two ports that genuinely cannot live here are `IAccountDirectory` (needs Identity) and `IInvitationMailer` (needs the outbox). |
-| `AppSuite.Main.Service` | **+** `/api/v1/circles` and `/api/v1/invitations`, the `CircleRoleFilter`, the circles rate-limit policies, DI composition, and the registration of `SoleOwnerCircleGuard`. |
-| `AppSuite.Main.Service.Core` | **+** `IAccountDeletionCleanup` — the second deletion seam (see below). |
-| `AppSuite.Infrastructure` | **+** the invitation mail template in DE/EN/FR — the fifth transactional mail, through the existing outbox. |
-| `AppSuite.Main.Ui` | **+** `CirclesApiClient`, `CircleErrorText`, and the pages. *Corrected during implementation:* the list above reads as one page per action, and the build is **four** — `MyCircles` (list + create), `CircleDetail`, `JoinRequests` (`/invitations`) and `InvitationLanding` (`/invitation/{token}`). Everything from invite through delete is one change to one aggregate and one people list, so splitting them across routes would only mean reloading the circle to answer "who is in it" on each one. The two invitation pages stay separate because they are two different ways in: one carries a token from a mail, the other carries none. |
-| `AppSuite.ApiClient` | **+** `ApiError.Code` — *not foreseen*. Every circle refusal carries a stable code so a DE/EN/FR client can translate it, but the reader discarded it, so the UI could only ever have said "there was a conflict". See below. |
-| `AppSuite.Ui.Shared` | **+** only if a component is genuinely needed twice; M2 does **not** promote anything speculatively ([ADR-0025](../adr/0025-shared-ui-building-blocks.md)). |
-| `AppSuite.Circles.Core.Test`, `AppSuite.Circles.Repository.Test` | **NEW** — see [TP-003](TP-003-m2-circles.md). |
+| `CircleTools.Circles.Contracts` | **NEW** — request/response DTOs. **No DTO describing a person carries an email field**, and an architecture test says so with a two-name exemption list (NFR-006). *Corrected during implementation:* "no email field anywhere" is unachievable — `InviteRequest` is an address going **in**, and the pending-invitation list is unusable without showing which address each entry is for. Neither is what NFR-006 forbids: no *member's* address is ever returned, and neither reveals whether an address has an account. The exemption list is what keeps a third one from appearing unnoticed. |
+| `CircleTools.Circles.Core` | **NEW** — the `Circle` aggregate, `CircleMembership`, `Invitation`, `DeclineRecord`, roles, the application handlers, and four **ports**: `ICircleRepository`, `IAccountDirectory` (the one crossing to Identity), `IInvitationMailer` and `IInvitationRateLimiter`. No ASP.NET, no EF. |
+| `CircleTools.Circles.Repository` | **NEW** — EF Core adapter, own `CirclesDbContext`, own migrations, **own Postgres schema `circles`** in the existing `maindb`. Implements `ICircleRepository` and — *corrected during implementation* — `IInvitationRateLimiter` as well: the table below assigned that port to the API host, but FR-017's counters were always specified as part of the `circles` schema, and an adapter in `Main.Service` would have meant the host writing directly into another context's tables. The two ports that genuinely cannot live here are `IAccountDirectory` (needs Identity) and `IInvitationMailer` (needs the outbox). |
+| `CircleTools.Main.Service` | **+** `/api/v1/circles` and `/api/v1/invitations`, the `CircleRoleFilter`, the circles rate-limit policies, DI composition, and the registration of `SoleOwnerCircleGuard`. |
+| `CircleTools.Main.Service.Core` | **+** `IAccountDeletionCleanup` — the second deletion seam (see below). |
+| `CircleTools.Infrastructure` | **+** the invitation mail template in DE/EN/FR — the fifth transactional mail, through the existing outbox. |
+| `CircleTools.Main.Ui` | **+** `CirclesApiClient`, `CircleErrorText`, and the pages. *Corrected during implementation:* the list above reads as one page per action, and the build is **four** — `MyCircles` (list + create), `CircleDetail`, `JoinRequests` (`/invitations`) and `InvitationLanding` (`/invitation/{token}`). Everything from invite through delete is one change to one aggregate and one people list, so splitting them across routes would only mean reloading the circle to answer "who is in it" on each one. The two invitation pages stay separate because they are two different ways in: one carries a token from a mail, the other carries none. |
+| `CircleTools.ApiClient` | **+** `ApiError.Code` — *not foreseen*. Every circle refusal carries a stable code so a DE/EN/FR client can translate it, but the reader discarded it, so the UI could only ever have said "there was a conflict". See below. |
+| `CircleTools.Ui.Shared` | **+** only if a component is genuinely needed twice; M2 does **not** promote anything speculatively ([ADR-0025](../adr/0025-shared-ui-building-blocks.md)). |
+| `CircleTools.Circles.Core.Test`, `CircleTools.Circles.Repository.Test` | **NEW** — see [TP-003](TP-003-m2-circles.md). |
 
 **Same database, separate schema.** `circles` and the Identity/Main tables share `maindb`, because
 [ADR-0003](../adr/0003-modular-monolith-with-aspire.md) is a modular monolith and a second database
@@ -359,7 +359,7 @@ that no Circles contract type has an email field.
 - [x] Builds clean under analyzers (warnings = errors)
 - [x] Tests per TP-003 pass
 - [x] Architecture boundaries respected — `Circles.Core` free of ASP.NET and EF; no Secret-Santa
-      project references Circles; no Circles project references `AppSuite.Identity`
+      project references Circles; no Circles project references `CircleTools.Identity`
 - [x] Docs and API comments updated; [arc42 ch. 5](../arc42/05-building-block-view.md) and
       [ch. 8](../arc42/08-crosscutting-concepts.md) reflect the built shape — the four ports, the rate
       limiter in `Circles.Repository`, both deletion seams and their ordering, `CircleRoleFilter` as

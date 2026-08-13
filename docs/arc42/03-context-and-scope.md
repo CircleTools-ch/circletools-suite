@@ -5,7 +5,7 @@
 ```mermaid
 flowchart TB
     User([Family / friends member])
-    subgraph AppSuite["AppSuite app suite"]
+    subgraph CircleTools["CircleTools app suite"]
         Web[Web app - Blazor]
         Native[Native apps - Android / iOS]
         API[Web API]

@@ -41,7 +41,7 @@
 | `<App>.LocalStore` | Service.Core (ports), SQLite | ASP.NET, Postgres |
 
 ## 5. Solution & naming
-- `AppSuite.<Context>.<Layer>`; folders mirror solution folders.
+- `CircleTools.<Context>.<Layer>`; folders mirror solution folders.
 
 ## 6. Cross-context communication
 - In-process contracts / integration events; no shared database; anti-corruption at boundaries.

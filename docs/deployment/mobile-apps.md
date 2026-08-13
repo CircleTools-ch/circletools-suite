@@ -2,7 +2,7 @@
 
 How a MAUI head gets from the repository into the two stores: what it costs, what has to happen in
 which order, and how long each part actually takes. Built from the
-`AppSuite.<App>.App` projects ([arc42 ch. 5](../arc42/05-building-block-view.md)).
+`CircleTools.<App>.App` projects ([arc42 ch. 5](../arc42/05-building-block-view.md)).
 
 For *testing* on the devices we own — before any of this — see [device testing](device-testing.md).
 
@@ -17,12 +17,11 @@ For *testing* on the devices we own — before any of this — see [device testi
 
 ## Before anything else: two blockers
 
-**1. The brand and domain must be settled first.** The `ApplicationId` / bundle identifier is
-**permanent after the first release**, and it should be derived from the suite domain
-(`ch.<suite-domain>.secretsanta` or similar). The head currently carries the template value
-`com.companyname.appsuite.secretsanta.app`. The same domain also fixes the passkey relying-party ID,
-which likewise cannot migrate ([ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md)), plus
-the privacy-policy and account-deletion URLs the stores require. See
+**1. Brand and domain — settled.** ✅ The brand is `CircleTools` at `circletools.ch`, and the
+`ApplicationId` / bundle identifier is **set** to `ch.circletools.secretsanta` (2026-08-13) — permanent
+after the first release, so it will not change again. The same domain fixes the passkey relying-party ID,
+which likewise cannot migrate ([ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md)); that plus
+the privacy-policy and account-deletion URLs the stores require are applied at deployment. See
 [naming](../process/naming.md) and [NFR-007](../requirements/non-functional/NFR-007-store-distributability.md).
 
 **2. iOS needs a Mac.** Not "is easier with" — iOS artifacts cannot be produced on Windows at all.
