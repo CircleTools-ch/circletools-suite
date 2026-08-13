@@ -85,11 +85,10 @@ jobs:
       - name: Restore MAUI workloads
         run: dotnet workload restore src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj
 
-      # Not --locked-mode — see the build-test job (per-OS / per-SDK-patch package resolution).
-      - name: Restore
-        run: dotnet restore src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj
-
       # Builds the Android and Windows heads (the TFMs the csproj enables on Windows).
       # iOS/MacCatalyst are macOS-only and deferred to a future macOS runner (ADR-0031).
+      # No --no-restore / no separate restore step: the Windows head is RID-specific
+      # (<RuntimeIdentifier>win-x64</RuntimeIdentifier>), and its runtime pack is fetched during
+      # build, not by `dotnet restore` — so build must run its own restore (NETSDK1112 otherwise).
       - name: Build MAUI heads (Android + Windows)
-        run: dotnet build src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj --no-restore -c Release
+        run: dotnet build src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj -c Release
