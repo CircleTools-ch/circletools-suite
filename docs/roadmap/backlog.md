@@ -19,16 +19,35 @@ old separator defect is gone), empty wishlists read "No wishlist provided", and 
 Postgres + Mailpit up — so the signed-in items below are from a **code + docs review** and still want a
 live two-account pass to confirm.
 
-- **UX-001 · Mobile is a milestone behind — decide its scope (P1).** The MAUI head
-  (`AppSuite.SecretSanta.App`) references only `SecretSanta.Ui` + `LocalStore`, and `MauiProgram.cs`
-  registers only the **offline MVP** — no `ApiClient`, no sync engine, no account UI, no
-  linking/circle APIs, and (per its own code comment) **no language picker**, so mobile is stuck on
-  `de-CH`. There is **no `Main` mobile head at all**, and the project still carries template defaults
-  (`ApplicationId = com.companyname…`, the dotnet-bot icon). Net: **M1–M4 effectively shipped web-only.**
-  This is implied by the docs (every M2–M4 walkthrough was the WASM web app; M1 carried "MAUI
-  cross-client passkeys") but was never called out as a milestone-level gap. **Decide explicitly:**
-  bring the MAUI head to web parity (sign-in, sync, linking, *and* a language picker), or formally scope
-  mobile as "offline-only for now" so the gap is a decision, not a silent omission.
+- **UX-001 · Mobile is a milestone behind — decide its scope (P1).** ✅ **Resolved 2026-08-13 —
+  decision: bring the MAUI head to web parity.** The `AppSuite.SecretSanta.App` head now composes the
+  same shared feature stack the browser WebApp does, with only the platform seams swapped for their
+  device implementations (ADR-0025/0028): it references `AppSuite.ApiClient` and `AppSuite.Ui.Account`,
+  and `MauiProgram.cs` registers the two keyed account `HttpClient`s (plain handler, no
+  browser-credentials handler), the `M3` sync engine (`AddSecretSantaSyncEngine`), the `ISyncApi` /
+  `ILinkingApi` / `ICircleDirectoryApi` ports over the authorized client, `AddAccountUi` under
+  `secretsanta.refreshToken`, and `AddSecretSantaUi`. The device seams are `FileKeyValueStore` (already
+  present) for storage and a new `MauiPasskeyCeremony`. The root `Routes` component now wraps
+  `CascadingAuthenticationState` + `CultureBoundary` and, before the first page renders, runs the two
+  startup steps the WebApp runs before `RunAsync` — `ICultureProvider.InitializeAsync` and
+  `AccountSession.RestoreAsync` — which is where the culture/session init the old comment said "belongs
+  with adding the picker" now lives. The `NavMenu` gained the account-aware section (sign-in / signed-in
+  identity, Sync now, Claim, My links/assignments/wishlists, sign out) **and the language picker**
+  (`CultureSelector`), so mobile is DE/EN/FR, not `de-CH`-only. **Verified:** both target frameworks
+  build clean (`net10.0-windows`, `net10.0-android`, 0/0), and the Windows head was run natively — it
+  boots with no composition/startup error and renders the parity nav (the **Anmelden** link and the
+  **Deutsch** language picker) over the offline flow.
+  - **What is still deferred, with reasons (all gated on the brand/domain, not on this work):**
+    **cross-client passkeys** — the WebAuthn RP-ID is the registrable suite domain (FR-010/011), so
+    `MauiPasskeyCeremony` reports "unsupported" and the account pages already show the right message;
+    password sign-in works fully. **The production API origin** — `MauiProgram.ApiBaseUrl` is a dev
+    default (`10.0.2.2:7080` for the Android emulator's host-loopback); the literal origin lands with
+    the domain. The **template `ApplicationId`/icon** were intentionally left: the bundle id is
+    permanent once released and is a hard brand gate (naming.md, risk R8), so it must not be baked in
+    now. There is still **no `Main` mobile head** — out of scope for the Secret-Santa app's parity.
+  - Live sign-in/sync from a device against a running Main service was **not** driven this pass (it
+    needs Main + Postgres + Mailpit reachable from the emulator/device); the account UI is the same
+    shared `Ui.Account` components already browser-verified end-to-end on web across M1–M4.
 - **UX-002 · Account-only actions are offered to account-free users (P1, browser-verified).** ✅
   **Fixed 2026-08-13.** On the members page **while signed out**, every member showed a **"Link…"**
   button; clicking it opened an email field + "Send" that calls the authorized server API — a dead end

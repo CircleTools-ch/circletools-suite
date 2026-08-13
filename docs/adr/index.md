@@ -44,6 +44,8 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0033](0033-which-aggregates-sync.md) | Which aggregates sync (narrows ADR-0016 — Group + profile; Circle excluded) | Accepted | 2026-08-03 |
 | [0034](0034-shared-account-session-ui-block.md) | Shared account/session UI building block (`Ui.Account`) | Accepted | 2026-08-11 |
 | [0035](0035-profile-sync-seam.md) | Profile-sync seam (host-supplied profile writer; offline edits flushed to `/profile`) | Accepted | 2026-08-12 |
+| [0036](0036-cloud-provider-and-hosting.md) | Cloud provider & hosting topology (Infomaniak VPS + Docker Compose; self-managed Postgres; Swiss Backup; Cloudflare) | Accepted | 2026-08-13 |
+| [0037](0037-transactional-email-provider.md) | Transactional email provider (Brevo free tier behind the outbox port) | Accepted | 2026-08-13 |
 
 ## Open decisions backlog
 
@@ -158,20 +160,28 @@ Raised while building the M3 profile-sync slice, and closed before it is impleme
   language change and [FR-023](../requirements/functional/FR-023-sync-across-devices.md)'s profile sync
   with the Identity profile as the single source of truth.
 
+### Recently closed (deployment — 2026-08-13)
+
+Raised as the "depends on deployment" items below and closed by pricing the concrete Swiss options.
+Both record the *decision* now; both have an **implementation prerequisite on the [brand & domain](../process/naming.md)**
+gate (the final origin fixes the passkey RP-ID, CSP and mail from-address), exactly as
+[ADR-0030](0030-mobile-store-publisher-identity.md)/[ADR-0031](0031-ios-build-host.md) are Accepted
+though execution waits on the brand and a Mac.
+
+- ✅ **Cloud provider & hosting target** → [ADR-0036](0036-cloud-provider-and-hosting.md) (a single
+  Infomaniak VPS + Docker Compose; self-managed Postgres with nightly dumps to Swiss Backup; Cloudflare
+  Free at the edge; ~CHF 12–14/mo). Swiss data residency for data at rest; Kubernetes and hyperscalers
+  rejected as disproportionate to a seasonal single-service load.
+- ✅ **Transactional email provider** → [ADR-0037](0037-transactional-email-provider.md) (Brevo free
+  tier, EU-hosted, behind the existing invitation outbox port; Postmark named as the paid fallback).
+  Closes M1's verification/reset/email-change and M2's invitation deliverability.
+
 ### Depends on deployment (genuinely open)
 
 > [ADR-0023](0023-local-dev-infrastructure-in-apphost.md) lets **implementation** proceed without
 > these, via containerised dev infrastructure behind provider-agnostic seams. It buys time; it does
-> **not** close them, and M1 cannot ship until they are decided.
+> **not** close them.
 
-- **Cloud provider & hosting target**, including **Swiss data residency** — now due, because v2 stores
-  personal data and assignments server-side. Also gates the passkey RP-ID
-  ([FR-010](../requirements/functional/FR-010-manage-passkeys.md)) and the CSP directive set.
-- **Transactional email provider** — required by **M1**, not only M2: verification
-  ([FR-007](../requirements/functional/FR-007-create-suite-account.md)), password reset
-  ([FR-009](../requirements/functional/FR-009-reset-password.md)) and email change
-  ([FR-013](../requirements/functional/FR-013-change-email-address.md)) all depend on delivery.
-  Invitations ([ADR-0018](0018-circle-and-sharing-model.md)) then add M2's onboarding dependency.
 - **CI/CD pipeline.** [ADR-0031](0031-ios-build-host.md) settles the *build host* but not the
   *pipeline*; note that any macOS leg is either the self-hosted Mac or per-minute hosted macOS.
 - **AppSuite packaging & app composition** (single shell hosting apps vs per-app installs). Now also

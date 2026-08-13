@@ -70,5 +70,9 @@
   href: 0034-shared-account-session-ui-block.md
 - name: ADR-0035 Profile-sync seam
   href: 0035-profile-sync-seam.md
+- name: ADR-0036 Cloud provider & hosting topology
+  href: 0036-cloud-provider-and-hosting.md
+- name: ADR-0037 Transactional email provider
+  href: 0037-transactional-email-provider.md
 - name: Template
   href: _template-adr.md
