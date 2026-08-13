@@ -1,7 +1,9 @@
 # 7. Deployment View
 
-> _Proposed / to be decided_ — the concrete cloud provider and topology are an open decision
-> (see the [ADR backlog](../adr/index.md)). This chapter captures the intended shape.
+> The cloud provider and topology are **decided** in
+> [ADR-0036](../adr/0036-cloud-provider-and-hosting.md) (Infomaniak VPS + Docker Compose) and the
+> transactional email sender in [ADR-0037](../adr/0037-transactional-email-provider.md); the CI/CD
+> **pipeline** remains an open ADR. This chapter captures the shape.
 
 ## 7.1 Environments
 
@@ -25,12 +27,18 @@ flowchart LR
     AppHost --> Dash[Aspire dashboard - OTel]
 ```
 
-## 7.3 Cloud (intended)
+## 7.3 Cloud (decided — ADR-0036 / ADR-0037)
 
-- **Web + API:** container-based hosting behind HTTPS on the suite domain.
-- **Database:** managed PostgreSQL.
+- **Web + API:** a single **Infomaniak VPS** (Swiss) running **Docker Compose** — reverse proxy
+  (Caddy/Traefik, Let's Encrypt TLS) serving the static WASM PWA, plus the API container. **Cloudflare
+  Free** at the edge (DNS, TLS, CDN, DDoS/WAF).
+- **Database:** **PostgreSQL as a container** on the same VPS (self-managed), with a **nightly `pg_dump`
+  to Infomaniak Swiss Backup** offsite; managed Postgres is the documented upgrade path.
+- **Transactional email:** **Brevo** (EU) behind the invitation outbox port
+  ([ADR-0037](../adr/0037-transactional-email-provider.md)).
 - **Static docs:** the DocFX site published to a static host / Pages.
-- Provider, regions (Swiss data residency), and CI/CD are pending ADRs.
+- Data at rest stays in Switzerland; recurring cost ≈ CHF 12–14/mo. **CI/CD** is still an open ADR, and
+  *execution* is gated on the [brand & domain](../process/naming.md).
 
 ## 7.4 App stores
 

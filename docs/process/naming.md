@@ -1,22 +1,30 @@
 # Naming — Working Name & Brand Candidates
 
-The solution and documentation use the **neutral working name `AppSuite`** for the app-suite. This
-is **not a brand** — it is a placeholder for the solution / project / namespace prefix
-(`AppSuite.AppHost`, `AppSuite.Main.*`, …). The real brand is **deliberately deferred**: branding
-may still change, so we don't bake it into project or namespace names yet.
+The solution and documentation use the **neutral working name `AppSuite`** as the code / namespace
+prefix (`AppSuite.AppHost`, `AppSuite.Main.*`, …). **The brand is now chosen: `CircleTools`, at
+`circletools.ch`** (registered at Infomaniak, **2026-08-13**). The `AppSuite` token stays in code only
+until the repo-wide rename is executed (see the *Next step* below); it was kept neutral precisely so
+that rename is a single find-replace rather than a refactor.
 
 ## Decisions taken
-- **Working name:** `AppSuite` (neutral; used in code + docs until a brand is chosen).
+- **Brand (final):** **CircleTools** — chosen 2026-08-13.
+- **Suite domain (registered):** **`circletools.ch`** — registered at Infomaniak, 2026-08-13.
+- **Derived permanent identifiers:** brand token `CircleTools`; bundle prefix `ch.circletools.*`
+  (e.g. `ch.circletools.secretsanta`); passkey relying-party ID `circletools.ch`.
+- **Working name:** `AppSuite` (neutral; stays in code until the repo-wide rename lands).
 - **Future brand language:** English preferred.
 - **TLD:** `.ch`-first (Swiss audience); a matching `.com` is a nice-to-have.
 - **App domains:** apps are **subdomains** of the (future) suite domain — e.g.
   `secretsanta.<suite-domain>`. Per-app brand names are decided during each app's idea step.
 
-## Leading brand candidate
+## Chosen brand
 
-### `Circle` direction — **Circle-Tools** (added 2026-07-30, current front-runner)
+> ✅ **Decided 2026-08-13 — `CircleTools`, `circletools.ch` registered at Infomaniak.** The exploration
+> below is kept as the record of how the name was reached.
 
-- **`circle-tools.ch`** — the name that prompted this direction; noted as available.
+### `Circle` direction — **Circle-Tools** (front-runner from 2026-07-30, **chosen 2026-08-13**)
+
+- **`circletools.ch`** — **registered** (primary). `circle-tools.ch` remains a candidate redirect.
 - Why the direction is strong:
   - **"Circle" is already our word.** The suite's central concept is exactly a
     [Circle](../glossary/circle.md) — a family, a household or a group of friends. A brand that says
@@ -77,7 +85,10 @@ may still change, so we don't bake it into project or namespace names yet.
 _Taken (for the record): Famigos/Famigo, Tribely, Framily, Kinly, Nestly, Familio, and most short
 single-word `.ch`/`.com` names._
 
-## Why this is now a hard gate
+## Why this was a hard gate
+
+> ✅ **Resolved 2026-08-13** by registering `circletools.ch`. The reasoning below is why it could not be
+> deferred any further — it now reads as the justification for the identifiers fixed above.
 
 Deferring the brand was cheap while everything was internal. It stops being cheap at the first store
 submission, because three things derived from the domain are **permanent or non-migratable**:
@@ -97,5 +108,17 @@ address and pointed at a suite-domain role address later
 Tracked as risk **R8** in [arc42 ch. 11](../arc42/11-risks-and-technical-debt.md).
 
 ## Next step (milestone 1)
-Choose and confirm the final brand, register the domain, then rename the `AppSuite` working-name
-token repo-wide (single find-replace) and record the decision here.
+
+✅ Brand confirmed (**CircleTools**) and domain **`circletools.ch`** registered at Infomaniak (2026-08-13).
+Remaining, now unblocked:
+
+- **Repo-wide rename `AppSuite` → `CircleTools`** (single find-replace across code + docs), including this
+  file's working-name framing, the root `CLAUDE.md` placeholder note (still says
+  *"leading candidate: Walf"*), and the arc42 **R8** risk entry (brand gate — now closable).
+- Set the derived identifiers where placeholders still stand: the MAUI **bundle id**
+  `ch.circletools.secretsanta` (today `com.companyname.appsuite.secretsanta.app`), the **passkey RP ID**
+  `circletools.ch`, the Secret-Santa **`RevealBaseUrl`**, and the **CSP** origin — none could be set
+  before now.
+- Create the free **`hello@circletools.ch`** (or `support@`) mailbox and point the store / Brevo /
+  Cloudflare accounts at it ([ADR-0030](../adr/0030-mobile-store-publisher-identity.md) role address).
+- Optionally register **`circle-tools.ch`** as a redirect (hyphen-typo insurance).
