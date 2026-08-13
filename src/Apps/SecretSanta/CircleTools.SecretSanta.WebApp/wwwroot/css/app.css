@@ -1,3 +1,52 @@
+/*
+   Secret-Santa's own skin over the shared suite theme (ADR-0024).
+
+   circletools.css defines the brand-as-Bootstrap-skin machinery and the suite defaults (navy + blue).
+   This file loads after it and swaps only the --circletools-* tokens for Secret-Santa's palette —
+   burgundy #7a1f2b, gold #e3a92e, cream #f7ede1 (naming.md § Visual identity) — so buttons, links,
+   focus rings and form states all follow, in light and dark, with no per-component overrides.
+
+   Dark mode is Bootstrap 5.3's colour mode, switched by js/theme.js from the OS preference. The nav
+   rail stays burgundy in both modes (brand chrome); on dark the interactive primary becomes gold so
+   it clears contrast on the dark surfaces.
+*/
+
+:root {
+    --circletools-brand: #7a1f2b;            /* burgundy — nav rail, chrome, PWA theme colour */
+    --circletools-brand-contrast: #ffffff;
+    --circletools-accent: #e3a92e;           /* gold — ribbon accent, active nav */
+
+    --circletools-primary: #7a1f2b;
+    --circletools-primary-rgb: 122, 31, 43;
+    --circletools-primary-hover: #661922;
+    --circletools-primary-active: #54141c;
+    --circletools-on-primary: #ffffff;
+
+    --circletools-surface: #fffdf9;
+    --circletools-border: #ece0d0;
+}
+
+/* Warm cream ground in light mode only, so the app reads like its cream-grounded icon. Scoped to the
+   light attribute (theme.js always sets one) so it never fights Bootstrap's dark surfaces. */
+[data-bs-theme="light"] {
+    --bs-body-bg: #faf6ef;
+    --bs-secondary-bg: #f2e8d9;
+    --bs-tertiary-bg: #f7ede1;
+}
+
+/* On dark, keep the burgundy brand for chrome but make the interactive primary gold — burgundy is too
+   dark to read as a control on Bootstrap's dark surfaces; gold is festive and high-contrast. */
+[data-bs-theme="dark"] {
+    --circletools-primary: #e3a92e;
+    --circletools-primary-rgb: 227, 169, 46;
+    --circletools-primary-hover: #edb949;
+    --circletools-primary-active: #f2c86a;
+    --circletools-on-primary: #3a2a06;
+
+    --circletools-surface: #241c14;
+    --circletools-border: #3a2f22;
+}
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
@@ -6,19 +55,7 @@ h1:focus {
     outline: none;
 }
 
-a, .btn-link {
-    color: #0071c1;
-}
-
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
+/* Links, buttons and focus rings inherit the brand skin from circletools.css — nothing here. */
 
 .content {
     padding-top: 1.1rem;
@@ -37,8 +74,8 @@ a, .btn-link {
 }
 
 #blazor-error-ui {
-    color-scheme: light only;
-    background: lightyellow;
+    background: var(--bs-warning-bg-subtle, lightyellow);
+    color: var(--bs-body-color, #212529);
     bottom: 0;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
     box-sizing: border-box;
@@ -85,7 +122,7 @@ a, .btn-link {
     }
 
         .loading-progress circle:last-child {
-            stroke: #1b6ec2;
+            stroke: var(--circletools-primary, #7a1f2b);
             stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
             transition: stroke-dasharray 0.05s ease-in-out;
         }

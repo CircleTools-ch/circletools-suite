@@ -103,9 +103,13 @@ dotnet run --project src/Apps/SecretSanta/CircleTools.SecretSanta.WebApp --launc
 # → http://localhost:5081   (the http profile avoids dev-certificate prompts)
 ```
 
-The Secret-Santa web app is a **standalone Blazor WASM** app with no backend — it is not part of the
-Aspire AppHost, so run its project directly. State lives in browser `localStorage`; clear it with
-`localStorage.clear()` for a clean run.
+The Secret-Santa web app is a **standalone Blazor WASM** app: offline and account-free by default,
+with state in browser `localStorage` (clear it with `localStorage.clear()` for a clean run). It is
+**not a backend** — but since it grew account/sync it now reaches the Main API, so it is orchestrated
+by the Aspire AppHost alongside `main-web` (ADR-0013). For a quick look at just the Secret-Santa UI
+you can still `dotnet run` its project directly as above; to exercise anything that talks to the API
+(sign-in, sync, circles), run the whole stack with `dotnet run --project src/Aspire/CircleTools.AppHost`
+and open `secretsanta-web` from the dashboard.
 
 When driving it:
 

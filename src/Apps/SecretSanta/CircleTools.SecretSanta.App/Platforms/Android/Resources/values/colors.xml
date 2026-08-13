@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Secret-Santa brand (naming.md § Visual identity): burgundy primary + status bar, gold accent.
+     colorPrimaryDark tints the status bar; the dark-mode variant lives in values-night/colors.xml. -->
 <resources>
-    <color name="colorPrimary">#512BD4</color>
-    <color name="colorPrimaryDark">#2B0B98</color>
-    <color name="colorAccent">#2B0B98</color>
+    <color name="colorPrimary">#7a1f2b</color>
+    <color name="colorPrimaryDark">#5c151f</color>
+    <color name="colorAccent">#e3a92e</color>
+    <color name="colorOnPrimary">#ffffff</color>
+    <color name="windowBackground">#faf6ef</color>
 </resources>

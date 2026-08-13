@@ -82,6 +82,10 @@ dotnet docfx docfx/docfx.json --serve
 
 # Build the solution
 dotnet build CircleTools.slnx
+
+# Run the full local stack (Postgres, Mailpit, Main API, and both WASM clients —
+# main-web and secretsanta-web) and open the Aspire dashboard
+dotnet run --project src/Aspire/CircleTools.AppHost
 ```
 
 ## Where to find things

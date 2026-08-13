@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    Secret-Santa native palette (naming.md § Visual identity, ADR-0024). The same burgundy + gold +
+    cream the web app and app icon use, expressed as MAUI resources so native chrome (page background
+    behind the WebView, ActivityIndicator, any native control) carries the accent. Android status-bar
+    tint is set separately in Platforms/Android/Resources/values/colors.xml.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Brand -->
+    <Color x:Key="Primary">#7a1f2b</Color>
+    <Color x:Key="PrimaryDark">#5c151f</Color>
+    <Color x:Key="PrimaryDarkText">#f2c86a</Color>
+    <Color x:Key="Secondary">#e3a92e</Color>
+    <Color x:Key="SecondaryDarkText">#3a2a06</Color>
+    <Color x:Key="Tertiary">#f7ede1</Color>
+
+    <Color x:Key="OnPrimary">#ffffff</Color>
+
+    <!-- Page grounds: warm cream in light, a deep warm brown in dark. -->
+    <Color x:Key="PageBackground">#faf6ef</Color>
+    <Color x:Key="PageBackgroundDark">#1c1712</Color>
+
+    <Color x:Key="White">White</Color>
+    <Color x:Key="Black">Black</Color>
+
+    <!-- Neutrals for text / surfaces. -->
+    <Color x:Key="Gray100">#f2ece3</Color>
+    <Color x:Key="Gray200">#e6ddd0</Color>
+    <Color x:Key="Gray300">#ccb7a5</Color>
+    <Color x:Key="Gray400">#9a8f80</Color>
+    <Color x:Key="Gray500">#6d6459</Color>
+    <Color x:Key="Gray600">#4f4840</Color>
+    <Color x:Key="Gray900">#241c14</Color>
+
+</ResourceDictionary>
