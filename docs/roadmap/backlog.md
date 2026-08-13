@@ -29,20 +29,25 @@ live two-account pass to confirm.
   cross-client passkeys") but was never called out as a milestone-level gap. **Decide explicitly:**
   bring the MAUI head to web parity (sign-in, sync, linking, *and* a language picker), or formally scope
   mobile as "offline-only for now" so the gap is a decision, not a silent omission.
-- **UX-002 · Account-only actions are offered to account-free users (P1, browser-verified).** On the
-  members page **while signed out**, every member shows a **"Link…"** button; clicking it opens an email
-  field + "Send" that calls the authorized server API — a dead end for someone with no account.
-  `Members.razor` renders the link/unlink controls with no `AuthorizeView`. Wrap them in one (or
-  disable with a "sign in to link" hint) so the action only appears when it can succeed.
+- **UX-002 · Account-only actions are offered to account-free users (P1, browser-verified).** ✅
+  **Fixed 2026-08-13.** On the members page **while signed out**, every member showed a **"Link…"**
+  button; clicking it opened an email field + "Send" that calls the authorized server API — a dead end
+  for someone with no account. `Members.razor` rendered the link/unlink controls with no `AuthorizeView`.
+  The link/unlink cluster is now wrapped in `<AuthorizeView>` so it appears only when signed in; Edit
+  and Remove (local, offline actions) stay for everyone. Verified in a real browser (signed out: no Link
+  button, Edit/Remove present, console clean).
 - **UX-003 · First-run / empty states are bare (P2, browser-verified).** Signed out, `/` is a title,
   an input, and the literal line "No groups yet." — no explanation of what the app does, no example, no
   cue to sign in for cross-device sync. Add a short explainer + a real call-to-action on the empty
   Groups screen, and **sell the account at the point of choice** (sync, see your own assignment, own
   your wishlist).
-- **UX-004 · The share screen dumps raw encoded URLs (P2, browser-verified).** Each person's reveal
-  link is printed verbatim as a ~197-character base64 blob. The "Copy" button is the right primary
-  action, but the raw string is noise and can alarm users. Collapse/hide the raw URL, emphasise Copy,
-  and consider a **QR code** and/or the native share sheet per person.
+- **UX-004 · The share screen dumps raw encoded URLs (P2, browser-verified).** ✅ **Partly fixed
+  2026-08-13.** Each person's reveal link was printed verbatim as a ~197-character base64 blob. The
+  "Copy" button is the right primary action, but the raw string is noise and can alarm users. The raw
+  URL is now collapsed behind a native `<details>` disclosure ("Show link" / "Link anzeigen" /
+  "Afficher le lien"), so Copy is the clear primary action and the URL stays available for anyone who
+  wants to inspect or paste it. Verified in a real browser (collapsed by default, expands on click,
+  console clean). **Still open (deferred):** a **QR code** and/or the native share sheet per person.
 - **UX-005 · Signed-in navigation shows dead ends and a reverting language picker (P2, from
   code+docs — not browser-verified this pass).** The nav shows **My links / My assignments / My
   wishlists** to *every* signed-in user, though they are inert unless the user is a linked member — make

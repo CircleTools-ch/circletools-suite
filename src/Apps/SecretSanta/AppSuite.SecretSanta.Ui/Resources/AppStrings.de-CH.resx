@@ -75,6 +75,7 @@
   <data name="NotFoundTitle" xml:space="preserve"><value>Nicht gefunden</value></data>
   <data name="NotFoundBody" xml:space="preserve"><value>Diesen Inhalt gibt es leider nicht.</value></data>
   <data name="ShareLinkTooLong" xml:space="preserve"><value>Dieser Link ist lang und könnte von manchen Chat-Apps gekürzt oder abgeschnitten werden. Kürze ggf. die Wunschlisteneinträge.</value></data>
+  <data name="ShowLink" xml:space="preserve"><value>Link anzeigen</value></data>
   <data name="ForLabel" xml:space="preserve"><value>Für</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Dein Wichtel</value></data>
   <data name="RevealGreeting" xml:space="preserve"><value>Hallo {0}!</value></data>

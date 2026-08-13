@@ -38,7 +38,12 @@ else
                         @(_copiedUrl == link.Url ? L["Copied"] : L["Copy"])
                     </button>
                 </div>
-                <div class="text-break small text-muted mt-1">@link.Url</div>
+                @* Copy is the primary action; the raw encoded URL is long and alarming, so keep it
+                   collapsed but available for anyone who wants to inspect or paste it manually. *@
+                <details class="mt-1">
+                    <summary class="small text-muted">@L["ShowLink"]</summary>
+                    <div class="text-break small text-muted mt-1">@link.Url</div>
+                </details>
                 @if (RevealLinkBuilder.ExceedsRecommendedLength(link.Url))
                 {
                     <div class="small text-warning mt-1" role="alert">@L["ShareLinkTooLong"]</div>

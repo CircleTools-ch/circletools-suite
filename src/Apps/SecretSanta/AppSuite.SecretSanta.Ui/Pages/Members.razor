@@ -75,15 +75,19 @@ else
                             }
                         </div>
                         <div>
-                            @if (member.UserId is not null)
-                            {
-                                <span class="badge bg-info text-dark me-1" title="@L["MemberLinkedTitle"]">@L["MemberLinkedBadge"]</span>
-                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => UnlinkAsync(member.Id)" disabled="@_linkBusy">@L["MemberUnlink"]</button>
-                            }
-                            else
-                            {
-                                <button class="btn btn-sm btn-outline-info" @onclick="() => BeginLink(member.Id)">@L["MemberLink"]</button>
-                            }
+                            @* Linking is an account-only action (it calls the authorized server API), so
+                               only show it when signed in. Edit/Remove are local and stay for everyone. *@
+                            <AuthorizeView>
+                                @if (member.UserId is not null)
+                                {
+                                    <span class="badge bg-info text-dark me-1" title="@L["MemberLinkedTitle"]">@L["MemberLinkedBadge"]</span>
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => UnlinkAsync(member.Id)" disabled="@_linkBusy">@L["MemberUnlink"]</button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-info" @onclick="() => BeginLink(member.Id)">@L["MemberLink"]</button>
+                                }
+                            </AuthorizeView>
                             <button class="btn btn-sm btn-outline-primary ms-1" @onclick="() => BeginEdit(member)">@L["Edit"]</button>
                             <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => AskRemove(member.Id)">@L["Remove"]</button>
                         </div>
