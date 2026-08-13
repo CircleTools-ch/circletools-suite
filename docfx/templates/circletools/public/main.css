@@ -5,8 +5,8 @@
  */
 
 :root {
-  --bs-primary: #1168bd;      /* placeholder brand accent (matches sample C4 diagram) */
-  --bs-link-color: #0b4884;
+  --bs-primary: #03173d;      /* CircleTools brand navy (see naming.md / ADR-0024) */
+  --bs-link-color: #3c6fd1;   /* CircleTools accent */
 }
 
 .navbar-brand {
