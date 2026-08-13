@@ -66,5 +66,9 @@
       href: secret-santa/UC-SS-011-see-my-assignment.md
     - name: UC-SS-012 Edit my own wishlist
       href: secret-santa/UC-SS-012-edit-my-wishlist.md
+- name: Cross-app SSO (M5)
+  items:
+    - name: UC-MAIN-017 Stay signed in across suite apps
+      href: main/UC-MAIN-017-single-sign-on-across-apps.md
 - name: Template
   href: _template-use-case.md

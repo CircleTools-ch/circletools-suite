@@ -79,6 +79,12 @@ builder.Services.AddScoped<ICircleDirectoryApi>(sp =>
 // hosts more than one app never crosses their sessions (ADR-0026).
 builder.Services.AddAccountUi("secretsanta.refreshToken");
 
+// Cross-app SSO (FR-031, ADR-0039). As a requesting app, this redirects a signed-out visitor to the
+// authority (the Main shell) to continue with an existing session. The authority origin is configured
+// like ApiBaseUrl; with no session the flow never runs, so an account-free visitor is unaffected.
+var ssoAuthorityUrl = builder.Configuration["SsoAuthorityUrl"] ?? builder.HostEnvironment.BaseAddress;
+builder.Services.AddAccountSso(ssoAuthorityUrl, "secretsanta-web");
+
 // Reveal links point at this app's own origin unless RevealBaseUrl overrides it.
 var configuredRevealBaseUrl = builder.Configuration["RevealBaseUrl"];
 var revealBaseUrl = string.IsNullOrWhiteSpace(configuredRevealBaseUrl)

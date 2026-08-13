@@ -1,0 +1,58 @@
+@page "/account/connect/callback"
+@inject IStringLocalizer<AccountStrings> L
+@inject SsoConnect Sso
+@inject NavigationManager Navigation
+
+@*
+    The requesting app's SSO callback (FR-031, ADR-0039). The authority redirected back here with a
+    single-use code; this page redeems it (proving the PKCE verifier stashed in BeginAsync) for this
+    app's own session, then leaves — stripping the code from the URL. A failed exchange never
+    dead-ends: it falls back to this app's own sign-in.
+*@
+
+<PageTitle>@L["ConnectTitle"]</PageTitle>
+
+<AuthCard Title="@Title">
+    <ChildContent>
+        @if (_state == State.Working)
+        {
+            <p class="mb-0">@L["ConnectWorking"]</p>
+        }
+        else
+        {
+            <p class="mb-0">@L["ConnectFailedText"]</p>
+        }
+    </ChildContent>
+    <Footer>
+        <a href="account/login">@L["NavSignIn"]</a>
+    </Footer>
+</AuthCard>
+
+@code {
+    private enum State
+    {
+        Working,
+        Failed,
+    }
+
+    private State _state = State.Working;
+
+    /// <summary>The single-use authorization code, from the authority redirect.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "code")]
+    public string? Code { get; set; }
+
+    private string Title => _state == State.Working ? L["ConnectTitle"] : L["ConnectFailedTitle"];
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (await Sso.CompleteCallbackAsync(Code))
+        {
+            // Land on the app root; navigating away also strips the ?code from the address bar.
+            Navigation.NavigateTo(string.Empty);
+            return;
+        }
+
+        _state = State.Failed;
+    }
+}

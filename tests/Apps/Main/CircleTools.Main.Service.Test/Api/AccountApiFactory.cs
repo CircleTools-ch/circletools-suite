@@ -59,6 +59,11 @@ public sealed class AccountApiFactory : WebApplicationFactory<Program>, IAsyncLi
         builder.UseSetting("Auth:TokenLifetimes:AccessTokenLifetime", "00:15:00");
         builder.UseSetting("Auth:TokenLifetimes:RefreshTokenLifetime", "30.00:00:00");
         builder.UseSetting("Auth:TokenLifetimes:RefreshReplayGraceWindow", "00:00:30");
+
+        // A trusted suite origin for the cross-app SSO return_uri allow-list (FR-031, ADR-0039). The
+        // factory runs in Production, where loopback is not auto-allowed, so ConnectEndpointsTests
+        // asserts against this explicit origin — the same Cors:AllowedOrigins the CORS policy reads.
+        builder.UseSetting("Cors:AllowedOrigins:0", "https://sibling.test");
     }
 }
 

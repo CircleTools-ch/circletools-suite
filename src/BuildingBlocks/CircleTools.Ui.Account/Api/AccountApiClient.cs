@@ -79,6 +79,36 @@ public sealed class AccountApiClient(
     public Task<ApiResult> LogoutAsync(CancellationToken cancellationToken = default) =>
         PostAsync<object?>(authorized, $"{Route}/logout", null, cancellationToken);
 
+    /// <summary>
+    /// As the SSO authority, mints a single-use authorization code for a sibling app (FR-031, ADR-0039).
+    /// </summary>
+    /// <remarks>Uses the <em>authorized</em> client: the code is minted for this app's own session.</remarks>
+    /// <param name="request">The client id, return URI and PKCE challenge.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The code to carry back to the requesting app, or the failure.</returns>
+    public Task<ApiResult<ConnectAuthorizeResponse>> ConnectAuthorizeAsync(
+        ConnectAuthorizeRequest request,
+        CancellationToken cancellationToken = default) =>
+        PostAsync<ConnectAuthorizeRequest, ConnectAuthorizeResponse>(
+            authorized, AccountApiClients.ConnectAuthorizeRoute, request, cancellationToken);
+
+    /// <summary>
+    /// Redeems an SSO authorization code for this app's own session (FR-031, ADR-0039).
+    /// </summary>
+    /// <remarks>
+    /// Uses the <em>anonymous</em> client: there is no session yet, and — as with refresh — this call
+    /// must not pass through the authorizing handler. Success returns the same
+    /// <see cref="SessionResponse"/> a password sign-in does.
+    /// </remarks>
+    /// <param name="request">The code and its PKCE verifier.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The new session, or the failure.</returns>
+    public Task<ApiResult<SessionResponse>> ConnectTokenAsync(
+        ConnectTokenRequest request,
+        CancellationToken cancellationToken = default) =>
+        PostAsync<ConnectTokenRequest, SessionResponse>(
+            anonymous, AccountApiClients.ConnectTokenRoute, request, cancellationToken);
+
     /// <summary>Reads the signed-in user's own profile (FR-012).</summary>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The profile, or the failure.</returns>

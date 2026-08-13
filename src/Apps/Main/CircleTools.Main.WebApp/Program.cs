@@ -1,6 +1,7 @@
 using CircleTools.ApiClient;
 using CircleTools.Localization;
 using CircleTools.Main.Ui;
+using CircleTools.Ui.Account;
 using CircleTools.Ui.Account.Api;
 using CircleTools.Ui.Account.Auth;
 using CircleTools.Main.WebApp;
@@ -61,6 +62,12 @@ builder.Logging.AddFilter("Microsoft.AspNetCore.Authorization", LogLevel.Warning
 // Localization (ADR-0011) and the account/session services (FEAT-002).
 builder.Services.AddCircleToolsLocalization(MainUiServiceCollectionExtensions.CultureStorageKey);
 builder.Services.AddMainAccount();
+
+// Cross-app SSO (FR-031, ADR-0039). This app is the authority: it serves the /account/connect page
+// that mints codes for sibling apps. Registering with its own origin as the authority means the
+// interactive "continue" affordance suppresses itself here — the authority never hands off to itself.
+var ssoAuthorityUrl = builder.Configuration["SsoAuthorityUrl"] ?? builder.HostEnvironment.BaseAddress;
+builder.Services.AddAccountSso(ssoAuthorityUrl, "main-web");
 
 var host = builder.Build();
 
