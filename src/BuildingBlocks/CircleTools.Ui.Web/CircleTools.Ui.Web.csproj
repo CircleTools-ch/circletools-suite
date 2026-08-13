@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <!-- Browser implementations of the Ui.Abstractions seams (ADR-0028). Deliberately not a Razor
+       class library: this block holds adapters, not components, so a MAUI head can reference
+       Ui.Shared's Razor components without dragging browser-only JS interop along with them. -->
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CircleTools.Ui.Abstractions\CircleTools.Ui.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.JSInterop" />
+  </ItemGroup>
+
+</Project>

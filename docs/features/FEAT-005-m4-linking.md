@@ -169,7 +169,7 @@ All under `/api/v1` ([ADR-0010](../adr/0010-api-style-and-versioning.md)), beare
 account-scoped, on the **Main API host** (where sync already lives). Additive — new routes only.
 
 - **Circle read for the picker — reused, no change.** The create-from-circle flow calls the existing
-  circle read endpoints (`AppSuite.Circles.Contracts`). No circle data is persisted client-side
+  circle read endpoints (`CircleTools.Circles.Contracts`). No circle data is persisted client-side
   (ADR-0033).
 - **Member-link (FR-028), reusing the invitation infrastructure:**
   - **`POST /api/v1/member-links`** — `{ groupId, memberId, email }`. Sends a member-link invitation
@@ -208,7 +208,7 @@ account-scoped, on the **Main API host** (where sync already lives). Additive �
   stale row for a superseded draw is replaced, so a linked member's next read is the **current**
   pairing and never a previous one (FR-029).
 - **Versioning / compatibility:** additive. The member-link and assignment/wishlist contracts are
-  **Secret-Santa-shaped** and live in `AppSuite.SecretSanta.Contracts`; the Main host references them
+  **Secret-Santa-shaped** and live in `CircleTools.SecretSanta.Contracts`; the Main host references them
   for this surface. This is the **one deliberate exception** to M3's "Platform stays ignorant of the
   Secret-Santa schema": ADR-0020 authorized a Secret-Santa-specific assignment store on the server.
   The **generic sync store from M3 stays opaque and untouched** — the group document still round-trips

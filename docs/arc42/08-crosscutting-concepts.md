@@ -43,7 +43,7 @@ what to take into the account on first sign-in, and local data is kept as a cach
 
 ## 8.4 Identity & authentication
 
-`AppSuite.Identity` centralizes the single suite account using **ASP.NET Core Identity** with the
+`CircleTools.Identity` centralizes the single suite account using **ASP.NET Core Identity** with the
 **built-in .NET 10 passkey** support: email+password and optional **passkeys/WebAuthn**
 ([ADR-0009](../adr/0009-authentication-and-passkeys.md)). Offline mode uses **no** identity, and an
 account is optional and additive throughout.
@@ -58,7 +58,7 @@ control and must stay strict — relaxing it silently removes the main mitigatio
 
 ### How a browser session actually behaves
 
-The client half lives in `AppSuite.ApiClient` and `AppSuite.Main.Ui/Auth`, and the flow is worth
+The client half lives in `CircleTools.ApiClient` and `CircleTools.Main.Ui/Auth`, and the flow is worth
 stating because several parts of it only look right if you know what they are for.
 
 ```mermaid
@@ -101,7 +101,7 @@ sequenceDiagram
 
 ## 8.5 Localization (DE/EN/FR)
 
-Central `AppSuite.Localization` using **RESX + `IStringLocalizer`** ([ADR-0011](../adr/0011-localization-format-and-culture.md));
+Central `CircleTools.Localization` using **RESX + `IStringLocalizer`** ([ADR-0011](../adr/0011-localization-format-and-culture.md));
 `de-CH` default culture; culture is a synced user preference. Formatting via `CultureInfo`; no
 locale/currency logic in the domain. See the [localization guidelines](../guidelines/localization-guidelines.md).
 

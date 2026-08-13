@@ -64,8 +64,8 @@ flowchart LR
       Auth[TokenAuthStateProvider\naccess token in memory]
     end
     subgraph Shared["BuildingBlocks — suite-wide"]
-      Ident[AppSuite.Identity\nmodel, passkeys, tokens]
-      Infra[AppSuite.Infrastructure\noutbox + SMTP sender]
+      Ident[CircleTools.Identity\nmodel, passkeys, tokens]
+      Infra[CircleTools.Infrastructure\noutbox + SMTP sender]
     end
     subgraph Server["Main.Service — API host"]
       Endpoints[endpoints + rate limiting]
@@ -82,26 +82,26 @@ flowchart LR
 ## Project structure
 
 This feature **creates two building blocks that arc42 ch.5 already plans but that do not exist yet** —
-`AppSuite.Identity` and `AppSuite.Infrastructure`. Identity is suite-wide by
+`CircleTools.Identity` and `CircleTools.Infrastructure`. Identity is suite-wide by
 [ADR-0009](../adr/0009-authentication-and-passkeys.md) ("one account across all apps"), so it belongs
 in `BuildingBlocks/`, not inside `Main`.
 
 | Project | Change |
 |---------|--------|
-| `AppSuite.Identity` | **NEW (planned in ch.5)** — `AppSuiteUser : IdentityUser<Guid>` incl. `DisplayName` / `PreferredLanguage`, ASP.NET Core Identity + `AddPasskeys()` configuration, token issuance, the **refresh-chain rotation & reuse detection**, and the **breached-password validator** with its bundled corpus ([ADR-0027](../adr/0027-breached-password-check.md)). |
-| `AppSuite.Infrastructure` | **NEW (planned in ch.5)** — the **outbox** (already its stated role) plus the SMTP `IEmailSender` and DE/EN/FR templates for the four transactional mails. The outbox is what makes dispatch *queued*, which NFR-005's timing rule requires. |
-| `AppSuite.Main.Service.Core` | **+** export assembly and deletion policy, incl. `IAccountDeletionGuard`. Stays pure — no ASP.NET, no EF. |
-| `AppSuite.Main.Service.Repository` | **+** Identity & passkey schema mapping, first migration into `maindb`, retention-job queries. |
-| `AppSuite.Main.Service` | **+** endpoint mapping, rate limiting, DI composition. |
-| `AppSuite.Main.Contracts` | **+** request/response DTOs and the export schema. |
-| `AppSuite.Ui.Abstractions` | **NEW (planned in ch.5, [ADR-0025](../adr/0025-shared-ui-building-blocks.md))** — the platform seams: `IKeyValueStore`, `ICultureProvider`, `IPasskeyCeremony`, `IFileSaver`. References nothing. |
-| `AppSuite.Localization` | **NEW (ADR-0025)** — `AppCultures`, `CultureProvider`, the DI extension. Closes the open follow-up in [ADR-0011](../adr/0011-localization-format-and-culture.md). |
-| `AppSuite.ApiClient` | **NEW (ADR-0025)** — `ApiResult`/`ApiError`, `ProblemDetails` reading, the token stores and `AuthorizedHttpMessageHandler`. No app DTOs, no routes. |
-| `AppSuite.Ui.Shared` | **NEW (planned in ch.5, ADR-0025)** — `AuthCard`, `BusyButton`, `ProblemAlert`, `CultureSelector`, `CultureBoundary`, and the suite theme ([ADR-0024](../adr/0024-ui-styling-and-theming.md)). |
-| `AppSuite.Main.Ui` | **+** the typed `AccountApiClient`, `TokenAuthStateProvider`, `AccountSession`/`SessionRefresher`, and the pages: sign-up, verify, sign-in, forgot/reset, profile, security (passkeys + email change), confirm email change, data & account, plus the verification banner. |
-| `AppSuite.Main.WebApp` | **+** browser implementations of the four seams, the credentials handler for the WebAuthn ceremonies, DI composition, the strict CSP, and the startup silent refresh. |
+| `CircleTools.Identity` | **NEW (planned in ch.5)** — `CircleToolsUser : IdentityUser<Guid>` incl. `DisplayName` / `PreferredLanguage`, ASP.NET Core Identity + `AddPasskeys()` configuration, token issuance, the **refresh-chain rotation & reuse detection**, and the **breached-password validator** with its bundled corpus ([ADR-0027](../adr/0027-breached-password-check.md)). |
+| `CircleTools.Infrastructure` | **NEW (planned in ch.5)** — the **outbox** (already its stated role) plus the SMTP `IEmailSender` and DE/EN/FR templates for the four transactional mails. The outbox is what makes dispatch *queued*, which NFR-005's timing rule requires. |
+| `CircleTools.Main.Service.Core` | **+** export assembly and deletion policy, incl. `IAccountDeletionGuard`. Stays pure — no ASP.NET, no EF. |
+| `CircleTools.Main.Service.Repository` | **+** Identity & passkey schema mapping, first migration into `maindb`, retention-job queries. |
+| `CircleTools.Main.Service` | **+** endpoint mapping, rate limiting, DI composition. |
+| `CircleTools.Main.Contracts` | **+** request/response DTOs and the export schema. |
+| `CircleTools.Ui.Abstractions` | **NEW (planned in ch.5, [ADR-0025](../adr/0025-shared-ui-building-blocks.md))** — the platform seams: `IKeyValueStore`, `ICultureProvider`, `IPasskeyCeremony`, `IFileSaver`. References nothing. |
+| `CircleTools.Localization` | **NEW (ADR-0025)** — `AppCultures`, `CultureProvider`, the DI extension. Closes the open follow-up in [ADR-0011](../adr/0011-localization-format-and-culture.md). |
+| `CircleTools.ApiClient` | **NEW (ADR-0025)** — `ApiResult`/`ApiError`, `ProblemDetails` reading, the token stores and `AuthorizedHttpMessageHandler`. No app DTOs, no routes. |
+| `CircleTools.Ui.Shared` | **NEW (planned in ch.5, ADR-0025)** — `AuthCard`, `BusyButton`, `ProblemAlert`, `CultureSelector`, `CultureBoundary`, and the suite theme ([ADR-0024](../adr/0024-ui-styling-and-theming.md)). |
+| `CircleTools.Main.Ui` | **+** the typed `AccountApiClient`, `TokenAuthStateProvider`, `AccountSession`/`SessionRefresher`, and the pages: sign-up, verify, sign-in, forgot/reset, profile, security (passkeys + email change), confirm email change, data & account, plus the verification banner. |
+| `CircleTools.Main.WebApp` | **+** browser implementations of the four seams, the credentials handler for the WebAuthn ceremonies, DI composition, the strict CSP, and the startup silent refresh. |
 
-The SMTP adapter sits in `AppSuite.Infrastructure` rather than in the API host because an outbound-mail
+The SMTP adapter sits in `CircleTools.Infrastructure` rather than in the API host because an outbound-mail
 adapter is an infrastructure concern, and the
 [architecture guidelines](../guidelines/architecture-guidelines.md) keep those out of hosts. It also
 keeps the [ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md) seam independently testable.
@@ -114,7 +114,7 @@ refresh, CSP", implying all four sit in the host. **Three of them do not.**
 browser-specific: they read a JWT payload, hold a string, and call an HTTP endpoint. Putting them in
 the WebAssembly host would mean a MAUI head reimplementing them, which is exactly what
 [ADR-0025](../adr/0025-shared-ui-building-blocks.md)'s seams exist to prevent. They live in
-`Main.Ui` and `AppSuite.ApiClient`.
+`Main.Ui` and `CircleTools.ApiClient`.
 
 The host keeps what genuinely is the browser: `BrowserKeyValueStore`, `BrowserPasskeyCeremony`,
 `BrowserFileSaver`, `BrowserCredentialsHandler`, the CSP meta tag, and the two JS modules.
@@ -124,9 +124,9 @@ The host keeps what genuinely is the browser: `BrowserKeyValueStore`, `BrowserPa
 - **Identity is a supporting subdomain, not a rich one.** ASP.NET Core Identity owns credentials,
   passkeys and the account lifecycle ([ADR-0009](../adr/0009-authentication-and-passkeys.md));
   modelling a parallel `User` aggregate would duplicate the framework for no gain. The profile fields
-  ride on `AppSuiteUser`, and `Main.Service.Core` owns only what genuinely needs domain reasoning: the
+  ride on `CircleToolsUser`, and `Main.Service.Core` owns only what genuinely needs domain reasoning: the
   **export and deletion policies**.
-- **`AppSuiteUser : IdentityUser<Guid>`** lives in `AppSuite.Identity`, carrying `DisplayName`,
+- **`CircleToolsUser : IdentityUser<Guid>`** lives in `CircleTools.Identity`, carrying `DisplayName`,
   `PreferredLanguage` and `CreatedAt`. GUID v7 ids ([ADR-0008](../adr/0008-entity-id-strategy.md)).
 - **Display names are not unique** — no constraint, no index enforcing it
   ([FR-012](../requirements/functional/FR-012-manage-profile.md)).

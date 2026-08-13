@@ -1,0 +1,47 @@
+@inject ICultureProvider Culture
+@inject AccountSession Session
+
+@*
+    Web parity for the device head (FEAT-002..005). Two things must be settled before the first page
+    renders — the same two the WebApp settles before RunAsync — and MAUI's synchronous CreateMauiApp
+    cannot await them, so they happen here, in the Blazor scope, gated behind _ready:
+
+      - the stored UI language: components read the CultureInfo defaults as they first render, so a
+        later switch would leave the first paint in the previous language (UC-MAIN-005); and
+      - the signed-in session: the access token lives in memory only (ADR-0021), so every launch
+        starts from the refresh token, and AuthorizeView must see the restored state on first paint.
+
+    CascadingAuthenticationState feeds AuthorizeView; CultureBoundary re-keys the tree so a language
+    change takes effect without a reload. The app is fully usable signed out (NFR-001) — the cascade
+    only unlocks the account-scoped screens the shared account block (ADR-0034) brings in.
+*@
+
+@if (_ready)
+{
+    <CascadingAuthenticationState>
+        <CultureBoundary Context="culture">
+            <Router @key="culture"
+                    AppAssembly="typeof(MauiProgram).Assembly"
+                    AdditionalAssemblies="new[] { typeof(CircleTools.SecretSanta.Ui.AppStrings).Assembly, typeof(CircleTools.Ui.Account.AccountStrings).Assembly }"
+                    NotFoundPage="typeof(Pages.NotFound)">
+                <Found Context="routeData">
+                    <RouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)" />
+                    <FocusOnNavigate RouteData="routeData" Selector="h1" />
+                </Found>
+            </Router>
+        </CultureBoundary>
+    </CascadingAuthenticationState>
+}
+
+@code {
+    private bool _ready;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Best-effort, exactly as on the web: a failed restore just starts signed out (NFR-001) and
+        // the culture falls back to the default. Neither may block startup.
+        await Culture.InitializeAsync();
+        await Session.RestoreAsync();
+        _ready = true;
+    }
+}

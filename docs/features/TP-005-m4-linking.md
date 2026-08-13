@@ -56,7 +56,7 @@ conflict-resolution UI and continuous background sync (parked, ADR-0016).
   duplicate-account guard picks exactly one to link); the rule that **linking/unlinking does not
   invalidate a completed draw** while editing members does; wishlist ownership resolution from link
   state; empty-item drop. Clock and transport injected.
-- **Integration — the two-account authorization harness (`AppSuite.Main.Service.Test`)** — **the
+- **Integration — the two-account authorization harness (`CircleTools.Main.Service.Test`)** — **the
   load-bearing level.** An **organizer** account and a **linked-member** account (distinct bearer
   tokens) driving the **real** member-link, assignment and self-wishlist surface against **real
   Postgres** ([ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md)). It asserts **end states
@@ -65,10 +65,10 @@ conflict-resolution UI and continuous background sync (parked, ADR-0016).
   linked; decline/expire → unlinked); the one-user-per-group guard; and the account-deletion cascade.
   One account cannot express "a member reads only their own"; two are two genuine callers.
 - **Contract** — the member-link, assignment and self-wishlist DTOs in
-  `AppSuite.SecretSanta.Contracts`, and that the **generic M3 sync store stays opaque** (the group body
+  `CircleTools.SecretSanta.Contracts`, and that the **generic M3 sync store stays opaque** (the group body
   still round-trips without the server deserializing it) while the new Secret-Santa surface is the
   **only** place the Main host understands the schema.
-- **Repository (`AppSuite.Main.Service.Repository.Test`)** — the `linking` schema against real Postgres:
+- **Repository (`CircleTools.Main.Service.Repository.Test`)** — the `linking` schema against real Postgres:
   the assignment row keyed for a single authorized lookup by giver account, `draw_version` replacement
   on re-run, the member-link lifecycle (expiry, revoke), and account-deletion removing the caller's
   assignment/wishlist rows.

@@ -31,14 +31,14 @@ The fastest loop, and the one that covers most feature work. Secret-Santa is a s
 WASM app with no backend, so run its project directly:
 
 ```bash
-dotnet run --project src/Apps/SecretSanta/AppSuite.SecretSanta.WebApp --launch-profile http
+dotnet run --project src/Apps/SecretSanta/CircleTools.SecretSanta.WebApp --launch-profile http
 # → http://localhost:5081   (the http profile avoids dev-certificate prompts)
 ```
 
 The Main app and its API run under Aspire instead:
 
 ```bash
-dotnet run --project src/Aspire/AppSuite.AppHost
+dotnet run --project src/Aspire/CircleTools.AppHost
 ```
 
 **Testing on the phone and iPad over the LAN.** Both are useful long before any native build exists —
@@ -46,7 +46,7 @@ the web app is the same UI the MAUI heads host. Bind to all interfaces and brows
 address from the device:
 
 ```bash
-dotnet run --project src/Apps/SecretSanta/AppSuite.SecretSanta.WebApp --launch-profile http --urls http://0.0.0.0:5081
+dotnet run --project src/Apps/SecretSanta/CircleTools.SecretSanta.WebApp --launch-profile http --urls http://0.0.0.0:5081
 ```
 
 Windows Firewall will ask to allow the port on a private network the first time. This gives real
@@ -67,7 +67,7 @@ dotnet workload restore
 **Emulator** — create a device in the Android Device Manager (Visual Studio), then:
 
 ```bash
-dotnet build src/Apps/SecretSanta/AppSuite.SecretSanta.App -f net10.0-android -t:Run
+dotnet build src/Apps/SecretSanta/CircleTools.SecretSanta.App -f net10.0-android -t:Run
 ```
 
 **Physical phone** — enable *Developer options* → *USB debugging*, plug it in, accept the RSA
@@ -109,7 +109,7 @@ development on it is impossible today — not slow, impossible. Even if it quali
 - **Simulator** — free, no paid Apple account needed. Best for layout, localisation and flow checks,
   including the iPad form factor:
   ```bash
-  dotnet build src/Apps/SecretSanta/AppSuite.SecretSanta.App -f net10.0-ios -t:Run
+  dotnet build src/Apps/SecretSanta/CircleTools.SecretSanta.App -f net10.0-ios -t:Run
   ```
 - **Physical iPad or iPhone** — a plain Apple ID gives *free provisioning*: the app installs but the
   signature expires after **7 days** and must be redeployed. Fine for occasional real-device checks.
@@ -124,7 +124,7 @@ development on it is impossible today — not slow, impossible. Even if it quali
 Worth knowing before judging what you see on a device — these are tracked, not surprises:
 
 - The app icon and splash are still the **.NET template art** (`#512BD4` purple).
-- `ApplicationId` is still `com.companyname.appsuite.secretsanta.app`
+- `ApplicationId` is set to the final `ch.circletools.secretsanta`
   ([NFR-007](../requirements/non-functional/NFR-007-store-distributability.md)).
 - `RevealBaseUrl` points at `https://localhost:7081`, so reveal links generated on a device will not
   resolve anywhere real yet.

@@ -62,14 +62,14 @@ server-recorded modification time; it does **not** know the group's schema. The 
 [Contracts](../glossary/group.md) define the body. This keeps ADR-0016's rule — sync sits *behind* the
 existing ports and never leaks into aggregates — literally true: the `Group` aggregate gains nothing.
 
-- **Client** (`AppSuite.SecretSanta.LocalStore` + shared `AppSuite.ApiClient`). The `IGroupRepository`
+- **Client** (`CircleTools.SecretSanta.LocalStore` + shared `CircleTools.ApiClient`). The `IGroupRepository`
   / `IKeyValueStore` ports from [ADR-0015](../adr/0015-mvp-client-offline-storage.md) stay; a **syncing
   implementation** wraps the existing `localStorage`-backed one. The persisted `GroupState` memento
   gains per-aggregate sync metadata; the store gains a **device id** and a **cursor**. A local edit is
   written first, bumps the version, is flagged *not yet synced*, and takes full effect with **zero
   awaited network calls** (NFR-008). A `SyncService` runs a cycle on the four triggers.
-- **Server** (a sync surface on the Main API host, `AppSuite.Main.Service`; storage in
-  `AppSuite.Main.Service.Repository`). One delta-exchange endpoint plus a claim/un-claim pair, all
+- **Server** (a sync surface on the Main API host, `CircleTools.Main.Service`; storage in
+  `CircleTools.Main.Service.Repository`). One delta-exchange endpoint plus a claim/un-claim pair, all
   bearer-authorized ([ADR-0021](../adr/0021-web-auth-token-model.md)) and scoped to the caller's
   account. The server assigns a **per-account monotonic sequence** to every applied change; the client
   cursor is the highest sequence it has seen, so a pull is "everything above my cursor".
@@ -101,7 +101,7 @@ sequenceDiagram
 
 - **Aggregates / entities / value objects:** **none added or changed** in `SecretSanta.Core`. Sync is
   behind the ports (ADR-0016). The `GroupState` **memento** in
-  `AppSuite.SecretSanta.Core/Persistence/` gains sync metadata (below); the aggregate itself is
+  `CircleTools.SecretSanta.Core/Persistence/` gains sync metadata (below); the aggregate itself is
   unaware of it.
 - **New Platform concepts (not app-domain):** a per-aggregate **version token**, a
   [**tombstone**](../glossary/tombstone.md) (id + version at deletion, no content), and an **un-claim
@@ -136,8 +136,8 @@ the caller's account.
   orphaned server copy behind it. Idempotent: un-claiming a group already removed elsewhere clears the
   local scope and surfaces no error.
 - **Versioning / compatibility:** additive — new routes only; no existing account/circle/heartbeat
-  contract changes. Contracts for the sync envelope live in `AppSuite.Main.Contracts`; the group body
-  shape is `AppSuite.SecretSanta.Contracts`' existing `GroupDtos`, so Platform stays ignorant of the
+  contract changes. Contracts for the sync envelope live in `CircleTools.Main.Contracts`; the group body
+  shape is `CircleTools.SecretSanta.Contracts`' existing `GroupDtos`, so Platform stays ignorant of the
   Secret-Santa schema.
 
 ## Data & migration considerations
@@ -152,7 +152,7 @@ the caller's account.
   authorized by account ownership (ADR-0020).
 - **SQLite / `localStorage` (client):** the `GroupState` memento gains `version`, `accountScope`
   (null = local-only), and `dirty`; the store gains `deviceId`, `cursor`, and a small **tombstone /
-  pending-marker set**. Existing keys (`appsuite.secretsanta.groups`) are **migrated in place** with a
+  pending-marker set**. Existing keys (`circletools.secretsanta.groups`) are **migrated in place** with a
   schema-version bump — no user loses a group. `localStorage` stays (ADR-0015/0016); SQLite/OPFS parked.
 - **Sync impact:** the aggregate is the unit; never a field-wise merge. LWW by `server_modified_at`.
   Deletes travel as tombstones; un-claims as markers. **Tombstone / marker retention:** a marker is

@@ -22,8 +22,8 @@ Two facts shape the decision:
 - **Only the Secret-Santa app has a client sync engine** (`AddSecretSantaSyncEngine`). The **Main
   WebApp is online-only** for account + circles; a profile edit there is a direct authorized
   `PUT /account/profile`.
-- **The profile screen is shared.** [`Profile.razor`](../../src/BuildingBlocks/AppSuite.Ui.Account/Pages/Profile.razor)
-  and the session service live in the shared `AppSuite.Ui.Account` block
+- **The profile screen is shared.** [`Profile.razor`](../../src/BuildingBlocks/CircleTools.Ui.Account/Pages/Profile.razor)
+  and the session service live in the shared `CircleTools.Ui.Account` block
   ([ADR-0034](0034-shared-account-session-ui-block.md)), consumed by both apps. Today the page does a
   direct online `UpdateProfileAsync`, so an offline edit returns `Unreachable` and is lost.
 
@@ -54,7 +54,7 @@ devices, keeping the authoritative `/profile` endpoint the single source of trut
 ## Considered options
 
 1. **Host-supplied profile-writer seam, offline edits flushed to `/profile`.** A port
-   (`IProfileWriter`) in `AppSuite.Ui.Account`. Main registers the direct-online implementation; the
+   (`IProfileWriter`) in `CircleTools.Ui.Account`. Main registers the direct-online implementation; the
    Secret-Santa app registers one that, when offline, queues the edit in a local pending record and
    **`PUT`-flushes it to the authoritative endpoint on the next sync trigger**, and adopts another
    device's change by reading `GET /profile` in the same reconcile.
@@ -71,14 +71,14 @@ devices, keeping the authoritative `/profile` endpoint the single source of trut
 **Chosen: Option 1 — a host-supplied `IProfileWriter` seam whose offline implementation flushes to the
 authoritative `/profile` endpoint.**
 
-- **The port** (`IProfileWriter`, in `AppSuite.Ui.Account`) covers the two things the page needs — load
+- **The port** (`IProfileWriter`, in `CircleTools.Ui.Account`) covers the two things the page needs — load
   the current preferences, save an edit — in the same `ProfileResponse`/`UpdateProfileRequest` the page
   already speaks. `Profile.razor` depends on the port, keeping its existing UX (the saved-confirmation
   navigation and the immediate `SetCultureAsync`); only the persistence call changes.
 - **Main WebApp** registers the **direct-online** writer (`OnlineProfileWriter`, a thin wrapper over
   `AccountApiClient.GetProfileAsync`/`UpdateProfileAsync`) — behaviour identical to today. It is the
   default `AddAccountUi` supplies, so a host that does nothing extra gets it.
-- **Secret-Santa** registers `OfflineProfileWriter` (in `AppSuite.SecretSanta.Ui`, which references
+- **Secret-Santa** registers `OfflineProfileWriter` (in `CircleTools.SecretSanta.Ui`, which references
   both the account block and the local store — so no dependency crosses into the account block). It:
   - on **save**, tries the authoritative `PUT`; offline, writes a `SyncedProfileRecord` (display name,
     language, `Dirty`) into the local store and reports success so the page applies the language and
@@ -100,7 +100,7 @@ authoritative `/profile` endpoint.**
   The Main app is unchanged; layering holds (the account block sees only the port; the sync store stays
   opaque).
 - **Positive:** the seam matches the existing `AddAccountUi` host-supplies-the-difference pattern.
-- **Negative / accepted:** the offline writer lives in `AppSuite.SecretSanta.Ui`, an app project, though
+- **Negative / accepted:** the offline writer lives in `CircleTools.SecretSanta.Ui`, an app project, though
   profile is an account concern — because that is the only project that both works offline and may
   reference the local store. Recorded rather than hidden; extract behind the same port if a second
   offline host appears.

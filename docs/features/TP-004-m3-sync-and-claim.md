@@ -46,22 +46,22 @@ Out of scope: circle sync (ADR-0033), linking a member to a user and creating a 
   tracking, cursor advance, tombstone vs un-claim-marker distinction, the LWW comparison, and the
   claim/un-claim state transitions on the `GroupState` memento. Clock and transport injected; no
   wall-clock waits.
-- **Integration — the two-client harness (`AppSuite.Main.Service.Test`)** — **the load-bearing level.**
+- **Integration — the two-client harness (`CircleTools.Main.Service.Test`)** — **the load-bearing level.**
   Two independent client stores (two `deviceId`s, two cursors) driving **real** sync cycles against the
   API over **real Postgres** ([ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md)). It
   drives offline edits, concurrent edits, deletes, un-claims, replayed/interrupted pushes and no-op
   cycles, and asserts the **end states** rather than the transport. A single-client change tracker
   cannot express "device B sees device A's change"; two stores are two genuine callers.
-- **Contract** — the `/api/v1/sync` envelope in `AppSuite.Main.Contracts` and the group body in
-  `AppSuite.SecretSanta.Contracts`: a group round-trips through the server as an **opaque document**
+- **Contract** — the `/api/v1/sync` envelope in `CircleTools.Main.Contracts` and the group body in
+  `CircleTools.SecretSanta.Contracts`: a group round-trips through the server as an **opaque document**
   (Platform never deserializes the Secret-Santa schema), and the envelope stays additive.
-- **Repository (`AppSuite.Main.Service.Repository.Test`)** — the `sync` schema mapping against real
+- **Repository (`CircleTools.Main.Service.Repository.Test`)** — the `sync` schema mapping against real
   Postgres: per-account `server_seq` monotonicity, the LWW ordering key, marker retention below
   `min(device last_cursor)`, and applying the migration as part of the suite.
 - **Architecture** — sync stays **behind the ports**: `SecretSanta.Core` gains no reference to
   sync/HTTP and its aggregate is unchanged; Platform stores app aggregates as opaque documents and does
   not depend on the Secret-Santa domain; no new cross-context dependency.
-- **UI/component (bUnit, `AppSuite.Main.Ui.Test` / Secret-Santa pages)** — the claim screen (nothing
+- **UI/component (bUnit, `CircleTools.Main.Ui.Test` / Secret-Santa pages)** — the claim screen (nothing
   pre-selected; the standing warnings; the assignment-upload warning for a drawn group; the **singular**
   count), the sync-status surface (fact, not error; manual retry), the un-claim confirmation (distinct
   from delete; offline-unavailable), and the offline circle notice.
@@ -178,7 +178,7 @@ lesson: a plan-time name is a promise, not evidence).
 ## Build reconciliation — the two-client harness slice
 
 The load-bearing integration level (§ Test levels) is built and green:
-`tests/Apps/Main/AppSuite.Main.Service.Test/Sync/`. Two real client stores
+`tests/Apps/Main/CircleTools.Main.Service.Test/Sync/`. Two real client stores
 (`SyncClient`, each its own `deviceId` / cursor / change tracker over an in-memory `localStorage`
 stand-in) drive the **real** Secret-Santa client engine (`LocalSyncStore` + `SyncingGroupRepository`
 + `SyncService`) against the **real** Main API and Postgres `sync` schema (`TwoClientSyncFactory`).
@@ -262,8 +262,8 @@ app** and adds the screens. It also required extracting the sign-in path both ap
 - **Shared account/session UI block** ([ADR-0034](../adr/0034-shared-account-session-ui-block.md),
   Accepted). `AccountSession`, `AccountApiClient`, `TokenAuthStateProvider`, `SessionRefresher` and the
   account pages (`Login`, `Register`, `ForgotPassword`, `ResetPassword`, `VerifyEmail`,
-  `ConfirmEmailChange`, `Profile`, `Security`) moved from `AppSuite.Main.Ui` into a new
-  `AppSuite.Ui.Account` building block with its own DE/EN/FR `AccountStrings`. `Main.Ui` re-points to
+  `ConfirmEmailChange`, `Profile`, `Security`) moved from `CircleTools.Main.Ui` into a new
+  `CircleTools.Ui.Account` building block with its own DE/EN/FR `AccountStrings`. `Main.Ui` re-points to
   it (`AccountData` stays there — it depends on `CircleErrorText`). Guarded by a new
   `UiAccountLayeringTests`; all 59 `Main.Ui.Test` tests stay green through the move.
 - **Host wiring.** `SecretSanta.WebApp` now registers `AddSecretSantaSyncEngine()` (was the

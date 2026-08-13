@@ -15,25 +15,25 @@ groups. Signing in and holding a session is not new code — the Main app's Blaz
 all of it: `AccountSession` (the one place that writes the token stores and follows the account's
 language), `AccountApiClient` (the typed client over `/api/v1/account`), `TokenAuthStateProvider` +
 `AccountClaims` (the principal derived from the bearer token, ADR-0021), and `SessionRefresher` (the
-ADR-0021/0026 refresh). All of it lives in **`AppSuite.Main.Ui`** today.
+ADR-0021/0026 refresh). All of it lives in **`CircleTools.Main.Ui`** today.
 
 Secret-Santa needs exactly this behaviour against the same backend. **Where should the account/session
 client code live so both frontends share one implementation, without inverting the layering the
-fitness functions guard?** The options considered at plan time were "reference `AppSuite.Main.Ui`
-directly from `AppSuite.SecretSanta.Ui`" (rejected — it couples two app UI assemblies) versus
+fitness functions guard?** The options considered at plan time were "reference `CircleTools.Main.Ui`
+directly from `CircleTools.SecretSanta.Ui`" (rejected — it couples two app UI assemblies) versus
 "extract a shared building block"; this ADR records the extraction and, crucially, **where its
 boundary falls**.
 
 Two facts discovered while tracing the code shape the decision:
 
 - The account/session plumbing is **host-neutral**: it depends only on building blocks
-  (`AppSuite.ApiClient`, `AppSuite.Localization`, `AppSuite.Ui.Abstractions`) plus
-  **`AppSuite.Main.Contracts`** — the shared backend contract that `AppSuite.SecretSanta.LocalStore`
+  (`CircleTools.ApiClient`, `CircleTools.Localization`, `CircleTools.Ui.Abstractions`) plus
+  **`CircleTools.Main.Contracts`** — the shared backend contract that `CircleTools.SecretSanta.LocalStore`
   **already references** for the M3 sync engine. Nothing in it touches Blazor WebAssembly or JS
   interop. It is a clean building-block candidate.
 - The account **Razor pages** (`Login`, `Register`, `ForgotPassword`, …) additionally bind to
-  `AppSuite.Main.Ui`'s own `AppStrings` resources and to `ApiErrorText`. The shared UI components they
-  use (`AuthCard`, `ProblemAlert`, `BusyButton`) are **already** in the `AppSuite.Ui.Shared` building
+  `CircleTools.Main.Ui`'s own `AppStrings` resources and to `ApiErrorText`. The shared UI components they
+  use (`AuthCard`, `ProblemAlert`, `BusyButton`) are **already** in the `CircleTools.Ui.Shared` building
   block, so those do not move — only the pages' strings and their host page would.
 
 ## Decision drivers
@@ -47,7 +47,7 @@ Two facts discovered while tracing the code shape the decision:
 - **Do not disturb the shipped Main app more than necessary.** Main's account pages and their strings
   are working and tested (FEAT-002, `Reviewed`). Moving live UI and its RESX out of a shipped app is
   real risk that this slice does not need to take.
-- **Match the precedent already set.** `LocalStore` referencing `AppSuite.Main.Contracts` established
+- **Match the precedent already set.** `LocalStore` referencing `CircleTools.Main.Contracts` established
   that the Main service's contract assembly is the shared backend contract, referenced across apps.
   A new UI block depending on it is the same accepted edge, not a new kind of coupling.
 - **Keep each app's screens its own.** The Secret-Santa login screen is a handful of fields; owning it
@@ -56,28 +56,28 @@ Two facts discovered while tracing the code shape the decision:
 
 ## Considered options
 
-1. **Extract the plumbing only into `AppSuite.Ui.Account`; each app keeps its own thin login page.**
+1. **Extract the plumbing only into `CircleTools.Ui.Account`; each app keeps its own thin login page.**
    The new block holds `AccountSession`, `AccountApiClient`, `TokenAuthStateProvider`/`AccountClaims`,
    `SessionRefresher`/`ISessionRefresher`, the API-client keys/routes (renamed from `MainApiClients`),
    `ApiErrorText`, and the DI extension. It references `ApiClient` + `Main.Contracts` + `Localization`
    + `Ui.Abstractions`. `Main.Ui` re-points its `using`s and delegates `AddMainAccount()` to the
    block; its account pages are unchanged. `SecretSanta.Ui` references the block and writes a small
    `Login.razor` (reusing `AuthCard`/`ProblemAlert`/`BusyButton` from `Ui.Shared`).
-2. **Extract the plumbing *and* the account pages + their strings into `AppSuite.Ui.Account`.** Both
+2. **Extract the plumbing *and* the account pages + their strings into `CircleTools.Ui.Account`.** Both
    apps render the identical `Login`/`Register`/… screens from the block. Maximises reuse but migrates
    live pages and RESX out of the shipped Main app.
-3. **Reference `AppSuite.Main.Ui` directly from `AppSuite.SecretSanta.Ui`.** No new block; couples the
+3. **Reference `CircleTools.Main.Ui` directly from `CircleTools.SecretSanta.Ui`.** No new block; couples the
    two apps' UI assemblies. (The rejected plan-time option, restated for completeness.)
 
 ## Decision outcome
 
-**Chosen: Option 2.** Create a new building block **`src/BuildingBlocks/AppSuite.Ui.Account`** holding
+**Chosen: Option 2.** Create a new building block **`src/BuildingBlocks/CircleTools.Ui.Account`** holding
 both the account/session client plumbing **and** the account Razor pages with their own RESX strings,
-referencing `AppSuite.ApiClient`, `AppSuite.Main.Contracts`, `AppSuite.Localization`,
-`AppSuite.Ui.Abstractions`, and `AppSuite.Ui.Shared` (for `AuthCard`/`ProblemAlert`/`BusyButton`).
-`AppSuite.Main.Ui` consumes the block instead of owning these types and pages: its `AddMainAccount()`
+referencing `CircleTools.ApiClient`, `CircleTools.Main.Contracts`, `CircleTools.Localization`,
+`CircleTools.Ui.Abstractions`, and `CircleTools.Ui.Shared` (for `AuthCard`/`ProblemAlert`/`BusyButton`).
+`CircleTools.Main.Ui` consumes the block instead of owning these types and pages: its `AddMainAccount()`
 becomes a thin wrapper over the block's registration, and it keeps only its Main-portal surface
-(dashboard, nav, circles/invitations). `AppSuite.SecretSanta.Ui` references the block, and the
+(dashboard, nav, circles/invitations). `CircleTools.SecretSanta.Ui` references the block, and the
 Secret-Santa WebApp registers the two keyed `HttpClient`s (anonymous/authorized) plus the browser
 passkey seam, exactly as the Main WebApp does (ADR-0013/0021/0026). Both apps therefore render the
 **identical** account screens (`Login`, `Register`, `ForgotPassword`, `ResetPassword`, `VerifyEmail`,
@@ -94,8 +94,8 @@ block exists to avoid.
 
 ### Layering and naming
 
-- The block's namespace is `AppSuite.Ui.Account` — **not** matched by the `^AppSuite\.(Main|SecretSanta)`
-  "app code" pattern, so it is not app code. Its dependency on `AppSuite.Main.Contracts` is the same
+- The block's namespace is `CircleTools.Ui.Account` — **not** matched by the `^CircleTools\.(Main|SecretSanta)`
+  "app code" pattern, so it is not app code. Its dependency on `CircleTools.Main.Contracts` is the same
   edge `LocalStore` already has; a new `Ui.AccountLayeringTests` fitness function will state the
   block's allowed set (ApiClient, Localization, Ui.Abstractions, Main.Contracts) and forbid Blazor
   WebAssembly / JS interop, mirroring `SharedUiBlockLayeringTests`.
@@ -117,13 +117,13 @@ block exists to avoid.
   the export page lands in both frontends and a future MAUI head at once; no per-app login page to
   drift.
 - **Negative / accepted:** migrating live pages and their RESX out of the shipped, tested Main app is
-  real churn with real risk. It must land with the full test suite (incl. `AppSuite.Main.Ui.Test`) and
+  real churn with real risk. It must land with the full test suite (incl. `CircleTools.Main.Ui.Test`) and
   the fitness functions green before any claim UI is built, and the account strings must split cleanly
   from the Main-portal strings that stay behind.
 - **Negative / accepted:** the block now carries routable `@page` pages, so both hosts expose the same
   `/account/*` routes; each app's router must include the block's assembly.
 - **Follow-ups:** update [arc42 ch. 5](../arc42/05-building-block-view.md) to add the block to the
-  building-block view; `Ui.AccountLayeringTests` is added with this slice; move `AppSuite.Main.Ui.Test`'s
+  building-block view; `Ui.AccountLayeringTests` is added with this slice; move `CircleTools.Main.Ui.Test`'s
   account-page tests alongside the block (they stay in `Main.Ui.Test` for now, re-pointed at the block's
   namespaces); the MAUI head can adopt the block in a later slice.
 - **Follow-up (string pruning):** the block owns the authoritative account strings (`AccountStrings`).
@@ -149,7 +149,7 @@ block exists to avoid.
 - 👎 Migrates live pages and RESX out of a shipped, tested app — real risk; enlarges the blast radius
   beyond the minimum the claim slice strictly needs.
 
-### 3. Reference `AppSuite.Main.Ui` directly from `SecretSanta.Ui`
+### 3. Reference `CircleTools.Main.Ui` directly from `SecretSanta.Ui`
 - 👍 Zero new projects; immediate reuse.
 - 👎 Couples two app UI assemblies — the coupling a building block exists to prevent; drags Main's
   circles/dashboard surface into Secret-Santa's dependency graph.

@@ -1,21 +1,48 @@
-# Naming — Working Name & Brand Candidates
+# Naming — Brand & Domain
 
-The solution and documentation use the **neutral working name `AppSuite`** as the code / namespace
-prefix (`AppSuite.AppHost`, `AppSuite.Main.*`, …). **The brand is now chosen: `CircleTools`, at
-`circletools.ch`** (registered at Infomaniak, **2026-08-13**). The `AppSuite` token stays in code only
-until the repo-wide rename is executed (see the *Next step* below); it was kept neutral precisely so
-that rename is a single find-replace rather than a refactor.
+The brand is **`CircleTools`**, at **`circletools.ch`** (registered at Infomaniak, **2026-08-13**). It is
+also the solution / project / namespace prefix (`CircleTools.AppHost`, `CircleTools.Main.*`, …). The
+project ran on a neutral working name `AppSuite` until the brand landed; that token was **renamed away
+repo-wide on 2026-08-13** (a single find-replace, as intended). The exploration that led to the name is
+kept below as the record.
 
 ## Decisions taken
 - **Brand (final):** **CircleTools** — chosen 2026-08-13.
 - **Suite domain (registered):** **`circletools.ch`** — registered at Infomaniak, 2026-08-13.
 - **Derived permanent identifiers:** brand token `CircleTools`; bundle prefix `ch.circletools.*`
   (e.g. `ch.circletools.secretsanta`); passkey relying-party ID `circletools.ch`.
-- **Working name:** `AppSuite` (neutral; stays in code until the repo-wide rename lands).
-- **Future brand language:** English preferred.
+- **Working name (retired):** the neutral `AppSuite` token was renamed to `CircleTools` repo-wide on 2026-08-13.
+- **Brand language:** English.
 - **TLD:** `.ch`-first (Swiss audience); a matching `.com` is a nice-to-have.
 - **App domains:** apps are **subdomains** of the (future) suite domain — e.g.
   `secretsanta.<suite-domain>`. Per-app brand names are decided during each app's idea step.
+
+## Visual identity — brand mark (decided 2026-08-13)
+
+The circle primitive from the naming rationale (below) is now drawn. The system:
+
+- **CircleTools (suite) mark:** a **ring of five people** — the figures *form* the circle, with no
+  separate container outline. Five (not more) so it stays legible at a 16 px favicon. Colour: brand
+  **navy `#03173d`** (white on the navy app-icon tile).
+- **Per-app rule:** each app keeps the same ring of five and **swaps what forms it** plus its accent
+  colour. Secret-Santa is a **ring of five gifts** — red box `#7a1f2b`, slim **gold `#e3a92e`**
+  vertical ribbon + bow — on a **cream `#f7ede1`** ground.
+- **Accessibility / stores:** every mark reads in a single colour (monochrome-safe, per
+  [ADR-0024](../adr/0024-ui-styling-and-theming.md)); app icons are full-bleed opaque squares with the
+  content inside the adaptive-icon safe zone (no alpha, no pre-rounded corners — the OS applies the
+  mask). Contrast clears WCAG AA on every ground (navy 17.6:1, gift red on cream 9.2:1).
+
+**Where the assets live** (source of truth):
+- Native (Secret-Santa MAUI): `…/CircleTools.SecretSanta.App/Resources/AppIcon/appicon.svg` (cream
+  background) + `appiconfg.svg` (gift ring) + `Splash/splash.svg`, with `MauiIcon Color="#f7ede1"`.
+  Resizetizer rasterises the store sizes at build.
+- Web PWAs: each app's `wwwroot/favicon.svg` (+ rasterised `favicon.png` / `icon-192.png` /
+  `icon-512.png`) and its manifest `theme_color` / `background_color`.
+- Docs: `docfx/templates/circletools/public/logo.svg` + `favicon.svg`, wired via `_appLogoPath` /
+  `_appFaviconPath` in `docfx.json`.
+
+Placeholder accents that had diverged from the brand were reconciled to navy `#03173d` / accent
+`#3c6fd1` (the DocFX `--bs-primary` was a `#1168bd` placeholder).
 
 ## Chosen brand
 
@@ -94,8 +121,8 @@ Deferring the brand was cheap while everything was internal. It stops being chea
 submission, because three things derived from the domain are **permanent or non-migratable**:
 
 - **The bundle identifier / `ApplicationId`** — cannot be changed after an app's first store release.
-  Ship the current placeholder `com.companyname.appsuite.secretsanta.app` once and it is the app's
-  identity forever ([NFR-007](../requirements/non-functional/NFR-007-store-distributability.md)).
+  Now set to `ch.circletools.secretsanta`; once it ships it is the app's identity forever
+  ([NFR-007](../requirements/non-functional/NFR-007-store-distributability.md)).
 - **The passkey relying-party ID** — RP IDs do not migrate. Passkeys registered against one domain do
   not work against another, so the domain must be final **before the first real user registers a
   passkey** ([ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md)).
@@ -107,18 +134,23 @@ address and pointed at a suite-domain role address later
 
 Tracked as risk **R8** in [arc42 ch. 11](../arc42/11-risks-and-technical-debt.md).
 
-## Next step (milestone 1)
+## Milestone 1 — status
 
 ✅ Brand confirmed (**CircleTools**) and domain **`circletools.ch`** registered at Infomaniak (2026-08-13).
-Remaining, now unblocked:
 
-- **Repo-wide rename `AppSuite` → `CircleTools`** (single find-replace across code + docs), including this
-  file's working-name framing, the root `CLAUDE.md` placeholder note (still says
-  *"leading candidate: Walf"*), and the arc42 **R8** risk entry (brand gate — now closable).
-- Set the derived identifiers where placeholders still stand: the MAUI **bundle id**
-  `ch.circletools.secretsanta` (today `com.companyname.appsuite.secretsanta.app`), the **passkey RP ID**
-  `circletools.ch`, the Secret-Santa **`RevealBaseUrl`**, and the **CSP** origin — none could be set
-  before now.
+**Done 2026-08-13:**
+- **Repo-wide rename `AppSuite` → `CircleTools`** across code + docs (namespaces, projects, folders,
+  solution, CSS classes, JWT issuer, dev mail domain, docfx theme, localStorage keys) and the CLAUDE.md
+  naming section.
+- **MAUI bundle id set** to `ch.circletools.secretsanta` (was the `com.companyname.appsuite…` template).
+
+**Remaining, gated on deployment (not on the brand):**
+- **Passkey RP ID** `circletools.ch`, the Secret-Santa **`RevealBaseUrl`**, and the **CSP** origin —
+  set these when the production origin exists (deployment milestone); the local-dev RP-ID/domain stays
+  `circletools.test`.
+- ✅ App **icon and splash** replaced with the CircleTools / Secret-Santa brand mark (2026-08-13) —
+  see *Visual identity* above; native store sizes are generated by resizetizer at build.
 - Create the free **`hello@circletools.ch`** (or `support@`) mailbox and point the store / Brevo /
   Cloudflare accounts at it ([ADR-0030](../adr/0030-mobile-store-publisher-identity.md) role address).
 - Optionally register **`circle-tools.ch`** as a redirect (hyphen-typo insurance).
+- Close arc42 risk **R8** (brand gate resolved) and **D7**'s bundle-id half.

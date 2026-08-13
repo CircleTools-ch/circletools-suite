@@ -1,0 +1,672 @@
+@page "/circles/{CircleId:guid}"
+@inject IStringLocalizer<AppStrings> L
+@inject CirclesApiClient Api
+@inject NavigationManager Nav
+
+@* The whole of FR-019 through FR-022 for one circle. It is one page rather than five because every
+   action here is a change to the same aggregate and the same people list: splitting them across
+   routes would mean reloading the circle to answer "who is in it" on each one. *@
+
+<PageTitle>@(_circle?.Name ?? L["CirclesTitle"].Value)</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="circletools-page">
+            <p><a href="circles">@L["CircleBackToCircles"]</a></p>
+
+            <ProblemAlert Message="@_error" />
+            <ConnectivityRequired Message="@(_offline ? L["CircleOfflineNotice"].Value : null)" />
+
+            @if (_gone)
+            {
+                <p class="text-body-secondary">@_goneMessage</p>
+            }
+            else if (_offline)
+            {
+                @* Online-only (ADR-0033); the notice above is the whole screen while offline. *@
+            }
+            else if (_circle is null)
+            {
+                <p class="text-body-secondary">@L["CircleLoading"]</p>
+            }
+            else
+            {
+                <h1 class="h4">@_circle.Name</h1>
+                <p class="text-body-secondary">@_circle.Label</p>
+
+                <ProblemAlert Message="@_actionError" />
+                @if (_notice is { Length: > 0 })
+                {
+                    <div class="alert alert-success" role="status">@_notice</div>
+                }
+
+                <section class="mb-5">
+                    <h2 class="h5">@L["CircleDetailPeople"]</h2>
+                    <ul class="list-group">
+                        @foreach (var person in _circle.People)
+                        {
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <span>
+                                        <strong>@person.DisplayName</strong>
+                                        @if (RoleBadge(person.Role) is { } badge)
+                                        {
+                                            <span class="badge text-bg-secondary ms-2">@badge</span>
+                                        }
+                                        @if (person.IsManaged)
+                                        {
+                                            <span class="badge text-bg-light ms-2">@L["CircleManagedBadge"]</span>
+                                        }
+                                        @if (person.IsYou)
+                                        {
+                                            <span class="badge text-bg-info ms-2">@L["CircleYouBadge"]</span>
+                                        }
+                                    </span>
+
+                                    <span class="d-flex flex-wrap gap-1">
+                                        @* Role changes are the owner's alone, and never apply to the
+                                           owner's own membership (FR-020). *@
+                                        @if (IsOwner && !person.IsYou && !person.IsManaged)
+                                        {
+                                            @if (IsAdminRole(person.Role))
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                        @onclick="@(() => MakeMemberAsync(person))">
+                                                    @L["CircleMakeMember"]
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                        @onclick="@(() => MakeAdminAsync(person))">
+                                                    @L["CircleMakeAdmin"]
+                                                </button>
+                                            }
+
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                    @onclick="@(() => Ask(ConfirmKind.Transfer, person))">
+                                                @L["CircleTransfer"]
+                                            </button>
+                                        }
+
+                                        @if (person.IsManaged && CanAdminister)
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                    @onclick="@(() => StartEdit(person))">
+                                                @L["CircleManagedEdit"]
+                                            </button>
+                                        }
+
+                                        @* An admin may remove members but not other admins; only the
+                                           owner can do that. The owner is never removable (FR-020). *@
+                                        @if (CanRemove(person))
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                    @onclick="@(() => Ask(ConfirmKind.Remove, person))">
+                                                @L["CircleRemove"]
+                                            </button>
+                                        }
+                                    </span>
+                                </div>
+
+                                @if (_editing?.MembershipId == person.MembershipId)
+                                {
+                                    <form class="circletools-form mt-3" @onsubmit="SaveManagedAsync"
+                                          @onsubmit:preventDefault="true">
+                                        <div>
+                                            <label class="form-label" for="managed-name">@L["CircleManagedName"]</label>
+                                            <input id="managed-name" class="form-control" required
+                                                   @bind="_managedName" @bind:event="oninput" />
+                                        </div>
+                                        <div>
+                                            <label class="form-label" for="managed-language">
+                                                @L["CircleManagedLanguage"]
+                                            </label>
+                                            <select id="managed-language" class="form-select" @bind="_managedLanguage">
+                                                <option value="">@L["CircleManagedLanguageNone"]</option>
+                                                <option value="de-CH">Deutsch</option>
+                                                <option value="en">English</option>
+                                                <option value="fr-CH">Français</option>
+                                            </select>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <BusyButton CssClass="btn btn-primary"
+                                                        Label="@L["CircleManagedSave"]"
+                                                        Busy="_busy"
+                                                        Disabled="@(_managedName.Trim().Length == 0)" />
+                                            <button type="button" class="btn btn-link"
+                                                    @onclick="@(() => _editing = null)">
+                                                @L["CircleManagedCancel"]
+                                            </button>
+                                        </div>
+                                    </form>
+                                }
+
+                                @if (_confirming is { } pending && pending.Person.MembershipId == person.MembershipId)
+                                {
+                                    <div class="alert alert-warning mt-3" role="alert">
+                                        <p>@pending.Question</p>
+                                        <div class="d-flex gap-2">
+                                            <BusyButton Type="button"
+                                                        CssClass="btn btn-sm btn-danger"
+                                                        Label="@L["CircleConfirmYes"]"
+                                                        Busy="_busy"
+                                                        OnClick="ConfirmAsync" />
+                                            <button type="button" class="btn btn-sm btn-link"
+                                                    @onclick="@(() => _confirming = null)">
+                                                @L["CircleConfirmNo"]
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+                            </li>
+                        }
+                    </ul>
+                </section>
+
+                @if (CanAdminister)
+                {
+                    <section class="mb-5">
+                        <h2 class="h5">@L["CircleInviteTitle"]</h2>
+                        <p class="text-body-secondary small">@L["CircleInviteLead"]</p>
+
+                        <form class="circletools-form" @onsubmit="InviteAsync" @onsubmit:preventDefault="true">
+                            <ProblemAlert Message="@_inviteError" />
+                            @if (_inviteSent)
+                            {
+                                @* Says the same thing whether a mail went out, the address is
+                                   already in the circle, or a decline is still in its cooldown.
+                                   That is the point (NFR-005). *@
+                                <div class="alert alert-info" role="status">@L["CircleInviteSent"]</div>
+                            }
+
+                            <div>
+                                <label class="form-label" for="invite-email">@L["CircleInviteEmail"]</label>
+                                <input id="invite-email" type="email" class="form-control" required
+                                       autocomplete="off" @bind="_inviteEmail" @bind:event="oninput" />
+                            </div>
+
+                            <BusyButton CssClass="btn btn-primary"
+                                        Label="@L["CircleInviteSubmit"]"
+                                        Busy="_inviting"
+                                        Disabled="@(_inviteEmail.Trim().Length == 0)" />
+                        </form>
+
+                        <h3 class="h6 mt-4">@L["CirclePendingTitle"]</h3>
+                        @if (_pending is null or { Count: 0 })
+                        {
+                            <p class="text-body-secondary small">@L["CirclePendingEmpty"]</p>
+                        }
+                        else
+                        {
+                            <ul class="list-group">
+                                @foreach (var invitation in _pending)
+                                {
+                                    <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
+                                        <span>
+                                            @invitation.InvitedEmail
+                                            <span class="text-body-secondary small ms-2">
+                                                @string.Format(
+                                                    CultureInfo.CurrentCulture,
+                                                    L["CirclePendingExpires"],
+                                                    invitation.ExpiresAt.ToLocalTime().ToString("d", CultureInfo.CurrentCulture))
+                                            </span>
+                                        </span>
+                                        <span class="d-flex gap-1">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                    @onclick="@(() => ResendAsync(invitation.Id))">
+                                                @L["CircleInviteResend"]
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                    @onclick="@(() => RevokeAsync(invitation.Id))">
+                                                @L["CircleInviteRevoke"]
+                                            </button>
+                                        </span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </section>
+
+                    <section class="mb-5">
+                        <h2 class="h5">@L["CircleManagedTitle"]</h2>
+                        <p class="text-body-secondary small">@L["CircleManagedLead"]</p>
+
+                        <form class="circletools-form" @onsubmit="AddManagedAsync" @onsubmit:preventDefault="true">
+                            <div>
+                                <label class="form-label" for="new-managed-name">@L["CircleManagedName"]</label>
+                                <input id="new-managed-name" class="form-control" required
+                                       @bind="_newManagedName" @bind:event="oninput" />
+                            </div>
+                            <BusyButton CssClass="btn btn-outline-primary"
+                                        Label="@L["CircleManagedAdd"]"
+                                        Busy="_busy"
+                                        Disabled="@(_newManagedName.Trim().Length == 0)" />
+                        </form>
+                    </section>
+
+                    <section class="mb-5">
+                        <h2 class="h5">@L["CircleSettingsTitle"]</h2>
+
+                        <form class="circletools-form" @onsubmit="RenameAsync" @onsubmit:preventDefault="true">
+                            <div>
+                                <label class="form-label" for="edit-name">@L["CircleNameField"]</label>
+                                <input id="edit-name" class="form-control" required
+                                       @bind="_editName" @bind:event="oninput" />
+                            </div>
+                            <div>
+                                <label class="form-label" for="edit-label">@L["CircleLabelField"]</label>
+                                <input id="edit-label" class="form-control"
+                                       @bind="_editLabel" @bind:event="oninput" />
+                            </div>
+                            <BusyButton CssClass="btn btn-primary"
+                                        Label="@L["CircleRenameSubmit"]"
+                                        Busy="_busy"
+                                        Disabled="@(_editName.Trim().Length == 0)" />
+                        </form>
+                    </section>
+                }
+
+                <section class="mb-5">
+                    <button type="button" class="btn btn-outline-secondary"
+                            @onclick="@(() => Ask(ConfirmKind.Leave, person: null))">
+                        @L["CircleLeave"]
+                    </button>
+
+                    @if (_confirming is { Kind: ConfirmKind.Leave } leaving)
+                    {
+                        <div class="alert alert-warning mt-3" role="alert">
+                            <p>@leaving.Question</p>
+
+                            @* FR-021 requires the confirmation to say what leaving does *not* take.
+                               The fear at this moment is losing the groups and draws you organised,
+                               and they live in a different app entirely — so the reassurance has to
+                               be here, where the decision is made. *@
+                            <p class="small mb-2">@L["CircleLeaveKeeps"]</p>
+
+                            <div class="d-flex gap-2">
+                                <BusyButton Type="button"
+                                            CssClass="btn btn-sm btn-danger"
+                                            Label="@L["CircleConfirmYes"]"
+                                            Busy="_busy"
+                                            OnClick="ConfirmAsync" />
+                                <button type="button" class="btn btn-sm btn-link"
+                                        @onclick="@(() => _confirming = null)">
+                                    @L["CircleConfirmNo"]
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </section>
+
+                @if (IsOwner)
+                {
+                    <section class="circletools-danger">
+                        <h2 class="h5">@L["CircleDeleteTitle"]</h2>
+
+                        @* FR-022 asks this confirmation to be specific rather than merely stern: the
+                           circle by name, how many people lose access, and every managed member by
+                           name — they are the only data here nobody else can recreate. The counts
+                           come from the response, never from a cached number. *@
+                        <p class="small mb-1">
+                            @string.Format(CultureInfo.CurrentCulture, L["CircleDeleteNames"], _circle.Name)
+                        </p>
+                        <p class="small mb-1">@LosesAccessSentence</p>
+
+                        @if (ManagedNames is { Length: > 0 } managedNames)
+                        {
+                            @* The names are appended as data rather than substituted into the
+                               sentence. A managed member's name is user data in the same way the
+                               label is, and keeping it out of the format string is what guarantees
+                               it is rendered verbatim in every language. *@
+                            <p class="small mb-1">
+                                @L["CircleDeleteManagedNamed"] <span>@managedNames</span>
+                            </p>
+                        }
+
+                        <p class="small mb-1">@L["CircleDeleteLead"]</p>
+                        <p class="small">@L["CircleDeleteKeeps"]</p>
+
+                        <form class="circletools-form" @onsubmit="DeleteAsync" @onsubmit:preventDefault="true">
+                            <div>
+                                <label class="form-label" for="confirm-name">@L["CircleDeleteConfirmPrompt"]</label>
+                                @* No password here. The threat is the misclick, and a hijacker who
+                                   wants to hurt you deletes the account, which is guarded already
+                                   (FR-022). *@
+                                <input id="confirm-name" class="form-control" autocomplete="off"
+                                       @bind="_confirmedName" @bind:event="oninput" />
+                            </div>
+
+                            <BusyButton CssClass="btn btn-outline-danger"
+                                        Label="@L["CircleDeleteSubmit"]"
+                                        Busy="_busy"
+                                        Disabled="@(!NameTypedBack)" />
+                        </form>
+                    </section>
+                }
+            }
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        @* Guarded like AccountData's: leaving or deleting makes this branch true a moment before the
+           page re-renders, and an unguarded redirect would bounce the user to sign-in mid-sentence. *@
+        @if (!_gone)
+        {
+            <RedirectToLogin />
+        }
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    /// <summary>The circle being viewed.</summary>
+    [Parameter]
+    public Guid CircleId { get; set; }
+
+    private enum ConfirmKind { Remove, Transfer, Leave }
+
+    private sealed record PendingConfirm(ConfirmKind Kind, CirclePersonResponse Person, string Question);
+
+    private CircleDetailResponse? _circle;
+    private IReadOnlyList<PendingInvitationResponse>? _pending;
+    private PendingConfirm? _confirming;
+    private CirclePersonResponse? _editing;
+
+    private string _inviteEmail = string.Empty;
+    private string _newManagedName = string.Empty;
+    private string _managedName = string.Empty;
+    private string _managedLanguage = string.Empty;
+    private string _editName = string.Empty;
+    private string _editLabel = string.Empty;
+    private string _confirmedName = string.Empty;
+
+    private string? _error;
+    private string? _actionError;
+    private string? _inviteError;
+    private string? _notice;
+    private string? _goneMessage;
+    private bool _inviteSent;
+    private bool _inviting;
+    private bool _busy;
+    private bool _gone;
+    private bool _offline;
+
+    private bool IsOwner => string.Equals(_circle?.Role, "Owner", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The managed members, by name, for the deletion confirmation (FR-022). Empty when the circle
+    /// has none, so the sentence naming them is left out rather than shown empty.
+    /// </summary>
+    private string ManagedNames => string.Join(
+        ", ",
+        _circle?.People.Where(person => person.IsManaged).Select(person => person.DisplayName) ?? []);
+
+    /// <summary>
+    /// How many people lose access when the circle is deleted (FR-022) — the account-backed people
+    /// only. Managed members are deleted rather than losing access; they never had any.
+    /// </summary>
+    private int LosingAccess => _circle?.People.Count(person => !person.IsManaged) ?? 0;
+
+    /// <summary>
+    /// The sentence stating that count, singular or plural. Only the owner sees this section, so the
+    /// count is never below one — and at one it is the owner themselves.
+    /// </summary>
+    /// <remarks>
+    /// German, English and French all inflect both the noun and the verb here, so a single format
+    /// string cannot serve both cases: it reads "1 Personen verlieren", "1 people will lose",
+    /// "1 personnes en perdront". The app has no pluralization machinery and one circle-sized feature
+    /// is the wrong place to introduce one, so the singular is its own resource entry — the same way
+    /// a translator would write it. The singular carries no placeholder: "one" belongs to the
+    /// sentence in every language, not beside it.
+    /// </remarks>
+    private string LosesAccessSentence => LosingAccess == 1
+        ? L["CircleDeleteLosesAccessOne"].Value
+        : string.Format(CultureInfo.CurrentCulture, L["CircleDeleteLosesAccess"], LosingAccess);
+
+    private bool CanAdminister => IsOwner || IsAdminRole(_circle?.Role);
+
+    // Compared against the stored name exactly, the same check the server makes (FR-022).
+    private bool NameTypedBack =>
+        _circle is not null && string.Equals(_confirmedName.Trim(), _circle.Name, StringComparison.Ordinal);
+
+    private static bool IsAdminRole(string? role) =>
+        string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var result = await Api.GetAsync(CircleId);
+
+        if (result.Value is { } circle)
+        {
+            _circle = circle;
+            _editName = circle.Name;
+            _editLabel = circle.Label;
+            _error = null;
+            _offline = false;
+
+            if (CanAdminister)
+            {
+                var pending = await Api.GetPendingInvitationsAsync(CircleId);
+                _pending = pending.Value;
+            }
+
+            return;
+        }
+
+        if (result.Error?.Failure == ApiFailure.Unreachable)
+        {
+            // Circles are online-only (ADR-0033): say the screen needs a connection.
+            _offline = true;
+            _error = null;
+            _circle = null;
+            return;
+        }
+
+        // A 404 here is both "no such circle" and "you are not in it" — the API refuses to say which
+        // (NFR-006), and so does this page.
+        _error = CircleErrorText.Describe(L, result.Error);
+        _offline = false;
+        _circle = null;
+    }
+
+    private async Task InviteAsync()
+    {
+        _inviting = true;
+        ClearBanners();
+        _inviteSent = false;
+
+        var result = await Api.InviteAsync(CircleId, new InviteRequest(_inviteEmail.Trim(), null));
+
+        _inviting = false;
+
+        if (result.IsSuccess)
+        {
+            _inviteSent = true;
+            _inviteEmail = string.Empty;
+            await LoadAsync();
+            return;
+        }
+
+        _inviteError = CircleErrorText.Describe(L, result.Error);
+    }
+
+    private Task ResendAsync(Guid invitationId) => RunAsync(() => Api.ResendInvitationAsync(CircleId, invitationId));
+
+    private Task RevokeAsync(Guid invitationId) => RunAsync(() => Api.RevokeInvitationAsync(CircleId, invitationId));
+
+    private Task MakeAdminAsync(CirclePersonResponse person) => ChangeRoleAsync(person, "Admin");
+
+    private Task MakeMemberAsync(CirclePersonResponse person) => ChangeRoleAsync(person, "Member");
+
+    private Task ChangeRoleAsync(CirclePersonResponse person, string role) =>
+        RunAsync(() => Api.ChangeRoleAsync(CircleId, person.MembershipId, new ChangeRoleRequest(role)));
+
+    private Task AddManagedAsync() =>
+        RunAsync(async () =>
+        {
+            ApiResult result = await Api.AddManagedMemberAsync(
+                CircleId,
+                new AddManagedMemberRequest(_newManagedName.Trim(), null));
+
+            if (result.IsSuccess)
+            {
+                _newManagedName = string.Empty;
+            }
+
+            return result;
+        });
+
+    private Task SaveManagedAsync() =>
+        RunAsync(async () =>
+        {
+            ApiResult result = await Api.UpdateManagedMemberAsync(
+                CircleId,
+                _editing!.MembershipId,
+                new UpdateManagedMemberRequest(
+                    _managedName.Trim(),
+                    _managedLanguage.Length == 0 ? null : _managedLanguage));
+
+            if (result.IsSuccess)
+            {
+                _editing = null;
+            }
+
+            return result;
+        });
+
+    private Task RenameAsync() =>
+        RunAsync(async () =>
+            await Api.UpdateAsync(CircleId, new UpdateCircleRequest(_editName.Trim(), _editLabel.Trim())));
+
+    private void StartEdit(CirclePersonResponse person)
+    {
+        _editing = person;
+        _managedName = person.DisplayName;
+        _managedLanguage = string.Empty;
+    }
+
+    private void Ask(ConfirmKind kind, CirclePersonResponse? person)
+    {
+        ClearBanners();
+
+        var question = kind switch
+        {
+            ConfirmKind.Remove => string.Format(CultureInfo.CurrentCulture, L["CircleRemoveConfirm"], person!.DisplayName),
+            ConfirmKind.Transfer => string.Format(CultureInfo.CurrentCulture, L["CircleTransferConfirm"], person!.DisplayName),
+            _ => L["CircleLeaveConfirm"].Value,
+        };
+
+        _confirming = new PendingConfirm(kind, person ?? Nobody, question);
+    }
+
+    private async Task ConfirmAsync()
+    {
+        if (_confirming is not { } pending)
+        {
+            return;
+        }
+
+        _busy = true;
+        ClearBanners();
+
+        var result = pending.Kind switch
+        {
+            ConfirmKind.Remove => await Api.RemoveAsync(CircleId, pending.Person.MembershipId),
+            ConfirmKind.Transfer => await Api.TransferOwnershipAsync(CircleId, pending.Person.MembershipId),
+            _ => await Api.LeaveAsync(CircleId),
+        };
+
+        _busy = false;
+        _confirming = null;
+
+        if (!result.IsSuccess)
+        {
+            // The owner's two refusals land here, and each names the way out (FR-021).
+            _actionError = CircleErrorText.Describe(L, result.Error);
+            return;
+        }
+
+        if (pending.Kind == ConfirmKind.Leave)
+        {
+            _gone = true;
+            _goneMessage = L["CircleLeft"];
+            _circle = null;
+            return;
+        }
+
+        await LoadAsync();
+    }
+
+    private async Task DeleteAsync()
+    {
+        _busy = true;
+        ClearBanners();
+
+        var result = await Api.DeleteAsync(CircleId, new DeleteCircleRequest(_confirmedName.Trim()));
+
+        _busy = false;
+
+        if (!result.IsSuccess)
+        {
+            _actionError = CircleErrorText.Describe(L, result.Error);
+            return;
+        }
+
+        _gone = true;
+        _goneMessage = L["CircleDeleted"];
+        _circle = null;
+    }
+
+    private bool CanRemove(CirclePersonResponse person)
+    {
+        if (person.IsYou || string.Equals(person.Role, "Owner", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        // An admin may remove members and managed members, but only the owner removes an admin.
+        return IsOwner || (IsAdminRole(_circle?.Role) && !IsAdminRole(person.Role));
+    }
+
+    private string? RoleBadge(string role) => role.ToUpperInvariant() switch
+    {
+        "OWNER" => L["CircleRoleOwner"].Value,
+        "ADMIN" => L["CircleRoleAdmin"].Value,
+        _ => null,
+    };
+
+    // Every banner on this page is about the action that just happened. One page carries several
+    // actions, so each one clears what the previous left behind — otherwise "Saved" sits above an
+    // unrelated invite, still claiming to describe it.
+    private void ClearBanners()
+    {
+        _actionError = null;
+        _inviteError = null;
+        _inviteSent = false;
+        _notice = null;
+    }
+
+    private async Task RunAsync(Func<Task<ApiResult>> action)
+    {
+        _busy = true;
+        ClearBanners();
+
+        var result = await action();
+
+        _busy = false;
+
+        if (result.IsSuccess)
+        {
+            _notice = L["CircleSaved"];
+            await LoadAsync();
+            return;
+        }
+
+        _actionError = CircleErrorText.Describe(L, result.Error);
+    }
+
+    // Stands in for the person a circle-wide confirmation has none of; never rendered.
+    private static readonly CirclePersonResponse Nobody =
+        new(Guid.Empty, string.Empty, "Member", false, false);
+}
