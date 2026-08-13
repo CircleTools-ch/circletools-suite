@@ -47,6 +47,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0036](0036-cloud-provider-and-hosting.md) | Cloud provider & hosting topology (Infomaniak VPS + Docker Compose; self-managed Postgres; Swiss Backup; Cloudflare) | Accepted | 2026-08-13 |
 | [0037](0037-transactional-email-provider.md) | Transactional email provider (Brevo free tier behind the outbox port) | Accepted | 2026-08-13 |
 | [0038](0038-ci-cd-pipeline.md) | CI/CD pipeline (GitHub Actions; CI gate now, CD to the VPS deferred to M8) | Accepted | 2026-08-13 |
+| [0039](0039-cross-app-single-sign-on.md) | Cross-app single sign-on (redirect-based authorization-code hand-off; Main origin as authority) | Accepted | 2026-08-13 |
 
 ## Open decisions backlog
 
