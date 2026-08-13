@@ -129,6 +129,6 @@ And the local copy on each device remains as account-free data
   decision [NFR-006](../non-functional/NFR-006-circle-authorization.md) requires. The narrowing is now
   recorded as [ADR-0033](../../adr/0033-which-aggregates-sync.md), which also parks an offline circle
   *read* cache as a separate, later decision.
-- Implemented by: [FEAT-004](../../features/FEAT-004-m3-sync-and-claim.md) *(M3 — sync & claim; Draft, not yet built)*
+- Implemented by: [FEAT-004](../../features/FEAT-004-m3-sync-and-claim.md) *(M3 — sync & claim; `Done`, built & verified 2026-08-12)*
 - Glossary: [Sync](../../glossary/sync.md), [Tombstone](../../glossary/tombstone.md),
   [Claim](../../glossary/claim.md), [Group](../../glossary/group.md)

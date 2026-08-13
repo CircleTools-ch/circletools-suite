@@ -68,19 +68,29 @@ M1 and M2, **"CI green" is carried to milestone 7** — no pipeline exists yet �
 waits on the transactional-email and hosting/residency decisions, though neither gates the build
 ([ADR-0023](../adr/0023-local-dev-infrastructure-in-apphost.md)).
 
-**M4 is designed (2026-08-12), not yet built.** [FEAT-005](FEAT-005-m4-linking.md) and its paired
-[TP-005](TP-005-m4-linking.md) are `Draft`: the linking slice — create a group from a circle, link and
+**M4 is built and closed (2026-08-12).** [FEAT-005](FEAT-005-m4-linking.md) is `Done` and its paired
+[TP-005](TP-005-m4-linking.md) `Reviewed`: the linking slice — create a group from a circle, link and
 unlink a member with consent, see my own assignment while signed in, edit my own wishlist — realises
 FR-027..030 under the already-accepted M4 ADRs ([ADR-0018](../adr/0018-circle-and-sharing-model.md),
 [ADR-0019](../adr/0019-member-user-linking.md), [ADR-0020](../adr/0020-server-side-assignment-privacy.md)),
-so Phase 4 is a no-op here. M4 is the **first cross-account milestone**: everything through M3 was
+so Phase 4 was a no-op here. M4 is the **first cross-account milestone**: everything through M3 was
 single-account (a user's own devices), whereas linking is the first time a *second* account — a linked
-member — reads and writes one slice of an organizer-owned group. The spec fixes the load-bearing new
+member — reads and writes one slice of an organizer-owned group. The spec fixed the load-bearing new
 piece for that: a **structured, per-caller-authorized surface** beside M3's opaque single-account sync,
-the surface ADR-0020 sanctioned. TP-005 is deliberately weighted toward **assignment authorization** —
-a cross-member read must be **denied, not filtered**, and a non-organizer response capped at one — for
-the same reason M3's plan centred on convergence and M2's on enumeration resistance: it is the sharpest
-silent-failure surface in the suite, where one wrong rule leaks the exact secret the app exists to keep.
-The spec also settles the numbers the requirements deferred (reuse the M2 invitation machinery for the
-member-link request; self-link auto-accepts; one user per group; per-group wishlists with a copy-previous
-offer; snapshot-at-create timing) in its *numbers* table.
+the surface ADR-0020 sanctioned, realised as **403 for a stranger vs 404 for a known member with no
+draw**. TP-005 was deliberately weighted toward **assignment authorization** — a cross-member read must
+be **denied, not filtered**, and a non-organizer response capped at one — for the same reason M3's plan
+centred on convergence and M2's on enumeration resistance: it is the sharpest silent-failure surface in
+the suite, where one wrong rule leaks the exact secret the app exists to keep. The slice also closed the
+carried Secret-Santa halves of **FR-019** and **FR-022** (the first thing to copy a circle into a group),
+and settled the numbers the requirements deferred (reuse the M2 invitation machinery for the member-link
+request; self-link auto-accepts; one user per group; per-group wishlists with a copy-previous offer;
+snapshot-at-create timing) in its *numbers* table.
+
+**Closing M4 turned up one product defect a green suite had missed** — create-from-circle set
+`Member.UserId` locally but never registered the **server-side** member-link, so a person linked that way
+could see their assignment but could not own their wishlist. It was found only by the two-account,
+DE/EN/FR browser walkthrough `CLAUDE.md` requires, and fixed with `POST /api/v1/member-links/circle` (the
+host verifies shared-circle membership before recording the link), now covered by `LinkingCircleTests`.
+The transferable lesson, recorded: every test set up its links through the accept flow, so the one path
+that did not was the one that broke — and only the browser showed it.

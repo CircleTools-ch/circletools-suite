@@ -114,5 +114,5 @@ Then they are told the change was not saved
 - Governing ADRs: [ADR-0016](../../adr/0016-sync-and-conflict-resolution.md) (LWW + escalation hook),
   [ADR-0012](../../adr/0012-observability-and-telemetry.md) (the hook must be observable),
   [ADR-0029](../../adr/0029-storage-write-failure-contract.md) (a refused write is reported)
-- Implemented by: [FEAT-004](../../features/FEAT-004-m3-sync-and-claim.md) *(M3 — sync & claim; Draft, not yet built)*
+- Implemented by: [FEAT-004](../../features/FEAT-004-m3-sync-and-claim.md) *(M3 — sync & claim; `Done`, built & verified 2026-08-12)*
 - Glossary: [Sync](../../glossary/sync.md), [Tombstone](../../glossary/tombstone.md)

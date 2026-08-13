@@ -3,7 +3,7 @@ id: UC-SS-011
 title: See my assignment while signed in
 app: Secret-Santa
 actors: [Member]
-status: Draft
+status: Approved
 priority: Must
 related: [FR-029, NFR-002, ADR-0020, ADR-0019, ADR-0014]
 ---

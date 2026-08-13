@@ -3,6 +3,67 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## UX & platform-parity review — 2026-08-12
+
+A usability pass taken after M4 closed, to answer two questions directly: is the suite built on
+**both** web and mobile, and is it **user-friendly**? The offline Secret-Santa journey was driven in a
+**real browser** (headless Chromium via Playwright, DE/EN/FR: create group → budget/event → members +
+wishlists → exclusion → draw → share → open a reveal link), per the `CLAUDE.md` "verify UI in a real
+browser" rule. **The core offline flow is polished and correct** — all three languages render cleanly,
+spoiler protection is thoughtful, the reveal page separates `Event: 12/24/2026, Zürich` correctly (the
+old separator defect is gone), empty wishlists read "No wishlist provided", and the whole run produced
+**zero console errors/warnings**. The findings below are the gaps that pass alongside that.
+
+**Scope caveat:** only the **account-free** flow was browser-audited. The **signed-in v2 flows**
+(sign-in, sync, claim, circles, linking) were **not** driven live — that needs the Main service +
+Postgres + Mailpit up — so the signed-in items below are from a **code + docs review** and still want a
+live two-account pass to confirm.
+
+- **UX-001 · Mobile is a milestone behind — decide its scope (P1).** The MAUI head
+  (`AppSuite.SecretSanta.App`) references only `SecretSanta.Ui` + `LocalStore`, and `MauiProgram.cs`
+  registers only the **offline MVP** — no `ApiClient`, no sync engine, no account UI, no
+  linking/circle APIs, and (per its own code comment) **no language picker**, so mobile is stuck on
+  `de-CH`. There is **no `Main` mobile head at all**, and the project still carries template defaults
+  (`ApplicationId = com.companyname…`, the dotnet-bot icon). Net: **M1–M4 effectively shipped web-only.**
+  This is implied by the docs (every M2–M4 walkthrough was the WASM web app; M1 carried "MAUI
+  cross-client passkeys") but was never called out as a milestone-level gap. **Decide explicitly:**
+  bring the MAUI head to web parity (sign-in, sync, linking, *and* a language picker), or formally scope
+  mobile as "offline-only for now" so the gap is a decision, not a silent omission.
+- **UX-002 · Account-only actions are offered to account-free users (P1, browser-verified).** On the
+  members page **while signed out**, every member shows a **"Link…"** button; clicking it opens an email
+  field + "Send" that calls the authorized server API — a dead end for someone with no account.
+  `Members.razor` renders the link/unlink controls with no `AuthorizeView`. Wrap them in one (or
+  disable with a "sign in to link" hint) so the action only appears when it can succeed.
+- **UX-003 · First-run / empty states are bare (P2, browser-verified).** Signed out, `/` is a title,
+  an input, and the literal line "No groups yet." — no explanation of what the app does, no example, no
+  cue to sign in for cross-device sync. Add a short explainer + a real call-to-action on the empty
+  Groups screen, and **sell the account at the point of choice** (sync, see your own assignment, own
+  your wishlist).
+- **UX-004 · The share screen dumps raw encoded URLs (P2, browser-verified).** Each person's reveal
+  link is printed verbatim as a ~197-character base64 blob. The "Copy" button is the right primary
+  action, but the raw string is noise and can alarm users. Collapse/hide the raw URL, emphasise Copy,
+  and consider a **QR code** and/or the native share sheet per person.
+- **UX-005 · Signed-in navigation shows dead ends and a reverting language picker (P2, from
+  code+docs — not browser-verified this pass).** The nav shows **My links / My assignments / My
+  wishlists** to *every* signed-in user, though they are inert unless the user is a linked member — make
+  them contextual. **Claim** is a nav link, not an auto-prompt on first sign-in with local groups
+  (already recorded as an M3 behaviour question). The **nav language picker is local-only** and reverts
+  to the profile preference on the next reconcile ([ADR-0035](../adr/0035-profile-sync-seam.md)); the
+  synced path is the Profile page — unify them or warn.
+- **UX-006 · Sync is manual (P2, known parked decision).** No continuous/background sync
+  ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md) parked it), so device B won't reflect device
+  A until someone presses "Sync now" or reloads — a weak spot for the "follows you between devices"
+  promise. A **pull-on-focus/startup** refresh would close most of the gap without reopening the parked
+  continuous-sync decision.
+- **UX-007 · Group editor has three separate Save buttons and one shared status line (P3,
+  browser-verified).** Name, Budget and Event each save independently, and a single "Saved." line at the
+  bottom does not say which section it refers to — easy to edit one section and forget to save another.
+  Prefer a single save, or per-section confirmation. (Also minor/cosmetic: the desktop sidebar is
+  mostly empty dead space.)
+
+These are review findings, not yet promoted; the P1/P2 items are the candidates to turn into use
+cases/requirements (or ADRs, for the mobile-scope decision) if taken forward.
+
 ## Ideas
 
 ### IDEA-002 — Circle (shared people across the suite) · _status: built & closed (M2, 2026-07-30) — M4 consumes it_

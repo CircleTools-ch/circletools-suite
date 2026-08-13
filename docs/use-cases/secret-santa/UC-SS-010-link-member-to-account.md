@@ -3,7 +3,7 @@ id: UC-SS-010
 title: Link a member to an account
 app: Secret-Santa
 actors: [Organizer, Member]
-status: Draft
+status: Approved
 priority: Must
 related: [FR-028, NFR-002, NFR-005, ADR-0019, ADR-0020, ADR-0018]
 ---

@@ -2,7 +2,7 @@
 id: FR-029
 title: See my assignment while signed in
 type: functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-SS-011
 verification: test
@@ -106,6 +106,6 @@ And the recipient's free-text wishlist is displayed untranslated
   authorization rule), [ADR-0019](../../adr/0019-member-user-linking.md) (what a linked member is),
   [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md) (anti-spoiler UX; partly superseded
   for account mode)
-- Implemented by: [FEAT-005](../../features/FEAT-005-m4-linking.md) *(M4 — linking; designed, `Draft`)*, verified by [TP-005](../../features/TP-005-m4-linking.md)
+- Implemented by: [FEAT-005](../../features/FEAT-005-m4-linking.md) *(M4 — linking; `Done`)*, verified by [TP-005](../../features/TP-005-m4-linking.md)
 - Glossary: [Assignment](../../glossary/assignment.md), [Member](../../glossary/member.md),
   [User](../../glossary/user.md), [Reveal link](../../glossary/reveal-link.md)

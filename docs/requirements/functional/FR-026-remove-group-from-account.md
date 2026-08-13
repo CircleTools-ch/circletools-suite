@@ -96,6 +96,6 @@ Then the action is unavailable and the reason is stated
   [ADR-0016](../../adr/0016-sync-and-conflict-resolution.md),
   [ADR-0022](../../adr/0022-account-deletion-and-data-export.md) (user-requested removal is a hard
   delete)
-- Implemented by: [FEAT-004](../../features/FEAT-004-m3-sync-and-claim.md) *(M3 — sync & claim; Draft, not yet built)*
+- Implemented by: [FEAT-004](../../features/FEAT-004-m3-sync-and-claim.md) *(M3 — sync & claim; `Done`, built & verified 2026-08-12)*
 - Glossary: [Claim](../../glossary/claim.md), [Tombstone](../../glossary/tombstone.md),
   [Group](../../glossary/group.md)

@@ -118,6 +118,6 @@ Then no network call is awaited before the user is told it is saved
 - Governing ADRs: [ADR-0016](../../adr/0016-sync-and-conflict-resolution.md) (the mechanism and its
   accepted data-loss window), [ADR-0012](../../adr/0012-observability-and-telemetry.md) (the hook must
   be observable), [ADR-0029](../../adr/0029-storage-write-failure-contract.md)
-- Implemented by: [FEAT-004](../../features/FEAT-004-m3-sync-and-claim.md) *(M3 — sync & claim; Draft, not yet built)*
+- Implemented by: [FEAT-004](../../features/FEAT-004-m3-sync-and-claim.md) *(M3 — sync & claim; `Done`, built & verified 2026-08-12)*
 - Glossary: [Sync](../../glossary/sync.md), [Tombstone](../../glossary/tombstone.md),
   [Claim](../../glossary/claim.md)

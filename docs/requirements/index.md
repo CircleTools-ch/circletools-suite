@@ -35,10 +35,10 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-016](functional/FR-016-create-circle.md) | Create a circle with a user-chosen label | Functional | Must | Implemented |
 | [FR-017](functional/FR-017-invite-to-circle.md) | Invite a person to a circle by email | Functional | Must | Approved |
 | [FR-018](functional/FR-018-respond-to-circle-invitation.md) | Accept or decline a circle invitation | Functional | Must | Implemented |
-| [FR-019](functional/FR-019-manage-managed-members.md) | Add and maintain managed members | Functional | Must | Approved |
+| [FR-019](functional/FR-019-manage-managed-members.md) | Add and maintain managed members | Functional | Must | Implemented |
 | [FR-020](functional/FR-020-manage-circle-roles-and-membership.md) | Manage circle roles, membership and ownership | Functional | Must | Implemented |
 | [FR-021](functional/FR-021-leave-circle.md) | Leave a circle | Functional | Must | Implemented |
-| [FR-022](functional/FR-022-delete-circle.md) | Delete a circle | Functional | Must | Approved |
+| [FR-022](functional/FR-022-delete-circle.md) | Delete a circle | Functional | Must | Implemented |
 | [NFR-006](non-functional/NFR-006-circle-authorization.md) | Circle data authorization | Non-functional | Must | Implemented |
 | [NFR-007](non-functional/NFR-007-store-distributability.md) | Store distributability & platform compliance | Non-functional | Must | Approved |
 | [FR-023](functional/FR-023-sync-across-devices.md) | Sync account-scoped data across a user's devices | Functional | Must | Implemented |
@@ -82,8 +82,9 @@ _Add a row per requirement._
   that copies a circle into a group, which is exactly the "copy" those two criteria were waiting on.
   M4 needs **no new NFR**: assignment privacy is already governed by the amended
   [NFR-002](non-functional/NFR-002-assignment-privacy.md), and the link request's
-  enumeration resistance by [NFR-005](non-functional/NFR-005-account-enumeration-resistance.md). To be
-  realised by [FEAT-005](../features/index.md) *(not yet written)*.
+  enumeration resistance by [NFR-005](non-functional/NFR-005-account-enumeration-resistance.md). Built
+  and closed as [FEAT-005](../features/FEAT-005-m4-linking.md), verified by
+  [TP-005](../features/TP-005-m4-linking.md).
 - **NFR-008** is the M3 counterpart to NFR-005 and NFR-006: convergence and data safety are one
   property that every syncing aggregate must hold, and both of its failure modes — a device that
   quietly stops converging, an edit that disappears — are silent. Stating it once gives it one test
@@ -113,17 +114,21 @@ _Add a row per requirement._
 - **Specified, not yet built** — **NFR-007** (store distributability), which belongs to no slice
   (see above). The M3 slice (**FR-023..026**, **NFR-008**) left this state on 2026-08-12: it is built
   and browser-verified as [FEAT-004](../features/FEAT-004-m3-sync-and-claim.md).
-- **Built, one criterion still open** — **FR-010**, **FR-011** and **NFR-004** from M1, and **FR-017**,
-  **FR-019** and **FR-022** from M2. Each is in use, but carries a criterion that cannot close yet, and
-  the reason is recorded rather than quietly dropped:
+- **Built, one criterion still open** — **FR-010**, **FR-011** and **NFR-004** from M1, and **FR-017**
+  from M2. Each is in use, but carries a criterion that cannot close yet, and the reason is recorded
+  rather than quietly dropped:
 
 | Requirement | What is still open | Unblocked by |
 |---|---|---|
 | FR-010 / FR-011 | passkeys across the MAUI heads (needs `apple-app-site-association` / Digital Asset Links on the real domain) | the hosting & domain decision |
 | NFR-004 | the data-residency target, and the "no private key, no biometric data" check that needs a stored passkey credential to inspect | the hosting decision; milestone 7 |
 | FR-017 | deliverability of the invitation — SPF/DKIM/DMARC, bounces, abuse reports. Everything else is built and tested against Mailpit, but an invitation is the first thing the suite sends to somebody with no relationship to it, and a local sink cannot exercise any of that | the transactional-email provider decision |
-| FR-019 | *"a managed member copied into a Secret-Santa group is unaffected by their removal from the circle"* — nothing copies a circle into a group yet, so there is no copy to leave unchanged | M4 — create a group from a circle |
-| FR-022 | *"a Secret-Santa group created from a deleted circle opens unchanged, and its dangling circle identifier does not cause an error"* — the API half is asserted; the Secret-Santa half has no circle identifier to hold yet | M4 — same reason |
+
+**FR-019 and FR-022 closed with M4.** Their one open criterion each — the managed member *copied* into
+a group left unchanged by a later circle change, and the group *created from* a circle that is later
+deleted opening unchanged with its dangling origin reference never dereferenced — waited on the first
+thing to copy a circle into a group, which [FEAT-005](../features/FEAT-005-m4-linking.md) built and
+covered with `CreateFromCircleSnapshotTests`. Both are now `Implemented`.
 
 **FR-015 closed with M2.** Its sole-circle-owner guard was M1's recorded loose end and is now
 `SoleOwnerCircleGuard`, verified end to end through real account deletion — which is what the mixed
