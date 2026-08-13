@@ -3,7 +3,7 @@ id: UC-SS-009
 title: Create a group from a circle
 app: Secret-Santa
 actors: [Organizer]
-status: Draft
+status: Approved
 priority: Must
 related: [FR-027, FR-019, FR-022, NFR-001, NFR-006, ADR-0018, ADR-0019, ADR-0033]
 ---

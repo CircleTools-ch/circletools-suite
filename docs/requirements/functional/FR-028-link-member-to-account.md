@@ -2,7 +2,7 @@
 id: FR-028
 title: Link a member to an account
 type: functional
-status: Draft
+status: Implemented
 priority: Must
 source: UC-SS-010
 verification: test
@@ -120,7 +120,7 @@ Then the unlinked members receive reveal links exactly as before
   duplicate-link guard, deletion cascade), [ADR-0020](../../adr/0020-server-side-assignment-privacy.md)
   (what the link grants), [ADR-0018](../../adr/0018-circle-and-sharing-model.md) (managed-member
   promotion)
-- Implemented by: [FEAT-005](../../features/FEAT-005-m4-linking.md) *(M4 — linking; designed, `Draft`)*, verified by [TP-005](../../features/TP-005-m4-linking.md)
+- Implemented by: [FEAT-005](../../features/FEAT-005-m4-linking.md) *(M4 — linking; `Done`)*, verified by [TP-005](../../features/TP-005-m4-linking.md)
 - ~~Open for the feature spec: whether the link request **reuses the M2
   [Invitation](../../glossary/invitation.md) infrastructure** (rate limits, expiry, revoke) or gets a
   member-link variant of it.~~ **Settled in [FEAT-005](../../features/FEAT-005-m4-linking.md):** it

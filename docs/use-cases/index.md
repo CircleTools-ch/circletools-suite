@@ -35,10 +35,10 @@ Use cases describe how actors achieve goals with the system. They are the bridge
 | [UC-MAIN-016](main/UC-MAIN-016-work-offline-and-reconcile.md) | Work offline while signed in, and reconcile when back online | Main | Approved |
 | [UC-SS-007](secret-santa/UC-SS-007-claim-local-groups.md) | Take my existing groups into my account | Secret-Santa | Approved |
 | [UC-SS-008](secret-santa/UC-SS-008-remove-group-from-account.md) | Take a group back out of my account | Secret-Santa | Approved |
-| [UC-SS-009](secret-santa/UC-SS-009-create-group-from-circle.md) | Create a group from a circle | Secret-Santa | Draft |
-| [UC-SS-010](secret-santa/UC-SS-010-link-member-to-account.md) | Link a member to an account | Secret-Santa | Draft |
-| [UC-SS-011](secret-santa/UC-SS-011-see-my-assignment.md) | See my assignment while signed in | Secret-Santa | Draft |
-| [UC-SS-012](secret-santa/UC-SS-012-edit-my-wishlist.md) | Edit my own wishlist | Secret-Santa | Draft |
+| [UC-SS-009](secret-santa/UC-SS-009-create-group-from-circle.md) | Create a group from a circle | Secret-Santa | Approved |
+| [UC-SS-010](secret-santa/UC-SS-010-link-member-to-account.md) | Link a member to an account | Secret-Santa | Approved |
+| [UC-SS-011](secret-santa/UC-SS-011-see-my-assignment.md) | See my assignment while signed in | Secret-Santa | Approved |
+| [UC-SS-012](secret-santa/UC-SS-012-edit-my-wishlist.md) | Edit my own wishlist | Secret-Santa | Approved |
 
 _Add a row per use case._
 
@@ -71,6 +71,6 @@ _Add a row per use case._
   [Circle](../glossary/circle.md) is first copied into a
   [Group](../glossary/group.md), which is the missing "copy" behind
   [FR-019](../requirements/functional/FR-019-manage-managed-members.md)'s and
-  [FR-022](../requirements/functional/FR-022-delete-circle.md)'s open criteria. To be realised by
-  `FR-027..030` (in drafting) and [FEAT-005](../features/index.md). *(M3 took `UC-SS-007..008`, so M4
-  starts at 009.)*
+  [FR-022](../requirements/functional/FR-022-delete-circle.md)'s open criteria. Realised by
+  [FR-027..030](../requirements/index.md) and [FEAT-005](../features/FEAT-005-m4-linking.md); built and
+  closed 2026-08-12. *(M3 took `UC-SS-007..008`, so M4 starts at 009.)*

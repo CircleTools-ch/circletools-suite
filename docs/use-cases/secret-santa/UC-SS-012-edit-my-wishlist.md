@@ -3,7 +3,7 @@ id: UC-SS-012
 title: Edit my own wishlist
 app: Secret-Santa
 actors: [Member]
-status: Draft
+status: Approved
 priority: Should
 related: [FR-030, NFR-003, ADR-0019, ADR-0014]
 ---

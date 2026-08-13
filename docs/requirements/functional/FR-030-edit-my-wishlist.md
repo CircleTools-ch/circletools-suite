@@ -2,7 +2,7 @@
 id: FR-030
 title: Edit my own wishlist
 type: functional
-status: Draft
+status: Implemented
 priority: Should
 source: UC-SS-012
 verification: test
@@ -105,7 +105,7 @@ And the free-text content is stored and shown untranslated
 - Governing ADRs: [ADR-0019](../../adr/0019-member-user-linking.md) (wishlist ownership; per-group
   membership), [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md) (reveal links are
   snapshots)
-- Implemented by: [FEAT-005](../../features/FEAT-005-m4-linking.md) *(M4 — linking; designed, `Draft`)*, verified by [TP-005](../../features/TP-005-m4-linking.md)
+- Implemented by: [FEAT-005](../../features/FEAT-005-m4-linking.md) *(M4 — linking; `Done`)*, verified by [TP-005](../../features/TP-005-m4-linking.md)
 - ~~Open for the feature spec: confirm the per-group-vs-unified wishlist choice and the "copy previous"
   offer.~~ **Settled in [FEAT-005](../../features/FEAT-005-m4-linking.md):** wishlists are **per
   membership**, with a client-side **offer to copy** a previous one when joining a new linked group; the
