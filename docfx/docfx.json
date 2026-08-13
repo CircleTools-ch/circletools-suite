@@ -44,6 +44,8 @@
     "globalMetadata": {
       "_appName": "CircleTools",
       "_appTitle": "CircleTools Documentation",
+      "_appLogoPath": "public/logo.svg",
+      "_appFaviconPath": "public/favicon.svg",
       "_enableSearch": true,
       "_disableContribution": false,
       "pdf": false
