@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark-mode brand chrome: keep burgundy for the primary/app bar (it reads on dark), lift the accent
+     to gold, and use a deep warm brown for the window ground. -->
+<resources>
+    <color name="colorPrimary">#7a1f2b</color>
+    <color name="colorPrimaryDark">#3a1015</color>
+    <color name="colorAccent">#e3a92e</color>
+    <color name="colorOnPrimary">#ffffff</color>
+    <color name="windowBackground">#1c1712</color>
+</resources>

@@ -1,20 +1,29 @@
+/* Secret-Santa's palette for the device head's WebView, matching the web app (naming.md). The shared
+   suite theme (circletools.css, linked in index.html) carries the brand-as-Bootstrap skin and the
+   suite navy defaults; these token overrides swap it for burgundy + gold so links, buttons and focus
+   rings all follow. The WebView stays light — native dark chrome is handled on the MAUI side. */
+:root {
+    --circletools-brand: #7a1f2b;
+    --circletools-brand-contrast: #ffffff;
+    --circletools-accent: #e3a92e;
+
+    --circletools-primary: #7a1f2b;
+    --circletools-primary-rgb: 122, 31, 43;
+    --circletools-primary-hover: #661922;
+    --circletools-primary-active: #54141c;
+    --circletools-on-primary: #ffffff;
+
+    --circletools-surface: #fffdf9;
+    --circletools-border: #ece0d0;
+
+    --bs-body-bg: #faf6ef;
+}
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-a, .btn-link {
-    color: #006bb7;
-}
-
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
+/* Links, buttons and focus rings inherit the brand skin from circletools.css. */
 
 .content {
     padding-top: 1.1rem;
@@ -38,7 +47,8 @@ h1:focus {
 
 #blazor-error-ui {
     color-scheme: light only;
-    background: lightyellow;
+    background: var(--bs-warning-bg-subtle, lightyellow);
+    color: var(--bs-body-color, #212529);
     bottom: 0;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
     box-sizing: border-box;
@@ -90,7 +100,7 @@ h1:focus {
         position: sticky;
         top: 0;
         height: env(safe-area-inset-top);
-        background-color: #f7f7f7;
+        background-color: var(--circletools-brand, #7a1f2b);
         width: 100%;
         z-index: 1;
     }

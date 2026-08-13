@@ -31,6 +31,26 @@ Examples:
 - At least one review before merge (self-review acceptable while solo, but the checklist still applies).
 - Prefer squash-merge for a clean, conventional history.
 
+## Branch protection (deferred — 2026-08-13)
+The repo (`CircleTools-ch/circletools-suite`) is **private on the GitHub Free plan**, where branch
+protection is **not enforced on private org repos** — neither classic branch-protection rules nor
+rulesets take effect until the org upgrades to **GitHub Team**, or the repo is made **public**. So
+the PR flow above is currently **convention, not a server-side gate**: nothing hard-blocks a direct
+push to `main`.
+
+This is accepted for a solo maintainer — the only person who could bypass it is the maintainer, and
+CI ([ADR-0038](../adr/0038-ci-cd-pipeline.md)) still **runs and reports** `build-test` / `docs` /
+`build-maui` on every pull request, so the signal is intact even without the block. Keep working
+through PRs by habit.
+
+**Revisit when** either trigger fires:
+- a **second contributor** joins — enforcement now guards *other people's* pushes, which is the real
+  risk; upgrade to **GitHub Team** (~$4/mo, also lifts the 2,000 Actions-minutes/month cap that the
+  Windows `build-maui` job spends at 2×), or
+- the repo **goes public** — enforcement and Actions minutes both become free; then add a **ruleset**
+  targeting the default branch requiring a PR and the three CI checks (see the ruleset config already
+  worked out for this repo).
+
 ## Do not
 - Don't commit secrets, real personal data, or build output.
 - Don't bypass hooks/signing unless explicitly agreed.

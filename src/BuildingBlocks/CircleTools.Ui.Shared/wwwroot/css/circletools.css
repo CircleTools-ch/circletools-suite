@@ -4,15 +4,110 @@
    Deliberately small. Bootstrap owns the components; this file owns the brand colour, the auth-card
    layout, and the handful of places the default template looks like a default template. Anything
    that belongs to a single component belongs in that component's .razor.css instead.
+
+   The brand landed 2026-08-13 (ADR-0024 amendment, docs/process/naming.md): suite navy #03173d with
+   accent blue #3c6fd1. An app rebrands by overriding the --circletools-primary* tokens (see the
+   Secret-Santa app.css, which swaps them for burgundy + gold) — nothing below hard-codes a colour.
+
+   Dark mode is Bootstrap 5.3's colour mode: js/theme.js sets data-bs-theme on <html> from the OS
+   preference, so every Bootstrap component gets its dark palette for free; this file only adjusts the
+   brand tokens per mode.
 */
 
 :root {
-    --circletools-brand: #03173d;
+    --circletools-brand: #03173d;            /* navy — chrome: nav rail, headers, PWA theme colour */
     --circletools-brand-contrast: #ffffff;
-    --circletools-accent: #3c6fd1;
+    --circletools-accent: #3c6fd1;           /* blue — the interactive accent */
+
+    /* Interactive primary skin (light). Apps override these six lines to rebrand. */
+    --circletools-primary: #3c6fd1;
+    --circletools-primary-rgb: 60, 111, 209;
+    --circletools-primary-hover: #3260bd;
+    --circletools-primary-active: #2d569f;
+    --circletools-on-primary: #ffffff;
+
     --circletools-surface: #f6f7fb;
     --circletools-border: #dfe3ec;
 }
+
+/* Suite primary on dark: lift the accent so it clears contrast on Bootstrap's dark surfaces, and let
+   hover/active go lighter rather than darker. */
+[data-bs-theme="dark"] {
+    --circletools-primary: #6f97e6;
+    --circletools-primary-rgb: 111, 151, 230;
+    --circletools-primary-hover: #86a9ec;
+    --circletools-primary-active: #9bb8f0;
+
+    --circletools-surface: #1b2233;
+    --circletools-border: #2c3550;
+}
+
+/* ---------- Brand as an interactive skin over Bootstrap ---------- */
+/* Bootstrap compiles component colours to literal hex, so re-skinning the primary means re-declaring
+   the affected component custom properties — not just --bs-primary. All of it reads the tokens above,
+   so it follows both the mode and any app override. Both selectors are listed so the mapping wins in
+   light and in dark regardless of Bootstrap's own [data-bs-theme=dark] declarations. */
+
+:root,
+[data-bs-theme="dark"] {
+    --bs-primary: var(--circletools-primary);
+    --bs-primary-rgb: var(--circletools-primary-rgb);
+    --bs-link-color: var(--circletools-primary);
+    --bs-link-color-rgb: var(--circletools-primary-rgb);
+    --bs-link-hover-color: var(--circletools-primary-hover);
+    --bs-link-hover-color-rgb: var(--circletools-primary-rgb);
+}
+
+.btn-primary {
+    --bs-btn-color: var(--circletools-on-primary);
+    --bs-btn-bg: var(--circletools-primary);
+    --bs-btn-border-color: var(--circletools-primary);
+    --bs-btn-hover-color: var(--circletools-on-primary);
+    --bs-btn-hover-bg: var(--circletools-primary-hover);
+    --bs-btn-hover-border-color: var(--circletools-primary-hover);
+    --bs-btn-active-color: var(--circletools-on-primary);
+    --bs-btn-active-bg: var(--circletools-primary-active);
+    --bs-btn-active-border-color: var(--circletools-primary-active);
+    --bs-btn-disabled-color: var(--circletools-on-primary);
+    --bs-btn-disabled-bg: var(--circletools-primary);
+    --bs-btn-disabled-border-color: var(--circletools-primary);
+    --bs-btn-focus-shadow-rgb: var(--circletools-primary-rgb);
+}
+
+.btn-outline-primary {
+    --bs-btn-color: var(--circletools-primary);
+    --bs-btn-border-color: var(--circletools-primary);
+    --bs-btn-hover-color: var(--circletools-on-primary);
+    --bs-btn-hover-bg: var(--circletools-primary);
+    --bs-btn-hover-border-color: var(--circletools-primary);
+    --bs-btn-active-color: var(--circletools-on-primary);
+    --bs-btn-active-bg: var(--circletools-primary);
+    --bs-btn-active-border-color: var(--circletools-primary);
+    --bs-btn-focus-shadow-rgb: var(--circletools-primary-rgb);
+}
+
+.btn-link {
+    --bs-btn-color: var(--circletools-primary);
+    --bs-btn-hover-color: var(--circletools-primary-hover);
+}
+
+/* Interactive form states default to Bootstrap blue; point them at the brand primary. */
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus,
+.btn:focus-visible,
+.btn.focus-visible {
+    border-color: var(--circletools-primary);
+    box-shadow: 0 0 0 0.25rem rgba(var(--circletools-primary-rgb), 0.25);
+}
+
+.form-check-input:checked {
+    background-color: var(--circletools-primary);
+    border-color: var(--circletools-primary);
+}
+
+.form-range::-webkit-slider-thumb { background-color: var(--circletools-primary); }
+.form-range::-moz-range-thumb { background-color: var(--circletools-primary); }
 
 /* ---------- Auth screens ---------- */
 
