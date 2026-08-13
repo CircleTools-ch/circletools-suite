@@ -49,12 +49,11 @@ Both stores also require a reachable **privacy policy URL**, and a **data-safety
 are provided in **DE / EN / FR**.
 
 **Identity permanence.** The **`ApplicationId` / bundle identifier cannot be changed after the first
-store release.** It is chosen once, for the lifetime of the app. Today the MAUI head still carries
-the template value `com.companyname.appsuite.secretsanta.app`, and the real value depends on the
-suite domain, which is not chosen yet ([naming](../../process/naming.md)). The same gate applies to
-the passkey relying-party ID: RP IDs do not migrate
-([ADR-0023](../../adr/0023-local-dev-infrastructure-in-apphost.md)), so the domain must be final
-before either the first submission or the first real passkey registration.
+store release.** It is chosen once, for the lifetime of the app. It is now **set** to
+`ch.circletools.secretsanta`, derived from the chosen suite domain `circletools.ch`
+([naming](../../process/naming.md)). The same gate applies to the passkey relying-party ID: RP IDs do not
+migrate ([ADR-0023](../../adr/0023-local-dev-infrastructure-in-apphost.md)); the RP-ID is `circletools.ch`,
+applied at deployment before the first real passkey registration.
 
 ## Rationale
 

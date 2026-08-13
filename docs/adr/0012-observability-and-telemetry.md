@@ -27,7 +27,7 @@ privacy?
 
 ## Decision outcome
 
-**Chosen: OpenTelemetry through `AppSuite.ServiceDefaults`** for all server hosts (traces, metrics, logs;
+**Chosen: OpenTelemetry through `CircleTools.ServiceDefaults`** for all server hosts (traces, metrics, logs;
 Aspire dashboard locally), and **client-side telemetry that is opt-in and consent-gated**. **No PII** is
 placed in traces, metrics, or logs anywhere.
 

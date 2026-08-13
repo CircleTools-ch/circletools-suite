@@ -12,7 +12,7 @@ tags: [security, identity, privacy, passwords]
 [FR-007](../requirements/functional/FR-007-create-suite-account.md) requires passwords to be
 "minimum 12 characters, no composition rules, no forced rotation, **checked against a
 breached-password list**". Only the length rule was implemented; the breached-password check was
-recorded as intended (a note in `AddAppSuiteIdentityCore` says it "is a separate validator, not an
+recorded as intended (a note in `AddCircleToolsIdentityCore` says it "is a separate validator, not an
 `IdentityOptions` setting") but never built, so an acceptance criterion of a Must-priority
 requirement was silently open.
 
@@ -65,7 +65,7 @@ user whose passphrase merely resembles a leaked one.
 
 ### Rebuilding the list
 
-Refreshing `src/BuildingBlocks/AppSuite.Identity/Passwords/BreachedPasswords.txt` means re-running
+Refreshing `src/BuildingBlocks/CircleTools.Identity/Passwords/BreachedPasswords.txt` means re-running
 the filter over the two source files and committing the result. Three rules are not optional:
 
 1. **Filter on characters, not bytes.** The check compares .NET `string` lengths. A shell filter

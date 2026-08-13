@@ -20,9 +20,9 @@ Postgres + Mailpit up — so the signed-in items below are from a **code + docs 
 live two-account pass to confirm.
 
 - **UX-001 · Mobile is a milestone behind — decide its scope (P1).** ✅ **Resolved 2026-08-13 —
-  decision: bring the MAUI head to web parity.** The `AppSuite.SecretSanta.App` head now composes the
+  decision: bring the MAUI head to web parity.** The `CircleTools.SecretSanta.App` head now composes the
   same shared feature stack the browser WebApp does, with only the platform seams swapped for their
-  device implementations (ADR-0025/0028): it references `AppSuite.ApiClient` and `AppSuite.Ui.Account`,
+  device implementations (ADR-0025/0028): it references `CircleTools.ApiClient` and `CircleTools.Ui.Account`,
   and `MauiProgram.cs` registers the two keyed account `HttpClient`s (plain handler, no
   browser-credentials handler), the `M3` sync engine (`AddSecretSantaSyncEngine`), the `ISyncApi` /
   `ILinkingApi` / `ICircleDirectoryApi` ports over the authorized client, `AddAccountUi` under
@@ -42,9 +42,9 @@ live two-account pass to confirm.
     `MauiPasskeyCeremony` reports "unsupported" and the account pages already show the right message;
     password sign-in works fully. **The production API origin** — `MauiProgram.ApiBaseUrl` is a dev
     default (`10.0.2.2:7080` for the Android emulator's host-loopback); the literal origin lands with
-    the domain. The **template `ApplicationId`/icon** were intentionally left: the bundle id is
-    permanent once released and is a hard brand gate (naming.md, risk R8), so it must not be baked in
-    now. There is still **no `Main` mobile head** — out of scope for the Secret-Santa app's parity.
+    the domain. The **`ApplicationId`** is now set to the final `ch.circletools.secretsanta` (2026-08-13,
+    brand chosen); the **icon/splash** are still template art, to be replaced before first submission.
+    There is still **no `Main` mobile head** — out of scope for the Secret-Santa app's parity.
   - Live sign-in/sync from a device against a running Main service was **not** driven this pass (it
     needs Main + Postgres + Mailpit reachable from the emulator/device); the account UI is the same
     shared `Ui.Account` components already browser-verified end-to-end on web across M1–M4.
@@ -146,8 +146,8 @@ cases/requirements (or ADRs, for the mobile-scope decision) if taken forward.
   memberships, invitations and decline records live **inside the `Circle` aggregate** (every invariant
   is circle-scoped), and there is **exactly one accept path** for both invitation branches, so the
   "verified address must match" rule lives in one place.
-- **Domain & application built (2026-07-29):** `AppSuite.Circles.Contracts` and
-  `AppSuite.Circles.Core` exist — the `Circle` aggregate with memberships, invitations and decline
+- **Domain & application built (2026-07-29):** `CircleTools.Circles.Contracts` and
+  `CircleTools.Circles.Core` exist — the `Circle` aggregate with memberships, invitations and decline
   records inside it, every invariant and cap, and 23 command/query handlers, with **68 unit tests**
   and four architecture fitness functions green (355 tests across 11 projects overall). Four ports
   are declared and unimplemented until the host slice: `ICircleRepository`, `IAccountDirectory`,
@@ -156,8 +156,8 @@ cases/requirements (or ADRs, for the mobile-scope decision) if taken forward.
   became "no DTO describing a **person** carries one", with a two-name exemption list under test
   (an invite request must carry an address, and a pending-invitation list is unusable without one);
   and the invitation mail leaves through an `IInvitationMailer` **port** rather than `Circles.Core`
-  referencing `AppSuite.Infrastructure`, which would have pulled MailKit into the domain project.
-- **Built and closed (2026-07-30):** the rest of the slice landed — `AppSuite.Circles.Repository`
+  referencing `CircleTools.Infrastructure`, which would have pulled MailKit into the domain project.
+- **Built and closed (2026-07-30):** the rest of the slice landed — `CircleTools.Circles.Repository`
   (the `circles` schema and its migration, `xmin` concurrency marked on the circle row so the token
   covers child changes, and `IInvitationRateLimiter` over rolling-window `invitation_attempts` rows),
   `/api/v1/circles` + `/api/v1/invitations` behind `CircleRoleFilter`, `OutboxInvitationMailer`, both
@@ -202,7 +202,7 @@ cases/requirements (or ADRs, for the mobile-scope decision) if taken forward.
   assignments, notifications, multiple simultaneous organizers.
 - **Traceability:** [brainstorming](../brainstorming/2026-07-24-secret-santa-scope.md) →
   [use cases UC-SS-001..006](../use-cases/index.md) → [requirements FR-001..006, NFR-001..003](../requirements/index.md).
-- **Post-MVP (v2 — designed 2026-07-27):** add **central login** in the AppSuite **Main** shell,
+- **Post-MVP (v2 — designed 2026-07-27):** add **central login** in the CircleTools **Main** shell,
   **App↔backend sync**, and the ability to **link a Secret-Santa `Member` to a
   [User](../glossary/user.md) account** — so members receive their assignment on their own device,
   keep their own wishlist, and identity is shared across apps. Scope and the eight pivotal decisions
@@ -289,7 +289,7 @@ cases/requirements (or ADRs, for the mobile-scope decision) if taken forward.
   pipeline** for "CI green", and *shipping* still waits on the transactional-email and hosting decisions,
   now sharpened again by the member-link mail — none gate the build).
 
-### IDEA-000 — AppSuite shell (Main app-type) · _status: in progress_
+### IDEA-000 — CircleTools shell (Main app-type) · _status: in progress_
 - **Problem:** apps need shared branding, one login, shared config, and a dashboard.
 - **Role:** hosts **central login / accounts**, shared config, and the **sync backbone** that
   connects the Secret-Santa app (and future apps) to the backend — including linking in-app "persons"
@@ -319,13 +319,13 @@ cases/requirements (or ADRs, for the mobile-scope decision) if taken forward.
   & retention) and [NFR-005](../requirements/non-functional/NFR-005-account-enumeration-resistance.md)
   (account-enumeration resistance). Glossary gained [Passkey](../glossary/passkey.md).
 - **Feature spec written (2026-07-27):** [FEAT-002](../features/FEAT-002-m1-identity.md). It creates
-  two building blocks arc42 ch.5 already planned but that do not exist yet — `AppSuite.Identity`
-  (suite-wide, per ADR-0009) and `AppSuite.Infrastructure` (outbox + SMTP sender). arc42 ch.5 §5.3 now
+  two building blocks arc42 ch.5 already planned but that do not exist yet — `CircleTools.Identity`
+  (suite-wide, per ADR-0009) and `CircleTools.Infrastructure` (outbox + SMTP sender). arc42 ch.5 §5.3 now
   fixes the four bounded contexts.
 - **Test plan written (2026-07-27):** [TP-002](../features/TP-002-m1-identity.md), weighted toward the
   two disproportionate risks — refresh-token rotation (custom code, incl. the racing-refresh case) and
   enumeration resistance (whose failure mode is invisible to ordinary functional tests).
-- **Server half built (2026-07-27):** `AppSuite.Identity` and `AppSuite.Infrastructure` exist, and
+- **Server half built (2026-07-27):** `CircleTools.Identity` and `CircleTools.Infrastructure` exist, and
   the whole `/api/v1/account` surface with them — register, verify, login, refresh, logout,
   forgot/reset, profile, change-email, passkeys, export, delete — against real Postgres and real
   Mailpit.
@@ -338,7 +338,7 @@ cases/requirements (or ADRs, for the mobile-scope decision) if taken forward.
   to *In progress*.
 - **Secret-Santa migrated onto the shared blocks (2026-07-28):** ADR-0025's recorded follow-up is
   closed. Secret-Santa lost its own `AppCultures`, its own `CultureSelector` and its own
-  `IKeyValueStore`; `secretsanta.culture` and `appsuite.secretsanta.groups` are untouched, so no
+  `IKeyValueStore`; `secretsanta.culture` and `circletools.secretsanta.groups` are untouched, so no
   user loses a language or a group. Two amendments came out of it —
   [ADR-0028](../adr/0028-browser-platform-adapters-block.md) (a shared `Ui.Web` block for the browser
   adapters, now that there are two web hosts) and

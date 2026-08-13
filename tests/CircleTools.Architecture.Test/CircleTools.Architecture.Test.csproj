@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="TngTech.ArchUnitNET.xUnit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\BuildingBlocks\CircleTools.SharedKernel\CircleTools.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\src\Apps\Main\CircleTools.Main.Service.Core\CircleTools.Main.Service.Core.csproj" />
+    <ProjectReference Include="..\..\src\Apps\Main\CircleTools.Main.Service.Repository\CircleTools.Main.Service.Repository.csproj" />
+    <ProjectReference Include="..\..\src\Apps\Main\CircleTools.Main.Ui\CircleTools.Main.Ui.csproj" />
+    <ProjectReference Include="..\..\src\Apps\SecretSanta\CircleTools.SecretSanta.Contracts\CircleTools.SecretSanta.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Apps\SecretSanta\CircleTools.SecretSanta.Core\CircleTools.SecretSanta.Core.csproj" />
+    <ProjectReference Include="..\..\src\Apps\SecretSanta\CircleTools.SecretSanta.LocalStore\CircleTools.SecretSanta.LocalStore.csproj" />
+    <ProjectReference Include="..\..\src\Apps\SecretSanta\CircleTools.SecretSanta.Ui\CircleTools.SecretSanta.Ui.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\CircleTools.Ui.Web\CircleTools.Ui.Web.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\CircleTools.Circles.Contracts\CircleTools.Circles.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\CircleTools.Circles.Core\CircleTools.Circles.Core.csproj" />
+    <ProjectReference Include="..\..\src\BuildingBlocks\CircleTools.Circles.Repository\CircleTools.Circles.Repository.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

@@ -27,7 +27,7 @@ installed apps. What API style and versioning approach do we use?
 ## Decision outcome
 
 **Chosen: Minimal APIs** with the `Asp.Versioning` library, **URL-segment versioning** (`/api/v1/…`),
-and the standard **`ProblemDetails`** error model. DTOs live in `AppSuite.<App>.Contracts` per bounded
+and the standard **`ProblemDetails`** error model. DTOs live in `CircleTools.<App>.Contracts` per bounded
 context; endpoints are grouped per resource and map to application commands/queries.
 
 ## Consequences

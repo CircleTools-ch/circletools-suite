@@ -59,14 +59,14 @@ New bounded-context projects under `src/Apps/SecretSanta/`, following the topolo
 
 | Project | Role |
 |---------|------|
-| `AppSuite.SecretSanta.Core` | Domain + application: aggregates, draw algorithm, reveal-link **codec** (encode/decode), commands/queries via the [dispatcher](../adr/0006-application-layer-and-mediation.md). Pure, no I/O. |
-| `AppSuite.SecretSanta.Contracts` | Reveal-link payload DTO + (future) API DTOs. |
-| `AppSuite.SecretSanta.LocalStore` | Client persistence behind `IKeyValueStore` + `IGroupRepository` ([ADR-0015](../adr/0015-mvp-client-offline-storage.md)): **localStorage** on WASM, a **JSON file** on MAUI, one `GroupState` JSON contract. (EF Core SQLite deferred as a later native option.) |
-| `AppSuite.SecretSanta.Ui` | Razor Class Library: pages (group, members, exclusions, draw, share, **reveal**). |
-| `AppSuite.SecretSanta.WebApp` | Standalone Blazor WASM **PWA** ([ADR-0005](../adr/0005-web-hosting-render-model.md)); hosts the app **and** the static `/r` reveal route (works offline once cached). |
+| `CircleTools.SecretSanta.Core` | Domain + application: aggregates, draw algorithm, reveal-link **codec** (encode/decode), commands/queries via the [dispatcher](../adr/0006-application-layer-and-mediation.md). Pure, no I/O. |
+| `CircleTools.SecretSanta.Contracts` | Reveal-link payload DTO + (future) API DTOs. |
+| `CircleTools.SecretSanta.LocalStore` | Client persistence behind `IKeyValueStore` + `IGroupRepository` ([ADR-0015](../adr/0015-mvp-client-offline-storage.md)): **localStorage** on WASM, a **JSON file** on MAUI, one `GroupState` JSON contract. (EF Core SQLite deferred as a later native option.) |
+| `CircleTools.SecretSanta.Ui` | Razor Class Library: pages (group, members, exclusions, draw, share, **reveal**). |
+| `CircleTools.SecretSanta.WebApp` | Standalone Blazor WASM **PWA** ([ADR-0005](../adr/0005-web-hosting-render-model.md)); hosts the app **and** the static `/r` reveal route (works offline once cached). |
 | `*.Test` | Unit tests (draw rules, codec round-trip). |
 
-> **Deferred to v2:** `AppSuite.SecretSanta.Service` (API) + `.Service.Repository` (Postgres) + sync —
+> **Deferred to v2:** `CircleTools.SecretSanta.Service` (API) + `.Service.Repository` (Postgres) + sync —
 > not needed while the MVP is offline. The MAUI native head is a follow-up within 6a/after.
 
 ## Domain model impact

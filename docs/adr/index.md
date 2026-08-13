@@ -94,7 +94,7 @@ web host made a Main-only adapter shared, and the second kind of caller made the
 insufficient.
 
 - ✅ **Where browser platform adapters live** → [ADR-0028](0028-browser-platform-adapters-block.md)
-  (a new `AppSuite.Ui.Web` block), **amending** ADR-0025's "a host supplies the platform" rule.
+  (a new `CircleTools.Ui.Web` block), **amending** ADR-0025's "a host supplies the platform" rule.
   **Follow-up: the remaining three adapters** (`BrowserFileSaver`, `BrowserPasskeyCeremony`,
   `BrowserCredentialsHandler`) stay in `Main.WebApp` until a second host needs them.
 - ✅ **Storage write-failure contract** → [ADR-0029](0029-storage-write-failure-contract.md)
@@ -184,7 +184,7 @@ though execution waits on the brand and a Mac.
 
 - **CI/CD pipeline.** [ADR-0031](0031-ios-build-host.md) settles the *build host* but not the
   *pipeline*; note that any macOS leg is either the self-hosted Mac or per-minute hosted macOS.
-- **AppSuite packaging & app composition** (single shell hosting apps vs per-app installs). Now also
+- **CircleTools packaging & app composition** (single shell hosting apps vs per-app installs). Now also
   a **distribution** question: it decides how many store listings, bundle identifiers and review
   cycles the suite carries — and bundle identifiers are permanent once released
   ([NFR-007](../requirements/non-functional/NFR-007-store-distributability.md)).

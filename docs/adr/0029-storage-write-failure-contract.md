@@ -9,7 +9,7 @@ tags: [architecture, ui, frontend, storage, data-integrity, local-first]
 
 ## Context and problem statement
 
-`AppSuite.Ui.Abstractions.IKeyValueStore` was written for M1, where everything it held was
+`CircleTools.Ui.Abstractions.IKeyValueStore` was written for M1, where everything it held was
 *recoverable*: a language preference and a refresh token. Its documented contract said reads **and
 writes** never throw — implementations swallow storage errors and behave as though nothing was
 stored. For a preference that is right: web storage is unavailable in private-browsing modes and

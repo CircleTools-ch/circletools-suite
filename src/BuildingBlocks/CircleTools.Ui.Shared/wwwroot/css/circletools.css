@@ -1,0 +1,97 @@
+/*
+   The suite theme: a thin layer over Bootstrap 5 (ADR-0024).
+
+   Deliberately small. Bootstrap owns the components; this file owns the brand colour, the auth-card
+   layout, and the handful of places the default template looks like a default template. Anything
+   that belongs to a single component belongs in that component's .razor.css instead.
+*/
+
+:root {
+    --circletools-brand: #03173d;
+    --circletools-brand-contrast: #ffffff;
+    --circletools-accent: #3c6fd1;
+    --circletools-surface: #f6f7fb;
+    --circletools-border: #dfe3ec;
+}
+
+/* ---------- Auth screens ---------- */
+
+.circletools-auth {
+    max-width: 30rem;
+    margin: 3rem auto;
+    padding: 0 1rem;
+}
+
+.circletools-auth__card {
+    border: 1px solid var(--circletools-border);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px rgb(3 23 61 / 6%), 0 8px 24px rgb(3 23 61 / 6%);
+}
+
+.circletools-auth__card .card-body {
+    padding: 2rem;
+}
+
+.circletools-auth__footer {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+/* Stack a form's fields with consistent breathing room without repeating mb-3 everywhere. */
+.circletools-form > * + * {
+    margin-top: 1rem;
+}
+
+/* "or" between two ways of signing in, with a rule either side. */
+.circletools-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.25rem 0;
+    color: var(--bs-secondary-color);
+    font-size: 0.875rem;
+}
+
+.circletools-divider::before,
+.circletools-divider::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--circletools-border);
+}
+
+/* ---------- Account management pages ---------- */
+
+.circletools-page {
+    max-width: 48rem;
+}
+
+/* A row in a list of things the user owns — a passkey, a session. */
+.circletools-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--circletools-border);
+    border-radius: 0.5rem;
+}
+
+.circletools-item + .circletools-item {
+    margin-top: 0.5rem;
+}
+
+/* Destructive areas are marked by colour *and* by their heading, never by colour alone. */
+.circletools-danger {
+    border: 1px solid var(--bs-danger-border-subtle);
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+    background-color: var(--bs-danger-bg-subtle);
+}
+
+/* ---------- Brand ---------- */
+
+.circletools-brand {
+    color: var(--circletools-brand-contrast);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}

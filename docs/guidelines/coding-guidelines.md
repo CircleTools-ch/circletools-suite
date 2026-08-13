@@ -47,7 +47,7 @@ mismatch — they must agree.
 - **Entity identity:** client-generated `Guid.CreateVersion7()` — never a server round-trip for IDs
   ([ADR-0008](../adr/0008-entity-id-strategy.md)).
 - **Application dispatch:** use the hand-rolled CQRS dispatcher (`ICommandHandler`/`IQueryHandler` +
-  `ISender` + `IPipelineBehavior`) in `AppSuite.Application`; **do not** use MediatR
+  `ISender` + `IPipelineBehavior`) in `CircleTools.Application`; **do not** use MediatR
   ([ADR-0006](../adr/0006-application-layer-and-mediation.md)).
 
 ## 12. XML documentation

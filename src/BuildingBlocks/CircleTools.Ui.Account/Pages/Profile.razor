@@ -1,0 +1,111 @@
+@page "/account/profile"
+@inject IStringLocalizer<AccountStrings> L
+@inject IProfileWriter Profiles
+@inject ICultureProvider Culture
+@inject NavigationManager Navigation
+
+<PageTitle>@L["ProfileTitle"]</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <div class="circletools-page">
+            <h1 class="h4">@L["ProfileTitle"]</h1>
+            <p class="text-body-secondary">@L["ProfileLead"]</p>
+
+            <ProblemAlert Message="@_error" Details="@_details" />
+
+            @if (Saved)
+            {
+                <div class="alert alert-success" role="status">@L["ProfileSaved"]</div>
+            }
+
+            <form class="circletools-form" @onsubmit="SubmitAsync" @onsubmit:preventDefault="true">
+                <div>
+                    <label class="form-label" for="profile-name">@L["FieldDisplayName"]</label>
+                    <input id="profile-name" class="form-control" required maxlength="100"
+                           autocomplete="nickname" @bind="_displayName" />
+                    <div class="form-text">@L["DisplayNameHint"]</div>
+                </div>
+
+                <div>
+                    <label class="form-label" for="profile-language">@L["FieldLanguage"]</label>
+                    <select id="profile-language" class="form-select" @bind="_language">
+                        @foreach (var culture in AppCultures.Supported)
+                        {
+                            <option value="@culture">@AppCultures.DisplayName(culture)</option>
+                        }
+                    </select>
+                </div>
+
+                <BusyButton Label="@L["ActionSave"]" Busy="_busy" Disabled="@(!_loaded)" />
+            </form>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private string _displayName = string.Empty;
+    private string _language = AppCultures.DefaultCulture;
+    private string? _error;
+    private IReadOnlyList<string>? _details;
+    private bool _busy;
+    private bool _loaded;
+
+    /// <summary>
+    /// Whether to show the "saved" confirmation.
+    /// </summary>
+    /// <remarks>
+    /// It comes from the query string rather than a field because saving a new language rebuilds the
+    /// whole component tree (see <c>CultureBoundary</c>), which would take a field with it — leaving
+    /// the one save that visibly changes the most as the only one with no confirmation.
+    /// </remarks>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "saved")]
+    public bool Saved { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Profiles.LoadAsync();
+
+        if (result.Value is { } profile)
+        {
+            _displayName = profile.DisplayName;
+            _language = AppCultures.Normalize(profile.Language);
+            _loaded = true;
+            return;
+        }
+
+        _error = ApiErrorText.Describe(L, result.Error);
+    }
+
+    private async Task SubmitAsync()
+    {
+        _busy = true;
+        _error = null;
+        _details = null;
+
+        var result = await Profiles.SaveAsync(new UpdateProfileRequest(_displayName, _language));
+
+        _busy = false;
+
+        if (result.Value is null)
+        {
+            _error = ApiErrorText.Describe(L, result.Error);
+            _details = ApiErrorText.Details(L, result.Error);
+            return;
+        }
+
+        // "true", not "1": Blazor parses a bool query parameter with bool.TryParse, and anything
+        // else throws while binding rather than defaulting to false.
+        Navigation.NavigateTo("account/profile?saved=true", replace: true);
+
+        // The page the choice was made on has to change language immediately; saving a preference
+        // that only takes effect on the next sign-in would read as the setting not working. This
+        // comes after the navigation because it rebuilds the tree, and the new page instance reads
+        // the confirmation back out of the URL.
+        await Culture.SetCultureAsync(result.Value.Language);
+    }
+}
