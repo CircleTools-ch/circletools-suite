@@ -46,6 +46,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0035](0035-profile-sync-seam.md) | Profile-sync seam (host-supplied profile writer; offline edits flushed to `/profile`) | Accepted | 2026-08-12 |
 | [0036](0036-cloud-provider-and-hosting.md) | Cloud provider & hosting topology (Infomaniak VPS + Docker Compose; self-managed Postgres; Swiss Backup; Cloudflare) | Accepted | 2026-08-13 |
 | [0037](0037-transactional-email-provider.md) | Transactional email provider (Brevo free tier behind the outbox port) | Accepted | 2026-08-13 |
+| [0038](0038-ci-cd-pipeline.md) | CI/CD pipeline (GitHub Actions; CI gate now, CD to the VPS deferred to M8) | Accepted | 2026-08-13 |
 
 ## Open decisions backlog
 
@@ -176,14 +177,25 @@ though execution waits on the brand and a Mac.
   tier, EU-hosted, behind the existing invitation outbox port; Postmark named as the paid fallback).
   Closes M1's verification/reset/email-change and M2's invitation deliverability.
 
+### Recently closed (CI/CD — 2026-08-13)
+
+Raised as the "depends on deployment" CI/CD item below, and closed now that the code lives on GitHub
+(org `CircleTools-ch`, repo `circletools-suite`) and a PR-based workflow needs an enforceable gate.
+
+- ✅ **CI/CD pipeline** → [ADR-0038](0038-ci-cd-pipeline.md) (GitHub Actions). The **CI gate is built
+  now** — `build-test` (non-MAUI solution + full test run), `docs` (link-checked DocFX), and
+  `build-maui` (Android + Windows heads; iOS deferred to a macOS runner per
+  [ADR-0031](0031-ios-build-host.md)) — satisfying the Definition of Done's "CI green" and closing
+  [arc42 ch. 11](../arc42/11-risks-and-technical-debt.md) D5. **CD is documented but deferred to
+  milestone 8**: it needs the [ADR-0036](0036-cloud-provider-and-hosting.md) VPS to exist (SSH →
+  `compose pull && up`), and carries ADR-0036's still-open **secrets management** follow-up.
+
 ### Depends on deployment (genuinely open)
 
 > [ADR-0023](0023-local-dev-infrastructure-in-apphost.md) lets **implementation** proceed without
 > these, via containerised dev infrastructure behind provider-agnostic seams. It buys time; it does
 > **not** close them.
 
-- **CI/CD pipeline.** [ADR-0031](0031-ios-build-host.md) settles the *build host* but not the
-  *pipeline*; note that any macOS leg is either the self-hosted Mac or per-minute hosted macOS.
 - **CircleTools packaging & app composition** (single shell hosting apps vs per-app installs). Now also
   a **distribution** question: it decides how many store listings, bundle identifiers and review
   cycles the suite carries — and bundle identifiers are permanent once released
