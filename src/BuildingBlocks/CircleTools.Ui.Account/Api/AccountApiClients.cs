@@ -30,4 +30,10 @@ public static class AccountApiClients
 
     /// <summary>The version-prefixed route base every account endpoint sits under (ADR-0010).</summary>
     public const string AccountRoute = "api/v1/account";
+
+    /// <summary>The authority endpoint that mints an SSO authorization code (FR-031, ADR-0039).</summary>
+    public const string ConnectAuthorizeRoute = "api/v1/account/connect/authorize";
+
+    /// <summary>The endpoint that redeems an SSO authorization code for a session (FR-031, ADR-0039).</summary>
+    public const string ConnectTokenRoute = "api/v1/account/connect/token";
 }

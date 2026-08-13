@@ -40,6 +40,10 @@
                     Label="@L["LoginPasskey"]"
                     Busy="_passkeyBusy"
                     OnClick="SignInWithPasskeyAsync" />
+
+        @* Cross-app SSO (FR-031, ADR-0039). Renders only on a requesting app that registered SSO —
+           nothing on the authority origin or a host without SSO (e.g. the MAUI head). *@
+        <ContinueWithAccount />
     </ChildContent>
     <Footer>
         <div><a href="account/forgot-password">@L["LoginForgot"]</a></div>

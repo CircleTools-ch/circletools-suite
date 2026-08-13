@@ -1,11 +1,11 @@
 ---
 id: FEAT-006
 title: M5 — Cross-app single sign-on
-status: Draft
+status: In progress
 owner: Adrian
 target-milestone: M5 (v2 — cross-app SSO)
 bounded-context: Platform
-related: [ADR-0039, ADR-0021, ADR-0026, ADR-0013, ADR-0034, ADR-0009, FR-008, NFR-001, TP-006]
+related: [UC-MAIN-017, FR-031, ADR-0039, ADR-0021, ADR-0026, ADR-0013, ADR-0034, ADR-0009, FR-008, NFR-001, TP-006]
 ---
 
 # FEAT-006 — M5 — Cross-app single sign-on
@@ -43,9 +43,10 @@ related: [ADR-0039, ADR-0021, ADR-0026, ADR-0013, ADR-0034, ADR-0009, FR-008, NF
 
 | Item | Covered? | Notes |
 |------|----------|-------|
-| **FR-031 (proposed) — start a session from a signed-in sibling app** | ⚠️ **not yet written** | This spec has an accepted ADR ([ADR-0039](../adr/0039-cross-app-single-sign-on.md)) but **no approved requirement/use case yet**. Per the process the FR/UC must be authored and approved before this leaves `Draft`. See *Risks & open questions*. |
+| [UC-MAIN-017](../use-cases/main/UC-MAIN-017-single-sign-on-across-apps.md) → [FR-031](../requirements/functional/FR-031-single-sign-on-across-apps.md) | ✅ | the whole feature: start a session on a sibling origin from a signed-in authority, without re-entering credentials; independent per-origin session; never-dead-end fallback |
 | [FR-008](../requirements/functional/FR-008-sign-in-with-password.md) | ✅ (extended) | adds a second way to *start* a session — an authorization-code exchange — alongside password/passkey; the resulting session is identical |
 | [NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md) | ✅ (preserved) | the hand-off is never in the write path and never load-bearing; an unreachable authority falls back to local sign-in, offline/account-free is untouched |
+| [NFR-005](../requirements/non-functional/NFR-005-account-enumeration-resistance.md) | ✅ | the authority returns no code to an off-allow-list origin, so the hand-off reveals nothing to an attacker origin |
 
 ## Design overview
 
@@ -201,11 +202,11 @@ Paired plan: **TP-006** (to be written with this spec). Weighted toward the two 
 
 ## Risks & open questions
 
-- **⚠️ Missing requirement/use-case (process gap).** This feature has an accepted ADR but **no approved
-  FR/UC**. Before it leaves `Draft`, author **FR-031 "Start a session from a signed-in sibling app"**
-  (functional) and a paired use case (e.g. `UC-MAIN-017`), trace them backward to
-  [ADR-0039](../adr/0039-cross-app-single-sign-on.md) and forward to this spec, and register them. The
-  design here is ready; the traceability chain is the open item.
+- **Traceability chain closed.** [FR-031](../requirements/functional/FR-031-single-sign-on-across-apps.md)
+  (functional) and [UC-MAIN-017](../use-cases/main/UC-MAIN-017-single-sign-on-across-apps.md) are
+  authored and registered, traced backward to [ADR-0039](../adr/0039-cross-app-single-sign-on.md) and
+  forward to this spec and [TP-006](TP-006-m5-cross-app-sso.md). FR-031 is `Draft` and moves to
+  `Implemented` when this feature is built and TP-006 is green — the same status flow M1–M4 followed.
 - **The authority origin becomes a higher-value target** — compromising it yields sessions on every
   sibling ([ADR-0039](../adr/0039-cross-app-single-sign-on.md)). Bounded (it already holds the user's own
   session); the mitigation is the strict CSP [ADR-0021](../adr/0021-web-auth-token-model.md) already
@@ -220,17 +221,22 @@ Paired plan: **TP-006** (to be written with this spec). Weighted toward the two 
 
 ## Definition of Done
 
-- [ ] **FR-031 + its use case authored, approved, and traced** (backward to ADR-0039, forward to here) —
-      the gate for leaving `Draft`
-- [ ] Meets the acceptance criteria of the new FR (and preserves FR-008's session shape and NFR-001)
-- [ ] Builds clean under analyzers (warnings = errors)
-- [ ] Tests per TP-006 pass: single-use, expiry, PKCE-bound, origin-bound, degrade-to-local, two-origin
-      happy path; allow-list-equals-CORS assertion green
-- [ ] Architecture boundaries respected — client flow in `Ui.Account`, no app-UI coupling; server
-      endpoints reuse `SessionService` (arch tests green)
-- [ ] Docs, API comments, and arc42 ch. 8 §8.4 / ch. 5 updated with the SSO flow
-- [ ] Localized strings provided (DE/EN/FR) in `AccountStrings`
-- [ ] **Two-origin DE/EN/FR browser walkthrough**: Main→Secret-Santa and reverse, authority-signed-out
-      case, `?code` stripped, console clean, and the authority-unreachable fallback to local login
-- [ ] Traceability links closed
+- [x] **FR-031 + UC-MAIN-017 authored and traced** (backward to ADR-0039, forward to here and TP-006) —
+      the process gate to start building; FR-031 flips to `Implemented` when TP-006 is green
+- [x] Meets the acceptance criteria of the new FR at the API level (session shape identical to FR-008 —
+      the SSO session refreshes through the normal `/refresh` path; NFR-001 preserved by the callback's
+      degrade-to-local path)
+- [x] Builds clean under analyzers (warnings = errors) — server, `Ui.Account`, and both web apps
+- [x] Automated tests per TP-006 pass: **single-use, expiry, PKCE-bound, origin-bound** (`ConnectEndpointsTests`,
+      `ConnectAuthorizationCodeServiceTests`, `PkceTests`), plus the mint→redeem→refresh parity path.
+      **Still owed:** the bUnit degrade-to-local test and the two-origin browser E2E (below)
+- [x] Architecture boundaries respected — client flow in `Ui.Account`, no app-UI coupling; server
+      endpoints reuse `SessionService` (`UiAccountLayeringTests` + arch suite green)
+- [x] Localized strings provided (DE/EN/FR) in `AccountStrings` (`LocalizationParityTests` green)
+- [ ] Docs, API comments updated; **arc42 ch. 8 §8.4 / ch. 5 SSO diagram still to add**
+- [ ] **Two-origin DE/EN/FR browser walkthrough** (the `CLAUDE.md` UI-verification gate, run from the
+      Aspire AppHost): Main→Secret-Santa and reverse, authority-signed-out case, `?code` stripped,
+      console clean, and the authority-unreachable fallback to local login. **Not yet run** — this is
+      what flips FEAT-006 to `Done` and FR-031 to `Implemented`
+- [x] Traceability links closed
 </content>

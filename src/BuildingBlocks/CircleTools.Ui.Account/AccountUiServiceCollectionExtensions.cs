@@ -54,4 +54,33 @@ public static class AccountUiServiceCollectionExtensions
 
         return services;
     }
+
+    /// <summary>
+    /// Adds the cross-app single-sign-on hand-off (FR-031, ADR-0039). Opt-in, on top of
+    /// <see cref="AddAccountUi"/>.
+    /// </summary>
+    /// <remarks>
+    /// Requires the host's <c>NavigationManager</c> (every Blazor host has one) and the
+    /// <see cref="CircleTools.Ui.Abstractions.IKeyValueStore"/> already registered for the refresh
+    /// token. The authority origin and client id come from the host's own configuration, so an app
+    /// that never starts a hand-off carries an inert value (NFR-001).
+    /// </remarks>
+    /// <param name="services">The service collection.</param>
+    /// <param name="authorityBaseUrl">The SSO authority origin (e.g. the Main shell).</param>
+    /// <param name="clientId">A stable identifier for this app.</param>
+    /// <returns>The same service collection, for chaining.</returns>
+    public static IServiceCollection AddAccountSso(
+        this IServiceCollection services,
+        string authorityBaseUrl,
+        string clientId)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentException.ThrowIfNullOrWhiteSpace(authorityBaseUrl);
+        ArgumentException.ThrowIfNullOrWhiteSpace(clientId);
+
+        services.AddSingleton(new SsoConnectOptions(authorityBaseUrl, clientId));
+        services.AddScoped<SsoConnect>();
+
+        return services;
+    }
 }

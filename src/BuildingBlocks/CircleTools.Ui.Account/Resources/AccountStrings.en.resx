@@ -88,4 +88,9 @@
   <data name="ConfirmEmailSignedOut" xml:space="preserve"><value>Please sign in with your current address first, then open this link again.</value></data>
   <data name="ConfirmEmailWrongAccount" xml:space="preserve"><value>This link belongs to a different account. Sign out and sign in with the account that requested the change.</value></data>
   <data name="ConfirmEmailFailed" xml:space="preserve"><value>That link did not work. It may have expired or already been used.</value></data>
+  <data name="ConnectTitle" xml:space="preserve"><value>Signing you in…</value></data>
+  <data name="ConnectWorking" xml:space="preserve"><value>One moment — connecting your CircleTools account…</value></data>
+  <data name="ConnectFailedTitle" xml:space="preserve"><value>Couldn't sign you in</value></data>
+  <data name="ConnectFailedText" xml:space="preserve"><value>We couldn't reach your CircleTools account. You can sign in here instead.</value></data>
+  <data name="ConnectContinue" xml:space="preserve"><value>Continue with your CircleTools account</value></data>
 </root>

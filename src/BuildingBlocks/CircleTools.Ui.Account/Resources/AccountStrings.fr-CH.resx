@@ -88,4 +88,9 @@
   <data name="ConfirmEmailSignedOut" xml:space="preserve"><value>Connectez-vous d'abord avec votre adresse actuelle, puis rouvrez ce lien.</value></data>
   <data name="ConfirmEmailWrongAccount" xml:space="preserve"><value>Ce lien appartient à un autre compte. Déconnectez-vous et connectez-vous avec le compte qui a demandé le changement.</value></data>
   <data name="ConfirmEmailFailed" xml:space="preserve"><value>Ce lien n'a pas fonctionné. Il a peut-être expiré ou a déjà été utilisé.</value></data>
+  <data name="ConnectTitle" xml:space="preserve"><value>Connexion en cours…</value></data>
+  <data name="ConnectWorking" xml:space="preserve"><value>Un instant – connexion de votre compte CircleTools…</value></data>
+  <data name="ConnectFailedTitle" xml:space="preserve"><value>Connexion impossible</value></data>
+  <data name="ConnectFailedText" xml:space="preserve"><value>Votre compte CircleTools est injoignable. Vous pouvez vous connecter ici à la place.</value></data>
+  <data name="ConnectContinue" xml:space="preserve"><value>Continuer avec votre compte CircleTools</value></data>
 </root>

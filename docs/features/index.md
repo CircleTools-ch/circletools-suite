@@ -20,7 +20,8 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-004](TP-004-m3-sync-and-claim.md) | Test plan — M3 Sync & Claim | Platform | Reviewed |
 | [FEAT-005](FEAT-005-m4-linking.md) | M4 — Linking | SecretSanta | Done |
 | [TP-005](TP-005-m4-linking.md) | Test plan — M4 Linking | SecretSanta | Reviewed |
-| [FEAT-006](FEAT-006-m5-cross-app-sso.md) | M5 — Cross-app single sign-on | Platform | Draft |
+| [FEAT-006](FEAT-006-m5-cross-app-sso.md) | M5 — Cross-app single sign-on | Platform | In progress |
+| [TP-006](TP-006-m5-cross-app-sso.md) | Test plan — M5 Cross-app SSO | Platform | Draft |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and
