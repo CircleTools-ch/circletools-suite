@@ -26,10 +26,14 @@ where does the eventual deploy step live?**
 
 Two properties of this repository shape the answer:
 
-- **The build is strict and reproducible.** `Directory.Build.props` sets `TreatWarningsAsErrors`,
+- **The build is strict.** `Directory.Build.props` sets `TreatWarningsAsErrors`,
   `EnforceCodeStyleInBuild` and `RestorePackagesWithLockFile`; every project has a committed
-  `packages.lock.json`. CI can therefore restore in `--locked-mode` and a warning is a failure — the
-  gate is meaningful without extra configuration.
+  `packages.lock.json`. A warning is a failure, so the gate is meaningful without extra
+  configuration. The lock files pin versions for local restores, but CI does **not** restore in
+  strict `--locked-mode`: a few packages resolve **per-OS** (the RID-specific `Aspire.Dashboard.Sdk`)
+  or **per-SDK-patch** (`Microsoft.NET.ILLink.Tasks`, pulled in for the Blazor WASM trimmer), so a
+  lock file committed from one machine cannot satisfy a strict restore on a differently-provisioned
+  runner. Enforcing locked-mode would make CI red for a package that changed only its RID or patch.
 - **One project cannot build on a plain Linux runner.** The MAUI head
   `CircleTools.SecretSanta.App` needs the MAUI workload, and its target frameworks are scoped by OS
   (Linux → `net10.0-android` only; Windows adds the Windows head; macOS adds iOS/MacCatalyst). The
@@ -42,7 +46,8 @@ Two properties of this repository shape the answer:
   build, on every push and PR to `main`.
 - **Cheap and low-maintenance** — one hobby maintainer; free-tier minutes must comfortably cover it.
 - **Native to where the code lives** — the repo is on GitHub; avoid a second account/provider.
-- **Reproducible** — honour the lock files (`--locked-mode`) and the pinned SDK (`global.json`).
+- **Reproducible** — pin the SDK (`global.json`) and keep the committed lock files as the version
+  baseline (strict `--locked-mode` is not enforced in CI; see the context note above).
 - **A path to CD and to iOS** — the same system must be able to deploy to the ADR-0036 VPS later and
   to host a macOS runner leg ([ADR-0031](0031-ios-build-host.md)) without being replaced.
 - **Fast core gate** — the everyday build/test signal should not wait on MAUI workload provisioning.
@@ -63,7 +68,8 @@ ample for this size, and it deploys to the ADR-0036 VPS over SSH and hosts a mac
 ### CI gate (built now)
 
 A single workflow `.github/workflows/ci.yml`, triggered on `push` and `pull_request` to `main`,
-pinning the SDK from `global.json` and restoring in `--locked-mode`, with three parallel jobs:
+pinning the SDK from `global.json` (restore uses the committed lock files but not strict
+`--locked-mode` — see the context note above), with three parallel jobs:
 
 - **`build-test`** (`ubuntu-latest`) — builds and tests the **non-MAUI** project set and carries the
   full test run. Because the MAUI head cannot build on a plain Linux runner, the set is a **second

@@ -33,8 +33,11 @@ jobs:
           cache-dependency-path: '**/packages.lock.json'
 
       # Everything except the MAUI head, which needs the MAUI workload (ADR-0038).
+      # Not --locked-mode: some packages resolve per-OS (the RID-specific Aspire dashboard SDK) or
+      # per-SDK-patch (Microsoft.NET.ILLink.Tasks), so a lock file committed from one machine cannot
+      # satisfy a strict restore on another. The committed lock files still pin versions for local devs.
       - name: Restore
-        run: dotnet restore CircleTools.NoMaui.slnx --locked-mode
+        run: dotnet restore CircleTools.NoMaui.slnx
 
       - name: Build
         run: dotnet build CircleTools.NoMaui.slnx --no-restore -c Release
@@ -56,9 +59,9 @@ jobs:
           cache-dependency-path: '**/packages.lock.json'
 
       # DocFX metadata is scoped to the library projects (docfx/docfx.json); restore so its
-      # Roslyn workspace can load them.
+      # Roslyn workspace can load them. (Not --locked-mode — see the build-test job.)
       - name: Restore
-        run: dotnet restore CircleTools.NoMaui.slnx --locked-mode
+        run: dotnet restore CircleTools.NoMaui.slnx
 
       - name: Restore local tools (DocFX)
         run: dotnet tool restore
@@ -82,8 +85,9 @@ jobs:
       - name: Restore MAUI workloads
         run: dotnet workload restore src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj
 
+      # Not --locked-mode — see the build-test job (per-OS / per-SDK-patch package resolution).
       - name: Restore
-        run: dotnet restore src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj --locked-mode
+        run: dotnet restore src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj
 
       # Builds the Android and Windows heads (the TFMs the csproj enables on Windows).
       # iOS/MacCatalyst are macOS-only and deferred to a future macOS runner (ADR-0031).
