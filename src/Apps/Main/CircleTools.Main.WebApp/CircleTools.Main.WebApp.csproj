@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Asset fingerprinting is off here, and only here, because of the CSP (ADR-0021).
+         Fingerprinting works by filling an inline <script type="importmap"> with the hashed asset
+         names, and an import map is subject to script-src. With no 'unsafe-inline' the browser
+         blocks it and logs a CSP violation on every page load; the alternative - pinning the map's
+         SHA-256 in the policy - changes with every build, which a static meta tag cannot track.
+         Cache-busting is not lost: the PWA's service-worker-assets.js manifest already carries a
+         content hash for every file. -->
+    <OverrideHtmlAssetPlaceholders>false</OverrideHtmlAssetPlaceholders>
+    <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
+    <!-- Localization (ADR-0011) needs real culture data; the repo default is invariant. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CircleTools.Main.Ui\CircleTools.Main.Ui.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\CircleTools.Ui.Web\CircleTools.Ui.Web.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ServiceWorker Include="wwwroot\service-worker.js" PublishedContent="wwwroot\service-worker.published.js" />
+  </ItemGroup>
+
+</Project>

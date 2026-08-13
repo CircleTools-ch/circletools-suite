@@ -31,11 +31,11 @@
     <!-- Reproducible restore -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 
-    <!-- Shared assembly metadata (brand: "AppSuite" — We Are Like Family) -->
-    <Product>AppSuite</Product>
-    <Company>AppSuite</Company>
-    <Copyright>Copyright (c) 2026 AppSuite. All rights reserved.</Copyright>
-    <Authors>AppSuite</Authors>
+    <!-- Shared assembly metadata (brand: "CircleTools" — We Are Like Family) -->
+    <Product>CircleTools</Product>
+    <Company>CircleTools</Company>
+    <Copyright>Copyright (c) 2026 CircleTools. All rights reserved.</Copyright>
+    <Authors>CircleTools</Authors>
     <NeutralLanguage>en</NeutralLanguage>
   </PropertyGroup>
 

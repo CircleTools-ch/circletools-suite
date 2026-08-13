@@ -33,22 +33,22 @@ under a different key.
 
 ## Considered options
 
-1. **A new `AppSuite.Ui.Web` block** holding the browser implementations of the seams.
-2. **A `Storage/` folder inside `AppSuite.Ui.Shared`**, which already references
+1. **A new `CircleTools.Ui.Web` block** holding the browser implementations of the seams.
+2. **A `Storage/` folder inside `CircleTools.Ui.Shared`**, which already references
    `Microsoft.AspNetCore.Components.Web` and therefore has JS interop available.
 3. **Duplicate the adapter into `SecretSanta.WebApp`**, leaving ADR-0025's rule untouched.
 
 ## Decision outcome
 
-**Chosen: option 1 — a new `AppSuite.Ui.Web` block**, referencing `Ui.Abstractions` and
+**Chosen: option 1 — a new `CircleTools.Ui.Web` block**, referencing `Ui.Abstractions` and
 `Microsoft.JSInterop` and nothing else.
 
 | Block | Contains | May reference |
 |---|---|---|
-| `AppSuite.Ui.Abstractions` | the seams | nothing |
-| `AppSuite.Ui.Web` | `BrowserKeyValueStore` | `Ui.Abstractions` |
-| `AppSuite.Localization` | `AppCultures`, `CultureProvider` | `Ui.Abstractions` |
-| `AppSuite.Ui.Shared` | Razor components + theme | `Localization`, `Ui.Abstractions` |
+| `CircleTools.Ui.Abstractions` | the seams | nothing |
+| `CircleTools.Ui.Web` | `BrowserKeyValueStore` | `Ui.Abstractions` |
+| `CircleTools.Localization` | `AppCultures`, `CultureProvider` | `Ui.Abstractions` |
+| `CircleTools.Ui.Shared` | Razor components + theme | `Localization`, `Ui.Abstractions` |
 
 This **amends** ADR-0025's "a host supplies the platform" rule to: *a host **chooses** the platform;
 where two hosts choose the same one, the implementation is shared.* The composition root still names
@@ -81,13 +81,13 @@ one does.
   left to be discovered.
 - **Follow-ups:** move `BrowserFileSaver`, `BrowserPasskeyCeremony` and `BrowserCredentialsHandler`
   into `Ui.Web` when a second host needs them, taking their `wwwroot/js` assets with them; add an
-  `AppSuite.Ui.Maui` block when the MAUI head implements the same seams natively.
+  `CircleTools.Ui.Maui` block when the MAUI head implements the same seams natively.
 - **New risks:** `Ui.Web` could become a dumping ground for "anything browser-ish". The rule that
   keeps it honest: it implements a seam declared in `Ui.Abstractions`, or it does not belong here.
 
 ## Pros and cons of the options
 
-### 1. New `AppSuite.Ui.Web` block (chosen)
+### 1. New `CircleTools.Ui.Web` block (chosen)
 - 👍 Honest dependency set; `Ui.Shared` stays MAUI-safe; the boundary is enforceable by a test.
 - 👎 One more project.
 

@@ -48,12 +48,12 @@ Concretely, three layers, in this order:
 | Layer | What lives there | Where |
 |---|---|---|
 | Bootstrap 5 | Grid, forms, buttons, alerts, utilities | `wwwroot/lib/bootstrap` (per host) |
-| Suite theme | Brand custom properties, the auth-card shell, list rows, danger areas, form rhythm | `AppSuite.Ui.Shared/wwwroot/css/appsuite.css` |
+| Suite theme | Brand custom properties, the auth-card shell, list rows, danger areas, form rhythm | `CircleTools.Ui.Shared/wwwroot/css/circletools.css` |
 | Component styles | Anything belonging to exactly one component | `<Component>.razor.css` |
 
 The theme is deliberately small — a handful of custom properties and about six layout classes. It
 carries **no brand assets**: no logo, no typeface, one neutral brand colour behind a CSS custom
-property (`--appsuite-brand`). Rebranding is then a variable change and an asset drop, not a rewrite.
+property (`--circletools-brand`). Rebranding is then a variable change and an asset drop, not a rewrite.
 
 Rules that follow from the layering:
 
@@ -86,7 +86,7 @@ explicitly deferred branding, keeping that exit cheap is worth more than the pol
 - **Follow-ups:** revisit when the brand is chosen ([naming](../process/naming.md)) — at that point
   the theme layer is where the brand lands, and this ADR gets an amendment rather than a successor.
 - **New risks:** the theme can accrete app-specific rules if the "shared vs component" line is not
-  held. The check is cheap: anything in `appsuite.css` that names a single app's concept is misplaced.
+  held. The check is cheap: anything in `circletools.css` that names a single app's concept is misplaced.
 
 ## Pros and cons of the options
 

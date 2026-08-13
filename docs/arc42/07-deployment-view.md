@@ -15,12 +15,12 @@
 
 ## 7.2 Local development (today)
 
-> **Implemented (M5):** `dotnet run --project src/Aspire/AppSuite.AppHost` starts the Aspire dashboard,
+> **Implemented (M5):** `dotnet run --project src/Aspire/CircleTools.AppHost` starts the Aspire dashboard,
 > a `postgres` container, the `main-api` service, and the `main-web` WASM PWA. Verified working.
 
 ```mermaid
 flowchart LR
-    Dev[Developer] --> AppHost[AppSuite.AppHost]
+    Dev[Developer] --> AppHost[CircleTools.AppHost]
     AppHost --> API[Service hosts]
     AppHost --> Web[WebApp hosts]
     AppHost --> PG[(PostgreSQL container)]

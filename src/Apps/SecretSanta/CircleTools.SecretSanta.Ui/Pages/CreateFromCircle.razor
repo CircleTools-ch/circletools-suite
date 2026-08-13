@@ -1,0 +1,218 @@
+@page "/groups/from-circle"
+@using CircleTools.ApiClient
+@using CircleTools.Circles.Contracts
+@inject CreateFromCircleService Service
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> L
+
+@*
+    Create a group from a circle (FR-027): pick a circle, everyone is pre-selected, name the group. The
+    group is a snapshot — a later change to the circle never touches it. Account-backed people come in
+    linked; a managed member, or a second person on the same account, comes in unlinked and is named.
+*@
+
+<PageTitle>@L["FromCircleTitle"]</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        <h1>@L["FromCircleTitle"]</h1>
+        <p class="text-body-secondary">@L["FromCircleLead"]</p>
+
+        @if (_error is not null)
+        {
+            <div class="alert alert-warning" role="status">@_error</div>
+        }
+
+        @if (_createdGroupId is { } createdId)
+        {
+            <div class="alert alert-success" role="status">@L["FromCircleCreated"]</div>
+            @if (_broughtInUnlinked.Count > 0)
+            {
+                @* The duplicate-account notice: a second person on the same account came in unlinked. *@
+                <div class="alert alert-info" role="status">
+                    @L["FromCircleDuplicateAccountNotice", string.Join(", ", _broughtInUnlinked)]
+                </div>
+            }
+            <button class="btn btn-primary" @onclick="OpenCreated">
+                @L["FromCircleOpenGroup"]
+            </button>
+        }
+        else if (_circles is null)
+        {
+            <p>@L["Loading"]</p>
+        }
+        else if (_circles.Count == 0)
+        {
+            <p>@L["FromCircleNoCircles"]</p>
+        }
+        else if (_detail is null)
+        {
+            <div class="mb-3">
+                <label class="form-label" for="circle-choose">@L["FromCircleChooseLabel"]</label>
+                <div class="list-group" id="circle-choose">
+                    @foreach (var circle in _circles)
+                    {
+                        <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                @onclick="() => ChooseAsync(circle.Id)" disabled="@_busy">
+                            <span><strong>@circle.Name</strong> <span class="text-body-secondary ms-2">@circle.Label</span></span>
+                            <span class="badge bg-secondary rounded-pill">@PeopleCount(circle.PeopleCount)</span>
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="mb-3">
+                <label class="form-label" for="group-name">@L["FromCircleGroupNameLabel"]</label>
+                <input class="form-control" id="group-name" @bind="_groupName" @bind:event="oninput" />
+            </div>
+
+            <p class="text-body-secondary">@PeopleCount(_detail.People.Count)</p>
+            <ul class="list-group mb-3">
+                @foreach (var person in _detail.People)
+                {
+                    <li class="list-group-item">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="person-@person.MembershipId"
+                                   checked="@_selected.Contains(person.MembershipId)"
+                                   @onchange="args => Toggle(person.MembershipId, (bool)args.Value!)" />
+                            <label class="form-check-label" for="person-@person.MembershipId">
+                                @person.DisplayName
+                                @if (person.IsManaged)
+                                {
+                                    <span class="badge bg-light text-dark ms-2">@L["FromCircleManagedBadge"]</span>
+                                }
+                                else if (person.AccountId is not null)
+                                {
+                                    <span class="badge bg-info text-dark ms-2">@L["FromCircleLinkedBadge"]</span>
+                                }
+                            </label>
+                        </div>
+                    </li>
+                }
+            </ul>
+
+            <button class="btn btn-primary" @onclick="CreateAsync"
+                    disabled="@(_busy || _selectedCount == 0 || string.IsNullOrWhiteSpace(_groupName))">
+                @L["FromCircleCreate"]
+            </button>
+            <button class="btn btn-link" @onclick="Back" disabled="@_busy">@L["FromCircleBack"]</button>
+        }
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private IReadOnlyList<CircleSummaryResponse>? _circles;
+    private CircleDetailResponse? _detail;
+    private readonly HashSet<Guid> _selected = [];
+    private string _groupName = string.Empty;
+    private bool _busy;
+    private string? _error;
+    private Guid? _createdGroupId;
+    private IReadOnlyList<string> _broughtInUnlinked = [];
+
+    private int _selectedCount => _selected.Count;
+
+    protected override async Task OnInitializedAsync() => await LoadCirclesAsync();
+
+    private async Task LoadCirclesAsync()
+    {
+        var result = await Service.GetCirclesAsync();
+        if (result.IsSuccess)
+        {
+            _circles = result.Value;
+        }
+        else
+        {
+            _circles = [];
+            _error = result.Error!.Failure == ApiFailure.Unreachable ? L["FromCircleOffline"] : L["FromCircleReadFailed"];
+        }
+    }
+
+    private async Task ChooseAsync(Guid circleId)
+    {
+        _busy = true;
+        _error = null;
+        var result = await Service.GetCircleAsync(circleId);
+        _busy = false;
+
+        if (result.IsSuccess)
+        {
+            _detail = result.Value;
+            _groupName = _detail!.Name;
+            _selected.Clear();
+            // Everyone is pre-selected — the common case is "bring the whole circle in".
+            foreach (var person in _detail.People)
+            {
+                _selected.Add(person.MembershipId);
+            }
+        }
+        else
+        {
+            _error = result.Error!.Failure == ApiFailure.Unreachable ? L["FromCircleOffline"] : L["FromCircleReadFailed"];
+        }
+    }
+
+    private void Toggle(Guid id, bool on)
+    {
+        if (on)
+        {
+            _selected.Add(id);
+        }
+        else
+        {
+            _selected.Remove(id);
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        if (_busy || _detail is null || _selected.Count == 0 || string.IsNullOrWhiteSpace(_groupName))
+        {
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var chosen = _detail.People.Where(p => _selected.Contains(p.MembershipId)).ToList();
+            var result = await Service.CreateAsync(_detail.Id, _groupName, chosen);
+
+            // Surface the duplicate-account notice before leaving; navigate straight through when there
+            // is nothing to say.
+            _broughtInUnlinked = result.BroughtInUnlinkedNames;
+            if (_broughtInUnlinked.Count == 0)
+            {
+                Navigation.NavigateTo($"groups/{result.GroupId}");
+                return;
+            }
+
+            _createdGroupId = result.GroupId;
+            _detail = null;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void Back() => _detail = null;
+
+    private void OpenCreated()
+    {
+        if (_createdGroupId is { } id)
+        {
+            Navigation.NavigateTo($"groups/{id}");
+        }
+    }
+
+    // The count-at-one string is a distinct key, not "{0} people" with a swapped number: at one the
+    // noun is singular in every language this app speaks (the M2 "1 Personen" trap; a picker shows one
+    // person often).
+    private string PeopleCount(int count) =>
+        count == 1 ? L["FromCirclePeopleCountSingular", count] : L["FromCirclePeopleCountPlural", count];
+}

@@ -8,7 +8,7 @@
 - Default culture: **`de-CH`**. Supported: `de-CH`, `fr-CH`, `en`.
 
 ## 2. Where localization lives
-- Central `AppSuite.Localization` building block; consumed by every RCL/host via `IStringLocalizer`
+- Central `CircleTools.Localization` building block; consumed by every RCL/host via `IStringLocalizer`
   / an `ICultureProvider` abstraction.
 
 ## 3. Rules
@@ -74,7 +74,7 @@ colon form (`Besitzer:in`), and a sentence that would need a gendered article is
 ## 7. Decided
 - Resource format and culture routing: **RESX + `IStringLocalizer`**, cultures `de-CH` (default),
   `en` and `fr-CH` — [ADR-0011](../adr/0011-localization-format-and-culture.md). The shared
-  implementation lives in `AppSuite.Localization`
+  implementation lives in `CircleTools.Localization`
   ([ADR-0025](../adr/0025-shared-ui-building-blocks.md)).
 - Key parity across all three cultures is enforced per app by a `LocalizationParityTests` fixture: a
   key present in the neutral resources and missing or empty in any culture fails the build's test

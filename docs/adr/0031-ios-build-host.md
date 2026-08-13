@@ -11,7 +11,7 @@ tags: [deployment, mobile, ios, maui, tooling, build]
 
 The suite promises native iOS alongside Android and Web
 ([arc42 ch. 1](../arc42/01-introduction-and-goals.md), quality goal Q2). The MAUI head
-`AppSuite.SecretSanta.App` already multi-targets `net10.0-ios`, but only on macOS — the csproj
+`CircleTools.SecretSanta.App` already multi-targets `net10.0-ios`, but only on macOS — the csproj
 scopes the iOS and Mac Catalyst target frameworks behind `IsOSPlatform('osx')` precisely because
 they cannot be built anywhere else.
 

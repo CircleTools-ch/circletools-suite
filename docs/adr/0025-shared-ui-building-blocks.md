@@ -12,7 +12,7 @@ tags: [architecture, ui, frontend, building-blocks, layering]
 [arc42 ch.5](../arc42/05-building-block-view.md) has planned `Ui.Abstractions`, `Ui.Shared` and an
 API client since the first draft, but none of them existed: Secret-Santa is local-first and needed no
 API client, and with one app there was nothing to share. Its `AppCultures`, its `CultureSelector` and
-its `IKeyValueStore` all live inside `AppSuite.SecretSanta.Ui`.
+its `IKeyValueStore` all live inside `CircleTools.SecretSanta.Ui`.
 
 v2's Main client changes both halves of that. It is the first API-consuming client — bearer tokens,
 silent refresh, `ProblemDetails` — and it is the second app that needs a language picker, a form
@@ -49,10 +49,10 @@ sit behind a seam from the start, because introducing one later means editing ev
 
 | Block | Contains | May reference |
 |---|---|---|
-| `AppSuite.Ui.Abstractions` | `IKeyValueStore`, `ICultureProvider`, `IPasskeyCeremony`, `IFileSaver`, `PasskeyCeremonyException` | nothing |
-| `AppSuite.Localization` | `AppCultures`, `CultureOptions`, `CultureProvider`, DI extension | `Ui.Abstractions` |
-| `AppSuite.ApiClient` | `ApiResult`/`ApiError`, `ApiResponseReader`, token stores, `AuthorizedHttpMessageHandler`, `ISessionRefresher` | `Ui.Abstractions` |
-| `AppSuite.Ui.Shared` | `AuthCard`, `BusyButton`, `ProblemAlert`, `CultureSelector`, `CultureBoundary`, `appsuite.css` | `Localization`, `Ui.Abstractions` |
+| `CircleTools.Ui.Abstractions` | `IKeyValueStore`, `ICultureProvider`, `IPasskeyCeremony`, `IFileSaver`, `PasskeyCeremonyException` | nothing |
+| `CircleTools.Localization` | `AppCultures`, `CultureOptions`, `CultureProvider`, DI extension | `Ui.Abstractions` |
+| `CircleTools.ApiClient` | `ApiResult`/`ApiError`, `ApiResponseReader`, token stores, `AuthorizedHttpMessageHandler`, `ISessionRefresher` | `Ui.Abstractions` |
+| `CircleTools.Ui.Shared` | `AuthCard`, `BusyButton`, `ProblemAlert`, `CultureSelector`, `CultureBoundary`, `circletools.css` | `Localization`, `Ui.Abstractions` |
 
 And the rules that make them worth separating:
 
@@ -79,7 +79,7 @@ genuine risk to a working app, for no user-visible gain; it is a follow-up, not 
 their language preference — Secret-Santa keeps `secretsanta.culture`, Main uses `main.culture`.
 
 > **Update (2026-07-28) — the migration has happened.** Secret-Santa now uses
-> `AppSuite.Localization` and `AppSuite.Ui.Shared`, and `secretsanta.culture` survived it, as
+> `CircleTools.Localization` and `CircleTools.Ui.Shared`, and `secretsanta.culture` survived it, as
 > `CultureOptions` was designed to allow. Carrying it out forced two amendments recorded as their own
 > ADRs: [ADR-0028](0028-browser-platform-adapters-block.md) moves the browser adapters into a shared
 > `Ui.Web` block, because "a host supplies the platform" stopped being the right rule once there were
@@ -100,11 +100,11 @@ their language preference — Secret-Santa keeps `secretsanta.culture`, Main use
   and Secret-Santa's. That is the cost of not touching a working app, and it is a real cost: a change
   to language handling has to be made in two places until the migration happens. *(Closed 2026-07-28
   — there is one implementation again.)*
-- **Negative / accepted:** `AppSuite.Ui.Shared` trips CA1716 (`Shared` is a Visual Basic keyword).
+- **Negative / accepted:** `CircleTools.Ui.Shared` trips CA1716 (`Shared` is a Visual Basic keyword).
   The name is fixed by arc42 and the suite is C#-only, so the rule is suppressed in that project with
   the reason recorded there.
-- **Follow-ups:** ~~migrate `AppSuite.SecretSanta.Ui` onto `AppSuite.Localization` and
-  `AppSuite.Ui.Shared` for `AppCultures`/`CultureSelector`, keeping its existing storage key; move
+- **Follow-ups:** ~~migrate `CircleTools.SecretSanta.Ui` onto `CircleTools.Localization` and
+  `CircleTools.Ui.Shared` for `AppCultures`/`CultureSelector`, keeping its existing storage key; move
   Secret-Santa's `IKeyValueStore` to `Ui.Abstractions` at the same time.~~ **Done 2026-07-28** — see
   the update above, [ADR-0028](0028-browser-platform-adapters-block.md) and
   [ADR-0029](0029-storage-write-failure-contract.md).

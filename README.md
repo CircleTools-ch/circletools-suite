@@ -1,6 +1,6 @@
-# AppSuite — app suite for families & friends
+# CircleTools — app suite for families & friends
 
-> **AppSuite** is a neutral **working name** — the brand is not finalized (branding may change).
+> **CircleTools** is a neutral **working name** — the brand is not finalized (branding may change).
 > A leading candidate is **Walf** (*We Are Like Family*; `walf.ch` available). See the naming
 > history and candidates in [`docs/process/naming.md`](docs/process/naming.md).
 
@@ -81,7 +81,7 @@ dotnet tool restore
 dotnet docfx docfx/docfx.json --serve
 
 # Build the solution
-dotnet build AppSuite.slnx
+dotnet build CircleTools.slnx
 ```
 
 ## Where to find things

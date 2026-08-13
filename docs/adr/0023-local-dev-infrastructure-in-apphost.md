@@ -68,7 +68,7 @@ timing requirement, not a nicety.
 
 ### Domain, TLS & passkeys — phase 2, when FR-010/011 start
 
-- A **reverse-proxy container** (Caddy or Traefik) terminating TLS for `*.appsuite.test`, with an
+- A **reverse-proxy container** (Caddy or Traefik) terminating TLS for `*.circletools.test`, with an
   **mkcert**-generated locally-trusted certificate. `.test` is reserved for this purpose (RFC 6761);
   a public wildcard-DNS service such as `localtest.me` was rejected because it reintroduces the
   external dependency this ADR exists to remove.
@@ -95,7 +95,7 @@ should not be imposed before they buy anything.
   served over HTTPS **from the real domain**; platform validation cannot be reproduced locally. That
   acceptance criterion cannot be closed before hosting exists, and the M1 test plan must say so rather
   than appear to cover it.
-- **Negative / accepted — RP IDs do not migrate.** Passkeys registered against `appsuite.test` will
+- **Negative / accepted — RP IDs do not migrate.** Passkeys registered against `circletools.test` will
   not work against the eventual real domain. Harmless for throwaway development data, but it means the
   domain must be settled **before the first real user registers a passkey** — the deferral is safe up
   to production, not past it.

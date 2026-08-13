@@ -34,13 +34,13 @@ Circles, sync, the claim flow and Secret-Santa linking are **out of scope** (M2�
 - **Authorization** — the export boundary, reusing the
   [ADR-0020](../adr/0020-server-side-assignment-privacy.md) tests rather than writing a parallel set.
 - **Security / timing** — paired enumeration tests per address-accepting endpoint.
-- **Architecture** — ASP.NET Core and EF absent from `Main.Service.Core`; `AppSuite.Identity` not
+- **Architecture** — ASP.NET Core and EF absent from `Main.Service.Core`; `CircleTools.Identity` not
   referenced by any Secret-Santa project ([ADR-0019](../adr/0019-member-user-linking.md)).
 - **UI/component (bUnit)** — the account pages, composed over a stub transport rather than a fake API
   client, so the assertions are about how a page reacts to what the API actually says. Two themes
   dominate: the deliberately uninformative answers that keep NFR-005 intact, and the rule that a
   cancelled passkey prompt is not a failure.
-- **Client HTTP (`AppSuite.ApiClient.Test`)** — the authorizing handler and the token stores in
+- **Client HTTP (`CircleTools.ApiClient.Test`)** — the authorizing handler and the token stores in
   isolation. This is where "exactly one refresh" is pinned; getting it wrong is what makes a
   legitimate client look like a token thief to the server.
 - **Localization** — key parity across `de-CH`/`en`/`fr-CH`, **including the four email templates**.
@@ -108,7 +108,7 @@ Circles, sync, the claim flow and Secret-Santa linking are **out of scope** (M2�
 | FR-013 confirm-change link states | `AccountPageTests.ConfirmEmailChange_*` (arriving signed out, and arriving as a different account, each get their own message rather than a bare 401) | Component | ✅ |
 | FR-014 export reaches the user | `AccountPageTests.Export_HandsTheArchiveToThePlatformToSave` (file name, content type, contents) | Component | ✅ |
 | FR-015 deletion is deliberate | `AccountPageTests.DeleteAccount_RequiresThePasswordBeforeTheButtonDoesAnything` + `.DeleteAccount_OnSuccess_SaysTheAccountIsGoneAndDropsTheSession` | Component | ✅ |
-| Client layering | `MainUiLayeringTests` (`Main.Ui` depends on neither `AppSuite.Identity`, `Main.Service`, EF Core nor the WebAssembly host; `ApiClient` and `Ui.Abstractions` stay platform-neutral) | Architecture | ✅ |
+| Client layering | `MainUiLayeringTests` (`Main.Ui` depends on neither `CircleTools.Identity`, `Main.Service`, EF Core nor the WebAssembly host; `ApiClient` and `Ui.Abstractions` stay platform-neutral) | Architecture | ✅ |
 | NFR-003 string parity | `LocalizationParityTests` — one in `Main.Ui.Test`, one in `SecretSanta.Ui.Test`: every neutral key is present and non-empty in `de-CH`, `en` and `fr-CH` | Localization | ✅ |
 | NFR-003 mail templates | **not** the parity test — the templates are code in `MailTemplateRenderer`, not RESX, so they are covered by `MailTemplateRendererTests` (each template renders in all three languages; `Normalize_ReducesCultureNamesToASupportedLanguage`). The row that claimed the parity test was "extended to the email templates" described a design that was not built. | Unit | ✅ |
 | NFR-003 email language | `PasswordResetTests.ResetMail_UsesTheAccountsLanguage` (the *account's* language, not the requester's browser) and `MailDeliveryTests.Registering_DeliversTheVerificationMailInTheChosenLanguage`, both asserting on messages delivered to Mailpit | Integration | ✅ |

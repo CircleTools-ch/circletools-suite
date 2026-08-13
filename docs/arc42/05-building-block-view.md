@@ -21,14 +21,14 @@
 
 ## 5.1 Level 1 — solution structure
 
-Single solution; physical folders mirror solution folders. Projects are prefixed `AppSuite.`
-(placeholder), app-specific ones `AppSuite.<AppType>.`.
+Single solution; physical folders mirror solution folders. Projects are prefixed `CircleTools.`
+(placeholder), app-specific ones `CircleTools.<AppType>.`.
 
 ```mermaid
 flowchart TD
     subgraph Aspire
-        AppHost[AppSuite.AppHost]
-        Defaults[AppSuite.ServiceDefaults]
+        AppHost[CircleTools.AppHost]
+        Defaults[CircleTools.ServiceDefaults]
     end
     subgraph BuildingBlocks
         SK[SharedKernel]
@@ -96,29 +96,29 @@ Razor components without inheriting `localStorage`
 
 | Project | Responsibility |
 |---------|----------------|
-| `AppSuite.AppHost` | Aspire orchestrator; local F5 entrypoint; wires DB, services, web hosts. |
-| `AppSuite.ServiceDefaults` | OpenTelemetry, health checks, resilience, service discovery. |
-| `AppSuite.SharedKernel` | DDD tactical base types (entity, value object, aggregate root, domain event). No I/O deps. |
-| `AppSuite.Application` | CQRS abstractions, pipeline behaviors, `Result`, unit-of-work. |
-| `AppSuite.Infrastructure` | Shared EF conventions, outbox, clock, ID generation, SMTP mail. |
-| `AppSuite.Identity` | Identity model, JWT, refresh-token chains, WebAuthn/passkeys. |
-| `AppSuite.Localization` | `AppCultures` (DE/EN/FR, `de-CH` default), `CultureProvider`, DI extension. |
-| `AppSuite.ApiClient` | `ApiResult`/`ApiError` + `ProblemDetails` reading; access/refresh token stores; `AuthorizedHttpMessageHandler` (bearer + silent refresh). No app DTOs, no routes. |
-| `AppSuite.Ui.Shared` | RCL: the suite theme ([ADR-0024](../adr/0024-ui-styling-and-theming.md)) and the components more than one app needs — `AuthCard`, `BusyButton`, `ProblemAlert`, `CultureSelector`, `CultureBoundary`. |
-| `AppSuite.Ui.Abstractions` | Platform seams: `IKeyValueStore`, `ICultureProvider`, `IPasskeyCeremony`, `IFileSaver`, `StorageUnavailableException`. **References nothing** — no packages, no JS interop — which is what lets a MAUI head swap the implementations and change nothing else. |
-| `AppSuite.Ui.Web` | Browser implementations of those seams, shared by both web hosts: `BrowserKeyValueStore` over `sessionStorage`/`localStorage` ([ADR-0028](../adr/0028-browser-platform-adapters-block.md)). Not an RCL — adapters only, no components — so `Ui.Shared` stays usable by a MAUI head. |
-| `AppSuite.Circles.Contracts` | DTOs for the Circles context. Returns **no member's email address**, enforced by an assembly scan with a two-name exemption list — an address going *in* (`InviteRequest`) and the pending-invitation list an admin typed themselves ([NFR-006](../requirements/non-functional/NFR-006-circle-authorization.md)). |
-| `AppSuite.Circles.Core` | The [Circle](../glossary/circle.md) aggregate (memberships, invitations, decline records, roles, managed members), its application handlers, and **four ports**: `ICircleRepository`, `IAccountDirectory` (the one crossing to Identity, by value), `IInvitationMailer` (*enqueue and return, never send inline* — the contract NFR-005 depends on) and `IInvitationRateLimiter`. No ASP.NET, no EF. |
-| `AppSuite.Circles.Repository` | EF Core adapter with its **own `DbContext` and its own Postgres schema `circles`** inside `maindb`. Implements `ICircleRepository` **and `IInvitationRateLimiter`** — FR-017's counters are `circles` tables (`invitation_attempts`, rolling windows over two indexes), so an adapter in the host would have meant the host writing into another context's tables. No foreign key to the Identity tables — a membership holds a `UserId` **value** ([ADR-0019](../adr/0019-member-user-linking.md)). Concurrency is `xmin` on the circle row, marked modified on every save so the token covers changes to *child* rows too. |
-| `AppSuite.<App>.Contracts` | API DTOs for the app-type (bounded-context boundary). |
-| `AppSuite.<App>.Service.Core` | Domain + application layer; defines repository **ports**. |
-| `AppSuite.<App>.Service.Repository` | EF Core + Postgres adapter. |
-| `AppSuite.<App>.Service` | API host / composition root. |
-| `AppSuite.<App>.Ui` | RCL: the app's pages & components. |
-| `AppSuite.<App>.WebApp` | Standalone **Blazor WebAssembly PWA** host ([ADR-0005](../adr/0005-web-hosting-render-model.md)). |
-| `AppSuite.<App>.App` | MAUI Blazor Hybrid host (Android/iOS). |
-| `AppSuite.<App>.LocalStore` | SQLite adapter + client sync engine. |
-| `AppSuite.<App>.*.Test` | Unit/integration/architecture tests co-located with the subject. |
+| `CircleTools.AppHost` | Aspire orchestrator; local F5 entrypoint; wires DB, services, web hosts. |
+| `CircleTools.ServiceDefaults` | OpenTelemetry, health checks, resilience, service discovery. |
+| `CircleTools.SharedKernel` | DDD tactical base types (entity, value object, aggregate root, domain event). No I/O deps. |
+| `CircleTools.Application` | CQRS abstractions, pipeline behaviors, `Result`, unit-of-work. |
+| `CircleTools.Infrastructure` | Shared EF conventions, outbox, clock, ID generation, SMTP mail. |
+| `CircleTools.Identity` | Identity model, JWT, refresh-token chains, WebAuthn/passkeys. |
+| `CircleTools.Localization` | `AppCultures` (DE/EN/FR, `de-CH` default), `CultureProvider`, DI extension. |
+| `CircleTools.ApiClient` | `ApiResult`/`ApiError` + `ProblemDetails` reading; access/refresh token stores; `AuthorizedHttpMessageHandler` (bearer + silent refresh). No app DTOs, no routes. |
+| `CircleTools.Ui.Shared` | RCL: the suite theme ([ADR-0024](../adr/0024-ui-styling-and-theming.md)) and the components more than one app needs — `AuthCard`, `BusyButton`, `ProblemAlert`, `CultureSelector`, `CultureBoundary`. |
+| `CircleTools.Ui.Abstractions` | Platform seams: `IKeyValueStore`, `ICultureProvider`, `IPasskeyCeremony`, `IFileSaver`, `StorageUnavailableException`. **References nothing** — no packages, no JS interop — which is what lets a MAUI head swap the implementations and change nothing else. |
+| `CircleTools.Ui.Web` | Browser implementations of those seams, shared by both web hosts: `BrowserKeyValueStore` over `sessionStorage`/`localStorage` ([ADR-0028](../adr/0028-browser-platform-adapters-block.md)). Not an RCL — adapters only, no components — so `Ui.Shared` stays usable by a MAUI head. |
+| `CircleTools.Circles.Contracts` | DTOs for the Circles context. Returns **no member's email address**, enforced by an assembly scan with a two-name exemption list — an address going *in* (`InviteRequest`) and the pending-invitation list an admin typed themselves ([NFR-006](../requirements/non-functional/NFR-006-circle-authorization.md)). |
+| `CircleTools.Circles.Core` | The [Circle](../glossary/circle.md) aggregate (memberships, invitations, decline records, roles, managed members), its application handlers, and **four ports**: `ICircleRepository`, `IAccountDirectory` (the one crossing to Identity, by value), `IInvitationMailer` (*enqueue and return, never send inline* — the contract NFR-005 depends on) and `IInvitationRateLimiter`. No ASP.NET, no EF. |
+| `CircleTools.Circles.Repository` | EF Core adapter with its **own `DbContext` and its own Postgres schema `circles`** inside `maindb`. Implements `ICircleRepository` **and `IInvitationRateLimiter`** — FR-017's counters are `circles` tables (`invitation_attempts`, rolling windows over two indexes), so an adapter in the host would have meant the host writing into another context's tables. No foreign key to the Identity tables — a membership holds a `UserId` **value** ([ADR-0019](../adr/0019-member-user-linking.md)). Concurrency is `xmin` on the circle row, marked modified on every save so the token covers changes to *child* rows too. |
+| `CircleTools.<App>.Contracts` | API DTOs for the app-type (bounded-context boundary). |
+| `CircleTools.<App>.Service.Core` | Domain + application layer; defines repository **ports**. |
+| `CircleTools.<App>.Service.Repository` | EF Core + Postgres adapter. |
+| `CircleTools.<App>.Service` | API host / composition root. |
+| `CircleTools.<App>.Ui` | RCL: the app's pages & components. |
+| `CircleTools.<App>.WebApp` | Standalone **Blazor WebAssembly PWA** host ([ADR-0005](../adr/0005-web-hosting-render-model.md)). |
+| `CircleTools.<App>.App` | MAUI Blazor Hybrid host (Android/iOS). |
+| `CircleTools.<App>.LocalStore` | SQLite adapter + client sync engine. |
+| `CircleTools.<App>.*.Test` | Unit/integration/architecture tests co-located with the subject. |
 
 **App-types now:** `Main` (shell: branding, login, dashboard, shared config) and `SecretSanta`.
 More follow the same template.
@@ -137,10 +137,10 @@ until this chapter confirmed them; they are now **fixed**:
 
 | Context | Owns | Lives in | Status |
 |---------|------|----------|--------|
-| **Secret-Santa** | [Group](../glossary/group.md), [Member](../glossary/member.md), [Exclusion](../glossary/exclusion.md), [Draw](../glossary/draw.md), [Assignment](../glossary/assignment.md), [Wishlist](../glossary/wishlist.md), [Budget](../glossary/budget.md), [Event details](../glossary/event-details.md), [Reveal link](../glossary/reveal-link.md) | `AppSuite.SecretSanta.*` | shipped (FEAT-001) |
-| **Identity** | [User](../glossary/user.md), [Passkey](../glossary/passkey.md) — credentials, profile, account lifecycle | `AppSuite.Identity` + the Main service host; the client half in `AppSuite.Main.Ui` (`Auth/`, `Api/`) over `AppSuite.ApiClient` | **M1** ([FEAT-002](../features/FEAT-002-m1-identity.md)) |
-| **Circles** | [Circle](../glossary/circle.md), [Circle membership](../glossary/circle-membership.md), [Invitation](../glossary/invitation.md), [Managed member](../glossary/managed-member.md) | `AppSuite.Circles.Contracts/.Core/.Repository`, hosted by the Main service; the client half in `AppSuite.Main.Ui` | **M2** ([FEAT-003](../features/FEAT-003-m2-circles.md)) |
-| **Platform** | [Sync](../glossary/sync.md) — local↔server reconciliation | `AppSuite.Infrastructure` + per-app `LocalStore` | **M3** ([FEAT-004](../features/FEAT-004-m3-sync-and-claim.md), Done) — syncs the Secret-Santa `Group` and profile preferences; **not** the `Circle` ([ADR-0033](../adr/0033-which-aggregates-sync.md)) |
+| **Secret-Santa** | [Group](../glossary/group.md), [Member](../glossary/member.md), [Exclusion](../glossary/exclusion.md), [Draw](../glossary/draw.md), [Assignment](../glossary/assignment.md), [Wishlist](../glossary/wishlist.md), [Budget](../glossary/budget.md), [Event details](../glossary/event-details.md), [Reveal link](../glossary/reveal-link.md) | `CircleTools.SecretSanta.*` | shipped (FEAT-001) |
+| **Identity** | [User](../glossary/user.md), [Passkey](../glossary/passkey.md) — credentials, profile, account lifecycle | `CircleTools.Identity` + the Main service host; the client half in `CircleTools.Main.Ui` (`Auth/`, `Api/`) over `CircleTools.ApiClient` | **M1** ([FEAT-002](../features/FEAT-002-m1-identity.md)) |
+| **Circles** | [Circle](../glossary/circle.md), [Circle membership](../glossary/circle-membership.md), [Invitation](../glossary/invitation.md), [Managed member](../glossary/managed-member.md) | `CircleTools.Circles.Contracts/.Core/.Repository`, hosted by the Main service; the client half in `CircleTools.Main.Ui` | **M2** ([FEAT-003](../features/FEAT-003-m2-circles.md)) |
+| **Platform** | [Sync](../glossary/sync.md) — local↔server reconciliation | `CircleTools.Infrastructure` + per-app `LocalStore` | **M3** ([FEAT-004](../features/FEAT-004-m3-sync-and-claim.md), Done) — syncs the Secret-Santa `Group` and profile preferences; **not** the `Circle` ([ADR-0033](../adr/0033-which-aggregates-sync.md)) |
 
 **Neither Secret-Santa nor Circles depends on Identity, and Secret-Santa does not depend on Circles.**
 Both cross-context links are the same shape: a [Member](../glossary/member.md) carries an **optional
@@ -152,7 +152,7 @@ deployable, and Secret-Santa keeps working with no account and no circle at all.
 nothing after the circle is deleted
 ([FR-022](../requirements/functional/FR-022-delete-circle.md)).
 
-`AppSuite.Identity` sits in `BuildingBlocks/` rather than under `Main` because
+`CircleTools.Identity` sits in `BuildingBlocks/` rather than under `Main` because
 [ADR-0009](../adr/0009-authentication-and-passkeys.md) makes one account serve **all** apps: any future
 app-type's API host authenticates the same bearer tokens
 ([ADR-0021](../adr/0021-web-auth-token-model.md)).
@@ -167,7 +167,7 @@ full inward-pointing split: `Core` owns the aggregate and the ports, `Repository
 `Contracts` is the boundary.
 
 It is **not an app-type**: it has no head, no `WebApp` and no `LocalStore`. The Main API host maps
-`/api/v1/circles` and `/api/v1/invitations`, and the client half is pages in `AppSuite.Main.Ui` —
+`/api/v1/circles` and `/api/v1/invitations`, and the client half is pages in `CircleTools.Main.Ui` —
 the same division of labour M1 used for Identity. Circles is **online-only**, and stays that way: M3
 decided that a set of people several devices edit does **not** belong under last-write-wins, so circle
 data is excluded from sync ([ADR-0033](../adr/0033-which-aggregates-sync.md), narrowing
@@ -176,21 +176,21 @@ separate, parked decision.
 
 **What the host contributes**, since none of it may live in the context itself:
 
-| In `AppSuite.Main.Service` | Why it is here and not in `Circles.*` |
+| In `CircleTools.Main.Service` | Why it is here and not in `Circles.*` |
 |---|---|
 | `CircleEndpoints`, `InvitationEndpoints` | ASP.NET, which `Circles.Core` may not reference. |
 | `CircleRoleFilter` + `CircleRoleRequirement` | The requirement is endpoint **metadata**, not a filter argument, so `CircleEndpointGuardTests` can read it back off the endpoint data source and fail the build when a circle route is added without a guard. The caller's membership is loaded **per request** — no role ever enters a token, which is what makes a removal take effect on the next request (FR-020, NFR-006). |
-| `OutboxInvitationMailer` | Implements `IInvitationMailer` over `IOutbox`. Referencing `AppSuite.Infrastructure` from the domain would have pulled MailKit in for one call. |
+| `OutboxInvitationMailer` | Implements `IInvitationMailer` over `IOutbox`. Referencing `CircleTools.Infrastructure` from the domain would have pulled MailKit in for one call. |
 | `SoleOwnerCircleGuard` | Implements M1's `IAccountDeletionGuard`. Blocks on **every** circle the account owns — not only the ones nobody else could own — because deleting the owner's membership would otherwise leave a circle with no owner, a state the domain does not define. Each blocker names itself and carries the way out (`owner_must_transfer_ownership` / `owner_must_delete_circle`). |
-| `CircleMembershipCleanup` | Implements `IAccountDeletionCleanup`, the **second** deletion seam, added in `AppSuite.Main.Service.Core` by this milestone. Removes the departing account's memberships and the invitations it sent; **leaves managed members**, which are circle data that survives their creator (FR-019). |
+| `CircleMembershipCleanup` | Implements `IAccountDeletionCleanup`, the **second** deletion seam, added in `CircleTools.Main.Service.Core` by this milestone. Removes the departing account's memberships and the invitations it sent; **leaves managed members**, which are circle data that survives their creator (FR-019). |
 
-`AppSuite.ApiClient` gained `ApiError.Code` for this milestone: every circle refusal carries a stable
+`CircleTools.ApiClient` gained `ApiError.Code` for this milestone: every circle refusal carries a stable
 code beside its English title, and the reader had been discarding it — so a DE/EN/FR client could only
 ever have said "there was a conflict" ([ADR-0011](../adr/0011-localization-format-and-culture.md)).
 `CircleErrorCodeCoverageTests` keeps the code table and the translated sentences in step in both
 directions.
 
-The client half is **four** pages in `AppSuite.Main.Ui/Pages/Circles/`: `MyCircles` (list + create),
+The client half is **four** pages in `CircleTools.Main.Ui/Pages/Circles/`: `MyCircles` (list + create),
 `CircleDetail` (people, invitations, managed members, roles, transfer, leave, delete), `JoinRequests`
 (`/invitations`) and `InvitationLanding` (`/invitation/{token}`). Everything from invite through delete
 is one change to one aggregate and one people list, so splitting it across routes would only mean
@@ -203,9 +203,9 @@ Dependencies point **inward**; the domain (`Service.Core` / `SharedKernel`) has 
 on EF, ASP.NET, HTTP, or MAUI. Enforced by an **architecture test** (ArchUnitNET). Full reference
 rules are in the [architecture guidelines](../guidelines/architecture-guidelines.md).
 
-`AppSuite.Circles.Core` is bound by the same rule as any `Service.Core`: no EF, no ASP.NET, no HTTP.
+`CircleTools.Circles.Core` is bound by the same rule as any `Service.Core`: no EF, no ASP.NET, no HTTP.
 Two further rules exist because the temptation is obvious — **no Circles project may reference
-`AppSuite.Identity`** (a `UserId` is a value, and reaching for the user would create the coupling
+`CircleTools.Identity`** (a `UserId` is a value, and reaching for the user would create the coupling
 ADR-0019 exists to prevent), and **no Secret-Santa project may reference Circles** in either
 direction.
 
@@ -213,7 +213,7 @@ On the client side the same rule reads outward-in from the host, and is enforced
 `MainUiLayeringTests` and `SharedUiBlockLayeringTests`:
 
 - `<App>.Ui` may reference `Ui.Shared`, `Ui.Abstractions`, `Localization`, `ApiClient` and its own
-  `Contracts` — and **never** `AppSuite.Identity`, `<App>.Service*`, EF Core, or the WebAssembly
+  `Contracts` — and **never** `CircleTools.Identity`, `<App>.Service*`, EF Core, or the WebAssembly
   host. Reaching for the server's Identity code from the browser would move a security decision
   somewhere the browser can read it.
 - `ApiClient` and `Ui.Abstractions` stay free of `Microsoft.JSInterop` and
