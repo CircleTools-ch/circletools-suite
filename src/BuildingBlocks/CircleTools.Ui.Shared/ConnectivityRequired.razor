@@ -1,5 +1,5 @@
 @*
-    Says a screen needs a live connection, distinctly from a failure.
+    Says a screen needs a live connection, distinctly from a failure (ADR-0040: MudBlazor).
 
     Circles are online-only and server-authoritative (ADR-0033): when the API cannot be reached the
     screen must state that it needs a connection, not fail opaquely as if something went wrong. This is
@@ -10,10 +10,9 @@
 
 @if (!string.IsNullOrWhiteSpace(Message))
 {
-    <div class="alert alert-info d-flex align-items-center gap-2" role="status">
-        <span class="bi bi-wifi-off" aria-hidden="true"></span>
-        <div>@Message</div>
-    </div>
+    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.WifiOff" Class="mb-3" Dense="true" role="status">
+        @Message
+    </MudAlert>
 }
 
 @code {

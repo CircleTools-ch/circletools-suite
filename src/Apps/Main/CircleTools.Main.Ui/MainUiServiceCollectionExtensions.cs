@@ -1,5 +1,6 @@
 using CircleTools.Main.Ui.Api;
 using CircleTools.Ui.Account;
+using CircleTools.Ui.Shared;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CircleTools.Main.Ui;
@@ -33,6 +34,14 @@ public static class MainUiServiceCollectionExtensions
 
         services.AddAccountUi(RefreshTokenStorageKey);
         services.AddScoped<CirclesApiClient>();
+
+        // Per-app header identity (ADR-0040 amendment): the suite ring mark and the brand navy on the
+        // app bar. Head-agnostic, so it lives here rather than in a host — the logo is served same-origin
+        // from the shared building block, which works on both the WASM and MAUI heads.
+        services.AddSingleton(new AppBranding(
+            LogoUrl: "_content/CircleTools.Ui.Shared/img/app-main.svg",
+            AppBarColor: "#03173d",
+            AppBarText: "#e7e9ee"));
 
         return services;
     }

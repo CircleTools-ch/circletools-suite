@@ -10,4 +10,9 @@
        rendered German labels. -->
   <data name="Language" xml:space="preserve"><value>Language</value></data>
   <data name="Working" xml:space="preserve"><value>Working …</value></data>
+  <data name="ThemeAppearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="ThemeSystem" xml:space="preserve"><value>System</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>Light</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>Dark</value></data>
+  <data name="AppsMenu" xml:space="preserve"><value>Apps</value></data>
 </root>

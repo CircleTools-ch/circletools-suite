@@ -44,6 +44,13 @@ The circle primitive from the naming rationale (below) is now drawn. The system:
 Placeholder accents that had diverged from the brand were reconciled to navy `#03173d` / accent
 `#3c6fd1` (the DocFX `--bs-primary` was a `#1168bd` placeholder).
 
+**In-app palette (from [ADR-0040](../adr/0040-ui-component-library-mudblazor.md), 2026-08-13):** the
+*running app* UI is deliberately **neutral and restrained** — a MudBlazor/Material theme on neutral
+surfaces with a single calm accent, plus light/dark. The **per-app brand marks and their festive
+colours** (Secret-Santa's red `#7a1f2b` / gold `#e3a92e` on cream) live on the **app icon, splash and
+store/marketing assets** listed above — not on every in-app surface. The mark and asset spec here is
+unchanged; only where the saturated colour is applied changed.
+
 ## Chosen brand
 
 > ✅ **Decided 2026-08-13 — `CircleTools`, `circletools.ch` registered at Infomaniak.** The exploration

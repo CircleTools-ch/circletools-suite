@@ -18,34 +18,34 @@
         @switch (_state)
         {
             case State.Working:
-                <p class="mb-0">@L["VerifyWorking"]</p>
+                <MudText>@L["VerifyWorking"]</MudText>
                 break;
 
             case State.Confirmed:
-                <p class="mb-0">@L["ConfirmEmailDoneText"]</p>
+                <MudText>@L["ConfirmEmailDoneText"]</MudText>
                 break;
 
             case State.SignedOut:
-                <p class="mb-0">@L["ConfirmEmailSignedOut"]</p>
+                <MudText>@L["ConfirmEmailSignedOut"]</MudText>
                 break;
 
             case State.WrongAccount:
-                <p class="mb-0">@L["ConfirmEmailWrongAccount"]</p>
+                <MudText>@L["ConfirmEmailWrongAccount"]</MudText>
                 break;
 
             default:
-                <p class="mb-0">@L["ConfirmEmailFailed"]</p>
+                <MudText>@L["ConfirmEmailFailed"]</MudText>
                 break;
         }
     </ChildContent>
     <Footer>
         @if (_state == State.SignedOut)
         {
-            <a href="account/login">@L["NavSignIn"]</a>
+            <MudLink Href="account/login">@L["NavSignIn"]</MudLink>
         }
         else
         {
-            <a href="account/security">@L["NavSecurity"]</a>
+            <MudLink Href="account/security">@L["NavSecurity"]</MudLink>
         }
     </Footer>
 </AuthCard>

@@ -1,0 +1,157 @@
+@inject IStringLocalizer<AppStrings> L
+@inject AccountSession Session
+@inject NavigationManager Navigation
+@inject ThemeState Theme
+@inject AppBranding Branding
+@implements IDisposable
+
+@*
+    The Main app shell (ADR-0040): a MudBlazor layout. Wide screens get a persistent drawer; narrow
+    screens get a bottom navigation bar with a "More" entry that opens the drawer. The MudThemeProvider
+    is driven by ThemeState (the System/Light/Dark switch), persisted via IKeyValueStore.
+*@
+
+<MudThemeProvider @ref="_themeProvider" Theme="_theme" IsDarkMode="Theme.IsDark" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                       OnClick="ToggleDrawer" aria-label="@L["NavMenu"]" />
+        @if (!string.IsNullOrEmpty(Branding.LogoUrl))
+        {
+            <img src="@Branding.LogoUrl" alt="" class="ct-appbar-logo ml-2" />
+        }
+        <MudText Typo="Typo.h6" Class="ml-2">CircleTools</MudText>
+        <MudSpacer />
+        <AuthorizeView>
+            <Authorized>
+                <MudText Typo="Typo.body2" Class="mr-2 d-none d-sm-flex">@context.User.DisplayName()</MudText>
+            </Authorized>
+            <NotAuthorized>
+                <MudButton Href="account/login" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Login">@L["NavSignIn"]</MudButton>
+            </NotAuthorized>
+        </AuthorizeView>
+        <AppSwitcher />
+        <ThemeSwitch />
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Variant="DrawerVariant.Responsive"
+               Breakpoint="Breakpoint.Md" ClipMode="DrawerClipMode.Always" Elevation="1">
+        <MudNavMenu>
+            <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">@L["NavDashboard"]</MudNavLink>
+            <MudNavLink Href="heartbeat" Icon="@Icons.Material.Filled.MonitorHeart">@L["NavHeartbeat"]</MudNavLink>
+
+            <AuthorizeView>
+                <Authorized>
+                    <MudDivider Class="my-2" />
+                    <MudNavLink Href="circles" Icon="@Icons.Material.Filled.Groups">@L["NavCircles"]</MudNavLink>
+                    <MudNavLink Href="invitations" Icon="@Icons.Material.Filled.Email">@L["InvitationsTitle"]</MudNavLink>
+                    <MudDivider Class="my-2" />
+                    <MudNavLink Href="account/profile" Icon="@Icons.Material.Filled.Person">@L["NavProfile"]</MudNavLink>
+                    <MudNavLink Href="account/security" Icon="@Icons.Material.Filled.Lock">@L["NavSecurity"]</MudNavLink>
+                    <MudNavLink Href="account/data" Icon="@Icons.Material.Filled.Download">@L["NavData"]</MudNavLink>
+                    <MudNavLink Icon="@Icons.Material.Filled.Logout" OnClick="SignOutAsync">@L["NavSignOut"]</MudNavLink>
+                </Authorized>
+                <NotAuthorized>
+                    <MudDivider Class="my-2" />
+                    <MudNavLink Href="account/login" Icon="@Icons.Material.Filled.Login">@L["NavSignIn"]</MudNavLink>
+                    <MudNavLink Href="account/register" Icon="@Icons.Material.Filled.PersonAdd">@L["NavRegister"]</MudNavLink>
+                </NotAuthorized>
+            </AuthorizeView>
+
+            <MudDivider Class="my-2" />
+            <div class="px-4 py-2">
+                <CultureSelector />
+            </div>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent>
+        @* Sits above every page, not only the account ones: a pending account can sign in but nothing
+           account-scoped works until the address is proven (FR-007), and the banner explains why. *@
+        <VerificationBanner />
+        <MudContainer MaxWidth="MaxWidth.Medium" Class="py-4 ct-has-bottomnav">
+            @ChildContent
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@* Bottom navigation on narrow viewports only. "More" opens the drawer for account/settings. *@
+<MudHidden Breakpoint="Breakpoint.MdAndUp">
+    <BottomNav Items="_bottomNav" OnMore="ToggleDrawer"
+               MoreIcon="@Icons.Material.Filled.Menu" MoreLabel="@L["NavMore"]" />
+</MudHidden>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    // Drives the bottom bar: signed-in visitors get the account destinations too, so the bar is a real
+    // tab bar rather than a single Home + More.
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private MudThemeProvider _themeProvider = default!;
+    private MudTheme _theme = CircleToolsTheme.Instance;
+    private bool _drawerOpen = true;
+
+    private IReadOnlyList<NavItem> _bottomNav = [];
+
+    protected override void OnInitialized()
+    {
+        Theme.Changed += OnThemeChanged;
+        // The per-app app-bar colour lives in a theme built once from the injected branding (ADR-0040
+        // amendment); every other surface stays the neutral suite palette.
+        _theme = CircleToolsTheme.ForApp(Branding);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var signedIn = AuthState is not null
+            && (await AuthState).User.Identity?.IsAuthenticated == true;
+
+        _bottomNav = signedIn
+            ?
+            [
+                new NavItem("", L["NavDashboard"], Icons.Material.Filled.Home, Exact: true),
+                new NavItem("circles", L["NavCircles"], Icons.Material.Filled.Groups),
+                new NavItem("invitations", L["InvitationsTitle"], Icons.Material.Filled.Email),
+            ]
+            :
+            [
+                new NavItem("", L["NavDashboard"], Icons.Material.Filled.Home, Exact: true),
+            ];
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var systemIsDark = await _themeProvider.GetSystemDarkModeAsync();
+            await Theme.InitializeAsync(systemIsDark);
+            await _themeProvider.WatchSystemDarkModeAsync(OnSystemPreferenceChanged);
+            StateHasChanged();
+        }
+    }
+
+    private Task OnSystemPreferenceChanged(bool isDark)
+    {
+        Theme.SystemPreferenceChanged(isDark);
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void OnThemeChanged() => InvokeAsync(StateHasChanged);
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    // Sign-out lands on the dashboard rather than the sign-in form: the suite is usable signed out
+    // (ADR-0005 local-first), so demanding credentials straight after leaving would be backwards.
+    private async Task SignOutAsync()
+    {
+        await Session.SignOutAsync();
+        Navigation.NavigateTo("");
+    }
+
+    public void Dispose() => Theme.Changed -= OnThemeChanged;
+}

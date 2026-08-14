@@ -42,6 +42,17 @@
         "resolved": "10.0.10",
         "contentHash": "f5VCIE7AJpd5YvzNTeMGVzQIgyE9tX+AreTYwQF+REbu+DZo/2Ae+jNSwhPEYrVz6RRkd7y8ubXjk6Nn6Ka+Cg=="
       },
+      "MudBlazor": {
+        "type": "Direct",
+        "requested": "[9.8.0, )",
+        "resolved": "9.8.0",
+        "contentHash": "JLJ81j6cn5RUTbgpYAtjRfB3bTNweX0q8lkMS6B9v1oGzZsjVTxDDnWahD+rOtzJWPU6D9svsymiETe4G8bSLw==",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "10.0.1",
+          "Microsoft.AspNetCore.Components.Web": "10.0.1",
+          "Microsoft.Extensions.Localization": "10.0.1"
+        }
+      },
       "GoogleGson": {
         "type": "Transitive",
         "resolved": "2.13.1.1",
@@ -1421,7 +1432,8 @@
           "CircleTools.Localization": "[1.0.0, )",
           "CircleTools.Ui.Abstractions": "[1.0.0, )",
           "Microsoft.AspNetCore.Components.Web": "[10.0.10, )",
-          "Microsoft.Extensions.Localization": "[10.0.10, )"
+          "Microsoft.Extensions.Localization": "[10.0.10, )",
+          "MudBlazor": "[9.8.0, )"
         }
       },
       "Microsoft.AspNetCore.Components.Authorization": {
@@ -1573,6 +1585,17 @@
           "Microsoft.Maui.Controls.Core": "10.0.20",
           "Microsoft.Maui.Controls.Xaml": "10.0.20",
           "Microsoft.Maui.Resizetizer": "10.0.20"
+        }
+      },
+      "MudBlazor": {
+        "type": "Direct",
+        "requested": "[9.8.0, )",
+        "resolved": "9.8.0",
+        "contentHash": "JLJ81j6cn5RUTbgpYAtjRfB3bTNweX0q8lkMS6B9v1oGzZsjVTxDDnWahD+rOtzJWPU6D9svsymiETe4G8bSLw==",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "10.0.1",
+          "Microsoft.AspNetCore.Components.Web": "10.0.1",
+          "Microsoft.Extensions.Localization": "10.0.1"
         }
       },
       "Microsoft.AspNetCore.Authorization": {
@@ -1958,7 +1981,8 @@
           "CircleTools.Localization": "[1.0.0, )",
           "CircleTools.Ui.Abstractions": "[1.0.0, )",
           "Microsoft.AspNetCore.Components.Web": "[10.0.10, )",
-          "Microsoft.Extensions.Localization": "[10.0.10, )"
+          "Microsoft.Extensions.Localization": "[10.0.10, )",
+          "MudBlazor": "[9.8.0, )"
         }
       },
       "Microsoft.AspNetCore.Components.Authorization": {

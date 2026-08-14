@@ -12,8 +12,13 @@
 
         'wasm-unsafe-eval' is mandatory: without it the .NET runtime cannot instantiate its own
         WebAssembly and the app does not start at all. It permits WebAssembly compilation only, not
-        eval() or inline script - which is why there is no 'unsafe-inline' here, and why the
+        eval() or inline script - which is why there is no 'unsafe-inline' in script-src, and why the
         service-worker registration lives in js/app.js instead of a <script> block.
+
+        style-src carries 'unsafe-inline' (ADR-0040): MudBlazor's theme provider emits a dynamic
+        inline <style> and its components set inline styles, which a static WASM host cannot nonce
+        per request. This relaxes styling only, not script — script-src stays inline-free, so the
+        XSS mitigation ADR-0021 relies on is intact. See ADR-0040 for the trade-off.
 
         connect-src names the API origin explicitly. It is the development one; a deployment serves
         this policy as a response header with its own origin, because a static file cannot know it.
@@ -23,7 +28,7 @@
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'self';
                    script-src 'self' 'wasm-unsafe-eval';
-                   style-src 'self';
+                   style-src 'self' 'unsafe-inline';
                    img-src 'self' data:;
                    font-src 'self';
                    connect-src 'self' https://localhost:7180;
@@ -34,8 +39,10 @@
                    object-src 'none'" />
     <title>CircleTools</title>
     <base href="/" />
-    <script src="js/theme.js"></script>
-    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
+    <!-- MudBlazor (ADR-0040). Fonts resolve to the system-ui stack set in the MudTheme, so no
+         external font is loaded (CSP-friendly). -->
+    <link rel="stylesheet" href="_content/MudBlazor/MudBlazor.min.css" />
+    <!-- The suite's slim, framework-agnostic helpers (screen-reader-only utility). -->
     <link rel="stylesheet" href="_content/CircleTools.Ui.Shared/css/circletools.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
@@ -61,6 +68,7 @@
         <span class="dismiss">🗙</span>
     </div>
     <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="js/app.js"></script>
 </body>
 

@@ -14,20 +14,20 @@
         @switch (_state)
         {
             case State.Working:
-                <p class="mb-0">@L["VerifyWorking"]</p>
+                <MudText>@L["VerifyWorking"]</MudText>
                 break;
 
             case State.Confirmed:
-                <p class="mb-0">@L["VerifyDoneText"]</p>
+                <MudText>@L["VerifyDoneText"]</MudText>
                 break;
 
             default:
-                <p class="mb-0">@L["VerifyFailedText"]</p>
+                <MudText>@L["VerifyFailedText"]</MudText>
                 break;
         }
     </ChildContent>
     <Footer>
-        <a href="account/login">@L["NavSignIn"]</a>
+        <MudLink Href="account/login">@L["NavSignIn"]</MudLink>
     </Footer>
 </AuthCard>
 

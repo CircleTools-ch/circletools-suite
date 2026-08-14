@@ -9,21 +9,21 @@
 
 @if (_error)
 {
-    <div class="alert alert-danger" role="alert">@L["RevealMalformed"]</div>
+    <MudAlert Severity="Severity.Error" Dense="true" role="alert">@L["RevealMalformed"]</MudAlert>
 }
 else if (_payload is not null)
 {
-    <h1>@L["RevealGreeting", _label]</h1>
+    <MudText Typo="Typo.h4" GutterBottom="true">@L["RevealGreeting", _label]</MudText>
 
     @if (_payload.BudgetAmount is { } amount)
     {
-        <p><strong>@L["RevealBudgetLabel"]:</strong> @amount.ToString("0.##", CultureInfo.CurrentCulture) @_payload.BudgetCurrency</p>
+        <MudText Class="mb-1"><strong>@L["RevealBudgetLabel"]:</strong> @amount.ToString("0.##", CultureInfo.CurrentCulture) @_payload.BudgetCurrency</MudText>
     }
 
     @if (HasEvent)
     {
         @* Razor strips the whitespace between these elements, so the separators must be explicit. *@
-        <p>
+        <MudText Class="mb-1">
             <strong>@L["RevealEventLabel"]:</strong>
             @if (_eventDate is { } date)
             {
@@ -37,22 +37,22 @@ else if (_payload is not null)
                 }
                 <span>&nbsp;@_payload.EventLocation</span>
             }
-        </p>
+        </MudText>
         @if (!string.IsNullOrWhiteSpace(_payload.EventNotes))
         {
-            <p>@_payload.EventNotes</p>
+            <MudText Class="mb-1">@_payload.EventNotes</MudText>
         }
     }
 
     @if (_revealed)
     {
-        <div class="alert alert-success">
-            <p class="mb-1">@L["RevealRecipientLabel"]:</p>
-            <h2 class="mb-3">@_payload.RecipientName</h2>
-            <p class="mb-1"><strong>@L["RevealWishlistLabel"]:</strong></p>
+        <MudAlert Severity="Severity.Success" Class="mt-3">
+            <MudText Class="mb-1">@L["RevealRecipientLabel"]:</MudText>
+            <MudText Typo="Typo.h5" Class="mb-3">@_payload.RecipientName</MudText>
+            <MudText Class="mb-1"><strong>@L["RevealWishlistLabel"]:</strong></MudText>
             @if (_payload.Wishlist.Count == 0)
             {
-                <p class="mb-0">@L["RevealNoWishlist"]</p>
+                <MudText>@L["RevealNoWishlist"]</MudText>
             }
             else
             {
@@ -63,12 +63,13 @@ else if (_payload is not null)
                     }
                 </ul>
             }
-        </div>
+        </MudAlert>
     }
     else
     {
-        <p class="text-muted">@L["RevealSpoilerNote"]</p>
-        <button class="btn btn-lg btn-primary" @onclick="() => _revealed = true">@L["RevealButton"]</button>
+        <MudText Class="mud-text-secondary my-3">@L["RevealSpoilerNote"]</MudText>
+        <MudButton Size="Size.Large" Color="Color.Primary" Variant="Variant.Filled"
+                   StartIcon="@Icons.Material.Filled.CardGiftcard" OnClick="() => _revealed = true">@L["RevealButton"]</MudButton>
     }
 }
 

@@ -9,123 +9,140 @@
 
 <GroupNav GroupId="GroupId" />
 
-<h1>@L["MembersTitle"]</h1>
+<MudText Typo="Typo.h4" GutterBottom="true">@L["MembersTitle"]</MudText>
 
 @if (_hasCurrentDraw)
 {
-    <div class="alert alert-warning" role="alert">@L["RemoveMemberVoidsDrawWarning"]</div>
+    <MudAlert Severity="Severity.Warning" Class="mb-4" Dense="true" role="alert">@L["RemoveMemberVoidsDrawWarning"]</MudAlert>
 }
 
-<div class="card mb-3">
-    <div class="card-body">
-        <div class="mb-2">
-            <label class="form-label" for="new-member-name">@L["NameLabel"]</label>
-            <input id="new-member-name" class="form-control" @bind="_newName" placeholder="@L["MemberNamePlaceholder"]" />
-        </div>
-        <div class="mb-2">
-            <label class="form-label" for="new-member-wishlist">@L["WishlistLabel"]</label>
-            <textarea id="new-member-wishlist" class="form-control" @bind="_newWishlist"></textarea>
-        </div>
-        <button class="btn btn-primary" @onclick="AddAsync" disabled="@string.IsNullOrWhiteSpace(_newName)">@L["AddMember"]</button>
-        @if (_error is not null)
-        {
-            <p class="text-danger mt-2" role="alert">@_error</p>
-        }
-    </div>
-</div>
+<MudCard Elevation="1" Class="mb-4">
+    <MudCardContent>
+        <MudStack Spacing="2">
+            <MudTextField @bind-Value="_newName" Label="@L["NameLabel"]" Placeholder="@L["MemberNamePlaceholder"]"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_newWishlist" Label="@L["WishlistLabel"]" Variant="Variant.Outlined"
+                          Margin="Margin.Dense" Lines="3" />
+            <div>
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddAsync"
+                           StartIcon="@Icons.Material.Filled.PersonAdd"
+                           Disabled="@string.IsNullOrWhiteSpace(_newName)">@L["AddMember"]</MudButton>
+            </div>
+            @if (_error is not null)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" role="alert">@_error</MudAlert>
+            }
+        </MudStack>
+    </MudCardContent>
+</MudCard>
 
 @if (_members is null)
 {
-    <p>@L["Loading"]</p>
+    <MudText>@L["Loading"]</MudText>
 }
 else if (_members.Count == 0)
 {
-    <p>@L["NoMembers"]</p>
+    <MudText Class="mud-text-secondary">@L["NoMembers"]</MudText>
 }
 else
 {
-    <ul class="list-group">
+    <MudStack Spacing="2">
         @foreach (var member in _members)
         {
-            <li class="list-group-item">
-                @if (_editingId == member.Id)
-                {
-                    <div class="mb-2">
-                        <input class="form-control" @bind="_editName" aria-label="@L["NameLabel"]" />
-                    </div>
-                    <div class="mb-2">
-                        <textarea class="form-control" @bind="_editWishlist" aria-label="@L["WishlistLabel"]"></textarea>
-                    </div>
-                    <button class="btn btn-sm btn-primary" @onclick="SaveEditAsync" disabled="@string.IsNullOrWhiteSpace(_editName)">@L["Save"]</button>
-                    <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="CancelEdit">@L["Cancel"]</button>
-                }
-                else
-                {
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <strong>@member.Name</strong>
-                            @if (member.Wishlist.Count > 0)
-                            {
-                                <ul class="mb-0">
-                                    @foreach (var item in member.Wishlist)
-                                    {
-                                        <li>@item</li>
-                                    }
-                                </ul>
-                            }
-                        </div>
-                        <div>
-                            @* Linking is an account-only action (it calls the authorized server API), so
-                               only show it when signed in. Edit/Remove are local and stay for everyone. *@
-                            <AuthorizeView>
-                                @if (member.UserId is not null)
-                                {
-                                    <span class="badge bg-info text-dark me-1" title="@L["MemberLinkedTitle"]">@L["MemberLinkedBadge"]</span>
-                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => UnlinkAsync(member.Id)" disabled="@_linkBusy">@L["MemberUnlink"]</button>
-                                }
-                                else
-                                {
-                                    <button class="btn btn-sm btn-outline-info" @onclick="() => BeginLink(member.Id)">@L["MemberLink"]</button>
-                                }
-                            </AuthorizeView>
-                            <button class="btn btn-sm btn-outline-primary ms-1" @onclick="() => BeginEdit(member)">@L["Edit"]</button>
-                            <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => AskRemove(member.Id)">@L["Remove"]</button>
-                        </div>
-                    </div>
-
-                    @* Send a member-link request: the member owns their wishlist and sees their own
-                       assignment once they accept. The response reveals nothing about the address. *@
-                    @if (_linkingMemberId == member.Id)
+            <MudCard Elevation="1">
+                <MudCardContent>
+                    @if (_editingId == member.Id)
                     {
-                        <div class="alert alert-light border mt-2 mb-0">
-                            <label class="form-label" for="link-email-@member.Id">@L["MemberLinkEmailLabel"]</label>
-                            <div class="input-group">
-                                <input id="link-email-@member.Id" class="form-control" type="email" @bind="_linkEmail" @bind:event="oninput" />
-                                <button class="btn btn-primary" @onclick="() => SendLinkAsync(member)" disabled="@(_linkBusy || string.IsNullOrWhiteSpace(_linkEmail))">
-                                    @L["MemberLinkSend"]
-                                </button>
-                                <button class="btn btn-outline-secondary" @onclick="CancelLink">@L["Cancel"]</button>
+                        <MudStack Spacing="2">
+                            <MudTextField @bind-Value="_editName" Label="@L["NameLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            <MudTextField @bind-Value="_editWishlist" Label="@L["WishlistLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" />
+                            <div class="d-flex gap-1">
+                                <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled"
+                                           OnClick="SaveEditAsync" Disabled="@string.IsNullOrWhiteSpace(_editName)">@L["Save"]</MudButton>
+                                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelEdit">@L["Cancel"]</MudButton>
+                            </div>
+                        </MudStack>
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-space-between align-start flex-wrap gap-2">
+                            <div>
+                                <MudText Typo="Typo.subtitle1"><strong>@member.Name</strong></MudText>
+                                @if (member.Wishlist.Count > 0)
+                                {
+                                    <ul class="mb-0">
+                                        @foreach (var item in member.Wishlist)
+                                        {
+                                            <li>@item</li>
+                                        }
+                                    </ul>
+                                }
+                            </div>
+                            <div class="d-flex align-center flex-wrap gap-1">
+                                @* Linking is an account-only action (it calls the authorized server API), so
+                                   only show it when signed in. Edit/Remove are local and stay for everyone. *@
+                                <AuthorizeView>
+                                    @if (member.UserId is not null)
+                                    {
+                                        <MudTooltip Text="@L["MemberLinkedTitle"]">
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">@L["MemberLinkedBadge"]</MudChip>
+                                        </MudTooltip>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                                   OnClick="() => UnlinkAsync(member.Id)" Disabled="@_linkBusy">@L["MemberUnlink"]</MudButton>
+                                    }
+                                    else
+                                    {
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info"
+                                                   OnClick="() => BeginLink(member.Id)">@L["MemberLink"]</MudButton>
+                                    }
+                                </AuthorizeView>
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                           OnClick="() => BeginEdit(member)">@L["Edit"]</MudButton>
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
+                                           OnClick="() => AskRemove(member.Id)">@L["Remove"]</MudButton>
                             </div>
                         </div>
-                    }
 
-                    @if (_linkMessageId == member.Id && _linkMessage is not null)
-                    {
-                        <div class="alert alert-info mt-2 mb-0" role="status">@_linkMessage</div>
-                    }
+                        @* Send a member-link request: the member owns their wishlist and sees their own
+                           assignment once they accept. The response reveals nothing about the address. *@
+                        @if (_linkingMemberId == member.Id)
+                        {
+                            <MudAlert Severity="Severity.Normal" Class="mt-3" Dense="true">
+                                <div class="d-flex gap-2 align-start flex-wrap">
+                                    <MudTextField @bind-Value="_linkEmail" Immediate="true" InputType="InputType.Email"
+                                                  Label="@L["MemberLinkEmailLabel"]" Variant="Variant.Outlined"
+                                                  Margin="Margin.Dense" Class="flex-grow-1" />
+                                    <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="mt-1"
+                                               OnClick="() => SendLinkAsync(member)"
+                                               Disabled="@(_linkBusy || string.IsNullOrWhiteSpace(_linkEmail))">
+                                        @L["MemberLinkSend"]
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Text" Class="mt-1" OnClick="CancelLink">@L["Cancel"]</MudButton>
+                                </div>
+                            </MudAlert>
+                        }
 
-                    @if (_pendingRemoveId == member.Id)
-                    {
-                        <div class="alert alert-warning mt-2 mb-0" role="alert">
-                            <p class="mb-2">@L["ConfirmRemoveMember", member.Name]</p>
-                            <button class="btn btn-sm btn-danger" @onclick="() => RemoveAsync(member.Id)">@L["ConfirmRemove"]</button>
-                            <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="CancelRemove">@L["Cancel"]</button>
-                        </div>
+                        @if (_linkMessageId == member.Id && _linkMessage is not null)
+                        {
+                            <MudAlert Severity="Severity.Info" Class="mt-2" Dense="true" role="status">@_linkMessage</MudAlert>
+                        }
+
+                        @if (_pendingRemoveId == member.Id)
+                        {
+                            <MudAlert Severity="Severity.Warning" Class="mt-2" Dense="true" role="alert">
+                                <MudText Class="mb-2">@L["ConfirmRemoveMember", member.Name]</MudText>
+                                <div class="d-flex gap-1">
+                                    <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Filled"
+                                               OnClick="() => RemoveAsync(member.Id)">@L["ConfirmRemove"]</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelRemove">@L["Cancel"]</MudButton>
+                                </div>
+                            </MudAlert>
+                        }
                     }
-                }
-            </li>
+                </MudCardContent>
+            </MudCard>
         }
-    </ul>
+    </MudStack>
 }
 
 @code {
