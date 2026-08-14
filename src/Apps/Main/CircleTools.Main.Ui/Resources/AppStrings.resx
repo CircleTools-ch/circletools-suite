@@ -67,6 +67,9 @@
   <data name="NavMenu" xml:space="preserve">
     <value>Navigation menu</value>
   </data>
+  <data name="NavMore" xml:space="preserve">
+    <value>More</value>
+  </data>
   <data name="NavDashboard" xml:space="preserve">
     <value>Dashboard</value>
   </data>
@@ -695,5 +698,11 @@
   </data>
   <data name="CircleOfflineNotice" xml:space="preserve">
     <value>Circles need a connection. Reconnect to see and manage them — nothing is saved offline here.</value>
+  </data>
+  <data name="OpenApp" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="NoOtherApps" xml:space="preserve">
+    <value>No other apps yet.</value>
   </data>
 </root>

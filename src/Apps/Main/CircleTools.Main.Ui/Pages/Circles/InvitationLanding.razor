@@ -18,7 +18,7 @@
 
         @if (_notice is { Length: > 0 })
         {
-            <p class="mb-0">@_notice</p>
+            <MudText>@_notice</MudText>
         }
         else if (_offline)
         {
@@ -26,52 +26,51 @@
         }
         else if (_invalid)
         {
-            <p class="mb-0">@L["InvitationInvalid"]</p>
+            <MudText>@L["InvitationInvalid"]</MudText>
         }
         else if (_preview is null)
         {
-            <p class="mb-0 text-body-secondary">@L["CircleLoading"]</p>
+            <MudText Class="mud-text-secondary">@L["CircleLoading"]</MudText>
         }
         else
         {
-            <p>
+            <MudText Class="mb-1">
                 @string.Format(
                     CultureInfo.CurrentCulture,
                     L["InvitationLandingLead"],
                     _preview.InviterDisplayName,
                     _preview.CircleName)
-            </p>
-            <p class="text-body-secondary small">@_preview.CircleLabel</p>
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">@_preview.CircleLabel</MudText>
 
             <AuthorizeView>
                 <Authorized>
-                    <p class="text-body-secondary small">@L["InvitationLandingHint"]</p>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["InvitationLandingHint"]</MudText>
                     <div class="d-flex gap-2">
                         <BusyButton Type="button"
-                                    CssClass="btn btn-primary"
                                     Label="@L["InvitationAccept"]"
                                     Busy="_busy"
                                     OnClick="AcceptAsync" />
                         <BusyButton Type="button"
-                                    CssClass="btn btn-outline-secondary"
+                                    Variant="Variant.Outlined" Color="Color.Default"
                                     Label="@L["InvitationDecline"]"
                                     Busy="_busy"
                                     OnClick="DeclineAsync" />
                     </div>
                 </Authorized>
                 <NotAuthorized>
-                    <p class="text-body-secondary small">@L["InvitationLandingHint"]</p>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["InvitationLandingHint"]</MudText>
                     <div class="d-flex flex-column gap-2">
                         @* Both offered, always. Which one the recipient needs is theirs to know. *@
-                        <a class="btn btn-primary" href="@SignInLink">@L["InvitationLandingSignIn"]</a>
-                        <a class="btn btn-outline-secondary" href="@RegisterLink">
+                        <MudButton Href="@SignInLink" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["InvitationLandingSignIn"]</MudButton>
+                        <MudButton Href="@RegisterLink" Variant="Variant.Outlined" Color="Color.Default" FullWidth="true">
                             @L["InvitationLandingRegister"]
-                        </a>
+                        </MudButton>
 
                         @* Declining needs no account, on purpose. Requiring one would make a
                            decline prove the address has one (FR-018). *@
                         <BusyButton Type="button"
-                                    CssClass="btn btn-link"
+                                    Variant="Variant.Text" Color="Color.Default"
                                     Label="@L["InvitationDecline"]"
                                     Busy="_busy"
                                     OnClick="DeclineAsync" />
@@ -81,7 +80,7 @@
         }
     </ChildContent>
     <Footer>
-        <a href="">@L["NavDashboard"]</a>
+        <MudLink Href="">@L["NavDashboard"]</MudLink>
     </Footer>
 </AuthCard>
 

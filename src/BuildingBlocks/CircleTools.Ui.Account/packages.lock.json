@@ -167,7 +167,8 @@
           "CircleTools.Localization": "[1.0.0, )",
           "CircleTools.Ui.Abstractions": "[1.0.0, )",
           "Microsoft.AspNetCore.Components.Web": "[10.0.10, )",
-          "Microsoft.Extensions.Localization": "[10.0.10, )"
+          "Microsoft.Extensions.Localization": "[10.0.10, )",
+          "MudBlazor": "[9.8.0, )"
         }
       },
       "Microsoft.Extensions.DependencyInjection": {
@@ -222,6 +223,17 @@
         "requested": "[10.0.10, )",
         "resolved": "10.0.10",
         "contentHash": "VivWvz1iFR3Ntf/e5/xci6o/MF2tcHiprNkhRlL+gMkBoDjQJCioiO+Gwp/DP8scuzqbp3b9C3wh+zuy4pD4AA=="
+      },
+      "MudBlazor": {
+        "type": "CentralTransitive",
+        "requested": "[9.8.0, )",
+        "resolved": "9.8.0",
+        "contentHash": "JLJ81j6cn5RUTbgpYAtjRfB3bTNweX0q8lkMS6B9v1oGzZsjVTxDDnWahD+rOtzJWPU6D9svsymiETe4G8bSLw==",
+        "dependencies": {
+          "Microsoft.AspNetCore.Components": "10.0.1",
+          "Microsoft.AspNetCore.Components.Web": "10.0.1",
+          "Microsoft.Extensions.Localization": "10.0.1"
+        }
       }
     }
   }

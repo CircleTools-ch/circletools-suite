@@ -4,10 +4,17 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#7a1f2b" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#241c14" media="(prefers-color-scheme: dark)" />
     <title>Secret Santa</title>
     <base href="/" />
     <link rel="preload" id="webassembly" />
-    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
+    <!-- MudBlazor (ADR-0040). Fonts resolve to the system-ui stack set in the MudTheme, so no
+         external font is loaded (CSP-friendly). -->
+    <link rel="stylesheet" href="_content/MudBlazor/MudBlazor.min.css" />
+    <!-- The suite's slim, framework-agnostic helpers (screen-reader-only utility). -->
+    <link rel="stylesheet" href="_content/CircleTools.Ui.Shared/css/circletools.css" />
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="icon" type="image/png" href="favicon.png" />
@@ -33,6 +40,7 @@
         <span class="dismiss">🗙</span>
     </div>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js" autostart="false"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="js/app.js"></script>
 </body>
 

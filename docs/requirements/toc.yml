@@ -62,6 +62,8 @@
       href: functional/FR-029-see-my-assignment.md
     - name: FR-030 Edit my own wishlist
       href: functional/FR-030-edit-my-wishlist.md
+    - name: FR-031 Cross-app single sign-on
+      href: functional/FR-031-single-sign-on-across-apps.md
 - name: Non-functional
   items:
     - name: NFR-001 Local-first & offline

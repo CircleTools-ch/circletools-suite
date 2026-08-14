@@ -1,0 +1,38 @@
+@implements IDisposable
+@inject ThemeState Theme
+
+@*
+    Mirrors the in-app System/Light/Dark switch (ThemeState, ADR-0040) onto the native shell so the
+    device chrome — status bar, navigation bar, any native control outside the WebView — follows the
+    same choice. Renders nothing; it exists only for the side effect. MAUI-only: it lives in the App
+    head where Microsoft.Maui APIs are available.
+*@
+
+@code {
+    protected override void OnInitialized()
+    {
+        Theme.Changed += Apply;
+        Apply();
+    }
+
+    private void Apply()
+    {
+        var appTheme = Theme.Mode switch
+        {
+            ThemeMode.Light => AppTheme.Light,
+            ThemeMode.Dark => AppTheme.Dark,
+            _ => AppTheme.Unspecified,
+        };
+
+        // UserAppTheme is UI-thread state; the Changed event can arrive off it.
+        MainThread.BeginInvokeOnMainThread(() =>
+        {
+            if (Microsoft.Maui.Controls.Application.Current is { } app)
+            {
+                app.UserAppTheme = appTheme;
+            }
+        });
+    }
+
+    public void Dispose() => Theme.Changed -= Apply;
+}

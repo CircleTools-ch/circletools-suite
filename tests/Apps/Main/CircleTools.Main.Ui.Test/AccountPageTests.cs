@@ -291,7 +291,9 @@ public sealed class AccountPageTests
                 ["Circles are not part of this release."]));
 
         var cut = ctx.RenderPage<AccountData>();
-        cut.Find("section button").Click();
+
+        // The export button is the first action on the page; the delete button lives in the danger card.
+        cut.FindAll("button").First(b => b.Closest(".circletools-danger") is null).Click();
 
         cut.WaitForAssertion(() => Assert.NotNull(ctx.Files.Saved));
 

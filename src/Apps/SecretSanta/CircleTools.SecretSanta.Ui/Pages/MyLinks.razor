@@ -15,42 +15,42 @@
 
 <AuthorizeView>
     <Authorized>
-        <h1>@L["MyLinksTitle"]</h1>
-        <p class="text-body-secondary">@L["MyLinksLead"]</p>
+        <MudText Typo="Typo.h4" GutterBottom="true">@L["MyLinksTitle"]</MudText>
+        <MudText Class="mud-text-secondary mb-4">@L["MyLinksLead"]</MudText>
 
         @if (_message is not null)
         {
-            <div class="alert alert-info" role="status">@_message</div>
+            <MudAlert Severity="Severity.Info" Class="mb-3" Dense="true" role="status">@_message</MudAlert>
         }
 
         @if (_pending is null)
         {
-            <p>@L["Loading"]</p>
+            <MudText>@L["Loading"]</MudText>
         }
         else if (_pending.Count == 0)
         {
-            <p>@L["MyLinksNone"]</p>
+            <MudText Class="mud-text-secondary">@L["MyLinksNone"]</MudText>
         }
         else
         {
-            <ul class="list-group">
+            <MudStack Spacing="1">
                 @foreach (var request in _pending)
                 {
-                    <li class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>@L["MyLinksRequestText", request.MemberDisplayName, request.GroupName]</span>
-                            <span>
-                                <button class="btn btn-sm btn-primary" @onclick="() => AcceptAsync(request)" disabled="@_busy">
-                                    @L["MyLinksAccept"]
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="() => DeclineAsync(request)" disabled="@_busy">
-                                    @L["MyLinksDecline"]
-                                </button>
-                            </span>
+                    <MudPaper Elevation="1" Class="d-flex justify-space-between align-center flex-wrap gap-2 pa-3">
+                        <MudText>@L["MyLinksRequestText", request.MemberDisplayName, request.GroupName]</MudText>
+                        <div class="d-flex gap-1">
+                            <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled"
+                                       OnClick="() => AcceptAsync(request)" Disabled="@_busy">
+                                @L["MyLinksAccept"]
+                            </MudButton>
+                            <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                       OnClick="() => DeclineAsync(request)" Disabled="@_busy">
+                                @L["MyLinksDecline"]
+                            </MudButton>
                         </div>
-                    </li>
+                    </MudPaper>
                 }
-            </ul>
+            </MudStack>
         }
     </Authorized>
     <NotAuthorized>

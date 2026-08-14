@@ -6,4 +6,9 @@
   <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
   <data name="Language" xml:space="preserve"><value>Sprache</value></data>
   <data name="Working" xml:space="preserve"><value>Wird ausgeführt …</value></data>
+  <data name="ThemeAppearance" xml:space="preserve"><value>Darstellung</value></data>
+  <data name="ThemeSystem" xml:space="preserve"><value>System</value></data>
+  <data name="ThemeLight" xml:space="preserve"><value>Hell</value></data>
+  <data name="ThemeDark" xml:space="preserve"><value>Dunkel</value></data>
+  <data name="AppsMenu" xml:space="preserve"><value>Apps</value></data>
 </root>

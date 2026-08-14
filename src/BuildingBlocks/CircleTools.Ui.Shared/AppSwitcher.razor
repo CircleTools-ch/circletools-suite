@@ -1,0 +1,48 @@
+@inject IEnumerable<SuiteAppLink> Apps
+@inject IStringLocalizer<SharedStrings> L
+
+@*
+    Cross-app switcher (ADR-0013 apps are separate origins; ADR-0040 shell). An app-bar menu that lists
+    the suite's apps and navigates to the chosen one. Switching is a full navigation to another origin,
+    so the entries are ordinary links. Injected as IEnumerable so a host that registers no links (the
+    MAUI heads) resolves an empty set and the switcher renders nothing.
+*@
+@if (_apps.Count > 0)
+{
+    <MudMenu Icon="@Icons.Material.Filled.Apps" Color="Color.Inherit" AriaLabel="@L["AppsMenu"]" Dense="true">
+        @foreach (var app in _apps)
+        {
+            @if (app.IsCurrent)
+            {
+                <MudMenuItem Disabled="true">
+                    <div class="d-flex align-center gap-2">
+                        <img class="ct-appswitcher-logo" src="@app.LogoUrl" alt="" />
+                        <span>@app.Name</span>
+                        <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Class="ml-auto" />
+                    </div>
+                </MudMenuItem>
+            }
+            else
+            {
+                <MudMenuItem Href="@app.Url">
+                    <div class="d-flex align-center gap-2">
+                        <img class="ct-appswitcher-logo" src="@app.LogoUrl" alt="" />
+                        <span>@app.Name</span>
+                    </div>
+                </MudMenuItem>
+            }
+        }
+    </MudMenu>
+}
+
+@code {
+    private IReadOnlyList<SuiteAppLink> _apps = [];
+
+    // A switcher of one app (only "this app") is not a switcher — hide it. Materialise once so the
+    // IEnumerable is not re-enumerated on every render.
+    protected override void OnInitialized()
+    {
+        var all = Apps.ToList();
+        _apps = all.Count > 1 ? all : [];
+    }
+}

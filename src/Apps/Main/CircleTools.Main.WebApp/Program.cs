@@ -1,6 +1,7 @@
 using CircleTools.ApiClient;
 using CircleTools.Localization;
 using CircleTools.Main.Ui;
+using CircleTools.Ui.Account;
 using CircleTools.Ui.Account.Api;
 using CircleTools.Ui.Account.Auth;
 using CircleTools.Main.WebApp;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MudBlazor.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -58,9 +60,34 @@ builder.Services.AddScoped(sp => sp.GetRequiredKeyedService<HttpClient>(AccountA
 // mean something.
 builder.Logging.AddFilter("Microsoft.AspNetCore.Authorization", LogLevel.Warning);
 
+// MudBlazor component services (ADR-0040): theme provider, popovers, dialogs, snackbars.
+builder.Services.AddMudServices();
+
+// The shared theme state behind the System/Light/Dark switch, persisted via IKeyValueStore.
+builder.Services.AddScoped<CircleTools.Ui.Shared.ThemeState>();
+
 // Localization (ADR-0011) and the account/session services (FEAT-002).
 builder.Services.AddCircleToolsLocalization(MainUiServiceCollectionExtensions.CultureStorageKey);
 builder.Services.AddMainAccount();
+
+// Cross-app SSO (FR-031, ADR-0039). This app is the authority: it serves the /account/connect page
+// that mints codes for sibling apps. Registering with its own origin as the authority means the
+// interactive "continue" affordance suppresses itself here — the authority never hands off to itself.
+var ssoAuthorityUrl = builder.Configuration["SsoAuthorityUrl"] ?? builder.HostEnvironment.BaseAddress;
+builder.Services.AddAccountSso(ssoAuthorityUrl, "main-web");
+
+// The cross-app switcher catalogue (web only, ADR-0013/0040): the suite's apps, from
+// wwwroot/appsettings.json. Each is a SuiteAppLink the shared shell and dashboard render; this host's
+// own entry is flagged IsCurrent by matching its key. Separate origins, so switching is a full
+// navigation, not routing. MAUI heads register none of these, so the switcher self-hides there.
+foreach (var entry in builder.Configuration.GetSection("SuiteApps").GetChildren())
+{
+    builder.Services.AddSingleton(new CircleTools.Ui.Shared.SuiteAppLink(
+        Name: entry["Name"] ?? string.Empty,
+        Url: entry["Url"] ?? string.Empty,
+        LogoUrl: entry["LogoUrl"] ?? string.Empty,
+        IsCurrent: string.Equals(entry["Key"], "main-web", StringComparison.Ordinal)));
+}
 
 var host = builder.Build();
 

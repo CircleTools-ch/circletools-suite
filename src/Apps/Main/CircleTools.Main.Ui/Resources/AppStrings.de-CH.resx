@@ -7,6 +7,7 @@
   <data name="Greeting" xml:space="preserve"><value>Willkommen in der CircleTools</value></data>
   <data name="DashboardTitle" xml:space="preserve"><value>Apps</value></data>
   <data name="NavMenu" xml:space="preserve"><value>Navigationsmenü</value></data>
+  <data name="NavMore" xml:space="preserve"><value>Mehr</value></data>
   <data name="NavDashboard" xml:space="preserve"><value>Übersicht</value></data>
   <data name="NavHeartbeat" xml:space="preserve"><value>Heartbeat</value></data>
   <data name="NavProfile" xml:space="preserve"><value>Profil</value></data>
@@ -214,4 +215,6 @@
   <data name="CircleErrorRefused" xml:space="preserve"><value>Das ist nicht erlaubt.</value></data>
   <data name="CircleLoading" xml:space="preserve"><value>Wird geladen...</value></data>
   <data name="CircleOfflineNotice" xml:space="preserve"><value>Für Kreise brauchst du eine Verbindung. Sobald du wieder online bist, siehst und verwaltest du sie – offline wird hier nichts gespeichert.</value></data>
+  <data name="OpenApp" xml:space="preserve"><value>Öffnen</value></data>
+  <data name="NoOtherApps" xml:space="preserve"><value>Noch keine weiteren Apps.</value></data>
 </root>

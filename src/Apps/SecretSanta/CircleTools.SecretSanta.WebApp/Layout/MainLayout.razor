@@ -1,12 +1,8 @@
 @inherits LayoutComponentBase
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+@using CircleTools.SecretSanta.Ui.Shared
 
-    <main>
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+@* The MudBlazor app shell is shared by both Secret-Santa heads (ADR-0040); the host layout just
+   hands it the page body. *@
+<SecretSantaShell>
+    @Body
+</SecretSantaShell>

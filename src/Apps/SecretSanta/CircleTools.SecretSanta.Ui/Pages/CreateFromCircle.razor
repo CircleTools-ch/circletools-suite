@@ -15,89 +15,83 @@
 
 <AuthorizeView>
     <Authorized>
-        <h1>@L["FromCircleTitle"]</h1>
-        <p class="text-body-secondary">@L["FromCircleLead"]</p>
+        <MudText Typo="Typo.h4" GutterBottom="true">@L["FromCircleTitle"]</MudText>
+        <MudText Class="mud-text-secondary mb-4">@L["FromCircleLead"]</MudText>
 
         @if (_error is not null)
         {
-            <div class="alert alert-warning" role="status">@_error</div>
+            <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true" role="status">@_error</MudAlert>
         }
 
         @if (_createdGroupId is { } createdId)
         {
-            <div class="alert alert-success" role="status">@L["FromCircleCreated"]</div>
+            <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true" role="status">@L["FromCircleCreated"]</MudAlert>
             @if (_broughtInUnlinked.Count > 0)
             {
                 @* The duplicate-account notice: a second person on the same account came in unlinked. *@
-                <div class="alert alert-info" role="status">
+                <MudAlert Severity="Severity.Info" Class="mb-3" Dense="true" role="status">
                     @L["FromCircleDuplicateAccountNotice", string.Join(", ", _broughtInUnlinked)]
-                </div>
+                </MudAlert>
             }
-            <button class="btn btn-primary" @onclick="OpenCreated">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="OpenCreated">
                 @L["FromCircleOpenGroup"]
-            </button>
+            </MudButton>
         }
         else if (_circles is null)
         {
-            <p>@L["Loading"]</p>
+            <MudText>@L["Loading"]</MudText>
         }
         else if (_circles.Count == 0)
         {
-            <p>@L["FromCircleNoCircles"]</p>
+            <MudText Class="mud-text-secondary">@L["FromCircleNoCircles"]</MudText>
         }
         else if (_detail is null)
         {
-            <div class="mb-3">
-                <label class="form-label" for="circle-choose">@L["FromCircleChooseLabel"]</label>
-                <div class="list-group" id="circle-choose">
-                    @foreach (var circle in _circles)
-                    {
-                        <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-                                @onclick="() => ChooseAsync(circle.Id)" disabled="@_busy">
-                            <span><strong>@circle.Name</strong> <span class="text-body-secondary ms-2">@circle.Label</span></span>
-                            <span class="badge bg-secondary rounded-pill">@PeopleCount(circle.PeopleCount)</span>
-                        </button>
-                    }
-                </div>
-            </div>
+            <MudText Typo="Typo.subtitle2" GutterBottom="true">@L["FromCircleChooseLabel"]</MudText>
+            <MudStack Spacing="1">
+                @foreach (var circle in _circles)
+                {
+                    <MudButton FullWidth="true" Variant="Variant.Outlined" Class="justify-space-between pa-3"
+                               OnClick="() => ChooseAsync(circle.Id)" Disabled="@_busy">
+                        <span><strong>@circle.Name</strong> <span class="mud-text-secondary ml-2">@circle.Label</span></span>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Filled">@PeopleCount(circle.PeopleCount)</MudChip>
+                    </MudButton>
+                }
+            </MudStack>
         }
         else
         {
-            <div class="mb-3">
-                <label class="form-label" for="group-name">@L["FromCircleGroupNameLabel"]</label>
-                <input class="form-control" id="group-name" @bind="_groupName" @bind:event="oninput" />
-            </div>
+            <MudTextField @bind-Value="_groupName" Immediate="true" Label="@L["FromCircleGroupNameLabel"]"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" />
 
-            <p class="text-body-secondary">@PeopleCount(_detail.People.Count)</p>
-            <ul class="list-group mb-3">
+            <MudText Class="mud-text-secondary mb-1">@PeopleCount(_detail.People.Count)</MudText>
+            <MudStack Spacing="1" Class="mb-3">
                 @foreach (var person in _detail.People)
                 {
-                    <li class="list-group-item">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="person-@person.MembershipId"
-                                   checked="@_selected.Contains(person.MembershipId)"
-                                   @onchange="args => Toggle(person.MembershipId, (bool)args.Value!)" />
-                            <label class="form-check-label" for="person-@person.MembershipId">
-                                @person.DisplayName
-                                @if (person.IsManaged)
-                                {
-                                    <span class="badge bg-light text-dark ms-2">@L["FromCircleManagedBadge"]</span>
-                                }
-                                else if (person.AccountId is not null)
-                                {
-                                    <span class="badge bg-info text-dark ms-2">@L["FromCircleLinkedBadge"]</span>
-                                }
-                            </label>
-                        </div>
-                    </li>
+                    <MudPaper Elevation="1" Class="pa-2">
+                        <MudCheckBox T="bool" Value="_selected.Contains(person.MembershipId)"
+                                     ValueChanged="on => Toggle(person.MembershipId, on)" Dense="true">
+                            @person.DisplayName
+                            @if (person.IsManaged)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text" Class="ml-2">@L["FromCircleManagedBadge"]</MudChip>
+                            }
+                            else if (person.AccountId is not null)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text" Class="ml-2">@L["FromCircleLinkedBadge"]</MudChip>
+                            }
+                        </MudCheckBox>
+                    </MudPaper>
                 }
-            </ul>
+            </MudStack>
 
-            <button class="btn btn-primary" @onclick="CreateAsync"
-                    disabled="@(_busy || _selectedCount == 0 || string.IsNullOrWhiteSpace(_groupName))">
-                @L["FromCircleCreate"]
-            </button>
-            <button class="btn btn-link" @onclick="Back" disabled="@_busy">@L["FromCircleBack"]</button>
+            <div class="d-flex gap-1 align-center">
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync"
+                           Disabled="@(_busy || _selectedCount == 0 || string.IsNullOrWhiteSpace(_groupName))">
+                    @L["FromCircleCreate"]
+                </MudButton>
+                <MudButton Variant="Variant.Text" OnClick="Back" Disabled="@_busy">@L["FromCircleBack"]</MudButton>
+            </div>
         }
     </Authorized>
     <NotAuthorized>

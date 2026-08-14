@@ -6,6 +6,7 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using MudBlazor.Services;
 
 namespace CircleTools.SecretSanta.Ui.Test;
 
@@ -21,6 +22,11 @@ public sealed class RevealPageTests : IDisposable
 
     public RevealPageTests()
     {
+        // MudBlazor (ADR-0040): the page is a MudBlazor component now; loose JSInterop lets its JS
+        // calls (ripples/element refs) no-op instead of failing the render.
+        _ctx.Services.AddMudServices();
+        _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+
         _ctx.Services.AddSingleton(new RevealLinkCodec());
         _ctx.Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassThroughStringLocalizer<AppStrings>());
     }

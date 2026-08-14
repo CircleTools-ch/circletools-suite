@@ -93,6 +93,13 @@ builder.Services.AddCircleToolsSessions(builder.Configuration);
 builder.Services.AddCircleToolsMail(builder.Configuration);
 builder.Services.AddCircleToolsRetention(builder.Configuration);
 
+// Cross-app SSO hand-off (FR-031, ADR-0039). The code store is a singleton because it holds the
+// short-lived codes in memory across requests; the return-uri validator reads the same
+// Cors:AllowedOrigins the CORS policy below reads, so the two allow-lists cannot drift.
+builder.Services.AddSingleton<IConnectAuthorizationCodeStore, InMemoryConnectAuthorizationCodeStore>();
+builder.Services.AddScoped<ConnectAuthorizationCodeService>();
+builder.Services.AddSingleton<ConnectReturnUriValidator>();
+
 var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
 
 builder.Services

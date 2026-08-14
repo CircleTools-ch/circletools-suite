@@ -16,6 +16,38 @@ public sealed record LoginRequest(string Email, string Password);
 /// <param name="RefreshToken">The refresh secret previously issued.</param>
 public sealed record RefreshRequest(string RefreshToken);
 
+/// <summary>
+/// Request to mint a cross-app single-sign-on authorization code (FR-031, ADR-0039).
+/// </summary>
+/// <remarks>
+/// Sent by the <em>authority</em> app while it holds a live session, on behalf of a sibling app that
+/// wants to start its own session. Bearer-authorized: the code is minted for the caller's user.
+/// </remarks>
+/// <param name="Client">An identifier for the requesting app (for auditing/binding).</param>
+/// <param name="ReturnUri">Where the code is redeemed — its origin must be on the suite allow-list.</param>
+/// <param name="CodeChallenge">The PKCE challenge; the redeemer proves the matching verifier.</param>
+/// <param name="CodeChallengeMethod">The PKCE method; only <c>S256</c> is supported.</param>
+public sealed record ConnectAuthorizeRequest(
+    string Client,
+    string ReturnUri,
+    string CodeChallenge,
+    string CodeChallengeMethod);
+
+/// <summary>The minted single-use authorization code (FR-031, ADR-0039).</summary>
+/// <param name="Code">The short-lived code to carry back to the requesting app.</param>
+public sealed record ConnectAuthorizeResponse(string Code);
+
+/// <summary>
+/// Request to redeem a single-sign-on authorization code for a session (FR-031, ADR-0039).
+/// </summary>
+/// <remarks>
+/// Sent by the <em>requesting</em> app through the anonymous client. On success it returns the same
+/// <see cref="SessionResponse"/> a password sign-in returns — the client stores it identically.
+/// </remarks>
+/// <param name="Code">The code received from the authority redirect.</param>
+/// <param name="CodeVerifier">The PKCE verifier proving this app requested the code.</param>
+public sealed record ConnectTokenRequest(string Code, string CodeVerifier);
+
 /// <summary>Request for a password-reset link (FR-009).</summary>
 /// <param name="Email">The address to send the link to, if it has an account.</param>
 public sealed record ForgotPasswordRequest(string Email);

@@ -7,86 +7,79 @@
 
 <AuthorizeView>
     <Authorized>
-        <div class="circletools-page">
-            <h1 class="h4">@L["CirclesTitle"]</h1>
-            <p class="text-body-secondary">@L["CirclesLead"]</p>
+        <MudText Typo="Typo.h4" GutterBottom="true">@L["CirclesTitle"]</MudText>
+        <MudText Class="mud-text-secondary mb-4">@L["CirclesLead"]</MudText>
 
-            <ProblemAlert Message="@_error" />
-            <ConnectivityRequired Message="@(_offline ? L["CircleOfflineNotice"].Value : null)" />
+        <ProblemAlert Message="@_error" />
+        <ConnectivityRequired Message="@(_offline ? L["CircleOfflineNotice"].Value : null)" />
 
-            @if (_offline)
-            {
-                @* Circles are online-only (ADR-0033); the notice above is the whole screen while offline. *@
-            }
-            else if (_circles is null)
-            {
-                <p class="text-body-secondary">@L["CircleLoading"]</p>
-            }
-            else if (_circles.Count == 0)
-            {
-                <p class="text-body-secondary">@L["CirclesEmpty"]</p>
-            }
-            else
-            {
-                <ul class="list-group mb-4">
-                    @foreach (var circle in _circles)
-                    {
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>
-                                @* The label is user data, shown exactly as it was stored. It is never
-                                   looked up in a resource file - that would silently retranslate a
-                                   circle someone named themselves (FR-016). *@
-                                <strong>@circle.Name</strong>
-                                <span class="text-body-secondary small ms-2">@circle.Label</span>
-                                @* A circle always holds at least the person reading this, and a circle
-                                   just created holds nobody else - so one is the count this list shows
-                                   most often, and it needs its own entry rather than "1 Personen". *@
-                                <span class="text-body-secondary small ms-2">
-                                    @(circle.PeopleCount == 1
-                                        ? L["CirclesPeopleCountOne"].Value
-                                        : string.Format(Culture, L["CirclesPeopleCount"], circle.PeopleCount))
-                                </span>
-                                @if (RoleBadge(circle.Role) is { } badge)
-                                {
-                                    <span class="badge text-bg-secondary ms-2">@badge</span>
-                                }
-                            </span>
-                            <a class="btn btn-sm btn-outline-primary" href="@($"circles/{circle.Id}")">
-                                @L["CirclesOpen"]
-                            </a>
-                        </li>
-                    }
-                </ul>
-            }
+        @if (_offline)
+        {
+            @* Circles are online-only (ADR-0033); the notice above is the whole screen while offline. *@
+        }
+        else if (_circles is null)
+        {
+            <MudText Class="mud-text-secondary">@L["CircleLoading"]</MudText>
+        }
+        else if (_circles.Count == 0)
+        {
+            <MudText Class="mud-text-secondary">@L["CirclesEmpty"]</MudText>
+        }
+        else
+        {
+            <MudStack Spacing="1" Class="mb-4 circles-list">
+                @foreach (var circle in _circles)
+                {
+                    <MudPaper Elevation="1" Class="d-flex justify-space-between align-center flex-wrap gap-2 pa-3">
+                        <div class="d-flex align-center flex-wrap gap-2">
+                            @* The label is user data, shown exactly as it was stored. It is never
+                               looked up in a resource file - that would silently retranslate a
+                               circle someone named themselves (FR-016). *@
+                            <MudText Typo="Typo.subtitle1"><strong>@circle.Name</strong></MudText>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">@circle.Label</MudText>
+                            @* A circle always holds at least the person reading this, and a circle
+                               just created holds nobody else - so one is the count this list shows
+                               most often, and it needs its own entry rather than "1 Personen". *@
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                @(circle.PeopleCount == 1
+                                    ? L["CirclesPeopleCountOne"].Value
+                                    : string.Format(Culture, L["CirclesPeopleCount"], circle.PeopleCount))
+                            </MudText>
+                            @if (RoleBadge(circle.Role) is { } badge)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Filled">@badge</MudChip>
+                            }
+                        </div>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                   Href="@($"circles/{circle.Id}")">
+                            @L["CirclesOpen"]
+                        </MudButton>
+                    </MudPaper>
+                }
+            </MudStack>
+        }
 
-            @if (!_offline)
-            {
-            <section>
-                <h2 class="h5">@L["CirclesCreateTitle"]</h2>
+        @if (!_offline)
+        {
+            <MudPaper Elevation="1" Class="pa-4">
+                <MudText Typo="Typo.h6" GutterBottom="true">@L["CirclesCreateTitle"]</MudText>
 
-                <form class="circletools-form" @onsubmit="CreateAsync" @onsubmit:preventDefault="true">
+                <form @onsubmit="CreateAsync" @onsubmit:preventDefault="true">
                     <ProblemAlert Message="@_createError" />
 
-                    <div>
-                        <label class="form-label" for="circle-name">@L["CircleNameField"]</label>
-                        <input id="circle-name" class="form-control" required
-                               @bind="_name" @bind:event="oninput" />
-                    </div>
+                    <MudStack Spacing="3" Style="max-width:26rem;">
+                        <MudTextField @bind-Value="_name" Immediate="true" Label="@L["CircleNameField"]"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" id="circle-name" />
+                        <MudTextField @bind-Value="_label" Immediate="true" Label="@L["CircleLabelField"]"
+                                      HelperText="@L["CircleLabelHint"]" Variant="Variant.Outlined" Margin="Margin.Dense" id="circle-label" />
 
-                    <div>
-                        <label class="form-label" for="circle-label">@L["CircleLabelField"]</label>
-                        <input id="circle-label" class="form-control" @bind="_label" @bind:event="oninput" />
-                        <div class="form-text">@L["CircleLabelHint"]</div>
-                    </div>
-
-                    <BusyButton CssClass="btn btn-primary"
-                                Label="@L["CirclesCreateSubmit"]"
-                                Busy="_creating"
-                                Disabled="@(_name.Trim().Length == 0)" />
+                        <BusyButton Label="@L["CirclesCreateSubmit"]"
+                                    Busy="_creating"
+                                    Disabled="@(_name.Trim().Length == 0)" />
+                    </MudStack>
                 </form>
-            </section>
-            }
-        </div>
+            </MudPaper>
+        }
     </Authorized>
     <NotAuthorized>
         <RedirectToLogin />

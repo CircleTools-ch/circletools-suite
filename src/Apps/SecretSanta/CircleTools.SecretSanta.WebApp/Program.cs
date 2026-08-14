@@ -16,10 +16,17 @@ using CircleTools.Ui.Web;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using MudBlazor.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
+
+// MudBlazor component services (ADR-0040): theme provider, popovers, dialogs, snackbars.
+builder.Services.AddMudServices();
+
+// The shared theme state behind the System/Light/Dark switch, persisted via IKeyValueStore.
+builder.Services.AddScoped<CircleTools.Ui.Shared.ThemeState>();
 
 // The Main service's origin, where a signed-in account syncs and where the account API lives. It is
 // configured in wwwroot/appsettings.json (ApiBaseUrl); with no session it is never contacted, so an
@@ -79,6 +86,12 @@ builder.Services.AddScoped<ICircleDirectoryApi>(sp =>
 // hosts more than one app never crosses their sessions (ADR-0026).
 builder.Services.AddAccountUi("secretsanta.refreshToken");
 
+// Cross-app SSO (FR-031, ADR-0039). As a requesting app, this redirects a signed-out visitor to the
+// authority (the Main shell) to continue with an existing session. The authority origin is configured
+// like ApiBaseUrl; with no session the flow never runs, so an account-free visitor is unaffected.
+var ssoAuthorityUrl = builder.Configuration["SsoAuthorityUrl"] ?? builder.HostEnvironment.BaseAddress;
+builder.Services.AddAccountSso(ssoAuthorityUrl, "secretsanta-web");
+
 // Reveal links point at this app's own origin unless RevealBaseUrl overrides it.
 var configuredRevealBaseUrl = builder.Configuration["RevealBaseUrl"];
 var revealBaseUrl = string.IsNullOrWhiteSpace(configuredRevealBaseUrl)
@@ -88,6 +101,19 @@ builder.Services.AddSingleton(new RevealLinkOptions(revealBaseUrl));
 
 // Localization (ADR-0011) via the shared block, under Secret-Santa's own storage key (ADR-0025).
 builder.Services.AddSecretSantaUi();
+
+// The cross-app switcher catalogue (web only, ADR-0013/0040): the suite's apps, from
+// wwwroot/appsettings.json. Each is a SuiteAppLink the shared shell renders; this host's own entry is
+// flagged IsCurrent by matching its key. Separate origins, so switching is a full navigation, not
+// routing. MAUI heads register none of these, so the switcher self-hides there.
+foreach (var entry in builder.Configuration.GetSection("SuiteApps").GetChildren())
+{
+    builder.Services.AddSingleton(new CircleTools.Ui.Shared.SuiteAppLink(
+        Name: entry["Name"] ?? string.Empty,
+        Url: entry["Url"] ?? string.Empty,
+        LogoUrl: entry["LogoUrl"] ?? string.Empty,
+        IsCurrent: string.Equals(entry["Key"], "secretsanta-web", StringComparison.Ordinal)));
+}
 
 var host = builder.Build();
 

@@ -16,86 +16,90 @@
 
 <AuthorizeView>
     <Authorized>
-        <h1>@L["MyAssignmentsTitle"]</h1>
-        <p class="text-body-secondary">@L["MyAssignmentsLead"]</p>
-        <p class="small text-body-secondary">@L["MyAssignmentsOperatorPrivacyNote"]</p>
+        <MudText Typo="Typo.h4" GutterBottom="true">@L["MyAssignmentsTitle"]</MudText>
+        <MudText Class="mud-text-secondary">@L["MyAssignmentsLead"]</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">@L["MyAssignmentsOperatorPrivacyNote"]</MudText>
 
         @if (_error is not null)
         {
-            <div class="alert alert-warning" role="status">@_error</div>
+            <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true" role="status">@_error</MudAlert>
         }
 
         @if (_assignments is null)
         {
-            <p>@L["Loading"]</p>
+            <MudText>@L["Loading"]</MudText>
         }
         else if (_assignments.Count == 0)
         {
-            <p>@L["MyAssignmentsNone"]</p>
+            <MudText Class="mud-text-secondary">@L["MyAssignmentsNone"]</MudText>
         }
         else
         {
-            @foreach (var assignment in _assignments)
-            {
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h2 class="h5 card-title">@assignment.GroupName</h2>
+            <MudStack Spacing="2">
+                @foreach (var assignment in _assignments)
+                {
+                    <MudCard Elevation="1">
+                        <MudCardContent>
+                            <MudText Typo="Typo.h6" GutterBottom="true">@assignment.GroupName</MudText>
 
-                        @if (assignment.Budget is { } budget)
-                        {
-                            <p class="mb-1"><strong>@L["RevealBudgetLabel"]:</strong>
-                                @budget.Amount.ToString("0.##", CultureInfo.CurrentCulture) @budget.Currency</p>
-                        }
-                        @if (assignment.Event is { } ev && HasEvent(ev))
-                        {
-                            <p class="mb-1">
-                                <strong>@L["RevealEventLabel"]:</strong>
-                                @if (ev.Date is { } date)
-                                {
-                                    <span>&nbsp;@date.ToString("d", CultureInfo.CurrentCulture)</span>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(ev.Location))
-                                {
-                                    @if (ev.Date is not null)
+                            @if (assignment.Budget is { } budget)
+                            {
+                                <MudText Class="mb-1"><strong>@L["RevealBudgetLabel"]:</strong>
+                                    @budget.Amount.ToString("0.##", CultureInfo.CurrentCulture) @budget.Currency</MudText>
+                            }
+                            @if (assignment.Event is { } ev && HasEvent(ev))
+                            {
+                                <MudText Class="mb-1">
+                                    <strong>@L["RevealEventLabel"]:</strong>
+                                    @if (ev.Date is { } date)
                                     {
-                                        <span>,</span>
+                                        <span>&nbsp;@date.ToString("d", CultureInfo.CurrentCulture)</span>
                                     }
-                                    <span>&nbsp;@ev.Location</span>
-                                }
-                            </p>
-                        }
-
-                        @if (_revealed.Contains(assignment.GroupId))
-                        {
-                            <div class="alert alert-success mt-2 mb-0">
-                                <p class="mb-1">@L["RevealRecipientLabel"]:</p>
-                                <h3 class="h4 mb-3">@assignment.RecipientName</h3>
-                                <p class="mb-1"><strong>@L["RevealWishlistLabel"]:</strong></p>
-                                @if (assignment.RecipientWishlist.Count == 0)
-                                {
-                                    <p class="mb-0">@L["RevealNoWishlist"]</p>
-                                }
-                                else
-                                {
-                                    <ul class="mb-0">
-                                        @foreach (var item in assignment.RecipientWishlist)
+                                    @if (!string.IsNullOrWhiteSpace(ev.Location))
+                                    {
+                                        @if (ev.Date is not null)
                                         {
-                                            <li>@item</li>
+                                            <span>,</span>
                                         }
-                                    </ul>
-                                }
-                            </div>
-                        }
-                        else
-                        {
-                            <p class="text-muted mt-2 mb-2">@L["RevealSpoilerNote"]</p>
-                            <button class="btn btn-primary" @onclick="() => _revealed.Add(assignment.GroupId)">
-                                @L["RevealButton"]
-                            </button>
-                        }
-                    </div>
-                </div>
-            }
+                                        <span>&nbsp;@ev.Location</span>
+                                    }
+                                </MudText>
+                            }
+
+                            @if (_revealed.Contains(assignment.GroupId))
+                            {
+                                <MudAlert Severity="Severity.Success" Class="mt-2">
+                                    <MudText Class="mb-1">@L["RevealRecipientLabel"]:</MudText>
+                                    <MudText Typo="Typo.h5" Class="mb-3">@assignment.RecipientName</MudText>
+                                    <MudText Class="mb-1"><strong>@L["RevealWishlistLabel"]:</strong></MudText>
+                                    @if (assignment.RecipientWishlist.Count == 0)
+                                    {
+                                        <MudText>@L["RevealNoWishlist"]</MudText>
+                                    }
+                                    else
+                                    {
+                                        <ul class="mb-0">
+                                            @foreach (var item in assignment.RecipientWishlist)
+                                            {
+                                                <li>@item</li>
+                                            }
+                                        </ul>
+                                    }
+                                </MudAlert>
+                            }
+                            else
+                            {
+                                <MudText Class="mud-text-secondary mt-2 mb-2">@L["RevealSpoilerNote"]</MudText>
+                                <MudButton Color="Color.Primary" Variant="Variant.Filled"
+                                           StartIcon="@Icons.Material.Filled.CardGiftcard"
+                                           OnClick="() => _revealed.Add(assignment.GroupId)">
+                                    @L["RevealButton"]
+                                </MudButton>
+                            }
+                        </MudCardContent>
+                    </MudCard>
+                }
+            </MudStack>
         }
     </Authorized>
     <NotAuthorized>

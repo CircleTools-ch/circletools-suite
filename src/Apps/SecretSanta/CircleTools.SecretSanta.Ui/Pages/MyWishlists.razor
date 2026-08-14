@@ -15,82 +15,89 @@
 
 <AuthorizeView>
     <Authorized>
-        <h1>@L["MyWishlistsTitle"]</h1>
-        <p class="text-body-secondary">@L["MyWishlistsLead"]</p>
-        <div class="alert alert-secondary small" role="note">@L["MyWishlistsRevealLinkCaveat"]</div>
+        <MudText Typo="Typo.h4" GutterBottom="true">@L["MyWishlistsTitle"]</MudText>
+        <MudText Class="mud-text-secondary mb-2">@L["MyWishlistsLead"]</MudText>
+        <MudAlert Severity="Severity.Normal" Dense="true" Class="mb-4" role="note">@L["MyWishlistsRevealLinkCaveat"]</MudAlert>
 
         @if (_error is not null)
         {
-            <div class="alert alert-warning" role="status">@_error</div>
+            <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true" role="status">@_error</MudAlert>
         }
 
         @if (_editors is null)
         {
-            <p>@L["Loading"]</p>
+            <MudText>@L["Loading"]</MudText>
         }
         else if (_editors.Count == 0)
         {
-            <p>@L["MyWishlistsNoMemberships"]</p>
+            <MudText Class="mud-text-secondary">@L["MyWishlistsNoMemberships"]</MudText>
         }
         else
         {
-            @foreach (var editor in _editors)
-            {
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h2 class="h5 card-title">@editor.GroupName</h2>
+            <MudStack Spacing="2">
+                @foreach (var editor in _editors)
+                {
+                    <MudCard Elevation="1">
+                        <MudCardContent>
+                            <MudText Typo="Typo.h6" GutterBottom="true">@editor.GroupName</MudText>
 
-                        @if (editor.Items.Count == 0 && _copyableFrom(editor).Any())
-                        {
-                            <div class="mb-2">
-                                <span class="me-2">@L["MyWishlistsCopyOfferLabel"]</span>
-                                @foreach (var source in _copyableFrom(editor))
+                            @if (editor.Items.Count == 0 && _copyableFrom(editor).Any())
+                            {
+                                <div class="d-flex align-center flex-wrap gap-1 mb-2">
+                                    <MudText Typo="Typo.body2" Class="mr-2">@L["MyWishlistsCopyOfferLabel"]</MudText>
+                                    @foreach (var source in _copyableFrom(editor))
+                                    {
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                                   OnClick="() => CopyFrom(editor, source)">
+                                            @source.GroupName
+                                        </MudButton>
+                                    }
+                                </div>
+                            }
+
+                            <MudStack Spacing="1" Class="mb-2">
+                                @for (var i = 0; i < editor.Items.Count; i++)
                                 {
-                                    <button class="btn btn-sm btn-outline-secondary me-1"
-                                            @onclick="() => CopyFrom(editor, source)">
-                                        @source.GroupName
-                                    </button>
+                                    var index = i;
+                                    <div class="d-flex align-center gap-2">
+                                        <MudTextField @bind-Value="editor.Items[index]" Immediate="true"
+                                                      Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
+                                                       Size="Size.Small" OnClick="() => editor.Items.RemoveAt(index)"
+                                                       aria-label="@L["Remove"]" />
+                                    </div>
+                                }
+                            </MudStack>
+
+                            <div class="d-flex gap-2 align-start mb-2">
+                                <MudTextField @bind-Value="editor.NewItem" Immediate="true"
+                                              Placeholder="@L["MyWishlistsAddPlaceholder"]" Variant="Variant.Outlined"
+                                              Margin="Margin.Dense" Class="flex-grow-1"
+                                              OnKeyDown="args => OnAddKeyDown(args, editor)" />
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-1"
+                                           OnClick="() => AddItem(editor)" Disabled="@string.IsNullOrWhiteSpace(editor.NewItem)">
+                                    @L["MyWishlistsAdd"]
+                                </MudButton>
+                            </div>
+
+                            <div class="d-flex align-center gap-2">
+                                <MudButton Color="Color.Primary" Variant="Variant.Filled"
+                                           OnClick="() => SaveAsync(editor)" Disabled="@editor.Busy">
+                                    @L["MyWishlistsSave"]
+                                </MudButton>
+                                @if (editor.Saved)
+                                {
+                                    <MudText Color="Color.Success" Typo="Typo.body2" role="status">@L["MyWishlistsSaved"]</MudText>
+                                }
+                                else if (editor.SaveError is not null)
+                                {
+                                    <MudText Color="Color.Error" Typo="Typo.body2" role="alert">@editor.SaveError</MudText>
                                 }
                             </div>
-                        }
-
-                        <ul class="list-group mb-2">
-                            @for (var i = 0; i < editor.Items.Count; i++)
-                            {
-                                var index = i;
-                                <li class="list-group-item d-flex align-items-center">
-                                    <input class="form-control me-2" @bind="editor.Items[index]" @bind:event="oninput" />
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => editor.Items.RemoveAt(index)">
-                                        @L["Remove"]
-                                    </button>
-                                </li>
-                            }
-                        </ul>
-
-                        <div class="input-group mb-2">
-                            <input class="form-control" placeholder="@L["MyWishlistsAddPlaceholder"]"
-                                   @bind="editor.NewItem" @bind:event="oninput"
-                                   @onkeydown="args => OnAddKeyDown(args, editor)" />
-                            <button class="btn btn-outline-primary" @onclick="() => AddItem(editor)"
-                                    disabled="@string.IsNullOrWhiteSpace(editor.NewItem)">
-                                @L["MyWishlistsAdd"]
-                            </button>
-                        </div>
-
-                        <button class="btn btn-primary" @onclick="() => SaveAsync(editor)" disabled="@editor.Busy">
-                            @L["MyWishlistsSave"]
-                        </button>
-                        @if (editor.Saved)
-                        {
-                            <span class="text-success ms-2" role="status">@L["MyWishlistsSaved"]</span>
-                        }
-                        else if (editor.SaveError is not null)
-                        {
-                            <span class="text-danger ms-2" role="alert">@editor.SaveError</span>
-                        }
-                    </div>
-                </div>
-            }
+                        </MudCardContent>
+                    </MudCard>
+                }
+            </MudStack>
         }
     </Authorized>
     <NotAuthorized>
