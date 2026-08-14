@@ -76,5 +76,9 @@
   href: 0037-transactional-email-provider.md
 - name: ADR-0038 CI/CD pipeline
   href: 0038-ci-cd-pipeline.md
+- name: ADR-0039 Cross-app single sign-on
+  href: 0039-cross-app-single-sign-on.md
+- name: ADR-0040 UI component library MudBlazor
+  href: 0040-ui-component-library-mudblazor.md
 - name: Template
   href: _template-adr.md

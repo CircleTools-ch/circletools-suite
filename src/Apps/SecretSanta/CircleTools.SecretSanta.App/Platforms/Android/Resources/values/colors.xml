@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Neutral chrome with one calm accent (ADR-0040), mirroring CircleToolsTheme. colorPrimaryDark tints
+     the status bar; the dark-mode variant lives in values-night/colors.xml. The festive brand lives on
+     the icon/splash only. -->
 <resources>
-    <color name="colorPrimary">#512BD4</color>
-    <color name="colorPrimaryDark">#2B0B98</color>
-    <color name="colorAccent">#2B0B98</color>
+    <color name="colorPrimary">#5b7cc4</color>
+    <color name="colorPrimaryDark">#45608f</color>
+    <color name="colorAccent">#5b7cc4</color>
+    <color name="colorOnPrimary">#ffffff</color>
+    <color name="windowBackground">#f6f7f9</color>
 </resources>

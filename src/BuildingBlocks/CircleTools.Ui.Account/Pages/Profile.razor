@@ -8,38 +8,33 @@
 
 <AuthorizeView>
     <Authorized>
-        <div class="circletools-page">
-            <h1 class="h4">@L["ProfileTitle"]</h1>
-            <p class="text-body-secondary">@L["ProfileLead"]</p>
+        <MudText Typo="Typo.h4" GutterBottom="true">@L["ProfileTitle"]</MudText>
+        <MudText Class="mud-text-secondary mb-4">@L["ProfileLead"]</MudText>
 
-            <ProblemAlert Message="@_error" Details="@_details" />
+        <ProblemAlert Message="@_error" Details="@_details" />
 
-            @if (Saved)
-            {
-                <div class="alert alert-success" role="status">@L["ProfileSaved"]</div>
-            }
+        @if (Saved)
+        {
+            <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true" role="status">@L["ProfileSaved"]</MudAlert>
+        }
 
-            <form class="circletools-form" @onsubmit="SubmitAsync" @onsubmit:preventDefault="true">
-                <div>
-                    <label class="form-label" for="profile-name">@L["FieldDisplayName"]</label>
-                    <input id="profile-name" class="form-control" required maxlength="100"
-                           autocomplete="nickname" @bind="_displayName" />
-                    <div class="form-text">@L["DisplayNameHint"]</div>
-                </div>
+        <form @onsubmit="SubmitAsync" @onsubmit:preventDefault="true">
+            <MudStack Spacing="3" Style="max-width:26rem;">
+                <MudTextField @bind-Value="_displayName" Label="@L["FieldDisplayName"]" HelperText="@L["DisplayNameHint"]"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" MaxLength="100"
+                              autocomplete="nickname" />
 
-                <div>
-                    <label class="form-label" for="profile-language">@L["FieldLanguage"]</label>
-                    <select id="profile-language" class="form-select" @bind="_language">
-                        @foreach (var culture in AppCultures.Supported)
-                        {
-                            <option value="@culture">@AppCultures.DisplayName(culture)</option>
-                        }
-                    </select>
-                </div>
+                <MudSelect T="string" @bind-Value="_language" Label="@L["FieldLanguage"]"
+                           Variant="Variant.Outlined" Margin="Margin.Dense">
+                    @foreach (var culture in AppCultures.Supported)
+                    {
+                        <MudSelectItem T="string" Value="@culture">@AppCultures.DisplayName(culture)</MudSelectItem>
+                    }
+                </MudSelect>
 
                 <BusyButton Label="@L["ActionSave"]" Busy="_busy" Disabled="@(!_loaded)" />
-            </form>
-        </div>
+            </MudStack>
+        </form>
     </Authorized>
     <NotAuthorized>
         <RedirectToLogin />

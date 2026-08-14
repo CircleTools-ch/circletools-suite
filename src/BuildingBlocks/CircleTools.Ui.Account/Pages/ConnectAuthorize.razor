@@ -1,0 +1,97 @@
+@page "/account/connect"
+@inject IStringLocalizer<AccountStrings> L
+@inject SsoConnect Sso
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthState
+
+@*
+    The SSO authority page (FR-031, ADR-0039). A sibling app redirects here; if this origin holds a
+    live session it mints a code and redirects back, otherwise it signs the user in first and resumes.
+    The request survives that sign-in round-trip in session storage (it cannot ride the login
+    returnUrl without tripping its open-redirect guard).
+*@
+
+<PageTitle>@L["ConnectTitle"]</PageTitle>
+
+<AuthCard Title="@Title">
+    <ChildContent>
+        @if (_state == State.Working)
+        {
+            <MudText>@L["ConnectWorking"]</MudText>
+        }
+        else
+        {
+            <MudText>@L["ConnectFailedText"]</MudText>
+        }
+    </ChildContent>
+    <Footer>
+        <MudLink Href="account/login">@L["NavSignIn"]</MudLink>
+    </Footer>
+</AuthCard>
+
+@code {
+    private enum State
+    {
+        Working,
+        Failed,
+    }
+
+    private State _state = State.Working;
+
+    /// <summary>The requesting app's callback URI, from the incoming redirect.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "return_uri")]
+    public string? ReturnUri { get; set; }
+
+    /// <summary>The PKCE challenge, from the incoming redirect.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "challenge")]
+    public string? Challenge { get; set; }
+
+    /// <summary>The PKCE method, from the incoming redirect.</summary>
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "method")]
+    public string? Method { get; set; }
+
+    private string Title => _state == State.Working ? L["ConnectTitle"] : L["ConnectFailedTitle"];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var returnUri = ReturnUri;
+        var challenge = Challenge;
+        var method = string.IsNullOrWhiteSpace(Method) ? PkceCodes.Method : Method;
+
+        if (string.IsNullOrWhiteSpace(returnUri) || string.IsNullOrWhiteSpace(challenge))
+        {
+            // Resuming after a sign-in on this origin: the request was parked before the redirect.
+            var pending = await Sso.ReadPendingAsync();
+
+            if (pending is null)
+            {
+                _state = State.Failed;
+                return;
+            }
+
+            (returnUri, challenge, method) = (pending.ReturnUri, pending.Challenge, pending.Method);
+        }
+
+        var user = (await AuthState.GetAuthenticationStateAsync()).User;
+
+        if (user.Identity?.IsAuthenticated != true)
+        {
+            // No session here yet: sign in first, then this page runs again and resumes from storage.
+            await Sso.StashPendingAsync(returnUri, challenge, method);
+            Navigation.NavigateTo("account/login?returnUrl=account/connect");
+            return;
+        }
+
+        await Sso.ClearPendingAsync();
+
+        // On success this redirects back to the requesting app with a code; on failure (offline, or a
+        // return URI the server refused) it comes back false and we show the sign-in fallback.
+        if (!await Sso.CompleteAuthorizeAsync(returnUri, challenge, method))
+        {
+            _state = State.Failed;
+        }
+    }
+}

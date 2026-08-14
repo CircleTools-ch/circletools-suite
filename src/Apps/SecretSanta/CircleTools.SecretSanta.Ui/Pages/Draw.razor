@@ -7,56 +7,57 @@
 
 <GroupNav GroupId="GroupId" />
 
-<h1>@L["DrawTitle"]</h1>
+<MudText Typo="Typo.h4" GutterBottom="true">@L["DrawTitle"]</MudText>
 
 @if (_group is null)
 {
-    <p>@L["Loading"]</p>
+    <MudText>@L["Loading"]</MudText>
 }
 else if (_group.Members.Count < 2)
 {
-    <p>@L["NeedTwoMembersToDraw"]</p>
+    <MudText>@L["NeedTwoMembersToDraw"]</MudText>
 }
 else
 {
     @if (_result is null && _group.DrawInvalidatedByMembershipChange)
     {
-        <div class="alert alert-warning" role="alert">@L["DrawInvalidatedNotice"]</div>
+        <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true" role="alert">@L["DrawInvalidatedNotice"]</MudAlert>
     }
 
-    <button class="btn btn-primary mb-3" @onclick="OnDrawClickedAsync" disabled="@_busy">@L["RunDraw"]</button>
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="mb-3"
+               StartIcon="@Icons.Material.Filled.Casino" OnClick="OnDrawClickedAsync" Disabled="@_busy">@L["RunDraw"]</MudButton>
 
     @if (_confirmRedraw)
     {
-        <div class="alert alert-warning" role="alert">
-            <p class="mb-2">@L["RedrawWarning"]</p>
-            <button class="btn btn-sm btn-danger" @onclick="RunAsync" disabled="@_busy">@L["RedrawConfirm"]</button>
-            <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="CancelRedraw">@L["Cancel"]</button>
-        </div>
+        <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true" role="alert">
+            <MudText Class="mb-2">@L["RedrawWarning"]</MudText>
+            <div class="d-flex gap-1">
+                <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" OnClick="RunAsync" Disabled="@_busy">@L["RedrawConfirm"]</MudButton>
+                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelRedraw">@L["Cancel"]</MudButton>
+            </div>
+        </MudAlert>
     }
 
     @if (_result is not null)
     {
         @if (_result.Success)
         {
-            <div class="alert alert-success">
-                <p class="mb-1">@L["DrawSuccess"]</p>
-                <p class="mb-1">@L["DrawAssignmentCount", _result.AssignmentCount]</p>
-                <p class="mb-0">@L["DrawSpoilerNote"]</p>
-            </div>
-            <button class="btn btn-outline-primary" @onclick="GoToShare">@L["NavShare"]</button>
+            <MudAlert Severity="Severity.Success" Class="mb-3">
+                <MudText>@L["DrawSuccess"]</MudText>
+                <MudText>@L["DrawAssignmentCount", _result.AssignmentCount]</MudText>
+                <MudText>@L["DrawSpoilerNote"]</MudText>
+            </MudAlert>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="GoToShare">@L["NavShare"]</MudButton>
         }
         else
         {
-            <div class="alert alert-danger" role="alert">@FailureMessage(_result.FailureReason)</div>
+            <MudAlert Severity="Severity.Error" Dense="true" role="alert">@FailureMessage(_result.FailureReason)</MudAlert>
         }
     }
     else if (_group.HasCurrentDraw)
     {
-        <div class="alert alert-info">
-            <p class="mb-0">@L["DrawSpoilerNote"]</p>
-        </div>
-        <button class="btn btn-outline-primary" @onclick="GoToShare">@L["NavShare"]</button>
+        <MudAlert Severity="Severity.Info" Class="mb-3">@L["DrawSpoilerNote"]</MudAlert>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="GoToShare">@L["NavShare"]</MudButton>
     }
 }
 

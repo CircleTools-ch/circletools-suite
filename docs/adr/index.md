@@ -32,7 +32,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0021](0021-web-auth-token-model.md) | Web auth token model (bearer in WASM) | Accepted | 2026-07-27 |
 | [0022](0022-account-deletion-and-data-export.md) | Account deletion & data export (immediate delete, export mirrors visibility) | Accepted | 2026-07-27 |
 | [0023](0023-local-dev-infrastructure-in-apphost.md) | Local dev infrastructure in the AppHost (containers behind provider-agnostic seams) | Accepted | 2026-07-27 |
-| [0024](0024-ui-styling-and-theming.md) | UI styling & theming (Bootstrap 5 + thin suite theme) | Accepted | 2026-07-28 |
+| [0024](0024-ui-styling-and-theming.md) | UI styling & theming (Bootstrap 5 + thin suite theme) | Superseded by [0040](0040-ui-component-library-mudblazor.md) | 2026-07-28 |
 | [0025](0025-shared-ui-building-blocks.md) | Shared UI building blocks (Ui.Abstractions, Localization, ApiClient, Ui.Shared) | Accepted | 2026-07-28 |
 | [0026](0026-refresh-token-persistence.md) | Refresh-token persistence in the browser (session by default, durable on request) | Accepted | 2026-07-28 |
 | [0027](0027-breached-password-check.md) | Breached-password check (bundled ≥12-character list) | Accepted | 2026-07-28 |
@@ -47,6 +47,8 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0036](0036-cloud-provider-and-hosting.md) | Cloud provider & hosting topology (Infomaniak VPS + Docker Compose; self-managed Postgres; Swiss Backup; Cloudflare) | Accepted | 2026-08-13 |
 | [0037](0037-transactional-email-provider.md) | Transactional email provider (Brevo free tier behind the outbox port) | Accepted | 2026-08-13 |
 | [0038](0038-ci-cd-pipeline.md) | CI/CD pipeline (GitHub Actions; CI gate now, CD to the VPS deferred to M8) | Accepted | 2026-08-13 |
+| [0039](0039-cross-app-single-sign-on.md) | Cross-app single sign-on (redirect-based authorization-code hand-off; Main origin as authority) | Accepted | 2026-08-13 |
+| [0040](0040-ui-component-library-mudblazor.md) | UI component library: MudBlazor (Material), supersedes ADR-0024 (neutral in-app palette, theme switch, native-feel nav) | Accepted | 2026-08-13 |
 
 ## Open decisions backlog
 

@@ -20,6 +20,10 @@
   href: FEAT-005-m4-linking.md
 - name: TP-005 M4 Linking test plan
   href: TP-005-m4-linking.md
+- name: FEAT-006 M5 Cross-app SSO
+  href: FEAT-006-m5-cross-app-sso.md
+- name: TP-006 M5 Cross-app SSO test plan
+  href: TP-006-m5-cross-app-sso.md
 - name: Templates
   items:
     - name: Feature spec template

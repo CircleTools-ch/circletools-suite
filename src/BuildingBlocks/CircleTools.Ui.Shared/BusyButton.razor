@@ -1,18 +1,20 @@
 @inject IStringLocalizer<SharedStrings> L
 
 @*
-    A button that disables itself while its action is running. Every account page has one, and every
-    one of them can be double-submitted without it — sign-up twice, delete twice.
+    A button that disables itself while its action is running (ADR-0040: MudBlazor). Every account page
+    has one, and every one of them can be double-submitted without it — sign-up twice, delete twice.
 *@
 
-<button type="@Type" class="@CssClass" disabled="@(Busy || Disabled)" @onclick="OnClick">
+<MudButton ButtonType="@(Type == "submit" ? ButtonType.Submit : ButtonType.Button)"
+           Variant="Variant" Color="Color" Size="Size" FullWidth="FullWidth"
+           Disabled="@(Busy || Disabled)" OnClick="OnClick">
     @if (Busy)
     {
-        <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+        <MudProgressCircular Class="mr-2" Size="MudBlazor.Size.Small" Indeterminate="true" />
         <span class="visually-hidden">@L["Working"]</span>
     }
     @Label
-</button>
+</MudButton>
 
 @code {
     /// <summary>The button's caption, supplied by the page so the wording stays with its own resources.</summary>
@@ -32,9 +34,21 @@
     [Parameter]
     public string Type { get; set; } = "submit";
 
-    /// <summary>The Bootstrap classes to apply.</summary>
+    /// <summary>The Mud button style; a filled primary button by default.</summary>
     [Parameter]
-    public string CssClass { get; set; } = "btn btn-primary";
+    public Variant Variant { get; set; } = Variant.Filled;
+
+    /// <summary>The Mud button colour; primary by default.</summary>
+    [Parameter]
+    public Color Color { get; set; } = Color.Primary;
+
+    /// <summary>The Mud button size; medium by default.</summary>
+    [Parameter]
+    public Size Size { get; set; } = Size.Medium;
+
+    /// <summary>Whether the button spans the full width of its container.</summary>
+    [Parameter]
+    public bool FullWidth { get; set; }
 
     /// <summary>Invoked on click, for buttons that are not form submits.</summary>
     [Parameter]

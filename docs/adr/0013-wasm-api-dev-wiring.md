@@ -43,6 +43,28 @@ projects use fixed dev ports. Zero extra dependencies, and it stays neutral w.r.
   approach, migrate to a **YARP BFF** (same-origin, no CORS) and supersede this ADR. `Aspire4Wasm` remains
   an option if manual config becomes tedious across environments.
 
+## Amendment (2026-08-13) — the wiring now covers both WASM clients
+
+When this ADR was written the suite had one standalone WASM client (the Main shell). Secret-Santa
+was a purely offline, account-free PWA and was deliberately **not** orchestrated by the AppHost — it
+was started on its own. Secret-Santa has since grown the shared account/session block
+([ADR-0034](0034-shared-account-session-ui-block.md)), sync ([ADR-0033](0033-which-aggregates-sync.md))
+and the circle/linking reads, so it now reaches the same Main API as the Main shell and needs the
+same two things this ADR provides: an `ApiBaseUrl` and a CORS allow-entry.
+
+Nothing about the **decision** changes — it is still manual config + CORS. It now simply applies to
+**both** clients:
+
+- The AppHost adds `secretsanta-web` alongside `main-web`, each `WithReference(api)`.
+- The API's `Cors:AllowedOrigins` gets **one indexed entry per client** (`__0` = `main-web`,
+  `__1` = `secretsanta-web`).
+- Each client keeps its own `wwwroot/appsettings.json` `ApiBaseUrl` (both point at the API's fixed
+  dev https port). The account-free visitor never contacts the API, so its value is inert for them
+  ([NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md)).
+
+The MAUI head stays out of the AppHost: it is a device app, not an orchestrated service, and supplies
+its own platform seams ([ADR-0028](0028-browser-platform-adapters-block.md)).
+
 ## Pros and cons of the options
 
 ### 1. Manual config + CORS

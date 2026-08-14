@@ -78,7 +78,7 @@ public sealed class CirclePageTests
             new[] { new CircleSummaryResponse(Guid.CreateVersion7(), "Müller", "Jassrunde", "Owner", 4) });
 
         var page = context.RenderPage<MyCircles>();
-        var list = page.Find("ul.list-group").InnerHtml;
+        var list = page.Find(".circles-list").InnerHtml;
 
         // Scoped to the list on purpose: the *create* form below it is legitimately prefilled with
         // the language default, and that is a different thing from re-labelling a stored circle.
@@ -108,7 +108,7 @@ public sealed class CirclePageTests
             CirclesRoute,
             new[] { new CircleSummaryResponse(Guid.CreateVersion7(), "Müller", "Familie", "Owner", people) });
 
-        var list = context.RenderPage<MyCircles>().Find("ul.list-group").InnerHtml;
+        var list = context.RenderPage<MyCircles>().Find(".circles-list").InnerHtml;
 
         Assert.Contains(expectedKey, list, StringComparison.Ordinal);
 
@@ -267,7 +267,7 @@ public sealed class CirclePageTests
             Person("Dora"));
 
         var page = RenderDetail(context, circleId);
-        var rows = page.FindAll("li.list-group-item");
+        var rows = page.FindAll(".person-row");
 
         Assert.DoesNotContain("CircleRemove", RowFor(rows, "Chris"), StringComparison.Ordinal);
         Assert.Contains("CircleRemove", RowFor(rows, "Dora"), StringComparison.Ordinal);
@@ -283,7 +283,7 @@ public sealed class CirclePageTests
             Person("Bea"));
 
         var page = RenderDetail(context, circleId);
-        var rows = page.FindAll("li.list-group-item");
+        var rows = page.FindAll(".person-row");
 
         Assert.DoesNotContain("CircleRemove", RowFor(rows, "Anna"), StringComparison.Ordinal);
         Assert.DoesNotContain("CircleMakeAdmin", RowFor(rows, "Anna"), StringComparison.Ordinal);
@@ -299,7 +299,7 @@ public sealed class CirclePageTests
             Person("Opa", isManaged: true));
 
         var page = RenderDetail(context, circleId);
-        var row = RowFor(page.FindAll("li.list-group-item"), "Opa");
+        var row = RowFor(page.FindAll(".person-row"), "Opa");
 
         Assert.Contains("CircleManagedBadge", row, StringComparison.Ordinal);
         Assert.DoesNotContain("CircleMakeAdmin", row, StringComparison.Ordinal);
@@ -453,7 +453,7 @@ public sealed class CirclePageTests
         var page = RenderDetail(context, circleId);
         page.FindAll("button").First(b => b.TextContent.Contains("CircleLeave", StringComparison.Ordinal)).Click();
 
-        var confirmation = page.Find("div.alert-warning").TextContent;
+        var confirmation = page.Find(".mud-alert").TextContent;
 
         Assert.Contains("CircleLeaveConfirm", confirmation, StringComparison.Ordinal);
         Assert.Contains("CircleLeaveKeeps", confirmation, StringComparison.Ordinal);
@@ -476,7 +476,7 @@ public sealed class CirclePageTests
             Person("Grosspapa", isManaged: true));
 
         var page = RenderDetail(context, circleId);
-        var danger = page.Find("section.circletools-danger");
+        var danger = page.Find(".circletools-danger");
 
         // The two managed members are named individually — the assertion that fails if the list is
         // ever replaced by a count, or moved inside the format string where a translation could drop
@@ -503,7 +503,7 @@ public sealed class CirclePageTests
     {
         using var context = DetailContext(out var circleId, "Owner", Person("Anna", "Owner", isYou: true));
 
-        var danger = RenderDetail(context, circleId).Find("section.circletools-danger").TextContent;
+        var danger = RenderDetail(context, circleId).Find(".circletools-danger").TextContent;
 
         Assert.DoesNotContain("CircleDeleteManagedNamed", danger, StringComparison.Ordinal);
         Assert.Contains("CircleDeleteNames", danger, StringComparison.Ordinal);

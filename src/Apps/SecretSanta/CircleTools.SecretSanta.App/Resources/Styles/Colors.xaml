@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    Secret-Santa native palette (ADR-0040). The in-app UI is MudBlazor with a neutral "sobre" theme and
+    one calm accent (CircleToolsTheme); these MAUI resources mirror it so native chrome (page background
+    behind the WebView, ActivityIndicator, any native control) stays neutral with the same accent. The
+    festive burgundy/gold brand lives only on the app icon, splash and store assets (naming.md). The
+    Android status-bar tint is set separately in Platforms/Android/Resources/values/colors.xml.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- The single calm accent, lifted on dark (matches CircleToolsTheme). -->
+    <Color x:Key="Primary">#5b7cc4</Color>
+    <Color x:Key="PrimaryDark">#45608f</Color>
+    <Color x:Key="PrimaryDarkText">#8aa6e0</Color>
+    <Color x:Key="Secondary">#5b6270</Color>
+    <Color x:Key="SecondaryDarkText">#e7e9ee</Color>
+    <Color x:Key="Tertiary">#eef0f3</Color>
+
+    <Color x:Key="OnPrimary">#ffffff</Color>
+
+    <!-- Page grounds: neutral near-white in light, neutral near-black in dark. -->
+    <Color x:Key="PageBackground">#f6f7f9</Color>
+    <Color x:Key="PageBackgroundDark">#121417</Color>
+
+    <Color x:Key="White">White</Color>
+    <Color x:Key="Black">Black</Color>
+
+    <!-- True-neutral greys for text / surfaces. -->
+    <Color x:Key="Gray100">#f2f3f5</Color>
+    <Color x:Key="Gray200">#e6e8ec</Color>
+    <Color x:Key="Gray300">#c9ccd3</Color>
+    <Color x:Key="Gray400">#9aa1ad</Color>
+    <Color x:Key="Gray500">#6b7280</Color>
+    <Color x:Key="Gray600">#4b5059</Color>
+    <Color x:Key="Gray900">#1a1d22</Color>
+
+</ResourceDictionary>

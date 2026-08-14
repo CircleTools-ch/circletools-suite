@@ -1,11 +1,18 @@
 ---
-status: Accepted
+status: Superseded by ADR-0040
 date: 2026-07-28
 deciders: [Adrian]
 tags: [architecture, ui, frontend, design]
+superseded-by: [0040]
 ---
 
 # ADR-0024 — UI styling & theming
+
+> **Superseded by [ADR-0040](0040-ui-component-library-mudblazor.md) (2026-08-13).** As this ADR's
+> *Follow-ups* anticipated, the styling approach was revisited once the brand landed. The suite moved
+> from Bootstrap + a thin theme to **MudBlazor (Material)** with a neutral in-app palette and a runtime
+> theme switch. Bootstrap and the `circletools.css` skin layer are being retired as screens migrate.
+> The record below is kept for history.
 
 ## Context and problem statement
 

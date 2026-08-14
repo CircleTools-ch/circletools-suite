@@ -12,55 +12,51 @@
 
 <AuthorizeView>
     <Authorized>
-        <h1>@L["ClaimTitle"]</h1>
-        <p class="text-body-secondary">@L["ClaimLead"]</p>
+        <MudText Typo="Typo.h4" GutterBottom="true">@L["ClaimTitle"]</MudText>
+        <MudText Class="mud-text-secondary mb-4">@L["ClaimLead"]</MudText>
 
         @if (_outcome is not null)
         {
-            <div class="@OutcomeCss" role="@OutcomeRole">@OutcomeText</div>
+            <MudAlert Severity="@OutcomeSeverity" Class="mb-3" Dense="true" role="@OutcomeRole">@OutcomeText</MudAlert>
         }
 
         @if (_groups is null)
         {
-            <p>@L["Loading"]</p>
+            <MudText>@L["Loading"]</MudText>
         }
         else if (_groups.Count == 0)
         {
-            <p>@L["ClaimNoGroups"]</p>
+            <MudText Class="mud-text-secondary">@L["ClaimNoGroups"]</MudText>
         }
         else
         {
-            <ul class="list-group mb-3">
+            <MudStack Spacing="1" Class="mb-3">
                 @foreach (var group in _groups)
                 {
-                    <li class="list-group-item">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="claim-@group.Id"
-                                   checked="@_selected.Contains(group.Id)"
-                                   @onchange="args => Toggle(group.Id, (bool)args.Value!)" />
-                            <label class="form-check-label" for="claim-@group.Id">
-                                <strong>@group.Name</strong>
-                                <span class="text-body-secondary ms-2">@MemberCount(group.MemberCount)</span>
-                            </label>
-                        </div>
+                    <MudPaper Elevation="1" Class="pa-3">
+                        <MudCheckBox T="bool" Value="_selected.Contains(group.Id)"
+                                     ValueChanged="on => Toggle(group.Id, on)" Dense="true">
+                            <strong>@group.Name</strong>
+                            <span class="mud-text-secondary ml-2">@MemberCount(group.MemberCount)</span>
+                        </MudCheckBox>
                         @if (group.HasCurrentDraw)
                         {
-                            <div class="form-text text-warning-emphasis ms-4">
+                            <MudText Typo="Typo.caption" Color="Color.Warning" Class="d-block" Style="margin-left:2rem;">
                                 @L["ClaimDrawnUploadsAssignmentsWarning"]
-                            </div>
+                            </MudText>
                         }
-                    </li>
+                    </MudPaper>
                 }
-            </ul>
+            </MudStack>
 
-            <p class="small text-body-secondary">
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
                 @L["ClaimLocalCopyStaysNote"] @L["ClaimUnclaimedLiveHereOnlyNote"]
-            </p>
+            </MudText>
 
-            <button class="btn btn-primary" @onclick="() => ClaimAsync(context.User.UserId())"
-                    disabled="@(_busy || _selected.Count == 0)">
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="() => ClaimAsync(context.User.UserId())"
+                       Disabled="@(_busy || _selected.Count == 0)">
                 @L["ClaimConfirm"]
-            </button>
+            </MudButton>
         }
     </Authorized>
     <NotAuthorized>
@@ -136,7 +132,7 @@
         _ => L["ClaimFailed"],
     };
 
-    private string OutcomeCss => _outcome!.IsSuccess ? "alert alert-success" : "alert alert-warning";
+    private Severity OutcomeSeverity => _outcome!.IsSuccess ? Severity.Success : Severity.Warning;
 
     private string OutcomeRole => _outcome!.Status == SyncStatus.StorageUnavailable ? "alert" : "status";
 }

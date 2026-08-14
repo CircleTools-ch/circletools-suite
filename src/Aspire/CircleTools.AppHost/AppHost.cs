@@ -26,14 +26,19 @@ var api = builder.AddProject<Projects.CircleTools_Main_Service>("main-api")
     .WaitFor(maindb)
     .WaitFor(mailpit);
 
-// Standalone Blazor WebAssembly PWA — pure API client.
+// Standalone Blazor WebAssembly PWAs — pure API clients (ADR-0013). Both the Main shell and
+// Secret-Santa run this way: offline and account-free by default, but reaching the Main API
+// once a session exists (account, sync, circles). Neither is a backend; each is a static WASM
+// client, so its API base address is configured in wwwroot/appsettings.json (ApiBaseUrl) —
+// the browser cannot read server env vars. The fixed dev ports keep client and API in sync.
 var web = builder.AddProject<Projects.CircleTools_Main_WebApp>("main-web")
     .WithReference(api);
 
-// Allow the web origin on the API (CORS). Note: because the WebApp is a standalone
-// WASM client, its API base address is configured in wwwroot/appsettings.json
-// (ApiBaseUrl) — the browser cannot read server env vars. The fixed dev ports keep
-// the two in sync locally.
+var secretSantaWeb = builder.AddProject<Projects.CircleTools_SecretSanta_WebApp>("secretsanta-web")
+    .WithReference(api);
+
+// Allow each WASM origin on the API (CORS), one indexed Cors:AllowedOrigins entry per client.
 api.WithEnvironment("Cors__AllowedOrigins__0", web.GetEndpoint("https"));
+api.WithEnvironment("Cors__AllowedOrigins__1", secretSantaWeb.GetEndpoint("https"));
 
 builder.Build().Run();

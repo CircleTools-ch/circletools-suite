@@ -9,63 +9,61 @@
 
 <AuthorizeView>
     <Authorized>
-        <div class="circletools-page">
-            <h1 class="h4">@L["InvitationsTitle"]</h1>
-            <p class="text-body-secondary">@L["InvitationsLead"]</p>
+        <MudText Typo="Typo.h4" GutterBottom="true">@L["InvitationsTitle"]</MudText>
+        <MudText Class="mud-text-secondary mb-4">@L["InvitationsLead"]</MudText>
 
-            <ProblemAlert Message="@_error" />
-            <ConnectivityRequired Message="@(_offline ? L["CircleOfflineNotice"].Value : null)" />
+        <ProblemAlert Message="@_error" />
+        <ConnectivityRequired Message="@(_offline ? L["CircleOfflineNotice"].Value : null)" />
 
-            @if (_notice is { Length: > 0 })
-            {
-                <div class="alert alert-success" role="status">@_notice</div>
-            }
+        @if (_notice is { Length: > 0 })
+        {
+            <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true" role="status">@_notice</MudAlert>
+        }
 
-            @if (_offline)
-            {
-                @* Online-only (ADR-0033); the notice above is the whole screen while offline. *@
-            }
-            else if (_requests is null)
-            {
-                <p class="text-body-secondary">@L["CircleLoading"]</p>
-            }
-            else if (_requests.Count == 0)
-            {
-                <p class="text-body-secondary">@L["InvitationsEmpty"]</p>
-            }
-            else
-            {
-                <ul class="list-group">
-                    @foreach (var request in _requests)
-                    {
-                        <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
-                            <span>
-                                <strong>@request.CircleName</strong>
-                                <span class="text-body-secondary small ms-2">@request.CircleLabel</span>
-                                <div class="text-body-secondary small">
-                                    @string.Format(
-                                        CultureInfo.CurrentCulture,
-                                        L["InvitationFrom"],
-                                        request.InviterDisplayName)
-                                </div>
-                            </span>
-                            <span class="d-flex gap-1">
-                                <button type="button" class="btn btn-sm btn-primary"
-                                        disabled="@_busy"
-                                        @onclick="@(() => AcceptAsync(request))">
-                                    @L["InvitationAccept"]
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary"
-                                        disabled="@_busy"
-                                        @onclick="@(() => DeclineAsync(request))">
-                                    @L["InvitationDecline"]
-                                </button>
-                            </span>
-                        </li>
-                    }
-                </ul>
-            }
-        </div>
+        @if (_offline)
+        {
+            @* Online-only (ADR-0033); the notice above is the whole screen while offline. *@
+        }
+        else if (_requests is null)
+        {
+            <MudText Class="mud-text-secondary">@L["CircleLoading"]</MudText>
+        }
+        else if (_requests.Count == 0)
+        {
+            <MudText Class="mud-text-secondary">@L["InvitationsEmpty"]</MudText>
+        }
+        else
+        {
+            <MudStack Spacing="1">
+                @foreach (var request in _requests)
+                {
+                    <MudPaper Elevation="1" Class="d-flex justify-space-between align-center flex-wrap gap-2 pa-3">
+                        <div>
+                            <div class="d-flex align-center flex-wrap gap-2">
+                                <MudText Typo="Typo.subtitle1"><strong>@request.CircleName</strong></MudText>
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary">@request.CircleLabel</MudText>
+                            </div>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                @string.Format(
+                                    CultureInfo.CurrentCulture,
+                                    L["InvitationFrom"],
+                                    request.InviterDisplayName)
+                            </MudText>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled"
+                                       Disabled="@_busy" OnClick="@(() => AcceptAsync(request))">
+                                @L["InvitationAccept"]
+                            </MudButton>
+                            <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                       Disabled="@_busy" OnClick="@(() => DeclineAsync(request))">
+                                @L["InvitationDecline"]
+                            </MudButton>
+                        </div>
+                    </MudPaper>
+                }
+            </MudStack>
+        }
     </Authorized>
     <NotAuthorized>
         <RedirectToLogin />

@@ -28,5 +28,12 @@
     </array>
     <key>XSAppIconAssets</key>
     <string>Assets.xcassets/appicon.appiconset</string>
+    <!-- The app's top strip is the neutral accent safe-area (wwwroot/app.css .status-bar-safe-area,
+         #5b7cc4 from CircleToolsTheme), so the status bar renders white/light content over it, in both
+         light and dark (ADR-0040). -->
+    <key>UIStatusBarStyle</key>
+    <string>UIStatusBarStyleLightContent</string>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <false/>
 </dict>
 </plist>

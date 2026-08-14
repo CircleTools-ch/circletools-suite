@@ -7,108 +7,119 @@
 
 <PageTitle>@L["GroupsTitle"]</PageTitle>
 
-<h1>@L["GroupsTitle"]</h1>
+<MudText Typo="Typo.h4" GutterBottom="true">@L["GroupsTitle"]</MudText>
 
-<div class="input-group mb-3">
-    <input class="form-control" @bind="_newName" @bind:event="oninput" placeholder="@L["NewGroupPlaceholder"]"
-           aria-label="@L["NewGroupPlaceholder"]" @onkeydown="OnNewNameKeyDown" />
-    <button class="btn btn-primary" @onclick="CreateAsync" disabled="@(_busy || string.IsNullOrWhiteSpace(_newName))">
+<div class="d-flex gap-2 align-start flex-wrap mb-4">
+    <MudTextField @bind-Value="_newName" Immediate="true" OnKeyDown="OnNewNameKeyDown"
+                  Label="@L["NewGroupPlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                  Class="flex-grow-1" Style="min-width:12rem;" />
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync"
+               StartIcon="@Icons.Material.Filled.Add" Class="mt-1"
+               Disabled="@(_busy || string.IsNullOrWhiteSpace(_newName))">
         @L["CreateGroup"]
-    </button>
+    </MudButton>
 </div>
 
 @* Create a group from a circle (FR-027): only offered while signed in, since it reads the account's
    circles. The account-free flow above is unchanged. *@
 <AuthorizeView>
     <Authorized>
-        <p class="mb-3">
-            <a class="btn btn-outline-secondary btn-sm" href="groups/from-circle">@L["CreateFromCircleAction"]</a>
-        </p>
+        <MudButton Href="groups/from-circle" Variant="Variant.Outlined" Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.GroupAdd" Class="mb-4">
+            @L["CreateFromCircleAction"]
+        </MudButton>
     </Authorized>
 </AuthorizeView>
 
 @if (_groups is null)
 {
-    <p>@L["Loading"]</p>
+    <MudText>@L["Loading"]</MudText>
 }
 else if (_groups.Count == 0)
 {
-    <p>@L["NoGroups"]</p>
+    <MudText Class="mud-text-secondary">@L["NoGroups"]</MudText>
 }
 else
 {
-    <ul class="list-group">
+    <MudStack Spacing="2">
         @foreach (var group in _groups)
         {
-            <li class="list-group-item">
-                <div class="d-flex justify-content-between align-items-center">
-                    <span>
-                        <strong>@group.Name</strong>
-                        <span class="text-muted ms-2">@L["MembersColumn"]: @group.MemberCount</span>
-                        @if (group.HasCurrentDraw)
-                        {
-                            <span class="badge bg-success ms-2">@L["DrawCompleteBadge"]</span>
-                        }
-                        else if (group.DrawInvalidatedByMembershipChange)
-                        {
-                            <span class="badge bg-warning text-dark ms-2">@L["DrawInvalidatedBadge"]</span>
-                        }
-                        @if (IsOnAccount(group.Id))
-                        {
-                            <span class="badge bg-info text-dark ms-2">@L["SyncedBadge"]</span>
-                        }
-                    </span>
-                    <span>
-                        <button class="btn btn-sm btn-outline-primary" @onclick="() => Open(group.Id)">@L["Open"]</button>
-                        <button class="btn btn-sm btn-outline-danger ms-1" @onclick="() => AskDelete(group.Id)">@L["Delete"]</button>
-                    </span>
-                </div>
-
-                @if (_pendingDeleteId == group.Id)
-                {
-                    <div class="alert alert-warning mt-2 mb-0" role="alert">
-                        <p class="mb-2">@L["ConfirmDeleteGroup", group.Name]</p>
-                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteAsync(group.Id)">@L["ConfirmYes"]</button>
-                        <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="CancelDelete">@L["Cancel"]</button>
+            <MudCard Elevation="1">
+                <MudCardContent Class="pb-2">
+                    <div class="d-flex justify-space-between align-center flex-wrap gap-2">
+                        <div class="d-flex align-center flex-wrap gap-2">
+                            <MudText Typo="Typo.subtitle1"><strong>@group.Name</strong></MudText>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                @L["MembersColumn"]: @group.MemberCount
+                            </MudText>
+                            @if (group.HasCurrentDraw)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
+                            }
+                            else if (group.DrawInvalidatedByMembershipChange)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
+                            }
+                            @if (IsOnAccount(group.Id))
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">@L["SyncedBadge"]</MudChip>
+                            }
+                        </div>
+                        <div class="d-flex align-center gap-1">
+                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                       OnClick="() => Open(group.Id)">@L["Open"]</MudButton>
+                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
+                                       OnClick="() => AskDelete(group.Id)">@L["Delete"]</MudButton>
+                        </div>
                     </div>
-                }
 
-                @* Un-claim (FR-026): only for a group on the account, and only while signed in. Kept
-                   visually and textually distinct from Delete — it removes the group from the account
-                   but keeps the copy on this device. *@
-                @if (_accountId != Guid.Empty && IsOnAccount(group.Id))
-                {
-                    <div class="mt-2">
+                    @if (_pendingDeleteId == group.Id)
+                    {
+                        <MudAlert Severity="Severity.Warning" Class="mt-3" Dense="true">
+                            <MudText Class="mb-2">@L["ConfirmDeleteGroup", group.Name]</MudText>
+                            <div class="d-flex gap-1">
+                                <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Filled"
+                                           OnClick="() => DeleteAsync(group.Id)">@L["ConfirmYes"]</MudButton>
+                                <MudButton Size="Size.Small" Variant="Variant.Text"
+                                           OnClick="CancelDelete">@L["Cancel"]</MudButton>
+                            </div>
+                        </MudAlert>
+                    }
+
+                    @* Un-claim (FR-026): only for a group on the account, and only while signed in. Kept
+                       visually and textually distinct from Delete — it removes the group from the account
+                       but keeps the copy on this device. *@
+                    @if (_accountId != Guid.Empty && IsOnAccount(group.Id))
+                    {
                         @if (_pendingUnclaimId == group.Id)
                         {
-                            <div class="alert alert-info mb-0" role="alert">
-                                <p class="mb-1">@L["UnclaimConfirmPrompt", group.Name]</p>
-                                <p class="small mb-1">@L["UnclaimKeepsLocalCopyNote"]</p>
-                                <p class="small mb-2">@L["UnclaimDistinctFromDeleteNote"]</p>
-                                <button class="btn btn-sm btn-primary" @onclick="() => UnclaimAsync(group.Id)">
-                                    @L["UnclaimConfirm"]
-                                </button>
-                                <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="CancelUnclaim">
-                                    @L["Cancel"]
-                                </button>
-                            </div>
+                            <MudAlert Severity="Severity.Info" Class="mt-3" Dense="true">
+                                <MudText Typo="Typo.body2" Class="mb-1">@L["UnclaimConfirmPrompt", group.Name]</MudText>
+                                <MudText Typo="Typo.caption" Class="d-block mb-1">@L["UnclaimKeepsLocalCopyNote"]</MudText>
+                                <MudText Typo="Typo.caption" Class="d-block mb-2">@L["UnclaimDistinctFromDeleteNote"]</MudText>
+                                <div class="d-flex gap-1">
+                                    <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled"
+                                               OnClick="() => UnclaimAsync(group.Id)">@L["UnclaimConfirm"]</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text"
+                                               OnClick="CancelUnclaim">@L["Cancel"]</MudButton>
+                                </div>
+                            </MudAlert>
                         }
                         else
                         {
-                            <button class="btn btn-sm btn-link px-0" @onclick="() => AskUnclaim(group.Id)">
-                                @L["UnclaimAction"]
-                            </button>
+                            <MudButton Size="Size.Small" Variant="Variant.Text" Class="mt-1 px-1"
+                                       OnClick="() => AskUnclaim(group.Id)">@L["UnclaimAction"]</MudButton>
                         }
-                    </div>
-                }
+                    }
 
-                @if (_unclaimMessageId == group.Id && _unclaimStatus is not null)
-                {
-                    <div class="@UnclaimCss mt-2 mb-0" role="@UnclaimRole">@UnclaimText</div>
-                }
-            </li>
+                    @if (_unclaimMessageId == group.Id && _unclaimStatus is not null)
+                    {
+                        <MudAlert Severity="@UnclaimSeverity" Class="mt-2" Dense="true" role="@UnclaimRole">@UnclaimText</MudAlert>
+                    }
+                </MudCardContent>
+            </MudCard>
         }
-    </ul>
+    </MudStack>
 }
 
 @code {
@@ -232,7 +243,7 @@ else
         _ => L["UnclaimFailed"],
     };
 
-    private string UnclaimCss => _unclaimStatus == SyncStatus.Synced ? "alert alert-success" : "alert alert-warning";
+    private Severity UnclaimSeverity => _unclaimStatus == SyncStatus.Synced ? Severity.Success : Severity.Warning;
 
     private string UnclaimRole => _unclaimStatus == SyncStatus.StorageUnavailable ? "alert" : "status";
 

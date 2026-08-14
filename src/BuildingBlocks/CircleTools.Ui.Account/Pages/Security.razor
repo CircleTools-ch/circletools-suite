@@ -7,84 +7,79 @@
 
 <AuthorizeView>
     <Authorized>
-        <div class="circletools-page">
-            <h1 class="h4">@L["SecurityTitle"]</h1>
-            <p class="text-body-secondary">@L["SecurityLead"]</p>
+        <MudText Typo="Typo.h4" GutterBottom="true">@L["SecurityTitle"]</MudText>
+        <MudText Class="mud-text-secondary mb-4">@L["SecurityLead"]</MudText>
 
-            <section class="mb-5">
-                <h2 class="h5">@L["PasskeysTitle"]</h2>
-                <p class="text-body-secondary small">@L["PasskeysLead"]</p>
+        <MudPaper Elevation="1" Class="pa-4 mb-4">
+            <MudText Typo="Typo.h6">@L["PasskeysTitle"]</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">@L["PasskeysLead"]</MudText>
 
-                <ProblemAlert Message="@_passkeyError" Details="@_passkeyDetails" />
+            <ProblemAlert Message="@_passkeyError" Details="@_passkeyDetails" />
 
-                @if (_passkeyStatus is not null)
-                {
-                    <div class="alert alert-success" role="status">@_passkeyStatus</div>
-                }
+            @if (_passkeyStatus is not null)
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true" role="status">@_passkeyStatus</MudAlert>
+            }
 
-                @if (_passkeys.Count == 0)
-                {
-                    <p class="text-body-secondary">@L["PasskeysEmpty"]</p>
-                }
-                else
-                {
-                    <ul class="list-unstyled">
-                        @foreach (var passkey in _passkeys)
-                        {
-                            <li class="circletools-item">
-                                <div>
-                                    <div class="fw-semibold">@passkey.Label</div>
-                                    <div class="small text-body-secondary">
-                                        @L["PasskeyAddedOn", passkey.CreatedAt.ToLocalTime().ToString("d", Culture)]
-                                    </div>
-                                </div>
-                                <BusyButton Type="button"
-                                            CssClass="btn btn-sm btn-outline-danger"
-                                            Label="@L["PasskeyRemove"]"
-                                            Busy="@(_removing == passkey.CredentialId)"
-                                            OnClick="@(() => RemoveAsync(passkey.CredentialId))" />
-                            </li>
-                        }
-                    </ul>
-                }
-
-                <div class="mb-2">
-                    <label class="form-label" for="passkey-label">@L["FieldPasskeyLabel"]</label>
-                    <input id="passkey-label" class="form-control" maxlength="60" @bind="_label" />
-                </div>
-
-                <BusyButton Type="button"
-                            CssClass="btn btn-primary"
-                            Label="@L["PasskeyAdd"]"
-                            Busy="_adding"
-                            OnClick="AddPasskeyAsync" />
-            </section>
-
-            <section>
-                <h2 class="h5">@L["ChangeEmailTitle"]</h2>
-                <p class="text-body-secondary small">@L["ChangeEmailLead"]</p>
-                <p class="small">@L["ChangeEmailCurrent", context.User.Email()]</p>
-
-                @if (_emailSent)
-                {
-                    <div class="alert alert-success" role="status">@L["ChangeEmailSent"]</div>
-                }
-                else
-                {
-                    <form class="circletools-form" @onsubmit="ChangeEmailAsync" @onsubmit:preventDefault="true">
-                        <ProblemAlert Message="@_emailError" Details="@_emailDetails" />
-
-                        <div>
-                            <label class="form-label" for="security-new-email">@L["FieldNewEmail"]</label>
-                            <input id="security-new-email" type="email" class="form-control" required
-                                   autocomplete="email" @bind="_newEmail" />
+            @if (_passkeys.Count == 0)
+            {
+                <MudText Class="mud-text-secondary mb-3">@L["PasskeysEmpty"]</MudText>
+            }
+            else
+            {
+                <MudStack Spacing="1" Class="mb-3">
+                    @foreach (var passkey in _passkeys)
+                    {
+                        <div class="d-flex justify-space-between align-center gap-2">
+                            <div>
+                                <MudText Typo="Typo.body1"><strong>@passkey.Label</strong></MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                    @L["PasskeyAddedOn", passkey.CreatedAt.ToLocalTime().ToString("d", Culture)]
+                                </MudText>
+                            </div>
+                            <BusyButton Type="button"
+                                        Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
+                                        Label="@L["PasskeyRemove"]"
+                                        Busy="@(_removing == passkey.CredentialId)"
+                                        OnClick="@(() => RemoveAsync(passkey.CredentialId))" />
                         </div>
+                    }
+                </MudStack>
+            }
+
+            <MudTextField @bind-Value="_label" Label="@L["FieldPasskeyLabel"]" MaxLength="60"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" Class="mb-3" Style="max-width:26rem;" />
+
+            <BusyButton Type="button"
+                        Label="@L["PasskeyAdd"]"
+                        Busy="_adding"
+                        OnClick="AddPasskeyAsync" />
+        </MudPaper>
+
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudText Typo="Typo.h6">@L["ChangeEmailTitle"]</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["ChangeEmailLead"]</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3">@L["ChangeEmailCurrent", context.User.Email()]</MudText>
+
+            @if (_emailSent)
+            {
+                <MudAlert Severity="Severity.Success" Dense="true" role="status">@L["ChangeEmailSent"]</MudAlert>
+            }
+            else
+            {
+                <form @onsubmit="ChangeEmailAsync" @onsubmit:preventDefault="true">
+                    <ProblemAlert Message="@_emailError" Details="@_emailDetails" />
+
+                    <MudStack Spacing="3" Style="max-width:26rem;">
+                        <MudTextField @bind-Value="_newEmail" Label="@L["FieldNewEmail"]" InputType="InputType.Email"
+                                      Variant="Variant.Outlined" Margin="Margin.Dense" Required="true"
+                                      autocomplete="email" />
 
                         <BusyButton Label="@L["ChangeEmailSubmit"]" Busy="_emailBusy" />
-                    </form>
-                }
-            </section>
-        </div>
+                    </MudStack>
+                </form>
+            }
+        </MudPaper>
     </Authorized>
     <NotAuthorized>
         <RedirectToLogin />

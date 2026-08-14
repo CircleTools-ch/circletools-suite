@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Apps\Main\CircleTools.Main.Service\CircleTools.Main.Service.csproj" />
     <ProjectReference Include="..\..\Apps\Main\CircleTools.Main.WebApp\CircleTools.Main.WebApp.csproj" />
+    <ProjectReference Include="..\..\Apps\SecretSanta\CircleTools.SecretSanta.WebApp\CircleTools.SecretSanta.WebApp.csproj" />
   </ItemGroup>
 
   <ItemGroup>

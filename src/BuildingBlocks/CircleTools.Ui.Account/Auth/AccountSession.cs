@@ -126,6 +126,33 @@ public sealed class AccountSession(
         auth.NotifyChanged();
     }
 
+    /// <summary>
+    /// Adopts a session obtained outside this class's own API calls — the cross-app SSO hand-off
+    /// (FR-031, ADR-0039).
+    /// </summary>
+    /// <remarks>
+    /// The SSO token exchange returns the same <see cref="SessionResponse"/> a sign-in does, but the
+    /// call is made by the connect flow, not here. Routing it through this method keeps the invariant
+    /// that <see cref="AccountSession"/> is the one place the token stores are written — the four steps
+    /// are the same as any other way into a session.
+    /// </remarks>
+    /// <param name="session">The session returned by the token exchange.</param>
+    /// <param name="staySignedIn">Whether the session should survive a browser restart (ADR-0026).</param>
+    /// <param name="cancellationToken">Cancels the adoption.</param>
+    /// <returns>A task that completes once the session is in effect.</returns>
+    public async Task AdoptAsync(
+        SessionResponse session,
+        bool staySignedIn,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+
+        tokens.SetToken(session.AccessToken, TimeSpan.FromSeconds(session.ExpiresIn));
+        await refreshTokens.SaveAsync(session.RefreshToken, staySignedIn, cancellationToken);
+        auth.NotifyChanged();
+        await ApplyAccountLanguageAsync(cancellationToken);
+    }
+
     private async Task<ApiResult<SessionResponse>> AcceptAsync(
         ApiResult<SessionResponse> result,
         bool staySignedIn,
@@ -136,11 +163,7 @@ public sealed class AccountSession(
             return result;
         }
 
-        tokens.SetToken(session.AccessToken, TimeSpan.FromSeconds(session.ExpiresIn));
-        await refreshTokens.SaveAsync(session.RefreshToken, staySignedIn, cancellationToken);
-        auth.NotifyChanged();
-        await ApplyAccountLanguageAsync(cancellationToken);
-
+        await AdoptAsync(session, staySignedIn, cancellationToken);
         return result;
     }
 

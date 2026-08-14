@@ -61,6 +61,12 @@ public static class AccountEndpoints
         group.MapPost("/login", LoginAsync).WithName("Login").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
         group.MapPost("/refresh", RefreshAsync).WithName("Refresh").AllowAnonymous();
         group.MapPost("/logout", LogoutAsync).WithName("Logout").RequireAuthorization();
+
+        // Cross-app SSO hand-off (FR-031, ADR-0039). Authorize is bearer-authorized (the authority
+        // mints a code for its signed-in user); token is anonymous (the sibling redeems it), for the
+        // same reason /refresh is anonymous — it must not pass through the authorizing handler.
+        group.MapPost("/connect/authorize", ConnectAuthorizeAsync).WithName("ConnectAuthorize").RequireAuthorization();
+        group.MapPost("/connect/token", ConnectTokenAsync).WithName("ConnectToken").AllowAnonymous();
         group.MapGet("/profile", GetProfileAsync).WithName("GetProfile").RequireAuthorization();
         group.MapPut("/profile", UpdateProfileAsync).WithName("UpdateProfile").RequireAuthorization();
 
@@ -412,6 +418,83 @@ public static class AccountEndpoints
         var user = await lookup.FindByIdAsync(userId, cancellationToken).ConfigureAwait(false);
 
         return Results.Ok(ToResponse(succeeded.Tokens, user?.EmailConfirmed ?? false));
+    }
+
+    /// <summary>
+    /// Mints a single-use, PKCE-bound SSO authorization code for the signed-in user (FR-031, ADR-0039).
+    /// </summary>
+    /// <remarks>
+    /// Bearer-authorized: the code is minted for the caller's own session, on behalf of a sibling app
+    /// named by <c>Client</c> that will redeem it. The <c>ReturnUri</c> is validated against the suite
+    /// allow-list (the same origins CORS trusts) before any code exists — an untrusted origin gets a
+    /// bare 400 and learns nothing.
+    /// </remarks>
+    private static async Task<IResult> ConnectAuthorizeAsync(
+        [FromBody] ConnectAuthorizeRequest request,
+        ClaimsPrincipal principal,
+        ConnectAuthorizationCodeService codes,
+        ConnectReturnUriValidator returnUris,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        if (!string.Equals(request.CodeChallengeMethod, Pkce.MethodS256, StringComparison.Ordinal)
+            || string.IsNullOrWhiteSpace(request.CodeChallenge))
+        {
+            return Results.BadRequest();
+        }
+
+        if (!returnUris.IsAllowed(request.ReturnUri))
+        {
+            return Results.BadRequest();
+        }
+
+        var code = await codes.IssueAsync(
+            userId,
+            request.Client,
+            request.ReturnUri,
+            request.CodeChallenge,
+            request.CodeChallengeMethod,
+            cancellationToken).ConfigureAwait(false);
+
+        return Results.Ok(new ConnectAuthorizeResponse(code));
+    }
+
+    /// <summary>
+    /// Redeems an SSO authorization code for a session (FR-031, ADR-0039).
+    /// </summary>
+    /// <remarks>
+    /// Anonymous, PKCE-proven, single-use. The code yields only a user id; the session itself comes
+    /// from <see cref="SessionService.StartAsync"/>, so this is the same token contract as a password
+    /// sign-in and there is exactly one path that issues tokens. Every rejection reads identically, as
+    /// a bad refresh does.
+    /// </remarks>
+    private static async Task<IResult> ConnectTokenAsync(
+        [FromBody] ConnectTokenRequest request,
+        ConnectAuthorizationCodeService codes,
+        SessionService sessions,
+        UserManager<CircleToolsUser> users,
+        CancellationToken cancellationToken)
+    {
+        var userId = await codes.RedeemAsync(request.Code, request.CodeVerifier, cancellationToken).ConfigureAwait(false);
+
+        if (userId is null)
+        {
+            return InvalidCredentials();
+        }
+
+        var user = await users.FindByIdAsync(userId.Value.ToString()).ConfigureAwait(false);
+
+        if (user is null)
+        {
+            return InvalidCredentials();
+        }
+
+        var tokens = await sessions.StartAsync(user, cancellationToken).ConfigureAwait(false);
+        return Results.Ok(ToResponse(tokens, user.EmailConfirmed));
     }
 
     /// <summary>Ends every session for the signed-in user (FR-008).</summary>

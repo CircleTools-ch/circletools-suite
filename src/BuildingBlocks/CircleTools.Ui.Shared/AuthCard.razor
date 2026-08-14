@@ -1,26 +1,26 @@
 @*
     The centred card every account screen sits in, so sign-up, sign-in and reset read as one flow
-    rather than three separately styled pages.
+    rather than three separately styled pages (ADR-0040: MudBlazor).
 *@
 
-<div class="circletools-auth">
-    <div class="card circletools-auth__card">
-        <div class="card-body">
-            <h1 class="h4 mb-1">@Title</h1>
-            @if (!string.IsNullOrWhiteSpace(Lead))
-            {
-                <p class="text-body-secondary small">@Lead</p>
-            }
-            @ChildContent
-        </div>
-    </div>
-    @if (Footer is not null)
-    {
-        <div class="circletools-auth__footer small">
+<div class="d-flex justify-center">
+    <MudPaper Elevation="2" Class="pa-6 my-4" Style="width:100%;max-width:26rem;">
+        <MudText Typo="Typo.h5" GutterBottom="true">@Title</MudText>
+        @if (!string.IsNullOrWhiteSpace(Lead))
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">@Lead</MudText>
+        }
+        @ChildContent
+    </MudPaper>
+</div>
+@if (Footer is not null)
+{
+    <div class="d-flex justify-center">
+        <div class="mud-text-secondary mb-4" style="max-width:26rem;font-size:0.85rem;text-align:center;">
             @Footer
         </div>
-    }
-</div>
+    </div>
+}
 
 @code {
     /// <summary>The screen's heading. Rendered as the page's single h1.</summary>

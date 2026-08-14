@@ -1,0 +1,45 @@
+@inject IStringLocalizer<AccountStrings> L
+@inject IServiceProvider Services
+
+@*
+    The interactive SSO affordance (FR-031, ADR-0039). A requesting app drops this where a signed-out
+    visitor would otherwise only see a sign-in form; choosing it starts the redirect hand-off to the
+    authority. Deliberately user-initiated, not an automatic redirect on load: a surprise navigation
+    and a broken offline start are worse than one click (UC-MAIN-017).
+
+    Safe to place on the shared login screen: SsoConnect is resolved optionally, so a host that never
+    registered SSO (e.g. the MAUI head, whose device flow differs) renders nothing here, and the
+    authority origin suppresses itself (it never hands off to itself). Wrapped in AuthorizeView so it
+    never shows to a user who already has a session on this app.
+*@
+
+@{
+    var sso = Services.GetService(typeof(SsoConnect)) as SsoConnect;
+}
+
+@if (sso is not null && !sso.IsAuthority())
+{
+    <AuthorizeView>
+        <NotAuthorized>
+            <MudDivider Class="my-4" />
+            <MudText Align="Align.Center" Typo="Typo.caption" Class="mud-text-secondary mb-2">@L["LoginOr"]</MudText>
+            <BusyButton Type="button"
+                        Variant="Variant.Outlined" Color="Color.Default" FullWidth="true"
+                        Label="@L["ConnectContinue"]"
+                        Busy="_busy"
+                        OnClick="() => BeginAsync(sso)" />
+        </NotAuthorized>
+    </AuthorizeView>
+}
+
+@code {
+    private bool _busy;
+
+    private async Task BeginAsync(SsoConnect sso)
+    {
+        _busy = true;
+
+        // A top-level cross-origin redirect; this call does not return on success.
+        await sso.BeginAsync();
+    }
+}

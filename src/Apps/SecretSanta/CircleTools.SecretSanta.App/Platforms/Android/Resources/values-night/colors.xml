@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark-mode neutral chrome (ADR-0040): the accent lifts to keep contrast, and the status bar and
+     window ground use the neutral near-black surfaces from CircleToolsTheme. -->
+<resources>
+    <color name="colorPrimary">#8aa6e0</color>
+    <color name="colorPrimaryDark">#0d0f12</color>
+    <color name="colorAccent">#8aa6e0</color>
+    <color name="colorOnPrimary">#1f2430</color>
+    <color name="windowBackground">#121417</color>
+</resources>

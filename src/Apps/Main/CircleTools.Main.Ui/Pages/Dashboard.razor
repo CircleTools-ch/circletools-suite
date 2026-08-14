@@ -1,26 +1,44 @@
 @page "/"
 @inject IStringLocalizer<AppStrings> L
+@inject IEnumerable<SuiteAppLink> SuiteApps
 
 <PageTitle>@L["DashboardTitle"]</PageTitle>
 
-<h1>@L["Greeting"]</h1>
+<MudText Typo="Typo.h4" GutterBottom="true">@L["Greeting"]</MudText>
 
-<h2>@L["DashboardTitle"]</h2>
-<ul>
-    @foreach (var app in _apps)
-    {
-        <li>@app</li>
-    }
-</ul>
+<MudText Typo="Typo.h6" GutterBottom="true">@L["DashboardTitle"]</MudText>
 
-<p>
-    <NavLink href="heartbeat">Heartbeat (skeleton sample)</NavLink>
-</p>
+@* Working links to the suite's other apps (ADR-0013/0040): each on its own origin, so opening one is
+   a full navigation. Built from the same SuiteApps config the app switcher uses; this app itself is
+   filtered out. When no siblings are configured (e.g. a MAUI head), nothing is shown. *@
+@if (_otherApps.Count == 0)
+{
+    <MudText Class="mud-text-secondary">@L["NoOtherApps"]</MudText>
+}
+else
+{
+    <MudStack Spacing="2">
+        @foreach (var app in _otherApps)
+        {
+            <MudButton Href="@app.Url" Variant="Variant.Outlined" FullWidth="true"
+                       Class="justify-start pa-3 text-none">
+                <img class="ct-appbar-logo mr-3" src="@app.LogoUrl" alt="" />
+                <div class="d-flex flex-column align-start">
+                    <MudText Typo="Typo.subtitle1"><strong>@app.Name</strong></MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["OpenApp"]</MudText>
+                </div>
+                <MudSpacer />
+                <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Color="Color.Primary" />
+            </MudButton>
+        }
+    </MudStack>
+}
+
+<MudButton Href="heartbeat" Variant="Variant.Text" Color="Color.Primary" Class="mt-2">Heartbeat (skeleton sample)</MudButton>
 
 @code {
-    // The suite apps. Only the skeleton sample is wired end-to-end so far.
-    private readonly string[] _apps =
-    [
-        "Secret-Santa — coming soon",
-    ];
+    private IReadOnlyList<SuiteAppLink> _otherApps = [];
+
+    protected override void OnInitialized() =>
+        _otherApps = [.. SuiteApps.Where(a => !a.IsCurrent)];
 }

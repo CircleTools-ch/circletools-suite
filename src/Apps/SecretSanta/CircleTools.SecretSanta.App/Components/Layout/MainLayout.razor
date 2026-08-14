@@ -1,13 +1,9 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@using CircleTools.SecretSanta.Ui.Shared
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+@* The MudBlazor app shell is shared by both Secret-Santa heads (ADR-0040); the MAUI host layout just
+   hands it the page body. NativeThemeSync mirrors the in-app theme switch onto the native chrome. *@
+<NativeThemeSync />
+<SecretSantaShell>
+    @Body
+</SecretSantaShell>

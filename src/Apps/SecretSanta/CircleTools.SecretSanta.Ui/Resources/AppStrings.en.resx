@@ -17,6 +17,7 @@
   <data name="Copy" xml:space="preserve"><value>Copy</value></data>
   <data name="Copied" xml:space="preserve"><value>Copied!</value></data>
   <data name="NavGroups" xml:space="preserve"><value>Groups</value></data>
+  <data name="NavMore" xml:space="preserve"><value>More</value></data>
   <data name="NavMembers" xml:space="preserve"><value>Members</value></data>
   <data name="NavExclusions" xml:space="preserve"><value>Exclusions</value></data>
   <data name="NavDraw" xml:space="preserve"><value>Draw</value></data>
@@ -148,4 +149,5 @@
   <data name="NavMyAssignments" xml:space="preserve"><value>My assignments</value></data>
   <data name="NavMyWishlists" xml:space="preserve"><value>My wishlists</value></data>
   <data name="CreateFromCircleAction" xml:space="preserve"><value>Create from a circle</value></data>
+  <data name="AllGroups" xml:space="preserve"><value>All groups</value></data>
 </root>

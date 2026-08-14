@@ -1,5 +1,5 @@
 @*
-    Renders a failure the user needs to know about.
+    Renders a failure the user needs to know about (ADR-0040: MudBlazor).
 
     role="alert" is required, not decorative: TP-002 makes it an accessibility criterion, so a screen
     reader announces the failure instead of leaving the user waiting on a form that silently refused.
@@ -7,18 +7,18 @@
 
 @if (!string.IsNullOrWhiteSpace(Message))
 {
-    <div class="alert @CssClass" role="alert">
+    <MudAlert Severity="Severity" Class="mb-3" Dense="true" role="alert">
         <div>@Message</div>
         @if (Details is { Count: > 0 })
         {
-            <ul class="mb-0 mt-2 small">
+            <ul class="mb-0 mt-2" style="font-size:0.85rem;">
                 @foreach (var detail in Details)
                 {
                     <li>@detail</li>
                 }
             </ul>
         }
-    </div>
+    </MudAlert>
 }
 
 @code {
@@ -30,7 +30,7 @@
     [Parameter]
     public IReadOnlyList<string>? Details { get; set; }
 
-    /// <summary>The Bootstrap alert variant.</summary>
+    /// <summary>The alert severity; an error by default.</summary>
     [Parameter]
-    public string CssClass { get; set; } = "alert-danger";
+    public Severity Severity { get; set; } = Severity.Error;
 }
