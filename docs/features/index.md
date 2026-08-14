@@ -22,6 +22,8 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-005](TP-005-m4-linking.md) | Test plan — M4 Linking | SecretSanta | Reviewed |
 | [FEAT-006](FEAT-006-m5-cross-app-sso.md) | M5 — Cross-app single sign-on | Platform | In progress |
 | [TP-006](TP-006-m5-cross-app-sso.md) | Test plan — M5 Cross-app SSO | Platform | Draft |
+| [FEAT-007](FEAT-007-events-per-group.md) | Events (occasions) as first-class entities within a group | SecretSanta | Done |
+| [TP-007](TP-007-events-per-group.md) | Test plan — Events per group | SecretSanta | Reviewed |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and

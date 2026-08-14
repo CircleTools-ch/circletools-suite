@@ -6,7 +6,7 @@ using CircleTools.SecretSanta.Core.Test.TestSupport;
 
 namespace CircleTools.SecretSanta.Core.Test;
 
-/// <summary>Tests exercising the application handlers over an in-memory repository.</summary>
+/// <summary>Tests exercising the application handlers over an in-memory repository (ADR-0042: events).</summary>
 public sealed class HandlerTests
 {
     private static readonly string[] _expectedLabels = ["Alice", "Bob", "Carol", "Dan"];
@@ -19,20 +19,20 @@ public sealed class HandlerTests
         var codec = new RevealLinkCodec();
         var linkBuilder = new RevealLinkBuilder(new RevealLinkOptions("https://santa.example"), codec);
 
-        // Arrange a group with four members and a budget.
+        // Arrange a group with four members and a budget on its default event (id == group id).
         var groupId = await new CreateGroupCommandHandler(repository).HandleAsync(new CreateGroupCommand("Family"), default);
-        await new SetBudgetCommandHandler(repository).HandleAsync(new SetBudgetCommand(groupId, 25m, "CHF"), default);
+        await new SetBudgetCommandHandler(repository).HandleAsync(new SetBudgetCommand(groupId, groupId, 25m, "CHF"), default);
         var addMember = new AddMemberCommandHandler(repository);
-        await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice", ["Scarf"]), default);
-        await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob", []), default);
-        await addMember.HandleAsync(new AddMemberCommand(groupId, "Carol", ["Tea"]), default);
-        await addMember.HandleAsync(new AddMemberCommand(groupId, "Dan", []), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "Carol"), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "Dan"), default);
 
-        // Act: run the draw, then generate reveal links.
+        // Act: run the draw for the default event, then generate reveal links for it.
         var drawResult = await new RunDrawCommandHandler(repository, generator, TimeProvider.System)
-            .HandleAsync(new RunDrawCommand(groupId), default);
+            .HandleAsync(new RunDrawCommand(groupId, groupId), default);
         var links = await new GetRevealLinksQueryHandler(repository, linkBuilder)
-            .HandleAsync(new GetRevealLinksQuery(groupId), default);
+            .HandleAsync(new GetRevealLinksQuery(groupId, groupId), default);
 
         // Assert.
         Assert.True(drawResult.Success);
@@ -60,30 +60,32 @@ public sealed class HandlerTests
 
         var groupId = await new CreateGroupCommandHandler(repository).HandleAsync(new CreateGroupCommand("Family"), default);
         var addMember = new AddMemberCommandHandler(repository);
-        var alice = await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice", []), default);
-        await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob", []), default);
-        await addMember.HandleAsync(new AddMemberCommand(groupId, "Carol", []), default);
-        await addMember.HandleAsync(new AddMemberCommand(groupId, "Dan", []), default);
+        var alice = await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "Carol"), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "Dan"), default);
         await new RunDrawCommandHandler(repository, new DrawGenerator(new SeededRandomSource(123)), TimeProvider.System)
-            .HandleAsync(new RunDrawCommand(groupId), default);
+            .HandleAsync(new RunDrawCommand(groupId, groupId), default);
 
         await new RemoveMemberCommandHandler(repository).HandleAsync(new RemoveMemberCommand(groupId, alice), default);
 
         // A partial set of links would silently drop whoever is left dangling from the exchange.
         var links = await new GetRevealLinksQueryHandler(repository, linkBuilder)
-            .HandleAsync(new GetRevealLinksQuery(groupId), default);
+            .HandleAsync(new GetRevealLinksQuery(groupId, groupId), default);
 
         Assert.Empty(links);
 
         var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
-        Assert.False(group!.HasCurrentDraw);
-        Assert.True(group.DrawInvalidatedByMembershipChange);
+        var occasion = Assert.Single(group!.Events);
+        Assert.False(occasion.HasCurrentDraw);
+        Assert.True(occasion.DrawInvalidatedByMembershipChange);
     }
 
     [Fact]
     public async Task GetRevealLinks_WhenDrawReferencesMissingMember_ReturnsNoLinksRatherThanPartialSet()
     {
-        // Guards against a stored snapshot whose draw no longer matches its member set.
+        // Guards against a stored (pre-events) snapshot whose draw no longer matches its member set; the
+        // legacy draw migrates into the default event (id == group id).
         var repository = new InMemoryGroupRepository();
         var linkBuilder = new RevealLinkBuilder(new RevealLinkOptions("https://santa.example"), new RevealLinkCodec());
 
@@ -95,7 +97,7 @@ public sealed class HandlerTests
             "Family",
             Budget: null,
             Event: null,
-            Members: [new MemberState(alice, "Alice", []), new MemberState(bob, "Bob", [])],
+            Members: [new MemberState(alice, "Alice"), new MemberState(bob, "Bob")],
             Exclusions: [],
             Draws:
             [
@@ -108,7 +110,7 @@ public sealed class HandlerTests
         await repository.SaveAsync(Group.FromState(state), default);
 
         var links = await new GetRevealLinksQueryHandler(repository, linkBuilder)
-            .HandleAsync(new GetRevealLinksQuery(state.Id), default);
+            .HandleAsync(new GetRevealLinksQuery(state.Id, state.Id), default);
 
         Assert.Empty(links);
     }
@@ -126,5 +128,7 @@ public sealed class HandlerTests
         Assert.Equal(2, summaries.Count);
         Assert.Contains(summaries, s => s.Name == "One");
         Assert.Contains(summaries, s => s.Name == "Two");
+        // Every new group starts with exactly one (default) event.
+        Assert.All(summaries, s => Assert.Equal(1, s.EventCount));
     }
 }

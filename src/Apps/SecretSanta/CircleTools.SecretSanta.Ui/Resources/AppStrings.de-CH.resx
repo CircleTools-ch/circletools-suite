@@ -180,6 +180,23 @@
   <data name="NavMyLinks" xml:space="preserve"><value>Verknüpfungsanfragen</value></data>
   <data name="NavMyAssignments" xml:space="preserve"><value>Meine Zuteilungen</value></data>
   <data name="NavMyWishlists" xml:space="preserve"><value>Meine Wunschlisten</value></data>
+  <data name="NavPinned" xml:space="preserve"><value>Angeheftet</value></data>
+  <data name="PinGroup" xml:space="preserve"><value>Gruppe anheften</value></data>
+  <data name="UnpinGroup" xml:space="preserve"><value>Anheften aufheben</value></data>
+  <data name="Rename" xml:space="preserve"><value>Umbenennen</value></data>
+  <data name="NavEvents" xml:space="preserve"><value>Anlässe</value></data>
+  <data name="NavEventDetails" xml:space="preserve"><value>Details</value></data>
+  <data name="NavWishlists" xml:space="preserve"><value>Wunschlisten</value></data>
+  <data name="DefaultEventName" xml:space="preserve"><value>Anlass</value></data>
+  <data name="EventNameLabel" xml:space="preserve"><value>Anlassname</value></data>
+  <data name="EventNamePlaceholder" xml:space="preserve"><value>z. B. Weihnachten 2026</value></data>
+  <data name="AddEvent" xml:space="preserve"><value>Anlass hinzufügen</value></data>
+  <data name="EventsColumn" xml:space="preserve"><value>Anlässe</value></data>
+  <data name="EventDetailsTitle" xml:space="preserve"><value>Anlass</value></data>
+  <data name="EventNotFound" xml:space="preserve"><value>Anlass nicht gefunden.</value></data>
+  <data name="WishlistsTitle" xml:space="preserve"><value>Wunschlisten</value></data>
+  <data name="WishlistsLead" xml:space="preserve"><value>Wunschliste jeder Person für diesen Anlass festlegen.</value></data>
+  <data name="ConfirmRemoveEvent" xml:space="preserve"><value>Anlass «{0}» entfernen? Auslosung und Wunschlisten gehen verloren.</value></data>
   <data name="CreateFromCircleAction" xml:space="preserve"><value>Aus einem Kreis erstellen</value></data>
   <data name="AllGroups" xml:space="preserve"><value>Alle Gruppen</value></data>
 </root>

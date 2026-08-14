@@ -51,6 +51,12 @@ public sealed class AssignmentRow
     /// <summary>The group the pairing belongs to.</summary>
     public Guid GroupId { get; set; }
 
+    /// <summary>The event (occasion) the pairing belongs to — part of the authorized read key (ADR-0042).</summary>
+    public Guid EventId { get; set; }
+
+    /// <summary>The event name, denormalized (the group document is opaque to the server), shown alongside the assignment.</summary>
+    public string EventName { get; set; } = string.Empty;
+
     /// <summary>The account of the linked giver who may read this row — the authorized read key.</summary>
     public Guid GiverAccountId { get; set; }
 
@@ -88,11 +94,17 @@ public sealed class AssignmentRow
     public long DrawVersion { get; set; }
 }
 
-/// <summary>A linked member's self-owned wishlist for one membership (FR-030).</summary>
+/// <summary>A linked member's self-owned wishlist for one event of one membership (FR-030, ADR-0042).</summary>
 public sealed class MemberWishlistRow
 {
     /// <summary>The group the wishlist belongs to.</summary>
     public Guid GroupId { get; set; }
+
+    /// <summary>The event (occasion) the wishlist belongs to — part of the key (ADR-0042).</summary>
+    public Guid EventId { get; set; }
+
+    /// <summary>The event name, denormalized so the caller's wishlist list needs no group read.</summary>
+    public string EventName { get; set; } = string.Empty;
 
     /// <summary>The linked member's account — the owner of this wishlist.</summary>
     public Guid MemberAccountId { get; set; }
@@ -105,6 +117,29 @@ public sealed class MemberWishlistRow
 
     /// <summary>The per-wishlist version, bumped on each edit for last-write-wins reconciliation (FR-024).</summary>
     public long Version { get; set; }
+}
+
+/// <summary>
+/// The organizer's event registry for a group (ADR-0042): the list of events (occasions) a linked
+/// member may enumerate to write a per-event wishlist even before a draw. Published by the organizer's
+/// client each sync cycle, denormalized because the group document is opaque to the server.
+/// </summary>
+public sealed class GroupEventRow
+{
+    /// <summary>The group the event belongs to.</summary>
+    public Guid GroupId { get; set; }
+
+    /// <summary>The event (occasion) identity.</summary>
+    public Guid EventId { get; set; }
+
+    /// <summary>The organizer who owns the group and published this event.</summary>
+    public Guid OrganizerAccountId { get; set; }
+
+    /// <summary>The group name, denormalized.</summary>
+    public string GroupName { get; set; } = string.Empty;
+
+    /// <summary>The event name (may be empty).</summary>
+    public string EventName { get; set; } = string.Empty;
 }
 
 /// <summary>

@@ -67,6 +67,23 @@ public sealed record RegisterCircleLinkRequest(
     Guid TargetAccountId);
 
 /// <summary>
+/// Registers the organizer linking their <strong>own</strong> account to a member of a group they just
+/// created (FR-032). Creating a group makes you a member of it, so — like the create-from-circle link —
+/// this needs no invitation round-trip and no address: the caller and the target are the same verified
+/// account, which the server takes from the bearer token rather than the request. The organizer's group
+/// document carries the matching <c>Member.UserId</c>, applied from the link resolution on the next sync.
+/// </summary>
+/// <param name="GroupId">The group the member belongs to.</param>
+/// <param name="GroupName">The group name (the server stores the group opaquely and cannot read it).</param>
+/// <param name="MemberId">The member representing the organizer.</param>
+/// <param name="MemberDisplayName">The member's display name.</param>
+public sealed record SelfLinkRequest(
+    Guid GroupId,
+    string GroupName,
+    Guid MemberId,
+    string MemberDisplayName);
+
+/// <summary>
 /// A pending member-link request waiting for the signed-in caller, whose verified address it was sent
 /// to (FR-028). Accepted or declined in the app, with no token from the mail (mirrors M2's
 /// <c>JoinRequestResponse</c>). Carries nothing that leaks another member's data.
@@ -147,6 +164,8 @@ public sealed record AckMemberLinkResolutionsRequest(IReadOnlyList<Guid> Resolut
 /// </summary>
 /// <param name="GroupId">The group whose draw is being published.</param>
 /// <param name="GroupName">The group name, shown to a linked member alongside their assignment.</param>
+/// <param name="EventId">The event (occasion) whose draw is being published (ADR-0042).</param>
+/// <param name="EventName">The event name, shown to a linked member alongside their assignment.</param>
 /// <param name="DrawVersion">A monotonically increasing draw version; a re-run publishes a higher value.</param>
 /// <param name="Budget">The gift budget, shown to the recipient's giver.</param>
 /// <param name="Event">The event details, shown to the recipient's giver.</param>
@@ -154,10 +173,25 @@ public sealed record AckMemberLinkResolutionsRequest(IReadOnlyList<Guid> Resolut
 public sealed record PublishAssignmentsRequest(
     Guid GroupId,
     string GroupName,
+    Guid EventId,
+    string EventName,
     long DrawVersion,
     BudgetDto? Budget,
     EventDetailsDto? Event,
     IReadOnlyList<PublishedAssignment> Assignments);
+
+/// <summary>
+/// The organizer's event registry for a group (ADR-0042): the events a linked member may enumerate to
+/// write a per-event wishlist before a draw. Published each sync; replaces the prior list wholesale.
+/// </summary>
+/// <param name="GroupName">The group name (the server stores the group opaquely).</param>
+/// <param name="Events">The group's events, in order.</param>
+public sealed record PublishGroupEventsRequest(string GroupName, IReadOnlyList<GroupEventEntry> Events);
+
+/// <summary>One event in the registry the organizer publishes.</summary>
+/// <param name="EventId">The event identity.</param>
+/// <param name="Name">The event name (may be empty).</param>
+public sealed record GroupEventEntry(Guid EventId, string Name);
 
 /// <summary>
 /// One published pairing: the linked giver's account, and the recipient view they are allowed to see.
@@ -180,6 +214,8 @@ public sealed record PublishedAssignment(
 /// </summary>
 /// <param name="GroupId">The group the assignment belongs to.</param>
 /// <param name="GroupName">The group name.</param>
+/// <param name="EventId">The event (occasion) the assignment belongs to (ADR-0042).</param>
+/// <param name="EventName">The event name (may be empty).</param>
 /// <param name="RecipientName">The caller's recipient.</param>
 /// <param name="RecipientWishlist">The recipient's <em>current</em> wishlist (their own row if linked, else the published snapshot).</param>
 /// <param name="Budget">The gift budget, or <see langword="null"/>.</param>
@@ -187,33 +223,40 @@ public sealed record PublishedAssignment(
 public sealed record MyAssignmentResponse(
     Guid GroupId,
     string GroupName,
+    Guid EventId,
+    string EventName,
     string RecipientName,
     IReadOnlyList<string> RecipientWishlist,
     BudgetDto? Budget,
     EventDetailsDto? Event);
 
-/// <summary>The caller's assignments across every group they are linked in, each gated client-side.</summary>
-/// <param name="Assignments">One row per drawn group the caller is a linked member of.</param>
+/// <summary>The caller's assignments across every event they are linked in, each gated client-side.</summary>
+/// <param name="Assignments">One row per drawn event the caller is a linked member of.</param>
 public sealed record MyAssignmentsResponse(IReadOnlyList<MyAssignmentResponse> Assignments);
 
-/// <summary>The linked member's own wishlist edit for one membership (FR-030). Empty items are ignored.</summary>
+/// <summary>The linked member's own wishlist edit for one event of a membership (FR-030, ADR-0042). Empty items are ignored.</summary>
+/// <param name="EventName">The event name, denormalized so the stored row needs no group read.</param>
 /// <param name="Items">The wishlist items, in order.</param>
-public sealed record UpdateMyWishlistRequest(IReadOnlyList<string> Items);
+public sealed record UpdateMyWishlistRequest(string EventName, IReadOnlyList<string> Items);
 
-/// <summary>One of the caller's self-owned wishlists, so a new membership can offer to copy a previous one (FR-030).</summary>
+/// <summary>One of the caller's self-owned wishlists (per event), so a new event can offer to copy a previous one (FR-030).</summary>
 /// <param name="GroupId">The group the wishlist belongs to.</param>
 /// <param name="GroupName">The group name.</param>
+/// <param name="EventId">The event within the group.</param>
+/// <param name="EventName">The event name (may be empty).</param>
 /// <param name="Items">The wishlist items, in order.</param>
-public sealed record MyWishlistResponse(Guid GroupId, string GroupName, IReadOnlyList<string> Items);
+public sealed record MyWishlistResponse(Guid GroupId, string GroupName, Guid EventId, string EventName, IReadOnlyList<string> Items);
 
-/// <summary>The caller's wishlists across their memberships.</summary>
-/// <param name="Wishlists">One row per membership with a self-owned wishlist.</param>
+/// <summary>The caller's wishlists across their memberships and events.</summary>
+/// <param name="Wishlists">One row per (membership, event) with a self-owned wishlist.</param>
 public sealed record MyWishlistsResponse(IReadOnlyList<MyWishlistResponse> Wishlists);
 
-/// <summary>One group the signed-in caller is a linked member of, so they can own a wishlist there even before the draw.</summary>
+/// <summary>One (group, event) the signed-in caller is a linked member of, so they can own a wishlist there even before the draw.</summary>
 /// <param name="GroupId">The group.</param>
 /// <param name="GroupName">The group name.</param>
-public sealed record MyMembership(Guid GroupId, string GroupName);
+/// <param name="EventId">The event within the group.</param>
+/// <param name="EventName">The event name (may be empty).</param>
+public sealed record MyMembership(Guid GroupId, string GroupName, Guid EventId, string EventName);
 
 /// <summary>The groups the caller is a linked member of.</summary>
 /// <param name="Memberships">One row per linked membership.</param>

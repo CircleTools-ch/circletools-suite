@@ -21,8 +21,6 @@
         <MudStack Spacing="2">
             <MudTextField @bind-Value="_newName" Label="@L["NameLabel"]" Placeholder="@L["MemberNamePlaceholder"]"
                           Variant="Variant.Outlined" Margin="Margin.Dense" />
-            <MudTextField @bind-Value="_newWishlist" Label="@L["WishlistLabel"]" Variant="Variant.Outlined"
-                          Margin="Margin.Dense" Lines="3" />
             <div>
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddAsync"
                            StartIcon="@Icons.Material.Filled.PersonAdd"
@@ -55,7 +53,6 @@ else
                     {
                         <MudStack Spacing="2">
                             <MudTextField @bind-Value="_editName" Label="@L["NameLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                            <MudTextField @bind-Value="_editWishlist" Label="@L["WishlistLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="3" />
                             <div class="d-flex gap-1">
                                 <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled"
                                            OnClick="SaveEditAsync" Disabled="@string.IsNullOrWhiteSpace(_editName)">@L["Save"]</MudButton>
@@ -68,15 +65,6 @@ else
                         <div class="d-flex justify-space-between align-start flex-wrap gap-2">
                             <div>
                                 <MudText Typo="Typo.subtitle1"><strong>@member.Name</strong></MudText>
-                                @if (member.Wishlist.Count > 0)
-                                {
-                                    <ul class="mb-0">
-                                        @foreach (var item in member.Wishlist)
-                                        {
-                                            <li>@item</li>
-                                        }
-                                    </ul>
-                                }
                             </div>
                             <div class="d-flex align-center flex-wrap gap-1">
                                 @* Linking is an account-only action (it calls the authorized server API), so
@@ -152,12 +140,10 @@ else
 
     private IReadOnlyList<MemberDto>? _members;
     private string _newName = string.Empty;
-    private string _newWishlist = string.Empty;
     private string? _error;
 
     private Guid? _editingId;
     private string _editName = string.Empty;
-    private string _editWishlist = string.Empty;
     private Guid? _pendingRemoveId;
     private bool _hasCurrentDraw;
     private string _groupName = string.Empty;
@@ -174,7 +160,7 @@ else
     {
         var group = await Sender.Send(new GetGroupQuery(GroupId));
         _members = group?.Members ?? [];
-        _hasCurrentDraw = group?.HasCurrentDraw ?? false;
+        _hasCurrentDraw = group?.Events.Any(e => e.HasCurrentDraw) ?? false;
         _groupName = group?.Name ?? string.Empty;
     }
 
@@ -230,17 +216,13 @@ else
         await LoadAsync();
     }
 
-    private static IReadOnlyList<string> ParseWishlist(string text) =>
-        text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
     private async Task AddAsync()
     {
         _error = null;
         try
         {
-            await Sender.Send(new AddMemberCommand(GroupId, _newName, ParseWishlist(_newWishlist)));
+            await Sender.Send(new AddMemberCommand(GroupId, _newName));
             _newName = string.Empty;
-            _newWishlist = string.Empty;
             await LoadAsync();
         }
         catch (InvalidOperationException exception)
@@ -253,7 +235,6 @@ else
     {
         _editingId = member.Id;
         _editName = member.Name;
-        _editWishlist = string.Join('\n', member.Wishlist);
         _error = null;
     }
 
@@ -269,7 +250,7 @@ else
         _error = null;
         try
         {
-            await Sender.Send(new EditMemberCommand(GroupId, id, _editName, ParseWishlist(_editWishlist)));
+            await Sender.Send(new EditMemberCommand(GroupId, id, _editName));
             _editingId = null;
             await LoadAsync();
         }

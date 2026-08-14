@@ -15,7 +15,7 @@ public sealed class GroupRepositoryTests
         var group = Group.Create(name);
         foreach (var memberName in memberNames)
         {
-            group.AddMember(memberName, Wishlist.Empty);
+            group.AddMember(memberName);
         }
 
         return group;
@@ -26,7 +26,7 @@ public sealed class GroupRepositoryTests
     {
         var repository = new GroupRepository(new InMemoryKeyValueStore());
         var group = CreateGroupWithMembers("Family", "Alice", "Bob");
-        group.SetBudget(Budget.Create(25m, "CHF"));
+        group.SetEventBudget(group.Id, Budget.Create(25m, "CHF"));
 
         await repository.SaveAsync(group, default);
 
@@ -34,7 +34,7 @@ public sealed class GroupRepositoryTests
         Assert.NotNull(loaded);
         Assert.Equal("Family", loaded!.Name);
         Assert.Equal(2, loaded.Members.Count);
-        Assert.Equal(25m, loaded.Budget!.Amount);
+        Assert.Equal(25m, loaded.FindEvent(loaded.Id)!.Budget!.Amount);
     }
 
     [Fact]

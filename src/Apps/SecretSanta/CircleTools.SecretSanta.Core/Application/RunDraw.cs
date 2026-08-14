@@ -4,9 +4,10 @@ using CircleTools.SecretSanta.Core.Domain;
 
 namespace CircleTools.SecretSanta.Core.Application;
 
-/// <summary>Command to run (or re-run) the draw for a group.</summary>
+/// <summary>Command to run (or re-run) the draw for one event of a group.</summary>
 /// <param name="GroupId">The group to draw.</param>
-public sealed record RunDrawCommand(Guid GroupId) : ICommand<RunDrawResultDto>;
+/// <param name="EventId">The event to draw.</param>
+public sealed record RunDrawCommand(Guid GroupId, Guid EventId) : ICommand<RunDrawResultDto>;
 
 /// <summary>Handles <see cref="RunDrawCommand"/> by generating a draw and persisting it on success.</summary>
 /// <param name="repository">The group repository port.</param>
@@ -21,7 +22,7 @@ public sealed class RunDrawCommandHandler(IGroupRepository repository, DrawGener
         ArgumentNullException.ThrowIfNull(command);
 
         var group = await repository.RequireAsync(command.GroupId, cancellationToken);
-        var result = group.RunDraw(generator, timeProvider.GetUtcNow());
+        var result = group.RunDraw(command.EventId, generator, timeProvider.GetUtcNow());
 
         if (result.IsSuccess)
         {

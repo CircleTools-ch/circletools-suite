@@ -19,6 +19,8 @@ namespace CircleTools.SecretSanta.LocalStore;
 [JsonSerializable(typeof(SyncGroupDocument))]
 [JsonSerializable(typeof(SyncState))]
 [JsonSerializable(typeof(SyncedProfileRecord))]
+[JsonSerializable(typeof(SyncedPreferencesRecord))]
+[JsonSerializable(typeof(PreferencesState))]
 [JsonSerializable(typeof(GroupState))]
 [JsonSerializable(typeof(SyncRequest))]
 [JsonSerializable(typeof(SyncResponse))]

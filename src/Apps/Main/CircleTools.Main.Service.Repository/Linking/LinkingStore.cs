@@ -297,6 +297,8 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
     public async Task PublishAssignmentsAsync(
         Guid groupId,
         string groupName,
+        Guid eventId,
+        string eventName,
         Guid organizerAccountId,
         long drawVersion,
         LinkingBudget? budget,
@@ -309,10 +311,10 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
         await using var transaction = await context.Database
             .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
-        // Never let an out-of-order publish overwrite a newer draw: a linked member's next read must be
-        // the current pairing, never a previous one (FR-029).
+        // Never let an out-of-order publish overwrite a newer draw of this event: a linked member's next
+        // read must be the current pairing, never a previous one (FR-029). Scoped per event (ADR-0042).
         var highestExisting = await context.Assignments
-            .Where(a => a.GroupId == groupId && a.OrganizerAccountId == organizerAccountId)
+            .Where(a => a.GroupId == groupId && a.EventId == eventId && a.OrganizerAccountId == organizerAccountId)
             .Select(a => (long?)a.DrawVersion)
             .MaxAsync(cancellationToken).ConfigureAwait(false);
 
@@ -322,9 +324,9 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
             return;
         }
 
-        // A re-run replaces prior rows atomically.
+        // A re-run replaces this event's prior rows atomically (other events are untouched).
         await context.Assignments
-            .Where(a => a.GroupId == groupId && a.OrganizerAccountId == organizerAccountId)
+            .Where(a => a.GroupId == groupId && a.EventId == eventId && a.OrganizerAccountId == organizerAccountId)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
 
         foreach (var row in assignments)
@@ -332,6 +334,8 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
             context.Assignments.Add(new AssignmentRow
             {
                 GroupId = groupId,
+                EventId = eventId,
+                EventName = eventName,
                 GiverAccountId = row.GiverAccountId,
                 OrganizerAccountId = organizerAccountId,
                 GroupName = groupName,
@@ -352,10 +356,45 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
     }
 
     /// <inheritdoc />
-    public async Task<AssignmentReadResult> GetMyAssignmentAsync(Guid groupId, Guid callerAccountId, CancellationToken cancellationToken)
+    public async Task PublishGroupEventsAsync(
+        Guid groupId,
+        string groupName,
+        Guid organizerAccountId,
+        IReadOnlyList<GroupEventInput> events,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+
+        await using var transaction = await context.Database
+            .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        // Replace the organizer's registry for this group wholesale — the client always sends the full
+        // current list, so a removed event disappears and a rename lands (ADR-0042).
+        await context.GroupEvents
+            .Where(e => e.GroupId == groupId && e.OrganizerAccountId == organizerAccountId)
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+
+        foreach (var occasion in events)
+        {
+            context.GroupEvents.Add(new GroupEventRow
+            {
+                GroupId = groupId,
+                EventId = occasion.EventId,
+                OrganizerAccountId = organizerAccountId,
+                GroupName = groupName,
+                EventName = occasion.EventName,
+            });
+        }
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<AssignmentReadResult> GetMyAssignmentAsync(Guid groupId, Guid eventId, Guid callerAccountId, CancellationToken cancellationToken)
     {
         var row = await context.Assignments
-            .FirstOrDefaultAsync(a => a.GroupId == groupId && a.GiverAccountId == callerAccountId, cancellationToken)
+            .FirstOrDefaultAsync(a => a.GroupId == groupId && a.EventId == eventId && a.GiverAccountId == callerAccountId, cancellationToken)
             .ConfigureAwait(false);
 
         if (row is not null)
@@ -378,7 +417,7 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
     {
         var rows = await context.Assignments
             .Where(a => a.GiverAccountId == callerAccountId)
-            .OrderBy(a => a.GroupName)
+            .OrderBy(a => a.GroupName).ThenBy(a => a.EventName)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
 
         var views = new List<AssignmentView>(rows.Count);
@@ -391,11 +430,12 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
     }
 
     /// <inheritdoc />
-    public async Task<bool> UpsertMyWishlistAsync(Guid groupId, Guid callerAccountId, IReadOnlyList<string> items, CancellationToken cancellationToken)
+    public async Task<bool> UpsertMyWishlistAsync(Guid groupId, Guid eventId, string eventName, Guid callerAccountId, IReadOnlyList<string> items, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(items);
 
-        // Only a linked member of the group owns a wishlist there.
+        // Only a linked member of the group owns a wishlist there (membership is group-scoped; the
+        // wishlist is per event, ADR-0042).
         var membership = await context.MemberLinks
             .FirstOrDefaultAsync(
                 m => m.GroupId == groupId && m.TargetAccountId == callerAccountId && m.State == MemberLinkState.Linked,
@@ -409,7 +449,7 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
         var cleaned = items.Where(i => !string.IsNullOrWhiteSpace(i)).Select(i => i.Trim()).ToList();
 
         var existing = await context.MemberWishlists
-            .FirstOrDefaultAsync(w => w.GroupId == groupId && w.MemberAccountId == callerAccountId, cancellationToken)
+            .FirstOrDefaultAsync(w => w.GroupId == groupId && w.EventId == eventId && w.MemberAccountId == callerAccountId, cancellationToken)
             .ConfigureAwait(false);
 
         if (existing is null)
@@ -417,6 +457,8 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
             context.MemberWishlists.Add(new MemberWishlistRow
             {
                 GroupId = groupId,
+                EventId = eventId,
+                EventName = eventName,
                 MemberAccountId = callerAccountId,
                 GroupName = membership.GroupName,
                 Items = Serialize(cleaned),
@@ -427,6 +469,7 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
         {
             existing.Items = Serialize(cleaned);
             existing.GroupName = membership.GroupName;
+            existing.EventName = eventName;
             existing.Version++;
         }
 
@@ -439,20 +482,29 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
     {
         var rows = await context.MemberWishlists
             .Where(w => w.MemberAccountId == callerAccountId)
-            .OrderBy(w => w.GroupName)
+            .OrderBy(w => w.GroupName).ThenBy(w => w.EventName)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
 
-        return rows.Select(w => new SelfWishlist(w.GroupId, w.GroupName, Deserialize(w.Items))).ToList();
+        return rows.Select(w => new SelfWishlist(w.GroupId, w.GroupName, w.EventId, w.EventName, Deserialize(w.Items))).ToList();
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<LinkedMembership>> GetMyMembershipsAsync(Guid callerAccountId, CancellationToken cancellationToken) =>
-        await context.MemberLinks
+    public async Task<IReadOnlyList<LinkedMembership>> GetMyMembershipsAsync(Guid callerAccountId, CancellationToken cancellationToken)
+    {
+        // A membership is group-scoped, but a wishlist is per event: cross the caller's linked groups with
+        // the organizer-published event registry so the caller sees one wishlist slot per (group, event),
+        // even before any draw (FR-030, ADR-0042).
+        var linkedGroups = context.MemberLinks
             .Where(m => m.TargetAccountId == callerAccountId && m.State == MemberLinkState.Linked)
-            .OrderBy(m => m.GroupName)
-            .Select(m => new LinkedMembership(m.GroupId, m.GroupName))
-            .Distinct()
+            .Select(m => m.GroupId)
+            .Distinct();
+
+        return await context.GroupEvents
+            .Where(e => linkedGroups.Contains(e.GroupId))
+            .OrderBy(e => e.GroupName).ThenBy(e => e.EventName)
+            .Select(e => new LinkedMembership(e.GroupId, e.GroupName, e.EventId, e.EventName))
             .ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
 
     /// <inheritdoc />
     public async Task CleanUpAccountAsync(Guid userId, CancellationToken cancellationToken)
@@ -496,6 +548,8 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
 
         await context.Assignments.Where(a => a.OrganizerAccountId == userId)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+        await context.GroupEvents.Where(e => e.OrganizerAccountId == userId)
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         await context.MemberLinks.Where(m => m.OrganizerAccountId == userId)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         await context.Resolutions.Where(r => r.OrganizerAccountId == userId)
@@ -518,8 +572,9 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
 
         if (recipientAccount is { } account)
         {
+            // The recipient's own wishlist is per event (ADR-0042): compose it for this event only.
             var own = await context.MemberWishlists
-                .Where(w => w.GroupId == row.GroupId && w.MemberAccountId == account)
+                .Where(w => w.GroupId == row.GroupId && w.EventId == row.EventId && w.MemberAccountId == account)
                 .Select(w => w.Items)
                 .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
 
@@ -536,7 +591,7 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
             ? new LinkingEvent(row.EventDate, row.EventLocation ?? string.Empty, row.EventDescription ?? string.Empty)
             : null;
 
-        return new AssignmentView(row.GroupId, row.GroupName, row.RecipientName, wishlist, budget, @event);
+        return new AssignmentView(row.GroupId, row.GroupName, row.EventId, row.EventName, row.RecipientName, wishlist, budget, @event);
     }
 
     private void AddResolution(Guid organizerAccountId, Guid groupId, Guid memberId, LinkResolutionKind kind, Guid? userId, DateTimeOffset now) =>

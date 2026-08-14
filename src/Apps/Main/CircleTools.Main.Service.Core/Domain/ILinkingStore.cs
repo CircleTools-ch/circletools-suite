@@ -81,9 +81,11 @@ public sealed record AssignmentPublication(
     string RecipientName,
     IReadOnlyList<string> RecipientWishlistSnapshot);
 
-/// <summary>A resolved assignment view for one caller, composed at read time.</summary>
+/// <summary>A resolved assignment view for one caller in one event, composed at read time (ADR-0042).</summary>
 /// <param name="GroupId">The group.</param>
 /// <param name="GroupName">The group name.</param>
+/// <param name="EventId">The event (occasion) the assignment belongs to.</param>
+/// <param name="EventName">The event name (may be empty).</param>
 /// <param name="RecipientName">The caller's recipient.</param>
 /// <param name="RecipientWishlist">The recipient's current wishlist (their own row if linked, else the published snapshot).</param>
 /// <param name="Budget">The gift budget, or <see langword="null"/>.</param>
@@ -91,10 +93,17 @@ public sealed record AssignmentPublication(
 public sealed record AssignmentView(
     Guid GroupId,
     string GroupName,
+    Guid EventId,
+    string EventName,
     string RecipientName,
     IReadOnlyList<string> RecipientWishlist,
     LinkingBudget? Budget,
     LinkingEvent? Event);
+
+/// <summary>One event the organizer publishes to the registry so linked members can enumerate it (ADR-0042).</summary>
+/// <param name="EventId">The event identity.</param>
+/// <param name="EventName">The event name (may be empty).</param>
+public sealed record GroupEventInput(Guid EventId, string EventName);
 
 /// <summary>A gift budget as the linking store keeps it (mirrors the Secret-Santa contract without referencing it).</summary>
 /// <param name="Amount">The amount.</param>
@@ -129,16 +138,20 @@ public enum AssignmentReadStatus
 /// <param name="Assignment">The assignment when <paramref name="Status"/> is <see cref="AssignmentReadStatus.Found"/>; otherwise <see langword="null"/>.</param>
 public sealed record AssignmentReadResult(AssignmentReadStatus Status, AssignmentView? Assignment);
 
-/// <summary>One group the caller is a linked member of.</summary>
+/// <summary>One (group, event) the caller is a linked member of, so they can own a wishlist there (ADR-0042).</summary>
 /// <param name="GroupId">The group.</param>
 /// <param name="GroupName">The group name.</param>
-public sealed record LinkedMembership(Guid GroupId, string GroupName);
+/// <param name="EventId">The event within the group.</param>
+/// <param name="EventName">The event name (may be empty).</param>
+public sealed record LinkedMembership(Guid GroupId, string GroupName, Guid EventId, string EventName);
 
-/// <summary>One of the caller's self-owned wishlists.</summary>
+/// <summary>One of the caller's self-owned wishlists, scoped to one event.</summary>
 /// <param name="GroupId">The group the wishlist belongs to.</param>
 /// <param name="GroupName">The group name.</param>
+/// <param name="EventId">The event within the group.</param>
+/// <param name="EventName">The event name (may be empty).</param>
 /// <param name="Items">The wishlist items, in order.</param>
-public sealed record SelfWishlist(Guid GroupId, string GroupName, IReadOnlyList<string> Items);
+public sealed record SelfWishlist(Guid GroupId, string GroupName, Guid EventId, string EventName, IReadOnlyList<string> Items);
 
 /// <summary>
 /// The one server-side surface ADR-0020 sanctioned: a per-caller-authorized store for member-links,
@@ -195,12 +208,15 @@ public interface ILinkingStore
     Task AckResolutionsAsync(IReadOnlyList<Guid> resolutionIds, Guid organizerAccountId, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Publishes the assignment projection for a group's linked members, replacing any prior draw's rows
-    /// so a linked member never reads a stale pairing (FR-029). Authorized to the organizer of the group.
+    /// Publishes the assignment projection for one event's linked members, replacing any prior draw's rows
+    /// for that event so a linked member never reads a stale pairing (FR-029, ADR-0042). Authorized to the
+    /// organizer of the group.
     /// </summary>
     Task PublishAssignmentsAsync(
         Guid groupId,
         string groupName,
+        Guid eventId,
+        string eventName,
         Guid organizerAccountId,
         long drawVersion,
         LinkingBudget? budget,
@@ -208,15 +224,21 @@ public interface ILinkingStore
         IReadOnlyList<AssignmentPublication> assignments,
         CancellationToken cancellationToken);
 
-    /// <summary>Reads the caller's own assignment in one group, denying — not filtering — a non-member (NFR-002).</summary>
-    Task<AssignmentReadResult> GetMyAssignmentAsync(Guid groupId, Guid callerAccountId, CancellationToken cancellationToken);
+    /// <summary>
+    /// Publishes the organizer's event registry for a group — the list of events linked members may
+    /// enumerate for their per-event wishlists — replacing the prior list (ADR-0042).
+    /// </summary>
+    Task PublishGroupEventsAsync(Guid groupId, string groupName, Guid organizerAccountId, IReadOnlyList<GroupEventInput> events, CancellationToken cancellationToken);
 
-    /// <summary>Reads all the caller's own assignments across the groups they are linked in (one per group).</summary>
+    /// <summary>Reads the caller's own assignment in one event, denying — not filtering — a non-member (NFR-002).</summary>
+    Task<AssignmentReadResult> GetMyAssignmentAsync(Guid groupId, Guid eventId, Guid callerAccountId, CancellationToken cancellationToken);
+
+    /// <summary>Reads all the caller's own assignments across the events they are linked in (one per drawn event).</summary>
     Task<IReadOnlyList<AssignmentView>> GetMyAssignmentsAsync(Guid callerAccountId, CancellationToken cancellationToken);
 
-    /// <summary>Stores the caller's own wishlist for one membership. The caller must be a linked member of the group.</summary>
+    /// <summary>Stores the caller's own wishlist for one event. The caller must be a linked member of the group.</summary>
     /// <returns><see langword="true"/> when stored; <see langword="false"/> when the caller is not a linked member (denied).</returns>
-    Task<bool> UpsertMyWishlistAsync(Guid groupId, Guid callerAccountId, IReadOnlyList<string> items, CancellationToken cancellationToken);
+    Task<bool> UpsertMyWishlistAsync(Guid groupId, Guid eventId, string eventName, Guid callerAccountId, IReadOnlyList<string> items, CancellationToken cancellationToken);
 
     /// <summary>Reads the caller's self-owned wishlists across their memberships.</summary>
     Task<IReadOnlyList<SelfWishlist>> GetMyWishlistsAsync(Guid callerAccountId, CancellationToken cancellationToken);

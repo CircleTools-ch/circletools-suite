@@ -62,7 +62,10 @@ internal static class LinkingScenario
         return resolution;
     }
 
-    /// <summary>Publishes the assignment projection for a group, as the organizer's client does after a draw.</summary>
+    /// <summary>
+    /// Publishes the assignment projection for a group's default event (id == group id, ADR-0042), as
+    /// the organizer's client does after a draw.
+    /// </summary>
     public static async Task PublishAsync(
         CircleTestAccount organizer,
         Guid groupId,
@@ -74,6 +77,8 @@ internal static class LinkingScenario
             new PublishAssignmentsRequest(
                 groupId,
                 "December",
+                groupId,
+                "December event",
                 drawVersion,
                 new BudgetDto(25m, "CHF"),
                 new EventDetailsDto(new DateTimeOffset(2026, 12, 24, 18, 0, 0, TimeSpan.Zero), "Grandma's", "Bring dessert"),
@@ -81,7 +86,22 @@ internal static class LinkingScenario
         publish.EnsureSuccessStatusCode();
     }
 
-    /// <summary>Reads a caller's own assignment, returning the raw response so status codes can be asserted.</summary>
-    public static Task<HttpResponseMessage> GetMyAssignmentAsync(CircleTestAccount caller, Guid groupId) =>
-        caller.Client.GetAsync(new Uri($"/api/v1/groups/{groupId}/my-assignment", UriKind.Relative));
+    /// <summary>Publishes the organizer's event registry with a single default event (id == group id).</summary>
+    public static async Task RegisterDefaultEventAsync(CircleTestAccount organizer, Guid groupId, string groupName = "December")
+    {
+        var response = await organizer.Client.PutAsJsonAsync(
+            $"/api/v1/groups/{groupId}/events",
+            new PublishGroupEventsRequest(groupName, [new GroupEventEntry(groupId, "December event")]));
+        response.EnsureSuccessStatusCode();
+    }
+
+    /// <summary>Reads a caller's own assignment in one event (default: the group's default event), raw for status assertions.</summary>
+    public static Task<HttpResponseMessage> GetMyAssignmentAsync(CircleTestAccount caller, Guid groupId, Guid? eventId = null) =>
+        caller.Client.GetAsync(new Uri($"/api/v1/groups/{groupId}/events/{eventId ?? groupId}/my-assignment", UriKind.Relative));
+
+    /// <summary>Puts a caller's own wishlist for one event (default: the group's default event).</summary>
+    public static Task<HttpResponseMessage> PutMyWishlistAsync(CircleTestAccount caller, Guid groupId, IReadOnlyList<string> items, Guid? eventId = null) =>
+        caller.Client.PutAsJsonAsync(
+            $"/api/v1/groups/{groupId}/events/{eventId ?? groupId}/my-wishlist",
+            new UpdateMyWishlistRequest("December event", items));
 }

@@ -39,7 +39,7 @@
                 {
                     <MudCard Elevation="1">
                         <MudCardContent>
-                            <MudText Typo="Typo.h6" GutterBottom="true">@editor.GroupName</MudText>
+                            <MudText Typo="Typo.h6" GutterBottom="true">@editor.GroupName — @EventLabel(editor.EventName)</MudText>
 
                             @if (editor.Items.Count == 0 && _copyableFrom(editor).Any())
                             {
@@ -49,7 +49,7 @@
                                     {
                                         <MudButton Size="Size.Small" Variant="Variant.Outlined"
                                                    OnClick="() => CopyFrom(editor, source)">
-                                            @source.GroupName
+                                            @source.GroupName · @EventLabel(source.EventName)
                                         </MudButton>
                                     }
                                 </div>
@@ -110,6 +110,8 @@
     {
         public Guid GroupId { get; init; }
         public string GroupName { get; init; } = string.Empty;
+        public Guid EventId { get; init; }
+        public string EventName { get; init; } = string.Empty;
         public List<string> Items { get; init; } = [];
         public string NewItem { get; set; } = string.Empty;
         public bool Busy { get; set; }
@@ -119,6 +121,8 @@
 
     private List<WishlistEditor>? _editors;
     private string? _error;
+
+    private string EventLabel(string name) => string.IsNullOrWhiteSpace(name) ? L["DefaultEventName"] : name;
 
     protected override async Task OnInitializedAsync()
     {
@@ -132,22 +136,25 @@
             return;
         }
 
+        // A membership is per (group, event) now (ADR-0042): key existing wishlists the same way.
         var existing = wishlists.IsSuccess
-            ? wishlists.Value!.Wishlists.ToDictionary(w => w.GroupId, w => w.Items)
-            : new Dictionary<Guid, IReadOnlyList<string>>();
+            ? wishlists.Value!.Wishlists.ToDictionary(w => (w.GroupId, w.EventId), w => w.Items)
+            : new Dictionary<(Guid, Guid), IReadOnlyList<string>>();
 
         _editors = memberships.Value!.Memberships
             .Select(m => new WishlistEditor
             {
                 GroupId = m.GroupId,
                 GroupName = m.GroupName,
-                Items = existing.TryGetValue(m.GroupId, out var items) ? [.. items] : [],
+                EventId = m.EventId,
+                EventName = m.EventName,
+                Items = existing.TryGetValue((m.GroupId, m.EventId), out var items) ? [.. items] : [],
             })
             .ToList();
     }
 
     private IEnumerable<WishlistEditor> _copyableFrom(WishlistEditor target) =>
-        _editors!.Where(e => e.GroupId != target.GroupId && e.Items.Count > 0);
+        _editors!.Where(e => (e.GroupId != target.GroupId || e.EventId != target.EventId) && e.Items.Count > 0);
 
     private void CopyFrom(WishlistEditor target, WishlistEditor source)
     {
@@ -178,7 +185,7 @@
         editor.Saved = false;
         editor.SaveError = null;
 
-        var result = await Linking.UpdateMyWishlistAsync(editor.GroupId, new UpdateMyWishlistRequest([.. editor.Items]));
+        var result = await Linking.UpdateMyWishlistAsync(editor.GroupId, editor.EventId, new UpdateMyWishlistRequest(editor.EventName, [.. editor.Items]));
         editor.Busy = false;
 
         if (result.IsSuccess)

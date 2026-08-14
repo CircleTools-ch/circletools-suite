@@ -21,7 +21,7 @@ public sealed class SyncingGroupRepositoryTests
         var group = Group.Create(name);
         foreach (var member in members)
         {
-            group.AddMember(member, Wishlist.Empty);
+            group.AddMember(member);
         }
 
         return group;

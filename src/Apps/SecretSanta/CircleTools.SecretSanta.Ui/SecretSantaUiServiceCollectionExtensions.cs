@@ -48,6 +48,10 @@ public static class SecretSantaUiServiceCollectionExtensions
         services.AddScoped<AssignmentPublisher>();
         services.AddScoped<CreateFromCircleService>();
 
+        // Group bookmarks (FR-033, ADR-0041): a per-account UI preference synced through the sync store
+        // as its own opaque kind. The service reads and toggles pins over the local store.
+        services.AddScoped<BookmarkService>();
+
         // Per-app header identity (ADR-0040 amendment): the gifts-ring mark and the festive burgundy on
         // the app bar. Head-agnostic (web + MAUI); the logo is served same-origin from the shared
         // building block so it resolves under the CSP img-src 'self' rule on either head.

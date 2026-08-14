@@ -139,8 +139,9 @@ of the two it means before it is scoped.
 ## Links
 
 - Related ADRs: [ADR-0016](0016-sync-and-conflict-resolution.md) (**narrowed by this ADR**),
-  [ADR-0017](0017-anonymous-to-account-claim.md), [ADR-0018](0018-circle-and-sharing-model.md),
-  [ADR-0020](0020-server-side-assignment-privacy.md)
+  [ADR-0041](0041-sync-secret-santa-ui-preferences.md) (**extends this ADR** — adds Secret-Santa UI
+  preferences to the sync catalogue), [ADR-0017](0017-anonymous-to-account-claim.md),
+  [ADR-0018](0018-circle-and-sharing-model.md), [ADR-0020](0020-server-side-assignment-privacy.md)
 - arc42 chapters: [05 Building-block view §5.3](../arc42/05-building-block-view.md)
 - Requirements / use cases:
   [FR-023](../requirements/functional/FR-023-sync-across-devices.md),

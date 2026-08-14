@@ -18,6 +18,9 @@ public interface ILinkingApi
     /// <summary>Registers a create-from-circle link (both accounts share the circle; the server verifies it).</summary>
     Task<ApiResult> RegisterCircleLinkAsync(RegisterCircleLinkRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>Links the organizer's own account to a member of a group they created (self-link, FR-032); no invitation, no address.</summary>
+    Task<ApiResult> SelfLinkAsync(SelfLinkRequest request, CancellationToken cancellationToken = default);
+
     /// <summary>Lists the member-link requests waiting for the signed-in caller.</summary>
     Task<ApiResult<IReadOnlyList<PendingMemberLinkResponse>>> GetPendingAsync(CancellationToken cancellationToken = default);
 
@@ -36,20 +39,23 @@ public interface ILinkingApi
     /// <summary>Acknowledges resolutions once applied to the group document.</summary>
     Task<ApiResult> AckResolutionsAsync(IReadOnlyList<Guid> resolutionIds, CancellationToken cancellationToken = default);
 
-    /// <summary>Publishes the assignment projection for a group after a draw or re-run.</summary>
+    /// <summary>Publishes one event's assignment projection after a draw or re-run (the event id is in the request).</summary>
     Task<ApiResult> PublishAssignmentsAsync(Guid groupId, PublishAssignmentsRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>Publishes the organizer's event registry for a group, so linked members can enumerate events (ADR-0042).</summary>
+    Task<ApiResult> PublishGroupEventsAsync(Guid groupId, PublishGroupEventsRequest request, CancellationToken cancellationToken = default);
+
     /// <summary>
-    /// Reads the caller's own assignment in one group. A 404 (no draw yet, or unlinked) surfaces as
+    /// Reads the caller's own assignment in one event. A 404 (no draw yet, or unlinked) surfaces as
     /// <see cref="ApiFailure.NotFound"/>; a 403 (stranger to the group) as <see cref="ApiFailure.Forbidden"/>.
     /// </summary>
-    Task<ApiResult<MyAssignmentResponse>> GetMyAssignmentAsync(Guid groupId, CancellationToken cancellationToken = default);
+    Task<ApiResult<MyAssignmentResponse>> GetMyAssignmentAsync(Guid groupId, Guid eventId, CancellationToken cancellationToken = default);
 
-    /// <summary>Reads the caller's assignments across every group they are linked in (one per group).</summary>
+    /// <summary>Reads the caller's assignments across every event they are linked in (one per drawn event).</summary>
     Task<ApiResult<MyAssignmentsResponse>> GetMyAssignmentsAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>Stores the caller's own wishlist for one membership.</summary>
-    Task<ApiResult> UpdateMyWishlistAsync(Guid groupId, UpdateMyWishlistRequest request, CancellationToken cancellationToken = default);
+    /// <summary>Stores the caller's own wishlist for one event of a membership.</summary>
+    Task<ApiResult> UpdateMyWishlistAsync(Guid groupId, Guid eventId, UpdateMyWishlistRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>Reads the caller's self-owned wishlists across their memberships (for the copy-previous offer).</summary>
     Task<ApiResult<MyWishlistsResponse>> GetMyWishlistsAsync(CancellationToken cancellationToken = default);

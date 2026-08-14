@@ -28,7 +28,6 @@ public sealed class CreateFromCircleMappingTests
         Assert.Equal(accountId, linked.UserId);
         Assert.Equal(accounted.MembershipId, linked.CirclePersonId); // origin recorded
         Assert.Null(unlinked.UserId);
-        Assert.Empty(linked.Wishlist);
     }
 }
 
@@ -40,7 +39,7 @@ public sealed class LinkResolutionApplierTests
     {
         var repository = new InMemoryGroupRepository();
         var group = Group.Create("Family");
-        var aliceId = group.AddMember("Alice", Wishlist.Empty);
+        var aliceId = group.AddMember("Alice");
         await repository.SaveAsync(group, default);
 
         var userId = Guid.NewGuid();
@@ -64,7 +63,7 @@ public sealed class LinkResolutionApplierTests
     {
         var repository = new InMemoryGroupRepository();
         var group = Group.Create("Family");
-        var aliceId = group.AddMember("Alice", Wishlist.Empty);
+        var aliceId = group.AddMember("Alice");
         var userId = Guid.NewGuid();
         group.LinkMember(aliceId, userId);
         await repository.SaveAsync(group, default);
@@ -105,7 +104,7 @@ public sealed class MyAssignmentsPageTests : IDisposable
         var api = new FakeLinkingApi
         {
             Assignments = new MyAssignmentsResponse(
-                [new MyAssignmentResponse(Guid.NewGuid(), "Family", RecipientName, ["Book"], null, null)]),
+                [new MyAssignmentResponse(Guid.NewGuid(), "Family", Guid.NewGuid(), "Christmas", RecipientName, ["Book"], null, null)]),
         };
         _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.Linking.ILinkingApi>(api);
 

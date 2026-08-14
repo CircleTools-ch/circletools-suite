@@ -51,6 +51,9 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-029](functional/FR-029-see-my-assignment.md) | See my assignment while signed in | Functional | Must | Implemented |
 | [FR-030](functional/FR-030-edit-my-wishlist.md) | Edit my own wishlist | Functional | Should | Implemented |
 | [FR-031](functional/FR-031-single-sign-on-across-apps.md) | Start a session from a signed-in sibling app (cross-app SSO) | Functional | Should | Draft |
+| [FR-032](functional/FR-032-add-organizer-as-member.md) | Add the organizer as the first member on group creation | Functional | Should | Implemented |
+| [FR-033](functional/FR-033-bookmark-groups.md) | Bookmark groups for quick access (synced across devices) | Functional | Could | Implemented |
+| [FR-034](functional/FR-034-multiple-events-per-group.md) | Multiple events (occasions) per group, sharing one roster | Functional | Should | Implemented |
 
 _Add a row per requirement._
 

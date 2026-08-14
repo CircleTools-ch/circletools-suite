@@ -49,6 +49,8 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0038](0038-ci-cd-pipeline.md) | CI/CD pipeline (GitHub Actions; CI gate now, CD to the VPS deferred to M8) | Accepted | 2026-08-13 |
 | [0039](0039-cross-app-single-sign-on.md) | Cross-app single sign-on (redirect-based authorization-code hand-off; Main origin as authority) | Accepted | 2026-08-13 |
 | [0040](0040-ui-component-library-mudblazor.md) | UI component library: MudBlazor (Material), supersedes ADR-0024 (neutral in-app palette, theme switch, native-feel nav) | Accepted | 2026-08-13 |
+| [0041](0041-sync-secret-santa-ui-preferences.md) | Sync Secret-Santa UI preferences as an opaque sync-store kind (extends ADR-0033 — adds pinned groups) | Accepted | 2026-08-14 |
+| [0042](0042-events-as-first-class-entities.md) | Events as first-class entities within a Secret-Santa group (shared roster; per-event draw, wishlists, budget; linking store keyed by event) | Accepted | 2026-08-14 |
 
 ## Open decisions backlog
 
