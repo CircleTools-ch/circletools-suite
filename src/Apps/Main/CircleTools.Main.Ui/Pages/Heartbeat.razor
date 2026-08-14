@@ -3,35 +3,37 @@
 
 <PageTitle>Heartbeat</PageTitle>
 
-<h1>Heartbeat</h1>
-<p>A throwaway end-to-end sample: create a heartbeat and list the stored ones.</p>
+<MudText Typo="Typo.h4" GutterBottom="true">Heartbeat</MudText>
+<MudText Class="mud-text-secondary mb-4">A throwaway end-to-end sample: create a heartbeat and list the stored ones.</MudText>
 
-<div>
-    <input @bind="_note" placeholder="Note" aria-label="Note" />
-    <button @onclick="CreateAsync" disabled="@_busy">Send heartbeat</button>
+<div class="d-flex gap-2 align-start flex-wrap mb-4">
+    <MudTextField @bind-Value="_note" Immediate="true" Placeholder="Note" Label="Note"
+                  Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" Style="min-width:12rem;" />
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="mt-1"
+               OnClick="CreateAsync" Disabled="@_busy">Send heartbeat</MudButton>
 </div>
 
 @if (_error is not null)
 {
-    <p role="alert">@_error</p>
+    <MudAlert Severity="Severity.Error" Class="mb-3" Dense="true" role="alert">@_error</MudAlert>
 }
 
 @if (_heartbeats is null)
 {
-    <p>Loading...</p>
+    <MudText>Loading...</MudText>
 }
 else if (_heartbeats.Count == 0)
 {
-    <p>No heartbeats yet.</p>
+    <MudText class="mud-text-secondary">No heartbeats yet.</MudText>
 }
 else
 {
-    <ul>
+    <MudList T="string" Dense="true">
         @foreach (var heartbeat in _heartbeats)
         {
-            <li>@heartbeat.CreatedAt.ToString("u") — @heartbeat.Note</li>
+            <MudListItem T="string">@heartbeat.CreatedAt.ToString("u") — @heartbeat.Note</MudListItem>
         }
-    </ul>
+    </MudList>
 }
 
 @code {

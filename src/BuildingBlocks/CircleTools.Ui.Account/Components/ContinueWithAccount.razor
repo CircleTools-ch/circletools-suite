@@ -21,9 +21,10 @@
 {
     <AuthorizeView>
         <NotAuthorized>
-            <div class="circletools-divider">@L["LoginOr"]</div>
+            <MudDivider Class="my-4" />
+            <MudText Align="Align.Center" Typo="Typo.caption" Class="mud-text-secondary mb-2">@L["LoginOr"]</MudText>
             <BusyButton Type="button"
-                        CssClass="btn btn-outline-secondary w-100"
+                        Variant="Variant.Outlined" Color="Color.Default" FullWidth="true"
                         Label="@L["ConnectContinue"]"
                         Busy="_busy"
                         OnClick="() => BeginAsync(sso)" />

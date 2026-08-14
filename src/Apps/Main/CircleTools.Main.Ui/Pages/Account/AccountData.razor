@@ -12,10 +12,10 @@
        applies and the user would otherwise be bounced to sign-in mid-sentence. *@
     <AuthCard Title="@L["DeleteDoneTitle"]">
         <ChildContent>
-            <p class="mb-0">@L["DeleteDoneText"]</p>
+            <MudText>@L["DeleteDoneText"]</MudText>
         </ChildContent>
         <Footer>
-            <a href="">@L["NavDashboard"]</a>
+            <MudLink Href="">@L["NavDashboard"]</MudLink>
         </Footer>
     </AuthCard>
 }
@@ -23,50 +23,47 @@ else
 {
     <AuthorizeView>
         <Authorized>
-            <div class="circletools-page">
-                <h1 class="h4">@L["DataTitle"]</h1>
-                <p class="text-body-secondary">@L["DataLead"]</p>
+            <MudText Typo="Typo.h4" GutterBottom="true">@L["DataTitle"]</MudText>
+            <MudText Class="mud-text-secondary mb-4">@L["DataLead"]</MudText>
 
-                <section class="mb-5">
-                    <h2 class="h5">@L["ExportTitle"]</h2>
-                    <p class="text-body-secondary small">@L["ExportLead"]</p>
+            <MudPaper Elevation="1" Class="pa-4 mb-4">
+                <MudText Typo="Typo.h6">@L["ExportTitle"]</MudText>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">@L["ExportLead"]</MudText>
 
-                    <ProblemAlert Message="@_exportError" />
+                <ProblemAlert Message="@_exportError" />
 
-                    <BusyButton Type="button"
-                                CssClass="btn btn-primary"
-                                Label="@L["ExportDownload"]"
-                                Busy="_exporting"
-                                OnClick="ExportAsync" />
-                </section>
+                <BusyButton Type="button"
+                            Label="@L["ExportDownload"]"
+                            Busy="_exporting"
+                            OnClick="ExportAsync" />
+            </MudPaper>
 
-                <section class="circletools-danger">
-                    <h2 class="h5">@L["DeleteTitle"]</h2>
-                    <p class="small">@L["DeleteLead"]</p>
+            @* Destructive area: marked by colour *and* by its heading, never by colour alone (TP-002). *@
+            <MudPaper Elevation="0" Outlined="true" Class="pa-4 circletools-danger"
+                      Style="border-color:var(--mud-palette-error);">
+                <MudText Typo="Typo.h6" Color="Color.Error">@L["DeleteTitle"]</MudText>
+                <MudText Typo="Typo.body2" Class="mb-3">@L["DeleteLead"]</MudText>
 
-                    <form class="circletools-form" @onsubmit="DeleteAsync" @onsubmit:preventDefault="true">
-                        <ProblemAlert Message="@_deleteError" Details="@_deleteDetails" />
+                <form @onsubmit="DeleteAsync" @onsubmit:preventDefault="true">
+                    <ProblemAlert Message="@_deleteError" Details="@_deleteDetails" />
 
-                        <div>
-                            <label class="form-label" for="delete-password">@L["DeletePasswordPrompt"]</label>
-                            @* Bound on input, not on change: the button below is gated on this
-                               field, and with the default change binding it only unlocks when the
-                               field loses focus - so the user's first click lands on a button that
-                               is still disabled and does nothing. *@
-                            <input id="delete-password" type="password" class="form-control" required
-                                   autocomplete="current-password"
-                                   @bind="_password" @bind:event="oninput" />
-                        </div>
+                    <MudStack Spacing="3" Style="max-width:26rem;">
+                        @* Bound on input, not on change: the button below is gated on this field, and
+                           with the default change binding it only unlocks when the field loses focus —
+                           so the user's first click lands on a button still disabled that does nothing. *@
+                        <MudTextField @bind-Value="_password" Immediate="true" InputType="InputType.Password"
+                                      Label="@L["DeletePasswordPrompt"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                      Required="true" autocomplete="current-password" id="delete-password" />
 
                         @* Not the primary style and not the first thing focused on the page: an
                            irreversible action should take a deliberate move to reach (TP-002). *@
-                        <BusyButton CssClass="btn btn-outline-danger"
+                        <BusyButton Variant="Variant.Outlined" Color="Color.Error"
                                     Label="@L["DeleteSubmit"]"
                                     Busy="_deleting"
                                     Disabled="@(_password.Length == 0)" />
-                    </form>
-                </section>
-            </div>
+                    </MudStack>
+                </form>
+            </MudPaper>
         </Authorized>
         <NotAuthorized>
             @* Guarded, because deleting an account makes this branch true a moment before the page

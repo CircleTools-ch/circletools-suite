@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>CircleTools.SecretSanta.App</title>
     <base href="/" />
-    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />
-    <!-- The suite theme: the auth-card shell, form rhythm and shared accents the account pages use
-         (ADR-0024). Shipped by the referenced CircleTools.Ui.Shared block as a static web asset. -->
+    <!-- MudBlazor (ADR-0040); fonts resolve to the system-ui stack set in the MudTheme. -->
+    <link rel="stylesheet" href="_content/MudBlazor/MudBlazor.min.css" />
+    <!-- The suite's slim, framework-agnostic helpers (screen-reader-only utility). -->
     <link rel="stylesheet" href="_content/CircleTools.Ui.Shared/css/circletools.css" />
     <link rel="stylesheet" href="app.css" />
     <link rel="stylesheet" href="CircleTools.SecretSanta.App.styles.css" />
@@ -27,6 +27,7 @@
     </div>
 
     <script src="_framework/blazor.webview.js" autostart="false"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
 
 </body>
 

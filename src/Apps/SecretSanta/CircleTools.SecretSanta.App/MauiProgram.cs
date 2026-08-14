@@ -10,6 +10,7 @@ using CircleTools.Ui.Abstractions;
 using CircleTools.Ui.Account;
 using CircleTools.Ui.Account.Api;
 using Microsoft.Extensions.Logging;
+using MudBlazor.Services;
 
 namespace CircleTools.SecretSanta.App;
 
@@ -53,6 +54,12 @@ public static class MauiProgram
             });
 
         builder.Services.AddMauiBlazorWebView();
+
+        // MudBlazor component services (ADR-0040): theme provider, popovers, dialogs, snackbars.
+        builder.Services.AddMudServices();
+
+        // The shared theme state behind the System/Light/Dark switch, persisted via IKeyValueStore.
+        builder.Services.AddScoped<CircleTools.Ui.Shared.ThemeState>();
 
         var apiBaseUrl = new Uri(ApiBaseUrl);
 

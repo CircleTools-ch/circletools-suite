@@ -11,341 +11,303 @@
 
 <AuthorizeView>
     <Authorized>
-        <div class="circletools-page">
-            <p><a href="circles">@L["CircleBackToCircles"]</a></p>
+        <MudButton Href="circles" StartIcon="@Icons.Material.Filled.ArrowBack" Size="Size.Small"
+                   Variant="Variant.Text" Class="mb-3">@L["CircleBackToCircles"]</MudButton>
 
-            <ProblemAlert Message="@_error" />
-            <ConnectivityRequired Message="@(_offline ? L["CircleOfflineNotice"].Value : null)" />
+        <ProblemAlert Message="@_error" />
+        <ConnectivityRequired Message="@(_offline ? L["CircleOfflineNotice"].Value : null)" />
 
-            @if (_gone)
-            {
-                <p class="text-body-secondary">@_goneMessage</p>
-            }
-            else if (_offline)
-            {
-                @* Online-only (ADR-0033); the notice above is the whole screen while offline. *@
-            }
-            else if (_circle is null)
-            {
-                <p class="text-body-secondary">@L["CircleLoading"]</p>
-            }
-            else
-            {
-                <h1 class="h4">@_circle.Name</h1>
-                <p class="text-body-secondary">@_circle.Label</p>
+        @if (_gone)
+        {
+            <MudText Class="mud-text-secondary">@_goneMessage</MudText>
+        }
+        else if (_offline)
+        {
+            @* Online-only (ADR-0033); the notice above is the whole screen while offline. *@
+        }
+        else if (_circle is null)
+        {
+            <MudText Class="mud-text-secondary">@L["CircleLoading"]</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h4">@_circle.Name</MudText>
+            <MudText Class="mud-text-secondary mb-4">@_circle.Label</MudText>
 
-                <ProblemAlert Message="@_actionError" />
-                @if (_notice is { Length: > 0 })
+            <ProblemAlert Message="@_actionError" />
+            @if (_notice is { Length: > 0 })
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true" role="status">@_notice</MudAlert>
+            }
+
+            <MudText Typo="Typo.h6" GutterBottom="true">@L["CircleDetailPeople"]</MudText>
+            <MudStack Spacing="1" Class="mb-6">
+                @foreach (var person in _circle.People)
                 {
-                    <div class="alert alert-success" role="status">@_notice</div>
-                }
-
-                <section class="mb-5">
-                    <h2 class="h5">@L["CircleDetailPeople"]</h2>
-                    <ul class="list-group">
-                        @foreach (var person in _circle.People)
-                        {
-                            <li class="list-group-item">
-                                <div class="d-flex justify-content-between align-items-start gap-2">
-                                    <span>
-                                        <strong>@person.DisplayName</strong>
-                                        @if (RoleBadge(person.Role) is { } badge)
-                                        {
-                                            <span class="badge text-bg-secondary ms-2">@badge</span>
-                                        }
-                                        @if (person.IsManaged)
-                                        {
-                                            <span class="badge text-bg-light ms-2">@L["CircleManagedBadge"]</span>
-                                        }
-                                        @if (person.IsYou)
-                                        {
-                                            <span class="badge text-bg-info ms-2">@L["CircleYouBadge"]</span>
-                                        }
-                                    </span>
-
-                                    <span class="d-flex flex-wrap gap-1">
-                                        @* Role changes are the owner's alone, and never apply to the
-                                           owner's own membership (FR-020). *@
-                                        @if (IsOwner && !person.IsYou && !person.IsManaged)
-                                        {
-                                            @if (IsAdminRole(person.Role))
-                                            {
-                                                <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                        @onclick="@(() => MakeMemberAsync(person))">
-                                                    @L["CircleMakeMember"]
-                                                </button>
-                                            }
-                                            else
-                                            {
-                                                <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                        @onclick="@(() => MakeAdminAsync(person))">
-                                                    @L["CircleMakeAdmin"]
-                                                </button>
-                                            }
-
-                                            <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                    @onclick="@(() => Ask(ConfirmKind.Transfer, person))">
-                                                @L["CircleTransfer"]
-                                            </button>
-                                        }
-
-                                        @if (person.IsManaged && CanAdminister)
-                                        {
-                                            <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                    @onclick="@(() => StartEdit(person))">
-                                                @L["CircleManagedEdit"]
-                                            </button>
-                                        }
-
-                                        @* An admin may remove members but not other admins; only the
-                                           owner can do that. The owner is never removable (FR-020). *@
-                                        @if (CanRemove(person))
-                                        {
-                                            <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    @onclick="@(() => Ask(ConfirmKind.Remove, person))">
-                                                @L["CircleRemove"]
-                                            </button>
-                                        }
-                                    </span>
-                                </div>
-
-                                @if (_editing?.MembershipId == person.MembershipId)
+                    <MudPaper Elevation="1" Class="pa-3 person-row">
+                        <div class="d-flex justify-space-between align-start flex-wrap gap-2">
+                            <div class="d-flex align-center flex-wrap gap-2">
+                                <MudText Typo="Typo.subtitle1"><strong>@person.DisplayName</strong></MudText>
+                                @if (RoleBadge(person.Role) is { } badge)
                                 {
-                                    <form class="circletools-form mt-3" @onsubmit="SaveManagedAsync"
-                                          @onsubmit:preventDefault="true">
-                                        <div>
-                                            <label class="form-label" for="managed-name">@L["CircleManagedName"]</label>
-                                            <input id="managed-name" class="form-control" required
-                                                   @bind="_managedName" @bind:event="oninput" />
-                                        </div>
-                                        <div>
-                                            <label class="form-label" for="managed-language">
-                                                @L["CircleManagedLanguage"]
-                                            </label>
-                                            <select id="managed-language" class="form-select" @bind="_managedLanguage">
-                                                <option value="">@L["CircleManagedLanguageNone"]</option>
-                                                <option value="de-CH">Deutsch</option>
-                                                <option value="en">English</option>
-                                                <option value="fr-CH">Français</option>
-                                            </select>
-                                        </div>
-                                        <div class="d-flex gap-2">
-                                            <BusyButton CssClass="btn btn-primary"
-                                                        Label="@L["CircleManagedSave"]"
-                                                        Busy="_busy"
-                                                        Disabled="@(_managedName.Trim().Length == 0)" />
-                                            <button type="button" class="btn btn-link"
-                                                    @onclick="@(() => _editing = null)">
-                                                @L["CircleManagedCancel"]
-                                            </button>
-                                        </div>
-                                    </form>
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Filled">@badge</MudChip>
+                                }
+                                @if (person.IsManaged)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text">@L["CircleManagedBadge"]</MudChip>
+                                }
+                                @if (person.IsYou)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">@L["CircleYouBadge"]</MudChip>
+                                }
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-1">
+                                @* Role changes are the owner's alone, and never apply to the
+                                   owner's own membership (FR-020). *@
+                                @if (IsOwner && !person.IsYou && !person.IsManaged)
+                                {
+                                    @if (IsAdminRole(person.Role))
+                                    {
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                                   OnClick="@(() => MakeMemberAsync(person))">
+                                            @L["CircleMakeMember"]
+                                        </MudButton>
+                                    }
+                                    else
+                                    {
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                                   OnClick="@(() => MakeAdminAsync(person))">
+                                            @L["CircleMakeAdmin"]
+                                        </MudButton>
+                                    }
+
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                               OnClick="@(() => Ask(ConfirmKind.Transfer, person))">
+                                        @L["CircleTransfer"]
+                                    </MudButton>
                                 }
 
-                                @if (_confirming is { } pending && pending.Person.MembershipId == person.MembershipId)
+                                @if (person.IsManaged && CanAdminister)
                                 {
-                                    <div class="alert alert-warning mt-3" role="alert">
-                                        <p>@pending.Question</p>
-                                        <div class="d-flex gap-2">
-                                            <BusyButton Type="button"
-                                                        CssClass="btn btn-sm btn-danger"
-                                                        Label="@L["CircleConfirmYes"]"
-                                                        Busy="_busy"
-                                                        OnClick="ConfirmAsync" />
-                                            <button type="button" class="btn btn-sm btn-link"
-                                                    @onclick="@(() => _confirming = null)">
-                                                @L["CircleConfirmNo"]
-                                            </button>
-                                        </div>
-                                    </div>
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                               OnClick="@(() => StartEdit(person))">
+                                        @L["CircleManagedEdit"]
+                                    </MudButton>
                                 }
-                            </li>
-                        }
-                    </ul>
-                </section>
 
-                @if (CanAdminister)
-                {
-                    <section class="mb-5">
-                        <h2 class="h5">@L["CircleInviteTitle"]</h2>
-                        <p class="text-body-secondary small">@L["CircleInviteLead"]</p>
-
-                        <form class="circletools-form" @onsubmit="InviteAsync" @onsubmit:preventDefault="true">
-                            <ProblemAlert Message="@_inviteError" />
-                            @if (_inviteSent)
-                            {
-                                @* Says the same thing whether a mail went out, the address is
-                                   already in the circle, or a decline is still in its cooldown.
-                                   That is the point (NFR-005). *@
-                                <div class="alert alert-info" role="status">@L["CircleInviteSent"]</div>
-                            }
-
-                            <div>
-                                <label class="form-label" for="invite-email">@L["CircleInviteEmail"]</label>
-                                <input id="invite-email" type="email" class="form-control" required
-                                       autocomplete="off" @bind="_inviteEmail" @bind:event="oninput" />
-                            </div>
-
-                            <BusyButton CssClass="btn btn-primary"
-                                        Label="@L["CircleInviteSubmit"]"
-                                        Busy="_inviting"
-                                        Disabled="@(_inviteEmail.Trim().Length == 0)" />
-                        </form>
-
-                        <h3 class="h6 mt-4">@L["CirclePendingTitle"]</h3>
-                        @if (_pending is null or { Count: 0 })
-                        {
-                            <p class="text-body-secondary small">@L["CirclePendingEmpty"]</p>
-                        }
-                        else
-                        {
-                            <ul class="list-group">
-                                @foreach (var invitation in _pending)
+                                @* An admin may remove members but not other admins; only the
+                                   owner can do that. The owner is never removable (FR-020). *@
+                                @if (CanRemove(person))
                                 {
-                                    <li class="list-group-item d-flex justify-content-between align-items-center gap-2">
-                                        <span>
-                                            @invitation.InvitedEmail
-                                            <span class="text-body-secondary small ms-2">
-                                                @string.Format(
-                                                    CultureInfo.CurrentCulture,
-                                                    L["CirclePendingExpires"],
-                                                    invitation.ExpiresAt.ToLocalTime().ToString("d", CultureInfo.CurrentCulture))
-                                            </span>
-                                        </span>
-                                        <span class="d-flex gap-1">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                    @onclick="@(() => ResendAsync(invitation.Id))">
-                                                @L["CircleInviteResend"]
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    @onclick="@(() => RevokeAsync(invitation.Id))">
-                                                @L["CircleInviteRevoke"]
-                                            </button>
-                                        </span>
-                                    </li>
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
+                                               OnClick="@(() => Ask(ConfirmKind.Remove, person))">
+                                        @L["CircleRemove"]
+                                    </MudButton>
                                 }
-                            </ul>
-                        }
-                    </section>
-
-                    <section class="mb-5">
-                        <h2 class="h5">@L["CircleManagedTitle"]</h2>
-                        <p class="text-body-secondary small">@L["CircleManagedLead"]</p>
-
-                        <form class="circletools-form" @onsubmit="AddManagedAsync" @onsubmit:preventDefault="true">
-                            <div>
-                                <label class="form-label" for="new-managed-name">@L["CircleManagedName"]</label>
-                                <input id="new-managed-name" class="form-control" required
-                                       @bind="_newManagedName" @bind:event="oninput" />
-                            </div>
-                            <BusyButton CssClass="btn btn-outline-primary"
-                                        Label="@L["CircleManagedAdd"]"
-                                        Busy="_busy"
-                                        Disabled="@(_newManagedName.Trim().Length == 0)" />
-                        </form>
-                    </section>
-
-                    <section class="mb-5">
-                        <h2 class="h5">@L["CircleSettingsTitle"]</h2>
-
-                        <form class="circletools-form" @onsubmit="RenameAsync" @onsubmit:preventDefault="true">
-                            <div>
-                                <label class="form-label" for="edit-name">@L["CircleNameField"]</label>
-                                <input id="edit-name" class="form-control" required
-                                       @bind="_editName" @bind:event="oninput" />
-                            </div>
-                            <div>
-                                <label class="form-label" for="edit-label">@L["CircleLabelField"]</label>
-                                <input id="edit-label" class="form-control"
-                                       @bind="_editLabel" @bind:event="oninput" />
-                            </div>
-                            <BusyButton CssClass="btn btn-primary"
-                                        Label="@L["CircleRenameSubmit"]"
-                                        Busy="_busy"
-                                        Disabled="@(_editName.Trim().Length == 0)" />
-                        </form>
-                    </section>
-                }
-
-                <section class="mb-5">
-                    <button type="button" class="btn btn-outline-secondary"
-                            @onclick="@(() => Ask(ConfirmKind.Leave, person: null))">
-                        @L["CircleLeave"]
-                    </button>
-
-                    @if (_confirming is { Kind: ConfirmKind.Leave } leaving)
-                    {
-                        <div class="alert alert-warning mt-3" role="alert">
-                            <p>@leaving.Question</p>
-
-                            @* FR-021 requires the confirmation to say what leaving does *not* take.
-                               The fear at this moment is losing the groups and draws you organised,
-                               and they live in a different app entirely — so the reassurance has to
-                               be here, where the decision is made. *@
-                            <p class="small mb-2">@L["CircleLeaveKeeps"]</p>
-
-                            <div class="d-flex gap-2">
-                                <BusyButton Type="button"
-                                            CssClass="btn btn-sm btn-danger"
-                                            Label="@L["CircleConfirmYes"]"
-                                            Busy="_busy"
-                                            OnClick="ConfirmAsync" />
-                                <button type="button" class="btn btn-sm btn-link"
-                                        @onclick="@(() => _confirming = null)">
-                                    @L["CircleConfirmNo"]
-                                </button>
                             </div>
                         </div>
-                    }
-                </section>
 
-                @if (IsOwner)
-                {
-                    <section class="circletools-danger">
-                        <h2 class="h5">@L["CircleDeleteTitle"]</h2>
-
-                        @* FR-022 asks this confirmation to be specific rather than merely stern: the
-                           circle by name, how many people lose access, and every managed member by
-                           name — they are the only data here nobody else can recreate. The counts
-                           come from the response, never from a cached number. *@
-                        <p class="small mb-1">
-                            @string.Format(CultureInfo.CurrentCulture, L["CircleDeleteNames"], _circle.Name)
-                        </p>
-                        <p class="small mb-1">@LosesAccessSentence</p>
-
-                        @if (ManagedNames is { Length: > 0 } managedNames)
+                        @if (_editing?.MembershipId == person.MembershipId)
                         {
-                            @* The names are appended as data rather than substituted into the
-                               sentence. A managed member's name is user data in the same way the
-                               label is, and keeping it out of the format string is what guarantees
-                               it is rendered verbatim in every language. *@
-                            <p class="small mb-1">
-                                @L["CircleDeleteManagedNamed"] <span>@managedNames</span>
-                            </p>
+                            <form class="mt-3" @onsubmit="SaveManagedAsync" @onsubmit:preventDefault="true">
+                                <MudStack Spacing="3">
+                                    <MudTextField @bind-Value="_managedName" Immediate="true" Label="@L["CircleManagedName"]"
+                                                  Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" />
+                                    <MudSelect T="string" @bind-Value="_managedLanguage" Label="@L["CircleManagedLanguage"]"
+                                               Variant="Variant.Outlined" Margin="Margin.Dense">
+                                        <MudSelectItem T="string" Value="@("")">@L["CircleManagedLanguageNone"]</MudSelectItem>
+                                        <MudSelectItem T="string" Value="@("de-CH")">Deutsch</MudSelectItem>
+                                        <MudSelectItem T="string" Value="@("en")">English</MudSelectItem>
+                                        <MudSelectItem T="string" Value="@("fr-CH")">Français</MudSelectItem>
+                                    </MudSelect>
+                                    <div class="d-flex gap-2 align-center">
+                                        <BusyButton Label="@L["CircleManagedSave"]" Busy="_busy"
+                                                    Disabled="@(_managedName.Trim().Length == 0)" />
+                                        <MudButton Variant="Variant.Text" OnClick="@(() => _editing = null)">
+                                            @L["CircleManagedCancel"]
+                                        </MudButton>
+                                    </div>
+                                </MudStack>
+                            </form>
                         }
 
-                        <p class="small mb-1">@L["CircleDeleteLead"]</p>
-                        <p class="small">@L["CircleDeleteKeeps"]</p>
-
-                        <form class="circletools-form" @onsubmit="DeleteAsync" @onsubmit:preventDefault="true">
-                            <div>
-                                <label class="form-label" for="confirm-name">@L["CircleDeleteConfirmPrompt"]</label>
-                                @* No password here. The threat is the misclick, and a hijacker who
-                                   wants to hurt you deletes the account, which is guarded already
-                                   (FR-022). *@
-                                <input id="confirm-name" class="form-control" autocomplete="off"
-                                       @bind="_confirmedName" @bind:event="oninput" />
-                            </div>
-
-                            <BusyButton CssClass="btn btn-outline-danger"
-                                        Label="@L["CircleDeleteSubmit"]"
-                                        Busy="_busy"
-                                        Disabled="@(!NameTypedBack)" />
-                        </form>
-                    </section>
+                        @if (_confirming is { } pending && pending.Person.MembershipId == person.MembershipId)
+                        {
+                            <MudAlert Severity="Severity.Warning" Class="mt-3" Dense="true" role="alert">
+                                <MudText Class="mb-2">@pending.Question</MudText>
+                                <div class="d-flex gap-2 align-center">
+                                    <BusyButton Type="button" Variant="Variant.Filled" Color="Color.Error" Size="Size.Small"
+                                                Label="@L["CircleConfirmYes"]" Busy="_busy" OnClick="ConfirmAsync" />
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => _confirming = null)">
+                                        @L["CircleConfirmNo"]
+                                    </MudButton>
+                                </div>
+                            </MudAlert>
+                        }
+                    </MudPaper>
                 }
+            </MudStack>
+
+            @if (CanAdminister)
+            {
+                <MudPaper Elevation="1" Class="pa-4 mb-4">
+                    <MudText Typo="Typo.h6">@L["CircleInviteTitle"]</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">@L["CircleInviteLead"]</MudText>
+
+                    <form @onsubmit="InviteAsync" @onsubmit:preventDefault="true">
+                        <ProblemAlert Message="@_inviteError" />
+                        @if (_inviteSent)
+                        {
+                            @* Says the same thing whether a mail went out, the address is
+                               already in the circle, or a decline is still in its cooldown.
+                               That is the point (NFR-005). *@
+                            <MudAlert Severity="Severity.Info" Class="mb-3" Dense="true" role="status">@L["CircleInviteSent"]</MudAlert>
+                        }
+
+                        <MudStack Spacing="3" Style="max-width:26rem;">
+                            <MudTextField @bind-Value="_inviteEmail" Immediate="true" InputType="InputType.Email"
+                                          Label="@L["CircleInviteEmail"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          Required="true" autocomplete="off" id="invite-email" />
+                            <BusyButton Label="@L["CircleInviteSubmit"]" Busy="_inviting"
+                                        Disabled="@(_inviteEmail.Trim().Length == 0)" />
+                        </MudStack>
+                    </form>
+
+                    <MudText Typo="Typo.subtitle2" Class="mt-4" GutterBottom="true">@L["CirclePendingTitle"]</MudText>
+                    @if (_pending is null or { Count: 0 })
+                    {
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["CirclePendingEmpty"]</MudText>
+                    }
+                    else
+                    {
+                        <MudStack Spacing="1">
+                            @foreach (var invitation in _pending)
+                            {
+                                <MudPaper Elevation="0" Outlined="true" Class="d-flex justify-space-between align-center flex-wrap gap-2 pa-3">
+                                    <div class="d-flex align-center flex-wrap gap-2">
+                                        <MudText>@invitation.InvitedEmail</MudText>
+                                        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                            @string.Format(
+                                                CultureInfo.CurrentCulture,
+                                                L["CirclePendingExpires"],
+                                                invitation.ExpiresAt.ToLocalTime().ToString("d", CultureInfo.CurrentCulture))
+                                        </MudText>
+                                    </div>
+                                    <div class="d-flex gap-1">
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                                   OnClick="@(() => ResendAsync(invitation.Id))">
+                                            @L["CircleInviteResend"]
+                                        </MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
+                                                   OnClick="@(() => RevokeAsync(invitation.Id))">
+                                            @L["CircleInviteRevoke"]
+                                        </MudButton>
+                                    </div>
+                                </MudPaper>
+                            }
+                        </MudStack>
+                    }
+                </MudPaper>
+
+                <MudPaper Elevation="1" Class="pa-4 mb-4">
+                    <MudText Typo="Typo.h6">@L["CircleManagedTitle"]</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">@L["CircleManagedLead"]</MudText>
+
+                    <form @onsubmit="AddManagedAsync" @onsubmit:preventDefault="true">
+                        <MudStack Spacing="3" Style="max-width:26rem;">
+                            <MudTextField @bind-Value="_newManagedName" Immediate="true" Label="@L["CircleManagedName"]"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" />
+                            <BusyButton Variant="Variant.Outlined" Label="@L["CircleManagedAdd"]" Busy="_busy"
+                                        Disabled="@(_newManagedName.Trim().Length == 0)" />
+                        </MudStack>
+                    </form>
+                </MudPaper>
+
+                <MudPaper Elevation="1" Class="pa-4 mb-4">
+                    <MudText Typo="Typo.h6" GutterBottom="true">@L["CircleSettingsTitle"]</MudText>
+
+                    <form @onsubmit="RenameAsync" @onsubmit:preventDefault="true">
+                        <MudStack Spacing="3" Style="max-width:26rem;">
+                            <MudTextField @bind-Value="_editName" Immediate="true" Label="@L["CircleNameField"]"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" />
+                            <MudTextField @bind-Value="_editLabel" Immediate="true" Label="@L["CircleLabelField"]"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            <BusyButton Label="@L["CircleRenameSubmit"]" Busy="_busy"
+                                        Disabled="@(_editName.Trim().Length == 0)" />
+                        </MudStack>
+                    </form>
+                </MudPaper>
             }
-        </div>
+
+            <div class="mb-6">
+                <MudButton Variant="Variant.Outlined" OnClick="@(() => Ask(ConfirmKind.Leave, person: null))">
+                    @L["CircleLeave"]
+                </MudButton>
+
+                @if (_confirming is { Kind: ConfirmKind.Leave } leaving)
+                {
+                    <MudAlert Severity="Severity.Warning" Class="mt-3" Dense="true" role="alert">
+                        <MudText class="mb-2">@leaving.Question</MudText>
+
+                        @* FR-021 requires the confirmation to say what leaving does *not* take.
+                           The fear at this moment is losing the groups and draws you organised,
+                           and they live in a different app entirely — so the reassurance has to
+                           be here, where the decision is made. *@
+                        <MudText Typo="Typo.body2" Class="mb-2">@L["CircleLeaveKeeps"]</MudText>
+
+                        <div class="d-flex gap-2 align-center">
+                            <BusyButton Type="button" Variant="Variant.Filled" Color="Color.Error" Size="Size.Small"
+                                        Label="@L["CircleConfirmYes"]" Busy="_busy" OnClick="ConfirmAsync" />
+                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => _confirming = null)">
+                                @L["CircleConfirmNo"]
+                            </MudButton>
+                        </div>
+                    </MudAlert>
+                }
+            </div>
+
+            @if (IsOwner)
+            {
+                <MudPaper Elevation="0" Outlined="true" Class="pa-4 circletools-danger" Style="border-color:var(--mud-palette-error);">
+                    <MudText Typo="Typo.h6" Color="Color.Error">@L["CircleDeleteTitle"]</MudText>
+
+                    @* FR-022 asks this confirmation to be specific rather than merely stern: the
+                       circle by name, how many people lose access, and every managed member by
+                       name — they are the only data here nobody else can recreate. The counts
+                       come from the response, never from a cached number. *@
+                    <MudText Typo="Typo.body2" Class="mt-1">
+                        @string.Format(CultureInfo.CurrentCulture, L["CircleDeleteNames"], _circle.Name)
+                    </MudText>
+                    <MudText Typo="Typo.body2">@LosesAccessSentence</MudText>
+
+                    @if (ManagedNames is { Length: > 0 } managedNames)
+                    {
+                        @* The names are appended as data rather than substituted into the
+                           sentence. A managed member's name is user data in the same way the
+                           label is, and keeping it out of the format string is what guarantees
+                           it is rendered verbatim in every language. *@
+                        <MudText Typo="Typo.body2">
+                            @L["CircleDeleteManagedNamed"] <span>@managedNames</span>
+                        </MudText>
+                    }
+
+                    <MudText Typo="Typo.body2">@L["CircleDeleteLead"]</MudText>
+                    <MudText Typo="Typo.body2" Class="mb-3">@L["CircleDeleteKeeps"]</MudText>
+
+                    <form @onsubmit="DeleteAsync" @onsubmit:preventDefault="true">
+                        <MudStack Spacing="3" Style="max-width:26rem;">
+                            @* No password here. The threat is the misclick, and a hijacker who
+                               wants to hurt you deletes the account, which is guarded already (FR-022). *@
+                            <MudTextField @bind-Value="_confirmedName" Immediate="true" Label="@L["CircleDeleteConfirmPrompt"]"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" autocomplete="off" id="confirm-name" />
+                            <BusyButton Variant="Variant.Outlined" Color="Color.Error"
+                                        Label="@L["CircleDeleteSubmit"]" Busy="_busy" Disabled="@(!NameTypedBack)" />
+                        </MudStack>
+                    </form>
+                </MudPaper>
+            }
+        }
     </Authorized>
     <NotAuthorized>
         @* Guarded like AccountData's: leaving or deleting makes this branch true a moment before the

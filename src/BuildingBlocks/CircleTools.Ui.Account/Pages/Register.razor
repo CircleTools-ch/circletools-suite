@@ -11,7 +11,7 @@
        would turn sign-up into a way to discover who has an account (NFR-005). *@
     <AuthCard Title="@L["RegisterDoneTitle"]">
         <ChildContent>
-            <p class="mb-0">@L["RegisterDoneText"]</p>
+            <MudText>@L["RegisterDoneText"]</MudText>
         </ChildContent>
     </AuthCard>
 }
@@ -19,34 +19,28 @@ else
 {
     <AuthCard Title="@L["RegisterTitle"]" Lead="@L["RegisterLead"]">
         <ChildContent>
-            <form class="circletools-form" @onsubmit="SubmitAsync" @onsubmit:preventDefault="true">
+            <form @onsubmit="SubmitAsync" @onsubmit:preventDefault="true">
                 <ProblemAlert Message="@_error" Details="@_details" />
 
-                <div>
-                    <label class="form-label" for="register-name">@L["FieldDisplayName"]</label>
-                    <input id="register-name" class="form-control" required maxlength="100"
-                           autocomplete="nickname" @bind="_displayName" />
-                    <div class="form-text">@L["DisplayNameHint"]</div>
-                </div>
+                <MudStack Spacing="3">
+                    <MudTextField @bind-Value="_displayName" Label="@L["FieldDisplayName"]" HelperText="@L["DisplayNameHint"]"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" MaxLength="100"
+                                  autocomplete="nickname" id="register-name" />
 
-                <div>
-                    <label class="form-label" for="register-email">@L["FieldEmail"]</label>
-                    <input id="register-email" type="email" class="form-control" required
-                           autocomplete="email" @bind="_email" />
-                </div>
+                    <MudTextField @bind-Value="_email" Label="@L["FieldEmail"]" InputType="InputType.Email"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" Required="true"
+                                  autocomplete="email" id="register-email" />
 
-                <div>
-                    <label class="form-label" for="register-password">@L["FieldPassword"]</label>
-                    <input id="register-password" type="password" class="form-control" required minlength="12"
-                           autocomplete="new-password" @bind="_password" />
-                    <div class="form-text">@L["PasswordHint"]</div>
-                </div>
+                    <MudTextField @bind-Value="_password" Label="@L["FieldPassword"]" InputType="InputType.Password"
+                                  HelperText="@L["PasswordHint"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" autocomplete="new-password" id="register-password" />
 
-                <BusyButton Label="@L["RegisterSubmit"]" Busy="_busy" />
+                    <BusyButton Label="@L["RegisterSubmit"]" Busy="_busy" FullWidth="true" />
+                </MudStack>
             </form>
         </ChildContent>
         <Footer>
-            @L["RegisterHaveAccount"] <a href="account/login">@L["NavSignIn"]</a>
+            @L["RegisterHaveAccount"] <MudLink Href="account/login">@L["NavSignIn"]</MudLink>
         </Footer>
     </AuthCard>
 }

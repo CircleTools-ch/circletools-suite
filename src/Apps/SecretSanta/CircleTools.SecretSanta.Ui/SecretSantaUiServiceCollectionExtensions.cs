@@ -1,5 +1,6 @@
 using CircleTools.Localization;
 using CircleTools.Ui.Account.Api;
+using CircleTools.Ui.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -46,6 +47,14 @@ public static class SecretSantaUiServiceCollectionExtensions
         services.AddScoped<LinkResolutionApplier>();
         services.AddScoped<AssignmentPublisher>();
         services.AddScoped<CreateFromCircleService>();
+
+        // Per-app header identity (ADR-0040 amendment): the gifts-ring mark and the festive burgundy on
+        // the app bar. Head-agnostic (web + MAUI); the logo is served same-origin from the shared
+        // building block so it resolves under the CSP img-src 'self' rule on either head.
+        services.AddSingleton(new AppBranding(
+            LogoUrl: "_content/CircleTools.Ui.Shared/img/app-secretsanta.svg",
+            AppBarColor: "#7a1f2b",
+            AppBarText: "#f7ede1"));
 
         return services;
     }

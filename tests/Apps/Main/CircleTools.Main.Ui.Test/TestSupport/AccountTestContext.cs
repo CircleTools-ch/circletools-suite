@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Localization;
+using MudBlazor.Services;
 
 namespace CircleTools.Main.Ui.Test.TestSupport;
 
@@ -39,6 +40,12 @@ public sealed class AccountTestContext : Bunit.TestContext
     public AccountTestContext(IPasskeyCeremony? passkeys = null)
     {
         var baseAddress = new Uri("https://api.test/");
+
+        // MudBlazor (ADR-0040): the account pages are MudBlazor components now. They call JS for
+        // ripples/element refs, so the JSInterop runs in loose mode (unmatched calls are no-ops)
+        // rather than the strict default that would fail the render.
+        Services.AddMudServices();
+        JSInterop.Mode = JSRuntimeMode.Loose;
 
         // Open generic: the pages use IStringLocalizer<AppStrings>, and the shared components
         // (BusyButton, CultureSelector) use IStringLocalizer<SharedStrings>.

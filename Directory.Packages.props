@@ -108,6 +108,12 @@
     <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.10" />
   </ItemGroup>
 
+  <!-- UI component library — Material Design for Blazor (ADR-0040, supersedes ADR-0024's Bootstrap).
+       Rendered by Ui.Shared, so it reaches both WASM web hosts and the MAUI Blazor Hybrid head. -->
+  <ItemGroup>
+    <PackageVersion Include="MudBlazor" Version="9.8.0" />
+  </ItemGroup>
+
   <!-- Secret-Santa (local-first): JS interop for browser localStorage; MAUI Blazor Hybrid head. -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.JSInterop" Version="10.0.10" />

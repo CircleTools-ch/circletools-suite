@@ -6,18 +6,16 @@
     reloading the page (UC-MAIN-005) — see CultureBoundary, which is what makes that work.
 *@
 
-<label class="form-label visually-hidden" for="culture-selector">@L["Language"]</label>
-<select id="culture-selector" class="form-select form-select-sm"
-        aria-label="@L["Language"]"
-        value="@Culture.CurrentCulture.Name"
-        @onchange="OnChangedAsync">
+<MudSelect T="string" Value="Culture.CurrentCulture.Name" ValueChanged="OnChangedAsync"
+           Label="@L["Language"]" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+           Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Language">
     @foreach (var culture in AppCultures.Supported)
     {
-        <option value="@culture">@AppCultures.DisplayName(culture)</option>
+        <MudSelectItem T="string" Value="@culture">@AppCultures.DisplayName(culture)</MudSelectItem>
     }
-</select>
+</MudSelect>
 
 @code {
-    private async Task OnChangedAsync(ChangeEventArgs args) =>
-        await Culture.SetCultureAsync(args.Value?.ToString() ?? AppCultures.DefaultCulture);
+    private async Task OnChangedAsync(string? value) =>
+        await Culture.SetCultureAsync(value ?? AppCultures.DefaultCulture);
 }

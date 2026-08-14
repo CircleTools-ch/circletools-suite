@@ -9,34 +9,32 @@
 
 <AuthCard Title="@L["LoginTitle"]" Lead="@L["LoginLead"]">
     <ChildContent>
-        <form class="circletools-form" @onsubmit="SubmitAsync" @onsubmit:preventDefault="true">
+        <form @onsubmit="SubmitAsync" @onsubmit:preventDefault="true">
             <ProblemAlert Message="@_error" Details="@_details" />
 
-            <div>
-                <label class="form-label" for="login-email">@L["FieldEmail"]</label>
-                <input id="login-email" type="email" class="form-control" required
-                       autocomplete="email" @bind="_email" />
-            </div>
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="_email" Label="@L["FieldEmail"]" InputType="InputType.Email"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" Required="true"
+                              autocomplete="email" />
 
-            <div>
-                <label class="form-label" for="login-password">@L["FieldPassword"]</label>
-                <input id="login-password" type="password" class="form-control" required
-                       autocomplete="current-password" @bind="_password" />
-            </div>
+                <MudTextField @bind-Value="_password" Label="@L["FieldPassword"]" InputType="InputType.Password"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" Required="true"
+                              autocomplete="current-password" />
 
-            <div class="form-check">
-                <input id="login-stay" class="form-check-input" type="checkbox" @bind="_staySignedIn" />
-                <label class="form-check-label" for="login-stay">@L["LoginStaySignedIn"]</label>
-                <div class="form-text">@L["LoginStaySignedInHint"]</div>
-            </div>
+                <div>
+                    <MudCheckBox @bind-Value="_staySignedIn" Dense="true">@L["LoginStaySignedIn"]</MudCheckBox>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@L["LoginStaySignedInHint"]</MudText>
+                </div>
 
-            <BusyButton Label="@L["LoginSubmit"]" Busy="_busy" />
+                <BusyButton Label="@L["LoginSubmit"]" Busy="_busy" FullWidth="true" />
+            </MudStack>
         </form>
 
-        <div class="circletools-divider">@L["LoginOr"]</div>
+        <MudDivider Class="my-4" />
+        <MudText Align="Align.Center" Typo="Typo.caption" Class="mud-text-secondary mb-2">@L["LoginOr"]</MudText>
 
         <BusyButton Type="button"
-                    CssClass="btn btn-outline-secondary w-100"
+                    Variant="Variant.Outlined" Color="Color.Default" FullWidth="true"
                     Label="@L["LoginPasskey"]"
                     Busy="_passkeyBusy"
                     OnClick="SignInWithPasskeyAsync" />
@@ -46,8 +44,8 @@
         <ContinueWithAccount />
     </ChildContent>
     <Footer>
-        <div><a href="account/forgot-password">@L["LoginForgot"]</a></div>
-        <div>@L["LoginNoAccount"] <a href="account/register">@L["NavRegister"]</a></div>
+        <div><MudLink Href="account/forgot-password">@L["LoginForgot"]</MudLink></div>
+        <div>@L["LoginNoAccount"] <MudLink Href="account/register">@L["NavRegister"]</MudLink></div>
     </Footer>
 </AuthCard>
 

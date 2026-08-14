@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!--
     Implicit native styles for the device head. The UI is a Blazor WebView, so the native surface is
-    small: the page ground behind the WebView (no white/black flash on load, and a cream ground that
-    matches the icon and splash), plus accent-tinted defaults for the handful of native controls that
-    could appear. Colours come from Colors.xaml (Secret-Santa burgundy + gold), theme-aware via
-    AppThemeBinding so the native chrome follows the system light/dark setting.
+    small: the page ground behind the WebView (no white/black flash on load, a neutral ground that
+    matches the in-app MudBlazor theme), plus accent-tinted defaults for the handful of native controls
+    that could appear. Colours come from Colors.xaml (the neutral palette + one calm accent, ADR-0040),
+    theme-aware via AppThemeBinding so the native chrome follows the system light/dark setting.
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
                     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">

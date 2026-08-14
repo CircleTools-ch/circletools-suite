@@ -16,15 +16,15 @@
     <ChildContent>
         @if (_state == State.Working)
         {
-            <p class="mb-0">@L["ConnectWorking"]</p>
+            <MudText>@L["ConnectWorking"]</MudText>
         }
         else
         {
-            <p class="mb-0">@L["ConnectFailedText"]</p>
+            <MudText>@L["ConnectFailedText"]</MudText>
         }
     </ChildContent>
     <Footer>
-        <a href="account/login">@L["NavSignIn"]</a>
+        <MudLink Href="account/login">@L["NavSignIn"]</MudLink>
     </Footer>
 </AuthCard>
 

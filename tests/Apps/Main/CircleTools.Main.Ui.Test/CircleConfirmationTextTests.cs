@@ -64,7 +64,7 @@ public sealed class CircleConfirmationTextTests
             $"api/v1/circles/{circleId}/invitations",
             Array.Empty<PendingInvitationResponse>());
 
-        var text = Normalize(RenderDetail(context, circleId).Find("section.circletools-danger").TextContent);
+        var text = Normalize(RenderDetail(context, circleId).Find(".circletools-danger").TextContent);
 
         // The circle, by name, inside its sentence rather than dangling beside it.
         Assert.Contains("Müller", text, StringComparison.Ordinal);
@@ -115,7 +115,7 @@ public sealed class CircleConfirmationTextTests
             $"api/v1/circles/{circleId}/invitations",
             Array.Empty<PendingInvitationResponse>());
 
-        var text = Normalize(RenderDetail(context, circleId).Find("section.circletools-danger").TextContent);
+        var text = Normalize(RenderDetail(context, circleId).Find(".circletools-danger").TextContent);
 
         // The managed member is deleted, not counted among those losing access — so a "2" here would
         // mean the count had started including people who never had access.
@@ -158,7 +158,7 @@ public sealed class CircleConfirmationTextTests
             .First(b => b.TextContent.Contains(Text(context, "CircleLeave"), StringComparison.Ordinal))
             .Click();
 
-        var text = Normalize(page.Find("div.alert-warning").TextContent);
+        var text = Normalize(page.Find(".mud-alert").TextContent);
 
         Assert.Contains(account, text, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Secret-Santa", text, StringComparison.Ordinal);
@@ -189,7 +189,7 @@ public sealed class CircleConfirmationTextTests
                 $"api/v1/circles/{circleId}/invitations",
                 Array.Empty<PendingInvitationResponse>());
 
-            var text = RenderDetail(context, circleId).Find("section.circletools-danger").TextContent;
+            var text = RenderDetail(context, circleId).Find(".circletools-danger").TextContent;
 
             Assert.DoesNotContain("CircleDelete", text, StringComparison.Ordinal);
         }
