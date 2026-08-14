@@ -18,8 +18,9 @@ gracefully** (no partial result) and explains why.
 
 ## Bounded context(s)
 
-- **Secret-Santa:** performed once a group is ready; may be re-run (each run is appended to the draw
-  history and the previous run becomes the baseline for rule (c)). Assignments are computed and kept
+- **Secret-Santa:** performed per [Event](event.md) once its group's roster is ready; may be re-run
+  (each run is appended to that event's draw history and the previous run becomes the baseline for rule
+  (c)). Re-drawing one event does not affect another (ADR-0042). Assignments are computed and kept
   locally only (see [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)).
 
 ## Synonyms / do-not-use
@@ -37,7 +38,7 @@ gracefully** (no partial result) and explains why.
 
 ## Related terms
 
-- [Assignment](assignment.md), [Exclusion](exclusion.md), [Group](group.md), [Reveal link](reveal-link.md)
+- [Assignment](assignment.md), [Event](event.md), [Exclusion](exclusion.md), [Group](group.md), [Reveal link](reveal-link.md)
 
 ## First appearance
 

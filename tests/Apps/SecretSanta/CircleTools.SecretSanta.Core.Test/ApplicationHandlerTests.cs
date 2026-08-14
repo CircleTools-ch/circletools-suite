@@ -5,7 +5,8 @@ namespace CircleTools.SecretSanta.Core.Test;
 
 /// <summary>
 /// Per-handler tests for the Secret-Santa application layer, exercising each command/query over the
-/// in-memory repository fake (happy path + a representative validation/error path).
+/// in-memory repository fake (happy path + a representative validation/error path). ADR-0042: budget,
+/// event details and wishlists are per event; a new group's default event has id == group id.
 /// </summary>
 public sealed class ApplicationHandlerTests
 {
@@ -53,15 +54,16 @@ public sealed class ApplicationHandlerTests
     {
         var (repository, groupId) = await CreateGroupAsync();
         var handler = new SetBudgetCommandHandler(repository);
+        var getEvent = new GetEventQueryHandler(repository);
 
-        await handler.HandleAsync(new SetBudgetCommand(groupId, 30m, "CHF"), default);
-        var withBudget = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        await handler.HandleAsync(new SetBudgetCommand(groupId, groupId, 30m, "CHF"), default);
+        var withBudget = await getEvent.HandleAsync(new GetEventQuery(groupId, groupId), default);
         Assert.NotNull(withBudget!.Budget);
         Assert.Equal(30m, withBudget.Budget!.Amount);
         Assert.Equal("CHF", withBudget.Budget.Currency);
 
-        await handler.HandleAsync(new SetBudgetCommand(groupId, null, null), default);
-        var cleared = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        await handler.HandleAsync(new SetBudgetCommand(groupId, groupId, null, null), default);
+        var cleared = await getEvent.HandleAsync(new GetEventQuery(groupId, groupId), default);
         Assert.Null(cleared!.Budget);
     }
 
@@ -70,31 +72,51 @@ public sealed class ApplicationHandlerTests
     {
         var (repository, groupId) = await CreateGroupAsync();
         var handler = new SetEventDetailsCommandHandler(repository);
+        var getEvent = new GetEventQueryHandler(repository);
         var date = new DateTimeOffset(2026, 12, 24, 18, 0, 0, TimeSpan.Zero);
 
-        await handler.HandleAsync(new SetEventDetailsCommand(groupId, date, "Zurich", "Bring snacks"), default);
-        var withEvent = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
-        Assert.NotNull(withEvent!.Event);
-        Assert.Equal("Zurich", withEvent.Event!.Location);
+        await handler.HandleAsync(new SetEventDetailsCommand(groupId, groupId, date, "Zurich", "Bring snacks"), default);
+        var withEvent = await getEvent.HandleAsync(new GetEventQuery(groupId, groupId), default);
+        Assert.NotNull(withEvent!.Details);
+        Assert.Equal("Zurich", withEvent.Details!.Location);
 
-        await handler.HandleAsync(new SetEventDetailsCommand(groupId, null, null, null), default);
-        var cleared = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
-        Assert.Null(cleared!.Event);
+        await handler.HandleAsync(new SetEventDetailsCommand(groupId, groupId, null, null, null), default);
+        var cleared = await getEvent.HandleAsync(new GetEventQuery(groupId, groupId), default);
+        Assert.Null(cleared!.Details);
     }
 
     [Fact]
-    public async Task AddMember_ReturnsIdAndPersistsWishlist()
+    public async Task AddMember_ReturnsIdAndPersists()
     {
         var (repository, groupId) = await CreateGroupAsync();
 
         var memberId = await new AddMemberCommandHandler(repository)
-            .HandleAsync(new AddMemberCommand(groupId, "Alice", ["Scarf", "Book"]), default);
+            .HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
 
         var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
         var member = Assert.Single(group!.Members);
         Assert.Equal(memberId, member.Id);
         Assert.Equal("Alice", member.Name);
-        Assert.Equal(["Scarf", "Book"], member.Wishlist);
+    }
+
+    [Fact]
+    public async Task SetMemberWishlist_PersistsPerEvent()
+    {
+        var (repository, groupId) = await CreateGroupAsync();
+        var memberId = await new AddMemberCommandHandler(repository)
+            .HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
+        var second = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Birthday"), default);
+
+        await new SetMemberWishlistCommandHandler(repository)
+            .HandleAsync(new SetMemberWishlistCommand(groupId, groupId, memberId, ["Scarf", "Book"]), default);
+        await new SetMemberWishlistCommandHandler(repository)
+            .HandleAsync(new SetMemberWishlistCommand(groupId, second, memberId, ["Bike"]), default);
+
+        var getEvent = new GetEventQueryHandler(repository);
+        var defaultEvent = await getEvent.HandleAsync(new GetEventQuery(groupId, groupId), default);
+        var birthday = await getEvent.HandleAsync(new GetEventQuery(groupId, second), default);
+        Assert.Equal(["Scarf", "Book"], Assert.Single(defaultEvent!.Wishlists).Items);
+        Assert.Equal(["Bike"], Assert.Single(birthday!.Wishlists).Items);
     }
 
     [Fact]
@@ -102,26 +124,25 @@ public sealed class ApplicationHandlerTests
     {
         var (repository, groupId) = await CreateGroupAsync();
         var handler = new AddMemberCommandHandler(repository);
-        await handler.HandleAsync(new AddMemberCommand(groupId, "Alice", []), default);
+        await handler.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            handler.HandleAsync(new AddMemberCommand(groupId, "alice", []), default));
+            handler.HandleAsync(new AddMemberCommand(groupId, "alice"), default));
     }
 
     [Fact]
-    public async Task EditMember_UpdatesNameAndWishlist()
+    public async Task EditMember_UpdatesName()
     {
         var (repository, groupId) = await CreateGroupAsync();
         var memberId = await new AddMemberCommandHandler(repository)
-            .HandleAsync(new AddMemberCommand(groupId, "Bob", ["Socks"]), default);
+            .HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
 
         await new EditMemberCommandHandler(repository)
-            .HandleAsync(new EditMemberCommand(groupId, memberId, "Robert", ["Gloves"]), default);
+            .HandleAsync(new EditMemberCommand(groupId, memberId, "Robert"), default);
 
         var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
         var member = Assert.Single(group!.Members);
         Assert.Equal("Robert", member.Name);
-        Assert.Equal(["Gloves"], member.Wishlist);
     }
 
     [Fact]
@@ -131,7 +152,7 @@ public sealed class ApplicationHandlerTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             new EditMemberCommandHandler(repository)
-                .HandleAsync(new EditMemberCommand(groupId, Guid.NewGuid(), "Ghost", []), default));
+                .HandleAsync(new EditMemberCommand(groupId, Guid.NewGuid(), "Ghost"), default));
     }
 
     [Fact]
@@ -139,8 +160,8 @@ public sealed class ApplicationHandlerTests
     {
         var (repository, groupId) = await CreateGroupAsync();
         var addMember = new AddMemberCommandHandler(repository);
-        var alice = await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice", []), default);
-        var bob = await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob", []), default);
+        var alice = await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
+        var bob = await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
         await new AddExclusionCommandHandler(repository).HandleAsync(new AddExclusionCommand(groupId, alice, bob), default);
 
         await new RemoveMemberCommandHandler(repository).HandleAsync(new RemoveMemberCommand(groupId, bob), default);
@@ -155,8 +176,8 @@ public sealed class ApplicationHandlerTests
     {
         var (repository, groupId) = await CreateGroupAsync();
         var addMember = new AddMemberCommandHandler(repository);
-        var alice = await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice", []), default);
-        var bob = await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob", []), default);
+        var alice = await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
+        var bob = await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
 
         await new AddExclusionCommandHandler(repository).HandleAsync(new AddExclusionCommand(groupId, alice, bob), default);
 
@@ -171,7 +192,7 @@ public sealed class ApplicationHandlerTests
     {
         var (repository, groupId) = await CreateGroupAsync();
         var alice = await new AddMemberCommandHandler(repository)
-            .HandleAsync(new AddMemberCommand(groupId, "Alice", []), default);
+            .HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             new AddExclusionCommandHandler(repository)
@@ -183,8 +204,8 @@ public sealed class ApplicationHandlerTests
     {
         var (repository, groupId) = await CreateGroupAsync();
         var addMember = new AddMemberCommandHandler(repository);
-        var alice = await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice", []), default);
-        var bob = await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob", []), default);
+        var alice = await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
+        var bob = await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
         await new AddExclusionCommandHandler(repository).HandleAsync(new AddExclusionCommand(groupId, alice, bob), default);
 
         await new RemoveExclusionCommandHandler(repository)
@@ -192,6 +213,24 @@ public sealed class ApplicationHandlerTests
 
         var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
         Assert.Empty(group!.Exclusions);
+    }
+
+    [Fact]
+    public async Task AddEvent_ThenRemove_KeepsAtLeastOne()
+    {
+        var (repository, groupId) = await CreateGroupAsync();
+        var second = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Birthday"), default);
+
+        var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        Assert.Equal(2, group!.Events.Count);
+
+        await new RemoveEventCommandHandler(repository).HandleAsync(new RemoveEventCommand(groupId, second), default);
+        group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        Assert.Single(group!.Events);
+
+        // The last remaining event cannot be removed.
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            new RemoveEventCommandHandler(repository).HandleAsync(new RemoveEventCommand(groupId, groupId), default));
     }
 
     [Fact]

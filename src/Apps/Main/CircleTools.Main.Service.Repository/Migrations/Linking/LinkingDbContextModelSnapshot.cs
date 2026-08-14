@@ -28,6 +28,9 @@ namespace CircleTools.Main.Service.Repository.Migrations.Linking
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("GiverAccountId")
                         .HasColumnType("uuid");
 
@@ -52,6 +55,11 @@ namespace CircleTools.Main.Service.Repository.Migrations.Linking
                         .HasMaxLength(400)
                         .HasColumnType("character varying(400)");
 
+                    b.Property<string>("EventName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("GroupName")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -72,13 +80,41 @@ namespace CircleTools.Main.Service.Repository.Migrations.Linking
                         .IsRequired()
                         .HasColumnType("jsonb");
 
-                    b.HasKey("GroupId", "GiverAccountId");
+                    b.HasKey("GroupId", "EventId", "GiverAccountId");
 
                     b.HasIndex("GiverAccountId");
 
-                    b.HasIndex("GroupId", "RecipientMemberId");
+                    b.HasIndex("GroupId", "EventId", "RecipientMemberId");
 
                     b.ToTable("assignments", "linking");
+                });
+
+            modelBuilder.Entity("CircleTools.Main.Service.Repository.Linking.GroupEventRow", b =>
+                {
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EventName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("GroupName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("OrganizerAccountId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("GroupId", "EventId");
+
+                    b.HasIndex("OrganizerAccountId");
+
+                    b.ToTable("group_events", "linking");
                 });
 
             modelBuilder.Entity("CircleTools.Main.Service.Repository.Linking.LinkResolutionRow", b =>
@@ -169,8 +205,16 @@ namespace CircleTools.Main.Service.Repository.Migrations.Linking
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("MemberAccountId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("EventName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("GroupName")
                         .IsRequired()
@@ -184,7 +228,7 @@ namespace CircleTools.Main.Service.Repository.Migrations.Linking
                     b.Property<long>("Version")
                         .HasColumnType("bigint");
 
-                    b.HasKey("GroupId", "MemberAccountId");
+                    b.HasKey("GroupId", "EventId", "MemberAccountId");
 
                     b.HasIndex("MemberAccountId");
 

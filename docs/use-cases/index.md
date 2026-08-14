@@ -39,6 +39,7 @@ Use cases describe how actors achieve goals with the system. They are the bridge
 | [UC-SS-010](secret-santa/UC-SS-010-link-member-to-account.md) | Link a member to an account | Secret-Santa | Approved |
 | [UC-SS-011](secret-santa/UC-SS-011-see-my-assignment.md) | See my assignment while signed in | Secret-Santa | Approved |
 | [UC-SS-012](secret-santa/UC-SS-012-edit-my-wishlist.md) | Edit my own wishlist | Secret-Santa | Approved |
+| [UC-SS-013](secret-santa/UC-SS-013-manage-events.md) | Manage multiple events (occasions) in a group | Secret-Santa | Approved |
 | [UC-MAIN-017](main/UC-MAIN-017-single-sign-on-across-apps.md) | Stay signed in when moving between suite apps | Main | Approved |
 
 _Add a row per use case._

@@ -12,6 +12,8 @@
   href: claim.md
 - name: Draw
   href: draw.md
+- name: Event
+  href: event.md
 - name: Event details
   href: event-details.md
 - name: Exclusion

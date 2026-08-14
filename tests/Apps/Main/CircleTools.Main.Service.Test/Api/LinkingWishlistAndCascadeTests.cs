@@ -21,9 +21,7 @@ public sealed class LinkingWishlistAndCascadeTests(MailApiFactory factory)
 
         await LinkingScenario.LinkMemberAsync(factory, organizer, member, groupId, Guid.NewGuid());
 
-        var put = await member.Client.PutAsJsonAsync(
-            $"/api/v1/groups/{groupId}/my-wishlist",
-            new UpdateMyWishlistRequest(["Scarf", "  ", "Book"])); // the empty item is dropped
+        var put = await LinkingScenario.PutMyWishlistAsync(member, groupId, ["Scarf", "  ", "Book"]); // the empty item is dropped
         put.EnsureSuccessStatusCode();
 
         var wishlists = await member.Client.GetFromJsonAsync<MyWishlistsResponse>("/api/v1/my-wishlists");
@@ -39,8 +37,10 @@ public sealed class LinkingWishlistAndCascadeTests(MailApiFactory factory)
         var groupId = Guid.NewGuid();
 
         await LinkingScenario.LinkMemberAsync(factory, organizer, member, groupId, Guid.NewGuid(), groupName: "December");
+        // The organizer publishes the group's events so the member can enumerate them (ADR-0042).
+        await LinkingScenario.RegisterDefaultEventAsync(organizer, groupId, "December");
 
-        // No draw yet — the member can still find the group to own a wishlist there (FR-030).
+        // No draw yet — the member can still find the (group, event) to own a wishlist there (FR-030).
         var memberships = await member.Client.GetFromJsonAsync<MyMembershipsResponse>("/api/v1/my-memberships");
         Assert.Contains(memberships!.Memberships, m => m.GroupId == groupId && m.GroupName == "December");
     }
@@ -56,9 +56,7 @@ public sealed class LinkingWishlistAndCascadeTests(MailApiFactory factory)
         await LinkingScenario.LinkMemberAsync(factory, organizer, member, groupId, Guid.NewGuid());
 
         // A stranger to the group is denied, not silently accepted.
-        var put = await stranger.Client.PutAsJsonAsync(
-            $"/api/v1/groups/{groupId}/my-wishlist",
-            new UpdateMyWishlistRequest(["Sneaking in"]));
+        var put = await LinkingScenario.PutMyWishlistAsync(stranger, groupId, ["Sneaking in"]);
         Assert.Equal(HttpStatusCode.Forbidden, put.StatusCode);
     }
 
@@ -73,8 +71,8 @@ public sealed class LinkingWishlistAndCascadeTests(MailApiFactory factory)
         await LinkingScenario.LinkMemberAsync(factory, organizer, member, groupA, Guid.NewGuid(), groupName: "A");
         await LinkingScenario.LinkMemberAsync(factory, organizer, member, groupB, Guid.NewGuid(), groupName: "B");
 
-        await member.Client.PutAsJsonAsync($"/api/v1/groups/{groupA}/my-wishlist", new UpdateMyWishlistRequest(["A-item"]));
-        await member.Client.PutAsJsonAsync($"/api/v1/groups/{groupB}/my-wishlist", new UpdateMyWishlistRequest(["B-item"]));
+        await LinkingScenario.PutMyWishlistAsync(member, groupA, ["A-item"]);
+        await LinkingScenario.PutMyWishlistAsync(member, groupB, ["B-item"]);
 
         var wishlists = await member.Client.GetFromJsonAsync<MyWishlistsResponse>("/api/v1/my-wishlists");
         Assert.Equal(["A-item"], wishlists!.Wishlists.Single(w => w.GroupId == groupA).Items);
@@ -92,7 +90,7 @@ public sealed class LinkingWishlistAndCascadeTests(MailApiFactory factory)
         var memberAccountId = await LinkingScenario.LinkMemberAsync(factory, organizer, member, groupId, memberId);
         await LinkingScenario.PublishAsync(organizer, groupId, drawVersion: 1,
             new PublishedAssignment(memberAccountId, Guid.NewGuid(), "Recipient", []));
-        await member.Client.PutAsJsonAsync($"/api/v1/groups/{groupId}/my-wishlist", new UpdateMyWishlistRequest(["Kept"]));
+        await LinkingScenario.PutMyWishlistAsync(member, groupId, ["Kept"]);
 
         // The linked member deletes their account (the delete endpoint re-checks the password).
         var delete = await member.Client.PostAsJsonAsync(

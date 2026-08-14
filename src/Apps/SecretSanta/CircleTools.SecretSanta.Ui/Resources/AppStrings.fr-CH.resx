@@ -180,6 +180,23 @@
   <data name="NavMyLinks" xml:space="preserve"><value>Demandes de lien</value></data>
   <data name="NavMyAssignments" xml:space="preserve"><value>Mes attributions</value></data>
   <data name="NavMyWishlists" xml:space="preserve"><value>Mes listes de souhaits</value></data>
+  <data name="NavPinned" xml:space="preserve"><value>Épinglés</value></data>
+  <data name="PinGroup" xml:space="preserve"><value>Épingler le groupe</value></data>
+  <data name="UnpinGroup" xml:space="preserve"><value>Détacher le groupe</value></data>
+  <data name="Rename" xml:space="preserve"><value>Renommer</value></data>
+  <data name="NavEvents" xml:space="preserve"><value>Événements</value></data>
+  <data name="NavEventDetails" xml:space="preserve"><value>Détails</value></data>
+  <data name="NavWishlists" xml:space="preserve"><value>Listes de souhaits</value></data>
+  <data name="DefaultEventName" xml:space="preserve"><value>Événement</value></data>
+  <data name="EventNameLabel" xml:space="preserve"><value>Nom de l'événement</value></data>
+  <data name="EventNamePlaceholder" xml:space="preserve"><value>p. ex. Noël 2026</value></data>
+  <data name="AddEvent" xml:space="preserve"><value>Ajouter un événement</value></data>
+  <data name="EventsColumn" xml:space="preserve"><value>Événements</value></data>
+  <data name="EventDetailsTitle" xml:space="preserve"><value>Événement</value></data>
+  <data name="EventNotFound" xml:space="preserve"><value>Événement introuvable.</value></data>
+  <data name="WishlistsTitle" xml:space="preserve"><value>Listes de souhaits</value></data>
+  <data name="WishlistsLead" xml:space="preserve"><value>Définissez la liste de souhaits de chaque personne pour cet événement.</value></data>
+  <data name="ConfirmRemoveEvent" xml:space="preserve"><value>Supprimer l'événement « {0} » ? Le tirage et les listes de souhaits seront perdus.</value></data>
   <data name="CreateFromCircleAction" xml:space="preserve"><value>Créer à partir d'un cercle</value></data>
   <data name="AllGroups" xml:space="preserve"><value>Tous les groupes</value></data>
 </root>

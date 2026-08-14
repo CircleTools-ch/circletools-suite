@@ -14,7 +14,36 @@ public static class SyncKinds
 
     /// <summary>The per-account profile document (display name, preferred language).</summary>
     public const string Profile = "profile";
+
+    /// <summary>The per-account Secret-Santa UI preferences document (pinned groups). See ADR-0041.</summary>
+    public const string Preferences = "preferences";
 }
+
+/// <summary>
+/// The pristine, syncable body of the per-account Secret-Santa UI preferences document (ADR-0041):
+/// the groups the user has pinned for quick access. Like <see cref="GroupState"/> it carries no sync
+/// metadata — the version, account scope and dirty flag wrap it in <see cref="SyncedPreferencesRecord"/>
+/// in the local store, and only this body crosses the wire as the opaque aggregate the server echoes to
+/// the account's other devices.
+/// </summary>
+/// <param name="PinnedGroupIds">The pinned group ids, in the order the user pinned them.</param>
+public sealed record PreferencesState(IReadOnlyList<Guid> PinnedGroupIds);
+
+/// <summary>
+/// The per-account UI preferences together with the sync metadata the client needs to reconcile it
+/// (ADR-0041), mirroring <see cref="SyncedGroupRecord"/>. Preferences are a device-agnostic account
+/// preference, so — unlike a group — the document exists only while signed in and is always scoped to an
+/// account; there is no account-free preferences document.
+/// </summary>
+/// <param name="State">The pristine preferences body.</param>
+/// <param name="Version">The per-document version, bumped on every local edit — the client's half of last-write-wins.</param>
+/// <param name="AccountScope">The account these preferences belong to; also the aggregate id under which the document syncs.</param>
+/// <param name="Dirty">Whether the local copy holds an edit not yet accepted by the server.</param>
+public sealed record SyncedPreferencesRecord(
+    PreferencesState State,
+    long Version,
+    Guid AccountScope,
+    bool Dirty);
 
 /// <summary>
 /// A persisted group together with the sync metadata the client needs to reconcile it (FEAT-004).

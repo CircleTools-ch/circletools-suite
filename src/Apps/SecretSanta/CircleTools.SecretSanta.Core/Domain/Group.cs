@@ -4,128 +4,91 @@ using CircleTools.SharedKernel;
 namespace CircleTools.SecretSanta.Core.Domain;
 
 /// <summary>
-/// Aggregate root for a Secret-Santa group. Owns its members, exclusions and draw history, and
-/// enforces the group's invariants (non-empty name, unique member names, exclusion endpoints that
-/// are members, and at least two members before a draw).
+/// Aggregate root for a Secret-Santa group. Owns a <strong>shared</strong> roster (members) and shared
+/// exclusions, plus one or more <see cref="Event"/>s — the occasions that reuse that roster, each with
+/// its own draw, wishlists, budget and event details (ADR-0042). Enforces the group's invariants:
+/// non-empty name, unique member names, exclusion endpoints that are members, at least two members
+/// before a draw, and at least one event at all times.
 /// </summary>
 public sealed class Group : AggregateRoot
 {
     private readonly List<Member> _members;
     private readonly List<Exclusion> _exclusions;
-    private readonly List<Draw> _draws;
+    private readonly List<Event> _events;
 
     private Group(
         Guid id,
         string name,
-        Budget? budget,
-        EventDetails? eventDetails,
         List<Member> members,
         List<Exclusion> exclusions,
-        List<Draw> draws,
-        bool drawInvalidatedByMembershipChange)
+        List<Event> events)
     {
         Id = id;
         Name = name;
-        Budget = budget;
-        EventDetails = eventDetails;
         _members = members;
         _exclusions = exclusions;
-        _draws = draws;
-        DrawInvalidatedByMembershipChange = drawInvalidatedByMembershipChange;
+        _events = events;
     }
 
     /// <summary>Gets the group name.</summary>
     public string Name { get; private set; }
 
-    /// <summary>Gets the optional gift budget.</summary>
-    public Budget? Budget { get; private set; }
-
-    /// <summary>Gets the optional event details.</summary>
-    public EventDetails? EventDetails { get; private set; }
-
-    /// <summary>Gets the group members.</summary>
+    /// <summary>Gets the shared group members.</summary>
     public IReadOnlyList<Member> Members => _members.AsReadOnly();
 
-    /// <summary>Gets the configured exclusions.</summary>
+    /// <summary>Gets the shared configured exclusions.</summary>
     public IReadOnlyList<Exclusion> Exclusions => _exclusions.AsReadOnly();
 
-    /// <summary>Gets the ordered draw history (oldest first).</summary>
-    public IReadOnlyList<Draw> Draws => _draws.AsReadOnly();
+    /// <summary>Gets the group's events (occasions), oldest first. A group always has at least one.</summary>
+    public IReadOnlyList<Event> Events => _events.AsReadOnly();
 
-    /// <summary>Gets the current (most recent) draw, or <see langword="null"/> if none.</summary>
-    public Draw? CurrentDraw => _draws.Count > 0 ? _draws[^1] : null;
-
-    /// <summary>
-    /// Gets a value indicating whether a draw was discarded because the member set changed. A draw
-    /// belongs to the exact member set it was generated for, so adding or removing a member voids
-    /// it (see <see cref="AddMember"/> and <see cref="RemoveMember"/>). This flag lets the UI tell
-    /// "never drawn" apart from "drawn, then invalidated"; it is cleared by the next successful draw.
-    /// </summary>
-    public bool DrawInvalidatedByMembershipChange { get; private set; }
-
-    /// <summary>Creates a new, empty group.</summary>
+    /// <summary>Creates a new, empty group with a single default event whose id is the group's id.</summary>
     /// <param name="name">A non-empty group name.</param>
     /// <returns>The created group.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
-    public static Group Create(string name) =>
-        new(
-            GuidV7.New(),
-            NormalizeName(name),
-            budget: null,
-            eventDetails: null,
-            members: [],
-            exclusions: [],
-            draws: [],
-            drawInvalidatedByMembershipChange: false);
+    public static Group Create(string name)
+    {
+        var id = GuidV7.New();
+
+        // The first/default event takes the group's own id — a deterministic value that keeps the common
+        // single-occasion group simple and lets the server migration line up existing rows (ADR-0042).
+        return new(id, NormalizeName(name), members: [], exclusions: [], events: [Event.Create(id, string.Empty)]);
+    }
 
     /// <summary>Renames the group.</summary>
     /// <param name="name">A non-empty group name.</param>
     public void Rename(string name) => Name = NormalizeName(name);
 
-    /// <summary>Sets or clears the gift budget.</summary>
-    /// <param name="budget">The budget, or <see langword="null"/> to clear it.</param>
-    public void SetBudget(Budget? budget) => Budget = budget;
-
-    /// <summary>Sets or clears the event details.</summary>
-    /// <param name="eventDetails">The event details, or <see langword="null"/> to clear them.</param>
-    public void SetEventDetails(EventDetails? eventDetails) => EventDetails = eventDetails;
-
-    /// <summary>Adds a member to the group.</summary>
+    /// <summary>Adds a member to the shared roster.</summary>
     /// <param name="name">A non-empty member name, unique within the group (case-insensitive).</param>
-    /// <param name="wishlist">The member's wishlist.</param>
     /// <returns>The identity of the added member.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the name duplicates an existing member.</exception>
-    /// <remarks>Adding a member voids any existing draw; see <see cref="DrawInvalidatedByMembershipChange"/>.</remarks>
-    public Guid AddMember(string name, Wishlist wishlist)
+    /// <remarks>Adding a member voids every event's draw; wishlists are set later, per event.</remarks>
+    public Guid AddMember(string name)
     {
-        ArgumentNullException.ThrowIfNull(wishlist);
-
-        var member = Member.Create(name, wishlist);
+        var member = Member.Create(name);
         GuardUniqueName(member.Name, excludingMemberId: null);
         _members.Add(member);
-        InvalidateDraws();
+        InvalidateAllDraws();
         return member.Id;
     }
 
     /// <summary>
     /// Adds a member copied from a circle person, optionally linked to an account. Used only by the
-    /// create-from-circle flow; the ordinary <see cref="AddMember"/> path stays account-free. The
-    /// origin id is recorded and never dereferenced (FR-027).
+    /// create-from-circle flow; the ordinary <see cref="AddMember"/> path stays account-free. The origin
+    /// id is recorded and never dereferenced (FR-027).
     /// </summary>
     /// <param name="name">A non-empty, group-unique member name.</param>
-    /// <param name="wishlist">The member's wishlist.</param>
     /// <param name="userId">The account to link the member to, or <see langword="null"/> to leave it unlinked.</param>
     /// <param name="originCirclePersonId">The circle person copied from, or <see langword="null"/>.</param>
     /// <returns>The identity of the added member.</returns>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when the name duplicates an existing member, or when <paramref name="userId"/> is
-    /// already linked to another member of this group.
+    /// Thrown when the name duplicates an existing member, or when <paramref name="userId"/> is already
+    /// linked to another member of this group.
     /// </exception>
-    public Guid AddMemberFromCircle(string name, Wishlist wishlist, Guid? userId, Guid? originCirclePersonId)
+    public Guid AddMemberFromCircle(string name, Guid? userId, Guid? originCirclePersonId)
     {
-        ArgumentNullException.ThrowIfNull(wishlist);
-
-        var member = Member.CreateFromCircle(name, wishlist, userId, originCirclePersonId);
+        var member = Member.CreateFromCircle(name, userId, originCirclePersonId);
         GuardUniqueName(member.Name, excludingMemberId: null);
         if (userId is { } linkedUser)
         {
@@ -133,14 +96,14 @@ public sealed class Group : AggregateRoot
         }
 
         _members.Add(member);
-        InvalidateDraws();
+        InvalidateAllDraws();
         return member.Id;
     }
 
     /// <summary>
     /// Links a member to an account. Linking changes how a member is <em>served</em> (their own
     /// assignment and wishlist ownership), not the participant set, so it does <strong>not</strong>
-    /// invalidate a completed draw.
+    /// invalidate any draw.
     /// </summary>
     /// <param name="memberId">The member to link.</param>
     /// <param name="userId">The account to link the member to.</param>
@@ -155,43 +118,41 @@ public sealed class Group : AggregateRoot
         member.Link(userId);
     }
 
-    /// <summary>
-    /// Clears a member's account link, reverting it to unlinked. The member, its name and its
-    /// wishlist survive; only how it is served changes. Does <strong>not</strong> invalidate a draw.
-    /// </summary>
+    /// <summary>Clears a member's account link, reverting it to unlinked. Does <strong>not</strong> invalidate a draw.</summary>
     /// <param name="memberId">The member to unlink.</param>
     /// <exception cref="InvalidOperationException">Thrown when the member is unknown.</exception>
     public void UnlinkMember(Guid memberId) => RequireMember(memberId).Unlink();
 
-    /// <summary>Edits an existing member's name and wishlist.</summary>
+    /// <summary>Edits an existing member's name. Wishlists are per event and edited there.</summary>
     /// <param name="memberId">The member to edit.</param>
     /// <param name="name">The new (non-empty, unique) name.</param>
-    /// <param name="wishlist">The new wishlist.</param>
     /// <exception cref="InvalidOperationException">Thrown when the member is unknown or the name duplicates another member.</exception>
-    public void EditMember(Guid memberId, string name, Wishlist wishlist)
+    public void EditMember(Guid memberId, string name)
     {
-        ArgumentNullException.ThrowIfNull(wishlist);
-
         var member = RequireMember(memberId);
         var normalized = NormalizeName(name);
         GuardUniqueName(normalized, excludingMemberId: memberId);
         member.Rename(normalized);
-        member.SetWishlist(wishlist);
     }
 
-    /// <summary>Removes a member and any exclusions that reference it.</summary>
+    /// <summary>Removes a member, any exclusions that reference it, and its wishlist in every event.</summary>
     /// <param name="memberId">The member to remove.</param>
     /// <exception cref="InvalidOperationException">Thrown when the member is unknown.</exception>
-    /// <remarks>Removing a member voids any existing draw; see <see cref="DrawInvalidatedByMembershipChange"/>.</remarks>
+    /// <remarks>Removing a member voids every event's draw.</remarks>
     public void RemoveMember(Guid memberId)
     {
         var member = RequireMember(memberId);
         _members.Remove(member);
         _exclusions.RemoveAll(e => e.GiverMemberId == memberId || e.RecipientMemberId == memberId);
-        InvalidateDraws();
+        foreach (var occasion in _events)
+        {
+            occasion.RemoveMember(memberId);
+        }
+
+        InvalidateAllDraws();
     }
 
-    /// <summary>Adds a directed exclusion between two existing members.</summary>
+    /// <summary>Adds a directed exclusion between two existing members (shared across events).</summary>
     /// <param name="giverMemberId">The giver member identity.</param>
     /// <param name="recipientMemberId">The forbidden recipient member identity.</param>
     /// <exception cref="InvalidOperationException">Thrown when either endpoint is not a member of this group.</exception>
@@ -213,15 +174,66 @@ public sealed class Group : AggregateRoot
     public void RemoveExclusion(Guid giverMemberId, Guid recipientMemberId) =>
         _exclusions.RemoveAll(e => e.GiverMemberId == giverMemberId && e.RecipientMemberId == recipientMemberId);
 
-    /// <summary>Runs a new draw and, on success, appends it to the draw history as the current draw.</summary>
+    /// <summary>Adds a new event (occasion) to the group.</summary>
+    /// <param name="name">The event name; may be empty.</param>
+    /// <returns>The identity of the created event.</returns>
+    public Guid AddEvent(string name)
+    {
+        var occasion = Event.Create(GuidV7.New(), name);
+        _events.Add(occasion);
+        return occasion.Id;
+    }
+
+    /// <summary>Renames an event.</summary>
+    /// <param name="eventId">The event to rename.</param>
+    /// <param name="name">The new name; may be empty.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the event is unknown.</exception>
+    public void RenameEvent(Guid eventId, string name) => RequireEvent(eventId).Rename(name);
+
+    /// <summary>Removes an event and everything it owns (its draws and wishlists).</summary>
+    /// <param name="eventId">The event to remove.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the event is unknown or it is the group's last event.</exception>
+    public void RemoveEvent(Guid eventId)
+    {
+        var occasion = RequireEvent(eventId);
+        if (_events.Count == 1)
+        {
+            throw new InvalidOperationException("A group must always have at least one event.");
+        }
+
+        _events.Remove(occasion);
+    }
+
+    /// <summary>Sets or clears an event's gift budget.</summary>
+    public void SetEventBudget(Guid eventId, Budget? budget) => RequireEvent(eventId).SetBudget(budget);
+
+    /// <summary>Sets or clears an event's details (date, location, description).</summary>
+    public void SetEventDetails(Guid eventId, EventDetails? eventDetails) =>
+        RequireEvent(eventId).SetEventDetails(eventDetails);
+
+    /// <summary>Sets (or clears, when empty) a member's wishlist for one event.</summary>
+    /// <param name="eventId">The event the wishlist belongs to.</param>
+    /// <param name="memberId">The member whose wishlist it is.</param>
+    /// <param name="wishlist">The wishlist.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the event or member is unknown.</exception>
+    public void SetMemberWishlist(Guid eventId, Guid memberId, Wishlist wishlist)
+    {
+        ArgumentNullException.ThrowIfNull(wishlist);
+        RequireMember(memberId);
+        RequireEvent(eventId).SetWishlist(memberId, wishlist);
+    }
+
+    /// <summary>Runs a new draw for one event and, on success, appends it to that event's history.</summary>
+    /// <param name="eventId">The event to draw.</param>
     /// <param name="generator">The draw generator domain service.</param>
     /// <param name="now">The current instant used to stamp the draw.</param>
     /// <returns>The <see cref="DrawResult"/> describing success or failure.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when the group has fewer than two members.</exception>
-    public DrawResult RunDraw(DrawGenerator generator, DateTimeOffset now)
+    /// <exception cref="InvalidOperationException">Thrown when the group has fewer than two members, or the event is unknown.</exception>
+    public DrawResult RunDraw(Guid eventId, DrawGenerator generator, DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(generator);
 
+        var occasion = RequireEvent(eventId);
         if (_members.Count < 2)
         {
             throw new InvalidOperationException("A draw needs at least two members.");
@@ -230,12 +242,11 @@ public sealed class Group : AggregateRoot
         var result = generator.Generate(
             _members.Select(m => m.Id).ToList(),
             _exclusions,
-            CurrentDraw?.ToMap());
+            occasion.CurrentDraw?.ToMap());
 
         if (result.IsSuccess)
         {
-            _draws.Add(Draw.Create(result.Assignments, now));
-            DrawInvalidatedByMembershipChange = false;
+            occasion.AppendDraw(result.Assignments, now);
         }
 
         return result;
@@ -246,22 +257,27 @@ public sealed class Group : AggregateRoot
     /// <returns>The member, or <see langword="null"/>.</returns>
     public Member? FindMember(Guid memberId) => _members.FirstOrDefault(m => m.Id == memberId);
 
+    /// <summary>Gets an event by identity, or <see langword="null"/> if not present.</summary>
+    /// <param name="eventId">The event identity.</param>
+    /// <returns>The event, or <see langword="null"/>.</returns>
+    public Event? FindEvent(Guid eventId) => _events.FirstOrDefault(e => e.Id == eventId);
+
     /// <summary>Captures the group's full state as a serializable memento.</summary>
     /// <returns>The <see cref="GroupState"/> snapshot.</returns>
     public GroupState ToState() => new(
         Id,
         Name,
-        Budget is null ? null : new BudgetState(Budget.Amount, Budget.Currency),
-        EventDetails is null ? null : new EventDetailsState(EventDetails.Date, EventDetails.Location, EventDetails.Description),
-        _members.Select(m => new MemberState(m.Id, m.Name, [.. m.Wishlist.Items], m.UserId, m.OriginCirclePersonId)).ToList(),
+        // Legacy single-exchange fields are no longer written; they exist only so an older snapshot can
+        // still be read and migrated (see FromState). New writes carry everything under Events.
+        Budget: null,
+        Event: null,
+        _members.Select(m => new MemberState(m.Id, m.Name, UserId: m.UserId, OriginCirclePersonId: m.OriginCirclePersonId)).ToList(),
         _exclusions.Select(e => new ExclusionState(e.GiverMemberId, e.RecipientMemberId)).ToList(),
-        _draws.Select(d => new DrawState(
-            d.Id,
-            d.CreatedAt,
-            d.Assignments.Select(a => new AssignmentState(a.GiverMemberId, a.RecipientMemberId)).ToList())).ToList(),
-        DrawInvalidatedByMembershipChange);
+        Draws: [],
+        DrawInvalidatedByMembershipChange: false,
+        Events: _events.Select(ToEventState).ToList());
 
-    /// <summary>Reconstructs a group from a previously captured memento.</summary>
+    /// <summary>Reconstructs a group from a previously captured memento, migrating a pre-events snapshot in place.</summary>
     /// <param name="state">The state snapshot.</param>
     /// <returns>The rehydrated group.</returns>
     public static Group FromState(GroupState state)
@@ -269,56 +285,87 @@ public sealed class Group : AggregateRoot
         ArgumentNullException.ThrowIfNull(state);
 
         var members = state.Members
-            .Select(m => Member.Restore(m.Id, m.Name, Wishlist.Create(m.Wishlist), m.UserId, m.OriginCirclePersonId))
+            .Select(m => Member.Restore(m.Id, m.Name, m.UserId, m.OriginCirclePersonId))
             .ToList();
 
         var exclusions = state.Exclusions
             .Select(e => Exclusion.Create(e.GiverMemberId, e.RecipientMemberId))
             .ToList();
 
+        var events = state.Events is { Count: > 0 } storedEvents
+            ? storedEvents.Select(FromEventState).ToList()
+            : [MigrateLegacyEvent(state)];
+
+        return new Group(state.Id, state.Name, members, exclusions, events);
+    }
+
+    // A snapshot written before events existed carried a single budget, event details, draw history and
+    // per-member wishlist. Lift them into one default event whose id is the group id — the same
+    // deterministic value the server-side linking migration uses to re-key existing rows (ADR-0042).
+    private static Event MigrateLegacyEvent(GroupState state)
+    {
         var draws = state.Draws
             .Select(d => Draw.Restore(
-                d.Id,
-                d.CreatedAt,
-                d.Assignments.Select(a => Assignment.Create(a.GiverMemberId, a.RecipientMemberId)).ToList()))
+                d.Id, d.CreatedAt, d.Assignments.Select(a => Assignment.Create(a.GiverMemberId, a.RecipientMemberId)).ToList()))
             .ToList();
 
+        var wishlists = state.Members
+            .Where(m => m.Wishlist is { Count: > 0 })
+            .ToDictionary(m => m.Id, m => Wishlist.Create(m.Wishlist));
+
         var budget = state.Budget is null ? null : Budget.Create(state.Budget.Amount, state.Budget.Currency);
-        var eventDetails = state.Event is null
+        var details = state.Event is null
             ? null
             : EventDetails.Create(state.Event.Date, state.Event.Location, state.Event.Description);
 
-        return new Group(
-            state.Id,
-            state.Name,
-            budget,
-            eventDetails,
-            members,
-            exclusions,
-            draws,
-            state.DrawInvalidatedByMembershipChange);
+        return Event.Restore(state.Id, string.Empty, budget, details, draws, wishlists, state.DrawInvalidatedByMembershipChange);
     }
 
-    /// <summary>
-    /// Discards the draw history because the member set changed. A draw maps a fixed set of givers
-    /// to recipients, so once that set changes the draw — and every reveal link built from it — no
-    /// longer describes the group. Clearing it here keeps <see cref="CurrentDraw"/> honest rather
-    /// than leaving assignments that reference members who are no longer present.
-    /// </summary>
-    private void InvalidateDraws()
+    private static Event FromEventState(EventState state)
     {
-        if (_draws.Count == 0)
-        {
-            return;
-        }
+        var draws = state.Draws
+            .Select(d => Draw.Restore(
+                d.Id, d.CreatedAt, d.Assignments.Select(a => Assignment.Create(a.GiverMemberId, a.RecipientMemberId)).ToList()))
+            .ToList();
 
-        _draws.Clear();
-        DrawInvalidatedByMembershipChange = true;
+        var wishlists = state.Wishlists.ToDictionary(w => w.MemberId, w => Wishlist.Create(w.Items));
+        var budget = state.Budget is null ? null : Budget.Create(state.Budget.Amount, state.Budget.Currency);
+        var details = state.EventDetails is null
+            ? null
+            : EventDetails.Create(state.EventDetails.Date, state.EventDetails.Location, state.EventDetails.Description);
+
+        return Event.Restore(state.Id, state.Name, budget, details, draws, wishlists, state.DrawInvalidatedByMembershipChange);
+    }
+
+    private static EventState ToEventState(Event occasion) => new(
+        occasion.Id,
+        occasion.Name,
+        occasion.Budget is null ? null : new BudgetState(occasion.Budget.Amount, occasion.Budget.Currency),
+        occasion.EventDetails is null
+            ? null
+            : new EventDetailsState(occasion.EventDetails.Date, occasion.EventDetails.Location, occasion.EventDetails.Description),
+        occasion.Draws.Select(d => new DrawState(
+            d.Id,
+            d.CreatedAt,
+            d.Assignments.Select(a => new AssignmentState(a.GiverMemberId, a.RecipientMemberId)).ToList())).ToList(),
+        occasion.DrawInvalidatedByMembershipChange,
+        occasion.Wishlists.Select(w => new EventWishlistState(w.Key, [.. w.Value.Items])).ToList());
+
+    private void InvalidateAllDraws()
+    {
+        foreach (var occasion in _events)
+        {
+            occasion.InvalidateDraws();
+        }
     }
 
     private Member RequireMember(Guid memberId) =>
         _members.FirstOrDefault(m => m.Id == memberId)
         ?? throw new InvalidOperationException($"Member '{memberId}' is not part of this group.");
+
+    private Event RequireEvent(Guid eventId) =>
+        _events.FirstOrDefault(e => e.Id == eventId)
+        ?? throw new InvalidOperationException($"Event '{eventId}' is not part of this group.");
 
     private void GuardUniqueUser(Guid userId, Guid excludingMemberId)
     {

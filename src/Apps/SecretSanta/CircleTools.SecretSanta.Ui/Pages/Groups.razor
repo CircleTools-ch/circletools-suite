@@ -1,9 +1,14 @@
 @page "/"
+@using CircleTools.SecretSanta.Contracts
+@using CircleTools.SecretSanta.LocalStore.Linking
 @inject ISender Sender
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
 @inject ClaimableGroupsService Claimable
 @inject SyncService Sync
+@inject ILinkingApi Linking
+@inject LinkResolutionApplier Resolutions
+@inject BookmarkService Bookmarks
 
 <PageTitle>@L["GroupsTitle"]</PageTitle>
 
@@ -52,11 +57,14 @@ else
                             <MudText Typo="Typo.body2" Class="mud-text-secondary">
                                 @L["MembersColumn"]: @group.MemberCount
                             </MudText>
-                            @if (group.HasCurrentDraw)
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                @L["EventsColumn"]: @group.EventCount
+                            </MudText>
+                            @if (group.HasAnyDraw)
                             {
                                 <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
                             }
-                            else if (group.DrawInvalidatedByMembershipChange)
+                            else if (group.AnyDrawInvalidated)
                             {
                                 <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
                             }
@@ -66,6 +74,18 @@ else
                             }
                         </div>
                         <div class="d-flex align-center gap-1">
+                            <AuthorizeView>
+                                <Authorized>
+                                    @{
+                                        var isPinned = _pinned.Contains(group.Id);
+                                    }
+                                    <MudIconButton Size="Size.Small"
+                                                   Icon="@(isPinned ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)"
+                                                   Color="@(isPinned ? Color.Warning : Color.Default)"
+                                                   OnClick="() => TogglePinAsync(group.Id)"
+                                                   aria-label="@(isPinned ? L["UnpinGroup"] : L["PinGroup"])" />
+                                </Authorized>
+                            </AuthorizeView>
                             <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
                                        OnClick="() => Open(group.Id)">@L["Open"]</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
@@ -128,7 +148,9 @@ else
 
     private IReadOnlyList<GroupSummaryDto>? _groups;
     private HashSet<Guid> _onAccount = [];
+    private HashSet<Guid> _pinned = [];
     private Guid _accountId;
+    private string _displayName = string.Empty;
     private string _newName = string.Empty;
     private bool _busy;
     private Guid? _pendingDeleteId;
@@ -144,6 +166,7 @@ else
         {
             var state = await AuthStateTask;
             _accountId = state.User.UserId();
+            _displayName = state.User.DisplayName();
         }
     }
 
@@ -163,9 +186,33 @@ else
         {
             _onAccount = [];
         }
+
+        // Pinned groups are a per-account preference (FR-033); empty when signed out. A storage failure
+        // just leaves the pins off, like the account badges above.
+        try
+        {
+            _pinned = [.. await Bookmarks.GetPinnedAsync()];
+        }
+        catch (StorageUnavailableException)
+        {
+            _pinned = [];
+        }
     }
 
     private bool IsOnAccount(Guid id) => _onAccount.Contains(id);
+
+    private async Task TogglePinAsync(Guid id)
+    {
+        try
+        {
+            await Bookmarks.ToggleAsync(id);
+            _pinned = [.. await Bookmarks.GetPinnedAsync()];
+        }
+        catch (StorageUnavailableException)
+        {
+            // The pin could not be written; leave the current state. Nothing else is affected.
+        }
+    }
 
     private async Task OnNewNameKeyDown(KeyboardEventArgs args)
     {
@@ -185,13 +232,44 @@ else
         _busy = true;
         try
         {
-            var id = await Sender.Send(new CreateGroupCommand(_newName));
+            var name = _newName.Trim();
+            var id = await Sender.Send(new CreateGroupCommand(name));
+
+            // The organizer is a member of the group they create. Signed in, add them and link their own
+            // account so their membership, wishlist and (once drawn) assignment are theirs on the My*
+            // screens (FR-032). Signed out there is no identity to add, so the group starts empty as before.
+            if (_accountId != Guid.Empty && !string.IsNullOrWhiteSpace(_displayName))
+            {
+                await AddSelfAsync(id, name, _displayName.Trim());
+            }
+
             _newName = string.Empty;
             Open(id);
         }
         finally
         {
             _busy = false;
+        }
+    }
+
+    // Add the organizer as the first member and link their own account. Best-effort: the self-link needs
+    // the server, so an unreachable server just leaves them an unlinked member — still in the group, with
+    // the link applying on a later "Sync now". Applying the resolution here sets Member.UserId at once so
+    // the roster shows the link immediately rather than only after the next sync.
+    private async Task AddSelfAsync(Guid groupId, string groupName, string displayName)
+    {
+        try
+        {
+            var memberId = await Sender.Send(new AddMemberCommand(groupId, displayName));
+            var link = await Linking.SelfLinkAsync(new SelfLinkRequest(groupId, groupName, memberId, displayName));
+            if (link.IsSuccess)
+            {
+                await Resolutions.ApplyPendingAsync();
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // A duplicate name (the organizer somehow already present) is not worth surfacing at create.
         }
     }
 

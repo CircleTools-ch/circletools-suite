@@ -55,4 +55,18 @@ public interface ILocalSyncStore
     /// <param name="cancellationToken">Cancels the write.</param>
     /// <returns>A task that completes when the write has stuck.</returns>
     Task SaveProfileAsync(SyncedProfileRecord profile, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Loads the locally-held Secret-Santa UI preferences document (pinned groups and sync metadata), or
+    /// <see langword="null"/> if none has been stored on this device yet (ADR-0041).
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    /// <returns>The stored preferences document, or <see langword="null"/>.</returns>
+    Task<SyncedPreferencesRecord?> LoadPreferencesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Writes the Secret-Santa UI preferences document (ADR-0041).</summary>
+    /// <param name="preferences">The preferences document to persist.</param>
+    /// <param name="cancellationToken">Cancels the write.</param>
+    /// <returns>A task that completes when the write has stuck.</returns>
+    Task SavePreferencesAsync(SyncedPreferencesRecord preferences, CancellationToken cancellationToken = default);
 }

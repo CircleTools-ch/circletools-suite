@@ -148,6 +148,23 @@
   <data name="NavMyLinks" xml:space="preserve"><value>Link requests</value></data>
   <data name="NavMyAssignments" xml:space="preserve"><value>My assignments</value></data>
   <data name="NavMyWishlists" xml:space="preserve"><value>My wishlists</value></data>
+  <data name="NavPinned" xml:space="preserve"><value>Pinned</value></data>
+  <data name="PinGroup" xml:space="preserve"><value>Pin group</value></data>
+  <data name="UnpinGroup" xml:space="preserve"><value>Unpin group</value></data>
+  <data name="Rename" xml:space="preserve"><value>Rename</value></data>
+  <data name="NavEvents" xml:space="preserve"><value>Events</value></data>
+  <data name="NavEventDetails" xml:space="preserve"><value>Details</value></data>
+  <data name="NavWishlists" xml:space="preserve"><value>Wishlists</value></data>
+  <data name="DefaultEventName" xml:space="preserve"><value>Event</value></data>
+  <data name="EventNameLabel" xml:space="preserve"><value>Event name</value></data>
+  <data name="EventNamePlaceholder" xml:space="preserve"><value>e.g. Christmas 2026</value></data>
+  <data name="AddEvent" xml:space="preserve"><value>Add event</value></data>
+  <data name="EventsColumn" xml:space="preserve"><value>Events</value></data>
+  <data name="EventDetailsTitle" xml:space="preserve"><value>Event</value></data>
+  <data name="EventNotFound" xml:space="preserve"><value>Event not found.</value></data>
+  <data name="WishlistsTitle" xml:space="preserve"><value>Wishlists</value></data>
+  <data name="WishlistsLead" xml:space="preserve"><value>Set each member's wishlist for this event.</value></data>
+  <data name="ConfirmRemoveEvent" xml:space="preserve"><value>Remove the event "{0}"? Its draw and wishlists will be lost.</value></data>
   <data name="CreateFromCircleAction" xml:space="preserve"><value>Create from a circle</value></data>
   <data name="AllGroups" xml:space="preserve"><value>All groups</value></data>
 </root>

@@ -21,6 +21,9 @@ public sealed class LocalSyncStore(IKeyValueStore store) : ILocalSyncStore
     /// <summary>The key holding the per-account profile document (display name, language, sync metadata).</summary>
     public const string ProfileKey = "circletools.secretsanta.sync.profile";
 
+    /// <summary>The key holding the per-account UI preferences document (pinned groups, sync metadata).</summary>
+    public const string PreferencesKey = "circletools.secretsanta.sync.preferences";
+
     /// <inheritdoc />
     public async Task<IReadOnlyList<SyncedGroupRecord>> LoadGroupsAsync(CancellationToken cancellationToken = default)
     {
@@ -103,6 +106,27 @@ public sealed class LocalSyncStore(IKeyValueStore store) : ILocalSyncStore
 
         var json = JsonSerializer.Serialize(profile, SyncJsonContext.Default.SyncedProfileRecord);
         await WriteOrThrowAsync(ProfileKey, json, "The profile could not be saved", cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<SyncedPreferencesRecord?> LoadPreferencesAsync(CancellationToken cancellationToken = default)
+    {
+        var json = await store.GetAsync(StorageScope.Durable, PreferencesKey, cancellationToken);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        return JsonSerializer.Deserialize(json, SyncJsonContext.Default.SyncedPreferencesRecord);
+    }
+
+    /// <inheritdoc />
+    public async Task SavePreferencesAsync(SyncedPreferencesRecord preferences, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(preferences);
+
+        var json = JsonSerializer.Serialize(preferences, SyncJsonContext.Default.SyncedPreferencesRecord);
+        await WriteOrThrowAsync(PreferencesKey, json, "The preferences could not be saved", cancellationToken);
     }
 
     private async Task WriteOrThrowAsync(string key, string json, string message, CancellationToken cancellationToken)

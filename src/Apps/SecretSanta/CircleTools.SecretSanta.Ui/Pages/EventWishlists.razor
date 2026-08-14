@@ -1,0 +1,85 @@
+@page "/groups/{GroupId:guid}/events/{EventId:guid}/wishlists"
+@inject ISender Sender
+@inject IStringLocalizer<AppStrings> L
+
+<PageTitle>@L["WishlistsTitle"]</PageTitle>
+
+<EventNav GroupId="GroupId" EventId="EventId" />
+
+<MudText Typo="Typo.h4" GutterBottom="true">@L["WishlistsTitle"]</MudText>
+<MudText Class="mud-text-secondary mb-4">@L["WishlistsLead"]</MudText>
+
+@if (_event is null)
+{
+    <MudText>@(_loaded ? L["EventNotFound"] : L["Loading"])</MudText>
+}
+else if (_event.Wishlists.Count == 0)
+{
+    <MudText Class="mud-text-secondary">@L["NoMembers"]</MudText>
+}
+else
+{
+    <MudStack Spacing="2">
+        @foreach (var editor in _editors)
+        {
+            <MudCard Elevation="1">
+                <MudCardContent>
+                    <MudText Typo="Typo.subtitle1" GutterBottom="true"><strong>@editor.MemberName</strong></MudText>
+                    <MudTextField @bind-Value="editor.Text" Label="@L["WishlistLabel"]" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" Lines="3" />
+                    <div class="d-flex align-center gap-2 mt-2">
+                        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="() => SaveAsync(editor)">@L["Save"]</MudButton>
+                        @if (editor.Saved)
+                        {
+                            <MudText Color="Color.Success" Typo="Typo.body2" role="status">@L["Saved"]</MudText>
+                        }
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        }
+    </MudStack>
+}
+
+@code {
+    /// <summary>The owning group.</summary>
+    [Parameter]
+    public Guid GroupId { get; set; }
+
+    /// <summary>The event whose wishlists are edited.</summary>
+    [Parameter]
+    public Guid EventId { get; set; }
+
+    private sealed class WishlistEditor
+    {
+        public Guid MemberId { get; init; }
+        public string MemberName { get; init; } = string.Empty;
+        public string Text { get; set; } = string.Empty;
+        public bool Saved { get; set; }
+    }
+
+    private EventDto? _event;
+    private bool _loaded;
+    private List<WishlistEditor> _editors = [];
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _event = await Sender.Send(new GetEventQuery(GroupId, EventId));
+        _loaded = true;
+        _editors = _event is null
+            ? []
+            : _event.Wishlists
+                .Select(w => new WishlistEditor { MemberId = w.MemberId, MemberName = w.MemberName, Text = string.Join('\n', w.Items) })
+                .ToList();
+    }
+
+    private static IReadOnlyList<string> ParseWishlist(string text) =>
+        text.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private async Task SaveAsync(WishlistEditor editor)
+    {
+        await Sender.Send(new SetMemberWishlistCommand(GroupId, EventId, editor.MemberId, ParseWishlist(editor.Text)));
+        editor.Saved = true;
+    }
+}

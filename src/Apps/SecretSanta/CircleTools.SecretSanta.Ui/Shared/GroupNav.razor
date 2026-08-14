@@ -39,11 +39,9 @@
 
     private IReadOnlyList<Tab> Tabs =>
     [
-        new($"groups/{GroupId}", L["GroupEditorTitle"], Exact: true),
+        new($"groups/{GroupId}", L["NavEvents"], Exact: true),
         new($"groups/{GroupId}/members", L["NavMembers"]),
         new($"groups/{GroupId}/exclusions", L["NavExclusions"]),
-        new($"groups/{GroupId}/draw", L["NavDraw"]),
-        new($"groups/{GroupId}/share", L["NavShare"]),
     ];
 
     protected override async Task OnParametersSetAsync()

@@ -1,5 +1,6 @@
 @page "/groups/{GroupId:guid}"
 @inject ISender Sender
+@inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
 
 <PageTitle>@L["GroupEditorTitle"]</PageTitle>
@@ -21,41 +22,74 @@ else
                    Disabled="@string.IsNullOrWhiteSpace(_name)">@L["Save"]</MudButton>
     </div>
 
-    <MudCard Elevation="1" Class="mb-4">
-        <MudCardContent>
-            <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["BudgetLabel"]</MudText>
-            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.End" Wrap="Wrap.Wrap">
-                <MudNumericField @bind-Value="_budgetAmount" Label="@L["AmountLabel"]" Variant="Variant.Outlined"
-                                 Margin="Margin.Dense" Step="0.01M" Min="0" HideSpinButtons="false" />
-                <MudTextField @bind-Value="_budgetCurrency" Label="@L["CurrencyLabel"]" Variant="Variant.Outlined"
-                              Margin="Margin.Dense" />
-                <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveBudgetAsync">@L["Save"]</MudButton>
-                <MudButton Variant="Variant.Outlined" OnClick="ClearBudgetAsync">@L["ClearBudget"]</MudButton>
-            </MudStack>
-        </MudCardContent>
-    </MudCard>
+    @* Events (occasions): the roster and exclusions are shared, but each event has its own draw,
+       wishlists, budget and date (ADR-0042). *@
+    <MudText Typo="Typo.h5" GutterBottom="true">@L["NavEvents"]</MudText>
 
-    <MudCard Elevation="1" Class="mb-4">
-        <MudCardContent>
-            <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["EventLabel"]</MudText>
-            <MudStack Spacing="2">
-                <MudDatePicker @bind-Date="_eventDate" Label="@L["DateLabel"]" Variant="Variant.Outlined"
-                               Margin="Margin.Dense" />
-                <MudTextField @bind-Value="_eventLocation" Label="@L["LocationLabel"]" Variant="Variant.Outlined"
-                              Margin="Margin.Dense" />
-                <MudTextField @bind-Value="_eventDescription" Label="@L["DescriptionLabel"]" Variant="Variant.Outlined"
-                              Margin="Margin.Dense" Lines="3" />
-                <div>
-                    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveEventAsync">@L["Save"]</MudButton>
-                </div>
-            </MudStack>
-        </MudCardContent>
-    </MudCard>
+    <div class="d-flex gap-2 align-start flex-wrap mb-4">
+        <MudTextField @bind-Value="_newEventName" Immediate="true" OnKeyDown="OnNewEventKeyDown"
+                      Label="@L["EventNameLabel"]" Placeholder="@L["EventNamePlaceholder"]"
+                      Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" Style="min-width:12rem;" />
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddEventAsync"
+                   StartIcon="@Icons.Material.Filled.Add" Class="mt-1">@L["AddEvent"]</MudButton>
+    </div>
 
-    @if (_status is not null)
-    {
-        <MudAlert Severity="Severity.Success" Dense="true" role="status">@_status</MudAlert>
-    }
+    <MudStack Spacing="2">
+        @foreach (var occasion in _group.Events)
+        {
+            <MudCard Elevation="1">
+                <MudCardContent Class="pb-2">
+                    @if (_editingId == occasion.Id)
+                    {
+                        <div class="d-flex gap-2 align-center flex-wrap">
+                            <MudTextField @bind-Value="_editName" Label="@L["EventNameLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
+                            <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveEventNameAsync">@L["Save"]</MudButton>
+                            <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => _editingId = null">@L["Cancel"]</MudButton>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex justify-space-between align-center flex-wrap gap-2">
+                            <div class="d-flex align-center flex-wrap gap-2">
+                                <MudText Typo="Typo.subtitle1"><strong>@EventLabel(occasion.Name)</strong></MudText>
+                                @if (occasion.HasCurrentDraw)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
+                                }
+                                else if (occasion.DrawInvalidatedByMembershipChange)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
+                                }
+                            </div>
+                            <div class="d-flex align-center gap-1">
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                           OnClick="() => Open(occasion.Id)">@L["Open"]</MudButton>
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                           OnClick="() => BeginEdit(occasion.Id, occasion.Name)">@L["Rename"]</MudButton>
+                                @if (_group.Events.Count > 1)
+                                {
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
+                                               OnClick="() => AskRemove(occasion.Id)">@L["Remove"]</MudButton>
+                                }
+                            </div>
+                        </div>
+
+                        @if (_pendingRemoveId == occasion.Id)
+                        {
+                            <MudAlert Severity="Severity.Warning" Class="mt-3" Dense="true" role="alert">
+                                <MudText Class="mb-2">@L["ConfirmRemoveEvent", EventLabel(occasion.Name)]</MudText>
+                                <div class="d-flex gap-1">
+                                    <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Filled"
+                                               OnClick="() => RemoveEventAsync(occasion.Id)">@L["ConfirmRemove"]</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => _pendingRemoveId = null">@L["Cancel"]</MudButton>
+                                </div>
+                            </MudAlert>
+                        }
+                    }
+                </MudCardContent>
+            </MudCard>
+        }
+    </MudStack>
 }
 
 @code {
@@ -66,12 +100,10 @@ else
     private GroupDto? _group;
     private bool _loaded;
     private string _name = string.Empty;
-    private decimal? _budgetAmount;
-    private string _budgetCurrency = "CHF";
-    private DateTime? _eventDate;
-    private string _eventLocation = string.Empty;
-    private string _eventDescription = string.Empty;
-    private string? _status;
+    private string _newEventName = string.Empty;
+    private Guid? _editingId;
+    private string _editName = string.Empty;
+    private Guid? _pendingRemoveId;
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
@@ -79,48 +111,64 @@ else
     {
         _group = await Sender.Send(new GetGroupQuery(GroupId));
         _loaded = true;
-        if (_group is null)
+        if (_group is not null)
         {
-            return;
+            _name = _group.Name;
         }
-
-        _name = _group.Name;
-        _budgetAmount = _group.Budget?.Amount;
-        _budgetCurrency = _group.Budget?.Currency ?? "CHF";
-        _eventDate = _group.Event?.Date?.DateTime;
-        _eventLocation = _group.Event?.Location ?? string.Empty;
-        _eventDescription = _group.Event?.Description ?? string.Empty;
     }
+
+    private string EventLabel(string name) => string.IsNullOrWhiteSpace(name) ? L["DefaultEventName"] : name;
 
     private async Task SaveNameAsync()
     {
         await Sender.Send(new RenameGroupCommand(GroupId, _name));
-        await Reload();
-    }
-
-    private async Task SaveBudgetAsync()
-    {
-        await Sender.Send(new SetBudgetCommand(GroupId, _budgetAmount, _budgetCurrency));
-        await Reload();
-    }
-
-    private async Task ClearBudgetAsync()
-    {
-        _budgetAmount = null;
-        await Sender.Send(new SetBudgetCommand(GroupId, null, null));
-        await Reload();
-    }
-
-    private async Task SaveEventAsync()
-    {
-        DateTimeOffset? date = _eventDate is { } value ? new DateTimeOffset(value, TimeSpan.Zero) : null;
-        await Sender.Send(new SetEventDetailsCommand(GroupId, date, _eventLocation, _eventDescription));
-        await Reload();
-    }
-
-    private async Task Reload()
-    {
         await LoadAsync();
-        _status = L["Saved"];
     }
+
+    private async Task OnNewEventKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await AddEventAsync();
+        }
+    }
+
+    private async Task AddEventAsync()
+    {
+        var id = await Sender.Send(new AddEventCommand(GroupId, _newEventName));
+        _newEventName = string.Empty;
+        Open(id);
+    }
+
+    private void BeginEdit(Guid eventId, string name)
+    {
+        _editingId = eventId;
+        _editName = name;
+        _pendingRemoveId = null;
+    }
+
+    private async Task SaveEventNameAsync()
+    {
+        if (_editingId is { } id)
+        {
+            await Sender.Send(new RenameEventCommand(GroupId, id, _editName));
+            _editingId = null;
+            await LoadAsync();
+        }
+    }
+
+    private void AskRemove(Guid eventId)
+    {
+        _pendingRemoveId = eventId;
+        _editingId = null;
+    }
+
+    private async Task RemoveEventAsync(Guid eventId)
+    {
+        _pendingRemoveId = null;
+        await Sender.Send(new RemoveEventCommand(GroupId, eventId));
+        await LoadAsync();
+    }
+
+    private void Open(Guid eventId) => Navigation.NavigateTo($"groups/{GroupId}/events/{eventId}");
 }

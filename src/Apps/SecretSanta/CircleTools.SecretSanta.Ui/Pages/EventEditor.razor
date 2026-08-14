@@ -1,0 +1,127 @@
+@page "/groups/{GroupId:guid}/events/{EventId:guid}"
+@inject ISender Sender
+@inject IStringLocalizer<AppStrings> L
+
+<PageTitle>@L["EventDetailsTitle"]</PageTitle>
+
+<EventNav GroupId="GroupId" EventId="EventId" />
+
+@if (_event is null)
+{
+    <MudText>@(_loaded ? L["EventNotFound"] : L["Loading"])</MudText>
+}
+else
+{
+    <div class="d-flex gap-2 align-start flex-wrap mb-4">
+        <MudTextField @bind-Value="_name" Label="@L["EventNameLabel"]" Placeholder="@L["EventNamePlaceholder"]"
+                      Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" Style="min-width:12rem;" />
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveNameAsync" Class="mt-1">@L["Save"]</MudButton>
+    </div>
+
+    <MudCard Elevation="1" Class="mb-4">
+        <MudCardContent>
+            <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["BudgetLabel"]</MudText>
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.End" Wrap="Wrap.Wrap">
+                <MudNumericField @bind-Value="_budgetAmount" Label="@L["AmountLabel"]" Variant="Variant.Outlined"
+                                 Margin="Margin.Dense" Step="0.01M" Min="0" HideSpinButtons="false" />
+                <MudTextField @bind-Value="_budgetCurrency" Label="@L["CurrencyLabel"]" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" />
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveBudgetAsync">@L["Save"]</MudButton>
+                <MudButton Variant="Variant.Outlined" OnClick="ClearBudgetAsync">@L["ClearBudget"]</MudButton>
+            </MudStack>
+        </MudCardContent>
+    </MudCard>
+
+    <MudCard Elevation="1" Class="mb-4">
+        <MudCardContent>
+            <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["EventLabel"]</MudText>
+            <MudStack Spacing="2">
+                <MudDatePicker @bind-Date="_eventDate" Label="@L["DateLabel"]" Variant="Variant.Outlined"
+                               Margin="Margin.Dense" />
+                <MudTextField @bind-Value="_eventLocation" Label="@L["LocationLabel"]" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" />
+                <MudTextField @bind-Value="_eventDescription" Label="@L["DescriptionLabel"]" Variant="Variant.Outlined"
+                              Margin="Margin.Dense" Lines="3" />
+                <div>
+                    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveEventAsync">@L["Save"]</MudButton>
+                </div>
+            </MudStack>
+        </MudCardContent>
+    </MudCard>
+
+    @if (_status is not null)
+    {
+        <MudAlert Severity="Severity.Success" Dense="true" role="status">@_status</MudAlert>
+    }
+}
+
+@code {
+    /// <summary>The owning group.</summary>
+    [Parameter]
+    public Guid GroupId { get; set; }
+
+    /// <summary>The event being edited.</summary>
+    [Parameter]
+    public Guid EventId { get; set; }
+
+    private EventDto? _event;
+    private bool _loaded;
+    private string _name = string.Empty;
+    private decimal? _budgetAmount;
+    private string _budgetCurrency = "CHF";
+    private DateTime? _eventDate;
+    private string _eventLocation = string.Empty;
+    private string _eventDescription = string.Empty;
+    private string? _status;
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _event = await Sender.Send(new GetEventQuery(GroupId, EventId));
+        _loaded = true;
+        if (_event is null)
+        {
+            return;
+        }
+
+        _name = _event.Name;
+        _budgetAmount = _event.Budget?.Amount;
+        _budgetCurrency = _event.Budget?.Currency ?? "CHF";
+        _eventDate = _event.Details?.Date?.DateTime;
+        _eventLocation = _event.Details?.Location ?? string.Empty;
+        _eventDescription = _event.Details?.Description ?? string.Empty;
+    }
+
+    private async Task SaveNameAsync()
+    {
+        await Sender.Send(new RenameEventCommand(GroupId, EventId, _name));
+        await Reload();
+    }
+
+    private async Task SaveBudgetAsync()
+    {
+        await Sender.Send(new SetBudgetCommand(GroupId, EventId, _budgetAmount, _budgetCurrency));
+        await Reload();
+    }
+
+    private async Task ClearBudgetAsync()
+    {
+        _budgetAmount = null;
+        await Sender.Send(new SetBudgetCommand(GroupId, EventId, null, null));
+        await Reload();
+    }
+
+    private async Task SaveEventAsync()
+    {
+        DateTimeOffset? date = _eventDate is { } value ? new DateTimeOffset(value, TimeSpan.Zero) : null;
+        await Sender.Send(new SetEventDetailsCommand(GroupId, EventId, date, _eventLocation, _eventDescription));
+        await Reload();
+    }
+
+    private async Task Reload()
+    {
+        await LoadAsync();
+        _status = L["Saved"];
+    }
+}
