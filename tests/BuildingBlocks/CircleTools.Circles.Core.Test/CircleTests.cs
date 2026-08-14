@@ -469,6 +469,76 @@ public sealed class CircleTests
     }
 
     [Fact]
+    public void Promotion_ByRecipientChoice_LinksTheExistingMembership_WhenTheInvitationDidNotAimAtOne()
+    {
+        var circle = CircleFactory.WithOwner(_owner);
+        var managed = CircleFactory.AddManaged(circle, _owner, "Mia");
+
+        // Invited without a target; the recipient names the offline profile as they accept.
+        var invitation = CircleFactory.Invite(circle, _owner, "mia@example.com");
+        var accepted = circle.Accept(
+            invitation.Id, _member, "mia@example.com", "Mia Meier", null,
+            CircleFactory.Limits(), CircleFactory.Now, chosenManagedMembershipId: managed.Id);
+
+        Assert.Null(accepted.Error);
+        Assert.Equal(managed.Id, accepted.Value!.Id);
+        Assert.Equal(2, circle.Memberships.Count);
+        Assert.Equal(_member, accepted.Value.UserId);
+        Assert.False(accepted.Value.IsManaged);
+    }
+
+    [Fact]
+    public void Promotion_AdminTarget_WinsOverAConflictingRecipientChoice()
+    {
+        var circle = CircleFactory.WithOwner(_owner);
+        var aimedAt = CircleFactory.AddManaged(circle, _owner, "Mia");
+        var other = CircleFactory.AddManaged(circle, _owner, "Tom");
+
+        // The inviter aimed at Mia; the recipient's attempt to pick Tom instead is ignored.
+        var invitation = CircleFactory.Invite(circle, _owner, "mia@example.com", managedMembershipId: aimedAt.Id);
+        var accepted = circle.Accept(
+            invitation.Id, _member, "mia@example.com", "Mia Meier", null,
+            CircleFactory.Limits(), CircleFactory.Now, chosenManagedMembershipId: other.Id);
+
+        Assert.Equal(aimedAt.Id, accepted.Value!.Id);
+        Assert.True(other.IsManaged);
+        Assert.Equal(3, circle.Memberships.Count);
+    }
+
+    [Fact]
+    public void RecipientChoice_NamingAnAccountBackedMember_IsIgnored_AndTheyJoinAsNew()
+    {
+        var circle = CircleFactory.WithOwner(_owner);
+
+        // The owner's own membership is account-backed; a recipient must never seize it by picking it.
+        var invitation = CircleFactory.Invite(circle, _owner, "eve@example.com");
+        var accepted = circle.Accept(
+            invitation.Id, _member, "eve@example.com", "Eve", null,
+            CircleFactory.Limits(), CircleFactory.Now, chosenManagedMembershipId: circle.Owner.Id);
+
+        Assert.Null(accepted.Error);
+        Assert.NotEqual(circle.Owner.Id, accepted.Value!.Id);
+        Assert.Equal(_member, accepted.Value.UserId);
+        Assert.Equal(CircleRole.Owner, circle.Owner.Role);
+        Assert.Equal(_owner, circle.Owner.UserId);
+    }
+
+    [Fact]
+    public void RecipientChoice_NamingAnUnknownId_IsIgnored_AndTheyJoinAsNew()
+    {
+        var circle = CircleFactory.WithOwner(_owner);
+
+        var invitation = CircleFactory.Invite(circle, _owner, "eve@example.com");
+        var accepted = circle.Accept(
+            invitation.Id, _member, "eve@example.com", "Eve", null,
+            CircleFactory.Limits(), CircleFactory.Now, chosenManagedMembershipId: Guid.NewGuid());
+
+        Assert.Null(accepted.Error);
+        Assert.Equal(2, circle.Memberships.Count);
+        Assert.Equal(_member, accepted.Value!.UserId);
+    }
+
+    [Fact]
     public void AdminChangingARole_IsRefused()
     {
         var circle = CircleFactory.WithOwner(_owner);

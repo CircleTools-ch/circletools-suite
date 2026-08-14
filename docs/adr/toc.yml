@@ -84,5 +84,7 @@
   href: 0041-sync-secret-santa-ui-preferences.md
 - name: 0042 Events as first-class entities
   href: 0042-events-as-first-class-entities.md
+- name: 0043 Invitee-chosen managed-member promotion
+  href: 0043-invitee-chosen-managed-member-promotion.md
 - name: Template
   href: _template-adr.md

@@ -135,6 +135,17 @@
   <data name="CircleInviteTitle" xml:space="preserve"><value>Inviter quelqu'un</value></data>
   <data name="CircleInviteLead" xml:space="preserve"><value>Nous leur enverrons un e-mail avec un lien. Le lien est valable 14 jours.</value></data>
   <data name="CircleInviteEmail" xml:space="preserve"><value>Adresse e-mail</value></data>
+  <data name="CircleInviteToJoin" xml:space="preserve"><value>Inviter à rejoindre</value></data>
+  <data name="CircleInviteAsLead" xml:space="preserve"><value>Lorsque la personne accepte, elle reprend le profil de {0} — en conservant sa place et son historique.</value></data>
+  <data name="CircleInviteFor" xml:space="preserve"><value>Cette invitation concerne</value></data>
+  <data name="CircleInviteForNew" xml:space="preserve"><value>Une nouvelle personne</value></data>
+  <data name="CircleInviteForPerson" xml:space="preserve"><value>{0} (hors ligne)</value></data>
+  <data name="CirclePendingAsTarget" xml:space="preserve"><value>en tant que {0}</value></data>
+  <data name="InvitationJoinAs" xml:space="preserve"><value>Vous rejoignez en tant que {0}, en conservant sa place et son historique.</value></data>
+  <data name="InvitationWhoAreYou" xml:space="preserve"><value>Qui êtes-vous ?</value></data>
+  <data name="InvitationJoinAsNew" xml:space="preserve"><value>Quelqu'un de nouveau</value></data>
+  <data name="InvitationJoinAsExisting" xml:space="preserve"><value>Je suis {0}</value></data>
+  <data name="InvitationJoinConfirm" xml:space="preserve"><value>Rejoindre</value></data>
   <data name="CircleInviteSubmit" xml:space="preserve"><value>Envoyer l'invitation</value></data>
   <data name="CircleInviteSent" xml:space="preserve"><value>Si cette adresse peut être invitée, l'invitation est en route.</value></data>
   <data name="CirclePendingTitle" xml:space="preserve"><value>En attente de réponse</value></data>

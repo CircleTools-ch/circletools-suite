@@ -453,6 +453,39 @@
   <data name="CircleInviteEmail" xml:space="preserve">
     <value>Email address</value>
   </data>
+  <data name="CircleInviteToJoin" xml:space="preserve">
+    <value>Invite to join</value>
+  </data>
+  <data name="CircleInviteAsLead" xml:space="preserve">
+    <value>When they accept, they take over {0}'s profile — keeping their place and history.</value>
+  </data>
+  <data name="CircleInviteFor" xml:space="preserve">
+    <value>This invitation is for</value>
+  </data>
+  <data name="CircleInviteForNew" xml:space="preserve">
+    <value>A new person</value>
+  </data>
+  <data name="CircleInviteForPerson" xml:space="preserve">
+    <value>{0} (offline)</value>
+  </data>
+  <data name="CirclePendingAsTarget" xml:space="preserve">
+    <value>as {0}</value>
+  </data>
+  <data name="InvitationJoinAs" xml:space="preserve">
+    <value>You will join as {0}, keeping their place and history.</value>
+  </data>
+  <data name="InvitationWhoAreYou" xml:space="preserve">
+    <value>Who are you joining as?</value>
+  </data>
+  <data name="InvitationJoinAsNew" xml:space="preserve">
+    <value>Someone new</value>
+  </data>
+  <data name="InvitationJoinAsExisting" xml:space="preserve">
+    <value>I'm {0}</value>
+  </data>
+  <data name="InvitationJoinConfirm" xml:space="preserve">
+    <value>Join</value>
+  </data>
   <data name="CircleInviteSubmit" xml:space="preserve">
     <value>Send invitation</value>
   </data>

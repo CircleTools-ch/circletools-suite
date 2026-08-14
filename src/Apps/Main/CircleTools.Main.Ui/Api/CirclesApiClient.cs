@@ -270,14 +270,38 @@ public sealed class CirclesApiClient(
             new HttpRequestMessage(HttpMethod.Get, $"{Invitations}/{Uri.EscapeDataString(token)}"),
             cancellationToken);
 
-    /// <summary>Accepts an invitation from a mail link (FR-018). Signed in and verified.</summary>
+    /// <summary>
+    /// Reads the offline profiles the signed-in recipient of a mail-link invitation may join as
+    /// (FR-019). Authorized: unlocked only when the caller's verified address is the invited one.
+    /// </summary>
     /// <param name="token">The secret from the link.</param>
     /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The preselected target or the offline options, or the failure.</returns>
+    public Task<ApiResult<JoinTargetsResponse>> GetInvitationTargetsAsync(
+        string token,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<JoinTargetsResponse>(
+            authorized,
+            new HttpRequestMessage(HttpMethod.Get, $"{Invitations}/{Uri.EscapeDataString(token)}/targets"),
+            cancellationToken);
+
+    /// <summary>Accepts an invitation from a mail link (FR-018). Signed in and verified.</summary>
+    /// <param name="token">The secret from the link.</param>
+    /// <param name="managedMembershipId">
+    /// The offline profile the recipient chose to join as, or null to join as new (FR-019). Ignored
+    /// when the inviter already aimed the invitation at a managed member.
+    /// </param>
+    /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The outcome; refused unless the caller's verified address is the invited one.</returns>
-    public Task<ApiResult> AcceptInvitationAsync(string token, CancellationToken cancellationToken = default) =>
+    public Task<ApiResult> AcceptInvitationAsync(
+        string token,
+        Guid? managedMembershipId = null,
+        CancellationToken cancellationToken = default) =>
         SendAsync(
             authorized,
-            Post($"{Invitations}/{Uri.EscapeDataString(token)}/accept"),
+            Post(
+                $"{Invitations}/{Uri.EscapeDataString(token)}/accept",
+                new AcceptInvitationBody(managedMembershipId)),
             cancellationToken);
 
     /// <summary>Declines an invitation from a mail link (FR-018). Anonymous.</summary>
@@ -295,16 +319,43 @@ public sealed class CirclesApiClient(
             Post($"{Invitations}/{Uri.EscapeDataString(token)}/decline"),
             cancellationToken);
 
+    /// <summary>
+    /// Reads the offline profiles the signed-in recipient of an in-app join request may join as
+    /// (FR-019). Authorized: unlocked only when the caller's verified address is the invited one.
+    /// </summary>
+    /// <param name="circleId">The circle.</param>
+    /// <param name="invitationId">The invitation.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The preselected target or the offline options, or the failure.</returns>
+    public Task<ApiResult<JoinTargetsResponse>> GetJoinRequestTargetsAsync(
+        Guid circleId,
+        Guid invitationId,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<JoinTargetsResponse>(
+            authorized,
+            new HttpRequestMessage(HttpMethod.Get, $"{Invitations}/{circleId}/{invitationId}/targets"),
+            cancellationToken);
+
     /// <summary>Accepts a join request from inside the app (FR-018).</summary>
     /// <param name="circleId">The circle.</param>
     /// <param name="invitationId">The invitation.</param>
+    /// <param name="managedMembershipId">
+    /// The offline profile the recipient chose to join as, or null to join as new (FR-019). Ignored
+    /// when the inviter already aimed the invitation at a managed member.
+    /// </param>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The outcome.</returns>
     public Task<ApiResult> AcceptJoinRequestAsync(
         Guid circleId,
         Guid invitationId,
+        Guid? managedMembershipId = null,
         CancellationToken cancellationToken = default) =>
-        SendAsync(authorized, Post($"{Invitations}/{circleId}/{invitationId}/accept"), cancellationToken);
+        SendAsync(
+            authorized,
+            Post(
+                $"{Invitations}/{circleId}/{invitationId}/accept",
+                new AcceptInvitationBody(managedMembershipId)),
+            cancellationToken);
 
     /// <summary>Declines a join request from inside the app (FR-018).</summary>
     /// <param name="circleId">The circle.</param>

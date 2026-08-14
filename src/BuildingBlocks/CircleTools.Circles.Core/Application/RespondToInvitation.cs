@@ -19,7 +19,8 @@ internal static class InvitationResponse
         CircleAccount account,
         CircleLimits limits,
         DateTimeOffset now,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Guid? chosenManagedMembershipId = null)
     {
         var accepted = circle.Accept(
             invitationId,
@@ -28,7 +29,8 @@ internal static class InvitationResponse
             account.DisplayName,
             account.Language,
             limits,
-            now);
+            now,
+            chosenManagedMembershipId);
 
         // Saved on every outcome, not only the successful one: an expired invitation is dropped and
         // an invitation accepted by someone already in the circle is consumed, and both of those are
@@ -165,7 +167,11 @@ public sealed class GetJoinRequestsQueryHandler(
 /// <summary>Command to accept an invitation from its mailed link (FR-018).</summary>
 /// <param name="UserId">The signed-in, verified caller.</param>
 /// <param name="Secret">The secret from the link.</param>
-public sealed record AcceptInvitationCommand(Guid UserId, string Secret)
+/// <param name="ChosenManagedMembershipId">
+/// The offline profile the recipient chose to join as, or null to join as new (FR-019). Honoured only
+/// when the inviter did not already aim the invitation at a managed member.
+/// </param>
+public sealed record AcceptInvitationCommand(Guid UserId, string Secret, Guid? ChosenManagedMembershipId = null)
     : ICommand<CircleResult<CircleSummaryResponse>>;
 
 /// <summary>Handles <see cref="AcceptInvitationCommand"/>.</summary>
@@ -219,7 +225,8 @@ public sealed class AcceptInvitationCommandHandler(
             account,
             limits.Value,
             timeProvider.GetUtcNow(),
-            cancellationToken);
+            cancellationToken,
+            command.ChosenManagedMembershipId);
     }
 }
 
@@ -227,7 +234,15 @@ public sealed class AcceptInvitationCommandHandler(
 /// <param name="UserId">The signed-in, verified caller.</param>
 /// <param name="CircleId">The circle being joined.</param>
 /// <param name="InvitationId">The invitation being accepted.</param>
-public sealed record AcceptJoinRequestCommand(Guid UserId, Guid CircleId, Guid InvitationId)
+/// <param name="ChosenManagedMembershipId">
+/// The offline profile the recipient chose to join as, or null to join as new (FR-019). Honoured only
+/// when the inviter did not already aim the invitation at a managed member.
+/// </param>
+public sealed record AcceptJoinRequestCommand(
+    Guid UserId,
+    Guid CircleId,
+    Guid InvitationId,
+    Guid? ChosenManagedMembershipId = null)
     : ICommand<CircleResult<CircleSummaryResponse>>;
 
 /// <summary>Handles <see cref="AcceptJoinRequestCommand"/>.</summary>
@@ -273,7 +288,8 @@ public sealed class AcceptJoinRequestCommandHandler(
             account,
             limits.Value,
             timeProvider.GetUtcNow(),
-            cancellationToken);
+            cancellationToken,
+            command.ChosenManagedMembershipId);
     }
 }
 
@@ -374,5 +390,118 @@ public sealed class DeclineJoinRequestCommandHandler(
             invitation.Id,
             timeProvider.GetUtcNow(),
             cancellationToken);
+    }
+}
+
+/// <summary>
+/// Query for the offline profiles the recipient of a <em>mailed</em> invitation may join as (FR-019).
+/// Signed in, and gated on the caller's verified address being the invited one.
+/// </summary>
+/// <param name="UserId">The signed-in, verified caller.</param>
+/// <param name="Secret">The secret from the link.</param>
+public sealed record GetInvitationTargetsBySecretQuery(Guid UserId, string Secret)
+    : IQuery<CircleResult<JoinTargetsResponse>>;
+
+/// <summary>Handles <see cref="GetInvitationTargetsBySecretQuery"/>.</summary>
+/// <param name="repository">The circle repository port.</param>
+/// <param name="accounts">The account directory port.</param>
+/// <param name="timeProvider">The clock.</param>
+/// <remarks>
+/// The offline roster this returns is member-only data (NFR-006), relaxed just far enough to let the
+/// invited person say who they are (ADR-0043). The relaxation is the address check below: a forwarded
+/// link resolves the same as an unknown one, so a link-holder who is not the invited address learns
+/// nothing — not the roster, and not whether the address has an account.
+/// </remarks>
+public sealed class GetInvitationTargetsBySecretQueryHandler(
+    ICircleRepository repository,
+    IAccountDirectory accounts,
+    TimeProvider timeProvider)
+    : IQueryHandler<GetInvitationTargetsBySecretQuery, CircleResult<JoinTargetsResponse>>
+{
+    /// <inheritdoc />
+    public async Task<CircleResult<JoinTargetsResponse>> HandleAsync(
+        GetInvitationTargetsBySecretQuery query,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var account = await accounts.FindAsync(query.UserId, cancellationToken);
+        if (account is null)
+        {
+            return CircleResults.Refused<JoinTargetsResponse>(CircleError.AccountNotFound);
+        }
+
+        if (string.IsNullOrWhiteSpace(query.Secret))
+        {
+            return CircleResults.Refused<JoinTargetsResponse>(CircleError.InvitationNotFound);
+        }
+
+        var handle = InvitationSecret.HandleFor(query.Secret);
+        var circle = await repository.FindByInvitationHandleAsync(handle, cancellationToken);
+        var invitation = circle?.FindInvitationByHandle(handle);
+
+        return Resolve(circle, invitation, account, timeProvider.GetUtcNow());
+    }
+
+    internal static CircleResult<JoinTargetsResponse> Resolve(
+        Circle? circle,
+        Invitation? invitation,
+        CircleAccount account,
+        DateTimeOffset now)
+    {
+        if (circle is null || invitation is null || invitation.IsExpiredAt(now))
+        {
+            return CircleResults.Refused<JoinTargetsResponse>(CircleError.InvitationNotFound);
+        }
+
+        // The whole of the forwarded-link defence: only the invited address is answered, and a
+        // mismatch is told exactly what an unknown invitation is told.
+        if (!string.Equals(invitation.EmailHash, EmailAddress.HashOf(account.Email), StringComparison.Ordinal))
+        {
+            return CircleResults.Refused<JoinTargetsResponse>(CircleError.InvitationNotFound);
+        }
+
+        return CircleResults.Ok(CircleMapper.ToJoinTargets(circle, invitation));
+    }
+}
+
+/// <summary>
+/// Query for the offline profiles the recipient of an <em>in-app</em> join request may join as
+/// (FR-019). Same address gate as the mailed path, addressed by circle and invitation id.
+/// </summary>
+/// <param name="UserId">The signed-in, verified caller.</param>
+/// <param name="CircleId">The circle.</param>
+/// <param name="InvitationId">The invitation.</param>
+public sealed record GetJoinRequestTargetsQuery(Guid UserId, Guid CircleId, Guid InvitationId)
+    : IQuery<CircleResult<JoinTargetsResponse>>;
+
+/// <summary>Handles <see cref="GetJoinRequestTargetsQuery"/>.</summary>
+/// <param name="repository">The circle repository port.</param>
+/// <param name="accounts">The account directory port.</param>
+/// <param name="timeProvider">The clock.</param>
+public sealed class GetJoinRequestTargetsQueryHandler(
+    ICircleRepository repository,
+    IAccountDirectory accounts,
+    TimeProvider timeProvider)
+    : IQueryHandler<GetJoinRequestTargetsQuery, CircleResult<JoinTargetsResponse>>
+{
+    /// <inheritdoc />
+    public async Task<CircleResult<JoinTargetsResponse>> HandleAsync(
+        GetJoinRequestTargetsQuery query,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        var account = await accounts.FindAsync(query.UserId, cancellationToken);
+        if (account is null)
+        {
+            return CircleResults.Refused<JoinTargetsResponse>(CircleError.AccountNotFound);
+        }
+
+        var circle = await repository.FindAsync(query.CircleId, cancellationToken);
+        var invitation = circle?.FindInvitation(query.InvitationId);
+
+        return GetInvitationTargetsBySecretQueryHandler.Resolve(
+            circle, invitation, account, timeProvider.GetUtcNow());
     }
 }

@@ -6,7 +6,7 @@ status: Approved
 priority: Must
 source: UC-MAIN-011
 verification: test
-related: [UC-MAIN-011, UC-MAIN-009, NFR-003, NFR-004, NFR-006, ADR-0018, ADR-0022, FEAT-003]
+related: [UC-MAIN-011, UC-MAIN-009, UC-MAIN-010, NFR-003, NFR-004, NFR-006, ADR-0018, ADR-0022, ADR-0043, FEAT-003]
 ---
 
 # FR-019 — Add and maintain managed members
@@ -24,10 +24,16 @@ A circle **owner** or **admin** must be able to add a
   hold `admin` or `owner`** — those roles imply someone who can sign in.
 - They are visibly marked as **managed** in the people list.
 - Display names are **not unique**; two people with the same name are allowed.
-- **Promotion:** when the person does get an email address, an owner or admin invites them **from the
-  managed profile**. On acceptance the existing membership is **linked to the new
-  [User](../../glossary/user.md)** rather than replaced, so the person keeps their place and their
-  history. Every rule of [FR-018](FR-018-respond-to-circle-invitation.md) applies unchanged.
+- **Promotion:** when the person does get an email address, they are promoted through an
+  [Invitation](../../glossary/invitation.md) aimed at the managed profile. The profile is aimed one of
+  two ways: the inviting owner or admin picks it when sending, **or** — when they don't — the invited
+  person picks themselves out of the circle's offline people as they accept, a choice offered only to
+  the signed-in recipient whose verified address is the invited one
+  ([ADR-0043](../../adr/0043-invitee-chosen-managed-member-promotion.md)). Either way, on acceptance
+  the existing membership is **linked to the new [User](../../glossary/user.md)** rather than replaced,
+  so the person keeps their place and their history. A recipient's pick that no longer names a managed
+  member of the circle is ignored — they simply join as new. Every rule of
+  [FR-018](FR-018-respond-to-circle-invitation.md) applies unchanged.
 - Managed members are **circle data, not the creator's data**: they survive the departure or account
   deletion of the admin who created them, and are deleted with the circle
   ([FR-022](FR-022-delete-circle.md)).
@@ -81,6 +87,15 @@ Given a managed member who has since obtained an email address
 When an admin invites them from the managed profile and the invitation is accepted
 Then the existing membership is linked to the new user
 And no second membership or duplicate person is created
+
+Given a circle with offline people and an invitation not aimed at any of them
+When the signed-in invited recipient picks one of those offline people while accepting
+Then the existing membership is linked to their account
+And no second membership or duplicate person is created
+
+Given a holder of a forwarded invitation link who is not the invited address
+When they request the circle's offline people to join as
+Then the request is refused exactly as an unknown invitation is
 
 Given a managed member created by an admin
 When that admin leaves the circle or deletes their account
