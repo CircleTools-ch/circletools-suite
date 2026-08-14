@@ -21,11 +21,21 @@ public sealed record InviteRequest(string Email, Guid? ManagedMembershipId);
 /// </param>
 /// <param name="InvitedAt">When the invitation was first created.</param>
 /// <param name="ExpiresAt">When it stops being acceptable and leaves this list.</param>
+/// <param name="ManagedMembershipId">
+/// The managed member this invitation promotes, when the inviter aimed it at one (FR-019), so the
+/// admin can tell "invite a new person" from "invite Grandma to take over her offline profile". Null
+/// for an ordinary invitation. Resolved to the profile's <em>current</em> name in
+/// <paramref name="ManagedDisplayName"/>; a target removed since the invitation was sent reads as null
+/// in both, and the invitation then behaves as an ordinary one.
+/// </param>
+/// <param name="ManagedDisplayName">The target managed member's current display name, or null.</param>
 public sealed record PendingInvitationResponse(
     Guid Id,
     string InvitedEmail,
     DateTimeOffset InvitedAt,
-    DateTimeOffset ExpiresAt);
+    DateTimeOffset ExpiresAt,
+    Guid? ManagedMembershipId = null,
+    string? ManagedDisplayName = null);
 
 /// <summary>
 /// What the holder of an invitation link is shown before accepting (FR-018) — the circle's name,
@@ -56,3 +66,41 @@ public sealed record JoinRequestResponse(
     string CircleName,
     string CircleLabel,
     string InviterDisplayName);
+
+/// <summary>
+/// One offline person (managed member) the recipient of an invitation may join <em>as</em> (FR-019).
+/// Carries a display name and the membership id and nothing else — no address, and never an
+/// account-backed member.
+/// </summary>
+/// <param name="MembershipId">The managed membership's identity, sent back as the recipient's choice.</param>
+/// <param name="DisplayName">The name that person is known by in the circle.</param>
+public sealed record ManagedPersonOption(Guid MembershipId, string DisplayName);
+
+/// <summary>
+/// What the invited person is offered when deciding <em>who</em> they are joining as (FR-019). It is
+/// returned only to a signed-in caller whose <strong>verified</strong> address is the invited one —
+/// the same check that admits acceptance — so the offline roster it carries is never exposed to a
+/// forwarded-link holder or shown on the anonymous landing preview (ADR-0043, NFR-006).
+/// </summary>
+/// <param name="PreselectedMembershipId">
+/// The managed member the inviter already aimed the invitation at, when they did. When set, the
+/// recipient has no choice to make — they will take over that profile — and <paramref name="Options"/>
+/// is empty. When null, the recipient may pick from <paramref name="Options"/> or join as new.
+/// </param>
+/// <param name="PreselectedDisplayName">That target's display name, or null.</param>
+/// <param name="Options">
+/// The circle's offline people the recipient may claim to be, present only for an untargeted
+/// invitation. Empty when the inviter targeted someone, or when the circle has no offline people.
+/// </param>
+public sealed record JoinTargetsResponse(
+    Guid? PreselectedMembershipId,
+    string? PreselectedDisplayName,
+    IReadOnlyList<ManagedPersonOption> Options);
+
+/// <summary>
+/// The body of an accept, carrying the recipient's self-selected offline profile (FR-019). Optional
+/// on both accept routes: an ordinary accept sends none, and an invitation the inviter already aimed
+/// at a managed member ignores it — the inviter's choice wins.
+/// </summary>
+/// <param name="ManagedMembershipId">The offline person the recipient chose to become, or null to join as new.</param>
+public sealed record AcceptInvitationBody(Guid? ManagedMembershipId);

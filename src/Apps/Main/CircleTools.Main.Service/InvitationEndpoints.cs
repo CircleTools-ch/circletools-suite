@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using CircleTools.Application;
+using CircleTools.Circles.Contracts;
 using CircleTools.Circles.Core.Application;
 
 namespace CircleTools.Main.Service;
@@ -35,15 +36,21 @@ public static class InvitationEndpoints
         // The in-app path: invitations sent to the caller's own verified address. No token from any
         // mail is involved at any point.
         group.MapGet("/", GetJoinRequestsAsync).WithName("GetJoinRequests").RequireAuthorization();
+        group.MapGet("/{circleId:guid}/{invitationId:guid}/targets", GetJoinRequestTargetsAsync)
+            .WithName("GetJoinRequestTargets").RequireAuthorization();
         group.MapPost("/{circleId:guid}/{invitationId:guid}/accept", AcceptJoinRequestAsync)
             .WithName("AcceptJoinRequest").RequireAuthorization();
         group.MapPost("/{circleId:guid}/{invitationId:guid}/decline", DeclineJoinRequestAsync)
             .WithName("DeclineJoinRequest").RequireAuthorization();
 
         // The mailed-link path. Reading and declining need no account — someone who has never used
-        // the product must be able to say no.
+        // the product must be able to say no. Listing the offline profiles to join as does need one:
+        // it is member-only data, unlocked only for the signed-in, address-matched recipient (ADR-0043).
         group.MapGet("/{secret}", GetPreviewAsync)
             .WithName("GetInvitationPreview").AllowAnonymous()
+            .RequireRateLimiting(AccountEndpoints.SensitiveRateLimitPolicy);
+        group.MapGet("/{secret}/targets", GetInvitationTargetsAsync)
+            .WithName("GetInvitationTargets").RequireAuthorization()
             .RequireRateLimiting(AccountEndpoints.SensitiveRateLimitPolicy);
         group.MapPost("/{secret}/decline", DeclineAsync)
             .WithName("DeclineInvitation").AllowAnonymous()
@@ -75,6 +82,28 @@ public static class InvitationEndpoints
         Guid invitationId,
         ClaimsPrincipal principal,
         ISender sender,
+        CancellationToken cancellationToken,
+        AcceptInvitationBody? body = null)
+    {
+        if (!principal.TryGetUserId(out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await sender
+            .Send(
+                new AcceptJoinRequestCommand(userId, circleId, invitationId, body?.ManagedMembershipId),
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        return result.IsSuccess ? Results.Ok(result.Value) : CircleProblems.From(result.Error!.Value);
+    }
+
+    private static async Task<IResult> GetJoinRequestTargetsAsync(
+        Guid circleId,
+        Guid invitationId,
+        ClaimsPrincipal principal,
+        ISender sender,
         CancellationToken cancellationToken)
     {
         if (!principal.TryGetUserId(out var userId))
@@ -83,7 +112,7 @@ public static class InvitationEndpoints
         }
 
         var result = await sender
-            .Send(new AcceptJoinRequestCommand(userId, circleId, invitationId), cancellationToken)
+            .Send(new GetJoinRequestTargetsQuery(userId, circleId, invitationId), cancellationToken)
             .ConfigureAwait(false);
 
         return result.IsSuccess ? Results.Ok(result.Value) : CircleProblems.From(result.Error!.Value);
@@ -134,6 +163,30 @@ public static class InvitationEndpoints
         string secret,
         ClaimsPrincipal principal,
         ISender sender,
+        CancellationToken cancellationToken,
+        AcceptInvitationBody? body = null)
+    {
+        if (!principal.TryGetUserId(out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await sender
+            .Send(new AcceptInvitationCommand(userId, secret, body?.ManagedMembershipId), cancellationToken)
+            .ConfigureAwait(false);
+
+        return result.IsSuccess ? Results.Ok(result.Value) : CircleProblems.From(result.Error!.Value);
+    }
+
+    /// <summary>
+    /// The offline profiles the signed-in recipient may join as (FR-019). Member-only data, unlocked
+    /// only for the caller whose verified address is the invited one — a forwarded-link holder is told
+    /// exactly what an unknown link is told, and the anonymous preview never carries it (ADR-0043).
+    /// </summary>
+    private static async Task<IResult> GetInvitationTargetsAsync(
+        string secret,
+        ClaimsPrincipal principal,
+        ISender sender,
         CancellationToken cancellationToken)
     {
         if (!principal.TryGetUserId(out var userId))
@@ -142,7 +195,7 @@ public static class InvitationEndpoints
         }
 
         var result = await sender
-            .Send(new AcceptInvitationCommand(userId, secret), cancellationToken)
+            .Send(new GetInvitationTargetsBySecretQuery(userId, secret), cancellationToken)
             .ConfigureAwait(false);
 
         return result.IsSuccess ? Results.Ok(result.Value) : CircleProblems.From(result.Error!.Value);

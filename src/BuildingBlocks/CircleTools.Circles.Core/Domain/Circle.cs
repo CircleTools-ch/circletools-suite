@@ -324,6 +324,13 @@ public sealed class Circle : AggregateRoot
     /// <param name="language">That account's preferred language.</param>
     /// <param name="limits">The configured caps.</param>
     /// <param name="now">The current instant.</param>
+    /// <param name="chosenManagedMembershipId">
+    /// The managed profile the <em>recipient</em> picked to become, when the invitation was not
+    /// already aimed at one by the inviter (FR-019). Ignored whenever the invitation carries an
+    /// admin-set <see cref="Invitation.ManagedMembershipId"/> — the inviter's choice is authoritative
+    /// — and validated the same way it is: it links only when it names a still-managed member of this
+    /// circle, and otherwise the person simply joins as new.
+    /// </param>
     /// <returns>The new or newly linked membership, or the reason it was refused.</returns>
     /// <remarks>
     /// A mismatching address is the forwarded-link case: it creates nothing, and the caller must
@@ -336,7 +343,8 @@ public sealed class Circle : AggregateRoot
         string displayName,
         string? language,
         CircleLimits limits,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        Guid? chosenManagedMembershipId = null)
     {
         ArgumentNullException.ThrowIfNull(limits);
         ArgumentException.ThrowIfNullOrWhiteSpace(verifiedEmail);
@@ -372,7 +380,13 @@ public sealed class Circle : AggregateRoot
         // Promotion (FR-019): link the profile the person already has rather than adding a second
         // one, so they keep their place and their history. A profile removed since the invitation
         // was sent simply means there is nothing to link, and they join as a new person.
-        var promoted = invitation.ManagedMembershipId is { } managedId ? FindMembership(managedId) : null;
+        //
+        // The target is the inviter's when they aimed the invitation at a managed member, and the
+        // recipient's own pick otherwise: the admin-set id wins because it is read first. Either way
+        // the same guard applies below — it links only when the id still names a managed member of
+        // this circle, so a recipient's stale or account-backed pick can never seize a real account.
+        var targetManagedId = invitation.ManagedMembershipId ?? chosenManagedMembershipId;
+        var promoted = targetManagedId is { } managedId ? FindMembership(managedId) : null;
         if (promoted is { IsManaged: true })
         {
             promoted.LinkToAccount(userId, displayName, language);

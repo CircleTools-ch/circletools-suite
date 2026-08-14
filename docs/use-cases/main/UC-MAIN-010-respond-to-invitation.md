@@ -5,7 +5,7 @@ app: Main
 actors: [User, Invited person]
 status: Approved
 priority: Must
-related: [FR-018, NFR-003, NFR-005, NFR-006, ADR-0018]
+related: [FR-018, FR-019, NFR-003, NFR-005, NFR-006, ADR-0018, ADR-0043]
 ---
 
 # UC-MAIN-010 — Accept or decline a circle invitation
@@ -72,6 +72,16 @@ The recipient opens the invitation mail, or opens the app and sees a pending joi
   owner. No hint is given as to whether that address has an account.
 - **4a. Recipient already belongs to the circle** → they are told so; the invitation is consumed and no
   second membership is created.
+- **3b / 4c. Recipient joins *as an existing offline person*** → when the circle has
+  [managed members](../../glossary/managed-member.md), the acceptance screen asks **who they are
+  joining as**: *someone new*, or one of those offline people. Picking one **promotes** that profile —
+  the account is linked to it, keeping its place and history
+  ([FR-019](../../requirements/functional/FR-019-manage-managed-members.md)). When the inviter already
+  aimed the invitation at a specific offline person, that is authoritative: the screen states *"you
+  will join as <name>"* and there is nothing to choose. This choice is offered **only** to the
+  signed-in recipient whose verified address is the invited one — never on the anonymous landing
+  preview, and never to a forwarded-link holder
+  ([ADR-0043](../../adr/0043-invitee-chosen-managed-member-promotion.md)).
 - **4b. Recipient never responds** → the invitation expires on its own. The inviter sees it leave the
   pending list, with no distinction between *ignored* and *expired*.
 
@@ -96,7 +106,11 @@ The recipient opens the invitation mail, or opens the app and sees a pending joi
 - **Privacy:** before accepting, the recipient sees only the circle's name, its label and the inviter's
   display name — never the member list. What the circle contains is member-only data
   ([NFR-006](../../requirements/non-functional/NFR-006-circle-authorization.md)), and someone deciding
-  whether to join has not joined yet.
+  whether to join has not joined yet. The **one** deliberate exception is the join-as choice above: a
+  signed-in recipient whose verified address is the invited one may be shown the circle's **offline
+  people** (display names only, no addresses, no account-backed members) so they can say who they are
+  — unlocked to precisely the person who is about to join, and to nobody else
+  ([ADR-0043](../../adr/0043-invitee-chosen-managed-member-promotion.md)).
 - **Performance:** accepting is a single round trip and puts the person in the circle immediately —
   no admin approval step.
 

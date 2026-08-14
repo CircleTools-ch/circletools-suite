@@ -220,6 +220,92 @@ public sealed class CirclePageTests
         Assert.Contains("CircleInviteSent", page.Markup, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// An offline person can be invited straight from their row, and the general invite form offers
+    /// aiming an invitation at one — the UI half of FR-019's promotion the backend already supported.
+    /// </summary>
+    [Fact]
+    public void OfflinePerson_OffersInvitingThemToJoin_AndRevealsTheAsThemForm()
+    {
+        using var context = DetailContext(
+            out var circleId,
+            "Owner",
+            Person("Anna", "Owner", isYou: true),
+            Person("Mia", "Member", isManaged: true));
+
+        var page = RenderDetail(context, circleId);
+
+        Assert.Contains("CircleInviteToJoin", page.Markup, StringComparison.Ordinal);
+        Assert.Contains("CircleInviteFor", page.Markup, StringComparison.Ordinal);
+
+        page.FindAll("button")
+            .First(b => b.TextContent.Contains("CircleInviteToJoin", StringComparison.Ordinal))
+            .Click();
+
+        Assert.Contains("CircleInviteAsLead", page.Markup, StringComparison.Ordinal);
+    }
+
+    /// <summary>A pending invitation aimed at an offline person says so, so an admin can tell it apart
+    /// from an ordinary invitation (FR-019).</summary>
+    [Fact]
+    public void PendingInvitation_AimedAtAnOfflinePerson_ShowsWhoItIsFor()
+    {
+        using var context = new AccountTestContext();
+        var id = Guid.CreateVersion7();
+        context.SignIn();
+        context.Api.RespondJson(
+            HttpMethod.Get,
+            $"{CirclesRoute}/{id}",
+            Circle(id, "Owner", Person("Anna", "Owner", isYou: true), Person("Mia", "Member", isManaged: true)));
+        context.Api.RespondJson(
+            HttpMethod.Get,
+            $"{CirclesRoute}/{id}/invitations",
+            new[]
+            {
+                new PendingInvitationResponse(
+                    Guid.CreateVersion7(), "mia@example.test",
+                    DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(14),
+                    Guid.CreateVersion7(), "Mia"),
+            });
+
+        var page = RenderDetail(context, id);
+
+        Assert.Contains("CirclePendingAsTarget", page.Markup, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// When the circle has offline people and the invitation was left open, accepting first asks the
+    /// recipient who they are joining as (FR-019, ADR-0043).
+    /// </summary>
+    [Fact]
+    public void JoinRequest_ForACircleWithOfflinePeople_AsksWhoYouAreJoiningAs()
+    {
+        using var context = new AccountTestContext();
+        context.SignIn();
+
+        var circleId = Guid.CreateVersion7();
+        var invitationId = Guid.CreateVersion7();
+        context.Api.RespondJson(
+            HttpMethod.Get,
+            "api/v1/invitations",
+            new[] { new JoinRequestResponse(circleId, invitationId, "Müller", "Familie", "Anna") });
+        context.Api.RespondJson(
+            HttpMethod.Get,
+            $"api/v1/invitations/{circleId}/{invitationId}/targets",
+            new JoinTargetsResponse(
+                PreselectedMembershipId: null,
+                PreselectedDisplayName: null,
+                Options: new[] { new ManagedPersonOption(Guid.CreateVersion7(), "Mia") }));
+
+        var page = context.RenderPage<JoinRequests>();
+        page.FindAll("button")
+            .First(b => b.TextContent.Contains("InvitationAccept", StringComparison.Ordinal))
+            .Click();
+
+        Assert.Contains("InvitationWhoAreYou", page.Markup, StringComparison.Ordinal);
+        Assert.Contains("InvitationJoinAsNew", page.Markup, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void AMember_SeesNeitherTheInviteFormNorTheDeleteSection()
     {

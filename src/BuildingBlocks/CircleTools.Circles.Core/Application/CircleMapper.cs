@@ -66,7 +66,38 @@ internal static class CircleMapper
         [.. circle.Invitations
             .Where(i => !i.IsExpiredAt(now))
             .OrderBy(i => i.CreatedAt)
-            .Select(i => new PendingInvitationResponse(i.Id, i.Email, i.CreatedAt, i.ExpiresAt))];
+            .Select(i =>
+            {
+                // A target still standing as a managed member is shown by its current name; one that
+                // was promoted or removed since is treated as no target at all, so the admin never
+                // reads "as Grandma" against a profile that is gone.
+                var target = i.ManagedMembershipId is { } id ? circle.FindMembership(id) : null;
+                var managed = target is { IsManaged: true } ? target : null;
+                return new PendingInvitationResponse(
+                    i.Id, i.Email, i.CreatedAt, i.ExpiresAt, managed?.Id, managed?.DisplayName);
+            })];
+
+    /// <summary>
+    /// What the invited person may choose to join <em>as</em> (FR-019). When the inviter aimed the
+    /// invitation at a managed member, that is preselected and there is nothing to pick; otherwise the
+    /// circle's offline people are offered. Callers gate this on the recipient's verified address —
+    /// this method assumes that check has already passed (ADR-0043).
+    /// </summary>
+    public static JoinTargetsResponse ToJoinTargets(Circle circle, Invitation invitation)
+    {
+        var preselected = invitation.ManagedMembershipId is { } id ? circle.FindMembership(id) : null;
+        if (preselected is { IsManaged: true })
+        {
+            return new JoinTargetsResponse(preselected.Id, preselected.DisplayName, []);
+        }
+
+        var options = circle.Memberships
+            .Where(m => m.IsManaged)
+            .Select(m => new ManagedPersonOption(m.Id, m.DisplayName))
+            .ToList();
+
+        return new JoinTargetsResponse(PreselectedMembershipId: null, PreselectedDisplayName: null, options);
+    }
 
     public static SoleOwnedCircleResponse ToSoleOwned(Circle circle, Guid ownerUserId) =>
         new(circle.Id, circle.Name, circle.Label, circle.CountOtherAccountBackedPeople(ownerUserId));
