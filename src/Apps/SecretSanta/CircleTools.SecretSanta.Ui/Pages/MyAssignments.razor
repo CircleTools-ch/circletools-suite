@@ -5,6 +5,7 @@
 @using CircleTools.SecretSanta.LocalStore.Linking
 @inject ILinkingApi Linking
 @inject IStringLocalizer<AppStrings> L
+@inject TimeProvider Time
 
 @*
     See my assignment while signed in (FR-029). The server returns only the caller's own pairing, one
@@ -119,7 +120,9 @@
         var result = await Linking.GetMyAssignmentsAsync();
         if (result.IsSuccess)
         {
-            _assignments = result.Value!.Assignments;
+            // Only present and future occasions: a past event's gift has been given, so it drops off
+            // the list (an undated or today's event stays).
+            _assignments = result.Value!.Assignments.Where(NotPast).ToList();
         }
         else
         {
@@ -130,4 +133,8 @@
 
     private static bool HasEvent(EventDetailsDto ev) =>
         ev.Date is not null || !string.IsNullOrWhiteSpace(ev.Location) || !string.IsNullOrWhiteSpace(ev.Description);
+
+    // An undated event has no past to hide; a dated one is kept while its calendar day is today or later.
+    private bool NotPast(MyAssignmentResponse a) =>
+        a.Event?.Date is not { } date || date.Date >= Time.GetLocalNow().Date;
 }

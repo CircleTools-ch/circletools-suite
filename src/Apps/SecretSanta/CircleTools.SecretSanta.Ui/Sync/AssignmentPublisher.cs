@@ -45,7 +45,7 @@ public sealed class AssignmentPublisher(ILinkingApi api)
             group.Id,
             new PublishGroupEventsRequest(
                 group.Name,
-                group.Events.Select(e => new GroupEventEntry(e.Id, e.Name)).ToList()),
+                group.Events.Select(e => new GroupEventEntry(e.Id, e.Name, e.EventDetails?.Date)).ToList()),
             cancellationToken);
 
         var published = 0;

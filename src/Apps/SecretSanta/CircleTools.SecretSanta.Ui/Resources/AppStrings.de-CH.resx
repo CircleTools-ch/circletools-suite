@@ -181,8 +181,11 @@
   <data name="MemberLinkEmailLabel" xml:space="preserve"><value>E-Mail-Adresse zum Einladen</value></data>
   <data name="MemberLinkSend" xml:space="preserve"><value>Anfrage senden</value></data>
   <data name="MemberLinkSelfLinked" xml:space="preserve"><value>Mit deinem Konto verknüpft.</value></data>
+  <data name="MemberLinkVerifyEmailFirst" xml:space="preserve"><value>Bestätige zuerst deine E-Mail-Adresse, danach kannst du dich hier verknüpfen.</value></data>
   <data name="MemberLinkRequestSent" xml:space="preserve"><value>Anfrage gesendet. Falls diese Adresse ein Konto hat, erscheint sie dort.</value></data>
   <data name="MemberLinkFailed" xml:space="preserve"><value>Das konnte nicht abgeschlossen werden. Bitte versuche es erneut.</value></data>
+  <data name="MemberLinkWithMyAccount" xml:space="preserve"><value>Mit meinem Konto verknüpfen</value></data>
+  <data name="MemberLinkAlreadyInGroup" xml:space="preserve"><value>Diese Adresse ist bereits mit einem Mitglied dieser Gruppe verknüpft.</value></data>
   <data name="MemberUnlinked" xml:space="preserve"><value>Verknüpfung gelöst. Mitglied und Wunschliste bleiben erhalten.</value></data>
   <data name="NavMyLinks" xml:space="preserve"><value>Verknüpfungsanfragen</value></data>
   <data name="NavMyAssignments" xml:space="preserve"><value>Meine Zuteilungen</value></data>

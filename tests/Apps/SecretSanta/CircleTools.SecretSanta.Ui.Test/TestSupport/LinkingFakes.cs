@@ -13,12 +13,21 @@ namespace CircleTools.SecretSanta.Ui.Test.TestSupport;
 public sealed class FakeLinkingApi : ILinkingApi
 {
     public MyAssignmentsResponse Assignments { get; set; } = new([]);
+    public MyMembershipsResponse Memberships { get; set; } = new([]);
     public MemberLinkResolutionsResponse Resolutions { get; set; } = new([]);
     public List<Guid> Acked { get; } = [];
     public List<(Guid GroupId, PublishAssignmentsRequest Request)> Published { get; } = [];
 
-    public Task<ApiResult<SendMemberLinkResponse>> SendMemberLinkAsync(SendMemberLinkRequest request, CancellationToken cancellationToken = default) =>
-        Task.FromResult(ApiResult.Ok(new SendMemberLinkResponse(MemberLinkOutcome.RequestSent)));
+    public List<SendMemberLinkRequest> SentLinks { get; } = [];
+
+    /// <summary>The outcome the next <see cref="SendMemberLinkAsync"/> returns; defaults to "request sent".</summary>
+    public MemberLinkOutcome SendOutcome { get; set; } = MemberLinkOutcome.RequestSent;
+
+    public Task<ApiResult<SendMemberLinkResponse>> SendMemberLinkAsync(SendMemberLinkRequest request, CancellationToken cancellationToken = default)
+    {
+        SentLinks.Add(request);
+        return Task.FromResult(ApiResult.Ok(new SendMemberLinkResponse(SendOutcome)));
+    }
 
     public Task<ApiResult> RegisterCircleLinkAsync(RegisterCircleLinkRequest request, CancellationToken cancellationToken = default) =>
         Task.FromResult(ApiResult.Ok());
@@ -79,7 +88,15 @@ public sealed class FakeLinkingApi : ILinkingApi
         Task.FromResult(ApiResult.Ok(new MyWishlistsResponse([])));
 
     public Task<ApiResult<MyMembershipsResponse>> GetMyMembershipsAsync(CancellationToken cancellationToken = default) =>
-        Task.FromResult(ApiResult.Ok(new MyMembershipsResponse([])));
+        Task.FromResult(ApiResult.Ok(Memberships));
+}
+
+/// <summary>A <see cref="TimeProvider"/> pinned to a fixed instant (UTC zone) so "today" is deterministic.</summary>
+public sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
+{
+    public override DateTimeOffset GetUtcNow() => now;
+
+    public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
 }
 
 /// <summary>An in-memory <see cref="IGroupRepository"/> that round-trips through <see cref="GroupState"/>.</summary>

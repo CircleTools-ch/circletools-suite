@@ -80,6 +80,15 @@ else
                                     }
                                     else
                                     {
+                                        @* The one-click self-link is the simplest way to become this member: no
+                                           address, no email confirmation, and — because one account backs at most
+                                           one member per group — offered only while none of my members is me yet. *@
+                                        @if (!_iAmLinkedInGroup)
+                                        {
+                                            <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Info"
+                                                       StartIcon="@Icons.Material.Filled.AccountCircle"
+                                                       OnClick="() => LinkWithMyAccountAsync(member)" Disabled="@_linkBusy">@L["MemberLinkWithMyAccount"]</MudButton>
+                                        }
                                         <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info"
                                                    OnClick="() => BeginLink(member.Id)">@L["MemberLink"]</MudButton>
                                     }
@@ -138,6 +147,11 @@ else
     [Parameter]
     public Guid GroupId { get; set; }
 
+    // Read to catch the one case where a link silently does nothing: linking your own member to your own
+    // still-unverified address (the server matches verified addresses only).
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; }
+
     private IReadOnlyList<MemberDto>? _members;
     private string _newName = string.Empty;
     private string? _error;
@@ -153,15 +167,54 @@ else
     private bool _linkBusy;
     private Guid? _linkMessageId;
     private string? _linkMessage;
+    private Guid _myUserId;
+
+    // My account already backs a member of this group. One account backs at most one member per group, so
+    // once it does the "Link with my account" affordance disappears everywhere — only inviting an address remains.
+    private bool _iAmLinkedInGroup =>
+        _myUserId != Guid.Empty && (_members?.Any(m => m.UserId == _myUserId) ?? false);
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
     private async Task LoadAsync()
     {
+        if (AuthState is not null)
+        {
+            _myUserId = (await AuthState).User.UserId();
+        }
+
         var group = await Sender.Send(new GetGroupQuery(GroupId));
         _members = group?.Members ?? [];
         _hasCurrentDraw = group?.Events.Any(e => e.HasCurrentDraw) ?? false;
         _groupName = group?.Name ?? string.Empty;
+    }
+
+    // The simple self-link: no address and no email confirmation. Establish it on the server (which takes
+    // the account from the bearer token), then set Member.UserId locally so the roster reflects it at once;
+    // the local edit rides the ordinary auto-sync, and the server's own resolution re-applies idempotently.
+    private async Task LinkWithMyAccountAsync(MemberDto member)
+    {
+        if (_linkBusy || _iAmLinkedInGroup)
+        {
+            return;
+        }
+
+        _linkBusy = true;
+        _linkMessageId = member.Id;
+        var result = await Linking.SelfLinkAsync(new SelfLinkRequest(GroupId, _groupName, member.Id, member.Name));
+
+        if (result.IsSuccess)
+        {
+            await Sender.Send(new LinkMemberCommand(GroupId, member.Id, _myUserId));
+            _linkMessage = L["MemberLinkSelfLinked"];
+        }
+        else
+        {
+            _linkMessage = L["MemberLinkFailed"];
+        }
+
+        _linkBusy = false;
+        await LoadAsync();
     }
 
     private void BeginLink(Guid memberId)
@@ -180,17 +233,40 @@ else
             return;
         }
 
+        var email = _linkEmail.Trim();
+
+        // A self-link to your own address only resolves once the address is confirmed — otherwise the
+        // server can't match it and the request quietly goes nowhere. There is no enumeration risk in
+        // telling you about your *own* unverified address, so say so plainly instead of "request sent".
+        if (AuthState is not null)
+        {
+            var user = (await AuthState).User;
+            if (!user.IsEmailVerified() && string.Equals(email, user.Email(), StringComparison.OrdinalIgnoreCase))
+            {
+                _linkingMemberId = null;
+                _linkMessageId = member.Id;
+                _linkMessage = L["MemberLinkVerifyEmailFirst"];
+                return;
+            }
+        }
+
         _linkBusy = true;
         var result = await Linking.SendMemberLinkAsync(
-            new SendMemberLinkRequest(GroupId, _groupName, member.Id, member.Name, _linkEmail.Trim()));
+            new SendMemberLinkRequest(GroupId, _groupName, member.Id, member.Name, email));
         _linkBusy = false;
         _linkingMemberId = null;
         _linkMessageId = member.Id;
 
         // "Request sent" whether or not the address has an account (NFR-005). A self-link says so and
-        // will apply on the next sync.
+        // will apply on the next sync. A duplicate — the address already backs a member of this group —
+        // is refused at send time with an explicit error (ADR-0044).
         _linkMessage = result.IsSuccess
-            ? result.Value!.Outcome == MemberLinkOutcome.SelfLinked ? L["MemberLinkSelfLinked"] : L["MemberLinkRequestSent"]
+            ? result.Value!.Outcome switch
+            {
+                MemberLinkOutcome.SelfLinked => L["MemberLinkSelfLinked"],
+                MemberLinkOutcome.AlreadyLinkedInGroup => L["MemberLinkAlreadyInGroup"],
+                _ => L["MemberLinkRequestSent"],
+            }
             : L["MemberLinkFailed"];
     }
 
