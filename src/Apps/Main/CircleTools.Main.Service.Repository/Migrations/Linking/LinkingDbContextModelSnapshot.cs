@@ -97,6 +97,9 @@ namespace CircleTools.Main.Service.Repository.Migrations.Linking
                     b.Property<Guid>("EventId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTimeOffset?>("Date")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("EventName")
                         .IsRequired()
                         .HasMaxLength(200)

@@ -1,6 +1,4 @@
 @inject IStringLocalizer<AppStrings> L
-@inject AccountSession Session
-@inject NavigationManager Navigation
 @inject ThemeState Theme
 @inject AppBranding Branding
 @implements IDisposable
@@ -26,16 +24,9 @@
         }
         <MudText Typo="Typo.h6" Class="ml-2">CircleTools</MudText>
         <MudSpacer />
-        <AuthorizeView>
-            <Authorized>
-                <MudText Typo="Typo.body2" Class="mr-2 d-none d-sm-flex">@context.User.DisplayName()</MudText>
-            </Authorized>
-            <NotAuthorized>
-                <MudButton Href="account/login" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Login">@L["NavSignIn"]</MudButton>
-            </NotAuthorized>
-        </AuthorizeView>
         <AppSwitcher />
         <ThemeSwitch />
+        <AccountMenu />
     </MudAppBar>
 
     <MudDrawer @bind-Open="_drawerOpen" Variant="DrawerVariant.Responsive"
@@ -44,20 +35,18 @@
             <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">@L["NavDashboard"]</MudNavLink>
             <MudNavLink Href="heartbeat" Icon="@Icons.Material.Filled.MonitorHeart">@L["NavHeartbeat"]</MudNavLink>
 
+            @* Sign in / out, Profile and Security live in the top-bar account menu now (AccountMenu,
+               ADR-0034). The drawer keeps only the Main-specific destinations the menu does not carry. *@
             <AuthorizeView>
                 <Authorized>
                     <MudDivider Class="my-2" />
                     <MudNavLink Href="circles" Icon="@Icons.Material.Filled.Groups">@L["NavCircles"]</MudNavLink>
                     <MudNavLink Href="invitations" Icon="@Icons.Material.Filled.Email">@L["InvitationsTitle"]</MudNavLink>
                     <MudDivider Class="my-2" />
-                    <MudNavLink Href="account/profile" Icon="@Icons.Material.Filled.Person">@L["NavProfile"]</MudNavLink>
-                    <MudNavLink Href="account/security" Icon="@Icons.Material.Filled.Lock">@L["NavSecurity"]</MudNavLink>
                     <MudNavLink Href="account/data" Icon="@Icons.Material.Filled.Download">@L["NavData"]</MudNavLink>
-                    <MudNavLink Icon="@Icons.Material.Filled.Logout" OnClick="SignOutAsync">@L["NavSignOut"]</MudNavLink>
                 </Authorized>
                 <NotAuthorized>
                     <MudDivider Class="my-2" />
-                    <MudNavLink Href="account/login" Icon="@Icons.Material.Filled.Login">@L["NavSignIn"]</MudNavLink>
                     <MudNavLink Href="account/register" Icon="@Icons.Material.Filled.PersonAdd">@L["NavRegister"]</MudNavLink>
                 </NotAuthorized>
             </AuthorizeView>
@@ -144,14 +133,6 @@
     private void OnThemeChanged() => InvokeAsync(StateHasChanged);
 
     private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
-
-    // Sign-out lands on the dashboard rather than the sign-in form: the suite is usable signed out
-    // (ADR-0005 local-first), so demanding credentials straight after leaving would be backwards.
-    private async Task SignOutAsync()
-    {
-        await Session.SignOutAsync();
-        Navigation.NavigateTo("");
-    }
 
     public void Dispose() => Theme.Changed -= OnThemeChanged;
 }

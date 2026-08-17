@@ -91,7 +91,7 @@ internal static class LinkingScenario
     {
         var response = await organizer.Client.PutAsJsonAsync(
             $"/api/v1/groups/{groupId}/events",
-            new PublishGroupEventsRequest(groupName, [new GroupEventEntry(groupId, "December event")]));
+            new PublishGroupEventsRequest(groupName, [new GroupEventEntry(groupId, "December event", null)]));
         response.EnsureSuccessStatusCode();
     }
 
