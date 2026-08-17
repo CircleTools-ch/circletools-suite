@@ -2,14 +2,22 @@
 id: FR-026
 title: Remove a group from the account
 type: functional
-status: Implemented
+status: Superseded
 priority: Should
 source: UC-SS-008
 verification: test
-related: [UC-SS-008, UC-SS-007, UC-MAIN-015, FR-023, FR-025, FR-015, NFR-002, ADR-0017, ADR-0022, FEAT-004]
+related: [UC-SS-008, UC-SS-007, UC-MAIN-015, FR-023, FR-025, FR-024, FR-015, NFR-002, ADR-0017, ADR-0022, ADR-0044, FEAT-004]
 ---
 
 # FR-026 — Remove a group from the account
+
+> **Retired by [ADR-0044](../../adr/0044-sign-in-reconciliation-and-account-scoped-visibility.md).**
+> Under the account-scoped-visibility model a signed-in device shows only account groups, so a
+> per-group "remove from account but keep local" (un-claim) affordance no longer fits the UX: signing
+> **out** hides account data locally (kept, not deleted), and "remove everywhere" is **delete** (which
+> already tombstones across devices, [FR-024](FR-024-offline-editing-and-reconciliation.md)). The
+> `UnclaimAsync` engine method remains but is no longer surfaced. The description below is retained for
+> history.
 
 ## Description
 

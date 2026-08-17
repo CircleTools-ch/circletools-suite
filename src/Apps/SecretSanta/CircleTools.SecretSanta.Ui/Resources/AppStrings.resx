@@ -254,4 +254,9 @@
   <data name="ConfirmRemoveEvent" xml:space="preserve"><value>Remove the event "{0}"? Its draw and wishlists will be lost.</value></data>
   <data name="CreateFromCircleAction" xml:space="preserve"><value>Create from a circle</value></data>
   <data name="AllGroups" xml:space="preserve"><value>All groups</value></data>
+  <data name="ReconcileTitle" xml:space="preserve"><value>Bring your offline data in?</value></data>
+  <data name="ReconcileBodySingular" xml:space="preserve"><value>You created a group while signed out. Import it into your account to sync it across your devices, or discard it? Discarding can't be undone.</value></data>
+  <data name="ReconcileBodyPlural" xml:space="preserve"><value>You created {0} groups while signed out. Import them into your account to sync them across your devices, or discard them? Discarding can't be undone.</value></data>
+  <data name="ReconcileImport" xml:space="preserve"><value>Import</value></data>
+  <data name="ReconcileDiscard" xml:space="preserve"><value>Discard</value></data>
 </root>

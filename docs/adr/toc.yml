@@ -86,5 +86,7 @@
   href: 0042-events-as-first-class-entities.md
 - name: 0043 Invitee-chosen managed-member promotion
   href: 0043-invitee-chosen-managed-member-promotion.md
+- name: 0044 Sign-in reconciliation and account-scoped visibility
+  href: 0044-sign-in-reconciliation-and-account-scoped-visibility.md
 - name: Template
   href: _template-adr.md

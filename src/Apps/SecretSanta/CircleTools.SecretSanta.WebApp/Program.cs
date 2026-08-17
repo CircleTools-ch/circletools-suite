@@ -36,6 +36,7 @@ var apiBaseUrl = new Uri(builder.Configuration["ApiBaseUrl"] ?? builder.HostEnvi
 // The browser implementations of the platform seams this app needs (ADR-0028). A MAUI head swaps
 // exactly these registrations; everything above them is shared feature code.
 builder.Services.AddScoped<IKeyValueStore, BrowserKeyValueStore>();
+builder.Services.AddScoped<IConnectivity, BrowserConnectivity>();
 builder.Services.AddScoped<BrowserPasskeyCeremony>();
 builder.Services.AddScoped<IPasskeyCeremony>(sp => sp.GetRequiredService<BrowserPasskeyCeremony>());
 

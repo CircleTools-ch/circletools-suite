@@ -6,10 +6,17 @@ status: Implemented
 priority: Must
 source: UC-MAIN-016
 verification: test
-related: [UC-MAIN-016, UC-MAIN-015, FR-023, NFR-001, NFR-008, ADR-0016, ADR-0012, ADR-0029, FEAT-004]
+related: [UC-MAIN-016, UC-MAIN-015, FR-023, NFR-001, NFR-008, ADR-0016, ADR-0012, ADR-0029, ADR-0044, FEAT-004]
 ---
 
 # FR-024 — Offline editing and reconciliation for signed-in users
+
+> **Extended by [ADR-0044](../../adr/0044-sign-in-reconciliation-and-account-scoped-visibility.md).**
+> The reconnect / "pushed without the user asking" behaviour specified below is now actually wired,
+> via an `IConnectivity` seam and an `AutoSyncService` that syncs **silently** on four triggers —
+> sign-in, app start, every change (debounced), and reconnect. ADR-0044 also adds the **sign-in
+> reconciliation** of offline data (Import / Discard / Cancel) and account-scoped visibility. The
+> criteria below still hold.
 
 ## Description
 

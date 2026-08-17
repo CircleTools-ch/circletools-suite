@@ -52,6 +52,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0041](0041-sync-secret-santa-ui-preferences.md) | Sync Secret-Santa UI preferences as an opaque sync-store kind (extends ADR-0033 — adds pinned groups) | Accepted | 2026-08-14 |
 | [0042](0042-events-as-first-class-entities.md) | Events as first-class entities within a Secret-Santa group (shared roster; per-event draw, wishlists, budget; linking store keyed by event) | Accepted | 2026-08-14 |
 | [0043](0043-invitee-chosen-managed-member-promotion.md) | Let the invited person choose which offline profile they join as (self-select gated to the authenticated, address-matched recipient; admin targeting stays authoritative) | Accepted | 2026-08-14 |
+| [0044](0044-sign-in-reconciliation-and-account-scoped-visibility.md) | Sign-in reconciliation of offline data (Import / Discard / Cancel) and account-scoped visibility; silent auto-sync on sign-in, start, change and reconnect | Accepted | 2026-08-14 |
 
 ## Open decisions backlog
 
