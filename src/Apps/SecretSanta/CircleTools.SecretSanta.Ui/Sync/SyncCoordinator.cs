@@ -40,19 +40,20 @@ public sealed class SyncCoordinator(
 
         var outcome = await sync.SyncNowAsync(accountId, cancellationToken);
 
-        await PublishDrawnGroupsAsync(cancellationToken);
+        await PublishGroupsAsync(cancellationToken);
 
         return outcome;
     }
 
-    // Best-effort publication of every drawn group's linked-giver rows. A group with no linked givers
-    // publishes nothing (the account-free and fully-unlinked cases stay inert), and a re-publish of an
-    // unchanged draw is a server no-op, so running this each cycle is what backfills a group drawn
-    // before M4 the first time one of its members links (FR-029).
-    private async Task PublishDrawnGroupsAsync(CancellationToken cancellationToken)
+    // Best-effort publication of every group's linking projection: its event registry (so linked members
+    // can enumerate events for their wishlists) and each drawn event's linked-giver rows. A group with no
+    // linked members publishes nothing (the account-free and fully-unlinked cases stay inert), and a
+    // re-publish of unchanged data is a server no-op, so running this each cycle is what backfills a group
+    // the first time one of its members links (FR-029, ADR-0042).
+    private async Task PublishGroupsAsync(CancellationToken cancellationToken)
     {
         var all = await groups.ListAsync(cancellationToken);
-        foreach (var group in all.Where(g => g.CurrentDraw is not null))
+        foreach (var group in all)
         {
             await publisher.PublishAsync(group, cancellationToken);
         }

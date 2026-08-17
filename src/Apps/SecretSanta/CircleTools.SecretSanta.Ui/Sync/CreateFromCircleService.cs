@@ -73,7 +73,6 @@ public sealed class CreateFromCircleService(ICircleDirectoryApi circles, ISender
         return new CirclePersonInput(
             person.MembershipId,
             person.DisplayName,
-            [],
             person.IsManaged ? null : person.AccountId);
     }
 }

@@ -102,8 +102,8 @@ resolved. As promised under *Follow-ups*, the identity lands in the theme layer 
 successor ADR:
 
 - **Brand mark:** a **ring of five people** (the figures form the circle). Per app the ring is kept and
-  its shapes + accent are swapped — Secret-Santa is a **ring of five gifts** (red `#7a1f2b`, gold
-  `#e3a92e` ribbon/bow, cream `#f7ede1` ground). Full spec and asset locations:
+  its shapes + accent are swapped — Secret-Santa is a **ring of five gifts** (a white wrapped present —
+  box, cross ribbon and bow — on a burgundy `#7a1f2b` ground). Full spec and asset locations:
   [naming § Visual identity](../process/naming.md).
 - **Palette:** the neutral `--circletools-brand` is confirmed as the committed brand navy **`#03173d`**
   with accent **`#3c6fd1`** (already the values in `circletools.css`). Divergent placeholders were

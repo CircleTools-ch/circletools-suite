@@ -53,6 +53,52 @@ public sealed class MemberLinkTests(MailApiFactory factory)
     }
 
     [Fact]
+    public async Task SelfLink_LinksTheOrganizerImmediately_WithoutAnInvitation()
+    {
+        var organizer = await CircleTestAccounts.SignUpAsync(factory, "Organizer");
+        var groupId = Guid.NewGuid();
+        var memberId = Guid.NewGuid();
+
+        // Creating a group makes you a member of it: the organizer self-links with no address and no
+        // second step (FR-032).
+        var response = await organizer.Client.PostAsJsonAsync(
+            "/api/v1/member-links/self",
+            new SelfLinkRequest(groupId, "December", memberId, "Me"));
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        // The organizer publishes the group's events (as their client does on sync), so the linked
+        // organizer can enumerate them on their My-wishlists / My-memberships screens (ADR-0042).
+        await LinkingScenario.RegisterDefaultEventAsync(organizer, groupId);
+
+        var memberships = await organizer.Client.GetFromJsonAsync<MyMembershipsResponse>("/api/v1/my-memberships");
+        Assert.Contains(memberships!.Memberships, m => m.GroupId == groupId);
+
+        // A Linked resolution is queued for the organizer's client to apply Member.UserId to its document.
+        var resolution = await LinkingScenario.DrainSingleResolutionAsync(organizer, groupId, memberId);
+        Assert.Equal(MemberLinkResolutionKind.Linked, resolution.Kind);
+        Assert.NotNull(resolution.UserId);
+    }
+
+    [Fact]
+    public async Task SelfLink_IsIdempotent_UnderTheOneUserPerGroupGuard()
+    {
+        var organizer = await CircleTestAccounts.SignUpAsync(factory, "Organizer");
+        var groupId = Guid.NewGuid();
+        var memberId = Guid.NewGuid();
+        var request = new SelfLinkRequest(groupId, "December", memberId, "Me");
+
+        (await organizer.Client.PostAsJsonAsync("/api/v1/member-links/self", request)).EnsureSuccessStatusCode();
+        (await organizer.Client.PostAsJsonAsync("/api/v1/member-links/self", request)).EnsureSuccessStatusCode();
+        await LinkingScenario.RegisterDefaultEventAsync(organizer, groupId);
+
+        // A re-run does not add a second link: the organizer is a member exactly once (and the group's
+        // registry has one event, so exactly one (group, event) membership).
+        var memberships = await organizer.Client.GetFromJsonAsync<MyMembershipsResponse>("/api/v1/my-memberships");
+        Assert.Single(memberships!.Memberships, m => m.GroupId == groupId);
+    }
+
+    [Fact]
     public async Task ARequestLinkingAUserAlreadyLinkedInThatGroup_IsRefused()
     {
         var organizer = await CircleTestAccounts.SignUpAsync(factory, "Organizer");

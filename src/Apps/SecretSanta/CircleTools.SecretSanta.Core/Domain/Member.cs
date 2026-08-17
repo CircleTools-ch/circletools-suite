@@ -2,23 +2,24 @@ using CircleTools.SharedKernel;
 
 namespace CircleTools.SecretSanta.Core.Domain;
 
-/// <summary>A member of a Secret-Santa group. Owned by the <see cref="Group"/> aggregate root.</summary>
+/// <summary>
+/// A member of a Secret-Santa group — identity within the shared roster (a name, an optional account
+/// link, an optional circle origin). What a member <em>wants</em> is not held here: wishlists are
+/// per-<see cref="Event"/> (ADR-0042), because a member's list for one occasion is not their list for
+/// another. Owned by the <see cref="Group"/> aggregate root.
+/// </summary>
 public sealed class Member : Entity
 {
-    private Member(Guid id, string name, Wishlist wishlist, Guid? userId, Guid? originCirclePersonId)
+    private Member(Guid id, string name, Guid? userId, Guid? originCirclePersonId)
     {
         Id = id;
         Name = name;
-        Wishlist = wishlist;
         UserId = userId;
         OriginCirclePersonId = originCirclePersonId;
     }
 
     /// <summary>Gets the member's display name.</summary>
     public string Name { get; private set; }
-
-    /// <summary>Gets the member's wishlist.</summary>
-    public Wishlist Wishlist { get; private set; }
 
     /// <summary>
     /// Gets the account this member is linked to, or <see langword="null"/> when the member is not
@@ -29,9 +30,7 @@ public sealed class Member : Entity
     /// </summary>
     public Guid? UserId { get; private set; }
 
-    /// <summary>
-    /// Gets a value indicating whether this member is linked to an account.
-    /// </summary>
+    /// <summary>Gets a value indicating whether this member is linked to an account.</summary>
     public bool IsLinked => UserId is not null;
 
     /// <summary>
@@ -43,27 +42,16 @@ public sealed class Member : Entity
     /// </summary>
     public Guid? OriginCirclePersonId { get; private set; }
 
-    internal static Member Create(string name, Wishlist wishlist) =>
-        new(GuidV7.New(), NormalizeName(name), wishlist, userId: null, originCirclePersonId: null);
+    internal static Member Create(string name) =>
+        new(GuidV7.New(), NormalizeName(name), userId: null, originCirclePersonId: null);
 
-    internal static Member CreateFromCircle(
-        string name,
-        Wishlist wishlist,
-        Guid? userId,
-        Guid? originCirclePersonId) =>
-        new(GuidV7.New(), NormalizeName(name), wishlist, userId, originCirclePersonId);
+    internal static Member CreateFromCircle(string name, Guid? userId, Guid? originCirclePersonId) =>
+        new(GuidV7.New(), NormalizeName(name), userId, originCirclePersonId);
 
-    internal static Member Restore(
-        Guid id,
-        string name,
-        Wishlist wishlist,
-        Guid? userId,
-        Guid? originCirclePersonId) =>
-        new(id, name, wishlist, userId, originCirclePersonId);
+    internal static Member Restore(Guid id, string name, Guid? userId, Guid? originCirclePersonId) =>
+        new(id, name, userId, originCirclePersonId);
 
     internal void Rename(string name) => Name = NormalizeName(name);
-
-    internal void SetWishlist(Wishlist wishlist) => Wishlist = wishlist;
 
     internal void Link(Guid userId) => UserId = userId;
 

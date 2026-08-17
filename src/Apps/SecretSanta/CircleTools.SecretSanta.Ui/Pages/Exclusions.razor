@@ -20,7 +20,7 @@ else if (_group.Members.Count < 2)
 else
 {
     <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Start" Wrap="Wrap.Wrap" Class="mb-2">
-        <MudSelect T="string" @bind-Value="_giverId" Label="@L["GiverLabel"]" Variant="Variant.Outlined"
+        <MudSelect T="string" Value="_giverId" ValueChanged="OnGiverChanged" Label="@L["GiverLabel"]" Variant="Variant.Outlined"
                    Margin="Margin.Dense" Class="flex-grow-1">
             <MudSelectItem T="string" Value="@("")">--</MudSelectItem>
             @foreach (var member in _group.Members)
@@ -28,10 +28,12 @@ else
                 <MudSelectItem T="string" Value="@member.Id.ToString()">@member.Name</MudSelectItem>
             }
         </MudSelect>
+        @* The giver is left out of the recipient list: a person is never drawn for themselves, so
+           excluding them from themselves is meaningless. *@
         <MudSelect T="string" @bind-Value="_recipientId" Label="@L["RecipientLabel"]" Variant="Variant.Outlined"
                    Margin="Margin.Dense" Class="flex-grow-1">
             <MudSelectItem T="string" Value="@("")">--</MudSelectItem>
-            @foreach (var member in _group.Members)
+            @foreach (var member in _group.Members.Where(m => m.Id.ToString() != _giverId))
             {
                 <MudSelectItem T="string" Value="@member.Id.ToString()">@member.Name</MudSelectItem>
             }
@@ -39,6 +41,9 @@ else
         <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="mt-1"
                    OnClick="AddAsync" Disabled="@(!CanAdd)">@L["AddExclusion"]</MudButton>
     </MudStack>
+
+    @* Mutual is the default: a couple normally should not be drawn for each other in either direction. *@
+    <MudCheckBox @bind-Value="_mutual" Dense="true" Color="Color.Primary" Class="mb-2">@L["ExclusionBothWays"]</MudCheckBox>
 
     @* A disabled button alone leaves the organizer guessing why nothing happens. *@
     @if (ValidationMessage is { } message)
@@ -56,7 +61,11 @@ else
             @foreach (var exclusion in _group.Exclusions)
             {
                 <MudPaper Elevation="1" Class="d-flex justify-space-between align-center pa-3">
-                    <MudText>@NameOf(exclusion.GiverMemberId) &rarr; @NameOf(exclusion.RecipientMemberId)</MudText>
+                    <MudText>
+                        @(exclusion.Mutual
+                            ? L["ExclusionRowMutual", NameOf(exclusion.GiverMemberId), NameOf(exclusion.RecipientMemberId)]
+                            : L["ExclusionRow", NameOf(exclusion.GiverMemberId), NameOf(exclusion.RecipientMemberId)])
+                    </MudText>
                     <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
                                OnClick="() => RemoveAsync(exclusion.GiverMemberId, exclusion.RecipientMemberId)">
                         @L["Remove"]
@@ -75,6 +84,9 @@ else
     private GroupDto? _group;
     private string _giverId = string.Empty;
     private string _recipientId = string.Empty;
+
+    // Two-way by default: a couple normally should not gift each other in either direction.
+    private bool _mutual = true;
 
     private bool CanAdd =>
         Guid.TryParse(_giverId, out var giver) &&
@@ -104,6 +116,16 @@ else
         }
     }
 
+    // Changing the giver drops a recipient that would now equal it, so the pair can never be self→self.
+    private void OnGiverChanged(string value)
+    {
+        _giverId = value;
+        if (_recipientId == _giverId)
+        {
+            _recipientId = string.Empty;
+        }
+    }
+
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
     private async Task LoadAsync() => _group = await Sender.Send(new GetGroupQuery(GroupId));
@@ -118,7 +140,7 @@ else
             return;
         }
 
-        await Sender.Send(new AddExclusionCommand(GroupId, Guid.Parse(_giverId), Guid.Parse(_recipientId)));
+        await Sender.Send(new AddExclusionCommand(GroupId, Guid.Parse(_giverId), Guid.Parse(_recipientId), _mutual));
         _giverId = string.Empty;
         _recipientId = string.Empty;
         await LoadAsync();

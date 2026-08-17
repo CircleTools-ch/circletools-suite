@@ -35,14 +35,15 @@ public sealed class LinkingCircleTests(MailApiFactory factory)
             new RegisterCircleLinkRequest(groupId, "December", memberId, "Member", circle.Id, memberAccountId));
         register.EnsureSuccessStatusCode();
 
+        // The organizer publishes the group's events so the member can enumerate them (ADR-0042).
+        await LinkingScenario.RegisterDefaultEventAsync(organizer, groupId, "December");
+
         // The member is now a linked member: they appear in their memberships and can own a wishlist —
         // exactly what was broken when create-from-circle only set the local UserId.
         var memberships = await member.Client.GetFromJsonAsync<MyMembershipsResponse>("/api/v1/my-memberships");
         Assert.Contains(memberships!.Memberships, m => m.GroupId == groupId);
 
-        var put = await member.Client.PutAsJsonAsync(
-            $"/api/v1/groups/{groupId}/my-wishlist",
-            new UpdateMyWishlistRequest(["Scarf"]));
+        var put = await LinkingScenario.PutMyWishlistAsync(member, groupId, ["Scarf"]);
         Assert.Equal(HttpStatusCode.NoContent, put.StatusCode);
     }
 

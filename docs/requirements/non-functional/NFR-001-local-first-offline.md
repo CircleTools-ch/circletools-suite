@@ -6,10 +6,16 @@ status: Implemented
 priority: Must
 source: UC-SS-001, UC-SS-004, UC-SS-006
 verification: test
-related: [UC-SS-001, UC-SS-002, UC-SS-003, UC-SS-004, UC-SS-005, UC-SS-006, FR-001, FR-004, FR-005, FR-006]
+related: [UC-SS-001, UC-SS-002, UC-SS-003, UC-SS-004, UC-SS-005, UC-SS-006, FR-001, FR-004, FR-005, FR-006, ADR-0044]
 ---
 
 # NFR-001 — Local-first and fully offline (no account or backend for MVP)
+
+> **Clarified by [ADR-0044](../../adr/0044-sign-in-reconciliation-and-account-scoped-visibility.md).**
+> Account-scoped visibility does not weaken local-first: offline creation and editing are unchanged,
+> and offline data is **never** silently lost — at sign-in the user explicitly imports or discards it,
+> and signing out **hides** account groups from the offline view but keeps the local copy (data safety
+> per NFR-008 is untouched).
 
 ## Description
 

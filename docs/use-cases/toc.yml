@@ -70,5 +70,9 @@
   items:
     - name: UC-MAIN-017 Stay signed in across suite apps
       href: main/UC-MAIN-017-single-sign-on-across-apps.md
+- name: Events (Secret-Santa)
+  items:
+    - name: UC-SS-013 Manage multiple events in a group
+      href: secret-santa/UC-SS-013-manage-events.md
 - name: Template
   href: _template-use-case.md

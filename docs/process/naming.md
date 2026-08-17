@@ -25,16 +25,18 @@ The circle primitive from the naming rationale (below) is now drawn. The system:
   separate container outline. Five (not more) so it stays legible at a 16 px favicon. Colour: brand
   **navy `#03173d`** (white on the navy app-icon tile).
 - **Per-app rule:** each app keeps the same ring of five and **swaps what forms it** plus its accent
-  colour. Secret-Santa is a **ring of five gifts** — red box `#7a1f2b`, slim **gold `#e3a92e`**
-  vertical ribbon + bow — on a **cream `#f7ede1`** ground.
+  colour. Secret-Santa is a **ring of five gifts** — a **white** wrapped present (box with a cross
+  ribbon and a bow, the ribbon cut out in the ground colour) — on the brand **burgundy `#7a1f2b`**
+  ground. This mirrors the suite mark's white-on-brand treatment (white people on navy → white gifts
+  on burgundy) and lets the icon blend into the burgundy app bar exactly as the Main mark does on navy.
 - **Accessibility / stores:** every mark reads in a single colour (monochrome-safe, per
   [ADR-0024](../adr/0024-ui-styling-and-theming.md)); app icons are full-bleed opaque squares with the
   content inside the adaptive-icon safe zone (no alpha, no pre-rounded corners — the OS applies the
-  mask). Contrast clears WCAG AA on every ground (navy 17.6:1, gift red on cream 9.2:1).
+  mask). Contrast clears WCAG AA on every ground (navy 17.6:1, white on burgundy 10.2:1).
 
 **Where the assets live** (source of truth):
-- Native (Secret-Santa MAUI): `…/CircleTools.SecretSanta.App/Resources/AppIcon/appicon.svg` (cream
-  background) + `appiconfg.svg` (gift ring) + `Splash/splash.svg`, with `MauiIcon Color="#f7ede1"`.
+- Native (Secret-Santa MAUI): `…/CircleTools.SecretSanta.App/Resources/AppIcon/appicon.svg` (burgundy
+  background) + `appiconfg.svg` (white gift ring) + `Splash/splash.svg`, with `MauiIcon Color="#7a1f2b"`.
   Resizetizer rasterises the store sizes at build.
 - Web PWAs: each app's `wwwroot/favicon.svg` (+ rasterised `favicon.png` / `icon-192.png` /
   `icon-512.png`) and its manifest `theme_color` / `background_color`.
@@ -47,9 +49,15 @@ Placeholder accents that had diverged from the brand were reconciled to navy `#0
 **In-app palette (from [ADR-0040](../adr/0040-ui-component-library-mudblazor.md), 2026-08-13):** the
 *running app* UI is deliberately **neutral and restrained** — a MudBlazor/Material theme on neutral
 surfaces with a single calm accent, plus light/dark. The **per-app brand marks and their festive
-colours** (Secret-Santa's red `#7a1f2b` / gold `#e3a92e` on cream) live on the **app icon, splash and
-store/marketing assets** listed above — not on every in-app surface. The mark and asset spec here is
-unchanged; only where the saturated colour is applied changed.
+colours** (Secret-Santa's burgundy `#7a1f2b` ground with a white gift ring) live on the **app icon,
+splash and store/marketing assets** listed above — not on every in-app surface. The mark and asset spec
+here is unchanged; only where the saturated colour is applied changed.
+
+**Refinement (2026-08-14):** the Secret-Santa mark was flipped from *coloured gifts on cream* to a
+*white gift ring on burgundy* so it reads white-on-brand like the Main mark and blends into the
+burgundy app bar. The gift glyph was also redrawn — the earlier box-plus-single-ribbon shape rendered
+as a little handled bag at icon size; the current glyph is a box with a full cross ribbon and a compact
+bow, legible as a wrapped present down to 24 px. Ring geometry (five nodes) is unchanged.
 
 ## Chosen brand
 

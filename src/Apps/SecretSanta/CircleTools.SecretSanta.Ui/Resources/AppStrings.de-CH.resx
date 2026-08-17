@@ -49,6 +49,9 @@
   <data name="ExclusionHint" xml:space="preserve"><value>Der Schenkende wird der gewählten Person nicht zugelost.</value></data>
   <data name="GiverLabel" xml:space="preserve"><value>Schenkende Person</value></data>
   <data name="RecipientLabel" xml:space="preserve"><value>Darf nicht beschenken</value></data>
+  <data name="ExclusionRow" xml:space="preserve"><value>{0} darf {1} nicht beschenken</value></data>
+  <data name="ExclusionRowMutual" xml:space="preserve"><value>{0} und {1} dürfen sich nicht gegenseitig beschenken</value></data>
+  <data name="ExclusionBothWays" xml:space="preserve"><value>Beide Richtungen (keine gegenseitige Beschenkung)</value></data>
   <data name="AddExclusion" xml:space="preserve"><value>Ausschluss hinzufügen</value></data>
   <data name="NoExclusions" xml:space="preserve"><value>Keine Ausschlüsse.</value></data>
   <data name="NeedTwoMembersForExclusion" xml:space="preserve"><value>Zuerst mindestens zwei Mitglieder hinzufügen.</value></data>
@@ -64,9 +67,13 @@
   <data name="ShareHint" xml:space="preserve"><value>Sende jeder Person ihren eigenen Link. Nur die empfangende Person sieht, wen sie beschenkt.</value></data>
   <data name="NoDrawYet" xml:space="preserve"><value>Lose zuerst aus, um Links zu erzeugen.</value></data>
   <data name="DrawInvalidatedNotice" xml:space="preserve"><value>Die Mitglieder haben sich geändert, daher gilt die frühere Auslosung nicht mehr. Bitte erneut auslosen.</value></data>
-  <data name="RedrawWarning" xml:space="preserve"><value>Diese Gruppe wurde bereits ausgelost. Ein erneutes Auslosen ersetzt alle Zuordnungen - bereits verschickte Links zeigen dann die falsche Person.</value></data>
+  <data name="RedrawWarning" xml:space="preserve"><value>Dieser Anlass wurde bereits ausgelost. Ein erneutes Auslosen ersetzt alle Zuordnungen - bereits verschickte Links zeigen dann die falsche Person.</value></data>
   <data name="RedrawConfirm" xml:space="preserve"><value>Trotzdem erneut auslosen</value></data>
   <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>Diese Gruppe wurde bereits ausgelost. Wer Mitglieder hinzufügt oder entfernt, macht die Auslosung ungültig und muss neu auslosen.</value></data>
+  <data name="DuplicateMemberError" xml:space="preserve"><value>Ein Mitglied mit dem Namen «{0}» gibt es in dieser Gruppe bereits.</value></data>
+  <data name="MemberSaveFailed" xml:space="preserve"><value>Das Mitglied konnte nicht gespeichert werden.</value></data>
+  <data name="BudgetAmountInvalid" xml:space="preserve"><value>Gib einen Budgetbetrag grösser als null ein.</value></data>
+  <data name="CurrencyInvalid" xml:space="preserve"><value>Gib einen dreistelligen Währungscode ein (z. B. CHF).</value></data>
   <data name="ConfirmDeleteGroup" xml:space="preserve"><value>"{0}" mit allen Inhalten löschen? Das lässt sich nicht rückgängig machen.</value></data>
   <data name="ConfirmRemoveMember" xml:space="preserve"><value>"{0}" aus dieser Gruppe entfernen?</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Ja, löschen</value></data>
@@ -180,6 +187,28 @@
   <data name="NavMyLinks" xml:space="preserve"><value>Verknüpfungsanfragen</value></data>
   <data name="NavMyAssignments" xml:space="preserve"><value>Meine Zuteilungen</value></data>
   <data name="NavMyWishlists" xml:space="preserve"><value>Meine Wunschlisten</value></data>
+  <data name="NavPinned" xml:space="preserve"><value>Angeheftet</value></data>
+  <data name="PinGroup" xml:space="preserve"><value>Gruppe anheften</value></data>
+  <data name="UnpinGroup" xml:space="preserve"><value>Anheften aufheben</value></data>
+  <data name="Rename" xml:space="preserve"><value>Umbenennen</value></data>
+  <data name="NavEvents" xml:space="preserve"><value>Anlässe</value></data>
+  <data name="NavEventDetails" xml:space="preserve"><value>Details</value></data>
+  <data name="NavWishlists" xml:space="preserve"><value>Wunschlisten</value></data>
+  <data name="DefaultEventName" xml:space="preserve"><value>Anlass</value></data>
+  <data name="EventNameLabel" xml:space="preserve"><value>Anlassname</value></data>
+  <data name="EventNamePlaceholder" xml:space="preserve"><value>z. B. Weihnachten 2026</value></data>
+  <data name="AddEvent" xml:space="preserve"><value>Anlass hinzufügen</value></data>
+  <data name="EventsColumn" xml:space="preserve"><value>Anlässe</value></data>
+  <data name="EventDetailsTitle" xml:space="preserve"><value>Anlass</value></data>
+  <data name="EventNotFound" xml:space="preserve"><value>Anlass nicht gefunden.</value></data>
+  <data name="WishlistsTitle" xml:space="preserve"><value>Wunschlisten</value></data>
+  <data name="WishlistsLead" xml:space="preserve"><value>Wunschliste jeder Person für diesen Anlass festlegen.</value></data>
+  <data name="ConfirmRemoveEvent" xml:space="preserve"><value>Anlass «{0}» entfernen? Auslosung und Wunschlisten gehen verloren.</value></data>
   <data name="CreateFromCircleAction" xml:space="preserve"><value>Aus einem Kreis erstellen</value></data>
   <data name="AllGroups" xml:space="preserve"><value>Alle Gruppen</value></data>
+  <data name="ReconcileTitle" xml:space="preserve"><value>Offline erstellte Daten übernehmen?</value></data>
+  <data name="ReconcileBodySingular" xml:space="preserve"><value>Du hast eine Gruppe erstellt, während du abgemeldet warst. In dein Konto übernehmen, damit sie über deine Geräte synchronisiert wird, oder verwerfen? Verwerfen kann nicht rückgängig gemacht werden.</value></data>
+  <data name="ReconcileBodyPlural" xml:space="preserve"><value>Du hast {0} Gruppen erstellt, während du abgemeldet warst. In dein Konto übernehmen, damit sie über deine Geräte synchronisiert werden, oder verwerfen? Verwerfen kann nicht rückgängig gemacht werden.</value></data>
+  <data name="ReconcileImport" xml:space="preserve"><value>Übernehmen</value></data>
+  <data name="ReconcileDiscard" xml:space="preserve"><value>Verwerfen</value></data>
 </root>

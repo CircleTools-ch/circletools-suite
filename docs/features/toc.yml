@@ -24,6 +24,10 @@
   href: FEAT-006-m5-cross-app-sso.md
 - name: TP-006 M5 Cross-app SSO test plan
   href: TP-006-m5-cross-app-sso.md
+- name: FEAT-007 Events per group
+  href: FEAT-007-events-per-group.md
+- name: TP-007 Events per group test plan
+  href: TP-007-events-per-group.md
 - name: Templates
   items:
     - name: Feature spec template

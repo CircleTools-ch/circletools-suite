@@ -47,10 +47,17 @@ public static class SecretSantaCoreServiceCollectionExtensions
         services.AddScoped<ICommandHandler<AddExclusionCommand>, AddExclusionCommandHandler>();
         services.AddScoped<ICommandHandler<RemoveExclusionCommand>, RemoveExclusionCommandHandler>();
         services.AddScoped<ICommandHandler<RunDrawCommand, RunDrawResultDto>, RunDrawCommandHandler>();
+        services.AddScoped<ICommandHandler<SetMemberWishlistCommand>, SetMemberWishlistCommandHandler>();
+
+        // Event (occasion) handlers (ADR-0042).
+        services.AddScoped<ICommandHandler<AddEventCommand, Guid>, AddEventCommandHandler>();
+        services.AddScoped<ICommandHandler<RenameEventCommand>, RenameEventCommandHandler>();
+        services.AddScoped<ICommandHandler<RemoveEventCommand>, RemoveEventCommandHandler>();
 
         // Query handlers.
         services.AddScoped<IQueryHandler<GetGroupsQuery, IReadOnlyList<GroupSummaryDto>>, GetGroupsQueryHandler>();
         services.AddScoped<IQueryHandler<GetGroupQuery, GroupDto?>, GetGroupQueryHandler>();
+        services.AddScoped<IQueryHandler<GetEventQuery, EventDto?>, GetEventQueryHandler>();
         services.AddScoped<IQueryHandler<GetRevealLinksQuery, IReadOnlyList<RevealLinkDto>>, GetRevealLinksQueryHandler>();
 
         return services;

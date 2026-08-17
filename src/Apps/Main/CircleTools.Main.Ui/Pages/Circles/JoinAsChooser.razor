@@ -1,0 +1,53 @@
+@inject IStringLocalizer<AppStrings> L
+
+@* The recipient's "who am I joining as?" control (FR-019), shared by the mailed-link landing and the
+   in-app join request so the choice reads the same on both. It renders nothing at all for an ordinary
+   invitation to a circle with no offline people — the common case — so those flows are untouched.
+
+   Three shapes:
+   - the inviter already aimed the invitation at an offline person → a line saying who, nothing to pick;
+   - the invitation is open and the circle has offline people → "someone new" plus one radio each;
+   - neither → nothing. *@
+
+@if (Targets is { } targets)
+{
+    @if (targets.PreselectedDisplayName is { Length: > 0 } name)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3" role="status">
+            @string.Format(CultureInfo.CurrentCulture, L["InvitationJoinAs"], name)
+        </MudAlert>
+    }
+    else if (targets.Options is { Count: > 0 } options)
+    {
+        <MudText Typo="Typo.subtitle2" GutterBottom="true">@L["InvitationWhoAreYou"]</MudText>
+        <MudRadioGroup T="Guid?" Value="Value" ValueChanged="OnChanged" Class="mb-3">
+            <MudRadio T="Guid?" Value="@((Guid?)null)" Dense="true" Size="Size.Small">@L["InvitationJoinAsNew"]</MudRadio>
+            @foreach (var option in options)
+            {
+                <MudRadio T="Guid?" Value="@((Guid?)option.MembershipId)" Dense="true" Size="Size.Small">
+                    @string.Format(CultureInfo.CurrentCulture, L["InvitationJoinAsExisting"], option.DisplayName)
+                </MudRadio>
+            }
+        </MudRadioGroup>
+    }
+}
+
+@code {
+    /// <summary>The offline profiles to choose from, or the preselected one; null while loading.</summary>
+    [Parameter]
+    public JoinTargetsResponse? Targets { get; set; }
+
+    /// <summary>The chosen offline membership, or null for "someone new".</summary>
+    [Parameter]
+    public Guid? Value { get; set; }
+
+    /// <summary>Raised when the recipient changes their choice.</summary>
+    [Parameter]
+    public EventCallback<Guid?> ValueChanged { get; set; }
+
+    private Task OnChanged(Guid? value)
+    {
+        Value = value;
+        return ValueChanged.InvokeAsync(value);
+    }
+}

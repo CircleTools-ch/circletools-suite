@@ -31,6 +31,14 @@ public sealed class HttpLinkingApi(HttpClient client) : ILinkingApi
             cancellationToken);
 
     /// <inheritdoc />
+    public Task<ApiResult> SelfLinkAsync(SelfLinkRequest request, CancellationToken cancellationToken = default) =>
+        SendNoContentAsync(
+            HttpMethod.Post,
+            $"{MemberLinks}/self",
+            JsonContent.Create(request, LinkingJsonContext.Default.SelfLinkRequest),
+            cancellationToken);
+
+    /// <inheritdoc />
     public Task<ApiResult<IReadOnlyList<PendingMemberLinkResponse>>> GetPendingAsync(CancellationToken cancellationToken = default) =>
         GetAsync($"{MemberLinks}/pending", LinkingJsonContext.Default.IReadOnlyListPendingMemberLinkResponse, cancellationToken);
 
@@ -67,18 +75,26 @@ public sealed class HttpLinkingApi(HttpClient client) : ILinkingApi
             cancellationToken);
 
     /// <inheritdoc />
-    public Task<ApiResult<MyAssignmentResponse>> GetMyAssignmentAsync(Guid groupId, CancellationToken cancellationToken = default) =>
-        GetAsync($"{Groups}/{groupId}/my-assignment", LinkingJsonContext.Default.MyAssignmentResponse, cancellationToken);
+    public Task<ApiResult> PublishGroupEventsAsync(Guid groupId, PublishGroupEventsRequest request, CancellationToken cancellationToken = default) =>
+        SendNoContentAsync(
+            HttpMethod.Put,
+            $"{Groups}/{groupId}/events",
+            JsonContent.Create(request, LinkingJsonContext.Default.PublishGroupEventsRequest),
+            cancellationToken);
+
+    /// <inheritdoc />
+    public Task<ApiResult<MyAssignmentResponse>> GetMyAssignmentAsync(Guid groupId, Guid eventId, CancellationToken cancellationToken = default) =>
+        GetAsync($"{Groups}/{groupId}/events/{eventId}/my-assignment", LinkingJsonContext.Default.MyAssignmentResponse, cancellationToken);
 
     /// <inheritdoc />
     public Task<ApiResult<MyAssignmentsResponse>> GetMyAssignmentsAsync(CancellationToken cancellationToken = default) =>
         GetAsync("api/v1/my-assignments", LinkingJsonContext.Default.MyAssignmentsResponse, cancellationToken);
 
     /// <inheritdoc />
-    public Task<ApiResult> UpdateMyWishlistAsync(Guid groupId, UpdateMyWishlistRequest request, CancellationToken cancellationToken = default) =>
+    public Task<ApiResult> UpdateMyWishlistAsync(Guid groupId, Guid eventId, UpdateMyWishlistRequest request, CancellationToken cancellationToken = default) =>
         SendNoContentAsync(
             HttpMethod.Put,
-            $"{Groups}/{groupId}/my-wishlist",
+            $"{Groups}/{groupId}/events/{eventId}/my-wishlist",
             JsonContent.Create(request, LinkingJsonContext.Default.UpdateMyWishlistRequest),
             cancellationToken);
 

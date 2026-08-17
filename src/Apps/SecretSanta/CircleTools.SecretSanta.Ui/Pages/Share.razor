@@ -1,4 +1,4 @@
-@page "/groups/{GroupId:guid}/share"
+@page "/groups/{GroupId:guid}/events/{EventId:guid}/share"
 @using CircleTools.SecretSanta.Core.Reveal
 @inject ISender Sender
 @inject IJSRuntime JS
@@ -6,7 +6,7 @@
 
 <PageTitle>@L["ShareTitle"]</PageTitle>
 
-<GroupNav GroupId="GroupId" />
+<EventNav GroupId="GroupId" EventId="EventId" />
 
 <MudText Typo="Typo.h4" GutterBottom="true">@L["ShareTitle"]</MudText>
 <MudText Class="mud-text-secondary mb-4">@L["ShareHint"]</MudText>
@@ -61,15 +61,19 @@ else
     [Parameter]
     public Guid GroupId { get; set; }
 
+    /// <summary>The event whose reveal links are shown.</summary>
+    [Parameter]
+    public Guid EventId { get; set; }
+
     private IReadOnlyList<RevealLinkDto>? _links;
     private string? _copiedUrl;
     private bool _drawInvalidated;
 
     protected override async Task OnParametersSetAsync()
     {
-        _links = await Sender.Send(new GetRevealLinksQuery(GroupId));
-        var group = await Sender.Send(new GetGroupQuery(GroupId));
-        _drawInvalidated = group?.DrawInvalidatedByMembershipChange ?? false;
+        _links = await Sender.Send(new GetRevealLinksQuery(GroupId, EventId));
+        var occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));
+        _drawInvalidated = occasion?.DrawInvalidatedByMembershipChange ?? false;
     }
 
     private async Task CopyAsync(string url)

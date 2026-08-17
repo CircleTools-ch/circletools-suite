@@ -17,7 +17,7 @@ public static class SyncTestData
         var group = Group.Create(name);
         foreach (var memberName in memberNames)
         {
-            group.AddMember(memberName, Wishlist.Empty);
+            group.AddMember(memberName);
         }
 
         return group.ToState();

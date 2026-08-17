@@ -64,6 +64,12 @@
       href: functional/FR-030-edit-my-wishlist.md
     - name: FR-031 Cross-app single sign-on
       href: functional/FR-031-single-sign-on-across-apps.md
+    - name: FR-032 Add the organizer as the first member
+      href: functional/FR-032-add-organizer-as-member.md
+    - name: FR-033 Bookmark groups for quick access
+      href: functional/FR-033-bookmark-groups.md
+    - name: FR-034 Multiple events per group
+      href: functional/FR-034-multiple-events-per-group.md
 - name: Non-functional
   items:
     - name: NFR-001 Local-first & offline

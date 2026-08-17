@@ -23,6 +23,14 @@ public sealed class FakeLinkingApi : ILinkingApi
     public Task<ApiResult> RegisterCircleLinkAsync(RegisterCircleLinkRequest request, CancellationToken cancellationToken = default) =>
         Task.FromResult(ApiResult.Ok());
 
+    public List<SelfLinkRequest> SelfLinks { get; } = [];
+
+    public Task<ApiResult> SelfLinkAsync(SelfLinkRequest request, CancellationToken cancellationToken = default)
+    {
+        SelfLinks.Add(request);
+        return Task.FromResult(ApiResult.Ok());
+    }
+
     public Task<ApiResult<IReadOnlyList<PendingMemberLinkResponse>>> GetPendingAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(ApiResult.Ok<IReadOnlyList<PendingMemberLinkResponse>>([]));
 
@@ -44,19 +52,27 @@ public sealed class FakeLinkingApi : ILinkingApi
         return Task.FromResult(ApiResult.Ok());
     }
 
+    public List<(Guid GroupId, PublishGroupEventsRequest Request)> PublishedEvents { get; } = [];
+
     public Task<ApiResult> PublishAssignmentsAsync(Guid groupId, PublishAssignmentsRequest request, CancellationToken cancellationToken = default)
     {
         Published.Add((groupId, request));
         return Task.FromResult(ApiResult.Ok());
     }
 
-    public Task<ApiResult<MyAssignmentResponse>> GetMyAssignmentAsync(Guid groupId, CancellationToken cancellationToken = default) =>
+    public Task<ApiResult> PublishGroupEventsAsync(Guid groupId, PublishGroupEventsRequest request, CancellationToken cancellationToken = default)
+    {
+        PublishedEvents.Add((groupId, request));
+        return Task.FromResult(ApiResult.Ok());
+    }
+
+    public Task<ApiResult<MyAssignmentResponse>> GetMyAssignmentAsync(Guid groupId, Guid eventId, CancellationToken cancellationToken = default) =>
         Task.FromResult(ApiResult.Failed<MyAssignmentResponse>(new ApiError(ApiFailure.NotFound)));
 
     public Task<ApiResult<MyAssignmentsResponse>> GetMyAssignmentsAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(ApiResult.Ok(Assignments));
 
-    public Task<ApiResult> UpdateMyWishlistAsync(Guid groupId, UpdateMyWishlistRequest request, CancellationToken cancellationToken = default) =>
+    public Task<ApiResult> UpdateMyWishlistAsync(Guid groupId, Guid eventId, UpdateMyWishlistRequest request, CancellationToken cancellationToken = default) =>
         Task.FromResult(ApiResult.Ok());
 
     public Task<ApiResult<MyWishlistsResponse>> GetMyWishlistsAsync(CancellationToken cancellationToken = default) =>
