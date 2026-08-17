@@ -1,0 +1,149 @@
+@implements IDisposable
+@inject AuthenticationStateProvider AuthProvider
+@inject IDialogService Dialog
+@inject ClaimableGroupsService Claimable
+@inject SyncService Sync
+@inject ISender Sender
+@inject AccountSession Session
+@inject NavigationManager Navigation
+@inject AutoSyncService AutoSync
+@inject IStringLocalizer<AppStrings> L
+
+@*
+    Sign-in reconciliation of offline data (ADR-0044). No visual output of its own: it watches for the
+    anonymous -> authenticated transition and, on the first interactive sign-in that finds account-free
+    groups on the device, asks the user to Import them into the account, Discard them, or Cancel the
+    sign-in. With no offline groups it simply lets the background sync run. A restored session (silent
+    startup refresh) happens before this component mounts, so it is never prompted.
+*@
+
+@code {
+    private bool _wasAuthenticated;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        _wasAuthenticated = state.User.Identity?.IsAuthenticated == true;
+        AuthProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+    }
+
+    private void OnAuthenticationStateChanged(Task<AuthenticationState> task) =>
+        _ = InvokeAsync(() => HandleAsync(task));
+
+    private async Task HandleAsync(Task<AuthenticationState> task)
+    {
+        AuthenticationState state;
+        try
+        {
+            state = await task;
+        }
+        catch
+        {
+            return;
+        }
+
+        var isAuthenticated = state.User.Identity?.IsAuthenticated == true;
+        var wasAuthenticated = _wasAuthenticated;
+        _wasAuthenticated = isAuthenticated;
+
+        // Only an anonymous -> authenticated transition, and only one at a time. A refresh
+        // (authenticated -> authenticated) or a sign-out (-> anonymous) is not a sign-in.
+        if (_busy || wasAuthenticated || !isAuthenticated)
+        {
+            return;
+        }
+
+        await ReconcileAsync(state.User.UserId());
+    }
+
+    private async Task ReconcileAsync(Guid accountId)
+    {
+        if (accountId == Guid.Empty)
+        {
+            return;
+        }
+
+        _busy = true;
+        AutoSync.Reconciling = true; // Suspend background auto-claim until the user decides.
+        try
+        {
+            IReadOnlyList<Guid> ids;
+            try
+            {
+                ids = [.. (await Claimable.GetAccountFreeAsync()).Select(g => g.Id)];
+            }
+            catch (StorageUnavailableException)
+            {
+                ids = [];
+            }
+
+            if (ids.Count > 0)
+            {
+                switch (await AskAsync(ids.Count))
+                {
+                    case OfflineChoice.Import:
+                        await Sync.ClaimAsync(accountId, ids);
+                        break;
+                    case OfflineChoice.Discard:
+                        foreach (var id in ids)
+                        {
+                            await Sender.Send(new DeleteGroupCommand(id));
+                        }
+
+                        break;
+                    case OfflineChoice.Cancel:
+                        await Session.SignOutAsync();
+                        Navigation.NavigateTo("");
+                        return; // Sign-in undone: do not start a sync.
+                }
+            }
+        }
+        finally
+        {
+            AutoSync.Reconciling = false;
+            _busy = false;
+        }
+
+        // Import, Discard, or nothing-to-reconcile: run the first cycle now to pull the account's data.
+        AutoSync.RequestSync();
+    }
+
+    private enum OfflineChoice
+    {
+        Import,
+        Discard,
+        Cancel,
+    }
+
+    private async Task<OfflineChoice> AskAsync(int count)
+    {
+        // Count-at-one is a distinct key, not "{0} things" with a swapped number: the noun is singular
+        // in every language this app speaks.
+        var body = count == 1 ? L["ReconcileBodySingular"] : L["ReconcileBodyPlural", count];
+
+        var messageBox = new MessageBoxOptions
+        {
+            Title = L["ReconcileTitle"],
+            Message = body,
+            YesText = L["ReconcileImport"],
+            NoText = L["ReconcileDiscard"],
+            CancelText = L["Cancel"],
+        };
+
+        // Only the three buttons resolve the dialog — an accidental backdrop click or Escape must not
+        // sign the user out.
+        var options = new DialogOptions { BackdropClick = false, CloseOnEscapeKey = false };
+
+        var result = await Dialog.ShowMessageBoxAsync(messageBox, options);
+
+        return result switch
+        {
+            true => OfflineChoice.Import,
+            false => OfflineChoice.Discard,
+            _ => OfflineChoice.Cancel,
+        };
+    }
+
+    public void Dispose() => AuthProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+}

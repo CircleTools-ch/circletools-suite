@@ -67,6 +67,9 @@ public static class MauiProgram
         // and (just below) the two account HTTP clients. The browser web host swaps exactly these;
         // everything else registered here is the identical shared feature code.
         builder.Services.AddSecretSantaFileStorage(FileSystem.AppDataDirectory);
+        // Fully qualified: MAUI's global usings also expose a Microsoft.Maui.Networking.IConnectivity,
+        // so the bare name would be ambiguous here.
+        builder.Services.AddScoped<CircleTools.Ui.Abstractions.IConnectivity, MauiConnectivity>();
         builder.Services.AddScoped<IPasskeyCeremony, MauiPasskeyCeremony>();
 
         // Two clients over the same Main API, differing only in whether the authorizing handler is in

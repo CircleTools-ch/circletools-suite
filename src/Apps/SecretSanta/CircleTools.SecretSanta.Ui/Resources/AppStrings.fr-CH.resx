@@ -199,4 +199,9 @@
   <data name="ConfirmRemoveEvent" xml:space="preserve"><value>Supprimer l'événement « {0} » ? Le tirage et les listes de souhaits seront perdus.</value></data>
   <data name="CreateFromCircleAction" xml:space="preserve"><value>Créer à partir d'un cercle</value></data>
   <data name="AllGroups" xml:space="preserve"><value>Tous les groupes</value></data>
+  <data name="ReconcileTitle" xml:space="preserve"><value>Importer vos données hors ligne ?</value></data>
+  <data name="ReconcileBodySingular" xml:space="preserve"><value>Vous avez créé un groupe en étant déconnecté. L'importer dans votre compte pour le synchroniser sur vos appareils, ou le supprimer ? La suppression est définitive.</value></data>
+  <data name="ReconcileBodyPlural" xml:space="preserve"><value>Vous avez créé {0} groupes en étant déconnecté. Les importer dans votre compte pour les synchroniser sur vos appareils, ou les supprimer ? La suppression est définitive.</value></data>
+  <data name="ReconcileImport" xml:space="preserve"><value>Importer</value></data>
+  <data name="ReconcileDiscard" xml:space="preserve"><value>Supprimer</value></data>
 </root>

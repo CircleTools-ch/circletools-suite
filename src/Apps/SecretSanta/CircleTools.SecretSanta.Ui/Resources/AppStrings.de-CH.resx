@@ -199,4 +199,9 @@
   <data name="ConfirmRemoveEvent" xml:space="preserve"><value>Anlass «{0}» entfernen? Auslosung und Wunschlisten gehen verloren.</value></data>
   <data name="CreateFromCircleAction" xml:space="preserve"><value>Aus einem Kreis erstellen</value></data>
   <data name="AllGroups" xml:space="preserve"><value>Alle Gruppen</value></data>
+  <data name="ReconcileTitle" xml:space="preserve"><value>Offline erstellte Daten übernehmen?</value></data>
+  <data name="ReconcileBodySingular" xml:space="preserve"><value>Du hast eine Gruppe erstellt, während du abgemeldet warst. In dein Konto übernehmen, damit sie über deine Geräte synchronisiert wird, oder verwerfen? Verwerfen kann nicht rückgängig gemacht werden.</value></data>
+  <data name="ReconcileBodyPlural" xml:space="preserve"><value>Du hast {0} Gruppen erstellt, während du abgemeldet warst. In dein Konto übernehmen, damit sie über deine Geräte synchronisiert werden, oder verwerfen? Verwerfen kann nicht rückgängig gemacht werden.</value></data>
+  <data name="ReconcileImport" xml:space="preserve"><value>Übernehmen</value></data>
+  <data name="ReconcileDiscard" xml:space="preserve"><value>Verwerfen</value></data>
 </root>
