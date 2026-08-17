@@ -62,7 +62,7 @@ public sealed class SyncClient
         var group = Group.Create(name);
         foreach (var memberName in memberNames)
         {
-            group.AddMember(memberName, Wishlist.Empty);
+            group.AddMember(memberName);
         }
 
         await _repository.SaveAsync(group, CancellationToken.None);
@@ -79,15 +79,20 @@ public sealed class SyncClient
     public async Task<Guid> CreateGroupWithDrawAsync(string name)
     {
         var group = Group.Create(name);
-        var ada = group.AddMember("Ada", Wishlist.Create(["Books", "Tea"]));
-        var bern = group.AddMember("Bernd", Wishlist.Create(["Socks"]));
-        var cora = group.AddMember("Cora", Wishlist.Empty);
-        group.AddMember("Deniz", Wishlist.Create(["Chocolate"]));
+        var ada = group.AddMember("Ada");
+        var bern = group.AddMember("Bernd");
+        var cora = group.AddMember("Cora");
+        var deniz = group.AddMember("Deniz");
+
+        // Wishlists are per event (ADR-0042): seed them on the group's default event (id == group id).
+        group.SetMemberWishlist(group.Id, ada, Wishlist.Create(["Books", "Tea"]));
+        group.SetMemberWishlist(group.Id, bern, Wishlist.Create(["Socks"]));
+        group.SetMemberWishlist(group.Id, deniz, Wishlist.Create(["Chocolate"]));
 
         // One exclusion the draw must honour, so the "exclusions crossed too" assertion has teeth.
         group.AddExclusion(ada, bern);
 
-        var result = group.RunDraw(new DrawGenerator(new SystemRandomSource()), DateTimeOffset.UtcNow);
+        var result = group.RunDraw(group.Id, new DrawGenerator(new SystemRandomSource()), DateTimeOffset.UtcNow);
         if (!result.IsSuccess)
         {
             throw new InvalidOperationException("The seeded draw did not succeed; the harness group is misconfigured.");
@@ -166,7 +171,7 @@ public sealed class SyncClient
     {
         var group = await _repository.GetAsync(id, CancellationToken.None)
             ?? throw new InvalidOperationException($"No local group {id} to edit.");
-        group.AddMember(memberName, Wishlist.Empty);
+        group.AddMember(memberName);
         await _repository.SaveAsync(group, CancellationToken.None);
     }
 

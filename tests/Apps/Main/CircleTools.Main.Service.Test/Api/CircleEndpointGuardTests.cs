@@ -45,6 +45,7 @@ public sealed class CircleEndpointGuardTests(MailApiFactory factory)
     private static readonly string[] _mayNameACircleWithoutARoleRequirement =
     [
         "GetJoinRequests",
+        "GetJoinRequestTargets",
         "AcceptJoinRequest",
         "DeclineJoinRequest",
     ];

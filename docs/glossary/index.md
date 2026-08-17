@@ -18,10 +18,11 @@ only — they are **not** code names.
 | [Circle](circle.md) | Circles | A persistent named set of people sharing apps and data; UI label is user-chosen. |
 | [Circle membership](circle-membership.md) | Circles | A person's link to a circle, carrying their role (owner/admin/member). |
 | [Claim](claim.md) | Platform · Secret-Santa | Taking account-free local data into a user's account, per aggregate and by explicit choice. |
-| [Draw](draw.md) | Secret-Santa | The act/result of randomly assigning gift-givers to recipients under the draw rules. |
-| [Event details](event-details.md) | Secret-Santa | A group's occasion info: date, location, notes. |
+| [Draw](draw.md) | Secret-Santa | The act/result of randomly assigning gift-givers to recipients under the draw rules, per event. |
+| [Event](event.md) | Secret-Santa | One gift-exchange occasion within a group, with its own draw, wishlists, budget and date. |
+| [Event details](event-details.md) | Secret-Santa | One event's occasion info: date, location, notes. |
 | [Exclusion](exclusion.md) | Secret-Santa | A one-directional rule preventing a giver from being matched to a recipient. |
-| [Group](group.md) | Secret-Santa | A set of participants who exchange gifts together. |
+| [Group](group.md) | Secret-Santa | A shared roster of participants who exchange gifts across one or more events. |
 | [Invitation](invitation.md) | Circles | A pending offer to join a circle, sent to an email address. |
 | [Managed member](managed-member.md) | Circles | A person in a circle with a profile but no account, maintained by an admin. |
 | [Member](member.md) | Secret-Santa | A person participating in a group; optionally linked to a user. |
@@ -30,6 +31,6 @@ only — they are **not** code names.
 | [Sync](sync.md) | Platform | Local-first reconciliation of on-device data with the server for a signed-in user. |
 | [Tombstone](tombstone.md) | Platform | The record that an aggregate was deleted, so the deletion travels instead of resurrecting. |
 | [User](user.md) | Identity | A person with an authenticated account, shared across all apps in the suite. |
-| [Wishlist](wishlist.md) | Secret-Santa | A member's optional list of gift ideas. |
+| [Wishlist](wishlist.md) | Secret-Santa | A member's optional list of gift ideas, per event. |
 
 _Keep this table sorted alphabetically as terms are added._

@@ -90,6 +90,14 @@
 
                                 @if (person.IsManaged && CanAdminister)
                                 {
+                                    @* The convenient way to promote an offline person: invite them
+                                       straight from their own row, and the invitation is aimed at
+                                       this profile so accepting takes it over rather than adding a
+                                       duplicate (FR-019). *@
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                               OnClick="@(() => StartInvite(person))">
+                                        @L["CircleInviteToJoin"]
+                                    </MudButton>
                                     <MudButton Size="Size.Small" Variant="Variant.Outlined"
                                                OnClick="@(() => StartEdit(person))">
                                         @L["CircleManagedEdit"]
@@ -125,6 +133,28 @@
                                         <BusyButton Label="@L["CircleManagedSave"]" Busy="_busy"
                                                     Disabled="@(_managedName.Trim().Length == 0)" />
                                         <MudButton Variant="Variant.Text" OnClick="@(() => _editing = null)">
+                                            @L["CircleManagedCancel"]
+                                        </MudButton>
+                                    </div>
+                                </MudStack>
+                            </form>
+                        }
+
+                        @if (_invitingPerson?.MembershipId == person.MembershipId)
+                        {
+                            <form class="mt-3" @onsubmit="SubmitRowInviteAsync" @onsubmit:preventDefault="true">
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
+                                    @string.Format(CultureInfo.CurrentCulture, L["CircleInviteAsLead"], person.DisplayName)
+                                </MudText>
+                                <ProblemAlert Message="@_rowInviteError" />
+                                <MudStack Spacing="3" Style="max-width:26rem;">
+                                    <MudTextField @bind-Value="_rowInviteEmail" Immediate="true" InputType="InputType.Email"
+                                                  Label="@L["CircleInviteEmail"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                                  Required="true" autocomplete="off" />
+                                    <div class="d-flex gap-2 align-center">
+                                        <BusyButton Label="@L["CircleInviteSubmit"]" Busy="_inviting"
+                                                    Disabled="@(_rowInviteEmail.Trim().Length == 0)" />
+                                        <MudButton Variant="Variant.Text" OnClick="@(() => _invitingPerson = null)">
                                             @L["CircleManagedCancel"]
                                         </MudButton>
                                     </div>
@@ -169,6 +199,24 @@
                             <MudTextField @bind-Value="_inviteEmail" Immediate="true" InputType="InputType.Email"
                                           Label="@L["CircleInviteEmail"]" Variant="Variant.Outlined" Margin="Margin.Dense"
                                           Required="true" autocomplete="off" id="invite-email" />
+
+                            @* Only shown when there is an offline person to promote. Left on "a new
+                               person" it invites an ordinary newcomer; picking someone aims the
+                               invitation at their profile so accepting takes it over (FR-019). *@
+                            @if (OfflinePeople is { Count: > 0 } offline)
+                            {
+                                <MudSelect T="Guid?" @bind-Value="_inviteTargetId" Label="@L["CircleInviteFor"]"
+                                           Variant="Variant.Outlined" Margin="Margin.Dense">
+                                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">@L["CircleInviteForNew"]</MudSelectItem>
+                                    @foreach (var offlinePerson in offline)
+                                    {
+                                        <MudSelectItem T="Guid?" Value="@((Guid?)offlinePerson.MembershipId)">
+                                            @string.Format(CultureInfo.CurrentCulture, L["CircleInviteForPerson"], offlinePerson.DisplayName)
+                                        </MudSelectItem>
+                                    }
+                                </MudSelect>
+                            }
+
                             <BusyButton Label="@L["CircleInviteSubmit"]" Busy="_inviting"
                                         Disabled="@(_inviteEmail.Trim().Length == 0)" />
                         </MudStack>
@@ -187,6 +235,12 @@
                                 <MudPaper Elevation="0" Outlined="true" Class="d-flex justify-space-between align-center flex-wrap gap-2 pa-3">
                                     <div class="d-flex align-center flex-wrap gap-2">
                                         <MudText>@invitation.InvitedEmail</MudText>
+                                        @if (invitation.ManagedDisplayName is { Length: > 0 } targetName)
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text">
+                                                @string.Format(CultureInfo.CurrentCulture, L["CirclePendingAsTarget"], targetName)
+                                            </MudChip>
+                                        }
                                         <MudText Typo="Typo.body2" Class="mud-text-secondary">
                                             @string.Format(
                                                 CultureInfo.CurrentCulture,
@@ -332,8 +386,12 @@
     private IReadOnlyList<PendingInvitationResponse>? _pending;
     private PendingConfirm? _confirming;
     private CirclePersonResponse? _editing;
+    private CirclePersonResponse? _invitingPerson;
 
     private string _inviteEmail = string.Empty;
+    private Guid? _inviteTargetId;
+    private string _rowInviteEmail = string.Empty;
+    private string? _rowInviteError;
     private string _newManagedName = string.Empty;
     private string _managedName = string.Empty;
     private string _managedLanguage = string.Empty;
@@ -432,13 +490,17 @@
         _circle = null;
     }
 
+    /// <summary>The circle's offline people (managed members), the ones an invitation can promote.</summary>
+    private IReadOnlyList<CirclePersonResponse> OfflinePeople =>
+        [.. _circle?.People.Where(person => person.IsManaged) ?? []];
+
     private async Task InviteAsync()
     {
         _inviting = true;
         ClearBanners();
         _inviteSent = false;
 
-        var result = await Api.InviteAsync(CircleId, new InviteRequest(_inviteEmail.Trim(), null));
+        var result = await Api.InviteAsync(CircleId, new InviteRequest(_inviteEmail.Trim(), _inviteTargetId));
 
         _inviting = false;
 
@@ -446,11 +508,48 @@
         {
             _inviteSent = true;
             _inviteEmail = string.Empty;
+            _inviteTargetId = null;
             await LoadAsync();
             return;
         }
 
         _inviteError = CircleErrorText.Describe(L, result.Error);
+    }
+
+    private void StartInvite(CirclePersonResponse person)
+    {
+        ClearBanners();
+        _rowInviteError = null;
+        _rowInviteEmail = string.Empty;
+        _editing = null;
+        _invitingPerson = person;
+    }
+
+    private async Task SubmitRowInviteAsync()
+    {
+        if (_invitingPerson is not { } person)
+        {
+            return;
+        }
+
+        _inviting = true;
+        _rowInviteError = null;
+
+        var result = await Api.InviteAsync(
+            CircleId,
+            new InviteRequest(_rowInviteEmail.Trim(), person.MembershipId));
+
+        _inviting = false;
+
+        if (result.IsSuccess)
+        {
+            _invitingPerson = null;
+            _inviteSent = true;
+            await LoadAsync();
+            return;
+        }
+
+        _rowInviteError = CircleErrorText.Describe(L, result.Error);
     }
 
     private Task ResendAsync(Guid invitationId) => RunAsync(() => Api.ResendInvitationAsync(CircleId, invitationId));
@@ -503,6 +602,7 @@
 
     private void StartEdit(CirclePersonResponse person)
     {
+        _invitingPerson = null;
         _editing = person;
         _managedName = person.DisplayName;
         _managedLanguage = string.Empty;

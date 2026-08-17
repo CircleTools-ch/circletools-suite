@@ -1,9 +1,15 @@
 @page "/"
+@using CircleTools.SecretSanta.Contracts
+@using CircleTools.SecretSanta.LocalStore.Linking
 @inject ISender Sender
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
-@inject ClaimableGroupsService Claimable
-@inject SyncService Sync
+@inject VisibleGroupsService VisibleGroups
+@inject ILinkingApi Linking
+@inject LinkResolutionApplier Resolutions
+@inject BookmarkService Bookmarks
+@inject AutoSyncService AutoSync
+@implements IDisposable
 
 <PageTitle>@L["GroupsTitle"]</PageTitle>
 
@@ -52,20 +58,31 @@ else
                             <MudText Typo="Typo.body2" Class="mud-text-secondary">
                                 @L["MembersColumn"]: @group.MemberCount
                             </MudText>
-                            @if (group.HasCurrentDraw)
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                @L["EventsColumn"]: @group.EventCount
+                            </MudText>
+                            @if (group.HasAnyDraw)
                             {
                                 <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
                             }
-                            else if (group.DrawInvalidatedByMembershipChange)
+                            else if (group.AnyDrawInvalidated)
                             {
                                 <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
                             }
-                            @if (IsOnAccount(group.Id))
-                            {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">@L["SyncedBadge"]</MudChip>
-                            }
                         </div>
                         <div class="d-flex align-center gap-1">
+                            <AuthorizeView>
+                                <Authorized>
+                                    @{
+                                        var isPinned = _pinned.Contains(group.Id);
+                                    }
+                                    <MudIconButton Size="Size.Small"
+                                                   Icon="@(isPinned ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)"
+                                                   Color="@(isPinned ? Color.Warning : Color.Default)"
+                                                   OnClick="() => TogglePinAsync(group.Id)"
+                                                   aria-label="@(isPinned ? L["UnpinGroup"] : L["PinGroup"])" />
+                                </Authorized>
+                            </AuthorizeView>
                             <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
                                        OnClick="() => Open(group.Id)">@L["Open"]</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
@@ -86,36 +103,6 @@ else
                         </MudAlert>
                     }
 
-                    @* Un-claim (FR-026): only for a group on the account, and only while signed in. Kept
-                       visually and textually distinct from Delete — it removes the group from the account
-                       but keeps the copy on this device. *@
-                    @if (_accountId != Guid.Empty && IsOnAccount(group.Id))
-                    {
-                        @if (_pendingUnclaimId == group.Id)
-                        {
-                            <MudAlert Severity="Severity.Info" Class="mt-3" Dense="true">
-                                <MudText Typo="Typo.body2" Class="mb-1">@L["UnclaimConfirmPrompt", group.Name]</MudText>
-                                <MudText Typo="Typo.caption" Class="d-block mb-1">@L["UnclaimKeepsLocalCopyNote"]</MudText>
-                                <MudText Typo="Typo.caption" Class="d-block mb-2">@L["UnclaimDistinctFromDeleteNote"]</MudText>
-                                <div class="d-flex gap-1">
-                                    <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled"
-                                               OnClick="() => UnclaimAsync(group.Id)">@L["UnclaimConfirm"]</MudButton>
-                                    <MudButton Size="Size.Small" Variant="Variant.Text"
-                                               OnClick="CancelUnclaim">@L["Cancel"]</MudButton>
-                                </div>
-                            </MudAlert>
-                        }
-                        else
-                        {
-                            <MudButton Size="Size.Small" Variant="Variant.Text" Class="mt-1 px-1"
-                                       OnClick="() => AskUnclaim(group.Id)">@L["UnclaimAction"]</MudButton>
-                        }
-                    }
-
-                    @if (_unclaimMessageId == group.Id && _unclaimStatus is not null)
-                    {
-                        <MudAlert Severity="@UnclaimSeverity" Class="mt-2" Dense="true" role="@UnclaimRole">@UnclaimText</MudAlert>
-                    }
                 </MudCardContent>
             </MudCard>
         }
@@ -127,45 +114,80 @@ else
     private Task<AuthenticationState>? AuthStateTask { get; set; }
 
     private IReadOnlyList<GroupSummaryDto>? _groups;
-    private HashSet<Guid> _onAccount = [];
+    private HashSet<Guid> _pinned = [];
     private Guid _accountId;
+    private bool _accountKnown;
+    private string _displayName = string.Empty;
     private string _newName = string.Empty;
     private bool _busy;
     private Guid? _pendingDeleteId;
-    private Guid? _pendingUnclaimId;
-    private Guid? _unclaimMessageId;
-    private SyncStatus? _unclaimStatus;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override void OnInitialized() => AutoSync.SyncCompleted += OnSyncCompleted;
 
+    // The cascading auth state re-runs this on every sign-in and sign-out. Reload when the account
+    // actually changed, so the visible set switches at once — account groups appear on sign-in and are
+    // hidden again on sign-out (ADR-0044) — without a manual refresh.
     protected override async Task OnParametersSetAsync()
     {
+        var accountId = Guid.Empty;
+        var displayName = string.Empty;
         if (AuthStateTask is not null)
         {
             var state = await AuthStateTask;
-            _accountId = state.User.UserId();
+            accountId = state.User.UserId();
+            displayName = state.User.DisplayName();
+        }
+
+        var changed = !_accountKnown || accountId != _accountId;
+        _accountId = accountId;
+        _displayName = displayName;
+        _accountKnown = true;
+
+        if (changed)
+        {
+            await LoadAsync();
         }
     }
+
+    // A background sync may have pulled or claimed groups; refresh the list so they appear on their own.
+    private void OnSyncCompleted() => _ = InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => AutoSync.SyncCompleted -= OnSyncCompleted;
 
     private async Task LoadAsync()
     {
-        _groups = await Sender.Send(new GetGroupsQuery());
+        // Signed in: every group (all synced). Signed out: only account-free groups — account data is
+        // hidden from the offline view but kept on the device (ADR-0044).
+        _groups = await VisibleGroups.GetVisibleAsync();
 
-        // The account scope is sync metadata, so it comes from the LocalStore read-model rather than
-        // the domain summary (ADR-0016). A storage failure just leaves the badges off — the list still
-        // renders from the domain query.
+        // Pinned groups are a per-account preference (FR-033); empty when signed out. A storage failure
+        // just leaves the pins off.
         try
         {
-            var claimable = await Claimable.GetAllAsync();
-            _onAccount = [.. claimable.Where(g => !g.IsAccountFree).Select(g => g.Id)];
+            _pinned = [.. await Bookmarks.GetPinnedAsync()];
         }
         catch (StorageUnavailableException)
         {
-            _onAccount = [];
+            _pinned = [];
         }
     }
 
-    private bool IsOnAccount(Guid id) => _onAccount.Contains(id);
+    private async Task TogglePinAsync(Guid id)
+    {
+        try
+        {
+            await Bookmarks.ToggleAsync(id);
+            _pinned = [.. await Bookmarks.GetPinnedAsync()];
+        }
+        catch (StorageUnavailableException)
+        {
+            // The pin could not be written; leave the current state. Nothing else is affected.
+        }
+    }
 
     private async Task OnNewNameKeyDown(KeyboardEventArgs args)
     {
@@ -185,7 +207,17 @@ else
         _busy = true;
         try
         {
-            var id = await Sender.Send(new CreateGroupCommand(_newName));
+            var name = _newName.Trim();
+            var id = await Sender.Send(new CreateGroupCommand(name));
+
+            // The organizer is a member of the group they create. Signed in, add them and link their own
+            // account so their membership, wishlist and (once drawn) assignment are theirs on the My*
+            // screens (FR-032). Signed out there is no identity to add, so the group starts empty as before.
+            if (_accountId != Guid.Empty && !string.IsNullOrWhiteSpace(_displayName))
+            {
+                await AddSelfAsync(id, name, _displayName.Trim());
+            }
+
             _newName = string.Empty;
             Open(id);
         }
@@ -195,11 +227,28 @@ else
         }
     }
 
-    private void AskDelete(Guid id)
+    // Add the organizer as the first member and link their own account. Best-effort: the self-link needs
+    // the server, so an unreachable server just leaves them an unlinked member — still in the group, with
+    // the link applying on a later "Sync now". Applying the resolution here sets Member.UserId at once so
+    // the roster shows the link immediately rather than only after the next sync.
+    private async Task AddSelfAsync(Guid groupId, string groupName, string displayName)
     {
-        _pendingDeleteId = id;
-        _pendingUnclaimId = null;
+        try
+        {
+            var memberId = await Sender.Send(new AddMemberCommand(groupId, displayName));
+            var link = await Linking.SelfLinkAsync(new SelfLinkRequest(groupId, groupName, memberId, displayName));
+            if (link.IsSuccess)
+            {
+                await Resolutions.ApplyPendingAsync();
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // A duplicate name (the organizer somehow already present) is not worth surfacing at create.
+        }
     }
+
+    private void AskDelete(Guid id) => _pendingDeleteId = id;
 
     private void CancelDelete() => _pendingDeleteId = null;
 
@@ -209,43 +258,6 @@ else
         await Sender.Send(new DeleteGroupCommand(id));
         await LoadAsync();
     }
-
-    private void AskUnclaim(Guid id)
-    {
-        _pendingUnclaimId = id;
-        _pendingDeleteId = null;
-        _unclaimMessageId = null;
-        _unclaimStatus = null;
-    }
-
-    private void CancelUnclaim() => _pendingUnclaimId = null;
-
-    private async Task UnclaimAsync(Guid id)
-    {
-        _pendingUnclaimId = null;
-        _unclaimMessageId = id;
-
-        var outcome = await Sync.UnclaimAsync(_accountId, id);
-        _unclaimStatus = outcome.Status;
-
-        // On success the group is account-free again; refresh the badges. Nothing local was removed.
-        if (outcome.IsSuccess)
-        {
-            await LoadAsync();
-        }
-    }
-
-    private string UnclaimText => _unclaimStatus switch
-    {
-        SyncStatus.Synced => L["UnclaimSuccess"],
-        SyncStatus.Offline => L["UnclaimOfflineUnavailable"],
-        SyncStatus.StorageUnavailable => L["SyncStatusStorageUnavailable"],
-        _ => L["UnclaimFailed"],
-    };
-
-    private Severity UnclaimSeverity => _unclaimStatus == SyncStatus.Synced ? Severity.Success : Severity.Warning;
-
-    private string UnclaimRole => _unclaimStatus == SyncStatus.StorageUnavailable ? "alert" : "status";
 
     private void Open(Guid id) => Navigation.NavigateTo($"groups/{id}");
 }

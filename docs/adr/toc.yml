@@ -80,5 +80,13 @@
   href: 0039-cross-app-single-sign-on.md
 - name: ADR-0040 UI component library MudBlazor
   href: 0040-ui-component-library-mudblazor.md
+- name: 0041 Sync Secret-Santa UI preferences
+  href: 0041-sync-secret-santa-ui-preferences.md
+- name: 0042 Events as first-class entities
+  href: 0042-events-as-first-class-entities.md
+- name: 0043 Invitee-chosen managed-member promotion
+  href: 0043-invitee-chosen-managed-member-promotion.md
+- name: 0044 Sign-in reconciliation and account-scoped visibility
+  href: 0044-sign-in-reconciliation-and-account-scoped-visibility.md
 - name: Template
   href: _template-adr.md

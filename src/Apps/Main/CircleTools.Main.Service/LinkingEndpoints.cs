@@ -33,6 +33,7 @@ public static class LinkingEndpoints
         group.MapPost("/", SendAsync).WithName("SendMemberLink").RequireAuthorization()
             .RequireRateLimiting(AccountEndpoints.SensitiveRateLimitPolicy);
         group.MapPost("/circle", RegisterCircleLinkAsync).WithName("RegisterCircleLink").RequireAuthorization();
+        group.MapPost("/self", SelfLinkAsync).WithName("SelfLinkMember").RequireAuthorization();
         group.MapGet("/pending", GetPendingAsync).WithName("GetPendingMemberLinks").RequireAuthorization();
         group.MapPost("/{id:guid}/accept", AcceptAsync).WithName("AcceptMemberLink").RequireAuthorization();
         group.MapPost("/{id:guid}/decline", DeclineAsync).WithName("DeclineMemberLink").RequireAuthorization();
@@ -50,9 +51,10 @@ public static class LinkingEndpoints
     {
         ArgumentNullException.ThrowIfNull(group);
 
-        group.MapGet("/{id:guid}/my-assignment", GetMyAssignmentAsync).WithName("GetMyAssignment").RequireAuthorization();
-        group.MapPut("/{id:guid}/my-wishlist", PutMyWishlistAsync).WithName("PutMyWishlist").RequireAuthorization();
+        group.MapGet("/{id:guid}/events/{eventId:guid}/my-assignment", GetMyAssignmentAsync).WithName("GetMyAssignment").RequireAuthorization();
+        group.MapPut("/{id:guid}/events/{eventId:guid}/my-wishlist", PutMyWishlistAsync).WithName("PutMyWishlist").RequireAuthorization();
         group.MapPost("/{id:guid}/assignments/publish", PublishAssignmentsAsync).WithName("PublishAssignments").RequireAuthorization();
+        group.MapPut("/{id:guid}/events", PublishGroupEventsAsync).WithName("PublishGroupEvents").RequireAuthorization();
         group.MapDelete("/{id:guid}/members/{memberId:guid}/link", UnlinkMemberAsync).WithName("UnlinkMember").RequireAuthorization();
 
         return group;
@@ -129,6 +131,32 @@ public static class LinkingEndpoints
         }
 
         return Results.Accepted(value: new SendMemberLinkResponse(MemberLinkOutcome.RequestSent));
+    }
+
+    private static async Task<IResult> SelfLinkAsync(
+        SelfLinkRequest request,
+        ClaimsPrincipal principal,
+        ILinkingStore store,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (!principal.TryGetUserId(out var caller))
+        {
+            return Results.Unauthorized();
+        }
+
+        // Creating a group makes you a member of it: the organizer links their own verified account with
+        // no invitation round-trip and no address — the caller is the target, taken from the bearer token,
+        // so nothing here is client-vouched. Same authorization profile as a self-link found through the
+        // email path (that too self-links to whatever group the caller names), and idempotent under the
+        // one-user-per-group guard.
+        await store.CreateSelfLinkAsync(
+            new MemberLinkRecord(
+                Guid.NewGuid(), request.GroupId, request.GroupName, request.MemberId,
+                request.MemberDisplayName, caller, caller, MemberLinkState.Linked),
+            cancellationToken).ConfigureAwait(false);
+
+        return Results.NoContent();
     }
 
     private static async Task<IResult> RegisterCircleLinkAsync(
@@ -285,6 +313,7 @@ public static class LinkingEndpoints
 
     private static async Task<IResult> GetMyAssignmentAsync(
         Guid id,
+        Guid eventId,
         ClaimsPrincipal principal,
         ILinkingStore store,
         CancellationToken cancellationToken)
@@ -294,7 +323,7 @@ public static class LinkingEndpoints
             return Results.Unauthorized();
         }
 
-        var result = await store.GetMyAssignmentAsync(id, caller, cancellationToken).ConfigureAwait(false);
+        var result = await store.GetMyAssignmentAsync(id, eventId, caller, cancellationToken).ConfigureAwait(false);
 
         return result.Status switch
         {
@@ -324,6 +353,7 @@ public static class LinkingEndpoints
 
     private static async Task<IResult> PutMyWishlistAsync(
         Guid id,
+        Guid eventId,
         UpdateMyWishlistRequest request,
         ClaimsPrincipal principal,
         ILinkingStore store,
@@ -335,7 +365,7 @@ public static class LinkingEndpoints
             return Results.Unauthorized();
         }
 
-        var stored = await store.UpsertMyWishlistAsync(id, caller, request.Items ?? [], cancellationToken).ConfigureAwait(false);
+        var stored = await store.UpsertMyWishlistAsync(id, eventId, request.EventName ?? string.Empty, caller, request.Items ?? [], cancellationToken).ConfigureAwait(false);
 
         // Only a linked member of the group owns a wishlist there; a non-member is denied, not silently ignored.
         return stored ? Results.NoContent() : Results.StatusCode(StatusCodes.Status403Forbidden);
@@ -353,7 +383,7 @@ public static class LinkingEndpoints
 
         var lists = await store.GetMyWishlistsAsync(caller, cancellationToken).ConfigureAwait(false);
         return Results.Ok(new MyWishlistsResponse(lists
-            .Select(w => new MyWishlistResponse(w.GroupId, w.GroupName, w.Items))
+            .Select(w => new MyWishlistResponse(w.GroupId, w.GroupName, w.EventId, w.EventName, w.Items))
             .ToList()));
     }
 
@@ -369,7 +399,7 @@ public static class LinkingEndpoints
 
         var memberships = await store.GetMyMembershipsAsync(caller, cancellationToken).ConfigureAwait(false);
         return Results.Ok(new MyMembershipsResponse(memberships
-            .Select(m => new MyMembership(m.GroupId, m.GroupName))
+            .Select(m => new MyMembership(m.GroupId, m.GroupName, m.EventId, m.EventName))
             .ToList()));
     }
 
@@ -396,9 +426,30 @@ public static class LinkingEndpoints
             .ToList();
 
         await store.PublishAssignmentsAsync(
-            id, request.GroupName, caller, request.DrawVersion, budget, eventDetails, rows, cancellationToken)
+            id, request.GroupName, request.EventId, request.EventName, caller, request.DrawVersion, budget, eventDetails, rows, cancellationToken)
             .ConfigureAwait(false);
 
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> PublishGroupEventsAsync(
+        Guid id,
+        PublishGroupEventsRequest request,
+        ClaimsPrincipal principal,
+        ILinkingStore store,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (!principal.TryGetUserId(out var caller))
+        {
+            return Results.Unauthorized();
+        }
+
+        var events = (request.Events ?? [])
+            .Select(e => new GroupEventInput(e.EventId, e.Name))
+            .ToList();
+
+        await store.PublishGroupEventsAsync(id, request.GroupName, caller, events, cancellationToken).ConfigureAwait(false);
         return Results.NoContent();
     }
 
@@ -406,6 +457,8 @@ public static class LinkingEndpoints
         new(
             view.GroupId,
             view.GroupName,
+            view.EventId,
+            view.EventName,
             view.RecipientName,
             view.RecipientWishlist,
             view.Budget is null ? null : new BudgetDto(view.Budget.Amount, view.Budget.Currency),

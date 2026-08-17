@@ -45,6 +45,7 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
     {
         var records = await local.LoadGroupsAsync(cancellationToken);
         var state = await local.LoadStateAsync(cancellationToken);
+        var preferences = await local.LoadPreferencesAsync(cancellationToken);
 
         var pushedChanges = records
             .Where(r => r.AccountScope == accountId && r.Dirty)
@@ -55,12 +56,18 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
                 JsonSerializer.SerializeToElement(r.State, SyncJsonContext.Default.GroupState)))
             .ToList();
 
+        // The per-account UI preferences ride the same opaque sync store as a distinct "preferences"
+        // kind (ADR-0041). Only a dirty document scoped to this account is pushed, and it is kept out of
+        // the group push list so the group counts the sync indicator reports are unaffected.
+        var preferencesPush = PreferencesPushFor(accountId, preferences);
+
         var pushedTombstones = state.Tombstones
             .Where(t => t.AccountId == accountId)
             .Select(t => new SyncTombstone(t.Kind, t.Id, t.Version))
             .ToList();
 
-        var request = new SyncRequest(state.DeviceId, state.CursorFor(accountId), pushedChanges, pushedTombstones);
+        var outgoingChanges = preferencesPush is null ? pushedChanges : [.. pushedChanges, preferencesPush];
+        var request = new SyncRequest(state.DeviceId, state.CursorFor(accountId), outgoingChanges, pushedTombstones);
 
         var result = await api.ExchangeAsync(request, cancellationToken);
         if (!result.IsSuccess)
@@ -70,7 +77,8 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
 
         try
         {
-            return await ReconcileAsync(accountId, result.Value!, pushedChanges, pushedTombstones, cancellationToken);
+            return await ReconcileAsync(
+                accountId, result.Value!, pushedChanges, pushedTombstones, preferencesPush?.Version, cancellationToken);
         }
         catch (StorageUnavailableException)
         {
@@ -237,11 +245,29 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
         }
     }
 
+    // Build the preferences push for the cycle: null unless the local document is dirty and scoped to the
+    // signed-in account. Only the pristine body crosses the wire; the account id is the aggregate id under
+    // which the one-per-account document syncs (ADR-0041).
+    private static SyncChange? PreferencesPushFor(Guid accountId, SyncedPreferencesRecord? preferences)
+    {
+        if (preferences is not { Dirty: true } || preferences.AccountScope != accountId)
+        {
+            return null;
+        }
+
+        return new SyncChange(
+            SyncKinds.Preferences,
+            accountId,
+            preferences.Version,
+            JsonSerializer.SerializeToElement(preferences.State, SyncJsonContext.Default.PreferencesState));
+    }
+
     private async Task<SyncOutcome> ReconcileAsync(
         Guid accountId,
         SyncResponse response,
         List<SyncChange> pushedChanges,
         List<SyncTombstone> pushedTombstones,
+        long? preferencesSentVersion,
         CancellationToken cancellationToken)
     {
         // Re-read so a write made while the request was in flight is reconciled rather than clobbered.
@@ -273,6 +299,10 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
 
         await local.SaveGroupsAsync(records, cancellationToken);
 
+        // Reconcile the UI preferences before the cursor is advanced, so a storage failure here re-fetches
+        // the same delta next cycle rather than skipping a pulled preferences change (ADR-0041).
+        await ReconcilePreferencesAsync(accountId, response, preferencesSentVersion, cancellationToken);
+
         var sentTombstoneIds = pushedTombstones.Select(t => t.Id).ToHashSet();
         var remainingTombstones = state.Tombstones
             .Where(t => !(t.AccountId == accountId && sentTombstoneIds.Contains(t.Id)))
@@ -285,6 +315,50 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
         await local.SaveStateAsync(state with { Cursors = cursors, Tombstones = remainingTombstones }, cancellationToken);
 
         return new SyncOutcome(SyncStatus.Synced, pushedChanges.Count, pulled, deleted, unclaimed, response.Collisions.Count);
+    }
+
+    // Reconcile the per-account UI preferences alongside the group cycle (ADR-0041): confirm a pushed
+    // edit synced, then adopt another device's edit under the same last-write-wins rule the groups follow.
+    private async Task ReconcilePreferencesAsync(
+        Guid accountId,
+        SyncResponse response,
+        long? sentVersion,
+        CancellationToken cancellationToken)
+    {
+        // Re-read so an edit made while the request was in flight is reconciled, not clobbered.
+        var current = await local.LoadPreferencesAsync(cancellationToken);
+
+        // A push we sent is marked synced only if the copy still holds exactly the version we sent.
+        if (sentVersion is { } sent
+            && current is { Dirty: true } dirty
+            && dirty.AccountScope == accountId
+            && dirty.Version == sent)
+        {
+            current = dirty with { Dirty = false };
+            await local.SavePreferencesAsync(current, cancellationToken);
+        }
+
+        var incoming = response.Changes
+            .LastOrDefault(c => c.Kind == SyncKinds.Preferences && c.Id == accountId);
+        if (incoming is null)
+        {
+            return;
+        }
+
+        // Do not overwrite an in-flight local edit with a body it is at least as new as; it will be
+        // pushed on the next cycle and win or lose there, under the server's clock.
+        if (current is { Dirty: true } pending && pending.Version >= incoming.Version)
+        {
+            return;
+        }
+
+        var body = incoming.Body.Deserialize(SyncJsonContext.Default.PreferencesState);
+        if (body is not null)
+        {
+            await local.SavePreferencesAsync(
+                new SyncedPreferencesRecord(body, incoming.Version, accountId, Dirty: false),
+                cancellationToken);
+        }
     }
 
     private static int ApplyPulledChanges(

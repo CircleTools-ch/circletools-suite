@@ -21,6 +21,12 @@ An invitation resolves down one of two paths, decided on the **recipient's** sid
 An invitation has an expiry, and can be resent or revoked by an admin. Issuing invitations is
 rate-limited per inviter.
 
+An invitation may also **promote** a [Managed member](managed-member.md): aimed at an offline
+person's profile, accepting it links the new account to that profile instead of adding a second one,
+keeping their place and history (FR-019). It is aimed either by the inviting admin, or — when they
+leave it open — by the invited person choosing themselves out of the circle's offline people as they
+accept ([ADR-0043](../adr/0043-invitee-chosen-managed-member-promotion.md)).
+
 ## Privacy constraint
 
 The inviter is **never** told which of the two paths applied — the UI says *"invitation sent"* either

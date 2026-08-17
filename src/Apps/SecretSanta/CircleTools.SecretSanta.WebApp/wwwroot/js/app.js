@@ -1,3 +1,18 @@
+// Connectivity bridge for BrowserConnectivity (ADR-0044): exposes navigator.onLine and the window
+// online/offline events to .NET so the silent auto-sync can flush queued edits on reconnect. Defined
+// here (an external file) rather than inline because the Content-Security-Policy forbids inline
+// scripts. Registered before Blazor.start so the global exists before any .NET call reaches for it.
+window.circletoolsConnectivity = {
+    isOnline: function () { return navigator.onLine; },
+    register: function (dotNetRef) {
+        const notify = function () {
+            dotNetRef.invokeMethodAsync('OnConnectivityChanged', navigator.onLine);
+        };
+        window.addEventListener('online', notify);
+        window.addEventListener('offline', notify);
+    }
+};
+
 // Blazor startup, in a file rather than an inline <script> so the two web heads start the runtime
 // the same way (see Main's js/app.js, where a Content-Security-Policy makes it mandatory).
 

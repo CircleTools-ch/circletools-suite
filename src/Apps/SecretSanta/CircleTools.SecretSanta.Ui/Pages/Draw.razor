@@ -1,25 +1,25 @@
-@page "/groups/{GroupId:guid}/draw"
+@page "/groups/{GroupId:guid}/events/{EventId:guid}/draw"
 @inject ISender Sender
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
 
 <PageTitle>@L["DrawTitle"]</PageTitle>
 
-<GroupNav GroupId="GroupId" />
+<EventNav GroupId="GroupId" EventId="EventId" />
 
 <MudText Typo="Typo.h4" GutterBottom="true">@L["DrawTitle"]</MudText>
 
-@if (_group is null)
+@if (_event is null)
 {
     <MudText>@L["Loading"]</MudText>
 }
-else if (_group.Members.Count < 2)
+else if (_memberCount < 2)
 {
     <MudText>@L["NeedTwoMembersToDraw"]</MudText>
 }
 else
 {
-    @if (_result is null && _group.DrawInvalidatedByMembershipChange)
+    @if (_result is null && _event.DrawInvalidatedByMembershipChange)
     {
         <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true" role="alert">@L["DrawInvalidatedNotice"]</MudAlert>
     }
@@ -54,7 +54,7 @@ else
             <MudAlert Severity="Severity.Error" Dense="true" role="alert">@FailureMessage(_result.FailureReason)</MudAlert>
         }
     }
-    else if (_group.HasCurrentDraw)
+    else if (_event.HasCurrentDraw)
     {
         <MudAlert Severity="Severity.Info" Class="mb-3">@L["DrawSpoilerNote"]</MudAlert>
         <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="GoToShare">@L["NavShare"]</MudButton>
@@ -62,18 +62,28 @@ else
 }
 
 @code {
-    /// <summary>The group to draw.</summary>
+    /// <summary>The owning group.</summary>
     [Parameter]
     public Guid GroupId { get; set; }
 
-    private GroupDto? _group;
+    /// <summary>The event to draw.</summary>
+    [Parameter]
+    public Guid EventId { get; set; }
+
+    private EventDto? _event;
+    private int _memberCount;
     private RunDrawResultDto? _result;
     private bool _busy;
     private bool _confirmRedraw;
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
-    private async Task LoadAsync() => _group = await Sender.Send(new GetGroupQuery(GroupId));
+    private async Task LoadAsync()
+    {
+        _event = await Sender.Send(new GetEventQuery(GroupId, EventId));
+        var group = await Sender.Send(new GetGroupQuery(GroupId));
+        _memberCount = group?.Members.Count ?? 0;
+    }
 
     /// <summary>
     /// Re-drawing silently invalidates links the organizer may already have sent (ADR-0014 links
@@ -81,7 +91,7 @@ else
     /// </summary>
     private async Task OnDrawClickedAsync()
     {
-        if (_group?.HasCurrentDraw == true && !_confirmRedraw)
+        if (_event?.HasCurrentDraw == true && !_confirmRedraw)
         {
             _confirmRedraw = true;
             return;
@@ -97,7 +107,7 @@ else
         _busy = true;
         try
         {
-            _result = await Sender.Send(new RunDrawCommand(GroupId));
+            _result = await Sender.Send(new RunDrawCommand(GroupId, EventId));
             _confirmRedraw = false;
             await LoadAsync();
         }
@@ -113,5 +123,5 @@ else
         _ => L["DrawFailedOverConstrained"],
     };
 
-    private void GoToShare() => Navigation.NavigateTo($"groups/{GroupId}/share");
+    private void GoToShare() => Navigation.NavigateTo($"groups/{GroupId}/events/{EventId}/share");
 }

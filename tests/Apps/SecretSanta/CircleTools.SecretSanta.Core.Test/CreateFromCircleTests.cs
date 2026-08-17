@@ -23,8 +23,8 @@ public sealed class CreateFromCircleTests
         var result = await Handle(
             repository,
             "December 2026",
-            new CirclePersonInput(alicePerson, "Alice", ["Scarf"], aliceUser),  // has an account
-            new CirclePersonInput(bobPerson, "Bob (managed)", [], UserId: null)); // managed → no account
+            new CirclePersonInput(alicePerson, "Alice", aliceUser),  // has an account
+            new CirclePersonInput(bobPerson, "Bob (managed)", UserId: null)); // managed → no account
 
         var group = await repository.GetAsync(result.GroupId, default);
         Assert.NotNull(group);
@@ -51,8 +51,8 @@ public sealed class CreateFromCircleTests
         var result = await Handle(
             repository,
             "Family",
-            new CirclePersonInput(Guid.NewGuid(), "Alice", [], sharedUser),
-            new CirclePersonInput(Guid.NewGuid(), "Alice's second entry", [], sharedUser));
+            new CirclePersonInput(Guid.NewGuid(), "Alice", sharedUser),
+            new CirclePersonInput(Guid.NewGuid(), "Alice's second entry", sharedUser));
 
         var group = await repository.GetAsync(result.GroupId, default);
         var linked = group!.Members.Where(m => m.IsLinked).ToList();
@@ -70,12 +70,13 @@ public sealed class CreateFromCircleTests
         var result = await Handle(
             repository,
             "Friends",
-            new CirclePersonInput(Guid.NewGuid(), "Alice", [], Guid.NewGuid()),
-            new CirclePersonInput(Guid.NewGuid(), "Bob", [], null));
+            new CirclePersonInput(Guid.NewGuid(), "Alice", Guid.NewGuid()),
+            new CirclePersonInput(Guid.NewGuid(), "Bob", null));
 
         var group = await repository.GetAsync(result.GroupId, default);
-        Assert.Null(group!.CurrentDraw);
-        Assert.False(group.DrawInvalidatedByMembershipChange);
+        var occasion = group!.FindEvent(group.Id)!;
+        Assert.Null(occasion.CurrentDraw);
+        Assert.False(occasion.DrawInvalidatedByMembershipChange);
     }
 
     private static Task<CreateGroupFromCircleResult> Handle(

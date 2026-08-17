@@ -19,7 +19,10 @@ their [Assignment](assignment.md) the account-free way — through a
 [Reveal link](reveal-link.md) that the organizer passes on.
 
 A managed member may later be **promoted**: when the person does get an account, the profile is
-linked to the new [User](user.md) rather than duplicated, and their history stays intact.
+linked to the new [User](user.md) rather than duplicated, and their history stays intact. Promotion
+happens through an [invitation](invitation.md), aimed at the profile one of two ways — the inviting
+admin picks it when sending, or, when they don't, the invited person picks themselves out of the
+circle's offline people as they accept ([ADR-0043](../adr/0043-invitee-chosen-managed-member-promotion.md)).
 
 ## Bounded context(s)
 

@@ -5,7 +5,7 @@ app: Secret-Santa
 actors: [Organizer]
 status: Approved
 priority: Must
-related: [FR-001, NFR-001, NFR-003]
+related: [FR-001, FR-032, NFR-001, NFR-003]
 ---
 
 # UC-SS-001 — Create and configure a Secret-Santa group
@@ -52,6 +52,10 @@ The organizer chooses "Create group" from the Secret-Santa app.
 - **4a.** Budget amount is non-numeric or negative → system blocks saving and prompts for a valid amount.
 - **5a.** Event date is in the past → system warns but allows it (a group may be recorded after the fact).
 - **4b./5b.** Organizer skips budget and/or event details → group is created without them; both can be edited later.
+- **6a. (signed in)** When the organizer is signed in, the system also adds them as the group's first
+  [Member](../../glossary/member.md) and links that member to their own account, so the group they
+  create is one they are in — see [FR-032](../../requirements/functional/FR-032-add-organizer-as-member.md).
+  The offline/account-free flow is unchanged (the group starts empty).
 
 ## Exceptions
 
@@ -70,6 +74,6 @@ The organizer chooses "Create group" from the Secret-Santa app.
 
 ## Traceability
 
-- Requirement: [FR-001](../../requirements/functional/FR-001-create-secret-santa-group.md); related [NFR-001](../../requirements/non-functional/NFR-001-local-first-offline.md), [NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)
+- Requirement: [FR-001](../../requirements/functional/FR-001-create-secret-santa-group.md); signed-in extension [FR-032](../../requirements/functional/FR-032-add-organizer-as-member.md); related [NFR-001](../../requirements/non-functional/NFR-001-local-first-offline.md), [NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)
 - Glossary: [Group](../../glossary/group.md), [Member](../../glossary/member.md), [Budget](../../glossary/budget.md), [Event details](../../glossary/event-details.md)
 - Origin: [2026-07-24 brainstorming](../../brainstorming/2026-07-24-secret-santa-scope.md)

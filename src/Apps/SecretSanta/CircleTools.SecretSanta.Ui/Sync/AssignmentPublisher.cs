@@ -20,19 +20,46 @@ namespace CircleTools.SecretSanta.Ui;
 /// <param name="api">The linking surface client.</param>
 public sealed class AssignmentPublisher(ILinkingApi api)
 {
-    /// <summary>Publishes the current draw's linked-giver rows for a group, if there is anything to publish.</summary>
-    /// <param name="group">The group whose current draw is being published.</param>
+    /// <summary>
+    /// Publishes a group's linking projection: its event registry (so linked members can enumerate
+    /// events for their wishlists) and, for each drawn event, the linked-giver assignment rows (ADR-0042).
+    /// A group with no linked members publishes nothing — the account-free and fully-unlinked cases stay
+    /// inert (NFR-001).
+    /// </summary>
+    /// <param name="group">The group to publish.</param>
     /// <param name="cancellationToken">Cancels the call.</param>
-    /// <returns>The number of rows published (0 when the group is undrawn or has no linked givers).</returns>
+    /// <returns>The number of assignment rows published across the group's events.</returns>
     public async Task<int> PublishAsync(Group group, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(group);
 
-        if (group.CurrentDraw is not { } draw)
+        // Nothing to project for a group nobody has linked into.
+        if (group.Members.All(m => m.UserId is null))
         {
             return 0;
         }
 
+        // The event registry lets a linked member on another device pick an event to wish for, even
+        // before a draw. Published every cycle so a rename or a removed event lands.
+        await api.PublishGroupEventsAsync(
+            group.Id,
+            new PublishGroupEventsRequest(
+                group.Name,
+                group.Events.Select(e => new GroupEventEntry(e.Id, e.Name)).ToList()),
+            cancellationToken);
+
+        var published = 0;
+        foreach (var occasion in group.Events.Where(e => e.CurrentDraw is not null))
+        {
+            published += await PublishEventAsync(group, occasion, cancellationToken);
+        }
+
+        return published;
+    }
+
+    private async Task<int> PublishEventAsync(Group group, Event occasion, CancellationToken cancellationToken)
+    {
+        var draw = occasion.CurrentDraw!;
         var rows = new List<PublishedAssignment>();
         foreach (var assignment in draw.Assignments)
         {
@@ -48,7 +75,7 @@ public sealed class AssignmentPublisher(ILinkingApi api)
                 continue;
             }
 
-            rows.Add(new PublishedAssignment(giverUserId, recipient.Id, recipient.Name, [.. recipient.Wishlist.Items]));
+            rows.Add(new PublishedAssignment(giverUserId, recipient.Id, recipient.Name, [.. occasion.WishlistFor(recipient.Id).Items]));
         }
 
         if (rows.Count == 0)
@@ -59,11 +86,13 @@ public sealed class AssignmentPublisher(ILinkingApi api)
         var request = new PublishAssignmentsRequest(
             group.Id,
             group.Name,
+            occasion.Id,
+            occasion.Name,
             draw.CreatedAt.ToUnixTimeMilliseconds(),
-            group.Budget is null ? null : new BudgetDto(group.Budget.Amount, group.Budget.Currency),
-            group.EventDetails is null
+            occasion.Budget is null ? null : new BudgetDto(occasion.Budget.Amount, occasion.Budget.Currency),
+            occasion.EventDetails is null
                 ? null
-                : new EventDetailsDto(group.EventDetails.Date, group.EventDetails.Location, group.EventDetails.Description),
+                : new EventDetailsDto(occasion.EventDetails.Date, occasion.EventDetails.Location, occasion.EventDetails.Description),
             rows);
 
         await api.PublishAssignmentsAsync(group.Id, request, cancellationToken);

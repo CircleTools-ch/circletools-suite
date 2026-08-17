@@ -70,6 +70,12 @@ public static class CirclesCoreServiceCollectionExtensions
         services.AddScoped<
             ICommandHandler<DeclineJoinRequestCommand, CircleResult>,
             DeclineJoinRequestCommandHandler>();
+        services.AddScoped<
+            IQueryHandler<GetInvitationTargetsBySecretQuery, CircleResult<JoinTargetsResponse>>,
+            GetInvitationTargetsBySecretQueryHandler>();
+        services.AddScoped<
+            IQueryHandler<GetJoinRequestTargetsQuery, CircleResult<JoinTargetsResponse>>,
+            GetJoinRequestTargetsQueryHandler>();
 
         // Managed members (FR-019)
         services.AddScoped<

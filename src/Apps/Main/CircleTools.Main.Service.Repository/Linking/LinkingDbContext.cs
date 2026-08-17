@@ -29,6 +29,9 @@ public sealed class LinkingDbContext(DbContextOptions<LinkingDbContext> options)
     /// <summary>Gets linked members' self-owned wishlists.</summary>
     public DbSet<MemberWishlistRow> MemberWishlists => Set<MemberWishlistRow>();
 
+    /// <summary>Gets the organizer-published event registry (ADR-0042).</summary>
+    public DbSet<GroupEventRow> GroupEvents => Set<GroupEventRow>();
+
     /// <summary>Gets the pending link resolutions the organizer's client drains.</summary>
     public DbSet<LinkResolutionRow> Resolutions => Set<LinkResolutionRow>();
 
@@ -60,9 +63,10 @@ public sealed class LinkingDbContext(DbContextOptions<LinkingDbContext> options)
         modelBuilder.Entity<AssignmentRow>(entity =>
         {
             entity.ToTable("assignments");
-            // The authorized read is a single row lookup by (group, giver account).
-            entity.HasKey(a => new { a.GroupId, a.GiverAccountId });
+            // The authorized read is a single row lookup by (group, event, giver account) (ADR-0042).
+            entity.HasKey(a => new { a.GroupId, a.EventId, a.GiverAccountId });
             entity.Property(a => a.GroupName).IsRequired().HasMaxLength(200);
+            entity.Property(a => a.EventName).IsRequired().HasMaxLength(200);
             entity.Property(a => a.RecipientName).IsRequired().HasMaxLength(200);
             entity.Property(a => a.RecipientWishlistSnapshot).IsRequired().HasColumnType("jsonb");
             entity.Property(a => a.BudgetCurrency).HasMaxLength(3);
@@ -70,20 +74,32 @@ public sealed class LinkingDbContext(DbContextOptions<LinkingDbContext> options)
             entity.Property(a => a.EventDescription).HasMaxLength(2000);
             entity.Property(a => a.DrawVersion).IsRequired();
 
-            // "All my assignments across groups" and the recipient-wishlist composition by member.
+            // "All my assignments across events" and the recipient-wishlist composition by member.
             entity.HasIndex(a => a.GiverAccountId);
-            entity.HasIndex(a => new { a.GroupId, a.RecipientMemberId });
+            entity.HasIndex(a => new { a.GroupId, a.EventId, a.RecipientMemberId });
         });
 
         modelBuilder.Entity<MemberWishlistRow>(entity =>
         {
             entity.ToTable("member_wishlists");
-            entity.HasKey(w => new { w.GroupId, w.MemberAccountId });
+            entity.HasKey(w => new { w.GroupId, w.EventId, w.MemberAccountId });
             entity.Property(w => w.GroupName).IsRequired().HasMaxLength(200);
+            entity.Property(w => w.EventName).IsRequired().HasMaxLength(200);
             entity.Property(w => w.Items).IsRequired().HasColumnType("jsonb");
             entity.Property(w => w.Version).IsRequired();
 
             entity.HasIndex(w => w.MemberAccountId);
+        });
+
+        modelBuilder.Entity<GroupEventRow>(entity =>
+        {
+            entity.ToTable("group_events");
+            entity.HasKey(e => new { e.GroupId, e.EventId });
+            entity.Property(e => e.GroupName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.EventName).IsRequired().HasMaxLength(200);
+
+            // The organizer replaces their own rows; a linked member enumerates a group's events.
+            entity.HasIndex(e => e.OrganizerAccountId);
         });
 
         modelBuilder.Entity<LinkResolutionRow>(entity =>

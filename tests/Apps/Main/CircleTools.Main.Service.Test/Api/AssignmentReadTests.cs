@@ -49,10 +49,8 @@ public sealed class AssignmentReadTests(MailApiFactory factory)
         await LinkingScenario.PublishAsync(organizer, groupId, drawVersion: 1,
             new PublishedAssignment(giverAccount, recipientMemberId, "Recipient", ["Old idea"]));
 
-        // The recipient then edits their own wishlist.
-        var put = await recipient.Client.PutAsJsonAsync(
-            $"/api/v1/groups/{groupId}/my-wishlist",
-            new UpdateMyWishlistRequest(["Fresh idea", "Second idea"]));
+        // The recipient then edits their own wishlist (for the same default event the draw published).
+        var put = await LinkingScenario.PutMyWishlistAsync(recipient, groupId, ["Fresh idea", "Second idea"]);
         put.EnsureSuccessStatusCode();
 
         // The giver sees the recipient's CURRENT wishlist, composed at read time — not the snapshot.

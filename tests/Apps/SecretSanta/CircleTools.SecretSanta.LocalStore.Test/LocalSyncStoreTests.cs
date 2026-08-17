@@ -106,4 +106,30 @@ public sealed class LocalSyncStoreTests
         await Assert.ThrowsAsync<StorageUnavailableException>(
             () => local.SaveProfileAsync(new SyncedProfileRecord(Guid.NewGuid(), "A", "de-CH", Dirty: true), default));
     }
+
+    [Fact]
+    public async Task LoadPreferences_IsNull_WhenNoneStored()
+    {
+        var local = new LocalSyncStore(new InMemoryKeyValueStore());
+
+        Assert.Null(await local.LoadPreferencesAsync(default));
+    }
+
+    [Fact]
+    public async Task SaveThenLoadPreferences_RoundTripsTheRecord()
+    {
+        var local = new LocalSyncStore(new InMemoryKeyValueStore());
+        var account = Guid.NewGuid();
+        var group = Guid.NewGuid();
+
+        await local.SavePreferencesAsync(
+            new SyncedPreferencesRecord(new PreferencesState([group]), Version: 3, AccountScope: account, Dirty: true), default);
+        var loaded = await local.LoadPreferencesAsync(default);
+
+        Assert.NotNull(loaded);
+        Assert.Equal(account, loaded!.AccountScope);
+        Assert.Equal(3, loaded.Version);
+        Assert.True(loaded.Dirty);
+        Assert.Equal(new[] { group }, loaded.State.PinnedGroupIds);
+    }
 }

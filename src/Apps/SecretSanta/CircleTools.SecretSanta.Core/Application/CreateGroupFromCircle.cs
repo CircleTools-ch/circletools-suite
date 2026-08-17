@@ -12,7 +12,6 @@ namespace CircleTools.SecretSanta.Core.Application;
 /// The circle person copied from, recorded on the member as its origin and never dereferenced.
 /// </param>
 /// <param name="Name">The person's display name.</param>
-/// <param name="Wishlist">The wishlist items to seed the member with (may be empty).</param>
 /// <param name="UserId">
 /// The account backing this person, or <see langword="null"/> when the person has no account (a
 /// managed member, or an unaccounted person). A person with an account becomes a <em>linked</em>
@@ -21,7 +20,6 @@ namespace CircleTools.SecretSanta.Core.Application;
 public sealed record CirclePersonInput(
     Guid CirclePersonId,
     string Name,
-    IReadOnlyList<string> Wishlist,
     Guid? UserId);
 
 /// <summary>
@@ -79,11 +77,7 @@ public sealed class CreateGroupFromCircleCommandHandler(IGroupRepository reposit
                 }
             }
 
-            group.AddMemberFromCircle(
-                person.Name,
-                Wishlist.Create(person.Wishlist),
-                link,
-                person.CirclePersonId);
+            group.AddMemberFromCircle(person.Name, link, person.CirclePersonId);
         }
 
         await repository.SaveAsync(group, cancellationToken);

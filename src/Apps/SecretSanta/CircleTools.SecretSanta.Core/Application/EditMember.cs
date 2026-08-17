@@ -3,12 +3,11 @@ using CircleTools.SecretSanta.Core.Domain;
 
 namespace CircleTools.SecretSanta.Core.Application;
 
-/// <summary>Command to edit a member's name and wishlist.</summary>
+/// <summary>Command to edit a member's name. Wishlists are per event and edited there (ADR-0042).</summary>
 /// <param name="GroupId">The owning group.</param>
 /// <param name="MemberId">The member to edit.</param>
 /// <param name="Name">The new, non-empty, group-unique name.</param>
-/// <param name="Wishlist">The new wishlist items.</param>
-public sealed record EditMemberCommand(Guid GroupId, Guid MemberId, string Name, IReadOnlyList<string> Wishlist) : ICommand;
+public sealed record EditMemberCommand(Guid GroupId, Guid MemberId, string Name) : ICommand;
 
 /// <summary>Handles <see cref="EditMemberCommand"/>.</summary>
 /// <param name="repository">The group repository port.</param>
@@ -21,7 +20,7 @@ public sealed class EditMemberCommandHandler(IGroupRepository repository)
         ArgumentNullException.ThrowIfNull(command);
 
         var group = await repository.RequireAsync(command.GroupId, cancellationToken);
-        group.EditMember(command.MemberId, command.Name, Wishlist.Create(command.Wishlist));
+        group.EditMember(command.MemberId, command.Name);
         await repository.SaveAsync(group, cancellationToken);
     }
 }

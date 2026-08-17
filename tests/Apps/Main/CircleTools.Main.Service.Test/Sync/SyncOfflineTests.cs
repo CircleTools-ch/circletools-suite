@@ -24,8 +24,9 @@ public sealed class SyncOfflineTests(TwoClientSyncFactory factory)
         var group = await device.GroupAsync(groupId);
         Assert.NotNull(group);
         Assert.Equal(4, group!.Members.Count);
-        Assert.Contains(group.Members, m => m.Wishlist.Items.Count > 0);
-        Assert.Single(group.Draws);
+        var occasion = group.FindEvent(group.Id)!;
+        Assert.Contains(group.Members, m => occasion.WishlistFor(m.Id).Items.Count > 0);
+        Assert.Single(occasion.Draws);
 
         // Nothing was claimed, so nothing is account-scoped: an unsent, account-free local group.
         var record = (await device.RecordAsync(groupId))!;

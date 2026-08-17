@@ -2,14 +2,23 @@
 id: FR-025
 title: Claim local groups into the account
 type: functional
-status: Implemented
+status: Superseded
 priority: Must
 source: UC-SS-007
 verification: test
-related: [UC-SS-007, UC-SS-008, UC-MAIN-015, FR-023, FR-026, NFR-001, NFR-002, NFR-003, ADR-0017, ADR-0020, FEAT-004]
+related: [UC-SS-007, UC-SS-008, UC-MAIN-015, FR-023, FR-024, FR-026, NFR-001, NFR-002, NFR-003, ADR-0017, ADR-0020, ADR-0044, FEAT-004]
 ---
 
 # FR-025 — Claim local groups into the account
+
+> **Superseded by [ADR-0044](../../adr/0044-sign-in-reconciliation-and-account-scoped-visibility.md).**
+> The *per-group opt-in claim screen* below is replaced by the **sign-in reconciliation dialog**
+> (Import / Discard / Cancel): on the first interactive sign-in with account-free groups the user
+> **imports all** offline groups into the account, **discards** them, or **cancels** the sign-in.
+> There is no standalone claim screen and no per-group claim button any more (a group created while
+> signed in is claimed automatically). The engine's `ClaimAsync` — and the additive "local copy is
+> kept" property — is unchanged; only the surfacing changed. The description below is retained for
+> history.
 
 ## Description
 

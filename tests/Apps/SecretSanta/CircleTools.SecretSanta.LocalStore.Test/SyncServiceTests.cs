@@ -1,3 +1,4 @@
+using System.Text.Json;
 using CircleTools.ApiClient;
 using CircleTools.Main.Contracts;
 using CircleTools.SecretSanta.Core.Persistence;
@@ -68,6 +69,60 @@ public sealed class SyncServiceTests
         await service.SyncNowAsync(Guid.NewGuid(), default);
 
         Assert.Empty(api.LastRequest!.Changes);
+    }
+
+    [Fact]
+    public async Task DirtyPreferences_ArePushedAsPreferencesKind_ThenMarkedSynced()
+    {
+        var account = Guid.NewGuid();
+        var (service, local, api) = NewService();
+        var group = Guid.NewGuid();
+        await local.SavePreferencesAsync(
+            new SyncedPreferencesRecord(new PreferencesState([group]), Version: 1, AccountScope: account, Dirty: true), default);
+        api.Returns(new SyncResponse(Cursor: 3, [], [], [], []));
+
+        await service.SyncNowAsync(account, default);
+
+        // The preferences document rides the same cycle under its own kind, keyed by the account id.
+        var change = Assert.Single(api.LastRequest!.Changes);
+        Assert.Equal(SyncKinds.Preferences, change.Kind);
+        Assert.Equal(account, change.Id);
+        Assert.Equal(1, change.Version);
+
+        var stored = await local.LoadPreferencesAsync(default);
+        Assert.NotNull(stored);
+        Assert.False(stored!.Dirty);
+        Assert.Equal(new[] { group }, stored.State.PinnedGroupIds);
+    }
+
+    [Fact]
+    public async Task PreferencesForAnotherAccount_AreNotPushed()
+    {
+        var (service, local, api) = NewService();
+        await local.SavePreferencesAsync(
+            new SyncedPreferencesRecord(new PreferencesState([Guid.NewGuid()]), Version: 1, AccountScope: Guid.NewGuid(), Dirty: true), default);
+
+        await service.SyncNowAsync(Guid.NewGuid(), default);
+
+        Assert.Empty(api.LastRequest!.Changes);
+    }
+
+    [Fact]
+    public async Task PulledPreferences_AreAppliedLocally()
+    {
+        var account = Guid.NewGuid();
+        var (service, local, api) = NewService();
+        var group = Guid.NewGuid();
+        var body = JsonSerializer.SerializeToElement(new PreferencesState([group]), SyncJsonContext.Default.PreferencesState);
+        api.Returns(new SyncResponse(Cursor: 5, [new SyncChange(SyncKinds.Preferences, account, 4, body)], [], [], []));
+
+        await service.SyncNowAsync(account, default);
+
+        var stored = await local.LoadPreferencesAsync(default);
+        Assert.NotNull(stored);
+        Assert.False(stored!.Dirty);
+        Assert.Equal(4, stored.Version);
+        Assert.Equal(new[] { group }, stored.State.PinnedGroupIds);
     }
 
     [Fact]

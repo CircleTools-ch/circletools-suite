@@ -31,14 +31,16 @@ public sealed class TwoClientSyncTests(TwoClientSyncFactory factory)
 
         // The whole aggregate crossed, not just the name: members with their wishlists, the exclusion,
         // and the completed draw's assignments (FR-023).
+        // Wishlists and the draw are per event now (ADR-0042); the seeded data lives on the default
+        // event (id == group id).
         Assert.Equal(onA.Name, onB.Name);
         Assert.Equal(
-            onA.Members.Select(m => (m.Name, string.Join(",", m.Wishlist.Items))).OrderBy(x => x.Name),
-            onB.Members.Select(m => (m.Name, string.Join(",", m.Wishlist.Items))).OrderBy(x => x.Name));
+            onA.Members.Select(m => (m.Name, string.Join(",", onA.FindEvent(onA.Id)!.WishlistFor(m.Id).Items))).OrderBy(x => x.Name),
+            onB.Members.Select(m => (m.Name, string.Join(",", onB.FindEvent(onB.Id)!.WishlistFor(m.Id).Items))).OrderBy(x => x.Name));
         Assert.Equal(onA.Exclusions.Count, onB.Exclusions.Count);
         Assert.Equal(
-            onA.Draws.Single().Assignments.Select(a => (a.GiverMemberId, a.RecipientMemberId)).OrderBy(x => x.GiverMemberId),
-            onB.Draws.Single().Assignments.Select(a => (a.GiverMemberId, a.RecipientMemberId)).OrderBy(x => x.GiverMemberId));
+            onA.FindEvent(onA.Id)!.CurrentDraw!.Assignments.Select(a => (a.GiverMemberId, a.RecipientMemberId)).OrderBy(x => x.GiverMemberId),
+            onB.FindEvent(onB.Id)!.CurrentDraw!.Assignments.Select(a => (a.GiverMemberId, a.RecipientMemberId)).OrderBy(x => x.GiverMemberId));
     }
 
     [Fact]

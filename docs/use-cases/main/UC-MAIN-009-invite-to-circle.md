@@ -5,7 +5,7 @@ app: Main
 actors: [User, Circle admin]
 status: Approved
 priority: Must
-related: [FR-017, NFR-003, NFR-005, NFR-006, ADR-0018]
+related: [FR-017, FR-019, NFR-003, NFR-005, NFR-006, ADR-0018, ADR-0043]
 ---
 
 # UC-MAIN-009 — Invite a person to a circle
@@ -69,6 +69,14 @@ The actor selects **Invite someone** on the circle page.
   rate-limited too, or it becomes a mail-bombing tool aimed at a third party.
 - **6a. The invitation expires unaccepted** → it leaves the pending list with no reason given, and the
   address can be invited again.
+- **1a. Actor invites an *offline person* (managed member) to join with their own account** → the actor
+  uses **Invite to join** on that person's row, or picks them under *"this invitation is for"*. The
+  invitation is aimed at that [managed member](../../glossary/managed-member.md); on acceptance the
+  existing profile is **promoted** — linked to the account rather than duplicated, keeping the person's
+  place and history ([FR-019](../../requirements/functional/FR-019-manage-managed-members.md)). The
+  pending entry shows *"as <name>"* so the aimed invitation is told apart from an ordinary one. If the
+  actor does **not** aim it, the recipient may still pick who they are on their side
+  ([UC-MAIN-010](UC-MAIN-010-respond-to-invitation.md), [ADR-0043](../../adr/0043-invitee-chosen-managed-member-promotion.md)).
 
 ## Exceptions
 

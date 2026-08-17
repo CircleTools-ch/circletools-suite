@@ -46,6 +46,12 @@
             <AuthorizeView>
                 <Authorized>
                     <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["InvitationLandingHint"]</MudText>
+
+                    @* The offline-profile choice, when there is one to make. Loaded only now that the
+                       caller is signed in, and returned only if their verified address is the invited
+                       one — so a forwarded-link holder never sees it (ADR-0043). *@
+                    <JoinAsChooser Targets="_targets" @bind-Value="_chosenTargetId" />
+
                     <div class="d-flex gap-2">
                         <BusyButton Type="button"
                                     Label="@L["InvitationAccept"]"
@@ -90,6 +96,8 @@
     public string Token { get; set; } = string.Empty;
 
     private InvitationPreviewResponse? _preview;
+    private JoinTargetsResponse? _targets;
+    private Guid? _chosenTargetId;
     private string? _error;
     private string? _notice;
     private bool _invalid;
@@ -107,6 +115,11 @@
     // invitation is waiting at /invitations, which is what the in-app path exists for (FR-018).
     private const string RegisterLink = "account/register";
 
+    /// <summary>The signed-in state, so the offline-profile choice is fetched only when there is a
+    /// verified caller to authorize it — the anonymous landing never asks for the roster.</summary>
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; }
+
     protected override async Task OnParametersSetAsync()
     {
         var result = await Api.PreviewInvitationAsync(Token);
@@ -116,6 +129,7 @@
             _preview = preview;
             _invalid = false;
             _offline = false;
+            await LoadTargetsAsync();
             return;
         }
 
@@ -133,12 +147,26 @@
         _offline = false;
     }
 
+    private async Task LoadTargetsAsync()
+    {
+        // Only a signed-in caller can be the authorized recipient; skip the call otherwise so the
+        // common anonymous landing never fires a 401.
+        if (AuthState is null || !(await AuthState).User.Identity!.IsAuthenticated)
+        {
+            _targets = null;
+            return;
+        }
+
+        var result = await Api.GetInvitationTargetsAsync(Token);
+        _targets = result.Value;
+    }
+
     private async Task AcceptAsync()
     {
         _busy = true;
         _error = null;
 
-        var result = await Api.AcceptInvitationAsync(Token);
+        var result = await Api.AcceptInvitationAsync(Token, _chosenTargetId);
 
         _busy = false;
 
