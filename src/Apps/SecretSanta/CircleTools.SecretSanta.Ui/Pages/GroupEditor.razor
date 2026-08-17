@@ -16,7 +16,7 @@ else
     <MudText Typo="Typo.h4" GutterBottom="true">@_group.Name</MudText>
 
     <div class="d-flex gap-2 align-start flex-wrap mb-4">
-        <MudTextField @bind-Value="_name" Label="@L["NameLabel"]" Variant="Variant.Outlined"
+        <MudTextField @bind-Value="_name" Immediate="true" Label="@L["NameLabel"]" Variant="Variant.Outlined"
                       Margin="Margin.Dense" Class="flex-grow-1" Style="min-width:12rem;" />
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveNameAsync" Class="mt-1"
                    Disabled="@string.IsNullOrWhiteSpace(_name)">@L["Save"]</MudButton>

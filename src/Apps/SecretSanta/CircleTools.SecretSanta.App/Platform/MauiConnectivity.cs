@@ -4,7 +4,7 @@ using MauiNet = Microsoft.Maui.Networking;
 namespace CircleTools.SecretSanta.App.Platform;
 
 /// <summary>
-/// MAUI <see cref="IConnectivity"/> over <c>Microsoft.Maui.Networking.Connectivity</c> (ADR-0044,
+/// MAUI <see cref="CircleTools.Ui.Abstractions.IConnectivity"/> over <c>Microsoft.Maui.Networking.Connectivity</c> (ADR-0044,
 /// ADR-0028) — the device-head counterpart of <c>BrowserConnectivity</c>.
 /// </summary>
 /// <remarks>
@@ -13,7 +13,7 @@ namespace CircleTools.SecretSanta.App.Platform;
 /// which is the conservative reading for whether a sync could reach the Main API. Connectivity is
 /// advisory (NFR-001), so a wrong reading only defers or retries a sync — it never blocks editing.
 /// </remarks>
-public sealed class MauiConnectivity : IConnectivity, IDisposable
+public sealed class MauiConnectivity : CircleTools.Ui.Abstractions.IConnectivity, IDisposable
 {
     private readonly MauiNet.IConnectivity _connectivity = MauiNet.Connectivity.Current;
 
