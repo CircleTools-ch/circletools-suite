@@ -19,7 +19,7 @@
 <MudCard Elevation="1" Class="mb-4">
     <MudCardContent>
         <MudStack Spacing="2">
-            <MudTextField @bind-Value="_newName" Label="@L["NameLabel"]" Placeholder="@L["MemberNamePlaceholder"]"
+            <MudTextField @bind-Value="_newName" Immediate="true" Label="@L["NameLabel"]" Placeholder="@L["MemberNamePlaceholder"]"
                           Variant="Variant.Outlined" Margin="Margin.Dense" />
             <div>
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddAsync"
@@ -52,7 +52,7 @@ else
                     @if (_editingId == member.Id)
                     {
                         <MudStack Spacing="2">
-                            <MudTextField @bind-Value="_editName" Label="@L["NameLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            <MudTextField @bind-Value="_editName" Immediate="true" Label="@L["NameLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
                             <div class="d-flex gap-1">
                                 <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled"
                                            OnClick="SaveEditAsync" Disabled="@string.IsNullOrWhiteSpace(_editName)">@L["Save"]</MudButton>
