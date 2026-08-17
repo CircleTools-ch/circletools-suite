@@ -1,0 +1,42 @@
+@inject IStringLocalizer<AccountStrings> L
+@inject AccountSession Session
+@inject NavigationManager Navigation
+
+@*
+    The account entry for an app bar: the industry-standard top-right avatar menu. Signed in it shows
+    who you are and links to Profile, Security and Sign out; signed out it offers Sign in. Shared by
+    every app's shell (ADR-0034) so the account surface is identical suite-wide, and it replaces the
+    per-app drawer sign-in/out entries. Sign-out mirrors the previous shell behaviour: end the session,
+    then return to the app root, which stays fully usable signed out (NFR-001).
+*@
+
+<MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit"
+         AriaLabel="@L["AccountMenuLabel"]" Dense="true">
+    <AuthorizeView>
+        <Authorized>
+            <MudMenuItem Disabled="true">
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                    @L["AccountMenuSignedInAs", context.User.DisplayName()]
+                </MudText>
+            </MudMenuItem>
+            <MudDivider Class="my-1" />
+            <MudMenuItem Href="/account/profile" Icon="@Icons.Material.Filled.Person">@L["ProfileTitle"]</MudMenuItem>
+            <MudMenuItem Href="/account/security" Icon="@Icons.Material.Filled.Security">@L["SecurityTitle"]</MudMenuItem>
+            <MudDivider Class="my-1" />
+            <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="SignOutAsync">@L["AccountMenuSignOut"]</MudMenuItem>
+        </Authorized>
+        <NotAuthorized>
+            <MudMenuItem Href="/account/login" Icon="@Icons.Material.Filled.Login">@L["NavSignIn"]</MudMenuItem>
+        </NotAuthorized>
+    </AuthorizeView>
+</MudMenu>
+
+@code {
+    private async Task SignOutAsync()
+    {
+        await Session.SignOutAsync();
+
+        // Leave any account-scoped screen; the app stays fully usable signed out (NFR-001).
+        Navigation.NavigateTo("");
+    }
+}

@@ -103,7 +103,8 @@ public sealed record AssignmentView(
 /// <summary>One event the organizer publishes to the registry so linked members can enumerate it (ADR-0042).</summary>
 /// <param name="EventId">The event identity.</param>
 /// <param name="EventName">The event name (may be empty).</param>
-public sealed record GroupEventInput(Guid EventId, string EventName);
+/// <param name="Date">The optional event date, carried so a linked member can hide past occasions (FR-030).</param>
+public sealed record GroupEventInput(Guid EventId, string EventName, DateTimeOffset? Date);
 
 /// <summary>A gift budget as the linking store keeps it (mirrors the Secret-Santa contract without referencing it).</summary>
 /// <param name="Amount">The amount.</param>
@@ -143,7 +144,8 @@ public sealed record AssignmentReadResult(AssignmentReadStatus Status, Assignmen
 /// <param name="GroupName">The group name.</param>
 /// <param name="EventId">The event within the group.</param>
 /// <param name="EventName">The event name (may be empty).</param>
-public sealed record LinkedMembership(Guid GroupId, string GroupName, Guid EventId, string EventName);
+/// <param name="EventDate">The optional event date, so past occasions can be hidden from the wishlist page (FR-030).</param>
+public sealed record LinkedMembership(Guid GroupId, string GroupName, Guid EventId, string EventName, DateTimeOffset? EventDate);
 
 /// <summary>One of the caller's self-owned wishlists, scoped to one event.</summary>
 /// <param name="GroupId">The group the wishlist belongs to.</param>
@@ -161,6 +163,14 @@ public sealed record SelfWishlist(Guid GroupId, string GroupName, Guid EventId, 
 /// </summary>
 public interface ILinkingStore
 {
+    /// <summary>
+    /// Reports whether <paramref name="accountId"/> already backs a member of the group other than
+    /// <paramref name="exceptMemberId"/> — an accepted link, or a still-outstanding (unexpired pending)
+    /// invitation. Drives the send-time one-user-per-group refusal (<see cref="MemberLinkState"/>), so a
+    /// duplicate is rejected before a second invitation is queued rather than only at accept time.
+    /// </summary>
+    Task<bool> IsAccountLinkedOrPendingInGroupAsync(Guid groupId, Guid accountId, Guid exceptMemberId, CancellationToken cancellationToken);
+
     /// <summary>Records a pending member-link request. The mail is sent by the host, out of band (NFR-005).</summary>
     Task CreateMemberLinkAsync(MemberLinkRecord record, CancellationToken cancellationToken);
 

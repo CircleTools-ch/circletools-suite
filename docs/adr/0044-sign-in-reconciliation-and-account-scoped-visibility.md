@@ -101,6 +101,46 @@ account — is exactly the data-ownership surprise the explicit prompt prevents.
 - **New risks:** the auto-sync-after-change hook could recurse if a sync's own writes re-triggered it;
   mitigated by a reentrancy guard in `AutoSyncService` and by firing only on user-dispatched commands.
 
+### Amendment (2026-08-17) — the manual "Sync now" button is removed
+
+The decision above kept a manual **"Sync now"** button "as an explicit retry" alongside the silent
+auto-sync. In practice the four automatic triggers (sign-in, app-start, every change, reconnect)
+cover every case, so the button was redundant and its only remaining value was *surfacing* the sync
+outcome. It is now removed from the shell. To keep that feedback, `AutoSyncService` exposes its last
+group-cycle outcome (`LastStatus`) and its `SyncCompleted` event; the drawer shows this in a passive
+status line. This completes the "sync is invisible" direction of this ADR rather than reversing it.
+
+### Amendment (2026-08-17) — one-click self-link, and send-time duplicate refusal
+
+Linking a member to the signed-in account had only one path on the roster: the **"Link…"** box, where
+you typed an address. To become a member yourself you had to type *your own* email — and if it was not
+yet verified the request silently went nowhere (the server matches verified addresses only), which is
+the confusing case the sign-in banner was added to explain. Two changes make this direct:
+
+- **A one-click "Link with my account".** On the members roster, each unlinked member offers a
+  **"Link with my account"** button that self-links with **no address and no email-confirmation step**
+  (it posts to `member-links/self`, which takes the account from the bearer token, FR-032). The client
+  sets `Member.UserId` locally at once and the ordinary auto-sync propagates it; the server's own
+  resolution re-applies idempotently. Because **one account backs at most one member per group**, the
+  button is shown **only while my account backs no member of this group** — once I am a member anywhere
+  in the group it disappears everywhere, leaving only the invite-an-address path.
+
+- **Duplicate links are refused at send time, not at accept time.** Previously a second invitation to an
+  address that already backed a member was queued and only rejected when the recipient tried to *accept*
+  (`AlreadyLinked`); the organizer got no feedback. `SendMemberLink` now resolves the address and, if it
+  already backs a **different** member of that group — **linked, or with a live pending invitation** —
+  returns a new `MemberLinkOutcome.AlreadyLinkedInGroup` the roster shows as an error. Re-inviting the
+  **same** member at the same address is a resend, not a duplicate, and is allowed. This also rejects an
+  organizer trying to self-link twice.
+
+  This is a **deliberate, scoped relaxation of NFR-005's constant-time guarantee**: the refusal only ever
+  fires for an account already linked to (or invited into) the caller's **own** group, whose linked
+  members the caller can already see (the "linked" badges). An **arbitrary** address still returns the
+  identical `RequestSent`, so the surface still cannot be used to probe whether a given address has an
+  account — the enumeration protection the original decision cares about is intact. The narrow new
+  disclosure (that a *specific* address the organizer typed maps to one of their *own* already-linked
+  members) was judged an acceptable trade for immediate, honest feedback on a duplicate.
+
 ## Pros and cons of the options
 
 ### 1. Keep the manual model

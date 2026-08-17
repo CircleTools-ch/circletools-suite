@@ -41,6 +41,19 @@ public enum MemberLinkOutcome
     /// caller already knows, so it leaks nothing.
     /// </summary>
     SelfLinked = 1,
+
+    /// <summary>
+    /// Refused: the address resolves to an account that already backs a different member of this group —
+    /// either an accepted link or a still-outstanding invitation. One account backs at most one member per
+    /// group, so a duplicate is rejected at send time with immediate feedback instead of silently queued.
+    /// <para>
+    /// This is a deliberate, <em>scoped</em> relaxation of the constant-time NFR-005 guarantee: it only
+    /// ever fires for accounts already linked to (or invited into) the caller's <strong>own</strong> group,
+    /// whose linked members the caller can already see. An arbitrary address still returns
+    /// <see cref="RequestSent"/>, so the surface cannot be used to probe for accounts (ADR-0044).
+    /// </para>
+    /// </summary>
+    AlreadyLinkedInGroup = 2,
 }
 
 /// <summary>The response to a <see cref="SendMemberLinkRequest"/>.</summary>
@@ -191,7 +204,8 @@ public sealed record PublishGroupEventsRequest(string GroupName, IReadOnlyList<G
 /// <summary>One event in the registry the organizer publishes.</summary>
 /// <param name="EventId">The event identity.</param>
 /// <param name="Name">The event name (may be empty).</param>
-public sealed record GroupEventEntry(Guid EventId, string Name);
+/// <param name="Date">The optional event date, so a linked member can hide past occasions (FR-030).</param>
+public sealed record GroupEventEntry(Guid EventId, string Name, DateTimeOffset? Date);
 
 /// <summary>
 /// One published pairing: the linked giver's account, and the recipient view they are allowed to see.
@@ -256,7 +270,8 @@ public sealed record MyWishlistsResponse(IReadOnlyList<MyWishlistResponse> Wishl
 /// <param name="GroupName">The group name.</param>
 /// <param name="EventId">The event within the group.</param>
 /// <param name="EventName">The event name (may be empty).</param>
-public sealed record MyMembership(Guid GroupId, string GroupName, Guid EventId, string EventName);
+/// <param name="EventDate">The optional event date, so past occasions can be hidden from the wishlist page (FR-030).</param>
+public sealed record MyMembership(Guid GroupId, string GroupName, Guid EventId, string EventName, DateTimeOffset? EventDate);
 
 /// <summary>The groups the caller is a linked member of.</summary>
 /// <param name="Memberships">One row per linked membership.</param>

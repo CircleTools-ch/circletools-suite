@@ -149,8 +149,11 @@
   <data name="MemberLinkEmailLabel" xml:space="preserve"><value>Email address to invite</value></data>
   <data name="MemberLinkSend" xml:space="preserve"><value>Send request</value></data>
   <data name="MemberLinkSelfLinked" xml:space="preserve"><value>Linked to your account.</value></data>
+  <data name="MemberLinkVerifyEmailFirst" xml:space="preserve"><value>Confirm your email address first, then you can link yourself here.</value></data>
   <data name="MemberLinkRequestSent" xml:space="preserve"><value>Request sent. If that address has an account, it will appear there.</value><comment>Phrased so decline and expiry stay indistinguishable (NFR-005).</comment></data>
   <data name="MemberLinkFailed" xml:space="preserve"><value>That could not be completed. Please try again.</value></data>
+  <data name="MemberLinkWithMyAccount" xml:space="preserve"><value>Link with my account</value></data>
+  <data name="MemberLinkAlreadyInGroup" xml:space="preserve"><value>That address is already linked to a member of this group.</value></data>
   <data name="MemberUnlinked" xml:space="preserve"><value>Unlinked. The member and wishlist are kept.</value></data>
   <data name="NavMyLinks" xml:space="preserve"><value>Link requests</value></data>
   <data name="NavMyAssignments" xml:space="preserve"><value>My assignments</value></data>

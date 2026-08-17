@@ -63,6 +63,9 @@
   <data name="NavSignIn" xml:space="preserve"><value>Sign in</value></data>
   <data name="NavRegister" xml:space="preserve"><value>Create account</value></data>
   <data name="NavSecurity" xml:space="preserve"><value>Security</value></data>
+  <data name="AccountMenuLabel" xml:space="preserve"><value>Account</value></data>
+  <data name="AccountMenuSignedInAs" xml:space="preserve"><value>Signed in as {0}</value></data>
+  <data name="AccountMenuSignOut" xml:space="preserve"><value>Sign out</value></data>
   <data name="FieldEmail" xml:space="preserve"><value>Email address</value></data>
   <data name="FieldNewEmail" xml:space="preserve"><value>New email address</value></data>
   <data name="FieldPassword" xml:space="preserve"><value>Password</value></data>

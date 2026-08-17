@@ -140,6 +140,9 @@ public sealed class GroupEventRow
 
     /// <summary>The event name (may be empty).</summary>
     public string EventName { get; set; } = string.Empty;
+
+    /// <summary>The optional event date, so a linked member can hide past occasions (FR-030).</summary>
+    public DateTimeOffset? Date { get; set; }
 }
 
 /// <summary>

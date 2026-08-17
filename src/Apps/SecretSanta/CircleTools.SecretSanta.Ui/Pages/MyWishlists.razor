@@ -4,6 +4,7 @@
 @using CircleTools.SecretSanta.LocalStore.Linking
 @inject ILinkingApi Linking
 @inject IStringLocalizer<AppStrings> L
+@inject TimeProvider Time
 
 @*
     Edit my own wishlist (FR-030). A linked member owns their wishlist per membership. In-app reveal is
@@ -124,6 +125,10 @@
 
     private string EventLabel(string name) => string.IsNullOrWhiteSpace(name) ? L["DefaultEventName"] : name;
 
+    // An undated event has no past to hide; a dated one is kept while its calendar day is today or later.
+    private bool NotPast(MyMembership m) =>
+        m.EventDate is not { } date || date.Date >= Time.GetLocalNow().Date;
+
     protected override async Task OnInitializedAsync()
     {
         var memberships = await Linking.GetMyMembershipsAsync();
@@ -142,6 +147,9 @@
             : new Dictionary<(Guid, Guid), IReadOnlyList<string>>();
 
         _editors = memberships.Value!.Memberships
+            // Only present and future occasions get a wishlist slot: a past event's gifts have been
+            // given, so it drops off (an undated or today's event stays). FR-030.
+            .Where(NotPast)
             .Select(m => new WishlistEditor
             {
                 GroupId = m.GroupId,

@@ -7,6 +7,9 @@
   <data name="NavSignIn" xml:space="preserve"><value>Se connecter</value></data>
   <data name="NavRegister" xml:space="preserve"><value>Créer un compte</value></data>
   <data name="NavSecurity" xml:space="preserve"><value>Sécurité</value></data>
+  <data name="AccountMenuLabel" xml:space="preserve"><value>Compte</value></data>
+  <data name="AccountMenuSignedInAs" xml:space="preserve"><value>Connecté en tant que {0}</value></data>
+  <data name="AccountMenuSignOut" xml:space="preserve"><value>Se déconnecter</value></data>
   <data name="FieldEmail" xml:space="preserve"><value>Adresse e-mail</value></data>
   <data name="FieldNewEmail" xml:space="preserve"><value>Nouvelle adresse e-mail</value></data>
   <data name="FieldPassword" xml:space="preserve"><value>Mot de passe</value></data>

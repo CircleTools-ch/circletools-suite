@@ -26,6 +26,23 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
     private static readonly TimeSpan _linkLifetime = TimeSpan.FromDays(14);
 
     /// <inheritdoc />
+    public async Task<bool> IsAccountLinkedOrPendingInGroupAsync(
+        Guid groupId, Guid accountId, Guid exceptMemberId, CancellationToken cancellationToken)
+    {
+        var now = timeProvider.GetUtcNow();
+
+        // An account backs a member here if it has an accepted link, or a live (unexpired) pending
+        // invitation, to any *other* member of the group. Re-inviting the same member is not a duplicate.
+        return await context.MemberLinks.AnyAsync(
+            m => m.GroupId == groupId
+                && m.TargetAccountId == accountId
+                && m.MemberId != exceptMemberId
+                && (m.State == MemberLinkState.Linked
+                    || (m.State == MemberLinkState.Pending && m.ExpiresAt > now)),
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
     public async Task CreateMemberLinkAsync(MemberLinkRecord record, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(record);
@@ -383,6 +400,7 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
                 OrganizerAccountId = organizerAccountId,
                 GroupName = groupName,
                 EventName = occasion.EventName,
+                Date = occasion.Date,
             });
         }
 
@@ -502,7 +520,7 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
         return await context.GroupEvents
             .Where(e => linkedGroups.Contains(e.GroupId))
             .OrderBy(e => e.GroupName).ThenBy(e => e.EventName)
-            .Select(e => new LinkedMembership(e.GroupId, e.GroupName, e.EventId, e.EventName))
+            .Select(e => new LinkedMembership(e.GroupId, e.GroupName, e.EventId, e.EventName, e.Date))
             .ToListAsync(cancellationToken).ConfigureAwait(false);
     }
 
