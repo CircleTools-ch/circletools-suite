@@ -38,7 +38,11 @@ public sealed record MemberState(
 /// <summary>Serializable snapshot of an <c>Exclusion</c>.</summary>
 /// <param name="GiverMemberId">The giver member identity.</param>
 /// <param name="RecipientMemberId">The recipient member identity.</param>
-public sealed record ExclusionState(Guid GiverMemberId, Guid RecipientMemberId);
+/// <param name="Mutual">
+/// Whether the exclusion applies in both directions. Snapshots written before this field existed
+/// deserialize to <see langword="false"/> (one-way), so no existing exclusion changes meaning.
+/// </param>
+public sealed record ExclusionState(Guid GiverMemberId, Guid RecipientMemberId, bool Mutual = false);
 
 /// <summary>Serializable snapshot of an <c>Assignment</c>.</summary>
 /// <param name="GiverMemberId">The giver member identity.</param>

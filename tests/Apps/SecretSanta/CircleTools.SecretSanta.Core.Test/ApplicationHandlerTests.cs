@@ -1,4 +1,5 @@
 using CircleTools.SecretSanta.Core.Application;
+using CircleTools.SecretSanta.Core.Domain;
 using CircleTools.SecretSanta.Core.Test.TestSupport;
 
 namespace CircleTools.SecretSanta.Core.Test;
@@ -126,7 +127,7 @@ public sealed class ApplicationHandlerTests
         var handler = new AddMemberCommandHandler(repository);
         await handler.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        await Assert.ThrowsAsync<DuplicateMemberNameException>(() =>
             handler.HandleAsync(new AddMemberCommand(groupId, "alice"), default));
     }
 

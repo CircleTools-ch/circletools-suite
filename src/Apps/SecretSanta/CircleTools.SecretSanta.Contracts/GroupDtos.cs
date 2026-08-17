@@ -35,10 +35,15 @@ public sealed record EventDetailsDto(DateTimeOffset? Date, string Location, stri
 /// </param>
 public sealed record MemberDto(Guid Id, string Name, Guid? UserId = null);
 
-/// <summary>A directed exclusion: <paramref name="GiverMemberId"/> must not draw <paramref name="RecipientMemberId"/>.</summary>
-/// <param name="GiverMemberId">The giver member identity.</param>
-/// <param name="RecipientMemberId">The forbidden recipient member identity.</param>
-public sealed record ExclusionDto(Guid GiverMemberId, Guid RecipientMemberId);
+/// <summary>
+/// An exclusion between two members. When <paramref name="Mutual"/> is <see langword="false"/> it is
+/// one-way (<paramref name="GiverMemberId"/> must not draw <paramref name="RecipientMemberId"/>); when
+/// <see langword="true"/> neither member may be assigned the other.
+/// </summary>
+/// <param name="GiverMemberId">The giver member identity (an endpoint when mutual).</param>
+/// <param name="RecipientMemberId">The forbidden recipient member identity (the other endpoint when mutual).</param>
+/// <param name="Mutual">Whether the exclusion applies in both directions.</param>
+public sealed record ExclusionDto(Guid GiverMemberId, Guid RecipientMemberId, bool Mutual = false);
 
 /// <summary>A single giver-to-recipient assignment within a draw.</summary>
 /// <param name="GiverMemberId">The giver member identity.</param>

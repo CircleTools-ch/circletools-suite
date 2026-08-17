@@ -34,7 +34,7 @@ public sealed class GroupTests
         var group = Group.Create("Friends");
         group.AddMember("Alice");
 
-        Assert.Throws<InvalidOperationException>(() => group.AddMember("  alice "));
+        Assert.Throws<DuplicateMemberNameException>(() => group.AddMember("  alice "));
     }
 
     [Fact]
@@ -44,6 +44,53 @@ public sealed class GroupTests
         var alice = group.AddMember("Alice");
 
         Assert.Throws<InvalidOperationException>(() => group.AddExclusion(alice, Guid.NewGuid()));
+    }
+
+    [Fact]
+    public void AddExclusion_IsOneWayByDefault()
+    {
+        var group = Group.Create("Friends");
+        var alice = group.AddMember("Alice");
+        var bob = group.AddMember("Bob");
+
+        group.AddExclusion(alice, bob);
+
+        Assert.False(Assert.Single(group.Exclusions).Mutual);
+    }
+
+    [Fact]
+    public void AddExclusion_ReplacesExistingRuleForSamePair()
+    {
+        var group = Group.Create("Friends");
+        var alice = group.AddMember("Alice");
+        var bob = group.AddMember("Bob");
+
+        group.AddExclusion(alice, bob);                 // one-way
+        group.AddExclusion(bob, alice, mutual: true);   // reconfigure the same pair as mutual
+
+        Assert.True(Assert.Single(group.Exclusions).Mutual);
+    }
+
+    [Fact]
+    public void MutualExclusion_IsOrderIndependent()
+    {
+        var a = Guid.NewGuid();
+        var b = Guid.NewGuid();
+
+        Assert.Equal(Exclusion.Create(a, b, mutual: true), Exclusion.Create(b, a, mutual: true));
+    }
+
+    [Fact]
+    public void ToState_RoundTrips_MutualFlag()
+    {
+        var group = Group.Create("Friends");
+        var alice = group.AddMember("Alice");
+        var bob = group.AddMember("Bob");
+        group.AddExclusion(alice, bob, mutual: true);
+
+        var restored = Group.FromState(group.ToState());
+
+        Assert.True(Assert.Single(restored.Exclusions).Mutual);
     }
 
     [Fact]

@@ -19,8 +19,8 @@
 <MudCard Elevation="1" Class="mb-4">
     <MudCardContent>
         <MudStack Spacing="2">
-            <MudTextField @bind-Value="_newName" Immediate="true" Label="@L["NameLabel"]" Placeholder="@L["MemberNamePlaceholder"]"
-                          Variant="Variant.Outlined" Margin="Margin.Dense" />
+            <MudTextField @bind-Value="_newName" Immediate="true" OnKeyDown="OnNewNameKeyDown" Label="@L["NameLabel"]"
+                          Placeholder="@L["MemberNamePlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
             <div>
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddAsync"
                            StartIcon="@Icons.Material.Filled.PersonAdd"
@@ -216,6 +216,14 @@ else
         await LoadAsync();
     }
 
+    private async Task OnNewNameKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter" && !string.IsNullOrWhiteSpace(_newName))
+        {
+            await AddAsync();
+        }
+    }
+
     private async Task AddAsync()
     {
         _error = null;
@@ -225,9 +233,13 @@ else
             _newName = string.Empty;
             await LoadAsync();
         }
-        catch (InvalidOperationException exception)
+        catch (CircleTools.SecretSanta.Core.Domain.DuplicateMemberNameException exception)
         {
-            _error = exception.Message;
+            _error = L["DuplicateMemberError", exception.Name];
+        }
+        catch (InvalidOperationException)
+        {
+            _error = L["MemberSaveFailed"];
         }
     }
 
@@ -254,9 +266,13 @@ else
             _editingId = null;
             await LoadAsync();
         }
-        catch (InvalidOperationException exception)
+        catch (CircleTools.SecretSanta.Core.Domain.DuplicateMemberNameException exception)
         {
-            _error = exception.Message;
+            _error = L["DuplicateMemberError", exception.Name];
+        }
+        catch (InvalidOperationException)
+        {
+            _error = L["MemberSaveFailed"];
         }
     }
 

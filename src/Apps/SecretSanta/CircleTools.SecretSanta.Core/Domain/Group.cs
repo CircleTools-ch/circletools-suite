@@ -152,34 +152,40 @@ public sealed class Group : AggregateRoot
         InvalidateAllDraws();
     }
 
-    /// <summary>Adds a directed exclusion between two existing members (shared across events).</summary>
+    /// <summary>
+    /// Adds an exclusion between two existing members (shared across events). A member pair carries a
+    /// single rule, so this replaces any existing exclusion for the same pair — switching a one-way
+    /// rule to mutual, or vice versa.
+    /// </summary>
     /// <param name="giverMemberId">The giver member identity.</param>
     /// <param name="recipientMemberId">The forbidden recipient member identity.</param>
+    /// <param name="mutual">
+    /// <see langword="true"/> to forbid both directions (the couple case); <see langword="false"/>
+    /// (default) to forbid only <c>giver → recipient</c>.
+    /// </param>
     /// <exception cref="InvalidOperationException">Thrown when either endpoint is not a member of this group.</exception>
-    public void AddExclusion(Guid giverMemberId, Guid recipientMemberId)
+    public void AddExclusion(Guid giverMemberId, Guid recipientMemberId, bool mutual = false)
     {
         RequireMember(giverMemberId);
         RequireMember(recipientMemberId);
 
-        var exclusion = Exclusion.Create(giverMemberId, recipientMemberId);
-        if (!_exclusions.Contains(exclusion))
-        {
-            _exclusions.Add(exclusion);
-        }
+        var exclusion = Exclusion.Create(giverMemberId, recipientMemberId, mutual);
+        _exclusions.RemoveAll(e => e.ConcernsPair(giverMemberId, recipientMemberId));
+        _exclusions.Add(exclusion);
     }
 
-    /// <summary>Removes a directed exclusion, if present.</summary>
-    /// <param name="giverMemberId">The giver member identity.</param>
-    /// <param name="recipientMemberId">The recipient member identity.</param>
+    /// <summary>Removes the exclusion for the given member pair, if present (in either direction).</summary>
+    /// <param name="giverMemberId">One endpoint of the pair.</param>
+    /// <param name="recipientMemberId">The other endpoint of the pair.</param>
     public void RemoveExclusion(Guid giverMemberId, Guid recipientMemberId) =>
-        _exclusions.RemoveAll(e => e.GiverMemberId == giverMemberId && e.RecipientMemberId == recipientMemberId);
+        _exclusions.RemoveAll(e => e.ConcernsPair(giverMemberId, recipientMemberId));
 
-    /// <summary>Adds a new event (occasion) to the group.</summary>
-    /// <param name="name">The event name; may be empty.</param>
+    /// <summary>Adds a new event (occasion) to the group. The name is trimmed; may end up empty.</summary>
+    /// <param name="name">The event name; surrounding whitespace is trimmed.</param>
     /// <returns>The identity of the created event.</returns>
     public Guid AddEvent(string name)
     {
-        var occasion = Event.Create(GuidV7.New(), name);
+        var occasion = Event.Create(GuidV7.New(), (name ?? string.Empty).Trim());
         _events.Add(occasion);
         return occasion.Id;
     }
@@ -272,7 +278,7 @@ public sealed class Group : AggregateRoot
         Budget: null,
         Event: null,
         _members.Select(m => new MemberState(m.Id, m.Name, UserId: m.UserId, OriginCirclePersonId: m.OriginCirclePersonId)).ToList(),
-        _exclusions.Select(e => new ExclusionState(e.GiverMemberId, e.RecipientMemberId)).ToList(),
+        _exclusions.Select(e => new ExclusionState(e.GiverMemberId, e.RecipientMemberId, e.Mutual)).ToList(),
         Draws: [],
         DrawInvalidatedByMembershipChange: false,
         Events: _events.Select(ToEventState).ToList());
@@ -289,7 +295,7 @@ public sealed class Group : AggregateRoot
             .ToList();
 
         var exclusions = state.Exclusions
-            .Select(e => Exclusion.Create(e.GiverMemberId, e.RecipientMemberId))
+            .Select(e => Exclusion.Create(e.GiverMemberId, e.RecipientMemberId, e.Mutual))
             .ToList();
 
         var events = state.Events is { Count: > 0 } storedEvents
@@ -385,7 +391,7 @@ public sealed class Group : AggregateRoot
 
         if (duplicate)
         {
-            throw new InvalidOperationException($"A member named '{name}' already exists in this group.");
+            throw new DuplicateMemberNameException(name);
         }
     }
 

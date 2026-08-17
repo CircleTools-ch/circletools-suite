@@ -48,6 +48,7 @@
   <data name="LoginSubmit" xml:space="preserve"><value>Anmelden</value></data>
   <data name="LoginStaySignedIn" xml:space="preserve"><value>Auf diesem Gerät angemeldet bleiben</value></data>
   <data name="LoginStaySignedInHint" xml:space="preserve"><value>Aktiviere dies nur auf einem Gerät, das dir gehört.</value></data>
+  <data name="LoginMissingCredentials" xml:space="preserve"><value>Gib deine E-Mail-Adresse und dein Passwort ein.</value></data>
   <data name="LoginPasskey" xml:space="preserve"><value>Mit Passkey anmelden</value></data>
   <data name="LoginOr" xml:space="preserve"><value>oder</value></data>
   <data name="LoginForgot" xml:space="preserve"><value>Passwort vergessen?</value></data>
