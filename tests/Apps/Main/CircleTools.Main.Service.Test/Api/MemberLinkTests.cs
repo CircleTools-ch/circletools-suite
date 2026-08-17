@@ -99,7 +99,7 @@ public sealed class MemberLinkTests(MailApiFactory factory)
     }
 
     [Fact]
-    public async Task ARequestLinkingAUserAlreadyLinkedInThatGroup_IsRefused()
+    public async Task LinkingAnAddressAlreadyBackingAMember_IsRefusedAtSendTime()
     {
         var organizer = await CircleTestAccounts.SignUpAsync(factory, "Organizer");
         var member = await CircleTestAccounts.SignUpAsync(factory, "Member");
@@ -107,17 +107,58 @@ public sealed class MemberLinkTests(MailApiFactory factory)
 
         await LinkingScenario.LinkMemberAsync(factory, organizer, member, groupId, Guid.NewGuid(), memberDisplayName: "First");
 
-        // A second member of the SAME group, offered to the SAME account.
-        var secondMemberId = Guid.NewGuid();
-        await organizer.Client.PostAsJsonAsync(
+        // A second member of the SAME group, offered to the SAME account: one account backs at most one
+        // member per group, so this is refused up front — no second invitation is queued.
+        var send = await organizer.Client.PostAsJsonAsync(
             "/api/v1/member-links",
-            new SendMemberLinkRequest(groupId, "December", secondMemberId, "Second", member.Email));
-        var pending = await member.Client.GetFromJsonAsync<IReadOnlyList<PendingMemberLinkResponse>>("/api/v1/member-links/pending");
-        var second = pending!.Single(p => p.MemberDisplayName == "Second");
+            new SendMemberLinkRequest(groupId, "December", Guid.NewGuid(), "Second", member.Email));
 
-        var accept = await member.Client.PostAsync(new Uri($"/api/v1/member-links/{second.Id}/accept", UriKind.Relative), content: null);
-        accept.EnsureSuccessStatusCode();
-        Assert.Equal(AcceptMemberLinkOutcome.AlreadyLinked, (await accept.Content.ReadFromJsonAsync<AcceptMemberLinkResponse>())!.Outcome);
+        Assert.Equal(HttpStatusCode.OK, send.StatusCode);
+        Assert.Equal(MemberLinkOutcome.AlreadyLinkedInGroup, (await send.Content.ReadFromJsonAsync<SendMemberLinkResponse>())!.Outcome);
+
+        // Nothing landed in the target's pending list for that group beyond the original.
+        var pending = await member.Client.GetFromJsonAsync<IReadOnlyList<PendingMemberLinkResponse>>("/api/v1/member-links/pending");
+        Assert.DoesNotContain(pending!, p => p.MemberDisplayName == "Second");
+    }
+
+    [Fact]
+    public async Task LinkingAnAddressWithAStillOutstandingInvitation_IsRefusedAtSendTime()
+    {
+        var organizer = await CircleTestAccounts.SignUpAsync(factory, "Organizer");
+        var member = await CircleTestAccounts.SignUpAsync(factory, "Member");
+        var groupId = Guid.NewGuid();
+
+        // A first invitation to that address is still pending (not yet accepted).
+        var first = await organizer.Client.PostAsJsonAsync(
+            "/api/v1/member-links",
+            new SendMemberLinkRequest(groupId, "December", Guid.NewGuid(), "First", member.Email));
+        Assert.Equal(MemberLinkOutcome.RequestSent, (await first.Content.ReadFromJsonAsync<SendMemberLinkResponse>())!.Outcome);
+
+        // Inviting the same address again — for a different member — is a duplicate even before acceptance.
+        var second = await organizer.Client.PostAsJsonAsync(
+            "/api/v1/member-links",
+            new SendMemberLinkRequest(groupId, "December", Guid.NewGuid(), "Second", member.Email));
+        Assert.Equal(MemberLinkOutcome.AlreadyLinkedInGroup, (await second.Content.ReadFromJsonAsync<SendMemberLinkResponse>())!.Outcome);
+    }
+
+    [Fact]
+    public async Task ReInvitingTheSameMemberAtTheSameAddress_IsNotADuplicate()
+    {
+        var organizer = await CircleTestAccounts.SignUpAsync(factory, "Organizer");
+        var member = await CircleTestAccounts.SignUpAsync(factory, "Member");
+        var groupId = Guid.NewGuid();
+        var memberId = Guid.NewGuid();
+
+        var first = await organizer.Client.PostAsJsonAsync(
+            "/api/v1/member-links",
+            new SendMemberLinkRequest(groupId, "December", memberId, "Member", member.Email));
+        Assert.Equal(MemberLinkOutcome.RequestSent, (await first.Content.ReadFromJsonAsync<SendMemberLinkResponse>())!.Outcome);
+
+        // Re-sending to the SAME member is a resend, not a second-member duplicate: it is allowed.
+        var again = await organizer.Client.PostAsJsonAsync(
+            "/api/v1/member-links",
+            new SendMemberLinkRequest(groupId, "December", memberId, "Member", member.Email));
+        Assert.Equal(MemberLinkOutcome.RequestSent, (await again.Content.ReadFromJsonAsync<SendMemberLinkResponse>())!.Outcome);
     }
 
     [Fact]

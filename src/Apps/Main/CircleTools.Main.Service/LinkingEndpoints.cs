@@ -103,6 +103,18 @@ public static class LinkingEndpoints
         // whether or not the address has an account.
         var target = await directory.FindByVerifiedEmailAsync(request.Email, cancellationToken).ConfigureAwait(false);
 
+        // One account backs at most one member per group. When the address resolves to an account that
+        // already backs a *different* member here (linked, or with a live invitation), refuse at send time
+        // with immediate feedback instead of queuing a second invitation only to fail it at accept time —
+        // this also rejects an organizer trying to self-link twice. The refusal only ever fires for
+        // accounts already in the caller's own group (whose linked members the caller can see), so an
+        // arbitrary address still returns "request sent" and the surface cannot probe for accounts (ADR-0044).
+        if (target is not null
+            && await store.IsAccountLinkedOrPendingInGroupAsync(request.GroupId, target.UserId, request.MemberId, cancellationToken).ConfigureAwait(false))
+        {
+            return Results.Ok(new SendMemberLinkResponse(MemberLinkOutcome.AlreadyLinkedInGroup));
+        }
+
         // A self-link — the organizer linking their own account — auto-accepts with no second step.
         if (target is not null && target.UserId == caller)
         {
@@ -399,7 +411,7 @@ public static class LinkingEndpoints
 
         var memberships = await store.GetMyMembershipsAsync(caller, cancellationToken).ConfigureAwait(false);
         return Results.Ok(new MyMembershipsResponse(memberships
-            .Select(m => new MyMembership(m.GroupId, m.GroupName, m.EventId, m.EventName))
+            .Select(m => new MyMembership(m.GroupId, m.GroupName, m.EventId, m.EventName, m.EventDate))
             .ToList()));
     }
 
@@ -446,7 +458,7 @@ public static class LinkingEndpoints
         }
 
         var events = (request.Events ?? [])
-            .Select(e => new GroupEventInput(e.EventId, e.Name))
+            .Select(e => new GroupEventInput(e.EventId, e.Name, e.Date))
             .ToList();
 
         await store.PublishGroupEventsAsync(id, request.GroupName, caller, events, cancellationToken).ConfigureAwait(false);

@@ -56,6 +56,13 @@ public sealed class AutoSyncService(
     public bool Reconciling { get; set; }
 
     /// <summary>
+    /// The outcome of the most recent completed group cycle, or <see langword="null"/> before the first
+    /// one drains. The shell shows this in its passive status line now that there is no manual "Sync now"
+    /// button (ADR-0044). Read it in a <see cref="SyncCompleted"/> handler.
+    /// </summary>
+    public SyncStatus? LastStatus { get; private set; }
+
+    /// <summary>
     /// Raised after a background sync cycle drains, so a listing screen can refresh to show groups the
     /// cycle pulled or claimed. Fired on the app's sync task continuation — subscribers marshal onto the
     /// render context (e.g. <c>InvokeAsync</c>) before touching component state.
@@ -166,7 +173,9 @@ public sealed class AutoSyncService(
             await sync.ClaimAsync(accountId, accountFree);
         }
 
-        await coordinator.SyncNowAsync(accountId);
+        // Keep the group cycle's outcome so the shell can show it in its passive status line — the same
+        // status the removed manual button used to surface.
+        LastStatus = (await coordinator.SyncNowAsync(accountId)).Status;
     }
 
     private void OnConnectivityChanged(bool online)

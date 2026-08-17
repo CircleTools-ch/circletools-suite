@@ -181,8 +181,11 @@
   <data name="MemberLinkEmailLabel" xml:space="preserve"><value>Adresse e-mail à inviter</value></data>
   <data name="MemberLinkSend" xml:space="preserve"><value>Envoyer la demande</value></data>
   <data name="MemberLinkSelfLinked" xml:space="preserve"><value>Lié à votre compte.</value></data>
+  <data name="MemberLinkVerifyEmailFirst" xml:space="preserve"><value>Confirme d'abord ton adresse e-mail, puis tu pourras te lier ici.</value></data>
   <data name="MemberLinkRequestSent" xml:space="preserve"><value>Demande envoyée. Si cette adresse a un compte, elle y apparaîtra.</value></data>
   <data name="MemberLinkFailed" xml:space="preserve"><value>Cela n'a pas pu être effectué. Veuillez réessayer.</value></data>
+  <data name="MemberLinkWithMyAccount" xml:space="preserve"><value>Lier à mon compte</value></data>
+  <data name="MemberLinkAlreadyInGroup" xml:space="preserve"><value>Cette adresse est déjà liée à un membre de ce groupe.</value></data>
   <data name="MemberUnlinked" xml:space="preserve"><value>Dissocié. Le membre et la liste de souhaits sont conservés.</value></data>
   <data name="NavMyLinks" xml:space="preserve"><value>Demandes de lien</value></data>
   <data name="NavMyAssignments" xml:space="preserve"><value>Mes attributions</value></data>
