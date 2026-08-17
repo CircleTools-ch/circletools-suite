@@ -18,7 +18,7 @@ public sealed class DrawGenerator(IRandomSource random)
 
     /// <summary>Attempts to generate a valid draw for the supplied members.</summary>
     /// <param name="memberIds">The participating member identities.</param>
-    /// <param name="exclusions">Directed exclusions (giver must not draw recipient).</param>
+    /// <param name="exclusions">Exclusions to honour (a mutual one forbids both directions).</param>
     /// <param name="previous">The previous draw as a giver-to-recipient map, or <see langword="null"/>.</param>
     /// <returns>A successful <see cref="DrawResult"/>, or a failure with the reason.</returns>
     public DrawResult Generate(
@@ -40,8 +40,15 @@ public sealed class DrawGenerator(IRandomSource random)
             return DrawResult.Failure(DrawFailureReason.TwoMemberReciprocalImpossible);
         }
 
-        var excluded = new HashSet<(Guid Giver, Guid Recipient)>(
-            exclusions.Select(e => (e.GiverMemberId, e.RecipientMemberId)));
+        var excluded = new HashSet<(Guid Giver, Guid Recipient)>();
+        foreach (var exclusion in exclusions)
+        {
+            excluded.Add((exclusion.GiverMemberId, exclusion.RecipientMemberId));
+            if (exclusion.Mutual)
+            {
+                excluded.Add((exclusion.RecipientMemberId, exclusion.GiverMemberId));
+            }
+        }
 
         var givers = memberIds.ToList();
 

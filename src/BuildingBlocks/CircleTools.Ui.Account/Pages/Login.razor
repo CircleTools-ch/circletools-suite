@@ -65,8 +65,16 @@
 
     private async Task SubmitAsync()
     {
-        _busy = true;
         Clear();
+
+        // Give immediate feedback instead of a round-trip that can only come back "invalid".
+        if (string.IsNullOrWhiteSpace(_email) || string.IsNullOrWhiteSpace(_password))
+        {
+            _error = L["LoginMissingCredentials"];
+            return;
+        }
+
+        _busy = true;
 
         var result = await Session.SignInAsync(_email, _password, _staySignedIn);
 

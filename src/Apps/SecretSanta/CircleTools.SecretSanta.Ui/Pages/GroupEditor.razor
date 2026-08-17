@@ -31,7 +31,8 @@ else
                       Label="@L["EventNameLabel"]" Placeholder="@L["EventNamePlaceholder"]"
                       Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" Style="min-width:12rem;" />
         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddEventAsync"
-                   StartIcon="@Icons.Material.Filled.Add" Class="mt-1">@L["AddEvent"]</MudButton>
+                   StartIcon="@Icons.Material.Filled.Add" Class="mt-1"
+                   Disabled="@string.IsNullOrWhiteSpace(_newEventName)">@L["AddEvent"]</MudButton>
     </div>
 
     <MudStack Spacing="2">
@@ -43,7 +44,8 @@ else
                     {
                         <div class="d-flex gap-2 align-center flex-wrap">
                             <MudTextField @bind-Value="_editName" Label="@L["EventNameLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
-                            <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveEventNameAsync">@L["Save"]</MudButton>
+                            <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveEventNameAsync"
+                                       Disabled="@string.IsNullOrWhiteSpace(_editName)">@L["Save"]</MudButton>
                             <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => _editingId = null">@L["Cancel"]</MudButton>
                         </div>
                     }
@@ -135,6 +137,11 @@ else
 
     private async Task AddEventAsync()
     {
+        if (string.IsNullOrWhiteSpace(_newEventName))
+        {
+            return;
+        }
+
         var id = await Sender.Send(new AddEventCommand(GroupId, _newEventName));
         _newEventName = string.Empty;
         Open(id);
@@ -149,6 +156,11 @@ else
 
     private async Task SaveEventNameAsync()
     {
+        if (string.IsNullOrWhiteSpace(_editName))
+        {
+            return;
+        }
+
         if (_editingId is { } id)
         {
             await Sender.Send(new RenameEventCommand(GroupId, id, _editName));

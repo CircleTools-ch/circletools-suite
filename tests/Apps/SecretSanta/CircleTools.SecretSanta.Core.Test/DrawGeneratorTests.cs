@@ -46,6 +46,23 @@ public sealed class DrawGeneratorTests
     }
 
     [Fact]
+    public void Generate_MutualExclusion_ForbidsBothDirections()
+    {
+        var members = Members(5);
+        var exclusions = new List<Exclusion>
+        {
+            Exclusion.Create(members[0], members[1], mutual: true),
+        };
+        var generator = new DrawGenerator(new SeededRandomSource(7));
+
+        var result = generator.Generate(members, exclusions, previous: null);
+
+        Assert.True(result.IsSuccess);
+        Assert.DoesNotContain(result.Assignments, a => a.GiverMemberId == members[0] && a.RecipientMemberId == members[1]);
+        Assert.DoesNotContain(result.Assignments, a => a.GiverMemberId == members[1] && a.RecipientMemberId == members[0]);
+    }
+
+    [Fact]
     public void Generate_HasNoReciprocalPairs()
     {
         var members = Members(6);

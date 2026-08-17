@@ -49,6 +49,9 @@
   <data name="ExclusionHint" xml:space="preserve"><value>La personne offrant ne sera pas attribuée au destinataire choisi.</value></data>
   <data name="GiverLabel" xml:space="preserve"><value>Personne offrant</value></data>
   <data name="RecipientLabel" xml:space="preserve"><value>Ne doit pas offrir à</value></data>
+  <data name="ExclusionRow" xml:space="preserve"><value>{0} ne doit pas offrir à {1}</value></data>
+  <data name="ExclusionRowMutual" xml:space="preserve"><value>{0} et {1} ne doivent pas s'offrir de cadeau</value></data>
+  <data name="ExclusionBothWays" xml:space="preserve"><value>Dans les deux sens (aucun n'offre à l'autre)</value></data>
   <data name="AddExclusion" xml:space="preserve"><value>Ajouter une exclusion</value></data>
   <data name="NoExclusions" xml:space="preserve"><value>Aucune exclusion.</value></data>
   <data name="NeedTwoMembersForExclusion" xml:space="preserve"><value>Ajoutez d'abord au moins deux membres.</value></data>
@@ -64,9 +67,13 @@
   <data name="ShareHint" xml:space="preserve"><value>Envoyez à chaque personne son propre lien. Seul le destinataire voit à qui il offre.</value></data>
   <data name="NoDrawYet" xml:space="preserve"><value>Lancez d'abord un tirage pour générer les liens.</value></data>
   <data name="DrawInvalidatedNotice" xml:space="preserve"><value>Les membres ont changé, le tirage précédent ne s'applique donc plus. Veuillez relancer le tirage.</value></data>
-  <data name="RedrawWarning" xml:space="preserve"><value>Ce groupe a déjà été tiré au sort. Relancer le tirage remplace toutes les attributions - les liens déjà envoyés indiqueront la mauvaise personne.</value></data>
+  <data name="RedrawWarning" xml:space="preserve"><value>Cet événement a déjà été tiré au sort. Relancer le tirage remplace toutes les attributions - les liens déjà envoyés indiqueront la mauvaise personne.</value></data>
   <data name="RedrawConfirm" xml:space="preserve"><value>Relancer quand même le tirage</value></data>
   <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>Ce groupe a déjà été tiré au sort. Ajouter ou retirer un membre annule ce tirage et vous devrez le relancer.</value></data>
+  <data name="DuplicateMemberError" xml:space="preserve"><value>Un membre nommé « {0} » existe déjà dans ce groupe.</value></data>
+  <data name="MemberSaveFailed" xml:space="preserve"><value>Le membre n'a pas pu être enregistré.</value></data>
+  <data name="BudgetAmountInvalid" xml:space="preserve"><value>Saisis un montant de budget supérieur à zéro.</value></data>
+  <data name="CurrencyInvalid" xml:space="preserve"><value>Saisis un code de devise à 3 lettres (p. ex. CHF).</value></data>
   <data name="ConfirmDeleteGroup" xml:space="preserve"><value>Supprimer « {0} » et tout son contenu ? Cette action est irréversible.</value></data>
   <data name="ConfirmRemoveMember" xml:space="preserve"><value>Retirer « {0} » de ce groupe ?</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Oui, supprimer</value></data>

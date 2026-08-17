@@ -25,10 +25,14 @@ else
                 <MudNumericField @bind-Value="_budgetAmount" Label="@L["AmountLabel"]" Variant="Variant.Outlined"
                                  Margin="Margin.Dense" Step="0.01M" Min="0" HideSpinButtons="false" />
                 <MudTextField @bind-Value="_budgetCurrency" Label="@L["CurrencyLabel"]" Variant="Variant.Outlined"
-                              Margin="Margin.Dense" />
+                              Margin="Margin.Dense" MaxLength="3" Immediate="true" />
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveBudgetAsync">@L["Save"]</MudButton>
                 <MudButton Variant="Variant.Outlined" OnClick="ClearBudgetAsync">@L["ClearBudget"]</MudButton>
             </MudStack>
+            @if (_budgetError is not null)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2" role="alert">@_budgetError</MudAlert>
+            }
         </MudCardContent>
     </MudCard>
 
@@ -37,7 +41,7 @@ else
             <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["EventLabel"]</MudText>
             <MudStack Spacing="2">
                 <MudDatePicker @bind-Date="_eventDate" Label="@L["DateLabel"]" Variant="Variant.Outlined"
-                               Margin="Margin.Dense" />
+                               Margin="Margin.Dense" Editable="true" />
                 <MudTextField @bind-Value="_eventLocation" Label="@L["LocationLabel"]" Variant="Variant.Outlined"
                               Margin="Margin.Dense" />
                 <MudTextField @bind-Value="_eventDescription" Label="@L["DescriptionLabel"]" Variant="Variant.Outlined"
@@ -73,6 +77,7 @@ else
     private string _eventLocation = string.Empty;
     private string _eventDescription = string.Empty;
     private string? _status;
+    private string? _budgetError;
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
@@ -101,12 +106,31 @@ else
 
     private async Task SaveBudgetAsync()
     {
-        await Sender.Send(new SetBudgetCommand(GroupId, EventId, _budgetAmount, _budgetCurrency));
+        _budgetError = null;
+
+        // A set budget needs a positive amount; "no budget" is expressed with Clear, not a zero.
+        if (_budgetAmount is not { } amount || amount <= 0)
+        {
+            _budgetError = L["BudgetAmountInvalid"];
+            return;
+        }
+
+        // Currencies are 3-letter ISO codes (CHF, EUR, …); normalize case and reject anything else.
+        var currency = (_budgetCurrency ?? string.Empty).Trim().ToUpperInvariant();
+        if (currency.Length != 3 || !currency.All(char.IsLetter))
+        {
+            _budgetError = L["CurrencyInvalid"];
+            return;
+        }
+
+        _budgetCurrency = currency;
+        await Sender.Send(new SetBudgetCommand(GroupId, EventId, amount, currency));
         await Reload();
     }
 
     private async Task ClearBudgetAsync()
     {
+        _budgetError = null;
         _budgetAmount = null;
         await Sender.Send(new SetBudgetCommand(GroupId, EventId, null, null));
         await Reload();

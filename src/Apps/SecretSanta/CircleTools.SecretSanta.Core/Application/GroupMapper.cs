@@ -22,7 +22,7 @@ internal static class GroupMapper
             .ToList();
 
         var exclusions = group.Exclusions
-            .Select(e => new ExclusionDto(e.GiverMemberId, e.RecipientMemberId))
+            .Select(e => new ExclusionDto(e.GiverMemberId, e.RecipientMemberId, e.Mutual))
             .ToList();
 
         var events = group.Events.Select(ToEventSummary).ToList();
