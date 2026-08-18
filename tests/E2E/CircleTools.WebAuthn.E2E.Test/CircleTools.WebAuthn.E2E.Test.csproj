@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Browser-driving end-to-end test host (arc42 D4, ADR-0045). Drives the real WebAuthn ceremony
+    in Chromium via a CDP virtual authenticator against the live Aspire stack, which this project
+    launches as a child process. Deliberately NOT in CircleTools.NoMaui.slnx: the core `build-test`
+    CI job must not run it — the dedicated `webauthn-e2e` job targets this project directly.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.Playwright" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Typed passkey DTOs (PasskeyResponse, SessionResponse) for the API-side assertions. -->
+    <ProjectReference Include="..\..\..\src\Apps\Main\CircleTools.Main.Contracts\CircleTools.Main.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
