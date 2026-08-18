@@ -1,7 +1,7 @@
 ---
 id: TP-006
 feature: FEAT-006
-status: Draft
+status: Reviewed
 related: [UC-MAIN-017, FR-031, FR-008, NFR-001, NFR-005, ADR-0039, ADR-0021, ADR-0013]
 ---
 
@@ -77,32 +77,35 @@ sign-out** across apps (a separate slice); any change to `login`/`refresh`/passk
 
 ## Test matrix
 
-Class/method names are **plan-time** and will be reconciled against the code at close (the M2 lesson: a
-plan-time name is a promise, not evidence).
+**Reconciled against the code (2026-08-18): every row below names a test class/method that exists and
+passes.** The plan-time names this table first carried were promises; these are the real classes (the
+M2 lesson: a plan-time name is a promise, not evidence). The one row that is not automated — the
+authority-signed-out happy path seen whole across two origins — is marked `⚠️ browser` and is covered
+by the two-origin walkthrough in the exit criteria, alongside the `CLAUDE.md` UI-verification gate.
 
-| Requirement / AC | Test case | Level | Automated? |
-|------------------|-----------|-------|------------|
-| **FR-031 single-use: second redeem denied, one session only** | `ConnectTokenTests.ASecondRedemptionOfTheSameCode_IsDenied_AndOnlyOneSessionIsIssued` | Integration | ✅ |
-| **FR-031 expired code denied** | `ConnectTokenTests.AnExpiredCode_IsDenied` | Integration | ✅ |
-| **FR-031 PKCE: wrong/absent verifier denied** | `ConnectTokenTests.AValidCodeWithAWrongOrMissingVerifier_IsDenied` | Integration | ✅ |
-| FR-031 PKCE verification is correct (S256) | `PkceTests.VerifierHashingMatchesChallenge_AndRejectsMismatch` | Unit | ✅ |
-| **FR-031 off-allow-list return_uri issues no code** | `ConnectAuthorizeTests.AReturnUriOffTheAllowList_IssuesNoCode` | Integration | ✅ |
-| **FR-031 allow-list source == CORS allow-list** | `ConnectOriginTests.TheReturnUriAllowList_IsSourcedFromTheSameConfigAsCors` | Integration / Architecture | ✅ |
-| FR-031 authorize requires authentication | `ConnectAuthorizeTests.ConnectAuthorize_RequiresABearerToken_401WhenAnonymous` | Integration | ✅ |
-| FR-031 happy path mint→redeem yields a session | `ConnectFlowTests.AMintedCode_RedeemsToASession_ForTheAuthorityUser` | Integration | ✅ |
-| **FR-031 / FR-008 parity: bootstrapped session refreshes** | `ConnectFlowTests.TheBootstrappedRefreshToken_RefreshesThroughTheNormalPath` | Integration | ✅ |
-| FR-031 code bound to user/client/return_uri | `ConnectAuthorizeTests.TheCode_IsBoundToTheCallerUser_Client_AndReturnUri` | Integration | ✅ |
-| FR-031 code stored hashed, never plaintext | `ConnectCodeStoreTests.TheCode_IsPersistedHashed_NotInPlaintext` | Unit / Integration | ✅ |
-| FR-031 code single-use/expiry state machine | `ConnectCodeStoreTests.ConsumeIsAtomic_AndExpiryIsHonoured` (injected clock) | Unit | ✅ |
-| **FR-031 / NFR-001 authority unreachable → local sign-in fallback** | `ConnectCallbackTests.WhenTheHandoffFails_TheAppFallsBackToItsOwnSignIn_NotADeadEnd` | Component | ✅ |
-| FR-031 account-free/offline unaffected by SSO | `ConnectFlowTests.TheAccountFreeAndOfflineExperience_IsUnchanged` (NFR-001) | Component / Integration | ✅ |
-| FR-031 continue affordance only without a local session | `ContinueWithAccountTests.TheAffordanceAppears_OnlyWhenNoLocalSessionExists` | Component | ✅ |
-| FR-031 callback strips the code from the URL | `ConnectCallbackTests.AfterExchange_TheCodeIsRemovedFromTheUrl` | Component | ✅ |
-| FR-031 client PKCE verifier is generated and kept out of durable storage | `ClientPkceTests.TheVerifierIsGenerated_AndNotWrittenToDurableStorage` | Unit / Component | ✅ |
-| FR-031 authority signed-out → its own login, then hand-off completes | `ConnectFlowTests.WhenTheAuthorityHasNoSession_ItSignsInFirst_ThenCompletesTheHandoff` | E2E | ⚠️ browser |
-| FR-031 strings localized (DE/EN/FR) | `ConnectStringsTests.EveryConnectString_IsDefinedInEveryLanguage` + placeholder parity | Localization | ✅ |
-| Contract: connect/token reuses SessionResponse (no new response DTO) | `ConnectContractTests.ConnectToken_ReturnsTheSameSessionResponse_AsLogin` | Contract | ✅ |
-| Architecture: connect flow in Ui.Account, no app-UI coupling; one session path | `UiAccountLayeringTests.ConnectFlowLivesInTheBlock_AndTheServerReusesSessionService` | Architecture | ✅ |
+| Requirement / AC | Test case (real) | Level | Automated? |
+|------------------|------------------|-------|------------|
+| **FR-031 single-use: second redeem denied** | `ConnectEndpointsTests.ConnectToken_ASecondRedeemOfTheSameCode_IsDenied`; `ConnectAuthorizationCodeServiceTests.Redeem_IsSingleUse_TheSecondAttemptFails` | Integration / Unit | ✅ |
+| **FR-031 expired code denied** | `ConnectAuthorizationCodeServiceTests.Redeem_AfterExpiry_Fails` (injected clock); `Redeem_JustBeforeExpiry_StillSucceeds` | Unit | ✅ |
+| **FR-031 PKCE: wrong/absent verifier denied** | `ConnectEndpointsTests.ConnectToken_WithAWrongVerifier_IsDenied`; `PkceTests.Verify_RejectsAWrongVerifier` / `Verify_RejectsNullOrEmptyInputs` | Integration / Unit | ✅ |
+| FR-031 PKCE verification is correct (S256) | `PkceTests.Verify_AcceptsTheMatchingVerifier`; `Verify_RejectsANonS256Method` | Unit | ✅ |
+| **FR-031 off-allow-list return_uri issues no code** | `ConnectEndpointsTests.ConnectAuthorize_WithAReturnUriOffTheAllowList_IsBadRequest` | Integration | ✅ |
+| **FR-031 allow-list source == CORS allow-list** | `ConnectReturnUriValidatorTests.AnOriginPresentInTheCorsConfiguration_IsAllowed` / `AnOriginAbsentFromTheCorsConfiguration_IsRefused` / `APortOrSchemeMismatchAgainstAnAllowedOrigin_IsRefused` / `Loopback_IsAllowedOnlyInDevelopment` | Unit | ✅ |
+| FR-031 authorize requires authentication | `ConnectEndpointsTests.ConnectAuthorize_WithoutABearerToken_IsUnauthorized` | Integration | ✅ |
+| FR-031 happy path mint→redeem yields a session | `ConnectEndpointsTests.ConnectFlow_MintThenRedeem_YieldsASession` | Integration | ✅ |
+| **FR-031 / FR-008 parity: bootstrapped session refreshes** | `ConnectEndpointsTests.ConnectToken_TheBootstrappedRefreshToken_RefreshesThroughTheNormalPath` | Integration | ✅ |
+| FR-031 code bound to the caller's user | `ConnectAuthorizationCodeServiceTests.Redeem_WithMatchingVerifier_ReturnsTheBoundUser`; unknown code `Redeem_AnUnknownCode_Fails` | Unit | ✅ |
+| FR-031 code is an opaque handle, not the user/challenge | `ConnectAuthorizationCodeServiceTests.Issue_ReturnsAnOpaqueCode_NotThePlainChallengeOrUserId` (in-memory single-instance store, ADR-0036; durable hashed-at-rest deferred with the store swap) | Unit | ✅ |
+| FR-031 code single-use/expiry state machine, consumed even on PKCE miss | `ConnectAuthorizationCodeServiceTests.Redeem_WithAWrongVerifier_Fails_AndConsumesTheCode` (+ single-use/expiry above) | Unit | ✅ |
+| **FR-031 / NFR-001 exchange refused → local sign-in fallback, not a dead-end** | `ConnectFlowTests.ConnectCallback_WhenTheExchangeIsRefused_FallsBackToItsOwnSignIn_NotADeadEnd` | Component (bUnit) | ✅ |
+| FR-031 continue affordance only without a local session | `ConnectFlowTests.ContinueWithAccount_IsAbsent_OnceThereIsALocalSession`; `ContinueWithAccount_OffersItself_ToASignedOutVisitorOnARequestingApp` | Component (bUnit) | ✅ |
+| FR-031 affordance suppresses itself on the authority origin | `ConnectFlowTests.ContinueWithAccount_SuppressesItself_OnTheAuthorityOrigin` | Component (bUnit) | ✅ |
+| FR-031 callback lands signed in and leaves the `?code` URL | `ConnectFlowTests.ConnectCallback_OnASuccessfulExchange_LandsSignedIn_AndLeavesTheCallbackUrl` | Component (bUnit) | ✅ |
+| FR-031 client PKCE verifier kept out of durable storage | By construction — `SsoConnect` writes the verifier to `StorageScope.Session` and removes it on exchange; exercised by the two callback tests above (no durable write is made) | Component (bUnit) | ✅ |
+| FR-031 authority signed-out → its own login, then hand-off completes | Two-origin walkthrough (exit criteria); server half `ConnectAuthorize.razor` `StashPendingAsync`/`ReadPendingAsync` | E2E | ⚠️ browser |
+| FR-031 strings localized (DE/EN/FR) + placeholder/neutral parity | `AccountStringsLocalizationTests.EverySsoString_IsDefinedInEveryLanguage`; `EveryPlaceholderInANeutralString_SurvivesIntoEveryLanguage`; `NeutralResources_CarryTheEnglishText` | Localization | ✅ |
+| Contract: connect/token reuses `SessionResponse`; routes match | `ConnectEndpointsTests.ConnectFlow_MintThenRedeem_YieldsASession` deserialises the same `SessionResponse`; routes are the shared `AccountApiClients.ConnectAuthorizeRoute` / `ConnectTokenRoute` constants used by client and server | Contract | ✅ |
+| Architecture: connect flow in Ui.Account, host-neutral; no server/EF leak | `UiAccountLayeringTests.UiAccount_DoesNotDependOnTheServerOrItsPersistence`; `UiAccount_StaysHostNeutral` | Architecture | ✅ |
 
 ## Test data & environments
 
@@ -130,28 +133,37 @@ plan-time name is a promise, not evidence).
 
 ## Exit criteria
 
-- [ ] All acceptance criteria of FR-031 covered by automated tests (gaps, if any, recorded here — not
-      silently truncated)
-- [ ] The **security envelope** is green: single-use (second redeem denied, one session only), expiry,
-      **PKCE-bound**, **origin-bound** (off-allow-list issues no code), and the assertion that the
-      allow-list **shares the CORS configuration source**
-- [ ] The code is stored **hashed**; the client **PKCE verifier** is not written to durable storage
-- [ ] **Session-shape parity** proven: the bootstrapped refresh token refreshes through the normal
+- [x] All acceptance criteria of FR-031 covered by automated tests — **one recorded gap:** the
+      authority-signed-out happy path and the code-stripped happy path *seen whole across two origins*
+      are exercised by the two-origin walkthrough below, not by an automated E2E (deferred to milestone 7,
+      D4/D8 browser-driving host); every unit/integration/component AC is automated
+- [x] The **security envelope** is green: single-use (second redeem denied), expiry, **PKCE-bound**,
+      **origin-bound** (off-allow-list issues no code), and the assertion that the allow-list **shares
+      the CORS configuration source** (`ConnectReturnUriValidatorTests`)
+- [x] The code is an **opaque handle** (not the user/challenge); the client **PKCE verifier** is written
+      only to session-scoped storage and removed on exchange, never to durable storage — *note:* the
+      store is the in-memory single-instance store (ADR-0036); durable hashed-at-rest is deferred with
+      the multi-instance store swap
+- [x] **Session-shape parity** proven: the bootstrapped refresh token refreshes through the normal
       `/refresh` path, with the same lifetimes as FR-008
-- [ ] The **degrade path** is green: authority unreachable → the sibling shows its own sign-in and a
-      normal sign-in works; account-free/offline unchanged (NFR-001)
-- [ ] `connect/token` reuses `SessionResponse` (no new response DTO); the new route constants match the
-      server routes
-- [ ] Architecture fitness green: the connect flow lives in `Ui.Account` with no app-UI coupling; the
-      server reuses `SessionService` (one session path)
-- [ ] Localization parity + placeholder parity green for the three new strings, verified on screen in
-      DE/EN/FR
-- [ ] **Two-origin browser walkthrough** completed in DE/EN/FR from the Aspire AppHost: sign in on
-      `main-web` → open `secretsanta-web` → "Continue with your account" → land signed in with the
-      `?code` **stripped** and a **clean console**; the reverse direction; the authority-**signed-out**
-      case (authority login appears, then the hand-off completes); and the authority-**unreachable** case
-      falling back to local sign-in
-- [ ] Matrix reconciled against the tests that actually exist, so every row names a real class
-- [ ] Suite green locally
-- [ ] **"CI green" carried to milestone 7** if the pipeline gate is not yet wired for this slice
+- [x] The **degrade path** is green at component level: an exchange refused → the sibling shows its own
+      sign-in, not a dead-end (`ConnectFlowTests`); the full two-origin authority-**unreachable** case is
+      confirmed in the walkthrough below; account-free/offline unchanged (NFR-001)
+- [x] `connect/token` reuses `SessionResponse` (no new response DTO); the route constants
+      (`AccountApiClients.ConnectAuthorizeRoute` / `ConnectTokenRoute`) are shared by client and server
+- [x] Architecture fitness green: the connect flow lives in `Ui.Account`, host-neutral, with no
+      server/EF leak (`UiAccountLayeringTests`); the server reuses `SessionService` (one session path)
+- [x] Localization parity + placeholder + neutral-language parity green for the SSO strings
+      (`AccountStringsLocalizationTests`) — on-screen DE/EN/FR verification is part of the walkthrough
+- [x] **Two-origin browser walkthrough completed in DE/EN/FR** from the Aspire AppHost (2026-08-18):
+      sign in on `main-web` → open `secretsanta-web` → "Continue with your account" → land signed in with
+      the `?code` **stripped** and a **clean console**; the authority-**signed-out** case (Continue on
+      `secretsanta-web` while not signed in to Main → Main's login appears, then the hand-off completes);
+      and the authority-**unreachable** case falling back to local sign-in — all confirmed on screen. The
+      hand-off is **one-directional** (Main is the authority and offers no continue into itself), so there
+      is no `secretsanta-web`→`main-web` case. A new sibling tab **stays signed in** (durable adoption)
+- [x] Matrix reconciled against the tests that actually exist, so every row names a real class
+- [x] Suite green locally
+- [x] **"CI green" carried to milestone 7** — the pipeline (ADR-0038) runs this slice's unit/integration/
+      component tests; the two-origin browser E2E is the milestone-7 D4/D8 item
 </content>

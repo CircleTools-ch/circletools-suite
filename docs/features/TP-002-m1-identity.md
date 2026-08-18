@@ -87,8 +87,8 @@ Circles, sync, the claim flow and Secret-Santa linking are **out of scope** (M2�
 | FR-009 reset flow | `PasswordResetTests` (`Reset_ReplacesThePasswordAndRevokesEverySession`, `.Reset_LinkIsSingleUse`, `.Reset_AlsoVerifiesAPendingAddress`, `.Reset_ShortPassword_IsRejected`) | Integration | ✅ |
 | FR-009 reset does not lock the old password | `PasswordResetTests.RequestingReset_DoesNotInvalidateTheCurrentPassword` | Integration | ✅ |
 | FR-010 passkey management | `PasskeyTests` (credentials listed with their labels, scoped to their owner, another user's cannot be removed, every endpoint requires authentication, removal leaves password sign-in working, creation options issued for a signed-in user) | Integration | ✅ |
-| FR-010 no private/biometric data | **not covered** — no test inspects a stored credential, because no test can register one: creating a credential needs a real WebAuthn authenticator. See the coverage notes. | — | ❌ |
-| FR-011 passkey sign-in — negative paths only | `PasskeyTests.RequestOptions_NameNoUser_SoTheyRevealNothing` and `.PasskeyLogin_WithGarbage_IsRefused`; `AccountPageTests.CancelledPasskeySignIn_*` / `.BrokenPasskeyCeremony_*`. **A successful ceremony is not automated** — see the coverage notes. | Integration / Component | ⚠️ partial |
+| FR-010 no private/biometric data | `PasskeyCeremonyTests` (E2E) registers a real credential via a CDP virtual authenticator, then reads it back through `GET /account/passkeys` and asserts **public metadata only** — no key bytes ([ADR-0045](../adr/0045-browser-driving-e2e-test-host.md), gap 4 closed 2026-08-18) | End-to-end | ✅ |
+| FR-011 passkey sign-in | Negative/authorization paths: `PasskeyTests.RequestOptions_NameNoUser_SoTheyRevealNothing`, `.PasskeyLogin_WithGarbage_IsRefused`; `AccountPageTests.CancelledPasskeySignIn_*` / `.BrokenPasskeyCeremony_*`. **The successful ceremony is now automated**: `PasskeyCeremonyTests` (E2E) registers a passkey and signs in with it discoverably ([ADR-0045](../adr/0045-browser-driving-e2e-test-host.md)) | Integration / Component / E2E | ✅ |
 | FR-012 profile & language | `ProfileAndEmailChangeTests.UpdateProfile_*` (name and language change, empty display name rejected, duplicate display names allowed, authentication required) | Integration | ✅ |
 | FR-013 email change | `ProfileAndEmailChangeTests.ChangeEmail_KeepsTheOldAddressWorkingUntilConfirmed`, `.ConfirmEmailChange_MovesTheAccountToTheNewAddress`, `.ChangeEmail_ToATakenAddress_IsIndistinguishableAndSendsNothing`, `.ConfirmEmailChange_ForAnotherUser_IsRefused` | Integration | ✅ |
 | FR-014 export contents | `ExportAndDeletionTests.Export_ContainsTheCallersOwnProfile`, `.Export_ExplainsWhatIsDeliberatelyAbsent`, `.Export_RequiresAuthentication` | Integration | ✅ |
@@ -161,14 +161,16 @@ listed here so the matrix is not mistaken for full coverage:
 Reconciling this plan against the tests that actually exist (2026-07-28) turned up **four more gaps**
 that the matrix had been reporting as covered:
 
-4. **Passkey registration and a successful passkey sign-in are not automated.** Every passkey test in
-   the suite is a negative or an authorization check — listing, scoping, removal, "garbage is
-   refused", "options reveal no user". None of them creates a credential, because creating one needs
-   a real WebAuthn authenticator, which an in-process `WebApplicationFactory` does not have. The
-   consequence is that **NFR-004's "no private key, no biometric data" has nothing to inspect**: there
-   is no stored credential in any test. Both were verified by hand through a CDP virtual authenticator
-   during the browser walkthrough; neither runs in CI. Closing this means driving the ceremony from a
-   browser in the test suite, which belongs with the milestone-7 end-to-end work.
+4. **Passkey registration and a successful passkey sign-in are not automated.** ✅ **Closed
+   2026-08-18.** Every passkey test *was* a negative or an authorization check — none created a
+   credential, because that needs a real WebAuthn authenticator an in-process `WebApplicationFactory`
+   does not have, which also left **NFR-004's "no private key, no biometric data" with nothing to
+   inspect**. This is now automated: `tests/E2E/CircleTools.WebAuthn.E2E.Test.PasskeyCeremonyTests`
+   drives real Chromium with a **CDP virtual authenticator** against the AppHost-launched stack,
+   registering a passkey (FR-010) and signing in with it discoverably (FR-011), then reading the
+   stored credential back as public-metadata-only (NFR-004). It runs in the dedicated gating
+   `webauthn-e2e` CI job over the browser-driving host of
+   [ADR-0045](../adr/0045-browser-driving-e2e-test-host.md).
 5. **FR-015 "history survives" and the export authorization suite have nothing to act on in M1.**
    Both are about Secret-Santa data on the server, and there is none until M4. They are marked `n/a`
    above rather than ✅.
@@ -185,12 +187,11 @@ deliverability (SPF/DKIM/DMARC, bounces), which no local sink can exercise
 
 ## Exit criteria
 
-- [x] All acceptance criteria covered by automated tests **except those recorded above**. One
-      exception is **deferred, not outstanding**: the passkey ceremony (gap 4), which also blocks
-      NFR-004's stored-credential check. Automating it needs a browser-driving test host, which is
-      milestone 7's work — it is carried there explicitly rather than left as an unticked box here.
-      The behaviour itself was verified by hand through a CDP virtual authenticator (see the browser
-      walkthrough below).
+- [x] All acceptance criteria covered by automated tests. The one exception carried here — the passkey
+      ceremony (gap 4), which also gated NFR-004's stored-credential check — was **closed 2026-08-18**
+      by the browser-driving E2E host ([ADR-0045](../adr/0045-browser-driving-e2e-test-host.md)):
+      `PasskeyCeremonyTests` now registers and signs in with a real passkey via a CDP virtual
+      authenticator, in the gating `webauthn-e2e` CI job.
 - [x] Refresh rotation, reuse detection and the racing-refresh case all green — at unit, store and
       endpoint level (2026-07-28)
 - [x] Enumeration parity green on every address-accepting endpoint, body/status **and** timing

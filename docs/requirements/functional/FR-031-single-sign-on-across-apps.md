@@ -2,7 +2,7 @@
 id: FR-031
 title: Start a session from a signed-in sibling app (cross-app SSO)
 type: functional
-status: Draft
+status: Implemented
 priority: Should
 source: UC-MAIN-017
 verification: test

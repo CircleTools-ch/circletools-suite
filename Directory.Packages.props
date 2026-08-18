@@ -41,6 +41,12 @@
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
   </ItemGroup>
 
+  <!-- Browser-driving end-to-end tests (WebAuthn ceremony via a CDP virtual authenticator,
+       arc42 D4; ADR-0045). Drives real Chromium against the live Aspire stack. -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Playwright" Version="1.55.0" />
+  </ItemGroup>
+
   <!-- Application layer building blocks (hand-rolled CQRS, ADR-0006). -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />

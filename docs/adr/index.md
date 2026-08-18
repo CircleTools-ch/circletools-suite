@@ -53,6 +53,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0042](0042-events-as-first-class-entities.md) | Events as first-class entities within a Secret-Santa group (shared roster; per-event draw, wishlists, budget; linking store keyed by event) | Accepted | 2026-08-14 |
 | [0043](0043-invitee-chosen-managed-member-promotion.md) | Let the invited person choose which offline profile they join as (self-select gated to the authenticated, address-matched recipient; admin targeting stays authoritative) | Accepted | 2026-08-14 |
 | [0044](0044-sign-in-reconciliation-and-account-scoped-visibility.md) | Sign-in reconciliation of offline data (Import / Discard / Cancel) and account-scoped visibility; silent auto-sync on sign-in, start, change and reconnect | Accepted | 2026-08-14 |
+| [0045](0045-browser-driving-e2e-test-host.md) | Browser-driving E2E test host: Playwright .NET + a CDP virtual authenticator against the AppHost-launched stack, in a dedicated gating CI job (automates the WebAuthn ceremony, arc42 D4) | Accepted | 2026-08-18 |
 
 ## Open decisions backlog
 

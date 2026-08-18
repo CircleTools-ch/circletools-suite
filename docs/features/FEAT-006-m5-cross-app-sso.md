@@ -1,7 +1,7 @@
 ---
 id: FEAT-006
 title: M5 — Cross-app single sign-on
-status: In progress
+status: Done
 owner: Adrian
 target-milestone: M5 (v2 — cross-app SSO)
 bounded-context: Platform
@@ -140,8 +140,11 @@ the same configuration the CORS policy reads, not a second hand-maintained list 
 - **SQLite / `localStorage` (client):** **no persistent schema change.** The PKCE `code_verifier` lives
   in **memory** (or `sessionStorage` only for the duration of the redirect round-trip, cleared on
   exchange) — it must not outlive the hand-off. The resulting refresh token is stored through the
-  **unchanged** [ADR-0026](../adr/0026-refresh-token-persistence.md) path (`sessionStorage` by default,
-  `localStorage` behind "stay signed in").
+  [ADR-0026](../adr/0026-refresh-token-persistence.md) refresh-token store, adopted in the **durable
+  (`localStorage`) scope** so the bootstrapped session **survives a new tab**: a hand-off exists to
+  spare the user a second sign-in, and a per-tab (`sessionStorage`) session would make every new tab of
+  the sibling re-run the affordance, defeating the point. (The direct password/passkey sign-in keeps its
+  own `sessionStorage`-by-default / "stay signed in" choice; only the SSO adoption is durable.)
 - **Sync impact:** none. SSO starts a session; it does not touch synced aggregates.
 
 ## Localization impact
@@ -171,8 +174,11 @@ Paired plan: **TP-006** (to be written with this spec). Weighted toward the two 
   → account-free/local-first behaviour unchanged (NFR-001).
 - **The happy path across two origins**, as the `CLAUDE.md`-mandated **two-origin, DE/EN/FR browser
   walkthrough**: sign in on Main → open Secret-Santa → "Continue with your account" → land signed in
-  with the URL's `?code` stripped and a clean console; then the reverse direction; then with the
-  authority *signed out* (authority login appears, then hand-off completes).
+  with the URL's `?code` stripped and a clean console; then with the authority *signed out* (the user
+  clicks Continue on Secret-Santa while not signed in to Main — Main's login appears, then the hand-off
+  completes); then the authority *unreachable* (fall back to Secret-Santa's own sign-in). The hand-off
+  is **one-directional** — Main is the authority and offers no "continue" into itself — so there is no
+  Secret-Santa→Main case to walk.
 
 ## Rollout / deployment & feature flags
 
@@ -197,7 +203,8 @@ Paired plan: **TP-006** (to be written with this spec). Weighted toward the two 
 | **Origin binding** | `return_uri` validated against the **CORS allow-list** at `authorize`; codes are never returned to an off-list origin. |
 | **Code at rest** | Stored **hashed** (like refresh secrets), short-lived; no durable relational need. |
 | **Trigger** | **Interactive** ("Continue with your account") for the first cut; silent (`prompt=none`) deferred, same endpoints. |
-| **Session result** | `connect/token` returns the existing **`SessionResponse`** via `SessionService.StartAsync`; the client stores it through the unchanged `AccountSession` path — a full, independent per-origin session. |
+| **Session result** | `connect/token` returns the existing **`SessionResponse`** via `SessionService.StartAsync`; the client adopts it through the unchanged `AccountSession` path — a full, independent per-origin session, adopted in **durable (`localStorage`) scope** so it survives a new tab (a hand-off is meant to spare a second sign-in). |
+| **Direction** | **One-directional.** The **Main origin is the authority**; it signs the user in and mints codes, and its `Continue with your account` affordance **suppresses itself** — you cannot bootstrap *into* Main. SSO flows Main → siblings only; to start a session you sign in on Main (directly, or via a sibling's hand-off that routes through Main's login). |
 | **Failure** | Any failure (unreachable authority, expired/rejected code) → **fall back to the app's own login form**; never a dead-end. |
 
 ## Risks & open questions
@@ -233,10 +240,14 @@ Paired plan: **TP-006** (to be written with this spec). Weighted toward the two 
 - [x] Architecture boundaries respected — client flow in `Ui.Account`, no app-UI coupling; server
       endpoints reuse `SessionService` (`UiAccountLayeringTests` + arch suite green)
 - [x] Localized strings provided (DE/EN/FR) in `AccountStrings` (`LocalizationParityTests` green)
-- [ ] Docs, API comments updated; **arc42 ch. 8 §8.4 / ch. 5 SSO diagram still to add**
-- [ ] **Two-origin DE/EN/FR browser walkthrough** (the `CLAUDE.md` UI-verification gate, run from the
-      Aspire AppHost): Main→Secret-Santa and reverse, authority-signed-out case, `?code` stripped,
-      console clean, and the authority-unreachable fallback to local login. **Not yet run** — this is
-      what flips FEAT-006 to `Done` and FR-031 to `Implemented`
+- [x] Docs, API comments updated; arc42 ch. 8 §8.4 gains a **Cross-app single sign-on** concept with a
+      hand-off sequence diagram (`docs/arc42/08-crosscutting-concepts.md`)
+- [x] **Two-origin DE/EN/FR browser walkthrough** (the `CLAUDE.md` UI-verification gate, run from the
+      Aspire AppHost) **completed 2026-08-18**: Main→Secret-Santa (one-directional — Main is the
+      authority and offers no continue into itself), authority-signed-out case, `?code` stripped, console
+      clean, and the authority-unreachable fallback to local login — all confirmed on screen. Two
+      findings from the walkthrough were resolved: the intended one-way direction was clarified in the
+      spec/test plan (Main is authority-only), and an SSO-bootstrapped session now adopts in **durable
+      scope** so it survives a new tab. This flips FEAT-006 to `Done` and FR-031 to `Implemented`.
 - [x] Traceability links closed
 </content>
