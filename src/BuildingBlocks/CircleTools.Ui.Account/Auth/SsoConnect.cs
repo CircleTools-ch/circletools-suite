@@ -150,8 +150,10 @@ public sealed class SsoConnect(
             return false;
         }
 
-        // A hand-off is a per-device convenience; default to the safe session scope (ADR-0026).
-        await session.AdoptAsync(adopted, staySignedIn: false, cancellationToken);
+        // Persist across tabs (ADR-0026 durable scope): a hand-off exists to spare the user a second
+        // sign-in, so a session it bootstraps must survive a new tab the same way — otherwise every new
+        // tab of the sibling would need the affordance clicked again, which defeats the point.
+        await session.AdoptAsync(adopted, staySignedIn: true, cancellationToken);
         return true;
     }
 

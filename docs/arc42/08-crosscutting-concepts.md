@@ -99,6 +99,65 @@ sequenceDiagram
   explicit origin list, and `credentials: "include"` on those two calls. This does not reopen the
   no-cookie-sessions decision — sign-in still yields a bearer token.
 
+### Cross-app single sign-on
+
+The suite runs as **two standalone WASM PWAs on separate origins** — the Main shell
+(`circletools.ch`) and Secret-Santa (`secretsanta.circletools.ch`) — sharing one account and one
+session implementation ([ADR-0034](../adr/0034-shared-account-session-ui-block.md)). Web storage is
+origin-scoped, so a user signed in on one arrives at the other signed out. Cross-app SSO
+([ADR-0039](../adr/0039-cross-app-single-sign-on.md), [FR-031](../requirements/functional/FR-031-single-sign-on-across-apps.md),
+[FEAT-006](../features/FEAT-006-m5-cross-app-sso.md)) lets the second origin **bootstrap** its own
+session from a session the first already holds — without re-entering credentials — via a
+redirect-based, PKCE-protected **authorization-code hand-off**. The **Main origin is the authority**:
+it owns every account screen and is the one a user is most likely already signed in to.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant SS as secretsanta.circletools.ch<br/>(requesting app)
+    participant U as User (browser)
+    participant M as circletools.ch<br/>(authority)
+    participant API as Main API /connect
+
+    Note over SS: no local session
+    SS->>SS: PKCE verifier (session storage) + challenge
+    SS->>U: "Continue with your account"
+    U->>M: top-level redirect ?return_uri&challenge
+    Note over M: live session (else sign in first, resume from storage)
+    M->>API: POST connect/authorize (bearer)
+    API-->>M: { code } single-use, ~30s
+    M->>U: redirect return_uri?code=…
+    U->>SS: back with ?code
+    SS->>API: POST connect/token (anonymous) { code, verifier }
+    API-->>SS: SessionResponse (as a normal sign-in)
+    SS->>SS: adopt session; strip ?code; verifier removed
+```
+
+The parts that only look right once you know what they defend:
+
+- **It is a convenience layered on top of per-app sign-in, never a replacement.** The affordance is
+  **interactive** (a "Continue with your account" the user clicks), it appears **only when there is no
+  local session**, and the authority origin **suppresses it for itself**. Every failure — an
+  unreachable authority, an expired or rejected code — **falls back to the app's own sign-in form**, so
+  the hand-off is never load-bearing and never a dead-end ([NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md)).
+- **Top-level navigation, not an iframe**, is what survives third-party-cookie / storage
+  partitioning. Each origin ends with its **own independent bearer session** — SSO only *starts* one;
+  the resulting `SessionResponse` is the same one a password sign-in returns and refreshes through the
+  unchanged `/refresh` path.
+- **The code's security envelope is the whole point.** It is **single-use** (consumed atomically on
+  first redeem), **short-lived** (~30 s), **PKCE-bound** (`S256`: possession of the code alone is
+  useless without the requesting app's in-memory verifier), and **origin-bound** — the authority mints
+  a code only for a `return_uri` whose origin is on the suite allow-list. That allow-list is read from
+  the **same `Cors:AllowedOrigins` configuration** the CORS policy uses (`ConnectReturnUriValidator`),
+  so it cannot drift from the origins already trusted to call the API — a second hand-kept list is
+  exactly where a code-exfiltration hole would hide.
+- **The PKCE verifier lives in `sessionStorage` for the round-trip only** and is removed the moment it
+  is used; it must never outlive the hand-off. The authorization code is held server-side in a
+  short-TTL, single-use store (in-memory for the single-instance deployment, ADR-0036; the interface is
+  the seam for a shared store later).
+- **The authority becomes a higher-value target** — a compromise there yields sessions on every
+  sibling — which is why the strict CSP §8.4 already makes load-bearing matters doubly on that origin.
+
 ## 8.5 Localization (DE/EN/FR)
 
 Central `CircleTools.Localization` using **RESX + `IStringLocalizer`** ([ADR-0011](../adr/0011-localization-format-and-culture.md));

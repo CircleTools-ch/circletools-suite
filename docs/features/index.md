@@ -20,8 +20,8 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-004](TP-004-m3-sync-and-claim.md) | Test plan — M3 Sync & Claim | Platform | Reviewed |
 | [FEAT-005](FEAT-005-m4-linking.md) | M4 — Linking | SecretSanta | Done |
 | [TP-005](TP-005-m4-linking.md) | Test plan — M4 Linking | SecretSanta | Reviewed |
-| [FEAT-006](FEAT-006-m5-cross-app-sso.md) | M5 — Cross-app single sign-on | Platform | In progress |
-| [TP-006](TP-006-m5-cross-app-sso.md) | Test plan — M5 Cross-app SSO | Platform | Draft |
+| [FEAT-006](FEAT-006-m5-cross-app-sso.md) | M5 — Cross-app single sign-on | Platform | Done |
+| [TP-006](TP-006-m5-cross-app-sso.md) | Test plan — M5 Cross-app SSO | Platform | Reviewed |
 | [FEAT-007](FEAT-007-events-per-group.md) | Events (occasions) as first-class entities within a group | SecretSanta | Done |
 | [TP-007](TP-007-events-per-group.md) | Test plan — Events per group | SecretSanta | Reviewed |
 
