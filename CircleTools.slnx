@@ -71,4 +71,12 @@
     <Project Path="tests/Apps/SecretSanta/CircleTools.SecretSanta.LocalStore.Test/CircleTools.SecretSanta.LocalStore.Test.csproj" />
     <Project Path="tests/Apps/SecretSanta/CircleTools.SecretSanta.Ui.Test/CircleTools.SecretSanta.Ui.Test.csproj" />
   </Folder>
+  <!--
+    Browser-driving end-to-end tests (arc42 D4, ADR-0045). Present in this full solution only, NOT
+    in CircleTools.NoMaui.slnx: the core CI `build-test` job runs the NoMaui solution and must not
+    execute the browser E2E, which the dedicated `webauthn-e2e` job runs on its own.
+  -->
+  <Folder Name="/tests/E2E/">
+    <Project Path="tests/E2E/CircleTools.WebAuthn.E2E.Test/CircleTools.WebAuthn.E2E.Test.csproj" />
+  </Folder>
 </Solution>
