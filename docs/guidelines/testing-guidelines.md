@@ -11,7 +11,12 @@
 - **Architecture** — dependency-direction & boundary rules (ArchUnitNET) as fitness functions.
 - **Contract** — API DTOs / client compatibility.
 - **Component (UI)** — Blazor components with bUnit.
-- **End-to-end** — critical journeys across Web/native.
+- **End-to-end** — critical journeys across Web/native, driven in a **real browser** against the live
+  Aspire stack. Tooling: **Playwright .NET** (Chromium), with a **CDP virtual authenticator** for the
+  WebAuthn ceremony ([ADR-0045](../adr/0045-browser-driving-e2e-test-host.md)); the host is launched by
+  running the AppHost on its `https` profile, so the fixed-port stack matches the WASM client's
+  origins. These live under `tests/E2E/`, run in their **own gating CI job** (not the core suite), and
+  need Docker + an HTTPS dev cert. First E2E: the passkey register/sign-in round-trip (arc42 D4).
 
 ## 3. Conventions
 - Framework: xUnit (v3); assertions: FluentAssertions; mocks/fakes: NSubstitute.

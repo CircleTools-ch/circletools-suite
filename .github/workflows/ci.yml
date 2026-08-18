@@ -70,6 +70,43 @@ jobs:
       - name: Build docs site
         run: dotnet docfx docfx/docfx.json
 
+  webauthn-e2e:
+    name: webauthn-e2e
+    runs-on: ubuntu-latest
+    # Drives the real WebAuthn ceremony in Chromium via a CDP virtual authenticator against the
+    # live Aspire stack (arc42 D4, ADR-0045). Kept off the build-test solution on purpose: this
+    # project is in CircleTools.slnx but NOT CircleTools.NoMaui.slnx, so the core suite never runs
+    # it — it is its own gate here. ubuntu-latest provides the Docker runtime the stack needs.
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET (from global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+
+      # Kestrel needs a certificate to bind https (the fixed-port stack the WASM client calls);
+      # Playwright drives the browser with IgnoreHTTPSErrors, so the cert need not be trusted.
+      - name: HTTPS dev certificate
+        run: dotnet dev-certs https
+
+      # Restores the AppHost and the whole non-MAUI graph the fixture launches at test time.
+      - name: Restore
+        run: dotnet restore CircleTools.NoMaui.slnx
+
+      # The E2E project lives outside CircleTools.NoMaui.slnx, so build it by path (restores its own
+      # reference, CircleTools.Main.Contracts, which the solution restore above already cached).
+      - name: Build E2E host
+        run: dotnet build tests/E2E/CircleTools.WebAuthn.E2E.Test -c Release
+
+      - name: Install Playwright Chromium
+        run: pwsh tests/E2E/CircleTools.WebAuthn.E2E.Test/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: WebAuthn E2E
+        run: dotnet test tests/E2E/CircleTools.WebAuthn.E2E.Test -c Release --no-build --verbosity normal
+
   build-maui:
     name: build-maui
     runs-on: windows-latest
