@@ -64,9 +64,12 @@ ports** the standalone WASM client's baked-in `ApiBaseUrl`/`SsoAuthorityUrl` req
 - **NFR-004 inspection:** after registration the stored credential is read back (`GET
   /api/v1/account/passkeys`) and asserted to expose **public metadata only** — no key bytes — and a
   genuine assertion sign-in proves the stored public key is real.
-- **Console gate:** real JS faults (uncaught exceptions, explicit `console.error`) fail the test;
-  Chromium's generic "Failed to load resource" subresource noise is excluded, as it is flaky by nature
-  and carries no actionable detail.
+- **Console gate:** real JS faults (uncaught exceptions, explicit `console.error`) fail the test. Two
+  test-host artifacts are excluded, as neither is a product fault: Chromium's generic, detail-free
+  "Failed to load resource" subresource noise; and the PWA service worker's refusal to register under
+  the CI host's *untrusted* dev certificate (headless Chromium enforces a valid cert for the worker
+  script even though `IgnoreHTTPSErrors` covers the ceremony's own fetches — a real or trusted-dev cert
+  registers it fine, and the worker is irrelevant to the ceremony).
 
 ## Consequences
 
