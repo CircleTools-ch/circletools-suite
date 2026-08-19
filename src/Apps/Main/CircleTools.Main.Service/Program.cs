@@ -6,6 +6,7 @@ using Asp.Versioning.Builder;
 using CircleTools.Identity.Tokens;
 using CircleTools.Main.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
@@ -227,14 +228,29 @@ app.UseStatusCodePages();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+}
 
-    // Apply pending migrations on startup in Development. Two contexts, two independent migration
-    // histories, one database.
+// Apply pending migrations for the four contexts (independent histories, one database). Automatic in
+// Development; elsewhere it is an *explicit* release step, never silent (ADR-0036 runbook): run the
+// image with the `--migrate` argument as a one-shot job that migrates and exits, or set
+// `Database:ApplyMigrationsOnStartup=true` on the running host. The API container starts with neither,
+// so a normal boot never migrates in production — the deploy runs the migrator first.
+var runMigrateAndExit = args.Contains("--migrate");
+if (app.Environment.IsDevelopment()
+    || runMigrateAndExit
+    || app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
+{
     using var scope = app.Services.CreateScope();
-    scope.ServiceProvider.GetRequiredService<MainDbContext>().Database.Migrate();
-    scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.Migrate();
-    scope.ServiceProvider.GetRequiredService<CirclesDbContext>().Database.Migrate();
-    scope.ServiceProvider.GetRequiredService<LinkingDbContext>().Database.Migrate();
+    var services = scope.ServiceProvider;
+    services.GetRequiredService<MainDbContext>().Database.Migrate();
+    services.GetRequiredService<SyncDbContext>().Database.Migrate();
+    services.GetRequiredService<CirclesDbContext>().Database.Migrate();
+    services.GetRequiredService<LinkingDbContext>().Database.Migrate();
+
+    if (runMigrateAndExit)
+    {
+        return; // One-shot migrator: migrations applied, do not start the web host.
+    }
 }
 
 app.UseHttpsRedirection();
@@ -319,5 +335,14 @@ heartbeats.MapGet("/", async (ISender sender, CancellationToken cancellationToke
     .WithName("GetHeartbeats");
 
 app.MapDefaultEndpoints();
+
+// Liveness for the container orchestrator (ADR-0036 Compose healthcheck). MapDefaultEndpoints exposes
+// /health and /alive only in Development for the reasons its comment gives; a deployed container still
+// needs a cheap, unauthenticated liveness probe. This maps *only* the "live"-tagged checks (process is
+// up) — never the full readiness set with its detail — so it is safe to expose in production.
+if (!app.Environment.IsDevelopment())
+{
+    app.MapHealthChecks("/alive", new HealthCheckOptions { Predicate = static r => r.Tags.Contains("live") });
+}
 
 app.Run();
