@@ -93,7 +93,7 @@ aggregate and are tested there, because that is where they are decided.
 | FR-017 delivery failure is not reported | Structural, and asserted as such: `OutboxInvitationMailerTests.QueueAsync_EnqueuesOneInvitationMessage` + `.WhatIsQueued_IsWhatTheTemplateCanRender` — the port enqueues and returns, so the endpoint has already answered before any delivery is attempted and has nothing to report. `MailDeliveryTests.Dispatcher_MarksMessagesProcessed_SoTheyAreNotSentTwice` covers the dispatch side. A **real SMTP failure** is not exercised — see gap 3 | Unit / Integration | ⚠️ partial |
 | FR-017 mail language | `InvitationMailTests.Mail_UsesTheRecipientsAccountLanguage_OtherwiseTheInvitersUsingMailpit` (delivered messages); `HandlerTests.Invite_QueuesOneMailInTheRecipientsLanguage_WhenTheAddressHasAnAccount` + `.Invite_UsesTheInvitersLanguage_WhenTheAddressHasNoAccount` | Integration / Unit | ✅ |
 | FR-017 dispatch is queued | `OutboxInvitationMailerTests.QueueAsync_EnqueuesOneInvitationMessage` + `.QueueAsync_CarriesTheChosenLanguage_AndLeavesNullToTheRenderer` + `.QueueAsync_RecordsWhetherTheRecipientHasAnAccount` — the structural half of the timing property, at the port rather than the endpoint | Unit | ✅ |
-| FR-018 no-account path | `HandlerTests.AcceptInvitation_FromTheLink_JoinsTheCircleAsAMember`; `CirclePageTests.InvitationLanding_ToSomeoneNotSignedIn_OffersBothWaysIn_WithoutSayingWhichApplies` — the landing page offers signing in **and** signing up and never says which applies (NFR-005). The register-then-verify-then-accept journey end to end is M1's flow plus this accept, and is walked in the browser rather than automated — see gap 7 | Unit / Component | ⚠️ partial |
+| FR-018 no-account path | `HandlerTests.AcceptInvitation_FromTheLink_JoinsTheCircleAsAMember`; `CirclePageTests.InvitationLanding_ToSomeoneNotSignedIn_OffersBothWaysIn_WithoutSayingWhichApplies` — the landing page offers signing in **and** signing up and never says which applies (NFR-005). The register-then-verify-then-accept journey end to end is now driven in one browser session by `InvitationSignUpTests.Invitation_link_carries_a_new_person_through_sign_up_into_the_circle` (E2E, gap 7 / arc42 D8) — mail link → create account → verify → sign in → join, asserting membership server-side | Unit / Component / E2E | ✅ |
 | FR-018 account path | `HandlerTests.JoinRequests_ListOnlyTheInvitationsForTheCallersVerifiedAddress`; `CircleFixture.AddMemberAsync` drives the whole in-app path (invite → list → accept, no mail token) in **every** integration test that puts somebody in a circle; `CirclePageTests.JoinRequests_NamesTheCircleAndWhoInvitedYou` + `.JoinRequests_WithNothingWaiting_SaysSo` | Unit / Integration / Component | ✅ |
 | **FR-018 the forwarded link** | `HandlerTests.AcceptInvitation_BySomeoneElsesVerifiedAddress_CreatesNothingAndRevealsNothing` and `CircleTests.Accept_BySomeoneElsesVerifiedAddress_CreatesNothing` — the single most important assertion in this plan, made where the single accept path checks it. *Level differs from the plan:* it is one comparison inside the aggregate, and the integration suite reaches the same code through `CircleRoleMatrixTests`' invitation rows | Unit | ✅ |
 | FR-018 decline without an account | `HandlerTests.DeclineInvitation_NeedsNoAccount_AndConsumesTheInvitation`; `.DeclineJoinRequest_ByAnotherAccount_IsRefused`; `CirclePageTests.InvitationLanding_Declining_NeedsNoAccount_AndConfirmsPlainly` | Unit / Component | ✅ |
@@ -181,12 +181,16 @@ aggregate and are tested there, because that is where they are decided.
    The fourth fact the endpoint withholds — a recent decline — is asserted where the decision is made
    (`CircleTests.ReInviteInsideTheCooldown_LooksIdenticalAndSendsNothing`), because reaching it through
    the API would mean declining through a mail link first.
-7. **The sign-up-from-a-link journey is not automated end to end.** Its two halves are: M1's
-   register → verify → sign in (covered by `AccountEndpointsTests`) and this milestone's accept
+7. **The sign-up-from-a-link journey is now automated end to end** (✅ closed 2026-08-19, arc42
+   D8). Its two halves — M1's register → verify → sign in, and this milestone's accept
    (`HandlerTests.AcceptInvitation_FromTheLink_JoinsTheCircleAsAMember`, with the landing page in
-   `CirclePageTests`). Joining them into one integration test means driving a mail link through
-   sign-up, and it is walked in the browser instead. This is the largest remaining hole in M2's own
-   coverage and it is worth closing when the E2E harness arrives with milestone 7 (gap 4).
+   `CirclePageTests`) — were each covered, but nothing drove a real mail link through sign-up in one
+   test; the join was walked in the browser instead. `InvitationSignUpTests` now drives it in one
+   Chromium session on the milestone-7 browser-driving host ([ADR-0045](../adr/0045-browser-driving-e2e-test-host.md),
+   the same host gap 4 / D4 built): an admin invites an address with no account (over the API), and
+   the recipient follows the invitation mail link to the anonymous landing, creates an account,
+   verifies it, signs in and joins — with membership asserted server-side (and NFR-006 upheld: the
+   address never appears in the people list). It runs in the gating `webauthn-e2e` CI job.
 
 ### What the timing work found (2026-07-30)
 
