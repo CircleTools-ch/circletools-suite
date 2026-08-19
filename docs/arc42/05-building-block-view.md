@@ -123,6 +123,14 @@ Razor components without inheriting `localStorage`
 **App-types now:** `Main` (shell: branding, login, dashboard, shared config) and `SecretSanta`.
 More follow the same template.
 
+> **Federated suite — `Main` is a hub, not a container** ([ADR-0046](../adr/0046-suite-packaging-and-app-composition.md)).
+> Each app-type is its own deployable: its own `WebApp` origin (`<app>.circletools.ch`) and its own
+> `App` bundle id (`ch.circletools.<app>`), one store listing each. The `Main` host is the suite hub —
+> account, dashboard, Circles, and the [SSO](../adr/0039-cross-app-single-sign-on.md) authority — and a
+> web app in its own right; it does **not** load or embed another app's `Ui`. Apps share **building
+> blocks** (`Ui.Account`, `Circles.*`, `ApiClient`, `Localization`), never the `Main` *host*, which
+> keeps the inward-pointing dependency rule (§5.4) intact and lets each app-type be extracted later.
+
 > **Web offline-storage caveat:** on native, `LocalStore` uses on-device SQLite. On the standalone
 > WASM web client, `LocalStore` cannot use device SQLite directly; it persists to `localStorage`
 > behind `IKeyValueStore` / `IGroupRepository`
