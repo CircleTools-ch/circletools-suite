@@ -119,6 +119,9 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
+      "circletools.circles.contracts": {
+        "type": "Project"
+      },
       "circletools.main.contracts": {
         "type": "Project"
       }
