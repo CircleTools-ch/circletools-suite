@@ -23,8 +23,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Typed passkey DTOs (PasskeyResponse, SessionResponse) for the API-side assertions. -->
+    <!-- Typed account/passkey DTOs (PasskeyResponse, SessionResponse, RegisterRequest, …) for the
+         API-side setup and assertions. -->
     <ProjectReference Include="..\..\..\src\Apps\Main\CircleTools.Main.Contracts\CircleTools.Main.Contracts.csproj" />
+    <!-- Circle/invitation DTOs (CreateCircleRequest, InviteRequest, CircleDetailResponse) for the
+         invitation-sign-up journey's API-side setup and its membership assertion (D8). -->
+    <ProjectReference Include="..\..\..\src\BuildingBlocks\CircleTools.Circles.Contracts\CircleTools.Circles.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
