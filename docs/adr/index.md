@@ -54,6 +54,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0043](0043-invitee-chosen-managed-member-promotion.md) | Let the invited person choose which offline profile they join as (self-select gated to the authenticated, address-matched recipient; admin targeting stays authoritative) | Accepted | 2026-08-14 |
 | [0044](0044-sign-in-reconciliation-and-account-scoped-visibility.md) | Sign-in reconciliation of offline data (Import / Discard / Cancel) and account-scoped visibility; silent auto-sync on sign-in, start, change and reconnect | Accepted | 2026-08-14 |
 | [0045](0045-browser-driving-e2e-test-host.md) | Browser-driving E2E test host: Playwright .NET + a CDP virtual authenticator against the AppHost-launched stack, in a dedicated gating CI job (automates the WebAuthn ceremony, arc42 D4) | Accepted | 2026-08-18 |
+| [0046](0046-suite-packaging-and-app-composition.md) | Suite packaging & app composition (federated suite: per-app installs/origins with permanent `ch.circletools.<app>` bundle ids and `<app>.circletools.ch` subdomains, apex RP-ID; Main is a hub, not a container; unified by shared account + SSO + Circles) | Accepted | 2026-08-19 |
 
 ## Open decisions backlog
 
@@ -197,16 +198,29 @@ Raised as the "depends on deployment" CI/CD item below, and closed now that the 
   milestone 8**: it needs the [ADR-0036](0036-cloud-provider-and-hosting.md) VPS to exist (SSH →
   `compose pull && up`), and carries ADR-0036's still-open **secrets management** follow-up.
 
+### Recently closed (packaging & composition — 2026-08-19)
+
+Raised as the "depends on deployment" packaging item below, and closed before the first store
+submission — because two of its outputs (a released bundle id, a passkey RP-ID) are permanent.
+
+- ✅ **CircleTools packaging & app composition** → [ADR-0046](0046-suite-packaging-and-app-composition.md).
+  A **federated suite**, not a container: each app is its own installable (permanent
+  `ch.circletools.<app>` bundle id, one store listing) and its own web origin
+  (`<app>.circletools.ch`, apex `circletools.ch` as the passkey RP-ID); the Main app is the suite
+  **hub** (account, dashboard, Circles, SSO authority), not a host that embeds other apps. This
+  ratifies the shape already built — two origins ([ADR-0005](0005-web-hosting-render-model.md)),
+  cross-origin SSO ([ADR-0039](0039-cross-app-single-sign-on.md)) that presupposes separate origins,
+  and a per-app MAUI head — and reserves the identifier namespace so the next app inherits the
+  decision instead of reopening it. The accepted cost is N apps = N store listings / review cycles.
+
 ### Depends on deployment (genuinely open)
 
 > [ADR-0023](0023-local-dev-infrastructure-in-apphost.md) lets **implementation** proceed without
 > these, via containerised dev infrastructure behind provider-agnostic seams. It buys time; it does
 > **not** close them.
 
-- **CircleTools packaging & app composition** (single shell hosting apps vs per-app installs). Now also
-  a **distribution** question: it decides how many store listings, bundle identifiers and review
-  cycles the suite carries — and bundle identifiers are permanent once released
-  ([NFR-007](../requirements/non-functional/NFR-007-store-distributability.md)).
+_None — the packaging & composition item that stood here is closed as
+[ADR-0046](0046-suite-packaging-and-app-composition.md) (see above)._
 
 ### Parked — revisit on a concrete trigger
 - **Per-member envelope encryption of assignments** (option P3 in
