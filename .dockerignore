@@ -1,0 +1,16 @@
+# Keep the Docker build context small and reproducible (build restores from source).
+**/bin/
+**/obj/
+**/.vs/
+**/.git/
+.git/
+**/node_modules/
+**/TestResults/
+_site/
+docfx/_site/
+docfx/api/
+**/*.user
+**/.DS_Store
+# Local secrets / env must never enter an image layer.
+deploy/.env
+**/appsettings.*.Local.json

@@ -1,0 +1,98 @@
+# CircleTools production stack (ADR-0036): one small VPS, Docker Compose, self-managed Postgres.
+# Federated suite (ADR-0046): one Caddy serves both WASM PWAs and proxies the API on separate origins.
+#
+# Local build:   docker compose -f deploy/compose.yaml --env-file deploy/.env build
+# Deploy on VM:  docker compose pull && docker compose up -d      (images from GHCR; ADR-0038 CD)
+# Migrate first: docker compose run --rm migrator                 (explicit release step)
+#
+# Every service reads secrets from deploy/.env (see .env.example). No secret is baked into an image.
+
+name: circletools
+
+x-images:
+  # Pull-based deploy on the VM uses these; `build:` is for producing/pushing them (CI or local).
+  api: &api-image ghcr.io/circletools-ch/circletools-api:${IMAGE_TAG:-latest}
+  web: &web-image ghcr.io/circletools-ch/circletools-web:${IMAGE_TAG:-latest}
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: maindb
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d maindb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # No published port: only the API (same network) reaches Postgres.
+
+  # One-shot: applies EF Core migrations for all four contexts, then exits (ADR-0036 explicit step).
+  migrator:
+    image: *api-image
+    build:
+      context: ..
+      dockerfile: deploy/api.Dockerfile
+    command: ["--migrate"]
+    restart: "no"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__maindb: ${ConnectionStrings__maindb}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    image: *api-image
+    build:
+      context: ..
+      dockerfile: deploy/api.Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      # Secrets — from deploy/.env, never committed.
+      ConnectionStrings__maindb: ${ConnectionStrings__maindb}
+      Auth__Jwt__SigningKey: ${Auth__Jwt__SigningKey}
+      Mail__Username: ${Mail__Username}
+      Mail__Password: ${Mail__Password}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/alive || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    # No published port: Caddy reverse-proxies to api:8080 on the internal network.
+
+  web:
+    image: *web-image
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+    restart: unless-stopped
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    depends_on:
+      - api
+    volumes:
+      # Persist issued certificates and ACME state across restarts.
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

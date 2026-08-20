@@ -6,7 +6,7 @@ status: Approved
 priority: Must
 source: ADR-0030, ADR-0031, deployment milestone
 verification: review
-related: [ADR-0030, ADR-0031, ADR-0022, ADR-0023, FR-015, NFR-003, NFR-004]
+related: [ADR-0030, ADR-0031, ADR-0022, ADR-0023, ADR-0046, FR-015, NFR-003, NFR-004]
 ---
 
 # NFR-007 — Store distributability & platform compliance
@@ -47,6 +47,16 @@ Both stores also require a reachable **privacy policy URL**, and a **data-safety
 / **privacy labels** (App Store) that match what the app actually collects. Under
 [NFR-003](NFR-003-multilingual-de-en-fr.md) the privacy policy, the imprint and the store listings
 are provided in **DE / EN / FR**.
+
+**Per-app obligations (federated suite).** The suite ships as **one store listing per app**, not as a
+single container app ([ADR-0046](../../adr/0046-suite-packaging-and-app-composition.md)). Every
+obligation above therefore repeats **per app**: each app carries its own DE/EN/FR listing and
+screenshots, its own privacy-policy and account-deletion URLs, its own data-safety declaration and age
+rating, and its own build against the current floors. The account-deletion and privacy-policy URLs may
+be shared suite-wide pages (one account backs all apps), but each listing must **link** them. The
+recurring per-release checklist in the [mobile-apps runbook](../../deployment/mobile-apps.md) is run
+once per app, and this upkeep scales with the number of apps — the accepted cost of independent
+per-app release cadence and discoverability.
 
 **Identity permanence.** The **`ApplicationId` / bundle identifier cannot be changed after the first
 store release.** It is chosen once, for the lifetime of the app. It is now **set** to
@@ -93,6 +103,11 @@ And the privacy declarations match the data the app actually collects
 Given the first store release of an app
 When its bundle identifier is set
 Then it is derived from the final suite domain and is never changed afterwards
+
+Given the suite contains more than one app
+When each app is distributed
+Then it has its own store listing and its own permanent bundle identifier
+And each listing links a reachable privacy-policy URL and account-deletion URL
 ```
 
 ## Quality attribute *(NFR only)*
@@ -115,7 +130,8 @@ Then it is derived from the final suite domain and is never changed afterwards
 - Governing ADRs: [ADR-0030](../../adr/0030-mobile-store-publisher-identity.md),
   [ADR-0031](../../adr/0031-ios-build-host.md),
   [ADR-0022](../../adr/0022-account-deletion-and-data-export.md),
-  [ADR-0023](../../adr/0023-local-dev-infrastructure-in-apphost.md)
+  [ADR-0023](../../adr/0023-local-dev-infrastructure-in-apphost.md),
+  [ADR-0046](../../adr/0046-suite-packaging-and-app-composition.md) (one listing/bundle id per app)
 - Related: [FR-015](../functional/FR-015-delete-account.md),
   [NFR-003](NFR-003-multilingual-de-en-fr.md),
   [NFR-004](NFR-004-data-protection-and-retention.md)

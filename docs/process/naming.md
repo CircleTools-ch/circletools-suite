@@ -17,6 +17,25 @@ kept below as the record.
 - **App domains:** apps are **subdomains** of the (future) suite domain — e.g.
   `secretsanta.<suite-domain>`. Per-app brand names are decided during each app's idea step.
 
+### Durable identifier scheme (per [ADR-0046](../adr/0046-suite-packaging-and-app-composition.md))
+
+The suite is **federated**: each app is its own installable and its own origin, unified by the shared
+account rather than by a container. The identifier scheme below is fixed once, and a new app **claims a
+row** — it does not reopen the composition decision. The apex and the bundle prefix are permanent
+(RP-IDs do not migrate; bundle ids cannot change after first release).
+
+| Identifier | Value | Scope / permanence |
+|---|---|---|
+| Passkey relying-party ID | **`circletools.ch`** (apex) | One RP-ID spans every subdomain, so one passkey works across all apps. **Non-migratable.** |
+| Web origin — suite hub | **`circletools.ch`** | The Main app: account, dashboard, Circles, SSO authority. A hub, **not** a container that hosts other apps. |
+| Web origin — per app | **`<app>.circletools.ch`** | One standalone WASM PWA per app (e.g. `secretsanta.circletools.ch`). |
+| Bundle id / `ApplicationId` prefix | **`ch.circletools.*`** | One permanent id per app (e.g. `ch.circletools.secretsanta`). **Permanent after first store release.** |
+| Store presence | **one listing per app** | No monolithic container app; no Main mobile head (account lives inside each app's head). |
+
+Reserved but unused: **`ch.circletools.suite`** — a native suite launcher, only if there is ever
+demand to enter the suite on mobile before choosing an app (ADR-0046 keeps this open; nothing forces
+it).
+
 ## Visual identity — brand mark (decided 2026-08-13)
 
 The circle primitive from the naming rationale (below) is now drawn. The system:

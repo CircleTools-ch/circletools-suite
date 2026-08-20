@@ -1,0 +1,56 @@
+# CircleTools reverse proxy / static host (ADR-0036, ADR-0046).
+# Three origins on one Caddy: the Main hub, Secret-Santa, and the API. Caddy obtains and renews
+# Let's Encrypt certificates automatically for each site name.
+#
+# ⚠️ Cloudflare caveat (ADR-0036): with the proxy (orange cloud) ON, Let's Encrypt HTTP-01 is
+#    intercepted. Either issue certs with the site in "DNS only" (grey cloud) first, or switch Caddy
+#    to the Cloudflare DNS-01 challenge (needs the caddy-dns/cloudflare build + a scoped API token).
+#    Documented as a milestone-8 follow-up in deploy/README.md.
+
+{
+	# ACME account email; supplied via the environment (see deploy/.env.example). The default keeps
+	# the config valid when the var is unset (e.g. `caddy validate` in CI).
+	email {$ACME_EMAIL:dev@circletools.ch}
+}
+
+# --- Snippet: how a standalone Blazor WASM PWA is served -----------------------------------------
+(wasm_pwa) {
+	encode zstd gzip
+	# Blazor ships .br/.gz siblings; serve them directly when the client accepts them.
+	file_server {
+		precompressed br gzip
+	}
+	# SPA fallback: unknown paths resolve to index.html so client-side routing and deep links work.
+	try_files {path} /index.html
+
+	header {
+		# Baseline hardening. HSTS is safe once every origin is HTTPS-only (it is, behind Caddy).
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		# TODO (ADR-0021, before first real users): add the finalised Content-Security-Policy.
+		#   Blazor WASM needs script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' https://api.circletools.ch;
+		#   plus the SSO authority in form-action/connect as ADR-0039 requires. A wrong CSP breaks the
+		#   app, so it is intentionally NOT shipped half-right here — pin it against the running app.
+		-Server
+	}
+}
+
+# --- Main hub (SSO authority) --------------------------------------------------------------------
+circletools.ch {
+	root * /srv/main
+	import wasm_pwa
+}
+
+# --- Secret-Santa --------------------------------------------------------------------------------
+secretsanta.circletools.ch {
+	root * /srv/secretsanta
+	import wasm_pwa
+}
+
+# --- API -----------------------------------------------------------------------------------------
+api.circletools.ch {
+	reverse_proxy api:8080
+	header -Server
+}
