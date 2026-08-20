@@ -41,6 +41,21 @@ One small Infomaniak VPS runs the API, Postgres and a reverse proxy under **Dock
 Aspire is dev. Managed Postgres (Infomaniak DB service or Exoscale DBaaS) is the documented upgrade path
 — a connection-string change — if self-managed backups become a chore.
 
+### Chosen product & sizing (concrete order)
+
+Concrete pick against the ADR-0036 baseline: **Infomaniak VPS Lite M** — 2 vCPU / 4 GB / ~60–80 GB
+NVMe, **Geneva (Switzerland)**, **Ubuntu 26.04 LTS** (prefer the `26.04.1` point-release image;
+fall back to **24.04 LTS** only if Infomaniak's picker does not yet offer 26.04); ~CHF 8–10 / mo, no
+commitment. This matches the baseline spec above, so it is a concrete confirmation of ADR-0036, not a
+new decision. 26.04 LTS is chosen over 24.04 for the longer support runway (standard ~2031 / ESM ~2036);
+it is a Docker host, so the OS userland surface is minimal and Docker 29 is pinned for the LTS.
+
+Sizing rationale: the VPS only *runs* containers (images are built in GitHub Actions and pulled from
+GHCR), so 4 GB is not stressed by builds; Postgres 17 + the .NET API + Caddy fit at launch traffic.
+VPS Lite resizes **in place** (Manager → ⋮ → change configuration; ~20 min downtime, no reprovision,
+no new IP, no data migration). **Upgrade-to-L trigger:** sustained memory pressure, or a second
+high-traffic suite app going live → VPS Lite L (4 vCPU / 8 GB / 160 GB).
+
 ## Costs (CHF, ex-VAT; CHF/EUR near parity, treat as ±10 %)
 
 | Piece | Provider | Spec | Cost |
@@ -80,7 +95,7 @@ Scaffolded items (`[~]`) have their artifacts in [`deploy/`](https://github.com/
 
 - [x] Brand & domain final; domain registered at Infomaniak (`circletools.ch`, 2026-08-13)
 - [ ] Project-owned Infomaniak account (not a personal login) for host + backup
-- [ ] VPS provisioned; Docker + Compose
+- [ ] VPS provisioned (**VPS Lite M**, Geneva, Ubuntu 26.04 LTS — fall back to 24.04 if 26.04 unavailable); Docker + Compose
 - [~] Reverse proxy with Let's Encrypt TLS — `Caddyfile` (three origins; Cloudflare/ACME caveat noted)
 - [ ] Cloudflare in front (DNS, proxy, TLS); WAF baseline
 - [x] Passkey RP-ID + API CORS baked to `circletools.ch` (`Main.Service/appsettings.Production.json`); PWA `ApiBaseUrl`/`SsoAuthorityUrl` baked (each `wwwroot/appsettings.Production.json`); Secret-Santa `RevealBaseUrl` = own origin
