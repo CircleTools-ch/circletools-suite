@@ -12,6 +12,16 @@ public sealed class MailOptions
     /// <summary>Gets or sets the SMTP port.</summary>
     public int Port { get; set; } = 1025;
 
+    /// <summary>
+    /// Gets or sets the SMTP username. Empty for the development sink (Mailpit, no auth); set from a
+    /// secret for a hosted provider (Brevo — ADR-0037). When empty the sender connects without
+    /// authenticating, preserving the loopback dev behaviour.
+    /// </summary>
+    public string Username { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the SMTP password / API key. Supplied from a secret, never committed.</summary>
+    public string Password { get; set; } = string.Empty;
+
     /// <summary>Gets or sets the address mail is sent from.</summary>
     public string FromAddress { get; set; } = "no-reply@circletools.test";
 

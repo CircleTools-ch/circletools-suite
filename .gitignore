@@ -58,3 +58,5 @@ desktop.ini
 .env.*
 appsettings.*.local.json
 secrets.json
+# ...but the committed deployment template is not a secret.
+!deploy/.env.example

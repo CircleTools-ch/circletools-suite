@@ -26,5 +26,10 @@
   keys — [ADR-0007](../adr/0007-persistence-approach.md), [ADR-0008](../adr/0008-entity-id-strategy.md).
 - **Contracts** per bounded context define the API surface (Minimal APIs, versioned —
   [ADR-0010](../adr/0010-api-style-and-versioning.md)); domain never depends on DTOs.
+- **Federated suite — the Main app is a hub, not a container** ([ADR-0046](../adr/0046-suite-packaging-and-app-composition.md)):
+  each app is its own origin (`<app>.circletools.ch`) and its own installable (`ch.circletools.<app>`),
+  unified by the shared account, cross-app [SSO](../adr/0039-cross-app-single-sign-on.md) and Circles —
+  **not** by a shell that hosts other apps' code. Main owns the account/dashboard/Circles surface and is
+  the SSO authority; apps depend on shared *building blocks*, never on the Main *host*.
 
 See the [building-block view](05-building-block-view.md) for the concrete structure.

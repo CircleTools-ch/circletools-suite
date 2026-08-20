@@ -92,6 +92,10 @@ public sealed class MailApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         builder.UseSetting("Mail:Port", _mailpit.GetMappedPublicPort(MailpitSmtpPort).ToString(System.Globalization.CultureInfo.InvariantCulture));
         builder.UseSetting("Mail:ClientBaseUrl", "https://app.example.test");
 
+        // Pin the sender the tests assert on, so they do not depend on whichever environment's
+        // appsettings this Production-mode host happens to load (production is a real address).
+        builder.UseSetting("Mail:FromAddress", "no-reply@circletools.test");
+
         // The tests drive dispatch explicitly, so the background loop must not race them.
         builder.UseSetting("Outbox:PollInterval", "01:00:00");
     }

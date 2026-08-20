@@ -5,11 +5,14 @@ provider and topology are decided in [ADR-0036](../adr/0036-cloud-provider-and-h
 transactional email sender in [ADR-0037](../adr/0037-transactional-email-provider.md). The other
 deployment track — the native heads — is [mobile apps](mobile-apps.md).
 
-> **Status:** decided, not yet executed. This runbook is filled in at
-> [milestone 8](../roadmap/roadmap.md). Everything here has a hard **prerequisite on the
-> [brand & domain](../process/naming.md)** — the final origin fixes the passkey relying-party ID, the
-> CSP directive set, the mail *from*-address and the Secret-Santa `RevealBaseUrl`, none of which can be
-> set on a placeholder domain once a real user or passkey exists.
+> **Status:** decided; **Compose stack scaffolded** (2026-08-19), not yet live on a VPS. The
+> deployment artifacts live in [`deploy/`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy)
+> (`compose.yaml`, `api.Dockerfile`, `web.Dockerfile`, `Caddyfile`, `.env.example`, `README.md`) with
+> the CD workflow in `.github/workflows/deploy.yml` (manual-trigger until the VPS and secrets exist).
+> The brand & domain gate is now **closed** — `circletools.ch` is registered, so the production origins
+> are baked: the API's passkey RP-ID / CORS in `Main.Service/appsettings.Production.json`, and each
+> PWA's `ApiBaseUrl` / `SsoAuthorityUrl` in its `wwwroot/appsettings.Production.json`. What remains is
+> provisioning the VPS, the secrets store, the CSP, and backups (below).
 
 ## Targets
 
@@ -38,6 +41,21 @@ One small Infomaniak VPS runs the API, Postgres and a reverse proxy under **Dock
 Aspire is dev. Managed Postgres (Infomaniak DB service or Exoscale DBaaS) is the documented upgrade path
 — a connection-string change — if self-managed backups become a chore.
 
+### Chosen product & sizing (concrete order)
+
+Concrete pick against the ADR-0036 baseline: **Infomaniak VPS Lite M** — 2 vCPU / 4 GB / ~60–80 GB
+NVMe, **Geneva (Switzerland)**, **Ubuntu 26.04 LTS** (prefer the `26.04.1` point-release image;
+fall back to **24.04 LTS** only if Infomaniak's picker does not yet offer 26.04); ~CHF 8–10 / mo, no
+commitment. This matches the baseline spec above, so it is a concrete confirmation of ADR-0036, not a
+new decision. 26.04 LTS is chosen over 24.04 for the longer support runway (standard ~2031 / ESM ~2036);
+it is a Docker host, so the OS userland surface is minimal and Docker 29 is pinned for the LTS.
+
+Sizing rationale: the VPS only *runs* containers (images are built in GitHub Actions and pulled from
+GHCR), so 4 GB is not stressed by builds; Postgres 17 + the .NET API + Caddy fit at launch traffic.
+VPS Lite resizes **in place** (Manager → ⋮ → change configuration; ~20 min downtime, no reprovision,
+no new IP, no data migration). **Upgrade-to-L trigger:** sustained memory pressure, or a second
+high-traffic suite app going live → VPS Lite L (4 vCPU / 8 GB / 160 GB).
+
 ## Costs (CHF, ex-VAT; CHF/EUR near parity, treat as ±10 %)
 
 | Piece | Provider | Spec | Cost |
@@ -62,25 +80,31 @@ needed.
 ## Open sub-decisions (still to record)
 
 - **CI/CD pipeline** — ✅ decided in [ADR-0038](../adr/0038-ci-cd-pipeline.md) (GitHub Actions). The CI
-  gate (build/test/docs + MAUI heads) is built; the **CD** step to this VM (SSH → `compose pull && up`,
-  with EF Core migrations as an explicit release step) is built here at milestone 8 once the VM exists.
+  gate (build/test/docs + MAUI heads) is built; the **CD** step is **scaffolded** in
+  `.github/workflows/deploy.yml` (build → GHCR → SSH `compose pull` → one-shot `migrator` → `up -d`),
+  manual-trigger only until the VM and `DEPLOY_*` secrets exist. EF Core migrations are the explicit
+  release step (`docker compose run --rm migrator`, i.e. the API image run with `--migrate`).
 - **Secrets management** — DB credentials, the Brevo API key, signing assets; host/CI secret store,
   never in the repo.
 - **Production observability backend** — the Aspire dashboard
   ([ADR-0012](../adr/0012-observability-and-telemetry.md)) is dev-only.
 
-## Checklist (to build out at milestone 8)
+## Checklist (milestone 8)
 
-- [ ] Brand & domain final; domain registered at Infomaniak
+Scaffolded items (`[~]`) have their artifacts in [`deploy/`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy); they still need a live VPS + secrets to be `[x]`.
+
+- [x] Brand & domain final; domain registered at Infomaniak (`circletools.ch`, 2026-08-13)
 - [ ] Project-owned Infomaniak account (not a personal login) for host + backup
-- [ ] VPS provisioned; Docker + Compose; reverse proxy with Let's Encrypt TLS
+- [ ] VPS provisioned (**VPS Lite M**, Geneva, Ubuntu 26.04 LTS — fall back to 24.04 if 26.04 unavailable); Docker + Compose
+- [~] Reverse proxy with Let's Encrypt TLS — `Caddyfile` (three origins; Cloudflare/ACME caveat noted)
 - [ ] Cloudflare in front (DNS, proxy, TLS); WAF baseline
-- [ ] Passkey RP-ID, CSP directive set, and MAUI `RevealBaseUrl` pointed at the final origin
-- [ ] Brevo account + SPF / DKIM / DMARC records on the domain; from-address on the suite domain
+- [x] Passkey RP-ID + API CORS baked to `circletools.ch` (`Main.Service/appsettings.Production.json`); PWA `ApiBaseUrl`/`SsoAuthorityUrl` baked (each `wwwroot/appsettings.Production.json`); Secret-Santa `RevealBaseUrl` = own origin
+- [~] CSP directive set — baseline security headers shipped in `Caddyfile`; **CSP itself still TODO** (ADR-0021, pin against the running app)
+- [~] Brevo behind the SMTP sender — `SmtpMailSender` now authenticates when credentials are set; Brevo host/port in prod config, login/key via env. Still: **account + SPF / DKIM / DMARC** on the domain
 - [ ] Postgres container on an NVMe volume; **nightly `pg_dump` → Swiss Backup**; **restore tested**
-- [ ] EF Core migrations run as an explicit release step
+- [~] EF Core migrations as an explicit release step — one-shot `migrator` service (`--migrate`)
 - [ ] Privacy policy + imprint + account-deletion URLs published, reachable, DE/EN/FR
-- [ ] Secrets in the host/CI store, none in the repo
+- [~] Secrets: `.env.example` template + git-ignored `.env`; **durable host/CI store still an open decision**
 - [ ] Observability backend chosen and wired
 - [ ] Deploy & smoke-test; single-VM recovery (rebuild + restore) documented
 

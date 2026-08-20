@@ -1,0 +1,86 @@
+# Continuous deployment to the Infomaniak VPS (ADR-0036 / ADR-0038 CD half).
+#
+# SCAFFOLD — manual-trigger only until the VPS exists and the deploy secrets are set. It does NOT run
+# on push, so it cannot affect the CI gate (ci.yml) or fire before there is anywhere to deploy to.
+# Flip to `on: push: branches: [main]` (after CI passes) once milestone 8 provisioning is done.
+#
+# Required repo secrets (still gated on the open secrets-management decision — see deploy/README.md):
+#   DEPLOY_HOST        VPS hostname / IP
+#   DEPLOY_USER        SSH user with docker access
+#   DEPLOY_SSH_KEY     private key for that user
+#   DEPLOY_KNOWN_HOSTS ssh-keyscan output for DEPLOY_HOST (host-key pinning)
+# The VM holds deploy/compose.yaml + deploy/.env and pulls images from GHCR.
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to build, push and deploy"
+        required: false
+        default: "latest"
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/circletools-ch
+
+jobs:
+  build-push:
+    name: build & push images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/api.Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/circletools-api:${{ inputs.image_tag }}
+            ${{ env.IMAGE_PREFIX }}/circletools-api:${{ github.sha }}
+
+      - name: Build & push Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/web.Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}/circletools-web:${{ inputs.image_tag }}
+            ${{ env.IMAGE_PREFIX }}/circletools-web:${{ github.sha }}
+
+  deploy:
+    name: deploy to VPS
+    needs: build-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        # TODO(milestone-8): enable once DEPLOY_* secrets and the VPS exist. Migrations run first as an
+        # explicit one-shot, then the stack rolls forward from the freshly pushed images.
+        run: |
+          set -euo pipefail
+          install -m 600 /dev/null key
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > key
+          mkdir -p ~/.ssh && echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          ssh -i key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "cd /opt/circletools && \
+             IMAGE_TAG=${{ inputs.image_tag }} docker compose pull && \
+             IMAGE_TAG=${{ inputs.image_tag }} docker compose run --rm migrator && \
+             IMAGE_TAG=${{ inputs.image_tag }} docker compose up -d"

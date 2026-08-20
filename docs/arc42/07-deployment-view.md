@@ -64,3 +64,19 @@ recurring platform obligations are stated as
 [NFR-007](../requirements/non-functional/NFR-007-store-distributability.md); the procedure lives in
 the [mobile-apps runbook](../deployment/mobile-apps.md), and what can be tested on which machine
 today in [device testing](../deployment/device-testing.md).
+
+## 7.5 Suite composition — federated, not a container ([ADR-0046](../adr/0046-suite-packaging-and-app-composition.md))
+
+Both channels above deploy a **federated** suite: **one origin and one store listing per app**, unified
+by the shared account rather than by a shell.
+
+- **Web:** `circletools.ch` is the Main **hub** (account, dashboard, Circles, SSO authority — a web app
+  in its own right, **not** a host that embeds other apps); each app is a standalone WASM PWA on its own
+  subdomain (`secretsanta.circletools.ch`, `<app>.circletools.ch`). The passkey **RP-ID is the apex
+  `circletools.ch`**, so one passkey spans every subdomain.
+- **Stores:** one listing + one permanent `ch.circletools.<app>` bundle id per app; **no** monolithic
+  container app and **no** Main mobile head (account/Circles live inside each app's head via
+  `Ui.Account`). Adding an app is **N → N+1 origins and listings**, not a change to any existing one.
+- **One identity backend, N frontends:** every app (web and mobile) authenticates against the single
+  Main identity API and its one account; per-app installs do not mean per-app accounts. Cross-app
+  [SSO](../adr/0039-cross-app-single-sign-on.md) carries one sign-in across the origins.

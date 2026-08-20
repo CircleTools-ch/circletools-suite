@@ -1,0 +1,72 @@
+# Deployment scaffold — Infomaniak VPS + Docker Compose
+
+Production deployment artifacts for the CircleTools suite. Topology and rationale:
+[ADR-0036](../docs/adr/0036-cloud-provider-and-hosting.md); suite composition (one origin + one
+listing per app): [ADR-0046](../docs/adr/0046-suite-packaging-and-app-composition.md); CI/CD:
+[ADR-0038](../docs/adr/0038-ci-cd-pipeline.md). The narrative runbook is
+[`docs/deployment/web-api-db.md`](../docs/deployment/web-api-db.md).
+
+> **Status: scaffold, not yet live.** No VPS exists yet and secrets are unset. The files here build and
+> run locally against the real domain config; going live is the milestone-8 checklist below.
+
+## What's here
+
+| File | Role |
+|------|------|
+| `compose.yaml` | The stack: `postgres`, a one-shot `migrator`, `api`, and `web` (Caddy). |
+| `api.Dockerfile` | Builds the Main API (`CircleTools.Main.Service`). |
+| `web.Dockerfile` | Builds both WASM PWAs and bakes them into a Caddy image. |
+| `Caddyfile` | TLS termination, static serving of both PWAs, reverse proxy to the API. |
+| `.env.example` | Every secret/host value the stack needs. Copy to `.env` (git-ignored) on the host. |
+
+## Origins (federated suite — ADR-0046)
+
+| Origin | Served by | Notes |
+|--------|-----------|-------|
+| `https://circletools.ch` | `web` → `/srv/main` | Main hub; SSO authority; passkey **RP-ID = `circletools.ch`**. |
+| `https://secretsanta.circletools.ch` | `web` → `/srv/secretsanta` | Secret-Santa PWA. |
+| `https://api.circletools.ch` | `web` → `reverse_proxy api:8080` | ASP.NET API. |
+
+Client origins are baked from each app's `wwwroot/appsettings.Production.json` (public config, no
+secrets). The API's CORS / SSO return-uri allow-list lives in
+`CircleTools.Main.Service/appsettings.Production.json` — **keep the two in step**.
+
+## Run it locally (against prod config)
+
+```bash
+cp deploy/.env.example deploy/.env      # then edit deploy/.env
+docker compose -f deploy/compose.yaml --env-file deploy/.env build
+docker compose -f deploy/compose.yaml --env-file deploy/.env run --rm migrator
+docker compose -f deploy/compose.yaml --env-file deploy/.env up -d
+```
+
+Caddy will try to obtain real Let's Encrypt certs for `circletools.ch` — for a pure local smoke test,
+point those names at `127.0.0.1` in `hosts` and expect cert warnings, or test the API image alone.
+
+## Migrations
+
+The API image is also the migrator. `docker compose run --rm migrator` runs it with `--migrate`, which
+applies all four EF Core contexts' migrations and **exits** without starting the web host
+(`Main.Service/Program.cs`). A normal `api` boot never migrates in production — the deploy runs the
+migrator first (the CD workflow and the commands above both do).
+
+## Known follow-ups before going live
+
+- **Secrets management (open decision).** `.env` on the host + GitHub Actions secrets for CI is the
+  interim; the durable store is still to be decided (web-api-db runbook). Nothing secret is committed.
+- **Cloudflare + ACME.** With Cloudflare's proxy ON, Let's Encrypt HTTP-01 is intercepted. Issue certs
+  with the record in **DNS-only** first, or switch Caddy to the **Cloudflare DNS-01** challenge
+  (`caddy-dns/cloudflare` build + a scoped token). See the note in `Caddyfile`.
+- **Content-Security-Policy.** The `Caddyfile` ships baseline security headers but **not** a CSP —
+  ADR-0021 makes it load-bearing and a wrong one breaks Blazor WASM. Pin it against the running app
+  before real users (`script-src 'self' 'wasm-unsafe-eval'`, `connect-src` the API + SSO authority).
+- **Reverse-proxy forwarded headers.** The API sits behind Caddy (TLS terminated). If `Request.IsHttps`
+  / scheme-sensitive behaviour (Secure cookies, absolute redirect URIs) misbehaves, add
+  `ForwardedHeaders` middleware with the proxy as a known network.
+- **Backups.** Nightly `pg_dump` → Infomaniak Swiss Backup, **restore tested** (ADR-0036). Not yet
+  scripted here.
+- **Observability.** Production OTel sink still to be chosen (the Aspire dashboard is dev-only).
+
+## Milestone-8 go-live checklist
+
+See [`docs/deployment/web-api-db.md`](../docs/deployment/web-api-db.md) — the authoritative checklist.

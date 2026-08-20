@@ -90,5 +90,7 @@
   href: 0044-sign-in-reconciliation-and-account-scoped-visibility.md
 - name: 0045 Browser-driving E2E test host
   href: 0045-browser-driving-e2e-test-host.md
+- name: 0046 Suite packaging and app composition
+  href: 0046-suite-packaging-and-app-composition.md
 - name: Template
   href: _template-adr.md

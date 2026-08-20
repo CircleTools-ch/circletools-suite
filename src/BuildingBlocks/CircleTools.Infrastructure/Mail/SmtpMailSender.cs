@@ -34,10 +34,20 @@ public sealed class SmtpMailSender(IOptions<MailOptions> options) : IMailSender
 
         using var client = new SmtpClient();
 
-        // The development sink speaks plain SMTP on a loopback port. A real provider will require
-        // STARTTLS and credentials — configured, not hard-coded, when that decision lands.
+        // The development sink speaks plain SMTP on a loopback port with no auth; a hosted provider
+        // (Brevo — ADR-0037) requires STARTTLS and credentials. SecureSocketOptions.Auto upgrades to
+        // STARTTLS when the server offers it, and authentication happens only when a username is
+        // configured — so the same adapter serves Mailpit (no credentials) and Brevo (credentials
+        // from a secret) with configuration alone, exactly as the class remark promises.
         await client.ConnectAsync(settings.Host, settings.Port, SecureSocketOptions.Auto, cancellationToken)
             .ConfigureAwait(false);
+
+        if (!string.IsNullOrWhiteSpace(settings.Username))
+        {
+            await client.AuthenticateAsync(settings.Username, settings.Password, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         await client.SendAsync(message, cancellationToken).ConfigureAwait(false);
         await client.DisconnectAsync(quit: true, cancellationToken).ConfigureAwait(false);
     }
