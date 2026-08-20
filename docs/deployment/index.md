@@ -8,6 +8,8 @@ Two tracks:
 
 - **[Web / API / Database](web-api-db.md)** — Infomaniak VPS + Docker Compose (self-managed Postgres,
   Swiss Backup, Cloudflare) under the suite domain; Brevo for transactional email.
+  - **[Server setup](server-setup.md)** — first-time VPS provisioning runbook (hardening, Docker,
+    stack bring-up), executed on the box.
 - **[Mobile apps](mobile-apps.md)** — Android (Play) & iOS (App Store): costs, enrolment,
   submission and the recurring platform deadlines.
 
