@@ -15,4 +15,6 @@
   <data name="ThemeLight" xml:space="preserve"><value>Light</value></data>
   <data name="ThemeDark" xml:space="preserve"><value>Dark</value></data>
   <data name="AppsMenu" xml:space="preserve"><value>Apps</value></data>
+  <data name="UpdateAvailable" xml:space="preserve"><value>A new version is available.</value></data>
+  <data name="UpdateReload" xml:space="preserve"><value>Reload</value></data>
 </root>

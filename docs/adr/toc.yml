@@ -94,5 +94,7 @@
   href: 0046-suite-packaging-and-app-composition.md
 - name: 0047 Versioning and release strategy
   href: 0047-versioning-and-release-strategy.md
+- name: 0048 Web app update delivery
+  href: 0048-web-app-update-delivery.md
 - name: Template
   href: _template-adr.md
