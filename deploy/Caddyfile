@@ -29,10 +29,15 @@
 		X-Content-Type-Options "nosniff"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		X-Frame-Options "DENY"
-		# TODO (ADR-0021, before first real users): add the finalised Content-Security-Policy.
-		#   Blazor WASM needs script-src 'self' 'wasm-unsafe-eval'; connect-src 'self' https://api.circletools.ch;
-		#   plus the SSO authority in form-action/connect as ADR-0039 requires. A wrong CSP breaks the
-		#   app, so it is intentionally NOT shipped half-right here — pin it against the running app.
+		# Content-Security-Policy (ADR-0021, ADR-0040). Served here, not as a <meta> in each app's
+		# index.html, because only the deployment knows its own API origin and because frame-ancestors
+		# is honoured in a header but ignored in a meta tag. One policy fits both WASM PWAs:
+		#   - 'wasm-unsafe-eval' lets the .NET runtime instantiate its WebAssembly (mandatory); it does
+		#     NOT permit eval()/inline script, so script-src stays inline-free — the XSS mitigation.
+		#   - style-src 'unsafe-inline' is MudBlazor's dynamic theme <style> (ADR-0040); styling only.
+		#   - connect-src names the API origin; the SSO hand-off (ADR-0039) is a top-level navigation
+		#     to the authority, not a fetch, so the authority origin does not belong here.
+		Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://api.circletools.ch; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'"
 		-Server
 	}
 }
