@@ -96,5 +96,7 @@
   href: 0047-versioning-and-release-strategy.md
 - name: 0048 Web app update delivery
   href: 0048-web-app-update-delivery.md
+- name: 0049 Disable WASM fingerprinting for CSP
+  href: 0049-disable-wasm-fingerprinting-for-csp.md
 - name: Template
   href: _template-adr.md

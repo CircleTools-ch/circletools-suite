@@ -56,7 +56,8 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0045](0045-browser-driving-e2e-test-host.md) | Browser-driving E2E test host: Playwright .NET + a CDP virtual authenticator against the AppHost-launched stack, in a dedicated gating CI job (automates the WebAuthn ceremony, arc42 D4) | Accepted | 2026-08-18 |
 | [0046](0046-suite-packaging-and-app-composition.md) | Suite packaging & app composition (federated suite: per-app installs/origins with permanent `ch.circletools.<app>` bundle ids and `<app>.circletools.ch` subdomains, apex RP-ID; Main is a hub, not a container; unified by shared account + SSO + Circles) | Accepted | 2026-08-19 |
 | [0047](0047-versioning-and-release-strategy.md) | Versioning & release strategy (Nerdbank.GitVersioning from a committed `version.json`; hybrid triggers — merge to `main` deploys the server, a `v*` tag cuts a mobile release; one suite version now, splittable per app; Android `versionCode` from git commit count) | Accepted | 2026-08-21 |
-| [0048](0048-web-app-update-delivery.md) | Web app update delivery (keep the offline PWA; a shared MudBlazor "Reload" prompt switches to a newly deployed version on the user's terms; edge cache headers — fingerprinted `_framework` immutable, control files revalidated; native heads update via the store) | Accepted | 2026-08-21 |
+| [0048](0048-web-app-update-delivery.md) | Web app update delivery (keep the offline PWA; a shared MudBlazor "Reload" prompt switches to a newly deployed version on the user's terms; all responses revalidate — corrected by ADR-0049; native heads update via the store) | Accepted | 2026-08-21 |
+| [0049](0049-disable-wasm-fingerprinting-for-csp.md) | Disable WASM asset fingerprinting for strict-CSP compatibility (the inline import map fingerprinting emits is blocked by the inline-free CSP and stops boot; `OverrideHtmlAssetPlaceholders=false` on both heads; corrects ADR-0048's immutable cache header) | Accepted | 2026-08-21 |
 
 ## Open decisions backlog
 
@@ -199,6 +200,19 @@ Raised as the "depends on deployment" CI/CD item below, and closed now that the 
   [arc42 ch. 11](../arc42/11-risks-and-technical-debt.md) D5. **CD is documented but deferred to
   milestone 8**: it needs the [ADR-0036](0036-cloud-provider-and-hosting.md) VPS to exist (SSH →
   `compose pull && up`), and carries ADR-0036's still-open **secrets management** follow-up.
+
+### Recently closed (Secret-Santa boot outage — 2026-08-21)
+
+The first deploy after [ADR-0048](0048-web-app-update-delivery.md) took Secret-Santa down (fresh
+sessions hung on the loading splash); Main was fine.
+
+- ✅ **Disable WASM fingerprinting for CSP** → [ADR-0049](0049-disable-wasm-fingerprinting-for-csp.md).
+  Root cause: the two WASM heads had drifted — Main disabled framework-asset fingerprinting
+  (`OverrideHtmlAssetPlaceholders=false`) because the inline **import map** it emits is blocked by the
+  strict inline-free CSP ([ADR-0021](0021-web-auth-token-model.md)) and stops the runtime booting;
+  Secret-Santa still had it on. Fixed by bringing Secret-Santa in line (no import map, stable asset
+  names). This also **corrects** [ADR-0048](0048-web-app-update-delivery.md)'s `immutable` cache header,
+  which would serve stale files once names are stable — all responses now revalidate.
 
 ### Recently closed (web app update delivery — 2026-08-21)
 

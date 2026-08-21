@@ -79,13 +79,15 @@ without the service worker, an update signal the worker lifecycle already provid
   implicit "Later". On the MAUI head the global is absent, so the interop call is guarded and does
   nothing.
 
-**Edge caching** (`Caddyfile`, [ADR-0036](0036-cloud-provider-and-hosting.md)): two non-overlapping
-matchers make precedence unambiguous — `/_framework/*` (the fully **fingerprinted** WASM payload: the
-loader, runtime and every assembly carry a content hash in the file name under .NET 10) is
-`public, max-age=31536000, immutable`; **everything else** — `index.html`, the worker,
-`service-worker-assets.js`, the manifest, and SPA-fallback navigations — is `no-cache` (revalidate), so
-a deploy is seen promptly. Defense-in-depth; the worker's `updateViaCache: 'none'` already bypasses the
-HTTP cache for its own update check.
+**Edge caching** (`Caddyfile`, [ADR-0036](0036-cloud-provider-and-hosting.md)): **all** responses are
+`Cache-Control: no-cache` (revalidate via ETag → cheap 304s). An earlier version of this ADR cached
+`/_framework/*` as `immutable`, but that was wrong: WASM **asset fingerprinting is disabled** on both
+heads because the inline import map it emits is blocked by the strict CSP and stops the runtime booting
+(see [ADR-0049](0049-disable-wasm-fingerprinting-for-csp.md)). With fingerprinting off the asset names
+are **stable** and their content changes each deploy, so an `immutable` header would serve stale files.
+Offline is provided by the **service worker's own content-hashed cache** (`service-worker-assets.js`),
+not the HTTP cache; the worker's `updateViaCache: 'none'` bypasses the HTTP cache for its update check
+and drives the in-app "Reload" prompt.
 
 **Android / iOS:** unchanged. Store updates deliver new versions; an in-app store-update nudge is a
 possible later refinement, tracked separately, not part of this ADR.
