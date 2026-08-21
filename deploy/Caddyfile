@@ -40,6 +40,19 @@
 		Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://api.circletools.ch; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'"
 		-Server
 	}
+
+	# Cache policy (ADR-0048). Two non-overlapping matchers, so precedence is unambiguous:
+	#   - /_framework/* is the fingerprinted WASM payload — the loader, the runtime and every assembly
+	#     carry a content hash in the file name, so a given URL never changes: cache hard, never revalidate.
+	#   - everything else (index.html, the service worker, service-worker-assets.js, the manifest, and
+	#     SPA-fallback navigations) must revalidate, so a new deploy is seen promptly and the service
+	#     worker can drive the in-app "Reload" prompt. This is defense-in-depth: the worker also updates
+	#     itself with updateViaCache:'none'.
+	@immutable path /_framework/*
+	header @immutable Cache-Control "public, max-age=31536000, immutable"
+
+	@revalidate not path /_framework/*
+	header @revalidate Cache-Control "no-cache"
 }
 
 # --- Main hub (SSO authority) --------------------------------------------------------------------

@@ -1,0 +1,58 @@
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<SharedStrings> L
+@implements IDisposable
+
+@*
+    Renders nothing. On first render it bridges the offline service worker's update lifecycle (ADR-0048)
+    to a MudBlazor snackbar that offers a one-tap "Reload" when a new deploy is waiting. Offline support
+    is untouched — this only changes how a user learns about, and switches to, a new version. The web
+    heads define window.circletoolsUpdate in js/app.js; the MAUI head has no service worker, so the
+    interop call is guarded and simply does nothing there.
+*@
+
+@code {
+    private DotNetObjectReference<UpdatePrompt>? _ref;
+    private bool _shown;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _ref = DotNetObjectReference.Create(this);
+        try
+        {
+            await JS.InvokeVoidAsync("circletoolsUpdate.register", _ref);
+        }
+        catch (JSException)
+        {
+            // No update bridge on this host (e.g. the MAUI WebView) — nothing to wire up.
+        }
+    }
+
+    // Called from JS when a newly deployed service worker has installed and is waiting to activate.
+    [JSInvokable]
+    public void OnUpdateAvailable()
+    {
+        if (_shown)
+        {
+            return;
+        }
+        _shown = true;
+
+        // RequireInteraction keeps it until the user acts; the close icon is the implicit "Later".
+        Snackbar.Add(L["UpdateAvailable"], Severity.Info, config =>
+        {
+            config.RequireInteraction = true;
+            config.Action = L["UpdateReload"];
+            config.ActionColor = Color.Primary;
+            config.OnClick = _ => JS.InvokeVoidAsync("circletoolsUpdate.apply").AsTask();
+        });
+    }
+
+    public void Dispose() => _ref?.Dispose();
+}

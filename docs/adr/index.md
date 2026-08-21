@@ -56,6 +56,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0045](0045-browser-driving-e2e-test-host.md) | Browser-driving E2E test host: Playwright .NET + a CDP virtual authenticator against the AppHost-launched stack, in a dedicated gating CI job (automates the WebAuthn ceremony, arc42 D4) | Accepted | 2026-08-18 |
 | [0046](0046-suite-packaging-and-app-composition.md) | Suite packaging & app composition (federated suite: per-app installs/origins with permanent `ch.circletools.<app>` bundle ids and `<app>.circletools.ch` subdomains, apex RP-ID; Main is a hub, not a container; unified by shared account + SSO + Circles) | Accepted | 2026-08-19 |
 | [0047](0047-versioning-and-release-strategy.md) | Versioning & release strategy (Nerdbank.GitVersioning from a committed `version.json`; hybrid triggers — merge to `main` deploys the server, a `v*` tag cuts a mobile release; one suite version now, splittable per app; Android `versionCode` from git commit count) | Accepted | 2026-08-21 |
+| [0048](0048-web-app-update-delivery.md) | Web app update delivery (keep the offline PWA; a shared MudBlazor "Reload" prompt switches to a newly deployed version on the user's terms; edge cache headers — fingerprinted `_framework` immutable, control files revalidated; native heads update via the store) | Accepted | 2026-08-21 |
 
 ## Open decisions backlog
 
@@ -198,6 +199,20 @@ Raised as the "depends on deployment" CI/CD item below, and closed now that the 
   [arc42 ch. 11](../arc42/11-risks-and-technical-debt.md) D5. **CD is documented but deferred to
   milestone 8**: it needs the [ADR-0036](0036-cloud-provider-and-hosting.md) VPS to exist (SSH →
   `compose pull && up`), and carries ADR-0036's still-open **secrets management** follow-up.
+
+### Recently closed (web app update delivery — 2026-08-21)
+
+Raised the moment CI/CD ([ADR-0047](0047-versioning-and-release-strategy.md)) shipped its first deploy:
+a returning user kept seeing the **old** version because the stock offline service worker parks a new
+build in the "waiting" state until every tab closes, and never says so.
+
+- ✅ **Web app update delivery** → [ADR-0048](0048-web-app-update-delivery.md). Keep the **offline
+  PWA** (local-first is a product promise, [ADR-0015](0015-mvp-client-offline-storage.md)) and add a
+  shared, localized **MudBlazor "Reload" prompt**: the service worker gains a `SKIP_WAITING` handler,
+  `js/app.js` bridges the worker's update lifecycle to .NET, and `UpdatePrompt` (in `Ui.Shared`, mounted
+  in both shells, inert on MAUI) offers a one-tap switch — **on the user's terms**, so a background
+  deploy never interrupts a draw or a half-filled form. Adds edge cache headers (fingerprinted
+  `_framework` immutable, control files revalidated). Native heads update through the store, unchanged.
 
 ### Recently closed (versioning & release — 2026-08-21)
 
