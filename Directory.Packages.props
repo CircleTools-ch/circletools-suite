@@ -133,6 +133,13 @@
     <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.6" />
   </ItemGroup>
 
+  <!-- Automatic versioning from git history (ADR-0047). Referenced repo-wide by
+       Directory.Build.props (except container builds), so every assembly is stamped from version.json
+       + git height. PrivateAssets=all at the reference site: build-time only, never a runtime dep. -->
+  <ItemGroup>
+    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.7.115" />
+  </ItemGroup>
+
   <!-- ServiceDefaults — resilience, service discovery, OpenTelemetry. ADR-0012. -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.6.0" />

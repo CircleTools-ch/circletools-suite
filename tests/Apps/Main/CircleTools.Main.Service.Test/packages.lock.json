@@ -49,6 +49,12 @@
           "Microsoft.TestPlatform.TestHost": "17.14.1"
         }
       },
+      "Nerdbank.GitVersioning": {
+        "type": "Direct",
+        "requested": "[3.7.115, )",
+        "resolved": "3.7.115",
+        "contentHash": "EpXamaAdRfG/BMxGgvZlTM0npRnkmXUjAj8OdNKd17t4oN+2nvjdv/KnFmzOOMDqvlwB49UCwtOHJrAQTfUBtQ=="
+      },
       "Testcontainers.PostgreSql": {
         "type": "Direct",
         "requested": "[4.6.0, )",
@@ -783,6 +789,7 @@
       "circletools.main.service": {
         "type": "Project",
         "dependencies": {
+          "Asp.Versioning.Http": "[10.0.0, )",
           "CircleTools.Application": "[1.0.0, )",
           "CircleTools.Circles.Core": "[1.0.0, )",
           "CircleTools.Circles.Repository": "[1.0.0, )",
@@ -791,7 +798,6 @@
           "CircleTools.Main.Service.Repository": "[1.0.0, )",
           "CircleTools.SecretSanta.Contracts": "[1.0.0, )",
           "CircleTools.ServiceDefaults": "[1.0.0, )",
-          "Asp.Versioning.Http": "[10.0.0, )",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[10.0.10, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.10, )"
         }

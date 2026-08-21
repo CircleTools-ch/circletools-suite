@@ -55,6 +55,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0044](0044-sign-in-reconciliation-and-account-scoped-visibility.md) | Sign-in reconciliation of offline data (Import / Discard / Cancel) and account-scoped visibility; silent auto-sync on sign-in, start, change and reconnect | Accepted | 2026-08-14 |
 | [0045](0045-browser-driving-e2e-test-host.md) | Browser-driving E2E test host: Playwright .NET + a CDP virtual authenticator against the AppHost-launched stack, in a dedicated gating CI job (automates the WebAuthn ceremony, arc42 D4) | Accepted | 2026-08-18 |
 | [0046](0046-suite-packaging-and-app-composition.md) | Suite packaging & app composition (federated suite: per-app installs/origins with permanent `ch.circletools.<app>` bundle ids and `<app>.circletools.ch` subdomains, apex RP-ID; Main is a hub, not a container; unified by shared account + SSO + Circles) | Accepted | 2026-08-19 |
+| [0047](0047-versioning-and-release-strategy.md) | Versioning & release strategy (Nerdbank.GitVersioning from a committed `version.json`; hybrid triggers — merge to `main` deploys the server, a `v*` tag cuts a mobile release; one suite version now, splittable per app; Android `versionCode` from git commit count) | Accepted | 2026-08-21 |
 
 ## Open decisions backlog
 
@@ -197,6 +198,23 @@ Raised as the "depends on deployment" CI/CD item below, and closed now that the 
   [arc42 ch. 11](../arc42/11-risks-and-technical-debt.md) D5. **CD is documented but deferred to
   milestone 8**: it needs the [ADR-0036](0036-cloud-provider-and-hosting.md) VPS to exist (SSH →
   `compose pull && up`), and carries ADR-0036's still-open **secrets management** follow-up.
+
+### Recently closed (versioning & release — 2026-08-21)
+
+Raised as [ADR-0038](0038-ci-cd-pipeline.md)'s two deferred CD follow-ups — *how versions are assigned*
+and *what triggers a deploy* — now due as milestone 8 begins.
+
+- ✅ **Versioning & release strategy** → [ADR-0047](0047-versioning-and-release-strategy.md).
+  **Nerdbank.GitVersioning** from a committed `version.json` (source of truth in the repo, rule 9)
+  stamps every assembly with `0.1.<git-height>` — automatic and monotonic, no hand-edits. **Triggers are
+  hybrid**: merge to `main` builds versioned images and (once the VPS exists) deploys the server
+  continuously, while a **`v*` tag** cuts a deliberate mobile store release — because a server we own and
+  a store-reviewed app have different release mechanics. **One suite version now**, stamped everywhere for
+  provenance, with a no-rewrite path to per-app `version.json` when cadences diverge; Android
+  `versionCode` comes from `git rev-list --count HEAD` (nbgv's height resets on minor bumps). The
+  image-build/push runs now; the SSH rollout **self-activates** when `DEPLOY_HOST` is set. **Follow-ups:
+  bump to `1.0` at launch; wire the store-upload leg once signing secrets exist**
+  ([ADR-0030](0030-mobile-store-publisher-identity.md)); record **secrets management** at M8.
 
 ### Recently closed (packaging & composition — 2026-08-19)
 
