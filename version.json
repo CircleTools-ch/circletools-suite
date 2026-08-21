@@ -1,0 +1,21 @@
+{
+  // Single source of truth for the suite version (ADR-0047). Nerdbank.GitVersioning computes
+  // "<version>.<git-height>" — the height being the number of commits since this base was set — so
+  // every merge to main yields a unique, increasing version with no tag or hand-edit.
+  //
+  //   - Bump "version" to "1.0" at launch (one line).
+  //   - When an app's release cadence diverges from the suite's, drop a nested version.json into
+  //     src/Apps/<App>/ and nbgv scopes that subtree independently — no rewrite here.
+  //
+  // Android versionCode is NOT derived from the git height (it resets on a major/minor bump);
+  // release-mobile.yml uses `git rev-list --count HEAD`. See ADR-0047.
+  "$schema": "https://raw.githubusercontent.com/dotnet/Nerdbank.GitVersioning/master/src/NerdBank.GitVersioning/version.schema.json",
+  "version": "0.1",
+  "publicReleaseRefSpec": [
+    "^refs/heads/main$",
+    "^refs/tags/v\\d+(?:\\.\\d+)*$"
+  ],
+  "cloudBuild": {
+    "setVersionVariables": true
+  }
+}

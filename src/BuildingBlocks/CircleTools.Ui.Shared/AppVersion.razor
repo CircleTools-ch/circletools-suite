@@ -1,0 +1,31 @@
+@using System.Reflection
+
+@*
+    The running suite build version (ADR-0047), shown in the drawer so the version is user-checkable and
+    support can read the exact commit. The number is stamped by Nerdbank.GitVersioning at build time
+    (every project shares the root version.json; the container build propagates /p:Version across the
+    graph, so this block carries the same number as the host app). The visible text drops the build
+    metadata (v0.1.5); the full string incl. the commit is the tooltip. Locale-neutral by design — no
+    translated words — so it needs no resource entry.
+*@
+
+<MudText Typo="Typo.caption" Class="mud-text-secondary" title="@Informational">@Label</MudText>
+
+@code {
+    private static readonly string Informational =
+        typeof(AppVersion).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+        ?? typeof(AppVersion).Assembly.GetName().Version?.ToString()
+        ?? "0.0.0";
+
+    // Drop the "+<commit>" build metadata for display; the tooltip keeps the full string. The label is
+    // built here (not as "v@Display" in markup): Razor's email heuristic would treat "v@..." as a
+    // literal, printing it verbatim.
+    private static readonly string Label = "v" + Trim(Informational);
+
+    private static string Trim(string v)
+    {
+        var plus = v.IndexOf('+');
+        return plus >= 0 ? v[..plus] : v;
+    }
+}

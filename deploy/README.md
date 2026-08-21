@@ -50,6 +50,21 @@ applies all four EF Core contexts' migrations and **exits** without starting the
 (`Main.Service/Program.cs`). A normal `api` boot never migrates in production — the deploy runs the
 migrator first (the CD workflow and the commands above both do).
 
+## Image versioning & the deploy trigger (ADR-0047)
+
+Images are versioned automatically from git — **Nerdbank.GitVersioning** stamps `0.1.<git-height>`
+(from the root [`version.json`](../version.json)) into the assemblies, and
+[`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) tags each pushed image
+`:<version>`, `:<commit-sha>`, and `:latest`. The version reaches the image via a `VERSION` build-arg
+(the build context omits `.git`), so the Dockerfiles here publish with `-p:ContainerBuild=true
+-p:Version=$VERSION`.
+
+**Trigger:** deploy runs after the CI gate succeeds on `main` (and on manual dispatch for
+redeploy/rollback). It **always builds and pushes** the versioned images to GHCR; the **SSH rollout job
+stays skipped until `DEPLOY_HOST` is set**, then self-activates — no edit needed. Set `IMAGE_TAG` in
+`.env` (or let the workflow pass it) to pin which tag the stack runs. Mobile store releases are a
+*separate*, tag-triggered workflow (`release-mobile.yml`), not part of this server track.
+
 ## Known follow-ups before going live
 
 - **Secrets management (open decision).** `.env` on the host + GitHub Actions secrets for CI is the

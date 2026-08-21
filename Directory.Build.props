@@ -47,4 +47,13 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
+  <!-- Automatic versioning from git history (ADR-0047, version.json at the repo root). nbgv stamps
+       AssemblyInformationalVersion / FileVersion into every assembly for provenance.
+       Excluded when ContainerBuild=true: the Docker context omits .git (deploy/.dockerignore), so nbgv
+       cannot compute a height there; the deploy workflow passes the version in via /p:Version instead.
+       CI must check out with fetch-depth: 0 or the height calculation fails on a shallow clone. -->
+  <ItemGroup Condition="'$(ContainerBuild)' != 'true'">
+    <PackageReference Include="Nerdbank.GitVersioning" PrivateAssets="all" />
+  </ItemGroup>
+
 </Project>

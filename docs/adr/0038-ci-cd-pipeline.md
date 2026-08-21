@@ -114,7 +114,10 @@ follow-up, to be recorded when CD lands. The macOS/iOS release leg rides
   - Enable **branch protection** on `main` requiring `build-test`, `docs`, `build-maui` (the checks
     appear in the protection UI only after the workflow has run once).
   - Build the **CD workflow** at [milestone 8](../roadmap/roadmap.md) against the provisioned VPS, and
-    record **secrets management** (ADR-0036 follow-up) then.
+    record **secrets management** (ADR-0036 follow-up) then. *(Versioning + the deploy trigger — the two
+    questions this ADR left open under "CD" — are resolved in
+    [ADR-0047](0047-versioning-and-release-strategy.md); the image build/push is wired and the SSH
+    rollout self-activates when `DEPLOY_HOST` is set.)*
   - Add the **macOS/iOS runner** leg once the Mac is acquired ([ADR-0031](0031-ios-build-host.md)).
   - Automate the **WebAuthn ceremony** and the invitation-link E2E (arc42 D4/D8) in the same
     browser-driving host — the remaining milestone-7 items, tracked separately from this ADR.
