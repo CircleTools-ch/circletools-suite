@@ -92,5 +92,7 @@
   href: 0045-browser-driving-e2e-test-host.md
 - name: 0046 Suite packaging and app composition
   href: 0046-suite-packaging-and-app-composition.md
+- name: 0047 Versioning and release strategy
+  href: 0047-versioning-and-release-strategy.md
 - name: Template
   href: _template-adr.md

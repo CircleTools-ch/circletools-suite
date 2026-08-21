@@ -8,6 +8,12 @@
         "resolved": "10.0.10",
         "contentHash": "z/2xXlFw2aLGjHyEm6E0tQ+In6VfzQzTrtArbQ2c0TQE16ZbyDCMGPvaUT9I0s8rgy9sRWlU2P9waW37qV04qA=="
       },
+      "Nerdbank.GitVersioning": {
+        "type": "Direct",
+        "requested": "[3.7.115, )",
+        "resolved": "3.7.115",
+        "contentHash": "EpXamaAdRfG/BMxGgvZlTM0npRnkmXUjAj8OdNKd17t4oN+2nvjdv/KnFmzOOMDqvlwB49UCwtOHJrAQTfUBtQ=="
+      },
       "circletools.ui.abstractions": {
         "type": "Project"
       }

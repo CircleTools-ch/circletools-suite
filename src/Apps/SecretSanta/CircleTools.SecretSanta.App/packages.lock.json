@@ -53,6 +53,12 @@
           "Microsoft.Extensions.Localization": "10.0.1"
         }
       },
+      "Nerdbank.GitVersioning": {
+        "type": "Direct",
+        "requested": "[3.7.115, )",
+        "resolved": "3.7.115",
+        "contentHash": "EpXamaAdRfG/BMxGgvZlTM0npRnkmXUjAj8OdNKd17t4oN+2nvjdv/KnFmzOOMDqvlwB49UCwtOHJrAQTfUBtQ=="
+      },
       "GoogleGson": {
         "type": "Transitive",
         "resolved": "2.13.1.1",
@@ -1597,6 +1603,12 @@
           "Microsoft.AspNetCore.Components.Web": "10.0.1",
           "Microsoft.Extensions.Localization": "10.0.1"
         }
+      },
+      "Nerdbank.GitVersioning": {
+        "type": "Direct",
+        "requested": "[3.7.115, )",
+        "resolved": "3.7.115",
+        "contentHash": "EpXamaAdRfG/BMxGgvZlTM0npRnkmXUjAj8OdNKd17t4oN+2nvjdv/KnFmzOOMDqvlwB49UCwtOHJrAQTfUBtQ=="
       },
       "Microsoft.AspNetCore.Authorization": {
         "type": "Transitive",
