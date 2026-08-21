@@ -41,18 +41,12 @@
 		-Server
 	}
 
-	# Cache policy (ADR-0048). Two non-overlapping matchers, so precedence is unambiguous:
-	#   - /_framework/* is the fingerprinted WASM payload — the loader, the runtime and every assembly
-	#     carry a content hash in the file name, so a given URL never changes: cache hard, never revalidate.
-	#   - everything else (index.html, the service worker, service-worker-assets.js, the manifest, and
-	#     SPA-fallback navigations) must revalidate, so a new deploy is seen promptly and the service
-	#     worker can drive the in-app "Reload" prompt. This is defense-in-depth: the worker also updates
-	#     itself with updateViaCache:'none'.
-	@immutable path /_framework/*
-	header @immutable Cache-Control "public, max-age=31536000, immutable"
-
-	@revalidate not path /_framework/*
-	header @revalidate Cache-Control "no-cache"
+	# Cache policy (ADR-0048). Asset fingerprinting is disabled for CSP reasons (ADR-0021), so the
+	# WASM assets under /_framework have STABLE names whose content changes on each deploy — they must
+	# NOT be cached immutably or a new build serves stale files. Everything revalidates (cheap ETag
+	# 304s); offline is provided by the service worker's own content-hashed cache, not the HTTP cache,
+	# and the worker drives the in-app "Reload" prompt on a new deploy.
+	header Cache-Control "no-cache"
 }
 
 # --- Main hub (SSO authority) --------------------------------------------------------------------
