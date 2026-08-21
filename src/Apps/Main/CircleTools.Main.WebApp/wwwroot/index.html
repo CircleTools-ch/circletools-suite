@@ -15,28 +15,14 @@
         eval() or inline script - which is why there is no 'unsafe-inline' in script-src, and why the
         service-worker registration lives in js/app.js instead of a <script> block.
 
-        style-src carries 'unsafe-inline' (ADR-0040): MudBlazor's theme provider emits a dynamic
-        inline <style> and its components set inline styles, which a static WASM host cannot nonce
-        per request. This relaxes styling only, not script — script-src stays inline-free, so the
-        XSS mitigation ADR-0021 relies on is intact. See ADR-0040 for the trade-off.
-
-        connect-src names the API origin explicitly. It is the development one; a deployment serves
-        this policy as a response header with its own origin, because a static file cannot know it.
-        frame-ancestors is deliberately absent: browsers ignore it in a meta tag and log a warning
-        for it, so it belongs in that same header.
+        This app used to carry the policy inline, but a <meta> cannot know the deployment's API
+        origin (it hard-coded the dev one, https://localhost:7180) and browsers ignore
+        frame-ancestors in a meta tag. In production the reverse proxy (deploy/Caddyfile) now serves
+        the finalized CSP as a response header — the single source of truth — for both WASM PWAs.
+        With the dev-origin meta gone, production no longer blocks the real API call (which surfaced
+        as "the server is unreachable") and dev no longer blocks the hot-reload websocket. Local
+        `dotnet run` therefore serves no CSP; dev is not the threat surface the policy defends.
     -->
-    <meta http-equiv="Content-Security-Policy"
-          content="default-src 'self';
-                   script-src 'self' 'wasm-unsafe-eval';
-                   style-src 'self' 'unsafe-inline';
-                   img-src 'self' data:;
-                   font-src 'self';
-                   connect-src 'self' https://localhost:7180;
-                   manifest-src 'self';
-                   worker-src 'self';
-                   base-uri 'self';
-                   form-action 'self';
-                   object-src 'none'" />
     <title>CircleTools</title>
     <base href="/" />
     <!-- MudBlazor (ADR-0040). Fonts resolve to the system-ui stack set in the MudTheme, so no
