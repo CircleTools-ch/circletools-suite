@@ -1,0 +1,108 @@
+# Mobile store release for the Secret-Santa app (ADR-0047 hybrid trigger — the store half).
+#
+# Store releases are deliberate, tagged events (store review + a versionCode that can never repeat),
+# unlike the server which deploys continuously on merge (deploy.yml). Pushing a `v*` tag builds the
+# signed Android head with:
+#   - versionName = the suite SemVer from git (nbgv, ADR-0047), e.g. 0.1.42
+#   - versionCode = `git rev-list --count HEAD` — globally monotonic, because nbgv's git height RESETS
+#     on a major/minor bump and a store versionCode must strictly increase forever (ADR-0047).
+#
+# SCAFFOLD — like deploy.yml: it builds and archives the artifact now; the SIGNING and the Play upload
+# activate once their secrets exist (the ADR-0030 store-account follow-up). iOS is deferred to the
+# future macOS runner (ADR-0031). No secrets → an unsigned .aab is produced for inspection only.
+#
+# Repo secrets (not yet set):
+#   ANDROID_KEYSTORE_BASE64    base64 of the upload keystore (.jks)
+#   ANDROID_KEYSTORE_PASSWORD  keystore password
+#   ANDROID_KEY_ALIAS          signing key alias
+#   ANDROID_KEY_PASSWORD       signing key password
+#   PLAY_SERVICE_ACCOUNT_JSON  Google Play Developer API service-account key (upload leg)
+name: Release (mobile)
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch: # manual test build off the current commit
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-mobile-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  android:
+    name: Android (Secret-Santa)
+    runs-on: windows-latest # matches ci.yml build-maui; the Android head builds with the MAUI workload
+    defaults:
+      run:
+        shell: bash
+    env:
+      APP: src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj
+      # secrets are not readable in a step-level `if`; surface presence as a job env instead.
+      HAS_SIGNING: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history: nbgv version + the git-count versionCode (ADR-0047).
+
+      - name: Setup .NET (from global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Compute version (nbgv)
+        id: nbgv
+        uses: dotnet/nbgv@v0.5.2
+        with:
+          toolVersion: "3.7.115"
+
+      # versionCode = total commits on this history. Monotonic as long as main is never rewritten
+      # (git-conventions), which a store upload requires.
+      - name: Compute versionCode
+        id: code
+        run: echo "value=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore MAUI workloads
+        run: dotnet workload restore "$APP"
+
+      - name: Decode signing keystore
+        if: ${{ env.HAS_SIGNING == 'true' }}
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/upload.jks"
+
+      # Signed release build. versionName from nbgv, versionCode from the git count (both override the
+      # csproj local-dev defaults). The signing props are only added when a keystore is present.
+      - name: Publish signed Android app bundle
+        if: ${{ env.HAS_SIGNING == 'true' }}
+        run: |
+          dotnet publish "$APP" -c Release -f net10.0-android \
+            -p:ApplicationDisplayVersion=${{ steps.nbgv.outputs.SimpleVersion }} \
+            -p:ApplicationVersion=${{ steps.code.outputs.value }} \
+            -p:AndroidPackageFormat=aab \
+            -p:AndroidKeyStore=true \
+            -p:AndroidSigningKeyStore="$RUNNER_TEMP/upload.jks" \
+            -p:AndroidSigningStorePass='${{ secrets.ANDROID_KEYSTORE_PASSWORD }}' \
+            -p:AndroidSigningKeyAlias='${{ secrets.ANDROID_KEY_ALIAS }}' \
+            -p:AndroidSigningKeyPass='${{ secrets.ANDROID_KEY_PASSWORD }}'
+
+      # No keystore yet: build an UNSIGNED bundle so the pipeline is exercised and the artifact is
+      # inspectable. Not uploadable to Play — that waits on the signing secrets (ADR-0030).
+      - name: Publish unsigned Android app bundle (scaffold)
+        if: ${{ env.HAS_SIGNING != 'true' }}
+        run: |
+          echo "::warning::No ANDROID_KEYSTORE_BASE64 — building an UNSIGNED bundle (not store-uploadable)."
+          dotnet publish "$APP" -c Release -f net10.0-android \
+            -p:ApplicationDisplayVersion=${{ steps.nbgv.outputs.SimpleVersion }} \
+            -p:ApplicationVersion=${{ steps.code.outputs.value }} \
+            -p:AndroidPackageFormat=aab
+
+      - name: Upload bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: secretsanta-android-${{ steps.nbgv.outputs.SimpleVersion }}-${{ steps.code.outputs.value }}
+          path: "src/Apps/SecretSanta/CircleTools.SecretSanta.App/bin/Release/net10.0-android/**/*.aab"
+          if-no-files-found: error
+
+      # TODO(ADR-0030 store accounts): upload to the Play internal track once PLAY_SERVICE_ACCOUNT_JSON
+      # and signing exist — e.g. r0adkll/upload-google-play with packageName ch.circletools.secretsanta.

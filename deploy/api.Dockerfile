@@ -3,11 +3,16 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
+# Version stamped into the assemblies. The deploy workflow computes it from git (nbgv, ADR-0047) and
+# passes it as a build-arg; .git is not in the build context, so ContainerBuild=true excludes the nbgv
+# package and Version is supplied explicitly. Defaults to a dev marker for a plain local `docker build`.
+ARG VERSION=0.0.0-dev
+
 # Copy the whole context and publish the API project. ProjectReferences and Central Package
 # Management (Directory.Packages.props) resolve from the copied tree; global.json pins the SDK band.
 COPY . .
 RUN dotnet publish src/Apps/Main/CircleTools.Main.Service/CircleTools.Main.Service.csproj \
-    -c Release -o /app
+    -c Release -o /app -p:ContainerBuild=true -p:Version=$VERSION
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 # curl backs the Compose liveness healthcheck (GET /alive). Non-chiseled aspnet image has apt.

@@ -1,11 +1,18 @@
-# Continuous deployment to the Infomaniak VPS (ADR-0036 / ADR-0038 CD half).
+# Continuous deployment to the Infomaniak VPS (ADR-0036 / ADR-0038 CD half / ADR-0047 versioning).
 #
-# SCAFFOLD — manual-trigger only until the VPS exists and the deploy secrets are set. It does NOT run
-# on push, so it cannot affect the CI gate (ci.yml) or fire before there is anywhere to deploy to.
-# Flip to `on: push: branches: [main]` (after CI passes) once milestone 8 provisioning is done.
+# Runs AFTER the CI gate succeeds on main (workflow_run) — so only green commits ever build an image —
+# and on manual dispatch (redeploy / rollback). Every run:
+#   1. computes the suite version from git (nbgv, ADR-0047: 0.1.<git-height>),
+#   2. builds the API + Web images, stamped with that version, and pushes them to GHCR tagged
+#      :<version>, :<commit-sha>, and :latest,
+#   3. rolls the VPS forward over SSH (migrator, then `compose up`) — ONLY once the DEPLOY_* secrets and
+#      the VPS exist. Until then the images are built and pushed; the rollout job self-skips.
+#
+# This is the milestone-8 "flip to on:push" from ADR-0038, made automatic: the rollout activates the
+# moment DEPLOY_HOST is set — no edit to this file needed.
 #
 # Required repo secrets (still gated on the open secrets-management decision — see deploy/README.md):
-#   DEPLOY_HOST        VPS hostname / IP
+#   DEPLOY_HOST        VPS hostname / IP     (its presence is what enables the rollout job)
 #   DEPLOY_USER        SSH user with docker access
 #   DEPLOY_SSH_KEY     private key for that user
 #   DEPLOY_KNOWN_HOSTS ssh-keyscan output for DEPLOY_HOST (host-key pinning)
@@ -13,13 +20,18 @@
 name: Deploy
 
 on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       image_tag:
-        description: "Image tag to build, push and deploy"
+        description: "Existing image tag to redeploy (rollback). Leave empty to build & deploy the current commit."
         required: false
-        default: "latest"
+        default: ""
 
+# One production rollout at a time; never cancel a rollout in flight.
 concurrency:
   group: deploy-production
   cancel-in-progress: false
@@ -33,11 +45,55 @@ env:
   IMAGE_PREFIX: ghcr.io/circletools-ch
 
 jobs:
+  # Gate + mode selection. On the auto trigger, proceed only for a SUCCESSFUL CI run. A manual dispatch
+  # with an image_tag is a rollback (redeploy an existing image, no rebuild); without one it builds the
+  # current commit like the auto path.
+  guard:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    outputs:
+      build: ${{ steps.pick.outputs.build }}
+      ref: ${{ steps.pick.outputs.ref }}
+      redeploy_tag: ${{ github.event.inputs.image_tag }}
+    steps:
+      - id: pick
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.image_tag }}" ]; then
+            echo "build=false" >> "$GITHUB_OUTPUT"
+            echo "ref=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            # workflow_run reports the exact commit CI validated; dispatch uses the checked-out tip.
+            echo "ref=${{ github.event.workflow_run.head_sha || github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
   build-push:
     name: build & push images
+    needs: guard
+    if: ${{ needs.guard.outputs.build == 'true' }}
     runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.nbgv.outputs.SimpleVersion }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.guard.outputs.ref }}
+          fetch-depth: 0 # full history: nbgv computes the version from git height (ADR-0047).
+
+      - name: Setup .NET (from global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # Computes the suite version from version.json + git height. toolVersion pins the nbgv CLI to the
+      # same build as the Nerdbank.GitVersioning package (Directory.Packages.props), so the workflow and
+      # the in-project stamping never disagree.
+      - name: Compute version (nbgv)
+        id: nbgv
+        uses: dotnet/nbgv@v0.5.2
+        with:
+          toolVersion: "3.7.115"
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -46,15 +102,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # VERSION (SemVer2, clean on main) is stamped into the image assemblies; .git is not in the build
+      # context, so the Dockerfiles publish with ContainerBuild=true and this explicit version (ADR-0047).
       - name: Build & push API image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: deploy/api.Dockerfile
           push: true
+          build-args: |
+            VERSION=${{ steps.nbgv.outputs.SemVer2 }}
           tags: |
-            ${{ env.IMAGE_PREFIX }}/circletools-api:${{ inputs.image_tag }}
-            ${{ env.IMAGE_PREFIX }}/circletools-api:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}/circletools-api:${{ steps.nbgv.outputs.SimpleVersion }}
+            ${{ env.IMAGE_PREFIX }}/circletools-api:${{ needs.guard.outputs.ref }}
+            ${{ env.IMAGE_PREFIX }}/circletools-api:latest
 
       - name: Build & push Web image
         uses: docker/build-push-action@v6
@@ -62,18 +123,54 @@ jobs:
           context: .
           file: deploy/web.Dockerfile
           push: true
+          build-args: |
+            VERSION=${{ steps.nbgv.outputs.SemVer2 }}
           tags: |
-            ${{ env.IMAGE_PREFIX }}/circletools-web:${{ inputs.image_tag }}
-            ${{ env.IMAGE_PREFIX }}/circletools-web:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}/circletools-web:${{ steps.nbgv.outputs.SimpleVersion }}
+            ${{ env.IMAGE_PREFIX }}/circletools-web:${{ needs.guard.outputs.ref }}
+            ${{ env.IMAGE_PREFIX }}/circletools-web:latest
+
+  # Is there a VPS to deploy to yet? DEPLOY_HOST's presence is the switch (secrets can't be read in a
+  # job-level `if`, so it is checked here in `run` and surfaced as an output).
+  preflight:
+    needs: guard
+    runs-on: ubuntu-latest
+    outputs:
+      deployable: ${{ steps.check.outputs.deployable }}
+    steps:
+      - id: check
+        run: |
+          set -euo pipefail
+          if [ -n "${{ secrets.DEPLOY_HOST }}" ]; then
+            echo "deployable=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deployable=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::DEPLOY_HOST not set — images built & pushed to GHCR, VPS rollout skipped (milestone 8)."
+          fi
 
   deploy:
     name: deploy to VPS
-    needs: build-push
+    needs: [guard, build-push, preflight]
+    # Run when a VPS exists and the build either succeeded (build mode) or was skipped (rollback mode).
+    if: >-
+      ${{ always()
+        && needs.guard.result == 'success'
+        && needs.preflight.outputs.deployable == 'true'
+        && (needs.build-push.result == 'success' || needs.build-push.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
+      - name: Resolve image tag
+        id: tag
+        run: |
+          set -euo pipefail
+          if [ "${{ needs.guard.outputs.build }}" = "true" ]; then
+            echo "tag=${{ needs.build-push.outputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ needs.guard.outputs.redeploy_tag }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy over SSH
-        # TODO(milestone-8): enable once DEPLOY_* secrets and the VPS exist. Migrations run first as an
-        # explicit one-shot, then the stack rolls forward from the freshly pushed images.
+        # Migrations run first as an explicit one-shot, then the stack rolls forward from the images.
         run: |
           set -euo pipefail
           install -m 600 /dev/null key
@@ -81,6 +178,6 @@ jobs:
           mkdir -p ~/.ssh && echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
           ssh -i key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
             "cd /opt/circletools && \
-             IMAGE_TAG=${{ inputs.image_tag }} docker compose pull && \
-             IMAGE_TAG=${{ inputs.image_tag }} docker compose run --rm migrator && \
-             IMAGE_TAG=${{ inputs.image_tag }} docker compose up -d"
+             IMAGE_TAG=${{ steps.tag.outputs.tag }} docker compose pull && \
+             IMAGE_TAG=${{ steps.tag.outputs.tag }} docker compose run --rm migrator && \
+             IMAGE_TAG=${{ steps.tag.outputs.tag }} docker compose up -d"
