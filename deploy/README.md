@@ -57,9 +57,12 @@ migrator first (the CD workflow and the commands above both do).
 - **Cloudflare + ACME.** With Cloudflare's proxy ON, Let's Encrypt HTTP-01 is intercepted. Issue certs
   with the record in **DNS-only** first, or switch Caddy to the **Cloudflare DNS-01** challenge
   (`caddy-dns/cloudflare` build + a scoped token). See the note in `Caddyfile`.
-- **Content-Security-Policy.** The `Caddyfile` ships baseline security headers but **not** a CSP —
-  ADR-0021 makes it load-bearing and a wrong one breaks Blazor WASM. Pin it against the running app
-  before real users (`script-src 'self' 'wasm-unsafe-eval'`, `connect-src` the API + SSO authority).
+- **Content-Security-Policy.** The `Caddyfile` now ships the finalized CSP as a response header for
+  both WASM PWAs (ADR-0021, ADR-0040): `script-src 'self' 'wasm-unsafe-eval'`,
+  `connect-src 'self' https://api.circletools.ch`, `frame-ancestors 'none'`. It is the single source
+  of truth — the apps no longer carry a `<meta>` policy. The SSO hand-off (ADR-0039) is a top-level
+  navigation to the authority, not a fetch, so the authority origin is deliberately not in
+  `connect-src`. Re-verify in-browser (console clean) after any change to the app's outbound calls.
 - **Reverse-proxy forwarded headers.** The API sits behind Caddy (TLS terminated). If `Request.IsHttps`
   / scheme-sensitive behaviour (Secure cookies, absolute redirect URIs) misbehaves, add
   `ForwardedHeaders` middleware with the proxy as a known network.
