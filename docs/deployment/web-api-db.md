@@ -84,10 +84,87 @@ needed.
   `.github/workflows/deploy.yml` (build → GHCR → SSH `compose pull` → one-shot `migrator` → `up -d`),
   manual-trigger only until the VM and `DEPLOY_*` secrets exist. EF Core migrations are the explicit
   release step (`docker compose run --rm migrator`, i.e. the API image run with `--migrate`).
-- **Secrets management** — DB credentials, the Brevo API key, signing assets; host/CI secret store,
-  never in the repo.
+- **Secrets management** — 🟡 **proposed** in [ADR-0050](../adr/0050-secrets-management.md) (pending
+  acceptance): two-tier — GitHub Actions encrypted secrets for CI/deploy + a git-ignored `deploy/.env`
+  on the host for runtime (DB credentials, JWT signing key, Brevo key), with the authoritative copy in a
+  password manager for recovery/rotation; SOPS+age recorded as the upgrade path. Never in the repo.
 - **Production observability backend** — the Aspire dashboard
   ([ADR-0012](../adr/0012-observability-and-telemetry.md)) is dev-only.
+
+## Secrets & recovery (ADR-0050)
+
+Which secrets exist, where each **value** durably lives, how to provision the box, rotate any one of
+them, and rebuild from nothing. The policy is [ADR-0050](../adr/0050-secrets-management.md): the
+**authoritative** copy of every value is an entry in the maintainer's **password manager (vault)**;
+`deploy/.env` on the VM and the GitHub Actions secrets are **derived copies**. Nothing secret is ever in
+git — [`deploy/.env.example`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy)
+records *which* values exist, not the values.
+
+### The two tiers
+
+| Tier | Where it lives | Values | Consumer |
+|---|---|---|---|
+| **Runtime / host** | `/opt/circletools/.env` on the VM (`chmod 600`, owned by the deploy user; git-ignored) | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `ConnectionStrings__maindb` (password in lockstep), `Auth__Jwt__SigningKey` ([ADR-0021](../adr/0021-web-auth-token-model.md)), `Mail__Username`, `Mail__Password` ([ADR-0037](../adr/0037-transactional-email-provider.md)) | `compose.yaml` → `api` / `migrator` / `postgres` |
+| **CI / deploy** | GitHub → Settings → Secrets and variables → Actions (repository encrypted secrets) | `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`; `GITHUB_TOKEN` (built-in, GHCR push) | `.github/workflows/deploy.yml` (SSH rollout) |
+
+CI holds **only deploy access** — never a runtime secret. Postgres is not published off the internal
+Docker network, so the DB credentials never leave the box. `ACME_EMAIL` and `IMAGE_TAG` in `.env` are
+config, not secrets.
+
+### Provisioning order (vault first, then derive)
+
+Generate every value **into the vault first**, then copy it out onto the host / into GitHub — never the
+other way round.
+
+1. **Generate + store in the vault:**
+   - `POSTGRES_PASSWORD` — strong random (e.g. `openssl rand -base64 32`).
+   - `Auth__Jwt__SigningKey` — `openssl rand -base64 48` (≥ 32 bytes; a leaked key mints sessions for any account).
+   - Brevo SMTP **login + key** — from the Brevo dashboard ([ADR-0037](../adr/0037-transactional-email-provider.md)).
+   - Deploy SSH keypair — `ssh-keygen -t ed25519 -C circletools-deploy` (passphrase-protected); private key → vault.
+2. **Derive the host tier:** on the VM, copy `deploy/.env.example` → `/opt/circletools/.env`, fill from the
+   vault, keep the `ConnectionStrings__maindb` password **identical** to `POSTGRES_PASSWORD`, then
+   `chmod 600 /opt/circletools/.env` and `chown` it to the deploy user.
+3. **Derive the CI tier:** add `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` (the private key),
+   `DEPLOY_KNOWN_HOSTS` (`ssh-keyscan <host>`) as GitHub Actions secrets; append the deploy **public** key
+   to the VM user's `~/.ssh/authorized_keys`. `GITHUB_TOKEN` is built-in — nothing to create.
+4. Setting **`DEPLOY_HOST`** is the switch that self-activates the rollout job in `deploy.yml` — no edit
+   to the workflow needed.
+
+### Rotation
+
+Every secret has a written path. In all cases: **edit the vault first**, then the derived copy, then
+redeploy.
+
+| Secret | When | Steps |
+|---|---|---|
+| **DB password** | Suspected leak; scheduled hygiene | Update in vault → edit `POSTGRES_PASSWORD` **and** the `ConnectionStrings__maindb` password in `.env` (lockstep) → `docker compose up -d` (Postgres re-reads on restart). |
+| **JWT signing key** ([ADR-0021](../adr/0021-web-auth-token-model.md)) | Suspected compromise only | Update in vault → edit `Auth__Jwt__SigningKey` → `up -d`. **Invalidates all live sessions by design** — everyone re-signs-in; accept that cost. |
+| **Brevo SMTP key** ([ADR-0037](../adr/0037-transactional-email-provider.md)) | Leak; Brevo reissue | Reissue in the Brevo dashboard → update vault → edit `Mail__Username` / `Mail__Password` → `up -d`. |
+| **Deploy SSH key** | Leak; maintainer offboard | `ssh-keygen` a new pair → update the `DEPLOY_SSH_KEY` GitHub secret and vault → swap the public key in the VM's `authorized_keys` → remove the old line. |
+| **Mobile store signing / API keys** (future) | When the upload legs are wired ([ADR-0030](../adr/0030-mobile-store-publisher-identity.md), [ADR-0047](../adr/0047-versioning-and-release-strategy.md)) | Join the **CI tier** as GitHub Actions secrets under this same policy — see the [mobile runbook](mobile-apps.md). |
+
+### Single-VM recovery drill
+
+The VM is a single point of failure ([ADR-0036](../adr/0036-cloud-provider-and-hosting.md)); losing it
+must not lose the secrets. Because the authoritative copy is the vault and the data is in the nightly
+`pg_dump` on Swiss Backup, recovery is a fixed sequence:
+
+1. **Reprovision** a VPS (VPS Lite M, Geneva, Ubuntu LTS), install Docker + Compose, create the deploy
+   user, restore its `authorized_keys` public key.
+2. **Restore the code / compose stack** — clone the repo (or pull the pinned images from GHCR).
+3. **Recreate `/opt/circletools/.env`** from the vault (step 2 of provisioning above), `chmod 600`.
+4. **Restore the database** — start `postgres`, load the latest `pg_dump` from Swiss Backup into `maindb`.
+5. **Roll forward** — `docker compose run --rm migrator` (applies any pending EF migrations), then
+   `docker compose up -d`.
+6. **Re-point DNS / Cloudflare** at the new IP if it changed; re-issue TLS.
+7. **Update CI** — if the host or its key changed, refresh `DEPLOY_HOST` / `DEPLOY_KNOWN_HOSTS`.
+
+No step needs anything that only existed on the lost box: values come from the vault, data from the
+offsite dump. **Test the restore** (checklist below) so this drill is exercised, not just written.
+
+> **Upgrade path (trigger-gated).** ADR-0050 records **SOPS + age** — encrypted secrets committed to git
+> — as the upgrade to adopt (as a superseding ADR) if a second maintainer joins, the secret count/rotation
+> cadence outgrows "edit the vault, edit `.env`", or plaintext-at-rest on the VM must go. Not now.
 
 ## Checklist (milestone 8)
 
@@ -104,9 +181,9 @@ Scaffolded items (`[~]`) have their artifacts in [`deploy/`](https://github.com/
 - [ ] Postgres container on an NVMe volume; **nightly `pg_dump` → Swiss Backup**; **restore tested**
 - [~] EF Core migrations as an explicit release step — one-shot `migrator` service (`--migrate`)
 - [ ] Privacy policy + imprint + account-deletion URLs published, reachable, DE/EN/FR
-- [~] Secrets: `.env.example` template + git-ignored `.env`; **durable host/CI store still an open decision**
+- [~] Secrets: `.env.example` template + git-ignored `.env`; durable host/CI store **proposed in [ADR-0050](../adr/0050-secrets-management.md)** (accept, then provision the VM's `.env` from the vault)
 - [ ] Observability backend chosen and wired
-- [ ] Deploy & smoke-test; single-VM recovery (rebuild + restore) documented
+- [ ] Deploy & smoke-test; single-VM recovery (rebuild + restore) documented — [drill](#secrets--recovery-adr-0050)
 
 ## Related
 
