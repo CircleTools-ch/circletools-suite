@@ -22,3 +22,13 @@ scrape_configs:
       - targets: ["api:8080"]
         labels:
           service: circletools-api
+
+  # Host metrics — node_exporter (CPU / RAM / disk / network / load) for the VM itself.
+  - job_name: node
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # Per-container metrics — cAdvisor (CPU / memory / network per Docker container).
+  - job_name: cadvisor
+    static_configs:
+      - targets: ["cadvisor:8080"]

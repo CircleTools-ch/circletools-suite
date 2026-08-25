@@ -159,6 +159,12 @@ jobs:
         && (needs.build-push.result == 'success' || needs.build-push.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
+      # The runner needs the deploy/ tree so it can rsync compose.yaml + observability config to the VM.
+      - name: Check out deploy config
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.guard.outputs.ref }}
+
       - name: Resolve image tag
         id: tag
         run: |
@@ -169,15 +175,30 @@ jobs:
             echo "tag=${{ needs.guard.outputs.redeploy_tag }}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Deploy over SSH
-        # Migrations run first as an explicit one-shot, then the stack rolls forward from the images.
+      - name: Sync config & roll forward over SSH
+        # 1) rsync the compose file + observability config to the VM (so config changes ship with the
+        #    deploy — not by hand), 2) pin the deployed IMAGE_TAG in the VM's .env (so a manual
+        #    `docker compose` matches the pipeline instead of drifting to a stale :latest), then
+        #    3) migrate as an explicit one-shot and roll the stack forward from the images.
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
           set -euo pipefail
           install -m 600 /dev/null key
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > key
           mkdir -p ~/.ssh && echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-          ssh -i key "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+
+          # Ship compose.yaml + config. NEVER sync .env (VM-only secrets); NO top-level --delete (it would
+          # wipe .env and other VM-only files). Caddyfile is baked into the web image, so it is not synced.
+          rsync -az -e "ssh -i key -o UserKnownHostsFile=$HOME/.ssh/known_hosts" \
+            deploy/compose.yaml deploy/loki deploy/prometheus deploy/grafana \
+            "$DEPLOY_USER@$DEPLOY_HOST:/opt/circletools/"
+
+          ssh -i key "$DEPLOY_USER@$DEPLOY_HOST" \
             "cd /opt/circletools && \
-             IMAGE_TAG=${{ steps.tag.outputs.tag }} docker compose pull && \
-             IMAGE_TAG=${{ steps.tag.outputs.tag }} docker compose run --rm migrator && \
-             IMAGE_TAG=${{ steps.tag.outputs.tag }} docker compose up -d"
+             (grep -q '^IMAGE_TAG=' .env && sed -i 's|^IMAGE_TAG=.*|IMAGE_TAG=$TAG|' .env || echo 'IMAGE_TAG=$TAG' >> .env) && \
+             IMAGE_TAG=$TAG docker compose pull && \
+             IMAGE_TAG=$TAG docker compose run --rm migrator && \
+             IMAGE_TAG=$TAG docker compose up -d --remove-orphans"

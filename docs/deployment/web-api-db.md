@@ -183,7 +183,17 @@ stays on the box. Scope today is **logs + metrics** (no traces/alerting yet — 
 |---|---|---|
 | **Prometheus** (`prom/prometheus`) | **Scrapes** the API's `/metrics` over the Docker network (`api:8080/metrics`), 30-day TSDB | Grafana only (internal) |
 | **Loki** (`grafana/loki`) | Stores the API's logs, ingested via **OTLP** (`api` → `http://loki:3100/otlp`), 30-day retention | Grafana only (internal) |
-| **Grafana** (`grafana/grafana`) | The admin view; datasources auto-provisioned (Prometheus default + Loki) | `https://grafana.circletools.ch`, Grafana admin login |
+| **Grafana** (`grafana/grafana`) | The admin view; datasources **and** the overview dashboard auto-provisioned | `https://grafana.circletools.ch`, Grafana admin login |
+| **node_exporter** (`prom/node-exporter`) | Host metrics — CPU / RAM / disk / filesystem / network / load | Prometheus only (internal) |
+| **cAdvisor** (`gcr.io/cadvisor/cadvisor`) | Per-container CPU / memory (API vs Postgres vs the stack itself) | Prometheus only (internal) |
+
+**Dashboard.** Grafana provisions **"CircleTools — Service & Host"**
+([`circletools-overview.json`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy/grafana/provisioning/dashboards))
+— at-a-glance tiles (API up, req/s, error rate, p95, host CPU/RAM/disk), then rows for **API** (request
+rate by status, latency p50/95/99, in-flight, sync collisions), **.NET runtime** (GC, process CPU/mem,
+threadpool), **Host** (CPU/mem/disk/net/load from node_exporter), **Containers** (per-container CPU/mem
+from cAdvisor), and **Logs** (Loki log-rate + a live logs panel). It loads automatically; edits made in
+the UI can be exported back into that JSON to keep them in git.
 
 **How it is wired.** `CircleTools.ServiceDefaults` exposes the Prometheus scraping endpoint at `/metrics`
 (all environments) and — when `Observability__LokiOtlpEndpoint` is set (it is, in `compose.yaml`) — adds
@@ -207,9 +217,17 @@ are expendable (retention-bounded); back up **Grafana's** config/dashboards.
 2. ✅ **`GRAFANA_ADMIN_PASSWORD`** generated (`openssl rand -base64 24`) and set in the VM's `deploy/.env`
    ([Secrets & recovery](#secrets--recovery-adr-0050)) — record the value in the vault as the
    authoritative copy.
-3. ⏳ `docker compose up -d` brings up `loki`, `prometheus`, `grafana` with the API; then **smoke-test**:
-   Grafana loads at `grafana.circletools.ch` (admin login), both datasources are green, Prometheus
-   **Targets** shows `api` UP, and a log line + a metric query return in **Explore**.
+3. ✅ Brought up and **smoke-tested end-to-end (2026-08-25)**: Grafana loads at `grafana.circletools.ch`
+   (admin login), both datasources green, Prometheus scraping the API (`up{job="api"}` = 1), and the API
+   shipping OTLP logs to Loki (the `service_name` label is present; query `{service_name=~".+"}`).
+
+> **Deploy mechanics (now handled by the pipeline).** `deploy.yml` **rsyncs** `compose.yaml` + the
+> observability config to the VM on every deploy (never `.env`) and **pins the deployed `IMAGE_TAG`** in
+> the VM's `.env`. This closes the two traps hit during first bring-up: config no longer has to be
+> hand-`scp`'d, and a manual `docker compose up` can't drift to a stale `:latest` (which had run
+> pre-observability code). Also fixed permanently: the API's OTLP log endpoint is the **full** signal path
+> `…/otlp/v1/logs` — the .NET OTLP/HTTP exporter, set programmatically, does not append `/v1/logs`, so a
+> bare `/otlp` silently 404s at Loki.
 
 **Upgrades (ADR-0051):** add **Tempo** for traces, **alert rules**, an all-container **log shipper**, or
 move to **Grafana Cloud** if the on-box footprint ever hurts.
@@ -230,7 +248,7 @@ Scaffolded items (`[~]`) have their artifacts in [`deploy/`](https://github.com/
 - [~] EF Core migrations as an explicit release step — one-shot `migrator` service (`--migrate`)
 - [ ] Privacy policy + imprint + account-deletion URLs published, reachable, DE/EN/FR
 - [~] Secrets: `.env.example` template + git-ignored `.env`; durable host/CI store **decided in [ADR-0050](../adr/0050-secrets-management.md)** (provision the VM's `.env` from the vault — see the [drill](#secrets--recovery-adr-0050))
-- [~] Observability backend **decided in [ADR-0051](../adr/0051-production-observability-backend.md)** — self-hosted Loki + Prometheus + Grafana; compose stack + `/metrics` scrape + OTLP-logs wiring built; **`grafana` DNS + `GRAFANA_ADMIN_PASSWORD` provisioned** — only the `up -d` bring-up + Grafana smoke-test remain (see [Observability](#observability-adr-0051))
+- [x] Observability backend **live ([ADR-0051](../adr/0051-production-observability-backend.md))** — self-hosted Loki + Prometheus + Grafana on the VPS; Grafana at `grafana.circletools.ch` (admin login), Prometheus scraping the API (`up`=1), the API shipping OTLP logs to Loki; **verified end-to-end 2026-08-25** (see [Observability](#observability-adr-0051))
 - [ ] Deploy & smoke-test; single-VM recovery (rebuild + restore) documented — [drill](#secrets--recovery-adr-0050)
 
 ## Related
