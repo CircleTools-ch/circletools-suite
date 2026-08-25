@@ -54,8 +54,10 @@ public static class Extensions
             logging.IncludeScopes = true;
 
             // Production ships logs to self-hosted Loki over OTLP (ADR-0051). Gated on a config value so
-            // local dev (which has no Loki) is unaffected — Aspire keeps using its dashboard there. Loki
-            // exposes an OTLP endpoint; the HTTP/protobuf exporter appends the `/v1/logs` signal path.
+            // local dev (which has no Loki) is unaffected — Aspire keeps using its dashboard there. The
+            // configured endpoint must be the FULL signal path (…/otlp/v1/logs): set programmatically
+            // like this, the OTLP/HTTP exporter uses it as-is and does NOT append /v1/logs (bare /otlp
+            // 404s at Loki's OTLP receiver).
             var lokiOtlpEndpoint = builder.Configuration["Observability:LokiOtlpEndpoint"];
             if (!string.IsNullOrWhiteSpace(lokiOtlpEndpoint))
             {
