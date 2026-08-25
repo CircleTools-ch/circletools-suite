@@ -67,8 +67,10 @@ stays skipped until `DEPLOY_HOST` is set**, then self-activates — no edit need
 
 ## Known follow-ups before going live
 
-- **Secrets management (open decision).** `.env` on the host + GitHub Actions secrets for CI is the
-  interim; the durable store is still to be decided (web-api-db runbook). Nothing secret is committed.
+- **Secrets management (proposed — ADR-0050).** `.env` on the host + GitHub Actions secrets for CI is
+  ratified by [ADR-0050](../docs/adr/0050-secrets-management.md) (Proposed, pending acceptance), with the
+  authoritative copy of every value in a password manager for recovery/rotation and SOPS+age as the
+  upgrade path. Nothing secret is committed.
 - **Cloudflare + ACME.** With Cloudflare's proxy ON, Let's Encrypt HTTP-01 is intercepted. Issue certs
   with the record in **DNS-only** first, or switch Caddy to the **Cloudflare DNS-01** challenge
   (`caddy-dns/cloudflare` build + a scoped token). See the note in `Caddyfile`.
