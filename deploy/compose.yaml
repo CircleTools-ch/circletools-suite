@@ -68,7 +68,9 @@ services:
       ASPNETCORE_HTTP_PORTS: "8080"
       # Observability (ADR-0051): ship structured logs to Loki over OTLP; metrics are scraped from
       # /metrics by Prometheus (pull), so no metrics endpoint is configured here. Not a secret.
-      Observability__LokiOtlpEndpoint: http://loki:3100/otlp
+      # The FULL signal path (/otlp/v1/logs) is required: the .NET OTLP/HTTP exporter uses the endpoint
+      # as-is when set programmatically — it does NOT append /v1/logs, so a bare /otlp 404s at Loki.
+      Observability__LokiOtlpEndpoint: http://loki:3100/otlp/v1/logs
       # Secrets — from deploy/.env, never committed.
       ConnectionStrings__maindb: ${ConnectionStrings__maindb}
       Auth__Jwt__SigningKey: ${Auth__Jwt__SigningKey}
