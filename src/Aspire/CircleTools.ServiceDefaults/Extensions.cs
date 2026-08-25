@@ -5,6 +5,8 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.ServiceDiscovery;
 using OpenTelemetry;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
@@ -50,6 +52,19 @@ public static class Extensions
         {
             logging.IncludeFormattedMessage = true;
             logging.IncludeScopes = true;
+
+            // Production ships logs to self-hosted Loki over OTLP (ADR-0051). Gated on a config value so
+            // local dev (which has no Loki) is unaffected — Aspire keeps using its dashboard there. Loki
+            // exposes an OTLP endpoint; the HTTP/protobuf exporter appends the `/v1/logs` signal path.
+            var lokiOtlpEndpoint = builder.Configuration["Observability:LokiOtlpEndpoint"];
+            if (!string.IsNullOrWhiteSpace(lokiOtlpEndpoint))
+            {
+                logging.AddOtlpExporter(otlp =>
+                {
+                    otlp.Endpoint = new Uri(lokiOtlpEndpoint);
+                    otlp.Protocol = OtlpExportProtocol.HttpProtobuf;
+                });
+            }
         });
 
         builder.Services.AddOpenTelemetry()
@@ -61,7 +76,10 @@ public static class Extensions
                     // The sync collision counter (FEAT-004). Named by literal rather than a project
                     // reference — ServiceDefaults sits below the app modules and must not depend up
                     // into them; the name is mirrored by SyncCollisionTelemetry.MeterName.
-                    .AddMeter("CircleTools.Sync");
+                    .AddMeter("CircleTools.Sync")
+                    // Production scrapes metrics with Prometheus (ADR-0051): this exposes the meter
+                    // provider at GET /metrics (mapped in MapDefaultEndpoints). Harmless in dev.
+                    .AddPrometheusExporter();
             })
             .WithTracing(tracing =>
             {
@@ -112,6 +130,12 @@ public static class Extensions
 
     public static WebApplication MapDefaultEndpoints(this WebApplication app)
     {
+        // Prometheus scraping endpoint (ADR-0051), mapped in ALL environments — production Prometheus
+        // scrapes it over the internal Docker network (api:8080/metrics). It carries no secrets but
+        // exposes operational internals, so the reverse proxy (deploy/Caddyfile) MUST deny /metrics on
+        // the public api.circletools.ch origin; the API is never published directly.
+        app.MapPrometheusScrapingEndpoint();
+
         // Adding health checks endpoints to applications in non-development environments has security implications.
         // See https://aka.ms/aspire/healthchecks for details before enabling these endpoints in non-development environments.
         if (app.Environment.IsDevelopment())

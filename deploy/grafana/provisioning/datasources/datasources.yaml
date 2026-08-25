@@ -1,0 +1,18 @@
+# Grafana datasource provisioning (ADR-0051): Prometheus (default) + Loki, both reached on the internal
+# Docker network. Auto-loaded at Grafana startup so there is nothing to click to set up. Dashboards and
+# alert rules can be added later under deploy/grafana/provisioning/ (dashboards/, alerting/).
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      httpMethod: POST
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100

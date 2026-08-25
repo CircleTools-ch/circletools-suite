@@ -85,7 +85,13 @@ stays skipped until `DEPLOY_HOST` is set**, then self-activates — no edit need
   `ForwardedHeaders` middleware with the proxy as a known network.
 - **Backups.** Nightly `pg_dump` → Infomaniak Swiss Backup, **restore tested** (ADR-0036). Not yet
   scripted here.
-- **Observability.** Production OTel sink still to be chosen (the Aspire dashboard is dev-only).
+- **Observability (decided — ADR-0051).** Self-hosted **Loki + Prometheus + Grafana** are in
+  `compose.yaml` (config under `deploy/prometheus`, `deploy/loki`, `deploy/grafana`). Prometheus scrapes
+  the API's internal `/metrics`; the API ships OTLP logs to Loki; **Grafana** is the admin view at
+  `grafana.circletools.ch` behind its own login. Prometheus/Loki are never published, and Caddy denies
+  `/metrics` on the public API origin. The **`grafana` DNS record** and **`GRAFANA_ADMIN_PASSWORD`** (in
+  the VM's `.env`) are provisioned; what remains is the `docker compose up -d` bring-up + a Grafana
+  smoke-test (both datasources green, `api` target UP).
 
 ## Milestone-8 go-live checklist
 
