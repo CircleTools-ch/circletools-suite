@@ -37,6 +37,11 @@ flowchart LR
   to Infomaniak Swiss Backup** offsite; managed Postgres is the documented upgrade path.
 - **Transactional email:** **Brevo** (EU) behind the invitation outbox port
   ([ADR-0037](../adr/0037-transactional-email-provider.md)).
+- **Observability:** self-hosted **Loki + Prometheus + Grafana** containers on the same VPS
+  ([ADR-0051](../adr/0051-production-observability-backend.md)) — Prometheus scrapes the API's internal
+  `/metrics`, the API ships OTLP logs to Loki, and **Grafana** is the admin view on its own subdomain
+  (`grafana.circletools.ch`) behind a login. Prometheus and Loki are never published; telemetry stays on
+  the box.
 - **Static docs:** the DocFX site published to a static host / Pages.
 - Data at rest stays in Switzerland; recurring cost ≈ CHF 12–14/mo. **CI** runs on GitHub Actions
   ([ADR-0038](../adr/0038-ci-cd-pipeline.md)); the **CD** step to this VPS is built at milestone 8 once

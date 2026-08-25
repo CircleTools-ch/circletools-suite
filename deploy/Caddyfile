@@ -63,6 +63,27 @@ secretsanta.circletools.ch {
 
 # --- API -----------------------------------------------------------------------------------------
 api.circletools.ch {
+	# Operational endpoints are INTERNAL-ONLY (ADR-0051): Prometheus scrapes /metrics over the Docker
+	# network and the orchestrator hits /alive on localhost — neither should be reachable from the
+	# internet. Deny them here before proxying everything else to the API.
+	@internal path /metrics /metrics/* /alive
+	respond @internal 404
+
 	reverse_proxy api:8080
 	header -Server
+}
+
+# --- Grafana (observability admin UI, ADR-0051) --------------------------------------------------
+# Reverse-proxies the internal Grafana; Grafana enforces its own admin login (GF_SECURITY_ADMIN_PASSWORD)
+# and sets its own CSP, so the strict wasm_pwa policy is deliberately NOT applied here. Prometheus and
+# Loki have no site block at all — they are never exposed.
+grafana.circletools.ch {
+	encode zstd gzip
+	reverse_proxy grafana:3000
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
 }
