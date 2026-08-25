@@ -58,7 +58,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0047](0047-versioning-and-release-strategy.md) | Versioning & release strategy (Nerdbank.GitVersioning from a committed `version.json`; hybrid triggers — merge to `main` deploys the server, a `v*` tag cuts a mobile release; one suite version now, splittable per app; Android `versionCode` from git commit count) | Accepted | 2026-08-21 |
 | [0048](0048-web-app-update-delivery.md) | Web app update delivery (keep the offline PWA; a shared MudBlazor "Reload" prompt switches to a newly deployed version on the user's terms; all responses revalidate — corrected by ADR-0049; native heads update via the store) | Accepted | 2026-08-21 |
 | [0049](0049-disable-wasm-fingerprinting-for-csp.md) | Disable WASM asset fingerprinting for strict-CSP compatibility (the inline import map fingerprinting emits is blocked by the inline-free CSP and stops boot; `OverrideHtmlAssetPlaceholders=false` on both heads; corrects ADR-0048's immutable cache header) | Accepted | 2026-08-21 |
-| [0050](0050-secrets-management.md) | Secrets management (two-tier: GitHub Actions encrypted secrets for CI/deploy + git-ignored `deploy/.env` on the host for runtime; authoritative copy in a password manager for recovery/rotation; no plaintext in the repo; SOPS+age recorded as the trigger-gated upgrade path) | Proposed | 2026-08-24 |
+| [0050](0050-secrets-management.md) | Secrets management (two-tier: GitHub Actions encrypted secrets for CI/deploy + git-ignored `deploy/.env` on the host for runtime; authoritative copy in a password manager for recovery/rotation; no plaintext in the repo; SOPS+age recorded as the trigger-gated upgrade path) | Accepted | 2026-08-25 |
 
 ## Open decisions backlog
 
@@ -269,15 +269,6 @@ submission — because two of its outputs (a released bundle id, a passkey RP-ID
 
 _None — the packaging & composition item that stood here is closed as
 [ADR-0046](0046-suite-packaging-and-app-composition.md) (see above)._
-
-### Proposed — awaiting acceptance (M8)
-
-- 🟡 **Secrets management** → [ADR-0050](0050-secrets-management.md) (**Proposed**). The M8 follow-up
-  named by [ADR-0036](0036-cloud-provider-and-hosting.md) / [ADR-0038](0038-ci-cd-pipeline.md) /
-  [ADR-0047](0047-versioning-and-release-strategy.md): two-tier native stores (GitHub Actions secrets for
-  CI/deploy + a git-ignored `deploy/.env` on the host), authoritative copy in a password manager for
-  recovery/rotation, SOPS+age recorded as the trigger-gated upgrade path. Accept before provisioning the
-  VM's `.env`.
 
 ### Parked — revisit on a concrete trigger
 - **Per-member envelope encryption of assignments** (option P3 in

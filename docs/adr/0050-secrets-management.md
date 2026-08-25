@@ -1,6 +1,6 @@
 ---
-status: Proposed
-date: 2026-08-24
+status: Accepted
+date: 2026-08-25
 deciders: [Adrian]
 tags: [security, secrets, deployment, ci-cd, operations, github, docker]
 ---
