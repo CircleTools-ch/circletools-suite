@@ -210,6 +210,14 @@ abstraction, consistent across Web and native; user/suite prefs persisted locall
 resilience for every service host. Client telemetry is optional and consent-gated
 ([ADR-0012](../adr/0012-observability-and-telemetry.md)).
 
+In **production** ([ADR-0051](../adr/0051-production-observability-backend.md)) that instrumentation
+feeds a self-hosted, on-box **Loki + Prometheus + Grafana** stack: `ServiceDefaults` exposes a
+Prometheus `/metrics` endpoint that Prometheus **scrapes** internally, and ships **OTLP logs** to Loki
+(gated on `Observability:LokiOtlpEndpoint`). **Grafana** is the persistent admin view
+(`grafana.circletools.ch`, behind its own login); Prometheus and Loki are never published and telemetry
+never leaves the box. Locally, the same OTel pipelines feed the **Aspire dashboard** instead. No PII is
+placed in any signal.
+
 ## 8.8 Security & privacy
 
 Privacy by design: minimal PII, input validation, secrets never in the repo, Swiss/GDPR

@@ -21,7 +21,7 @@ but "ratify where each tier durably lives, how it is provisioned, recovered, and
 
 | Tier | Consumer | Secrets today | Read from |
 |------|----------|---------------|-----------|
-| **Runtime / host** | `compose.yaml` → `api`, `migrator`, `postgres` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `ConnectionStrings__maindb`, `Auth__Jwt__SigningKey`, `Mail__Username`, `Mail__Password` | git-ignored `deploy/.env` on the VM |
+| **Runtime / host** | `compose.yaml` → `api`, `migrator`, `postgres`, `grafana` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `ConnectionStrings__maindb`, `Auth__Jwt__SigningKey`, `Mail__Username`, `Mail__Password`, `GRAFANA_ADMIN_PASSWORD` ([ADR-0051](0051-production-observability-backend.md)) | git-ignored `deploy/.env` on the VM |
 | **CI / deploy** | `.github/workflows/deploy.yml` (SSH rollout) | `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`; `GITHUB_TOKEN` (built-in, GHCR push) | GitHub Actions encrypted secrets |
 | **Mobile signing** (future) | `release-mobile.yml` | Play / App Store Connect signing + API keys | not yet wired — [ADR-0030](0030-mobile-store-publisher-identity.md) follow-up |
 

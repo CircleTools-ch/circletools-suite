@@ -100,5 +100,7 @@
   href: 0049-disable-wasm-fingerprinting-for-csp.md
 - name: 0050 Secrets management
   href: 0050-secrets-management.md
+- name: 0051 Production observability backend
+  href: 0051-production-observability-backend.md
 - name: Template
   href: _template-adr.md

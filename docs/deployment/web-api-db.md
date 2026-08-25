@@ -90,8 +90,12 @@ needed.
   password manager for recovery/rotation; SOPS+age recorded as the upgrade path. Never in the repo. The
   provisioning order, per-secret rotation table and single-VM recovery drill are in
   [Secrets & recovery](#secrets--recovery-adr-0050) below.
-- **Production observability backend** — the Aspire dashboard
-  ([ADR-0012](../adr/0012-observability-and-telemetry.md)) is dev-only.
+- **Production observability backend** — ✅ decided in
+  [ADR-0051](../adr/0051-production-observability-backend.md) (Accepted 2026-08-25): self-hosted **Loki +
+  Prometheus + Grafana** on the VPS. Prometheus scrapes the API's internal `/metrics`; the API ships
+  OTLP logs to Loki; **Grafana** is the persistent admin view at `grafana.circletools.ch` behind its own
+  login. Prometheus/Loki are never published; telemetry stays on-box. See
+  [Observability](#observability-adr-0051) below.
 
 ## Secrets & recovery (ADR-0050)
 
@@ -106,7 +110,7 @@ records *which* values exist, not the values.
 
 | Tier | Where it lives | Values | Consumer |
 |---|---|---|---|
-| **Runtime / host** | `/opt/circletools/.env` on the VM (`chmod 600`, owned by the deploy user; git-ignored) | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `ConnectionStrings__maindb` (password in lockstep), `Auth__Jwt__SigningKey` ([ADR-0021](../adr/0021-web-auth-token-model.md)), `Mail__Username`, `Mail__Password` ([ADR-0037](../adr/0037-transactional-email-provider.md)) | `compose.yaml` → `api` / `migrator` / `postgres` |
+| **Runtime / host** | `/opt/circletools/.env` on the VM (`chmod 600`, owned by the deploy user; git-ignored) | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `ConnectionStrings__maindb` (password in lockstep), `Auth__Jwt__SigningKey` ([ADR-0021](../adr/0021-web-auth-token-model.md)), `Mail__Username`, `Mail__Password` ([ADR-0037](../adr/0037-transactional-email-provider.md)), `GRAFANA_ADMIN_PASSWORD` ([ADR-0051](../adr/0051-production-observability-backend.md)) | `compose.yaml` → `api` / `migrator` / `postgres` / `grafana` |
 | **CI / deploy** | GitHub → Settings → Secrets and variables → Actions (repository encrypted secrets) | `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`; `GITHUB_TOKEN` (built-in, GHCR push) | `.github/workflows/deploy.yml` (SSH rollout) |
 
 CI holds **only deploy access** — never a runtime secret. Postgres is not published off the internal
@@ -142,6 +146,7 @@ redeploy.
 | **DB password** | Suspected leak; scheduled hygiene | Update in vault → edit `POSTGRES_PASSWORD` **and** the `ConnectionStrings__maindb` password in `.env` (lockstep) → `docker compose up -d` (Postgres re-reads on restart). |
 | **JWT signing key** ([ADR-0021](../adr/0021-web-auth-token-model.md)) | Suspected compromise only | Update in vault → edit `Auth__Jwt__SigningKey` → `up -d`. **Invalidates all live sessions by design** — everyone re-signs-in; accept that cost. |
 | **Brevo SMTP key** ([ADR-0037](../adr/0037-transactional-email-provider.md)) | Leak; Brevo reissue | Reissue in the Brevo dashboard → update vault → edit `Mail__Username` / `Mail__Password` → `up -d`. |
+| **Grafana admin password** ([ADR-0051](../adr/0051-production-observability-backend.md)) | Leak; scheduled hygiene | Change in vault → edit `GRAFANA_ADMIN_PASSWORD` → `docker compose up -d grafana` (or reset in the Grafana UI and update the vault to match). |
 | **Deploy SSH key** | Leak; maintainer offboard | `ssh-keygen` a new pair → update the `DEPLOY_SSH_KEY` GitHub secret and vault → swap the public key in the VM's `authorized_keys` → remove the old line. |
 | **Mobile store signing / API keys** (future) | When the upload legs are wired ([ADR-0030](../adr/0030-mobile-store-publisher-identity.md), [ADR-0047](../adr/0047-versioning-and-release-strategy.md)) | Join the **CI tier** as GitHub Actions secrets under this same policy — see the [mobile runbook](mobile-apps.md). |
 
@@ -168,6 +173,47 @@ offsite dump. **Test the restore** (checklist below) so this drill is exercised,
 > — as the upgrade to adopt (as a superseding ADR) if a second maintainer joins, the secret count/rotation
 > cadence outgrows "edit the vault, edit `.env`", or plaintext-at-rest on the VM must go. Not now.
 
+## Observability (ADR-0051)
+
+Self-hosted **Loki + Prometheus + Grafana**, on the same VPS, all on the internal Docker network. Only
+**Grafana** is exposed; Prometheus and Loki have no Caddy site block and are never published. Telemetry
+stays on the box. Scope today is **logs + metrics** (no traces/alerting yet — additive later).
+
+| Piece | Role | Reached by |
+|---|---|---|
+| **Prometheus** (`prom/prometheus`) | **Scrapes** the API's `/metrics` over the Docker network (`api:8080/metrics`), 30-day TSDB | Grafana only (internal) |
+| **Loki** (`grafana/loki`) | Stores the API's logs, ingested via **OTLP** (`api` → `http://loki:3100/otlp`), 30-day retention | Grafana only (internal) |
+| **Grafana** (`grafana/grafana`) | The admin view; datasources auto-provisioned (Prometheus default + Loki) | `https://grafana.circletools.ch`, Grafana admin login |
+
+**How it is wired.** `CircleTools.ServiceDefaults` exposes the Prometheus scraping endpoint at `/metrics`
+(all environments) and — when `Observability__LokiOtlpEndpoint` is set (it is, in `compose.yaml`) — adds
+an OTLP **log** exporter to Loki. Local dev sets neither Loki nor a public `/metrics`, so it is
+unaffected (Aspire keeps its dashboard). Config lives in
+[`deploy/prometheus/prometheus.yml`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy/prometheus),
+[`deploy/loki/loki-config.yaml`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy/loki),
+and [`deploy/grafana/provisioning/`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy/grafana).
+
+**Security.** `/metrics` (and `/alive`) are **denied on the public `api.circletools.ch` origin** by
+Caddy — Prometheus reaches them only internally. Grafana enforces its own admin login
+(`GRAFANA_ADMIN_PASSWORD`), sign-up and anonymous access disabled.
+
+**Log floor.** The Docker `json-file` driver stays on (rotated `max-size`/`max-file`), so
+`docker compose logs` still works on the box even when Grafana/Loki is down. Prometheus/Loki data volumes
+are expendable (retention-bounded); back up **Grafana's** config/dashboards.
+
+**Provisioning steps (host-side).**
+1. ✅ **`grafana.circletools.ch`** DNS record created (mind the HTTP-01 caveat as the other origins —
+   see [`deploy/README.md`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy)).
+2. ✅ **`GRAFANA_ADMIN_PASSWORD`** generated (`openssl rand -base64 24`) and set in the VM's `deploy/.env`
+   ([Secrets & recovery](#secrets--recovery-adr-0050)) — record the value in the vault as the
+   authoritative copy.
+3. ⏳ `docker compose up -d` brings up `loki`, `prometheus`, `grafana` with the API; then **smoke-test**:
+   Grafana loads at `grafana.circletools.ch` (admin login), both datasources are green, Prometheus
+   **Targets** shows `api` UP, and a log line + a metric query return in **Explore**.
+
+**Upgrades (ADR-0051):** add **Tempo** for traces, **alert rules**, an all-container **log shipper**, or
+move to **Grafana Cloud** if the on-box footprint ever hurts.
+
 ## Checklist (milestone 8)
 
 Scaffolded items (`[~]`) have their artifacts in [`deploy/`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy); they still need a live VPS + secrets to be `[x]`.
@@ -184,7 +230,7 @@ Scaffolded items (`[~]`) have their artifacts in [`deploy/`](https://github.com/
 - [~] EF Core migrations as an explicit release step — one-shot `migrator` service (`--migrate`)
 - [ ] Privacy policy + imprint + account-deletion URLs published, reachable, DE/EN/FR
 - [~] Secrets: `.env.example` template + git-ignored `.env`; durable host/CI store **decided in [ADR-0050](../adr/0050-secrets-management.md)** (provision the VM's `.env` from the vault — see the [drill](#secrets--recovery-adr-0050))
-- [ ] Observability backend chosen and wired
+- [~] Observability backend **decided in [ADR-0051](../adr/0051-production-observability-backend.md)** — self-hosted Loki + Prometheus + Grafana; compose stack + `/metrics` scrape + OTLP-logs wiring built; **`grafana` DNS + `GRAFANA_ADMIN_PASSWORD` provisioned** — only the `up -d` bring-up + Grafana smoke-test remain (see [Observability](#observability-adr-0051))
 - [ ] Deploy & smoke-test; single-VM recovery (rebuild + restore) documented — [drill](#secrets--recovery-adr-0050)
 
 ## Related
