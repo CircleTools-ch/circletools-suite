@@ -1,0 +1,16 @@
+# Grafana dashboard provisioning (ADR-0051). Loads every dashboard JSON in this folder at startup, so
+# the "CircleTools — Service & Host" board is present with no manual import. Edits made in the UI can be
+# saved back into these files (or exported) to keep them in git.
+apiVersion: 1
+
+providers:
+  - name: CircleTools
+    orgId: 1
+    folder: CircleTools
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false
