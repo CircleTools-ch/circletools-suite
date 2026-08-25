@@ -129,8 +129,12 @@ reinforcing [ADR-0012](0012-observability-and-telemetry.md)'s privacy posture.
   - Generate `GRAFANA_ADMIN_PASSWORD` into the vault and derive `.env` from it
     ([ADR-0050](0050-secrets-management.md)); add its rotation line to the runbook.
   - **Back up** Grafana's dashboards/config (provisioning is in git; runtime-created dashboards are not).
-  - Add starter **dashboards** (API RED metrics, runtime, sync collisions) and **alert rules** under
-    `deploy/grafana/provisioning/`.
+  - ✅ **Done:** the **"CircleTools — Service & Host" dashboard** is provisioned under
+    `deploy/grafana/provisioning/dashboards/`, and **host + per-container metrics** were added
+    (**node_exporter** for host CPU/RAM/disk/network/load, **cAdvisor** for per-container CPU/memory,
+    both internal-only, scraped by Prometheus). Still open: **alert rules**.
+  - ✅ **Done:** the CD pipeline (`deploy.yml`) now **rsyncs `deploy/` config to the VM** and **pins
+    `IMAGE_TAG`**, closing the config-drift + stale-`:latest` gaps found at first bring-up.
   - Optional: a **log shipper** (Grafana Alloy / Promtail) to also land Postgres/Caddy container logs in
     Loki; and **Tempo** for distributed traces — both when they earn their weight.
   - Deliver [ADR-0012](0012-observability-and-telemetry.md)'s other open follow-up — **log-scrubbing
