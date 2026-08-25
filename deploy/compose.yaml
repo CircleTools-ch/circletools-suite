@@ -170,6 +170,40 @@ services:
       - loki
     # No published port: Caddy reverse-proxies grafana:3000 (deploy/Caddyfile).
 
+  # Host metrics (CPU / RAM / disk / filesystem / network / load) — reads the host through read-only
+  # mounts; Prometheus scrapes it at node-exporter:9100. Not published.
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    restart: unless-stopped
+    logging: *default-logging
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/host/root"
+      # Only report real filesystems (skip the container/pseudo mounts). $$ escapes $ for compose.
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|run)($$|/)"
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro,rslave
+
+  # Per-container metrics (CPU / memory / network) — so the API vs Postgres vs the observability stack's
+  # own footprint is visible on the shared box. Prometheus scrapes it at cadvisor:8080. Not published.
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    restart: unless-stopped
+    logging: *default-logging
+    privileged: true
+    devices:
+      - /dev/kmsg
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+
 volumes:
   pgdata:
   caddy_data:
