@@ -1,0 +1,24 @@
+# Prometheus scrape config (ADR-0051). Prometheus PULLS metrics from the API's /metrics endpoint over
+# the internal Docker network. That endpoint is NEVER published publicly — deploy/Caddyfile denies
+# /metrics on the api.circletools.ch origin, and the api container has no published port. Data is kept
+# on a local volume with 30d retention (set via the --storage.tsdb.retention.time flag in compose).
+global:
+  scrape_interval: 30s
+  scrape_timeout: 10s
+  external_labels:
+    environment: production
+
+scrape_configs:
+  # Prometheus scraping itself (self-monitoring).
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # The CircleTools Web API — ASP.NET + OpenTelemetry runtime/HTTP/AspNetCore metrics plus the custom
+  # CircleTools.Sync meter (circletools_sync_collisions). Exposed by ServiceDefaults at /metrics.
+  - job_name: api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["api:8080"]
+        labels:
+          service: circletools-api
