@@ -84,10 +84,12 @@ needed.
   `.github/workflows/deploy.yml` (build → GHCR → SSH `compose pull` → one-shot `migrator` → `up -d`),
   manual-trigger only until the VM and `DEPLOY_*` secrets exist. EF Core migrations are the explicit
   release step (`docker compose run --rm migrator`, i.e. the API image run with `--migrate`).
-- **Secrets management** — 🟡 **proposed** in [ADR-0050](../adr/0050-secrets-management.md) (pending
-  acceptance): two-tier — GitHub Actions encrypted secrets for CI/deploy + a git-ignored `deploy/.env`
+- **Secrets management** — ✅ decided in [ADR-0050](../adr/0050-secrets-management.md) (Accepted
+  2026-08-25): two-tier — GitHub Actions encrypted secrets for CI/deploy + a git-ignored `deploy/.env`
   on the host for runtime (DB credentials, JWT signing key, Brevo key), with the authoritative copy in a
-  password manager for recovery/rotation; SOPS+age recorded as the upgrade path. Never in the repo.
+  password manager for recovery/rotation; SOPS+age recorded as the upgrade path. Never in the repo. The
+  provisioning order, per-secret rotation table and single-VM recovery drill are in
+  [Secrets & recovery](#secrets--recovery-adr-0050) below.
 - **Production observability backend** — the Aspire dashboard
   ([ADR-0012](../adr/0012-observability-and-telemetry.md)) is dev-only.
 
@@ -181,7 +183,7 @@ Scaffolded items (`[~]`) have their artifacts in [`deploy/`](https://github.com/
 - [ ] Postgres container on an NVMe volume; **nightly `pg_dump` → Swiss Backup**; **restore tested**
 - [~] EF Core migrations as an explicit release step — one-shot `migrator` service (`--migrate`)
 - [ ] Privacy policy + imprint + account-deletion URLs published, reachable, DE/EN/FR
-- [~] Secrets: `.env.example` template + git-ignored `.env`; durable host/CI store **proposed in [ADR-0050](../adr/0050-secrets-management.md)** (accept, then provision the VM's `.env` from the vault)
+- [~] Secrets: `.env.example` template + git-ignored `.env`; durable host/CI store **decided in [ADR-0050](../adr/0050-secrets-management.md)** (provision the VM's `.env` from the vault — see the [drill](#secrets--recovery-adr-0050))
 - [ ] Observability backend chosen and wired
 - [ ] Deploy & smoke-test; single-VM recovery (rebuild + restore) documented — [drill](#secrets--recovery-adr-0050)
 
