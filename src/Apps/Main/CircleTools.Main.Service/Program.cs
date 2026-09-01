@@ -13,7 +13,6 @@ using Microsoft.EntityFrameworkCore;
 using CircleTools.Application;
 using CircleTools.Main.Contracts;
 using CircleTools.Main.Service.Core;
-using CircleTools.Main.Service.Core.Application;
 using CircleTools.Main.Service.Core.Domain;
 using CircleTools.Main.Service.Repository;
 using CircleTools.Main.Service.Repository.Linking;
@@ -314,25 +313,6 @@ app.MapGroup("/api/v{version:apiVersion}/my-wishlists")
 app.MapGroup("/api/v{version:apiVersion}/my-memberships")
     .WithApiVersionSet(versionSet).MapToApiVersion(new ApiVersion(1, 0))
     .MapMyMembershipsEndpoint();
-
-var heartbeats = app
-    .MapGroup("/api/v{version:apiVersion}/heartbeats")
-    .WithApiVersionSet(versionSet)
-    .MapToApiVersion(new ApiVersion(1, 0));
-
-heartbeats.MapPost("/", async (CreateHeartbeatRequest request, ISender sender, CancellationToken cancellationToken) =>
-    {
-        var id = await sender.Send(new CreateHeartbeatCommand(request.Note), cancellationToken);
-        return Results.Created($"/api/v1/heartbeats/{id}", id);
-    })
-    .WithName("CreateHeartbeat");
-
-heartbeats.MapGet("/", async (ISender sender, CancellationToken cancellationToken) =>
-    {
-        var result = await sender.Send(new GetHeartbeatsQuery(), cancellationToken);
-        return Results.Ok(result);
-    })
-    .WithName("GetHeartbeats");
 
 app.MapDefaultEndpoints();
 

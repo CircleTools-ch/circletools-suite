@@ -2,8 +2,9 @@
 
 > The technology choices are **ratified** ([ADR-0005–0015](09-architecture-decisions.md)). The
 > building blocks (`SharedKernel`, `Application`) and the **Main** app-type projects **exist**
-> (walking skeleton, milestone 5); a throwaway `Heartbeat` sample exercises the full pipeline
-> (domain → dispatcher → repository → EF Core → Postgres → Minimal API → WASM). The **SecretSanta**
+> (walking skeleton, milestone 5); a throwaway `Heartbeat` sample exercised the full pipeline
+> (domain → dispatcher → repository → EF Core → Postgres → Minimal API → WASM) and was **removed
+> 2026-09-01** once the real Identity/Circles/Sync/Linking slices had replaced it. The **SecretSanta**
 > app-type is being implemented in milestone 6a as the **offline MVP — no server tier**
 > (`Contracts`/`Core`/`LocalStore`/`Ui`/`WebApp` + a MAUI head, per
 > [FEAT-001](../features/FEAT-001-secret-santa-mvp.md)); the dispatcher + domain run **client-side**

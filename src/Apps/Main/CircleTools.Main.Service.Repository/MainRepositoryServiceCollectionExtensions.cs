@@ -3,7 +3,6 @@ using CircleTools.Identity.Passwords;
 using CircleTools.Identity.Tokens;
 using CircleTools.Infrastructure.Mail;
 using CircleTools.Infrastructure.Outbox;
-using CircleTools.Main.Service.Core.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -25,7 +24,6 @@ public static class MainRepositoryServiceCollectionExtensions
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
         services.AddDbContext<MainDbContext>(options => options.UseNpgsql(connectionString));
-        services.AddScoped<IHeartbeatRepository, HeartbeatRepository>();
         services.AddScoped<IRefreshTokenChainStore, RefreshTokenChainStore>();
         services.AddScoped<ISessionUserLookup, SessionUserLookup>();
         services.AddScoped<IOutbox, EfOutbox>();
