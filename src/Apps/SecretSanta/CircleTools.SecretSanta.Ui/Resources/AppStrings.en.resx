@@ -18,6 +18,7 @@
   <data name="Copied" xml:space="preserve"><value>Copied!</value></data>
   <data name="NavGroups" xml:space="preserve"><value>Groups</value></data>
   <data name="NavMore" xml:space="preserve"><value>More</value></data>
+  <data name="NavMoreEllipsis" xml:space="preserve"><value>More…</value></data>
   <data name="NavMembers" xml:space="preserve"><value>Members</value></data>
   <data name="NavExclusions" xml:space="preserve"><value>Exclusions</value></data>
   <data name="NavDraw" xml:space="preserve"><value>Draw</value></data>

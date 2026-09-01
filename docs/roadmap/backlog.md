@@ -28,10 +28,22 @@ A second UX pass on the Secret-Santa app, driven by the organizer's own use. Eac
 - **R2-4 · Default event name "Christmas {year}" (P2).** ✅ **Done.** The add-event field is pre-filled
   with a localized default — *Weihnachten 2026* / *Christmas 2026* / *Noël 2026* (`DefaultEventNameFormat`
   + the current year) — which the user can accept or edit.
-- **R2-5 · Nav quick-access submenu (groups → recent events) (P2).** ⏳ **Next.** The drawer should show
-  the last-opened groups, each expanding to its most recent events (by date, else last opened) with a
-  "More…" into the group, and a "More…" into the full groups list — for fast access to the common
-  destinations, especially on mobile.
+- **R2-5 · Nav quick-access submenu (groups → recent events) (P2).** ✅ **Done.** The drawer now shows,
+  under *Groups*, the recently-opened (and still-visible) groups — each an expandable `MudNavGroup`
+  listing its most recent occasions (dated newest-first, then undated by last-opened) plus a **Mehr…**
+  link into the group — and, when more groups exist than are shown, an **Alle Gruppen** link to the full
+  list. Recency is a device-local `RecentAccessService` over the plain `IKeyValueStore` (like the culture
+  choice, not synced); `GroupNav`/`EventNav` record opens, and the shell refreshes the section on
+  navigation, sign-in change and sync. The current group's submenu auto-expands. Event ordering needed a
+  new `EventSummaryDto.Date`. **Browser-verified** (DE): the group and its two occasions appear nested in
+  the drawer, current event highlighted.
+- **R2-1b · A past occasion's stale draw is not flagged "re-draw needed" (refinement of R2-1/2).** ✅
+  **Done.** After removing a member, a *past* occasion (its date has gone by) was still showing
+  "re-draw needed", which is noise — a finished exchange is history, not something to re-draw. The read
+  model ([ADR-0052](../adr/0052-member-archival-and-permanent-draw-history.md)) now suppresses the stale
+  flag once the occasion's date is in the past (undated/upcoming still show it); the query handlers take a
+  `TimeProvider`. Applies everywhere the flag surfaces (badges, draw/share notices). Browser-verified: a
+  2024 occasion reads "Ausgelost", a 2027 occasion "Neu auslosen nötig".
 - **R2-6 · Broader mobile/UX polish (P3, open).** Ongoing: make the app easy to understand and quick to
   reach the common things, on web and especially on phones. Candidates to be gathered as they surface.
 

@@ -92,9 +92,11 @@ the group and event badges show "re-draw needed" ahead of "drawn" when a draw is
   archived member round-trips through the memento.
 - 👍 A re-added name or re-linked account is allowed, because uniqueness is enforced among active
   members only.
-- 👎 The shared-roster model means a roster change flags **every** event's draw as stale, including
-  long-finished past ones — an accurate but sometimes noisy signal. Per-event participants (option 2)
-  would scope it; deferred until there is evidence it matters.
+- 👎/👍 The shared-roster model means a roster change flags **every** event's draw stale in the domain.
+  To keep that from being noise, the **read model suppresses the flag for a past occasion** (its date is
+  behind us — it is history, not something to re-draw), surfacing "re-draw needed" only for undated or
+  upcoming occasions; the query handlers take a `TimeProvider` for this. A finer scoping (per-event
+  participants, option 2) is still deferred until there is evidence it matters.
 - 👎 Archived members accumulate in the group document forever. Acceptable at the expected scale (a
   family roster); a compaction pass is a later option if it ever isn't.
 - 👎 A member archived while linked to an account keeps their account link in history; their

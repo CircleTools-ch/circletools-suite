@@ -6,6 +6,7 @@ using CircleTools.SecretSanta.Core.Application;
 using CircleTools.SecretSanta.Core.Domain;
 using CircleTools.SecretSanta.Ui;
 using CircleTools.SecretSanta.Ui.Pages;
+using CircleTools.Ui.Abstractions;
 using CircleTools.SecretSanta.Ui.Test.TestSupport;
 using Bunit;
 using Bunit.TestDoubles;
@@ -207,6 +208,9 @@ public sealed class MembersPageLinkGuardTests : IDisposable
         _ctx.Services.AddMudServices();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassThroughStringLocalizer<AppStrings>());
+        // The Members page renders GroupNav, which records recency (R2-5) via RecentAccessService.
+        _ctx.Services.AddSingleton<IKeyValueStore>(new StubKeyValueStore());
+        _ctx.Services.AddSingleton<RecentAccessService>();
     }
 
     [Fact]
@@ -258,6 +262,9 @@ public sealed class MembersPageSelfLinkTests : IDisposable
         _ctx.Services.AddMudServices();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassThroughStringLocalizer<AppStrings>());
+        // The Members page renders GroupNav, which records recency (R2-5) via RecentAccessService.
+        _ctx.Services.AddSingleton<IKeyValueStore>(new StubKeyValueStore());
+        _ctx.Services.AddSingleton<RecentAccessService>();
     }
 
     [Fact]
@@ -340,6 +347,27 @@ file sealed class GroupSender(GroupDto group) : ISender
 
     public Task<TResult> Send<TResult>(IQuery<TResult> query, CancellationToken cancellationToken = default) =>
         Task.FromResult((TResult)(object)group);
+}
+
+/// <summary>An in-memory <see cref="IKeyValueStore"/> so components that record recency (GroupNav → RecentAccessService) render in tests.</summary>
+file sealed class StubKeyValueStore : IKeyValueStore
+{
+    private readonly Dictionary<string, string> _values = [];
+
+    public ValueTask<string?> GetAsync(StorageScope scope, string key, CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult(_values.TryGetValue(key, out var value) ? value : null);
+
+    public ValueTask<bool> SetAsync(StorageScope scope, string key, string value, CancellationToken cancellationToken = default)
+    {
+        _values[key] = value;
+        return ValueTask.FromResult(true);
+    }
+
+    public ValueTask RemoveAsync(StorageScope scope, string key, CancellationToken cancellationToken = default)
+    {
+        _values.Remove(key);
+        return ValueTask.CompletedTask;
+    }
 }
 
 /// <summary>Unit test for the client event-registry publish: the event date is carried (FR-030).</summary>

@@ -79,7 +79,7 @@ public sealed class HandlerTests
 
         Assert.Equal(4, links.Count);
 
-        var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        var group = await new GetGroupQueryHandler(repository, TimeProvider.System).HandleAsync(new GetGroupQuery(groupId), default);
         var occasion = Assert.Single(group!.Events);
         Assert.True(occasion.HasCurrentDraw); // kept, only flagged stale
         Assert.True(occasion.DrawInvalidatedByMembershipChange);
@@ -128,12 +128,48 @@ public sealed class HandlerTests
         await create.HandleAsync(new CreateGroupCommand("One"), default);
         await create.HandleAsync(new CreateGroupCommand("Two"), default);
 
-        var summaries = await new GetGroupsQueryHandler(repository).HandleAsync(new GetGroupsQuery(), default);
+        var summaries = await new GetGroupsQueryHandler(repository, TimeProvider.System).HandleAsync(new GetGroupsQuery(), default);
 
         Assert.Equal(2, summaries.Count);
         Assert.Contains(summaries, s => s.Name == "One");
         Assert.Contains(summaries, s => s.Name == "Two");
         // A new group starts with no event (ADR-0042 amendment); the user adds the first occasion.
         Assert.All(summaries, s => Assert.Equal(0, s.EventCount));
+    }
+
+    [Fact]
+    public async Task StaleDraw_IsFlaggedOnAnUpcomingEvent_ButNotOnAPastOne()
+    {
+        // A past occasion's stale draw is history, not something to re-draw, so the read model suppresses
+        // the "re-draw needed" flag once the date is in the past — only the upcoming one keeps it (ADR-0052).
+        var repo = new InMemoryGroupRepository();
+        var groupId = await new CreateGroupCommandHandler(repo).HandleAsync(new CreateGroupCommand("Fam"), default);
+        var addEvent = new AddEventCommandHandler(repo);
+        var past = await addEvent.HandleAsync(new AddEventCommand(groupId, "Christmas 2024"), default);
+        var upcoming = await addEvent.HandleAsync(new AddEventCommand(groupId, "Christmas 2027"), default);
+        var setDetails = new SetEventDetailsCommandHandler(repo);
+        await setDetails.HandleAsync(new SetEventDetailsCommand(groupId, past, new DateTimeOffset(2024, 12, 24, 0, 0, 0, TimeSpan.Zero), "", ""), default);
+        await setDetails.HandleAsync(new SetEventDetailsCommand(groupId, upcoming, new DateTimeOffset(2027, 12, 24, 0, 0, 0, TimeSpan.Zero), "", ""), default);
+        var addMember = new AddMemberCommandHandler(repo);
+        var a = await addMember.HandleAsync(new AddMemberCommand(groupId, "A"), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "B"), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "C"), default);
+        var draw = new RunDrawCommandHandler(repo, new DrawGenerator(new SeededRandomSource(1)), TimeProvider.System);
+        await draw.HandleAsync(new RunDrawCommand(groupId, past), default);
+        await draw.HandleAsync(new RunDrawCommand(groupId, upcoming), default);
+
+        // A roster change flags both draws stale in the domain.
+        await new RemoveMemberCommandHandler(repo).HandleAsync(new RemoveMemberCommand(groupId, a), default);
+
+        var clock = new FixedClock(new DateTimeOffset(2026, 9, 1, 12, 0, 0, TimeSpan.Zero));
+        var group = await new GetGroupQueryHandler(repo, clock).HandleAsync(new GetGroupQuery(groupId), default);
+
+        Assert.False(group!.Events.Single(e => e.Id == past).DrawInvalidatedByMembershipChange);
+        Assert.True(group.Events.Single(e => e.Id == upcoming).DrawInvalidatedByMembershipChange);
+    }
+
+    private sealed class FixedClock(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 }

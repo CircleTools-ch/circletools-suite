@@ -1,6 +1,7 @@
 @inject IStringLocalizer<AppStrings> L
 @inject NavigationManager Navigation
 @inject ISender Sender
+@inject RecentAccessService Recent
 
 @* Event-level sub-navigation within a group (ADR-0042): a back link to the group's events list plus the
    event's name, then a Material tab strip for the event's sections (details, wishlists, draw, share).
@@ -50,6 +51,11 @@
     protected override async Task OnParametersSetAsync()
     {
         _activeIndex = ActiveIndexFromRoute();
+
+        // Opening any of an event's pages counts as opening both the event and its group: record recency
+        // for the nav quick access (the event id orders undated occasions; the group id keeps the group near the top).
+        await Recent.RecordEventAsync(EventId);
+        await Recent.RecordGroupAsync(GroupId);
 
         // The group and event names are a nicety in the header; a read failure just leaves them at their
         // fallbacks and the tabs still work, so it is not worth surfacing an error.
