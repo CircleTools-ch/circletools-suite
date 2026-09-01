@@ -104,5 +104,7 @@
   href: 0051-production-observability-backend.md
 - name: 0052 Member archival & permanent draw history
   href: 0052-member-archival-and-permanent-draw-history.md
+- name: 0053 Backend-free first mobile release
+  href: 0053-backend-free-first-mobile-release.md
 - name: Template
   href: _template-adr.md

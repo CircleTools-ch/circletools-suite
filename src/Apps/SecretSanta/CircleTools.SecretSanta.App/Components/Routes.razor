@@ -18,6 +18,9 @@
 
 @if (_ready)
 {
+    @* Routes an incoming reveal App Link (ADR-0053) to /r. Outside the culture boundary so it is not
+       re-keyed on a language change — it subscribes once for the app's life. Renders nothing. *@
+    <DeepLinkListener />
     <CascadingAuthenticationState>
         <CultureBoundary Context="culture">
             <Router @key="culture"

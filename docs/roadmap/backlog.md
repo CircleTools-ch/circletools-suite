@@ -63,6 +63,16 @@ A second UX pass on the Secret-Santa app, driven by the organizer's own use. Eac
     USB-deploy runbook added to [device testing](../deployment/device-testing.md). **Known limitation:**
     account sign-in/sync over the LAN needs a trusted cert / real origin — deferred with hosting; the
     offline + share flow is unaffected.
+  - **Backend-free v1 reveal path — ✅ implemented 2026-09-01 ([ADR-0053](../adr/0053-backend-free-first-mobile-release.md)).**
+    `RevealBaseUrl` (and `ApiBaseUrl`) are now **build-time settings** on the MAUI head (Release defaults to
+    the production origins; `release-mobile.yml` passes them), so a store build no longer ships a dev URL.
+    **Android App Links** for `secretsanta.circletools.ch/r` open the installed app and render the reveal
+    **offline from the baked-in UI** (`MainActivity` intent-filter + `DeepLinkService` + `DeepLinkListener`,
+    `LaunchMode=SingleTask`); a recipient without the app falls back to the static page. **Verified on the
+    Pixel 9 Pro:** a reveal App Link opened the app and showed "Hallo Katy! … Du bist Wichtel für: Vreni",
+    fully offline. `assetlinks.json` ships in the web app with a **placeholder** fingerprint —
+    **still to do before go-live:** replace it with the real Play App Signing SHA-256 (see `deploy/README.md`)
+    so links auto-open silently instead of via the chooser.
   - More mobile-feature candidates gathered in the
     [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-secret-santa-mobile.md): QR codes,
     add-to-calendar, share-all, local notifications, biometric lock.

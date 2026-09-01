@@ -79,6 +79,8 @@ jobs:
           dotnet publish "$APP" -c Release -f net10.0-android \
             -p:ApplicationDisplayVersion=${{ steps.nbgv.outputs.SimpleVersion }} \
             -p:ApplicationVersion=${{ steps.code.outputs.value }} \
+            -p:RevealBaseUrl=https://secretsanta.circletools.ch \
+            -p:ApiBaseUrl=https://api.circletools.ch \
             -p:AndroidPackageFormat=aab \
             -p:AndroidKeyStore=true \
             -p:AndroidSigningKeyStore="$RUNNER_TEMP/upload.jks" \
@@ -95,6 +97,8 @@ jobs:
           dotnet publish "$APP" -c Release -f net10.0-android \
             -p:ApplicationDisplayVersion=${{ steps.nbgv.outputs.SimpleVersion }} \
             -p:ApplicationVersion=${{ steps.code.outputs.value }} \
+            -p:RevealBaseUrl=https://secretsanta.circletools.ch \
+            -p:ApiBaseUrl=https://api.circletools.ch \
             -p:AndroidPackageFormat=aab
 
       - name: Upload bundle artifact

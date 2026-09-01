@@ -94,6 +94,14 @@ stays skipped until `DEPLOY_HOST` is set**, then self-activates — no edit need
 - **CD config sync (done).** `deploy.yml` **rsyncs** `compose.yaml` + the observability config to the VM
   on every deploy (never `.env`) and **pins `IMAGE_TAG`** in the VM's `.env` — so config changes ship
   automatically and a manual `docker compose` can't drift to a stale `:latest`. No more hand-`scp`.
+- **Android App Links (ADR-0053).** The Secret-Santa app opens reveal links
+  (`https://secretsanta.circletools.ch/r…`) directly. Verification needs
+  `https://secretsanta.circletools.ch/.well-known/assetlinks.json` to list the app's **Play App Signing**
+  SHA-256. The file ships in the Secret-Santa WASM site (`wwwroot/.well-known/assetlinks.json`) with a
+  **placeholder** fingerprint. Before go-live: replace it with the real fingerprint from the Play Console
+  (Setup → App integrity → App signing), redeploy the web head, and confirm with Google's
+  [Statement List Tester](https://developers.google.com/digital-asset-links/tools/generator). Until then,
+  reveal links still open the app — via the system chooser instead of silently.
 
 ## Milestone-8 go-live checklist
 
