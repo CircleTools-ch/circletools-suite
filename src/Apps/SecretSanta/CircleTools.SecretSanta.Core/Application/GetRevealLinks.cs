@@ -29,6 +29,11 @@ public sealed class GetRevealLinksQueryHandler(IGroupRepository repository, Reve
             return [];
         }
 
+        // A stale draw (roster changed since it ran, ADR-0052) still yields links: an archived member's
+        // name resolves through FindMember, so a past occasion's links stay reachable — that is the whole
+        // point of keeping the draw. The UI warns that the draw no longer matches the roster; it is not
+        // blocked here. The null guard below still protects a genuinely broken (legacy) draw.
+
         var links = new List<RevealLinkDto>(occasion.CurrentDraw.Assignments.Count);
         foreach (var assignment in occasion.CurrentDraw.Assignments)
         {

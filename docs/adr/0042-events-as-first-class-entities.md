@@ -139,6 +139,26 @@ Options 2 and 3 are rejected for the reasons under the drivers.
 - 👍 Smaller change (draw history already exists).
 - 👎 A birthday list is not a Christmas list — the organizer asked for per-occasion wishlists and budget.
 
+## Amendments
+
+### 2026-09-01 — a new group starts with **no** event
+
+The original decision seeded every new group with **one** default event (its id equal to the group
+id) and forbade removing a group's last event ("at least one event at all times"). In use this
+pre-created and pre-named an *unnamed* occasion the user never asked for, and the group editor opened
+onto an event rather than letting the user create and name their first occasion.
+
+Changed so that **`Group.Create` adds no event**; the user creates the first occasion themselves, and
+the UI pre-fills its name with the localized **"Christmas {year}"** default (DE *Weihnachten*, FR
+*Noël*). `Group.RemoveEvent` no longer refuses to remove the last event, so a group may hold **zero**
+occasions. The create-from-circle flow is eventless too.
+
+Persistence and migration are unaffected in spirit and made precise: a **pre-events** snapshot still
+has a `null` `Events` field and is migrated to a single default event; an **empty** (non-null)
+`Events` list is now a real, intentional state and is kept as-is. The default-event-id-equals-group-id
+convention remains only for that legacy migration. One sync aggregate, LWW and claim flow are
+unchanged (an eventless group is a smaller document, nothing more).
+
 ## Links
 
 - Related ADRs: [ADR-0040](0040-ui-component-library-mudblazor.md) (**nav amended** — two-level group

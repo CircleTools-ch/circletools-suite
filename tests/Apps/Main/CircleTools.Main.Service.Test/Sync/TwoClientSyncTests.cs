@@ -30,17 +30,18 @@ public sealed class TwoClientSyncTests(TwoClientSyncFactory factory)
         Assert.NotNull(onB);
 
         // The whole aggregate crossed, not just the name: members with their wishlists, the exclusion,
-        // and the completed draw's assignments (FR-023).
-        // Wishlists and the draw are per event now (ADR-0042); the seeded data lives on the default
-        // event (id == group id).
+        // and the completed draw's assignments (FR-023). Wishlists and the draw are per event now
+        // (ADR-0042); the seeded group has a single occasion.
+        var eventA = onA.Events.Single();
+        var eventB = onB!.Events.Single();
         Assert.Equal(onA.Name, onB.Name);
         Assert.Equal(
-            onA.Members.Select(m => (m.Name, string.Join(",", onA.FindEvent(onA.Id)!.WishlistFor(m.Id).Items))).OrderBy(x => x.Name),
-            onB.Members.Select(m => (m.Name, string.Join(",", onB.FindEvent(onB.Id)!.WishlistFor(m.Id).Items))).OrderBy(x => x.Name));
+            onA.Members.Select(m => (m.Name, string.Join(",", eventA.WishlistFor(m.Id).Items))).OrderBy(x => x.Name),
+            onB.Members.Select(m => (m.Name, string.Join(",", eventB.WishlistFor(m.Id).Items))).OrderBy(x => x.Name));
         Assert.Equal(onA.Exclusions.Count, onB.Exclusions.Count);
         Assert.Equal(
-            onA.FindEvent(onA.Id)!.CurrentDraw!.Assignments.Select(a => (a.GiverMemberId, a.RecipientMemberId)).OrderBy(x => x.GiverMemberId),
-            onB.FindEvent(onB.Id)!.CurrentDraw!.Assignments.Select(a => (a.GiverMemberId, a.RecipientMemberId)).OrderBy(x => x.GiverMemberId));
+            eventA.CurrentDraw!.Assignments.Select(a => (a.GiverMemberId, a.RecipientMemberId)).OrderBy(x => x.GiverMemberId),
+            eventB.CurrentDraw!.Assignments.Select(a => (a.GiverMemberId, a.RecipientMemberId)).OrderBy(x => x.GiverMemberId));
     }
 
     [Fact]

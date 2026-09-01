@@ -5,10 +5,11 @@ namespace CircleTools.SecretSanta.Core.Domain;
 
 /// <summary>
 /// Aggregate root for a Secret-Santa group. Owns a <strong>shared</strong> roster (members) and shared
-/// exclusions, plus one or more <see cref="Event"/>s — the occasions that reuse that roster, each with
+/// exclusions, plus zero or more <see cref="Event"/>s — the occasions that reuse that roster, each with
 /// its own draw, wishlists, budget and event details (ADR-0042). Enforces the group's invariants:
-/// non-empty name, unique member names, exclusion endpoints that are members, at least two members
-/// before a draw, and at least one event at all times.
+/// non-empty name, unique member names, exclusion endpoints that are members, and at least two members
+/// before a draw. A newly created group has <strong>no</strong> event — the user creates the first
+/// occasion themselves (ADR-0042 amendment, 2026-09-01), so nothing is pre-named on their behalf.
 /// </summary>
 public sealed class Group : AggregateRoot
 {
@@ -33,27 +34,30 @@ public sealed class Group : AggregateRoot
     /// <summary>Gets the group name.</summary>
     public string Name { get; private set; }
 
-    /// <summary>Gets the shared group members.</summary>
-    public IReadOnlyList<Member> Members => _members.AsReadOnly();
+    /// <summary>
+    /// Gets the <strong>active</strong> roster — the members who take part in the group now. Archived
+    /// members (removed but kept for history, ADR-0052) are excluded, so the roster editor, the draw and
+    /// every "who is in this group" read see only current people. Name resolution for a past draw uses
+    /// <see cref="FindMember"/>, which still finds archived members.
+    /// </summary>
+    public IReadOnlyList<Member> Members => [.. _members.Where(m => !m.IsArchived)];
 
     /// <summary>Gets the shared configured exclusions.</summary>
     public IReadOnlyList<Exclusion> Exclusions => _exclusions.AsReadOnly();
 
-    /// <summary>Gets the group's events (occasions), oldest first. A group always has at least one.</summary>
+    /// <summary>Gets the group's events (occasions), oldest first. May be empty until the user adds one.</summary>
     public IReadOnlyList<Event> Events => _events.AsReadOnly();
 
-    /// <summary>Creates a new, empty group with a single default event whose id is the group's id.</summary>
+    /// <summary>Creates a new, empty group with no members, no exclusions and no events.</summary>
     /// <param name="name">A non-empty group name.</param>
     /// <returns>The created group.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is empty.</exception>
-    public static Group Create(string name)
-    {
-        var id = GuidV7.New();
-
-        // The first/default event takes the group's own id — a deterministic value that keeps the common
-        // single-occasion group simple and lets the server migration line up existing rows (ADR-0042).
-        return new(id, NormalizeName(name), members: [], exclusions: [], events: [Event.Create(id, string.Empty)]);
-    }
+    /// <remarks>
+    /// A new group starts with <strong>no</strong> event (ADR-0042 amendment, 2026-09-01): the user
+    /// creates the first occasion, so the app never pre-names one on their behalf.
+    /// </remarks>
+    public static Group Create(string name) =>
+        new(GuidV7.New(), NormalizeName(name), members: [], exclusions: [], events: []);
 
     /// <summary>Renames the group.</summary>
     /// <param name="name">A non-empty group name.</param>
@@ -63,13 +67,14 @@ public sealed class Group : AggregateRoot
     /// <param name="name">A non-empty member name, unique within the group (case-insensitive).</param>
     /// <returns>The identity of the added member.</returns>
     /// <exception cref="InvalidOperationException">Thrown when the name duplicates an existing member.</exception>
-    /// <remarks>Adding a member voids every event's draw; wishlists are set later, per event.</remarks>
+    /// <remarks>Adding a member flags every event's current draw as no longer matching the roster (it is
+    /// kept, not discarded — ADR-0052); wishlists are set later, per event.</remarks>
     public Guid AddMember(string name)
     {
         var member = Member.Create(name);
         GuardUniqueName(member.Name, excludingMemberId: null);
         _members.Add(member);
-        InvalidateAllDraws();
+        MarkRosterChangedOnAllEvents();
         return member.Id;
     }
 
@@ -96,7 +101,7 @@ public sealed class Group : AggregateRoot
         }
 
         _members.Add(member);
-        InvalidateAllDraws();
+        MarkRosterChangedOnAllEvents();
         return member.Id;
     }
 
@@ -135,21 +140,23 @@ public sealed class Group : AggregateRoot
         member.Rename(normalized);
     }
 
-    /// <summary>Removes a member, any exclusions that reference it, and its wishlist in every event.</summary>
-    /// <param name="memberId">The member to remove.</param>
-    /// <exception cref="InvalidOperationException">Thrown when the member is unknown.</exception>
-    /// <remarks>Removing a member voids every event's draw.</remarks>
+    /// <summary>
+    /// Removes a member from the active roster by <strong>archiving</strong> them (ADR-0052): the member
+    /// is kept in the aggregate, so a past draw that includes them still resolves their name and a later
+    /// rename still reaches them, but they take part in no future draw and are hidden from the roster.
+    /// Exclusions that reference them are dropped (an archived member cannot be drawn), and their
+    /// per-event wishlists are kept so a past occasion still reads correctly. Completed draws are
+    /// <strong>not</strong> discarded; each event's current draw is flagged as no longer matching the
+    /// roster so the UI can invite a re-draw.
+    /// </summary>
+    /// <param name="memberId">The active member to archive.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the member is unknown or already archived.</exception>
     public void RemoveMember(Guid memberId)
     {
         var member = RequireMember(memberId);
-        _members.Remove(member);
+        member.Archive();
         _exclusions.RemoveAll(e => e.GiverMemberId == memberId || e.RecipientMemberId == memberId);
-        foreach (var occasion in _events)
-        {
-            occasion.RemoveMember(memberId);
-        }
-
-        InvalidateAllDraws();
+        MarkRosterChangedOnAllEvents();
     }
 
     /// <summary>
@@ -196,19 +203,10 @@ public sealed class Group : AggregateRoot
     /// <exception cref="InvalidOperationException">Thrown when the event is unknown.</exception>
     public void RenameEvent(Guid eventId, string name) => RequireEvent(eventId).Rename(name);
 
-    /// <summary>Removes an event and everything it owns (its draws and wishlists).</summary>
+    /// <summary>Removes an event and everything it owns (its draws and wishlists). A group may end up with none.</summary>
     /// <param name="eventId">The event to remove.</param>
-    /// <exception cref="InvalidOperationException">Thrown when the event is unknown or it is the group's last event.</exception>
-    public void RemoveEvent(Guid eventId)
-    {
-        var occasion = RequireEvent(eventId);
-        if (_events.Count == 1)
-        {
-            throw new InvalidOperationException("A group must always have at least one event.");
-        }
-
-        _events.Remove(occasion);
-    }
+    /// <exception cref="InvalidOperationException">Thrown when the event is unknown.</exception>
+    public void RemoveEvent(Guid eventId) => _events.Remove(RequireEvent(eventId));
 
     /// <summary>Sets or clears an event's gift budget.</summary>
     public void SetEventBudget(Guid eventId, Budget? budget) => RequireEvent(eventId).SetBudget(budget);
@@ -240,13 +238,14 @@ public sealed class Group : AggregateRoot
         ArgumentNullException.ThrowIfNull(generator);
 
         var occasion = RequireEvent(eventId);
-        if (_members.Count < 2)
+        var active = _members.Where(m => !m.IsArchived).ToList();
+        if (active.Count < 2)
         {
             throw new InvalidOperationException("A draw needs at least two members.");
         }
 
         var result = generator.Generate(
-            _members.Select(m => m.Id).ToList(),
+            active.Select(m => m.Id).ToList(),
             _exclusions,
             occasion.CurrentDraw?.ToMap());
 
@@ -277,7 +276,7 @@ public sealed class Group : AggregateRoot
         // still be read and migrated (see FromState). New writes carry everything under Events.
         Budget: null,
         Event: null,
-        _members.Select(m => new MemberState(m.Id, m.Name, UserId: m.UserId, OriginCirclePersonId: m.OriginCirclePersonId)).ToList(),
+        _members.Select(m => new MemberState(m.Id, m.Name, UserId: m.UserId, OriginCirclePersonId: m.OriginCirclePersonId, IsArchived: m.IsArchived)).ToList(),
         _exclusions.Select(e => new ExclusionState(e.GiverMemberId, e.RecipientMemberId, e.Mutual)).ToList(),
         Draws: [],
         DrawInvalidatedByMembershipChange: false,
@@ -291,16 +290,19 @@ public sealed class Group : AggregateRoot
         ArgumentNullException.ThrowIfNull(state);
 
         var members = state.Members
-            .Select(m => Member.Restore(m.Id, m.Name, m.UserId, m.OriginCirclePersonId))
+            .Select(m => Member.Restore(m.Id, m.Name, m.UserId, m.OriginCirclePersonId, m.IsArchived))
             .ToList();
 
         var exclusions = state.Exclusions
             .Select(e => Exclusion.Create(e.GiverMemberId, e.RecipientMemberId, e.Mutual))
             .ToList();
 
-        var events = state.Events is { Count: > 0 } storedEvents
-            ? storedEvents.Select(FromEventState).ToList()
-            : [MigrateLegacyEvent(state)];
+        // A pre-events snapshot has a null Events field and is migrated to a single default event; a
+        // post-events snapshot carries Events explicitly, and an empty list is a real, intentional state
+        // now that a new group starts with none (ADR-0042 amendment). Only null triggers migration.
+        List<Event> events = state.Events is null
+            ? [MigrateLegacyEvent(state)]
+            : [.. state.Events.Select(FromEventState)];
 
         return new Group(state.Id, state.Name, members, exclusions, events);
     }
@@ -357,25 +359,29 @@ public sealed class Group : AggregateRoot
         occasion.DrawInvalidatedByMembershipChange,
         occasion.Wishlists.Select(w => new EventWishlistState(w.Key, [.. w.Value.Items])).ToList());
 
-    private void InvalidateAllDraws()
+    private void MarkRosterChangedOnAllEvents()
     {
         foreach (var occasion in _events)
         {
-            occasion.InvalidateDraws();
+            occasion.MarkRosterChanged();
         }
     }
 
+    // Mutations act on the active roster: an archived member is history, not someone you rename, link or
+    // re-archive. Name resolution for a past draw uses FindMember, which still finds archived members.
     private Member RequireMember(Guid memberId) =>
-        _members.FirstOrDefault(m => m.Id == memberId)
-        ?? throw new InvalidOperationException($"Member '{memberId}' is not part of this group.");
+        _members.FirstOrDefault(m => m.Id == memberId && !m.IsArchived)
+        ?? throw new InvalidOperationException($"Member '{memberId}' is not an active member of this group.");
 
     private Event RequireEvent(Guid eventId) =>
         _events.FirstOrDefault(e => e.Id == eventId)
         ?? throw new InvalidOperationException($"Event '{eventId}' is not part of this group.");
 
+    // Uniqueness is enforced among active members only: an archived member's name or account link is
+    // history and must not block a new active member (e.g. re-adding someone you removed, ADR-0052).
     private void GuardUniqueUser(Guid userId, Guid excludingMemberId)
     {
-        var duplicate = _members.Any(m => m.Id != excludingMemberId && m.UserId == userId);
+        var duplicate = _members.Any(m => !m.IsArchived && m.Id != excludingMemberId && m.UserId == userId);
         if (duplicate)
         {
             throw new InvalidOperationException(
@@ -386,6 +392,7 @@ public sealed class Group : AggregateRoot
     private void GuardUniqueName(string name, Guid? excludingMemberId)
     {
         var duplicate = _members.Any(m =>
+            !m.IsArchived &&
             m.Id != excludingMemberId &&
             string.Equals(m.Name, name, StringComparison.OrdinalIgnoreCase));
 

@@ -28,12 +28,18 @@ public sealed record EventDetailsState(DateTimeOffset? Date, string Location, st
 /// The circle person this member was copied from, or <see langword="null"/>. Recorded at create time
 /// and never dereferenced; older snapshots deserialize to <see langword="null"/>.
 /// </param>
+/// <param name="IsArchived">
+/// Whether this member has been archived — removed from the active roster but kept for history
+/// (ADR-0052). Snapshots written before this field existed deserialize to <see langword="false"/>
+/// (active), so no existing member is lost or hidden by the schema bump.
+/// </param>
 public sealed record MemberState(
     Guid Id,
     string Name,
     IReadOnlyList<string>? Wishlist = null,
     Guid? UserId = null,
-    Guid? OriginCirclePersonId = null);
+    Guid? OriginCirclePersonId = null,
+    bool IsArchived = false);
 
 /// <summary>Serializable snapshot of an <c>Exclusion</c>.</summary>
 /// <param name="GiverMemberId">The giver member identity.</param>

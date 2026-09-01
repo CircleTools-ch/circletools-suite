@@ -3,6 +3,38 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## UX round 2 — Secret-Santa usability (2026-09-01)
+
+A second UX pass on the Secret-Santa app, driven by the organizer's own use. Each item was built and
+**verified in a real browser** (Playwright/Chromium, DE + EN, account-free flow), console clean.
+
+- **R2-1/R2-2 · Member history: delete keeps past events; rename propagates (P1).** ✅ **Done —
+  [ADR-0052](../adr/0052-member-archival-and-permanent-draw-history.md).** Removing a member used to
+  delete them from the roster *and* clear every event's draw (and adding a member cleared past draws
+  too), so a completed occasion lost both the person and the result. Now removal **archives** the member
+  (kept in the aggregate for name resolution and rename propagation, off the active roster and out of
+  future draws), and a roster change **flags** each event's draw stale instead of clearing it — draws
+  are permanent history. A rename reaches past occasions because names resolve by id through
+  `FindMember`. Reveal links for a kept draw still generate (the archived name resolves), with a "roster
+  changed" warning on the draw/share screens; the remove confirmation says the person stays in occasions
+  already drawn. Additive `MemberState.IsArchived`, opaque to sync (no server change). **Browser-verified
+  end to end:** draw 4 people → remove one → the Share page still lists all 4 links (incl. the removed
+  person) under the stale warning → rename another → the kept draw's link shows the new name.
+- **R2-3 · A new group starts with no event (P2).** ✅ **Done — [ADR-0042 amendment](../adr/0042-events-as-first-class-entities.md).**
+  A new group no longer auto-creates an unnamed event; the group editor opens on an empty occasions list
+  with a hint, and the user creates the first occasion. `Group.RemoveEvent` may now go to zero;
+  create-from-circle is eventless too. A pre-events snapshot (null `Events`) still migrates; an empty
+  list is a real state.
+- **R2-4 · Default event name "Christmas {year}" (P2).** ✅ **Done.** The add-event field is pre-filled
+  with a localized default — *Weihnachten 2026* / *Christmas 2026* / *Noël 2026* (`DefaultEventNameFormat`
+  + the current year) — which the user can accept or edit.
+- **R2-5 · Nav quick-access submenu (groups → recent events) (P2).** ⏳ **Next.** The drawer should show
+  the last-opened groups, each expanding to its most recent events (by date, else last opened) with a
+  "More…" into the group, and a "More…" into the full groups list — for fast access to the common
+  destinations, especially on mobile.
+- **R2-6 · Broader mobile/UX polish (P3, open).** Ongoing: make the app easy to understand and quick to
+  reach the common things, on web and especially on phones. Candidates to be gathered as they surface.
+
 ## UX & platform-parity review — 2026-08-12
 
 A usability pass taken after M4 closed, to answer two questions directly: is the suite built on

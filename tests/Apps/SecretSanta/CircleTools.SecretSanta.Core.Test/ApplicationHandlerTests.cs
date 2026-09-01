@@ -7,7 +7,8 @@ namespace CircleTools.SecretSanta.Core.Test;
 /// <summary>
 /// Per-handler tests for the Secret-Santa application layer, exercising each command/query over the
 /// in-memory repository fake (happy path + a representative validation/error path). ADR-0042: budget,
-/// event details and wishlists are per event; a new group's default event has id == group id.
+/// event details and wishlists are per event. A new group starts with <strong>no</strong> event
+/// (ADR-0042 amendment), so event-scoped tests add one first.
 /// </summary>
 public sealed class ApplicationHandlerTests
 {
@@ -54,17 +55,18 @@ public sealed class ApplicationHandlerTests
     public async Task SetBudget_SetsThenClears()
     {
         var (repository, groupId) = await CreateGroupAsync();
+        var eventId = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var handler = new SetBudgetCommandHandler(repository);
         var getEvent = new GetEventQueryHandler(repository);
 
-        await handler.HandleAsync(new SetBudgetCommand(groupId, groupId, 30m, "CHF"), default);
-        var withBudget = await getEvent.HandleAsync(new GetEventQuery(groupId, groupId), default);
+        await handler.HandleAsync(new SetBudgetCommand(groupId, eventId, 30m, "CHF"), default);
+        var withBudget = await getEvent.HandleAsync(new GetEventQuery(groupId, eventId), default);
         Assert.NotNull(withBudget!.Budget);
         Assert.Equal(30m, withBudget.Budget!.Amount);
         Assert.Equal("CHF", withBudget.Budget.Currency);
 
-        await handler.HandleAsync(new SetBudgetCommand(groupId, groupId, null, null), default);
-        var cleared = await getEvent.HandleAsync(new GetEventQuery(groupId, groupId), default);
+        await handler.HandleAsync(new SetBudgetCommand(groupId, eventId, null, null), default);
+        var cleared = await getEvent.HandleAsync(new GetEventQuery(groupId, eventId), default);
         Assert.Null(cleared!.Budget);
     }
 
@@ -72,17 +74,18 @@ public sealed class ApplicationHandlerTests
     public async Task SetEventDetails_SetsThenClears()
     {
         var (repository, groupId) = await CreateGroupAsync();
+        var eventId = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var handler = new SetEventDetailsCommandHandler(repository);
         var getEvent = new GetEventQueryHandler(repository);
         var date = new DateTimeOffset(2026, 12, 24, 18, 0, 0, TimeSpan.Zero);
 
-        await handler.HandleAsync(new SetEventDetailsCommand(groupId, groupId, date, "Zurich", "Bring snacks"), default);
-        var withEvent = await getEvent.HandleAsync(new GetEventQuery(groupId, groupId), default);
+        await handler.HandleAsync(new SetEventDetailsCommand(groupId, eventId, date, "Zurich", "Bring snacks"), default);
+        var withEvent = await getEvent.HandleAsync(new GetEventQuery(groupId, eventId), default);
         Assert.NotNull(withEvent!.Details);
         Assert.Equal("Zurich", withEvent.Details!.Location);
 
-        await handler.HandleAsync(new SetEventDetailsCommand(groupId, groupId, null, null, null), default);
-        var cleared = await getEvent.HandleAsync(new GetEventQuery(groupId, groupId), default);
+        await handler.HandleAsync(new SetEventDetailsCommand(groupId, eventId, null, null, null), default);
+        var cleared = await getEvent.HandleAsync(new GetEventQuery(groupId, eventId), default);
         Assert.Null(cleared!.Details);
     }
 
@@ -106,17 +109,19 @@ public sealed class ApplicationHandlerTests
         var (repository, groupId) = await CreateGroupAsync();
         var memberId = await new AddMemberCommandHandler(repository)
             .HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
-        var second = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Birthday"), default);
+        var addEvent = new AddEventCommandHandler(repository);
+        var first = await addEvent.HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
+        var second = await addEvent.HandleAsync(new AddEventCommand(groupId, "Birthday"), default);
 
         await new SetMemberWishlistCommandHandler(repository)
-            .HandleAsync(new SetMemberWishlistCommand(groupId, groupId, memberId, ["Scarf", "Book"]), default);
+            .HandleAsync(new SetMemberWishlistCommand(groupId, first, memberId, ["Scarf", "Book"]), default);
         await new SetMemberWishlistCommandHandler(repository)
             .HandleAsync(new SetMemberWishlistCommand(groupId, second, memberId, ["Bike"]), default);
 
         var getEvent = new GetEventQueryHandler(repository);
-        var defaultEvent = await getEvent.HandleAsync(new GetEventQuery(groupId, groupId), default);
+        var christmas = await getEvent.HandleAsync(new GetEventQuery(groupId, first), default);
         var birthday = await getEvent.HandleAsync(new GetEventQuery(groupId, second), default);
-        Assert.Equal(["Scarf", "Book"], Assert.Single(defaultEvent!.Wishlists).Items);
+        Assert.Equal(["Scarf", "Book"], Assert.Single(christmas!.Wishlists).Items);
         Assert.Equal(["Bike"], Assert.Single(birthday!.Wishlists).Items);
     }
 
@@ -217,21 +222,27 @@ public sealed class ApplicationHandlerTests
     }
 
     [Fact]
-    public async Task AddEvent_ThenRemove_KeepsAtLeastOne()
+    public async Task NewGroup_HasNoEvents_AndAddRemoveGoesToZero()
     {
         var (repository, groupId) = await CreateGroupAsync();
-        var second = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Birthday"), default);
+        var getGroup = new GetGroupQueryHandler(repository);
 
-        var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        // A new group starts with no event (ADR-0042 amendment): the user creates the first one.
+        var group = await getGroup.HandleAsync(new GetGroupQuery(groupId), default);
+        Assert.Empty(group!.Events);
+
+        var addEvent = new AddEventCommandHandler(repository);
+        var first = await addEvent.HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
+        var second = await addEvent.HandleAsync(new AddEventCommand(groupId, "Birthday"), default);
+        group = await getGroup.HandleAsync(new GetGroupQuery(groupId), default);
         Assert.Equal(2, group!.Events.Count);
 
-        await new RemoveEventCommandHandler(repository).HandleAsync(new RemoveEventCommand(groupId, second), default);
-        group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
-        Assert.Single(group!.Events);
-
-        // The last remaining event cannot be removed.
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            new RemoveEventCommandHandler(repository).HandleAsync(new RemoveEventCommand(groupId, groupId), default));
+        // Removing the last event is now allowed — a group may hold zero occasions.
+        var removeEvent = new RemoveEventCommandHandler(repository);
+        await removeEvent.HandleAsync(new RemoveEventCommand(groupId, second), default);
+        await removeEvent.HandleAsync(new RemoveEventCommand(groupId, first), default);
+        group = await getGroup.HandleAsync(new GetGroupQuery(groupId), default);
+        Assert.Empty(group!.Events);
     }
 
     [Fact]
