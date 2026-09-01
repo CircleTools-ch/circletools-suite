@@ -1,3 +1,4 @@
+using System.Reflection;
 using CircleTools.ApiClient;
 using CircleTools.Application;
 using CircleTools.SecretSanta.App.Platform;
@@ -28,14 +29,15 @@ public static class MauiProgram
     /// The base URL the reveal links generated on this device point at.
     /// </summary>
     /// <remarks>
-    /// Reveal links are fully client-side (<c>/r#for=…</c>, see <c>RevealLinkBuilder</c>), so a link only
-    /// needs the Secret-Santa WebApp served at this origin to open. For home testing this is the dev
-    /// machine's LAN address, with the WebApp bound to all interfaces
-    /// (<c>--urls http://0.0.0.0:5081</c>) so any device on the same Wi-Fi can open a shared link.
-    /// Adjust the IP to the dev machine's LAN address if it differs. The literal production origin lands
-    /// with the suite domain (still deferred — see naming.md).
+    /// A build-time setting (ADR-0053): baked in from the <c>RevealBaseUrl</c> MSBuild property via
+    /// assembly metadata — a Release/store build defaults to the production origin
+    /// (<c>https://secretsanta.circletools.ch</c>), a Debug build to the dev machine's LAN address for
+    /// on-device testing (run the WebApp with <c>--urls http://0.0.0.0:5081</c>). Reveal links are fully
+    /// client-side (<c>/r#for=…</c>, ADR-0014): an installed app opens them via App Links and renders
+    /// them offline; a recipient without the app opens the static page at this origin. The fallback below
+    /// only applies if the metadata is somehow absent.
     /// </remarks>
-    public const string RevealBaseUrl = "http://192.168.100.122:5081";
+    public static readonly string RevealBaseUrl = BuildSetting("RevealBaseUrl", "http://192.168.100.122:5081");
 
     /// <summary>
     /// The Main service origin — where a signed-in account syncs and where the account API lives.
@@ -48,11 +50,25 @@ public static class MauiProgram
     /// <strong>Known limitation on a physical phone:</strong> the API is served over HTTPS with the
     /// local dev certificate, which the phone does not trust — so sign-in and sync do not work over the
     /// LAN until a real (trusted) origin exists. The offline product and reveal-link sharing do not need
-    /// the API, so they are unaffected. The literal production origin lands with the suite domain
-    /// (still deferred — see naming.md).
+    /// the API, so they are unaffected.
+    /// </para>
+    /// <para>
+    /// A build-time setting (ADR-0053): a Release build defaults to <c>https://api.circletools.ch</c>, a
+    /// Debug build to the emulator host loopback. The fallback below only applies if the metadata is absent.
     /// </para>
     /// </remarks>
-    public const string ApiBaseUrl = "https://10.0.2.2:7080";
+    public static readonly string ApiBaseUrl = BuildSetting("ApiBaseUrl", "https://10.0.2.2:7080");
+
+    /// <summary>
+    /// Reads a value baked in at build time as assembly metadata (the <c>RevealBaseUrl</c> / <c>ApiBaseUrl</c>
+    /// MSBuild properties, ADR-0053), falling back to <paramref name="fallback"/> only if it is absent.
+    /// </summary>
+    private static string BuildSetting(string key, string fallback) =>
+        typeof(MauiProgram).Assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(a => string.Equals(a.Key, key, StringComparison.Ordinal))?.Value is { Length: > 0 } value
+            ? value
+            : fallback;
 
     /// <summary>Builds and configures the MAUI application.</summary>
     /// <returns>The configured <see cref="MauiApp"/>.</returns>
@@ -85,6 +101,10 @@ public static class MauiProgram
         builder.Services.AddScoped<CircleTools.Ui.Abstractions.IConnectivity, MauiConnectivity>();
         builder.Services.AddScoped<IPasskeyCeremony, MauiPasskeyCeremony>();
         builder.Services.AddScoped<IShareService, MauiShareService>();
+
+        // Carries an incoming reveal App Link (ADR-0053) from the platform activation into the Blazor
+        // app; a singleton so a link that arrives on a cold start survives until the UI can consume it.
+        builder.Services.AddSingleton<DeepLinkService>();
 
         // Two clients over the same Main API, differing only in whether the authorizing handler is in
         // the chain (see AccountApiClients). The device head needs no browser-credentials handler, so
