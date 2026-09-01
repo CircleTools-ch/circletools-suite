@@ -25,7 +25,11 @@
   <data name="GroupsTitle" xml:space="preserve"><value>Gruppen</value></data>
   <data name="NewGroupPlaceholder" xml:space="preserve"><value>Name der neuen Gruppe</value></data>
   <data name="CreateGroup" xml:space="preserve"><value>Gruppe erstellen</value></data>
-  <data name="NoGroups" xml:space="preserve"><value>Noch keine Gruppen.</value></data>
+  <data name="EmptyStateHeadline" xml:space="preserve"><value>Verlose ein Wichteln mit deiner Gruppe</value></data>
+  <data name="EmptyStateExplainer" xml:space="preserve"><value>Füge alle hinzu, lege fest, wer wen nicht ziehen soll, und lose fair aus. Jede Person erhält einen privaten Link, der nur die gezogene Person und deren Wunschliste zeigt – ganz offline und ohne Konto. Gib oben einer Gruppe einen Namen, um zu starten.</value></data>
+  <data name="EmptyStateAccountSell" xml:space="preserve"><value>Melde dich an, um deine Gruppen geräteübergreifend zu synchronisieren, deine eigene Zuteilung zu sehen und deine eigene Wunschliste zu führen.</value></data>
+  <data name="EmptyStateSignIn" xml:space="preserve"><value>Anmelden</value></data>
+  <data name="EmptyStateSignedInHint" xml:space="preserve"><value>Noch keine Gruppen. Erstelle oben eine – oder starte von einem deiner Kreise.</value></data>
   <data name="MembersColumn" xml:space="preserve"><value>Mitglieder</value></data>
   <data name="DrawCompleteBadge" xml:space="preserve"><value>Ausgelost</value></data>
   <data name="DrawInvalidatedBadge" xml:space="preserve"><value>Neu auslosen nötig</value></data>
@@ -190,6 +194,8 @@
   <data name="NavMyLinks" xml:space="preserve"><value>Verknüpfungsanfragen</value></data>
   <data name="NavMyAssignments" xml:space="preserve"><value>Meine Zuteilungen</value></data>
   <data name="NavMyWishlists" xml:space="preserve"><value>Meine Wunschlisten</value></data>
+  <data name="NavLanguageDeviceNote" xml:space="preserve"><value>Dies ändert die Sprache nur auf diesem Gerät. Deine Kontosprache verwaltest du in deinem</value></data>
+  <data name="NavLanguageProfileLink" xml:space="preserve"><value>Profil.</value></data>
   <data name="NavPinned" xml:space="preserve"><value>Angeheftet</value></data>
   <data name="PinGroup" xml:space="preserve"><value>Gruppe anheften</value></data>
   <data name="UnpinGroup" xml:space="preserve"><value>Anheften aufheben</value></data>

@@ -25,7 +25,11 @@
   <data name="GroupsTitle" xml:space="preserve"><value>Groupes</value></data>
   <data name="NewGroupPlaceholder" xml:space="preserve"><value>Nom du nouveau groupe</value></data>
   <data name="CreateGroup" xml:space="preserve"><value>Créer un groupe</value></data>
-  <data name="NoGroups" xml:space="preserve"><value>Aucun groupe pour l'instant.</value></data>
+  <data name="EmptyStateHeadline" xml:space="preserve"><value>Organisez un Père Noël secret avec votre groupe</value></data>
+  <data name="EmptyStateExplainer" xml:space="preserve"><value>Ajoutez tout le monde, indiquez qui ne doit pas tirer qui, et tirez les noms équitablement. Chaque personne reçoit un lien privé qui ne révèle que la personne tirée et sa liste de souhaits — sans connexion et sans compte. Nommez un groupe ci-dessus pour commencer.</value></data>
+  <data name="EmptyStateAccountSell" xml:space="preserve"><value>Connectez-vous pour synchroniser vos groupes entre vos appareils, voir votre propre attribution et tenir votre propre liste de souhaits.</value></data>
+  <data name="EmptyStateSignIn" xml:space="preserve"><value>Se connecter</value></data>
+  <data name="EmptyStateSignedInHint" xml:space="preserve"><value>Aucun groupe pour l'instant. Créez-en un ci-dessus, ou partez de l'un de vos cercles.</value></data>
   <data name="MembersColumn" xml:space="preserve"><value>Membres</value></data>
   <data name="DrawCompleteBadge" xml:space="preserve"><value>Tirage effectué</value></data>
   <data name="DrawInvalidatedBadge" xml:space="preserve"><value>Nouveau tirage requis</value></data>
@@ -190,6 +194,8 @@
   <data name="NavMyLinks" xml:space="preserve"><value>Demandes de lien</value></data>
   <data name="NavMyAssignments" xml:space="preserve"><value>Mes attributions</value></data>
   <data name="NavMyWishlists" xml:space="preserve"><value>Mes listes de souhaits</value></data>
+  <data name="NavLanguageDeviceNote" xml:space="preserve"><value>Ceci change la langue sur cet appareil uniquement. La langue de votre compte se règle dans votre</value></data>
+  <data name="NavLanguageProfileLink" xml:space="preserve"><value>profil.</value></data>
   <data name="NavPinned" xml:space="preserve"><value>Épinglés</value></data>
   <data name="PinGroup" xml:space="preserve"><value>Épingler le groupe</value></data>
   <data name="UnpinGroup" xml:space="preserve"><value>Détacher le groupe</value></data>
