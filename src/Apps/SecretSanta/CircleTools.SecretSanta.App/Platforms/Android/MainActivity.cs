@@ -24,7 +24,43 @@ public class MainActivity : MauiAppCompatActivity
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
+
+        // Route the Android Back gesture / button / hardware key into the app's own in-app history
+        // (the hybrid WebView), so Back navigates a view back instead of finishing the activity. Only
+        // when there is nothing left to go back to does the system default (leave the app) take over.
+        OnBackPressedDispatcher.AddCallback(this, new WebViewBackCallback(this));
+
         ForwardDeepLink(Intent); // a link that cold-started the app
+    }
+
+    // The platform WebView behind the BlazorWebView. Its back/forward list tracks the Blazor client-side
+    // navigations (history.pushState), so CanGoBack/GoBack maps straight onto the app's own history.
+    private static Android.Webkit.WebView? CurrentWebView
+    {
+        get
+        {
+            var windows = Microsoft.Maui.Controls.Application.Current?.Windows;
+            var page = windows is { Count: > 0 } ? windows[0].Page as MainPage : null;
+            return page?.HybridWebView?.Handler?.PlatformView as Android.Webkit.WebView;
+        }
+    }
+
+    private sealed class WebViewBackCallback(MainActivity activity) : AndroidX.Activity.OnBackPressedCallback(true)
+    {
+        public override void HandleOnBackPressed()
+        {
+            var webView = CurrentWebView;
+            if (webView is not null && webView.CanGoBack())
+            {
+                webView.GoBack();
+                return;
+            }
+
+            // No in-app history left: disable this callback and re-dispatch so the system's default
+            // behaviour (home / task switcher) runs — the normal "exit the app" Back at the root.
+            Enabled = false;
+            activity.OnBackPressedDispatcher.OnBackPressed();
+        }
     }
 
     protected override void OnNewIntent(Intent? intent)
