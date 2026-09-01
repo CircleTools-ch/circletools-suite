@@ -102,17 +102,21 @@ else
                                     @{
                                         var isPinned = _pinned.Contains(group.Id);
                                     }
-                                    <MudIconButton Size="Size.Small"
-                                                   Icon="@(isPinned ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)"
+                                    <MudIconButton Icon="@(isPinned ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)"
                                                    Color="@(isPinned ? Color.Warning : Color.Default)"
                                                    OnClick="() => TogglePinAsync(group.Id)"
                                                    aria-label="@(isPinned ? L["UnpinGroup"] : L["PinGroup"])" />
                                 </Authorized>
                             </AuthorizeView>
-                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
                                        OnClick="() => Open(group.Id)">@L["Open"]</MudButton>
-                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
-                                       OnClick="() => AskDelete(group.Id)">@L["Delete"]</MudButton>
+                            @* Delete is destructive and rare, so it moves out of the row into an overflow
+                               menu — keeping a phone row to pin + Open + a single kebab. *@
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
+                                     AriaLabel="@L["MoreActions"]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                                <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error"
+                                             OnClick="() => AskDelete(group.Id)">@L["Delete"]</MudMenuItem>
+                            </MudMenu>
                         </div>
                     </div>
 

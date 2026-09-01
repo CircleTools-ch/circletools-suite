@@ -70,6 +70,9 @@
   <data name="Open" xml:space="preserve"><value>Open</value></data>
   <data name="Copy" xml:space="preserve"><value>Copy</value></data>
   <data name="Copied" xml:space="preserve"><value>Copied!</value></data>
+  <data name="Share" xml:space="preserve"><value>Share</value></data>
+  <data name="MoreActions" xml:space="preserve"><value>More actions</value></data>
+  <data name="ShareMessage" xml:space="preserve"><value>Here's your Secret Santa link 🎁</value></data>
   <data name="NavGroups" xml:space="preserve"><value>Groups</value></data>
   <data name="NavMore" xml:space="preserve"><value>More</value></data>
   <data name="NavMoreEllipsis" xml:space="preserve"><value>More…</value></data>

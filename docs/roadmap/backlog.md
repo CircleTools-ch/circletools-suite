@@ -46,6 +46,26 @@ A second UX pass on the Secret-Santa app, driven by the organizer's own use. Eac
   2024 occasion reads "Ausgelost", a 2027 occasion "Neu auslosen nötig".
 - **R2-6 · Broader mobile/UX polish (P3, open).** Ongoing: make the app easy to understand and quick to
   reach the common things, on web and especially on phones. Candidates to be gathered as they surface.
+  - **Mobile touch/layout pass — ✅ done 2026-09-01** (alongside making the Android head installable on a
+    physical phone). From an on-screen inventory of every Secret-Santa screen: primary row-action buttons
+    no longer use `Size.Small` (~30px → default, ~44px touch target); crowded per-row button clusters fold
+    into an overflow **kebab menu** keeping one primary action visible (`Members` — was up to 5 inline
+    buttons; `Groups`; `GroupEditor`); non-wrapping rows gained `flex-wrap` (`Share` card header,
+    `Exclusions` list row); the app bar drops the cross-app switcher on narrow viewports
+    (`SecretSantaShell`); the budget fields get explicit widths + hidden spinners (`EventEditor`); the
+    from-circle person checkboxes lose `Dense` for a bigger hit area. A new **`MoreActions`** string in all
+    four resx. Build + Ui tests green. **Still to verify on the Pixel:** the Android top safe-area /
+    status-bar behaviour (currently tinted via `colorPrimaryDark`, neutral per ADR-0040 by design) and the
+    kebab/tap targets under a real finger.
+  - **Installable on a physical Android phone — ✅ done 2026-09-01.** `RevealBaseUrl` in `MauiProgram.cs`
+    now points at the dev machine's **LAN address** (`http://192.168.100.122:5081`) so a link shared from
+    the phone opens on any device on the home Wi-Fi (run the WebApp with `--urls http://0.0.0.0:5081`).
+    USB-deploy runbook added to [device testing](../deployment/device-testing.md). **Known limitation:**
+    account sign-in/sync over the LAN needs a trusted cert / real origin — deferred with hosting; the
+    offline + share flow is unaffected.
+  - More mobile-feature candidates gathered in the
+    [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-secret-santa-mobile.md): QR codes,
+    add-to-calendar, share-all, local notifications, biometric lock.
 
 ## UX & platform-parity review — 2026-08-12
 
@@ -119,7 +139,18 @@ live two-account pass to confirm.
   URL is now collapsed behind a native `<details>` disclosure ("Show link" / "Link anzeigen" /
   "Afficher le lien"), so Copy is the clear primary action and the URL stays available for anyone who
   wants to inspect or paste it. Verified in a real browser (collapsed by default, expands on click,
-  console clean). **Still open (deferred):** a **QR code** and/or the native share sheet per person.
+  console clean).
+  - **Native share sheet — ✅ done 2026-09-01.** Each link now has a **Share** button beside Copy that
+    opens the OS share sheet (WhatsApp / Messages / e-mail), carrying the reveal link. It is a new
+    platform seam, `IShareService` ([ADR-0028](../adr/0028-browser-platform-adapters-block.md) amendment):
+    a browser impl over the Web Share API (`SecretSanta.WebApp/Interop/BrowserShareService.cs` +
+    `wwwroot/js/share.js`) and a device impl over MAUI's `Share` (`App/Platform/MauiShareService.cs`).
+    The button self-hides where the platform has no share sheet (most desktop browsers), so Copy stays
+    the fallback. Covered by `SharePageTests` (button gates on support; click hands the link to the
+    seam). WebApp + Android head build clean; Ui tests 28/28. **On-device (Pixel) confirmation pending**
+    the USB-deploy pass.
+  - **Still open (deferred):** a **QR code** per person (see the
+    [mobile brainstorm](../brainstorming/2026-09-01-secret-santa-mobile.md)).
 - **UX-005 · Signed-in navigation shows dead ends and a reverting language picker (P2).** ✅ **Fixed
   2026-09-01** (the **Claim** sub-finding was already closed earlier by ADR-0044, which retired the
   `/claim` screen for the silent `AutoSyncService` + `SignInReconciler` prompt). Two changes to

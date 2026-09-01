@@ -74,3 +74,21 @@ h1:focus {
         z-index: 1;
     }
 }
+
+/* Android 15+ draws the WebView edge-to-edge, so the fixed MudBlazor app bar renders under the status
+   bar (clock/battery overlapping the toolbar). Inset by the top safe area: grow the fixed app bar down
+   so its toolbar clears the status bar, and push the main content by the same amount with a transparent
+   top border (stacks on MudBlazor's responsive padding-top instead of replacing it). Scoped to
+   non-WebKit so it never stacks with the iOS .status-bar-safe-area above; env(safe-area-inset-top) is 0
+   on the Windows MAUI head and desktop browsers, so this is a no-op there. */
+@supports not (-webkit-touch-callout: none) {
+    .mud-appbar.mud-appbar-fixed-top {
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top);
+        height: calc(var(--mud-appbar-height) + env(safe-area-inset-top));
+    }
+
+    .mud-main-content {
+        border-top: env(safe-area-inset-top) solid transparent;
+    }
+}

@@ -70,9 +70,38 @@ dotnet workload restore
 dotnet build src/Apps/SecretSanta/CircleTools.SecretSanta.App -f net10.0-android -t:Run
 ```
 
-**Physical phone** — enable *Developer options* → *USB debugging*, plug it in, accept the RSA
-prompt, and run the same command; `adb devices` confirms it is visible. A real phone is the better
-test: the emulator hides performance and touch behaviour.
+**Physical phone (e.g. the Pixel 9 Pro) — step by step:**
+
+1. On the phone: **Settings → About phone**, tap **Build number** seven times to unlock
+   *Developer options*; then **Settings → System → Developer options → USB debugging** on.
+2. Plug the phone into the PC with a USB cable and **accept the RSA prompt** ("Allow USB debugging?").
+3. Confirm it is visible: `adb devices` should list one device (`adb` ships with the Android SDK
+   platform-tools, e.g. `C:\Program Files (x86)\Android\android-sdk\platform-tools\adb.exe`).
+4. Build, install and launch on the phone:
+   ```bash
+   dotnet build src/Apps/SecretSanta/CircleTools.SecretSanta.App -f net10.0-android -t:Run
+   ```
+   If MSBuild can't find the JDK/SDK, name them explicitly (VS-installed paths on this machine):
+   `-p:JavaSdkDirectory="C:\Program Files\Android\openjdk\jdk-21.0.8"`
+   `-p:AndroidSdkDirectory="C:\Program Files (x86)\Android\android-sdk"`.
+
+A real phone is the better test: the emulator hides performance and touch behaviour.
+
+**For reveal-link sharing to work end to end on the phone**, the reveal page must be reachable at the
+link's origin. The MAUI head's `RevealBaseUrl` (`MauiProgram.cs`) is set to the dev machine's **LAN
+address** for home testing, so run the WebApp bound to all interfaces and keep it running while you
+test:
+
+```bash
+dotnet run --project src/Apps/SecretSanta/CircleTools.SecretSanta.WebApp --launch-profile http --urls http://0.0.0.0:5081
+```
+
+Then a link shared from the phone (via the new **Share** button → WhatsApp / Messages / e-mail) opens
+on any device on the same Wi-Fi. Adjust the IP in `RevealBaseUrl` if the machine's LAN address differs.
+
+> **Account sign-in / sync does not work over the LAN yet.** The Main API is served over HTTPS with
+> the local dev certificate, which the phone does not trust. The offline product and reveal-link
+> sharing need no API, so they are unaffected; a trusted origin lands with the suite domain.
 
 Nothing here needs a Google Play account. Play enrolment is only for *distribution*.
 
@@ -123,13 +152,20 @@ development on it is impossible today — not slow, impossible. Even if it quali
 
 Worth knowing before judging what you see on a device — these are tracked, not surprises:
 
-- The app icon and splash are still the **.NET template art** (`#512BD4` purple).
 - `ApplicationId` is set to the final `ch.circletools.secretsanta`
   ([NFR-007](../requirements/non-functional/NFR-007-store-distributability.md)).
-- `RevealBaseUrl` points at `https://localhost:7081`, so reveal links generated on a device will not
-  resolve anywhere real yet.
-- The head has **no language picker**, so only the default locale is reachable there. Test DE/EN/FR
-  in the web app.
+- The app icon and splash are the **Secret-Santa art** (burgundy `#7a1f2b` gift ring), not the old
+  .NET template purple.
+- The head is at **web parity** (UX-001), including the **language picker** — DE/EN/FR are reachable
+  on the device, not just in the web app.
+- `RevealBaseUrl` is a **dev LAN default** (`http://192.168.100.122:5081`), not `localhost`, so links
+  generated on a device resolve on the home Wi-Fi while the WebApp runs (see above). The literal
+  production origin still lands with the suite domain.
+- **Account sign-in / sync over the LAN** is the known gap — the dev HTTPS cert is untrusted by the
+  phone (see the note above). Offline + sharing are unaffected.
+- **Not yet verified on a physical phone:** the Android top safe-area / status-bar behaviour on a
+  punch-hole, gesture-nav device (the status bar is tinted via `colorPrimaryDark`, neutral by design —
+  [ADR-0040](../adr/0040-ui-component-library-mudblazor.md)).
 
 ## Related
 

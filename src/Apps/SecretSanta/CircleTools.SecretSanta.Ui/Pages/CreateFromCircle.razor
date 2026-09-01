@@ -70,7 +70,7 @@
                 {
                     <MudPaper Elevation="1" Class="pa-2">
                         <MudCheckBox T="bool" Value="_selected.Contains(person.MembershipId)"
-                                     ValueChanged="on => Toggle(person.MembershipId, on)" Dense="true">
+                                     ValueChanged="on => Toggle(person.MembershipId, on)">
                             @person.DisplayName
                             @if (person.IsManaged)
                             {
