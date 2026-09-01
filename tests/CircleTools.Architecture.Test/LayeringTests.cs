@@ -15,7 +15,7 @@ public sealed class LayeringTests
     private static readonly ArchUnitNET.Domain.Architecture _architecture = new ArchLoader()
         .LoadAssemblies(
             typeof(CircleTools.SharedKernel.Entity).Assembly,
-            typeof(CircleTools.Main.Service.Core.Domain.Heartbeat).Assembly,
+            typeof(CircleTools.Main.Service.Core.Domain.IAccountDeletionGuard).Assembly,
             typeof(CircleTools.Main.Service.Repository.MainDbContext).Assembly)
         .Build();
 
