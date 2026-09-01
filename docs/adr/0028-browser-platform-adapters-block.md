@@ -68,6 +68,26 @@ have exactly one consumer, and two of them are paired with JavaScript files in t
 flows in a browser — real work, for no benefit until a second host wants them. They follow when
 one does.
 
+## Amendment (2026-09-01) — the share seam
+
+Making the MAUI Android head ready for a phone added a fifth platform seam, **`IShareService`** (the
+native OS share sheet, so an organizer sends each reveal link straight into WhatsApp / Messages /
+e-mail). It follows this ADR exactly:
+
+- The seam, `IShareService`, is declared in `Ui.Abstractions` (references nothing).
+- The browser implementation, `BrowserShareService`, goes through the Web Share API in
+  `wwwroot/js/share.js` and lives **host-local** in `SecretSanta.WebApp/Interop` — the same place and
+  reason as `BrowserPasskeyCeremony`: it is paired with a JS file and, for now, has one web consumer.
+  It moves into `Ui.Web` (with its JS asset) when a second web host needs it, per the follow-ups above.
+- The device implementation, `MauiShareService`, wraps `Microsoft.Maui…DataTransfer.Share` in the App
+  head's `Platform/` folder, beside `MauiConnectivity`.
+- Both composition roots register it inline (`AddScoped<IShareService, …>()`), keeping the swap point
+  one visible line — exactly as for the other seams.
+
+Sharing is a convenience, not a gate: the Share page keeps its always-available Copy action, and the
+browser implementation reports `IsSupportedAsync() == false` where the Web Share API is absent (most
+desktops), so the button simply does not appear there.
+
 ## Consequences
 
 - **Positive:** the browser storage implementation exists once for the whole suite; a third web app

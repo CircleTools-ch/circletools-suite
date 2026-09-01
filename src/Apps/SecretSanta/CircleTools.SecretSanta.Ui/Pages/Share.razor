@@ -2,6 +2,7 @@
 @using CircleTools.SecretSanta.Core.Reveal
 @inject ISender Sender
 @inject IJSRuntime JS
+@inject IShareService ShareService
 @inject IStringLocalizer<AppStrings> L
 
 <PageTitle>@L["ShareTitle"]</PageTitle>
@@ -34,12 +35,24 @@ else
         {
             <MudCard Elevation="1">
                 <MudCardContent class="pb-2">
-                    <div class="d-flex justify-space-between align-center gap-2">
+                    <div class="d-flex flex-wrap justify-space-between align-center gap-2">
                         <MudText><strong>@L["ForLabel"]:</strong> @link.ForLabel</MudText>
-                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
-                                   StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="() => CopyAsync(link.Url)">
-                            @(_copiedUrl == link.Url ? L["Copied"] : L["Copy"])
-                        </MudButton>
+                        @* Share is the primary action where the platform has a share sheet (the phone,
+                           and mobile browsers): one tap into WhatsApp / Messages / e-mail. Copy stays
+                           for every platform, and is the only action on a desktop browser. *@
+                        <div class="d-flex gap-2">
+                            @if (_canShare)
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                           StartIcon="@Icons.Material.Filled.Share" OnClick="() => ShareAsync(link)">
+                                    @L["Share"]
+                                </MudButton>
+                            }
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="() => CopyAsync(link.Url)">
+                                @(_copiedUrl == link.Url ? L["Copied"] : L["Copy"])
+                            </MudButton>
+                        </div>
                     </div>
                     @* Copy is the primary action; the raw encoded URL is long and alarming, so keep it
                        collapsed but available for anyone who wants to inspect or paste it manually. *@
@@ -69,12 +82,36 @@ else
     private IReadOnlyList<RevealLinkDto>? _links;
     private string? _copiedUrl;
     private bool _drawInvalidated;
+    private bool _canShare;
 
     protected override async Task OnParametersSetAsync()
     {
         _links = await Sender.Send(new GetRevealLinksQuery(GroupId, EventId));
         var occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));
         _drawInvalidated = occasion?.DrawInvalidatedByMembershipChange ?? false;
+    }
+
+    // Decide up front whether this platform can present a share sheet (and, on the browser, warm the
+    // JS module so the later share() runs inside the click's user activation). Done after first render
+    // because the browser implementation touches the JS runtime.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _canShare = await ShareService.IsSupportedAsync();
+            if (_canShare)
+            {
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task ShareAsync(RevealLinkDto link)
+    {
+        // Carry the link in the message body (not only the url field): some share targets read only the
+        // text, so this guarantees the reveal link reaches WhatsApp / SMS / e-mail.
+        var text = $"{L["ShareMessage"]}\n{link.Url}";
+        await ShareService.ShareAsync(L["AppName"], text, link.Url);
     }
 
     private async Task CopyAsync(string url)

@@ -25,10 +25,17 @@ namespace CircleTools.SecretSanta.App;
 public static class MauiProgram
 {
     /// <summary>
-    /// The base URL the reveal links point at. In development this is the local Blazor WebApp;
-    /// replace with the deployed reveal origin for release builds.
+    /// The base URL the reveal links generated on this device point at.
     /// </summary>
-    public const string RevealBaseUrl = "https://localhost:7081";
+    /// <remarks>
+    /// Reveal links are fully client-side (<c>/r#for=…</c>, see <c>RevealLinkBuilder</c>), so a link only
+    /// needs the Secret-Santa WebApp served at this origin to open. For home testing this is the dev
+    /// machine's LAN address, with the WebApp bound to all interfaces
+    /// (<c>--urls http://0.0.0.0:5081</c>) so any device on the same Wi-Fi can open a shared link.
+    /// Adjust the IP to the dev machine's LAN address if it differs. The literal production origin lands
+    /// with the suite domain (still deferred — see naming.md).
+    /// </remarks>
+    public const string RevealBaseUrl = "http://192.168.100.122:5081";
 
     /// <summary>
     /// The Main service origin — where a signed-in account syncs and where the account API lives.
@@ -36,8 +43,14 @@ public static class MauiProgram
     /// <remarks>
     /// Development default. With no session it is never contacted, so an account-free user is
     /// unaffected by its value (NFR-001). On the Android emulator the host loopback is reachable as
-    /// <c>10.0.2.2</c> (not <c>localhost</c>); a physical device needs the machine's LAN address. The
-    /// literal production origin lands with the suite domain (still deferred — see naming.md).
+    /// <c>10.0.2.2</c> (not <c>localhost</c>); a physical device needs the machine's LAN address.
+    /// <para>
+    /// <strong>Known limitation on a physical phone:</strong> the API is served over HTTPS with the
+    /// local dev certificate, which the phone does not trust — so sign-in and sync do not work over the
+    /// LAN until a real (trusted) origin exists. The offline product and reveal-link sharing do not need
+    /// the API, so they are unaffected. The literal production origin lands with the suite domain
+    /// (still deferred — see naming.md).
+    /// </para>
     /// </remarks>
     public const string ApiBaseUrl = "https://10.0.2.2:7080";
 
@@ -71,6 +84,7 @@ public static class MauiProgram
         // so the bare name would be ambiguous here.
         builder.Services.AddScoped<CircleTools.Ui.Abstractions.IConnectivity, MauiConnectivity>();
         builder.Services.AddScoped<IPasskeyCeremony, MauiPasskeyCeremony>();
+        builder.Services.AddScoped<IShareService, MauiShareService>();
 
         // Two clients over the same Main API, differing only in whether the authorizing handler is in
         // the chain (see AccountApiClients). The device head needs no browser-credentials handler, so

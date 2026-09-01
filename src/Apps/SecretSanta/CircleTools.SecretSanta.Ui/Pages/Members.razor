@@ -68,14 +68,16 @@ else
                             </div>
                             <div class="d-flex align-center flex-wrap gap-1">
                                 @* Linking is an account-only action (it calls the authorized server API), so
-                                   only show it when signed in. Edit/Remove are local and stay for everyone. *@
+                                   only show it when signed in. Edit/Remove are local and always available, but
+                                   moved into a per-row overflow menu so the row stays a single tap-friendly line
+                                   on a phone instead of a cramped cluster of small buttons. *@
                                 <AuthorizeView>
                                     @if (member.UserId is not null)
                                     {
                                         <MudTooltip Text="@L["MemberLinkedTitle"]">
                                             <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">@L["MemberLinkedBadge"]</MudChip>
                                         </MudTooltip>
-                                        <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                        <MudButton Variant="Variant.Outlined"
                                                    OnClick="() => UnlinkAsync(member.Id)" Disabled="@_linkBusy">@L["MemberUnlink"]</MudButton>
                                     }
                                     else
@@ -85,18 +87,19 @@ else
                                            one member per group — offered only while none of my members is me yet. *@
                                         @if (!_iAmLinkedInGroup)
                                         {
-                                            <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Info"
+                                            <MudButton Variant="Variant.Filled" Color="Color.Info"
                                                        StartIcon="@Icons.Material.Filled.AccountCircle"
                                                        OnClick="() => LinkWithMyAccountAsync(member)" Disabled="@_linkBusy">@L["MemberLinkWithMyAccount"]</MudButton>
                                         }
-                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info"
+                                        <MudButton Variant="Variant.Outlined" Color="Color.Info"
                                                    OnClick="() => BeginLink(member.Id)">@L["MemberLink"]</MudButton>
                                     }
                                 </AuthorizeView>
-                                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
-                                           OnClick="() => BeginEdit(member)">@L["Edit"]</MudButton>
-                                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
-                                           OnClick="() => AskRemove(member.Id)">@L["Remove"]</MudButton>
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
+                                         AriaLabel="@L["MoreActions"]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                                    <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => BeginEdit(member)">@L["Edit"]</MudMenuItem>
+                                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="() => AskRemove(member.Id)">@L["Remove"]</MudMenuItem>
+                                </MudMenu>
                             </div>
                         </div>
 

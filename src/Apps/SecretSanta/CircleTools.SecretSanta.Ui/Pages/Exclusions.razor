@@ -60,7 +60,7 @@ else
         <MudStack Spacing="1">
             @foreach (var exclusion in _group.Exclusions)
             {
-                <MudPaper Elevation="1" Class="d-flex justify-space-between align-center pa-3">
+                <MudPaper Elevation="1" Class="d-flex justify-space-between align-center flex-wrap gap-2 pa-3">
                     <MudText>
                         @(exclusion.Mutual
                             ? L["ExclusionRowMutual", NameOf(exclusion.GiverMemberId), NameOf(exclusion.RecipientMemberId)]
