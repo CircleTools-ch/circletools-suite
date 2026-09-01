@@ -26,7 +26,7 @@ public sealed class ApplicationHandlerTests
 
         var groupId = await new CreateGroupCommandHandler(repository).HandleAsync(new CreateGroupCommand("  Office  "), default);
 
-        var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        var group = await new GetGroupQueryHandler(repository, TimeProvider.System).HandleAsync(new GetGroupQuery(groupId), default);
         Assert.NotNull(group);
         Assert.Equal("Office", group!.Name);
     }
@@ -38,7 +38,7 @@ public sealed class ApplicationHandlerTests
 
         await new RenameGroupCommandHandler(repository).HandleAsync(new RenameGroupCommand(groupId, "Renamed"), default);
 
-        var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        var group = await new GetGroupQueryHandler(repository, TimeProvider.System).HandleAsync(new GetGroupQuery(groupId), default);
         Assert.Equal("Renamed", group!.Name);
     }
 
@@ -57,7 +57,7 @@ public sealed class ApplicationHandlerTests
         var (repository, groupId) = await CreateGroupAsync();
         var eventId = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var handler = new SetBudgetCommandHandler(repository);
-        var getEvent = new GetEventQueryHandler(repository);
+        var getEvent = new GetEventQueryHandler(repository, TimeProvider.System);
 
         await handler.HandleAsync(new SetBudgetCommand(groupId, eventId, 30m, "CHF"), default);
         var withBudget = await getEvent.HandleAsync(new GetEventQuery(groupId, eventId), default);
@@ -76,7 +76,7 @@ public sealed class ApplicationHandlerTests
         var (repository, groupId) = await CreateGroupAsync();
         var eventId = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var handler = new SetEventDetailsCommandHandler(repository);
-        var getEvent = new GetEventQueryHandler(repository);
+        var getEvent = new GetEventQueryHandler(repository, TimeProvider.System);
         var date = new DateTimeOffset(2026, 12, 24, 18, 0, 0, TimeSpan.Zero);
 
         await handler.HandleAsync(new SetEventDetailsCommand(groupId, eventId, date, "Zurich", "Bring snacks"), default);
@@ -97,7 +97,7 @@ public sealed class ApplicationHandlerTests
         var memberId = await new AddMemberCommandHandler(repository)
             .HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
 
-        var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        var group = await new GetGroupQueryHandler(repository, TimeProvider.System).HandleAsync(new GetGroupQuery(groupId), default);
         var member = Assert.Single(group!.Members);
         Assert.Equal(memberId, member.Id);
         Assert.Equal("Alice", member.Name);
@@ -118,7 +118,7 @@ public sealed class ApplicationHandlerTests
         await new SetMemberWishlistCommandHandler(repository)
             .HandleAsync(new SetMemberWishlistCommand(groupId, second, memberId, ["Bike"]), default);
 
-        var getEvent = new GetEventQueryHandler(repository);
+        var getEvent = new GetEventQueryHandler(repository, TimeProvider.System);
         var christmas = await getEvent.HandleAsync(new GetEventQuery(groupId, first), default);
         var birthday = await getEvent.HandleAsync(new GetEventQuery(groupId, second), default);
         Assert.Equal(["Scarf", "Book"], Assert.Single(christmas!.Wishlists).Items);
@@ -146,7 +146,7 @@ public sealed class ApplicationHandlerTests
         await new EditMemberCommandHandler(repository)
             .HandleAsync(new EditMemberCommand(groupId, memberId, "Robert"), default);
 
-        var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        var group = await new GetGroupQueryHandler(repository, TimeProvider.System).HandleAsync(new GetGroupQuery(groupId), default);
         var member = Assert.Single(group!.Members);
         Assert.Equal("Robert", member.Name);
     }
@@ -172,7 +172,7 @@ public sealed class ApplicationHandlerTests
 
         await new RemoveMemberCommandHandler(repository).HandleAsync(new RemoveMemberCommand(groupId, bob), default);
 
-        var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        var group = await new GetGroupQueryHandler(repository, TimeProvider.System).HandleAsync(new GetGroupQuery(groupId), default);
         Assert.Single(group!.Members);
         Assert.Empty(group.Exclusions);
     }
@@ -187,7 +187,7 @@ public sealed class ApplicationHandlerTests
 
         await new AddExclusionCommandHandler(repository).HandleAsync(new AddExclusionCommand(groupId, alice, bob), default);
 
-        var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        var group = await new GetGroupQueryHandler(repository, TimeProvider.System).HandleAsync(new GetGroupQuery(groupId), default);
         var exclusion = Assert.Single(group!.Exclusions);
         Assert.Equal(alice, exclusion.GiverMemberId);
         Assert.Equal(bob, exclusion.RecipientMemberId);
@@ -217,7 +217,7 @@ public sealed class ApplicationHandlerTests
         await new RemoveExclusionCommandHandler(repository)
             .HandleAsync(new RemoveExclusionCommand(groupId, alice, bob), default);
 
-        var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        var group = await new GetGroupQueryHandler(repository, TimeProvider.System).HandleAsync(new GetGroupQuery(groupId), default);
         Assert.Empty(group!.Exclusions);
     }
 
@@ -225,7 +225,7 @@ public sealed class ApplicationHandlerTests
     public async Task NewGroup_HasNoEvents_AndAddRemoveGoesToZero()
     {
         var (repository, groupId) = await CreateGroupAsync();
-        var getGroup = new GetGroupQueryHandler(repository);
+        var getGroup = new GetGroupQueryHandler(repository, TimeProvider.System);
 
         // A new group starts with no event (ADR-0042 amendment): the user creates the first one.
         var group = await getGroup.HandleAsync(new GetGroupQuery(groupId), default);
@@ -252,7 +252,7 @@ public sealed class ApplicationHandlerTests
 
         await new DeleteGroupCommandHandler(repository).HandleAsync(new DeleteGroupCommand(groupId), default);
 
-        var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        var group = await new GetGroupQueryHandler(repository, TimeProvider.System).HandleAsync(new GetGroupQuery(groupId), default);
         Assert.Null(group);
     }
 
@@ -261,7 +261,7 @@ public sealed class ApplicationHandlerTests
     {
         var repository = new InMemoryGroupRepository();
 
-        var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(Guid.NewGuid()), default);
+        var group = await new GetGroupQueryHandler(repository, TimeProvider.System).HandleAsync(new GetGroupQuery(Guid.NewGuid()), default);
 
         Assert.Null(group);
     }

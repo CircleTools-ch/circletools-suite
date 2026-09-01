@@ -56,12 +56,14 @@ public sealed record AssignmentDto(Guid GiverMemberId, string GiverName, Guid Re
 /// <param name="Id">The event identity.</param>
 /// <param name="Name">The event name (may be empty; the UI shows a generic label for an unnamed event).</param>
 /// <param name="HasCurrentDraw">Whether this event has a current draw.</param>
-/// <param name="DrawInvalidatedByMembershipChange">Whether this event's draw was voided by a roster change.</param>
+/// <param name="DrawInvalidatedByMembershipChange">Whether this event's draw needs re-running because the roster changed while it is still upcoming.</param>
+/// <param name="Date">The event's date, if set — used to order occasions for quick access (nav).</param>
 public sealed record EventSummaryDto(
     Guid Id,
     string Name,
     bool HasCurrentDraw,
-    bool DrawInvalidatedByMembershipChange);
+    bool DrawInvalidatedByMembershipChange,
+    DateTimeOffset? Date = null);
 
 /// <summary>Group-level view for the editor screens: the group name, its shared roster and exclusions, and its events.</summary>
 /// <param name="Id">The group identity.</param>

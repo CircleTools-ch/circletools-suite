@@ -1,6 +1,7 @@
 @inject IStringLocalizer<AppStrings> L
 @inject NavigationManager Navigation
 @inject ISender Sender
+@inject RecentAccessService Recent
 
 @* Sub-navigation for a single group (ADR-0040): a back link to the group list plus the group's name,
    then a native Material tab strip for the group's sections. The tab matching the current route is
@@ -47,6 +48,9 @@
     protected override async Task OnParametersSetAsync()
     {
         _activeIndex = ActiveIndexFromRoute();
+
+        // Landing on any of a group's pages counts as opening it: record recency for the nav quick access.
+        await Recent.RecordGroupAsync(GroupId);
 
         // The group name is a nicety in the header; a read failure just leaves it blank and the tabs
         // still work, so it is not worth surfacing an error for.
