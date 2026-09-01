@@ -75,7 +75,12 @@ else
                 <MudCardContent Class="pb-2">
                     <div class="d-flex justify-space-between align-center flex-wrap gap-2">
                         <div class="d-flex align-center flex-wrap gap-2">
-                            <MudText Typo="Typo.subtitle1"><strong>@group.Name</strong></MudText>
+                            @* The name opens the group, the same as the Open button, so the whole row reads
+                               as a link — with keyboard support to match the button. *@
+                            <div class="ct-openable" role="button" tabindex="0"
+                                 @onclick="() => Open(group.Id)" @onkeydown="@(e => OpenOnEnter(e, group.Id))">
+                                <MudText Typo="Typo.subtitle1"><strong>@group.Name</strong></MudText>
+                            </div>
                             <MudText Typo="Typo.body2" Class="mud-text-secondary">
                                 @L["MembersColumn"]: @group.MemberCount
                             </MudText>
@@ -281,4 +286,13 @@ else
     }
 
     private void Open(Guid id) => Navigation.NavigateTo($"groups/{id}");
+
+    // Keyboard parity for the clickable name (Enter or Space opens, like the Open button).
+    private void OpenOnEnter(KeyboardEventArgs args, Guid id)
+    {
+        if (args.Key is "Enter" or " ")
+        {
+            Open(id);
+        }
+    }
 }

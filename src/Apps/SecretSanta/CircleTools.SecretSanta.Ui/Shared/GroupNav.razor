@@ -9,7 +9,9 @@
    tabs carry no panel content — each section is its own route/page rendered below this component — so
    the (empty) MudTabs content area is hidden in GroupNav.razor.css. *@
 <div class="d-flex align-center flex-wrap gap-2 mb-2">
-    <MudButton Href="" StartIcon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Variant="Variant.Text">
+    @* Navigate to the app root explicitly: an empty Href renders <a href=""> which the browser
+       resolves to the *current* URL (the group page), so the back button appeared to do nothing. *@
+    <MudButton OnClick="GoToAllGroups" StartIcon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Variant="Variant.Text">
         @L["AllGroups"]
     </MudButton>
     @if (!string.IsNullOrEmpty(_groupName))
@@ -88,4 +90,8 @@
         _activeIndex = index;
         Navigation.NavigateTo(Tabs[index].Href);
     }
+
+    // Empty string navigates to the app root (the groups list) — NavigationManager resolves it against
+    // the base URI, unlike a bare <a href=""> which stays on the current page.
+    private void GoToAllGroups() => Navigation.NavigateTo(string.Empty);
 }

@@ -59,7 +59,11 @@ else
                     {
                         <div class="d-flex justify-space-between align-center flex-wrap gap-2">
                             <div class="d-flex align-center flex-wrap gap-2">
-                                <MudText Typo="Typo.subtitle1"><strong>@EventLabel(occasion.Name)</strong></MudText>
+                                @* The name opens the occasion, the same as the Open button. *@
+                                <div class="ct-openable" role="button" tabindex="0"
+                                     @onclick="() => Open(occasion.Id)" @onkeydown="@(e => OpenOnEnter(e, occasion.Id))">
+                                    <MudText Typo="Typo.subtitle1"><strong>@EventLabel(occasion.Name)</strong></MudText>
+                                </div>
                                 @if (occasion.DrawInvalidatedByMembershipChange)
                                 {
                                     <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
@@ -201,4 +205,13 @@ else
     }
 
     private void Open(Guid eventId) => Navigation.NavigateTo($"groups/{GroupId}/events/{eventId}");
+
+    // Keyboard parity for the clickable name (Enter or Space opens, like the Open button).
+    private void OpenOnEnter(KeyboardEventArgs args, Guid eventId)
+    {
+        if (args.Key is "Enter" or " ")
+        {
+            Open(eventId);
+        }
+    }
 }
