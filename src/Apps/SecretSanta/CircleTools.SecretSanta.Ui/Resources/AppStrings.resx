@@ -79,7 +79,11 @@
   <data name="GroupsTitle" xml:space="preserve"><value>Groups</value></data>
   <data name="NewGroupPlaceholder" xml:space="preserve"><value>New group name</value></data>
   <data name="CreateGroup" xml:space="preserve"><value>Create group</value></data>
-  <data name="NoGroups" xml:space="preserve"><value>No groups yet.</value></data>
+  <data name="EmptyStateHeadline" xml:space="preserve"><value>Run a Secret Santa with your group</value></data>
+  <data name="EmptyStateExplainer" xml:space="preserve"><value>Add everyone, mark who shouldn't draw whom, and draw names fairly. Each person gets a private link that reveals only who they got and their wishlist — it works offline, with no account. Name a group above to start.</value></data>
+  <data name="EmptyStateAccountSell" xml:space="preserve"><value>Sign in to sync your groups across devices, see your own assignment, and keep your own wishlist.</value></data>
+  <data name="EmptyStateSignIn" xml:space="preserve"><value>Sign in</value></data>
+  <data name="EmptyStateSignedInHint" xml:space="preserve"><value>No groups yet. Create one above, or start from one of your circles.</value></data>
   <data name="MembersColumn" xml:space="preserve"><value>Members</value></data>
   <data name="DrawCompleteBadge" xml:space="preserve"><value>Drawn</value></data>
   <data name="DrawInvalidatedBadge" xml:space="preserve"><value>Re-draw needed</value></data>
@@ -245,6 +249,8 @@
   <data name="NavMyLinks" xml:space="preserve"><value>Link requests</value></data>
   <data name="NavMyAssignments" xml:space="preserve"><value>My assignments</value></data>
   <data name="NavMyWishlists" xml:space="preserve"><value>My wishlists</value></data>
+  <data name="NavLanguageDeviceNote" xml:space="preserve"><value>This changes the language on this device. Your account language is set on your</value><comment>Signed-in note under the nav language picker; the Profile link (NavLanguageProfileLink) follows it inline.</comment></data>
+  <data name="NavLanguageProfileLink" xml:space="preserve"><value>Profile.</value></data>
   <data name="NavPinned" xml:space="preserve"><value>Pinned</value></data>
   <data name="PinGroup" xml:space="preserve"><value>Pin group</value></data>
   <data name="UnpinGroup" xml:space="preserve"><value>Unpin group</value></data>

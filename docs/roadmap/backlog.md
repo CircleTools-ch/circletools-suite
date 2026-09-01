@@ -55,11 +55,20 @@ live two-account pass to confirm.
   The link/unlink cluster is now wrapped in `<AuthorizeView>` so it appears only when signed in; Edit
   and Remove (local, offline actions) stay for everyone. Verified in a real browser (signed out: no Link
   button, Edit/Remove present, console clean).
-- **UX-003 · First-run / empty states are bare (P2, browser-verified).** Signed out, `/` is a title,
-  an input, and the literal line "No groups yet." — no explanation of what the app does, no example, no
-  cue to sign in for cross-device sync. Add a short explainer + a real call-to-action on the empty
-  Groups screen, and **sell the account at the point of choice** (sync, see your own assignment, own
-  your wishlist).
+- **UX-003 · First-run / empty states are bare (P2, browser-verified).** ✅ **Fixed 2026-09-01.**
+  Signed out, `/` was a title, an input, and the literal line "No groups yet." — no explanation of what
+  the app does, no cue to sign in for cross-device sync. The empty Groups state is now an
+  `AuthorizeView`-split onboarding block (`Groups.razor`): **signed out**, a gift-icon card with a
+  headline (per app name — *Wichteln* / *Secret Santa* / *Père Noël secret*), a one-paragraph explainer
+  of the whole flow that nudges to the create field above, a divider, and the **account sell at the
+  point of choice** (sync across devices, see your own assignment, own your wishlist) with a **Sign in**
+  button to `/account/login`; **signed in**, a shorter hint pointing at the create field and the
+  from-circle shortcut. Five new strings (`EmptyState*`) added to all three cultures + neutral (the dead
+  `NoGroups` key it replaces was removed); DE `du` / FR `vous` per ADR-0032; no counts, so no
+  singular-form concern. Parity test green, project builds clean. **Verified in a real browser**
+  (Playwright/Chromium, signed-out first-run in DE/EN/FR): the card renders correctly in all three
+  languages, the create field stays the primary action above, and the change adds no console
+  errors/warnings.
 - **UX-004 · The share screen dumps raw encoded URLs (P2, browser-verified).** ✅ **Partly fixed
   2026-08-13.** Each person's reveal link was printed verbatim as a ~197-character base64 blob. The
   "Copy" button is the right primary action, but the raw string is noise and can alarm users. The raw
@@ -67,23 +76,50 @@ live two-account pass to confirm.
   "Afficher le lien"), so Copy is the clear primary action and the URL stays available for anyone who
   wants to inspect or paste it. Verified in a real browser (collapsed by default, expands on click,
   console clean). **Still open (deferred):** a **QR code** and/or the native share sheet per person.
-- **UX-005 · Signed-in navigation shows dead ends and a reverting language picker (P2, from
-  code+docs — not browser-verified this pass).** The nav shows **My links / My assignments / My
-  wishlists** to *every* signed-in user, though they are inert unless the user is a linked member — make
-  them contextual. **Claim** is a nav link, not an auto-prompt on first sign-in with local groups
-  (already recorded as an M3 behaviour question). The **nav language picker is local-only** and reverts
-  to the profile preference on the next reconcile ([ADR-0035](../adr/0035-profile-sync-seam.md)); the
-  synced path is the Profile page — unify them or warn.
-- **UX-006 · Sync is manual (P2, known parked decision).** No continuous/background sync
-  ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md) parked it), so device B won't reflect device
-  A until someone presses "Sync now" or reloads — a weak spot for the "follows you between devices"
-  promise. A **pull-on-focus/startup** refresh would close most of the gap without reopening the parked
-  continuous-sync decision.
-- **UX-007 · Group editor has three separate Save buttons and one shared status line (P3,
-  browser-verified).** Name, Budget and Event each save independently, and a single "Saved." line at the
-  bottom does not say which section it refers to — easy to edit one section and forget to save another.
-  Prefer a single save, or per-section confirmation. (Also minor/cosmetic: the desktop sidebar is
-  mostly empty dead space.)
+- **UX-005 · Signed-in navigation shows dead ends and a reverting language picker (P2).** ✅ **Fixed
+  2026-09-01** (the **Claim** sub-finding was already closed earlier by ADR-0044, which retired the
+  `/claim` screen for the silent `AutoSyncService` + `SignInReconciler` prompt). Two changes to
+  `SecretSantaShell.razor`, both verified live:
+  - **Contextual personal nav.** *My links / My assignments / My wishlists* were shown to **every**
+    signed-in user, inert unless they were a linked member. They are now gated: **My links** appears
+    only when a member-link request is actually waiting (`ILinkingApi.GetPendingAsync` > 0), and **My
+    assignments / My wishlists** only for a linked member (`GetMyMembershipsAsync` > 0). The gate is
+    **server-authoritative on purpose** — a member of *someone else's* group has no local group document
+    to read `Member.UserId` from, so a local check would wrongly hide the screens from exactly the people
+    they are for. The two gates recompute when the account changes and after each background sync (so
+    they appear on their own once a create/self-link or an accepted link lands), and stay hidden when the
+    server is unreachable, reappearing on the next sync. The mobile bottom bar gates its two personal
+    tabs the same way.
+  - **Language picker — warn (not unify).** The nav `CultureSelector` is device-local; for a signed-in
+    user the account language wins and reverts the pick on the next reconcile
+    ([ADR-0035](../adr/0035-profile-sync-seam.md)). Chosen fix: when signed in, a caption under the
+    picker says so and links to the **Profile** page (the durable, synced path). Kept the shared
+    `Ui.Shared/CultureSelector` device-local rather than wiring it to `IProfileWriter`, so the shared
+    component's behavior is unchanged across apps; persisting-from-nav ("unify") is a recorded follow-up
+    (would add an optional persistence callback to `CultureSelector`). Two new `NavLanguage*` strings in
+    all three cultures + neutral.
+  - **Verified against the live Aspire stack** (Playwright/Chromium, real register→verify→sign-in via
+    the API + Mailpit): signed-in-but-not-linked hides all three personal links and shows the device
+    note; after creating a group (FR-032 self-link) *My assignments* + *My wishlists* appear on their own
+    via the post-create sync while *My links* stays hidden; the device note reads correctly in **DE / EN
+    / FR** (the account language winning over the local pick was observed directly — a live demonstration
+    of the very revert the note explains). Console clean; 8/8 assertions green.
+  - **Follow-up (optional):** a bUnit regression test for the two nav gates (the shell needs MudBlazor
+    providers + fakes for `ILinkingApi`/`AutoSyncService`/`ISender`, so it was left as a follow-up rather
+    than built here); and the "unify" language-picker option if device-local-plus-warn proves too subtle
+    in use.
+- **UX-006 · Sync is manual (P2).** ✅ **Resolved by ADR-0044 (2026-08-17).** The manual "Sync now"
+  button is gone; `AutoSyncService` runs a silent, debounced sync on four triggers — app start (restored
+  session), reconnect, post-edit, and the sign-in reconciler — so device B converges without anyone
+  pressing anything, and the shell shows only a passive last-outcome status line. The parked
+  continuous-sync decision ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md)) was **not**
+  reopened. A pure *pull-on-tab-focus* refresh for a long-idle open tab is the only sliver left, and it
+  is marginal; parked with the continuous-sync decision.
+- **UX-007 · Group editor has three separate Save buttons and one shared status line (P3).** ✅
+  **Obsolete after ADR-0042 (events as first-class).** The editor was restructured to **Name + Events**;
+  budget and date/location moved into the **per-event** editor, so the "three saves under one ambiguous
+  status line" arrangement no longer exists. `GroupEditor.razor` now has one name save plus per-event
+  add/rename/remove, each with its own inline control. Nothing to do.
 
 These are review findings, not yet promoted; the P1/P2 items are the candidates to turn into use
 cases/requirements (or ADRs, for the mobile-scope decision) if taken forward.
