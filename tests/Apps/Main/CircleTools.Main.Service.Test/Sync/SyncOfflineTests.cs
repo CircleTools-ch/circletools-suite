@@ -24,7 +24,7 @@ public sealed class SyncOfflineTests(TwoClientSyncFactory factory)
         var group = await device.GroupAsync(groupId);
         Assert.NotNull(group);
         Assert.Equal(4, group!.Members.Count);
-        var occasion = group.FindEvent(group.Id)!;
+        var occasion = Assert.Single(group.Events);
         Assert.Contains(group.Members, m => occasion.WishlistFor(m.Id).Items.Count > 0);
         Assert.Single(occasion.Draws);
 

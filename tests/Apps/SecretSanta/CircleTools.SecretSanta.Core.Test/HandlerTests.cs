@@ -19,20 +19,21 @@ public sealed class HandlerTests
         var codec = new RevealLinkCodec();
         var linkBuilder = new RevealLinkBuilder(new RevealLinkOptions("https://santa.example"), codec);
 
-        // Arrange a group with four members and a budget on its default event (id == group id).
+        // Arrange a group with an event, four members, and a budget on that event.
         var groupId = await new CreateGroupCommandHandler(repository).HandleAsync(new CreateGroupCommand("Family"), default);
-        await new SetBudgetCommandHandler(repository).HandleAsync(new SetBudgetCommand(groupId, groupId, 25m, "CHF"), default);
+        var eventId = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
+        await new SetBudgetCommandHandler(repository).HandleAsync(new SetBudgetCommand(groupId, eventId, 25m, "CHF"), default);
         var addMember = new AddMemberCommandHandler(repository);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Carol"), default);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Dan"), default);
 
-        // Act: run the draw for the default event, then generate reveal links for it.
+        // Act: run the draw for the event, then generate reveal links for it.
         var drawResult = await new RunDrawCommandHandler(repository, generator, TimeProvider.System)
-            .HandleAsync(new RunDrawCommand(groupId, groupId), default);
+            .HandleAsync(new RunDrawCommand(groupId, eventId), default);
         var links = await new GetRevealLinksQueryHandler(repository, linkBuilder)
-            .HandleAsync(new GetRevealLinksQuery(groupId, groupId), default);
+            .HandleAsync(new GetRevealLinksQuery(groupId, eventId), default);
 
         // Assert.
         Assert.True(drawResult.Success);
@@ -53,32 +54,36 @@ public sealed class HandlerTests
     }
 
     [Fact]
-    public async Task GetRevealLinks_AfterMemberRemoved_ReturnsNoLinks()
+    public async Task GetRevealLinks_AfterMemberArchived_KeepsTheDrawAndItsLinks()
     {
         var repository = new InMemoryGroupRepository();
         var linkBuilder = new RevealLinkBuilder(new RevealLinkOptions("https://santa.example"), new RevealLinkCodec());
 
         var groupId = await new CreateGroupCommandHandler(repository).HandleAsync(new CreateGroupCommand("Family"), default);
+        var eventId = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var addMember = new AddMemberCommandHandler(repository);
         var alice = await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Carol"), default);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Dan"), default);
         await new RunDrawCommandHandler(repository, new DrawGenerator(new SeededRandomSource(123)), TimeProvider.System)
-            .HandleAsync(new RunDrawCommand(groupId, groupId), default);
+            .HandleAsync(new RunDrawCommand(groupId, eventId), default);
 
         await new RemoveMemberCommandHandler(repository).HandleAsync(new RemoveMemberCommand(groupId, alice), default);
 
-        // A partial set of links would silently drop whoever is left dangling from the exchange.
+        // The draw is permanent history (ADR-0052): archiving a member keeps it, and its links still
+        // generate because the archived member's name resolves through FindMember — so a past occasion
+        // stays viewable and its already-issued links keep working. The UI flags it stale.
         var links = await new GetRevealLinksQueryHandler(repository, linkBuilder)
-            .HandleAsync(new GetRevealLinksQuery(groupId, groupId), default);
+            .HandleAsync(new GetRevealLinksQuery(groupId, eventId), default);
 
-        Assert.Empty(links);
+        Assert.Equal(4, links.Count);
 
         var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
         var occasion = Assert.Single(group!.Events);
-        Assert.False(occasion.HasCurrentDraw);
+        Assert.True(occasion.HasCurrentDraw); // kept, only flagged stale
         Assert.True(occasion.DrawInvalidatedByMembershipChange);
+        Assert.Equal(3, group.Members.Count); // Alice is archived, off the active roster
     }
 
     [Fact]
@@ -128,7 +133,7 @@ public sealed class HandlerTests
         Assert.Equal(2, summaries.Count);
         Assert.Contains(summaries, s => s.Name == "One");
         Assert.Contains(summaries, s => s.Name == "Two");
-        // Every new group starts with exactly one (default) event.
-        Assert.All(summaries, s => Assert.Equal(1, s.EventCount));
+        // A new group starts with no event (ADR-0042 amendment); the user adds the first occasion.
+        Assert.All(summaries, s => Assert.Equal(0, s.EventCount));
     }
 }

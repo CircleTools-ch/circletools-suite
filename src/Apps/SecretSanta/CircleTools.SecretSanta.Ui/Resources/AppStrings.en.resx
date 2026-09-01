@@ -70,16 +70,16 @@
   <data name="ShareTitle" xml:space="preserve"><value>Share links</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Send each person their own link. Only the recipient can see who they drew.</value></data>
   <data name="NoDrawYet" xml:space="preserve"><value>Run a draw first to generate links.</value></data>
-  <data name="DrawInvalidatedNotice" xml:space="preserve"><value>The members changed, so the previous draw no longer applies. Please run the draw again.</value></data>
+  <data name="DrawInvalidatedNotice" xml:space="preserve"><value>The members changed since this draw, so it no longer covers everyone. Run the draw again to update it — the previous result stays visible until you do.</value></data>
   <data name="RedrawWarning" xml:space="preserve"><value>This event has already been drawn. Drawing again replaces every assignment - links you have already sent will show the wrong person.</value></data>
   <data name="RedrawConfirm" xml:space="preserve"><value>Draw again anyway</value></data>
-  <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>This group has already been drawn. Adding or removing a member voids that draw and you will need to draw again.</value></data>
+  <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>This group has already been drawn. Adding or removing a member means you'll need to draw again to include everyone. Occasions you've already drawn keep the people who were in them.</value></data>
   <data name="DuplicateMemberError" xml:space="preserve"><value>A member named '{0}' already exists in this group.</value></data>
   <data name="MemberSaveFailed" xml:space="preserve"><value>The member could not be saved.</value></data>
   <data name="BudgetAmountInvalid" xml:space="preserve"><value>Enter a budget amount greater than zero.</value></data>
   <data name="CurrencyInvalid" xml:space="preserve"><value>Enter a 3-letter currency code (e.g. CHF).</value></data>
   <data name="ConfirmDeleteGroup" xml:space="preserve"><value>Delete "{0}" and everything in it? This cannot be undone.</value></data>
-  <data name="ConfirmRemoveMember" xml:space="preserve"><value>Remove "{0}" from this group?</value></data>
+  <data name="ConfirmRemoveMember" xml:space="preserve"><value>Remove "{0}" from this group? They stay in occasions you've already drawn.</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Yes, delete</value></data>
   <data name="ConfirmRemove" xml:space="preserve"><value>Yes, remove</value></data>
   <data name="ExclusionSelfNotAllowed" xml:space="preserve"><value>A person cannot be excluded from giving to themselves - they are never assigned to themselves anyway.</value></data>
@@ -172,6 +172,8 @@
   <data name="NavEventDetails" xml:space="preserve"><value>Details</value></data>
   <data name="NavWishlists" xml:space="preserve"><value>Wishlists</value></data>
   <data name="DefaultEventName" xml:space="preserve"><value>Event</value></data>
+  <data name="DefaultEventNameFormat" xml:space="preserve"><value>Christmas {0}</value></data>
+  <data name="NoEventsYet" xml:space="preserve"><value>No occasions yet. Add your first one above to draw names, share links and collect wishlists.</value></data>
   <data name="EventNameLabel" xml:space="preserve"><value>Event name</value></data>
   <data name="EventNamePlaceholder" xml:space="preserve"><value>e.g. Christmas 2026</value></data>
   <data name="AddEvent" xml:space="preserve"><value>Add event</value></data>

@@ -351,8 +351,9 @@ public sealed class AssignmentPublisherTests
         var group = Group.Create("Family");
         var alice = group.AddMember("Alice");
         group.LinkMember(alice, Guid.NewGuid()); // at least one linked member, else publish is a no-op
+        var eventId = group.AddEvent("Christmas");
         var date = new DateTimeOffset(2026, 12, 24, 18, 0, 0, TimeSpan.Zero);
-        group.SetEventDetails(group.Id, EventDetails.Create(date, "Zurich", "Bring snacks"));
+        group.SetEventDetails(eventId, EventDetails.Create(date, "Zurich", "Bring snacks"));
 
         var api = new FakeLinkingApi();
         await new AssignmentPublisher(api).PublishAsync(group);

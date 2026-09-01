@@ -82,13 +82,13 @@ else
                             <MudText Typo="Typo.body2" Class="mud-text-secondary">
                                 @L["EventsColumn"]: @group.EventCount
                             </MudText>
-                            @if (group.HasAnyDraw)
-                            {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
-                            }
-                            else if (group.AnyDrawInvalidated)
+                            @if (group.AnyDrawInvalidated)
                             {
                                 <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
+                            }
+                            else if (group.HasAnyDraw)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
                             }
                         </div>
                         <div class="d-flex align-center gap-1">

@@ -2,6 +2,7 @@
 @inject ISender Sender
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
+@inject TimeProvider Time
 
 <PageTitle>@L["GroupEditorTitle"]</PageTitle>
 
@@ -35,6 +36,11 @@ else
                    Disabled="@string.IsNullOrWhiteSpace(_newEventName)">@L["AddEvent"]</MudButton>
     </div>
 
+    @if (_group.Events.Count == 0)
+    {
+        <MudAlert Severity="Severity.Normal" Class="mb-2" role="note">@L["NoEventsYet"]</MudAlert>
+    }
+
     <MudStack Spacing="2">
         @foreach (var occasion in _group.Events)
         {
@@ -54,13 +60,13 @@ else
                         <div class="d-flex justify-space-between align-center flex-wrap gap-2">
                             <div class="d-flex align-center flex-wrap gap-2">
                                 <MudText Typo="Typo.subtitle1"><strong>@EventLabel(occasion.Name)</strong></MudText>
-                                @if (occasion.HasCurrentDraw)
-                                {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
-                                }
-                                else if (occasion.DrawInvalidatedByMembershipChange)
+                                @if (occasion.DrawInvalidatedByMembershipChange)
                                 {
                                     <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
+                                }
+                                else if (occasion.HasCurrentDraw)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
                                 }
                             </div>
                             <div class="d-flex align-center gap-1">
@@ -116,8 +122,20 @@ else
         if (_group is not null)
         {
             _name = _group.Name;
+
+            // Offer a sensible default the user can accept or edit (item: default event name). Only
+            // pre-fill when the field is untouched, so a name the user is typing is never clobbered.
+            if (string.IsNullOrEmpty(_newEventName))
+            {
+                _newEventName = DefaultEventName();
+            }
         }
     }
+
+    // "Weihnachten 2026" / "Christmas 2026" / "Noël 2026" — the localized default gift-exchange occasion
+    // for the current year. A format string per culture keeps the word and word order translatable.
+    private string DefaultEventName() => string.Format(
+        System.Globalization.CultureInfo.CurrentCulture, L["DefaultEventNameFormat"], Time.GetLocalNow().Year);
 
     private string EventLabel(string name) => string.IsNullOrWhiteSpace(name) ? L["DefaultEventName"] : name;
 
@@ -143,7 +161,7 @@ else
         }
 
         var id = await Sender.Send(new AddEventCommand(GroupId, _newEventName));
-        _newEventName = string.Empty;
+        _newEventName = DefaultEventName();
         Open(id);
     }
 

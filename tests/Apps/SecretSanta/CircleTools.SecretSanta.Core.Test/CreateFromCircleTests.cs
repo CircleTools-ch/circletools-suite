@@ -73,10 +73,10 @@ public sealed class CreateFromCircleTests
             new CirclePersonInput(Guid.NewGuid(), "Alice", Guid.NewGuid()),
             new CirclePersonInput(Guid.NewGuid(), "Bob", null));
 
+        // A group created from a circle starts eventless like any other (ADR-0042 amendment): the
+        // members come across, but the first occasion is created by the user, so there is no draw.
         var group = await repository.GetAsync(result.GroupId, default);
-        var occasion = group!.FindEvent(group.Id)!;
-        Assert.Null(occasion.CurrentDraw);
-        Assert.False(occasion.DrawInvalidatedByMembershipChange);
+        Assert.Empty(group!.Events);
     }
 
     private static Task<CreateGroupFromCircleResult> Handle(

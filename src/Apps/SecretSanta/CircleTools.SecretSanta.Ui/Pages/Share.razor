@@ -11,20 +11,21 @@
 <MudText Typo="Typo.h4" GutterBottom="true">@L["ShareTitle"]</MudText>
 <MudText Class="mud-text-secondary mb-4">@L["ShareHint"]</MudText>
 
+@* The draw is kept even after the roster changes (ADR-0052), so its links stay available here — but
+   they are from a draw that no longer matches the current roster, so warn before the organizer shares
+   them as if current. *@
+@if (_drawInvalidated)
+{
+    <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true" role="alert">@L["DrawInvalidatedNotice"]</MudAlert>
+}
+
 @if (_links is null)
 {
     <MudText>@L["Loading"]</MudText>
 }
 else if (_links.Count == 0)
 {
-    @if (_drawInvalidated)
-    {
-        <MudAlert Severity="Severity.Warning" Dense="true" role="alert">@L["DrawInvalidatedNotice"]</MudAlert>
-    }
-    else
-    {
-        <MudText Class="mud-text-secondary">@L["NoDrawYet"]</MudText>
-    }
+    <MudText Class="mud-text-secondary">@L["NoDrawYet"]</MudText>
 }
 else
 {

@@ -10,16 +10,26 @@ namespace CircleTools.SecretSanta.Core.Domain;
 /// </summary>
 public sealed class Member : Entity
 {
-    private Member(Guid id, string name, Guid? userId, Guid? originCirclePersonId)
+    private Member(Guid id, string name, Guid? userId, Guid? originCirclePersonId, bool isArchived)
     {
         Id = id;
         Name = name;
         UserId = userId;
         OriginCirclePersonId = originCirclePersonId;
+        IsArchived = isArchived;
     }
 
     /// <summary>Gets the member's display name.</summary>
     public string Name { get; private set; }
+
+    /// <summary>
+    /// Gets a value indicating whether this member has been <em>archived</em> — removed from the active
+    /// roster but kept in the aggregate so past draws still resolve their name and a rename still reaches
+    /// them (the "archive, don't delete" model, ADR-0052). An archived member takes part in no future
+    /// draw and is hidden from the roster editor, but a completed draw that already includes them stays
+    /// intact and viewable.
+    /// </summary>
+    public bool IsArchived { get; private set; }
 
     /// <summary>
     /// Gets the account this member is linked to, or <see langword="null"/> when the member is not
@@ -43,15 +53,18 @@ public sealed class Member : Entity
     public Guid? OriginCirclePersonId { get; private set; }
 
     internal static Member Create(string name) =>
-        new(GuidV7.New(), NormalizeName(name), userId: null, originCirclePersonId: null);
+        new(GuidV7.New(), NormalizeName(name), userId: null, originCirclePersonId: null, isArchived: false);
 
     internal static Member CreateFromCircle(string name, Guid? userId, Guid? originCirclePersonId) =>
-        new(GuidV7.New(), NormalizeName(name), userId, originCirclePersonId);
+        new(GuidV7.New(), NormalizeName(name), userId, originCirclePersonId, isArchived: false);
 
-    internal static Member Restore(Guid id, string name, Guid? userId, Guid? originCirclePersonId) =>
-        new(id, name, userId, originCirclePersonId);
+    internal static Member Restore(Guid id, string name, Guid? userId, Guid? originCirclePersonId, bool isArchived) =>
+        new(id, name, userId, originCirclePersonId, isArchived);
 
     internal void Rename(string name) => Name = NormalizeName(name);
+
+    /// <summary>Archives the member: kept for history, but removed from the active roster (ADR-0052).</summary>
+    internal void Archive() => IsArchived = true;
 
     internal void Link(Guid userId) => UserId = userId;
 
