@@ -6,6 +6,16 @@
    screen-reader-only utility used for the accessible label on icon-only / spinner states.
 */
 
+/* MudBlazor's floating input label (ADR-0040) sets a fixed `line-height: 1.15rem` (18.4px) and clips
+   its box with `overflow: hidden`, which is a hair too short for the font's descenders — so letters
+   like g / p / y lose about a pixel off the bottom (e.g. the "g" in "New group name"). We give the
+   label a touch more line-height so the whole glyph fits; the horizontal ellipsis truncation is
+   unchanged. `!important` overrides MudBlazor's two-class rule cleanly without matching its exact
+   selector chain. */
+.mud-input-label-inputcontrol {
+    line-height: 1.3rem !important;
+}
+
 .visually-hidden {
     position: absolute !important;
     width: 1px;
