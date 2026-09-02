@@ -23,7 +23,15 @@ public sealed class CultureProvider(IKeyValueStore store, CultureOptions options
     public async ValueTask<CultureInfo> InitializeAsync(CancellationToken cancellationToken = default)
     {
         var stored = await store.GetAsync(StorageScope.Durable, options.StorageKey, cancellationToken);
-        Apply(AppCultures.Resolve(stored));
+
+        // First run (nothing stored): follow the device/browser language, mapped to the nearest supported
+        // one (any de-* -> de-CH, fr-* -> fr-CH, en-* -> en, else de-CH). The device value is read from
+        // CurrentUICulture before Apply overwrites it — on both heads the platform seeds it from the
+        // device/browser language at startup. A stored choice always wins, and a signed-in account's
+        // language still overrides on the next reconcile (ADR-0035). It is deliberately not persisted
+        // here: with no explicit choice the default keeps following the device on each start.
+        var name = stored ?? CultureInfo.CurrentUICulture.Name;
+        Apply(AppCultures.Resolve(name));
         return _current;
     }
 
