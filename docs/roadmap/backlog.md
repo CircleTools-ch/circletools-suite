@@ -18,16 +18,48 @@ and consumes the [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-se
 
 **In [FEAT-008](../features/FEAT-008-mobile-native-feel-polish.md) (levers 1–4 — build first):**
 
-- **MNF-1 · Touch-ergonomics completion (P1).** Close the remaining sub-48 px tap targets the R2-6 pass
-  left (icon buttons, kebab menu items, list-row actions, from-circle checkboxes) and add a shared
-  mobile density baseline so new screens inherit it. Cheap, high-impact, cross-platform.
-- **MNF-2 · Navigation clean-up (P1).** Drop the redundant app-bar hamburger on narrow viewports (the
-  bottom bar's "More" already opens the drawer — two entry points to one drawer), and stop rendering a
-  **degenerate one-item bottom bar** when signed out (today "Groups + More").
-- **MNF-3 · Motion — haptics + pull-to-refresh (P1).** An `IHapticFeedback` seam (MAUI
-  `HapticFeedback`; web no-op — mirrors `IShareService`, [ADR-0028](../adr/0028-browser-platform-adapters-block.md)):
-  a light tap on draw, reveal, pin/delete (needs Android `VIBRATE`). Pull-to-refresh on the list screens
-  triggering the existing `AutoSyncService`. Single cheapest "feels native" levers.
+- **MNF-1 · Touch-ergonomics completion (P1).** ✅ **Built 2026-09-02.** A shared **mobile density
+  baseline** in `circletools.css` (narrow breakpoint) gives every `.mud-icon-button` a ≥48 px hit area
+  (input-adornment icons excepted so dense fields don't grow) and every `.mud-menu-item` ≥48 px — so
+  every screen, and every new one, inherits a phone-sized target instead of re-solving it. **Browser-verified**
+  (Playwright, 390 px): the Groups kebab overflow button measures **48×48**. The transient
+  `Size.Small` buttons in the confirm/edit clusters are left for **MNF-4**, which replaces those inline
+  clusters with action sheets.
+- **MNF-2 · Navigation clean-up (P1).** ✅ **Built 2026-09-02.** `SecretSantaShell` now shows the bottom
+  bar **only when it carries more than the single "Groups" tab** (`_showBottomBar`), and the app-bar
+  hamburger is hidden on narrow **only when a bottom bar owns the drawer** — so a signed-out / not-linked
+  phone gets one menu entry (the hamburger + drawer) and no degenerate one-item bar, while a linked
+  member gets the real tab bar and no redundant hamburger. Content bottom-padding (`ct-has-bottomnav`) is
+  now conditional too, so there's no phantom strip without a bar. **Browser-verified** (Playwright,
+  390 px, signed out): hamburger present, **no bottom bar**, hamburger opens the drawer, console clean.
+  The **signed-in linked-member** path (bottom bar shown, hamburger hidden on narrow) needs the live
+  Aspire stack + a linked member — deferred to the [TP-008](../features/TP-008-mobile-native-feel-polish.md)
+  live-stack / on-device pass.
+- **MNF-3a · Motion — haptics (P1).** ✅ **Built 2026-09-02.** New `IHapticFeedback` seam in
+  `Ui.Abstractions` with a MAUI impl over `Microsoft.Maui.Devices.HapticFeedback` (`Click`) and a
+  **web no-op** (`BrowserHapticFeedback`) — mirrors `IShareService`
+  ([ADR-0028](../adr/0028-browser-platform-adapters-block.md)). A light tap fires on **draw success**
+  (`Draw`), **giftee reveal** (`Reveal` + `MyAssignments`), and **pin/delete** (`Groups`). Android
+  `VIBRATE` permission added to the manifest. Covered by a bUnit test (reveal taps once; the web impl is
+  a no-op) — Ui suite **29/29**. **On-device: confirmed on the Pixel 9 Pro** — the buzz fires on **Auslosen (draw)**
+  and **delete confirm** (the two offline-reachable points; pin and the signed-in *my-assignments*
+  reveal are gated behind sign-in, and the public reveal-link buzz needs an opened `/r` link).
+  **Root cause found on device:** the platform haptic silently no-ops unless `HapticFeedback.Perform`
+  is marshalled onto the UI thread — a Blazor event handler is not guaranteed to be on the main looper.
+  `MauiHapticFeedback` now wraps it in `MainThread.BeginInvokeOnMainThread`; that is what made the buzz
+  fire. (A clean build with the temporary diagnostic logging removed is in the working tree; it is
+  behaviourally identical to the confirmed build and ships with the next Android deploy.)
+- **MNF-3b · Motion — pull-to-refresh (P1).** ✅ **Built & confirmed on the Pixel 2026-09-02.** A shared
+  `PullToRefresh` component + `js/pullToRefresh.js` in `Ui.Shared` (works on both
+  heads — both render in a web view): a top-of-page pull past ~72px shows a spinner and fires the existing
+  `AutoSyncService.RequestSync()` (a no-op signed out; pulled data arrives via the ordinary
+  `SyncCompleted` re-render). The gesture only engages at scroll-top while dragging down, so ordinary
+  scrolling is never blocked; `overscroll-behavior-y: contain` suppresses the browser's own reload-on-pull.
+  **Browser-verified** (Playwright, 390px touch): the indicator reaches full opacity while pulling,
+  **triggers past the threshold**, **ignores a below-threshold pull**, console clean. **On-device (Pixel):**
+  the maintainer confirmed the gesture feels good and **does not interfere with normal scrolling** — the
+  on-device tuning [FEAT-008](../features/FEAT-008-mobile-native-feel-polish.md) flagged is satisfied; no
+  threshold/resistance changes needed.
 - **MNF-4 · Native interaction patterns (P2).** Bottom/action sheets for destructive confirmations and
   overflow menus (replacing the inline `MudAlert` expanders), and a **FAB** for the primary create/add
   actions on narrow viewports.

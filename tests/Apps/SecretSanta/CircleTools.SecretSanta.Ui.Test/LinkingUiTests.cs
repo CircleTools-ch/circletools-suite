@@ -100,6 +100,7 @@ public sealed class MyAssignmentsPageTests : IDisposable
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
 
         _ctx.Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassThroughStringLocalizer<AppStrings>());
+        _ctx.Services.AddSingleton<IHapticFeedback>(new FakeHapticFeedback());
         _ctx.AddTestAuthorization().SetAuthorized("member");
     }
 

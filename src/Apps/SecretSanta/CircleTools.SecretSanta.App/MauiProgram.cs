@@ -101,6 +101,9 @@ public static class MauiProgram
         builder.Services.AddScoped<CircleTools.Ui.Abstractions.IConnectivity, MauiConnectivity>();
         builder.Services.AddScoped<IPasskeyCeremony, MauiPasskeyCeremony>();
         builder.Services.AddScoped<IShareService, MauiShareService>();
+        // Fully qualified: MAUI's global usings also expose Microsoft.Maui.Devices.IHapticFeedback,
+        // so the bare name is ambiguous here (as with IConnectivity above).
+        builder.Services.AddScoped<CircleTools.Ui.Abstractions.IHapticFeedback, MauiHapticFeedback>();
 
         // Carries an incoming reveal App Link (ADR-0053) from the platform activation into the Blazor
         // app; a singleton so a link that arrives on a cold start survives until the UI can consume it.
