@@ -90,10 +90,30 @@ top-level one ([ADR-0040](0040-ui-component-library-mudblazor.md)), which is con
 scarce bottom edge. The hub is the standard native pattern for "a thing with several sections and a
 workflow".
 
-**Scope.** This decision covers the **event level** (`EventNav`). The **group level** (`GroupNav`:
-Events / Members / Exclusions — fewer, shorter labels) is less affected; whether it adopts the same hub
-for consistency is a **follow-up to evaluate during the feature spec**, not settled here. This ADR
-**amends** ADR-0042's presentation of event navigation; the domain model and routes are unchanged.
+**Scope.** This decision covers the **event level** (`EventNav`). The **group level** (`GroupNav`) is
+addressed in the amendment below. This ADR **amends** ADR-0042's presentation of event navigation; the
+domain model and routes are unchanged.
+
+## Amendment (2026-09-02) — the group level gets the same hub
+
+The group-level tab strip (`GroupNav`: *Events / Members / Exclusions*) is retired the same way, for the
+same reasons and by the same maintainer request:
+
+- The **group landing** `/groups/{groupId}` (was `GroupEditor` with tabs) becomes the **group hub**: the
+  **occasions (events) list** is the primary content — the full list plus the add-event control — and
+  **Members** and **Exclusions** sit **below it as section rows** (icon + count + chevron, the same
+  `ct-hub-row` as the event hub). `GroupNav` is removed; Members/Exclusions pages get a `GroupBackNav`
+  "← group name" link back to the hub.
+- **The group-rename field leaves the landing.** An always-visible name text box made the hub lead with a
+  form; the rename now lives behind the header's **overflow menu → "Rename"**, which opens a bottom sheet
+  (the FEAT-008 W4 `TextInputSheet`, extended to accept the current name as its initial value). The label
+  is **"Rename"** (`Umbenennen` / `Renommer`) — accurate while the name is the only group-level setting;
+  if more settings arrive, promote it to a **"Group settings"** screen.
+- Unlike the event hub, the group hub keeps the existing **inline event cards** (open / rename / remove an
+  occasion) — those are the list, not a menu.
+
+Same trade as the event level (a wide user returns to the hub to switch sections); same "one screen per
+route" simplicity. Realised in [FEAT-009](../features/FEAT-009-event-section-hub.md).
 
 ## Consequences
 
