@@ -17,16 +17,20 @@
 
 <MudText Typo="Typo.h4" GutterBottom="true">@L["GroupsTitle"]</MudText>
 
-<div class="d-flex gap-2 align-start flex-wrap mb-4">
-    <MudTextField @bind-Value="_newName" Immediate="true" OnKeyDown="OnNewNameKeyDown"
-                  Label="@L["NewGroupPlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense"
-                  Class="flex-grow-1" Style="min-width:12rem;" />
-    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync"
-               StartIcon="@Icons.Material.Filled.Add" Class="mt-1"
-               Disabled="@(_busy || string.IsNullOrWhiteSpace(_newName))">
-        @L["CreateGroup"]
-    </MudButton>
-</div>
+@* The inline create field is the wide-screen path; on a phone it moves behind the "+" FAB (like adding
+   members) so the list of groups leads. *@
+<MudHidden Breakpoint="Breakpoint.SmAndDown">
+    <div class="d-flex gap-2 align-start flex-wrap mb-4">
+        <MudTextField @bind-Value="_newName" Immediate="true" OnKeyDown="OnNewNameKeyDown"
+                      Label="@L["NewGroupPlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Class="flex-grow-1" Style="min-width:12rem;" />
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync"
+                   StartIcon="@Icons.Material.Filled.Add" Class="mt-1"
+                   Disabled="@(_busy || string.IsNullOrWhiteSpace(_newName))">
+            @L["CreateGroup"]
+        </MudButton>
+    </div>
+</MudHidden>
 
 @* Create a group from a circle (FR-027): only offered while signed in, since it reads the account's
    circles. The account-free flow above is unchanged. *@
@@ -128,6 +132,16 @@ else
     </MudStack>
 }
 
+@* Create a group via a FAB on phones (like adding members); the inline field owns it on wide.
+   The spacer reserves scroll room so the FAB never traps the last group card's controls. *@
+<MudHidden Breakpoint="Breakpoint.MdAndUp">
+    <div class="ct-fab-spacer"></div>
+    <div class="ct-fab">
+        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                aria-label="@L["CreateGroup"]" OnClick="CreateViaFabAsync" />
+    </div>
+</MudHidden>
+
 @code {
     [CascadingParameter]
     private Task<AuthenticationState>? AuthStateTask { get; set; }
@@ -217,9 +231,22 @@ else
         }
     }
 
-    private async Task CreateAsync()
+    // The inline field (wide screens) creates from the bound value.
+    private Task CreateAsync() => CreateNamedAsync(_newName);
+
+    // The phone FAB collects the name in a bottom sheet, then creates it (like adding members).
+    private async Task CreateViaFabAsync()
     {
-        if (_busy || string.IsNullOrWhiteSpace(_newName))
+        var name = await Dialogs.ShowTextInputSheetAsync(L["CreateGroup"], L["NewGroupPlaceholder"], L["CreateGroup"], L["Cancel"]);
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            await CreateNamedAsync(name);
+        }
+    }
+
+    private async Task CreateNamedAsync(string rawName)
+    {
+        if (_busy || string.IsNullOrWhiteSpace(rawName))
         {
             return;
         }
@@ -227,7 +254,7 @@ else
         _busy = true;
         try
         {
-            var name = _newName.Trim();
+            var name = rawName.Trim();
             var id = await Sender.Send(new CreateGroupCommand(name));
 
             // The organizer is a member of the group they create. Signed in, add them and link their own

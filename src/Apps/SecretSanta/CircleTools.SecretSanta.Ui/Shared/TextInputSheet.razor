@@ -29,7 +29,12 @@
     /// <summary>Label for the dismissing action.</summary>
     [Parameter] public string CancelLabel { get; set; } = string.Empty;
 
+    /// <summary>Optional initial text (e.g. the current name when renaming).</summary>
+    [Parameter] public string? Initial { get; set; }
+
     private string _value = string.Empty;
+
+    protected override void OnInitialized() => _value = Initial ?? string.Empty;
 
     private void Submit()
     {

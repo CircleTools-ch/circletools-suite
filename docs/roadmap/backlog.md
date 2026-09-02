@@ -3,6 +3,49 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Drawer & group-hub refinements — Secret-Santa (2026-09-02)
+
+Follow-ups from the maintainer's use, on top of the [chrome/navigation review](#mobile-chrome--navigation-review--secret-santa-2026-09-02).
+
+- **DGH-6 · Deleted groups lingered in the drawer quick-access (bug, P1).** ✅ **Fixed, browser-verified.**
+  A group deleted **while signed out** stayed in the drawer's quick-access until the next navigation/sync:
+  the after-change trigger (`AutoSyncBehavior` → `RequestSync`) only reaches the drawer via `SyncCompleted`,
+  which a signed-out cycle never fires. Added a **`LocalChanged`** event on `AutoSyncService` (raised by
+  `RequestSync`, so on every mutation regardless of sign-in); the shell subscribes and re-reads
+  quick-access, which filters by `VisibleGroupsService` so a deleted group drops immediately. Browser-verified
+  (390px, signed out): create → group in drawer; delete (no navigation) → gone from the list **and** the
+  drawer.
+
+- **DGH-1 · Settings pinned to the drawer bottom + bigger nav targets.** ✅ **Built, browser-verified.**
+  The drawer is now a full-height flex column: the main nav scrolls in the top region and **Settings sits
+  pinned at the very bottom** (empty space between when there are few groups/events), so it reads as an
+  app-level control. Drawer nav links get a **≥48px** target and a slightly larger font on narrow
+  viewports. Browser-verified (390px): Groups link 48px tall; Settings link top at y≈796 of 844.
+- **DGH-2 · Group hub (ADR-0055 amendment).** ✅ **Built, browser-verified; device pass pending.** The
+  group landing is now a **hub** matching the event hub ([FEAT-009](../features/FEAT-009-event-section-hub.md),
+  [ADR-0055 amendment](../adr/0055-event-navigation-mobile-section-hub.md)): the **occasions list** is the
+  primary content, with **Members** and **Exclusions** as `ct-hub-row` rows (icon + count + chevron) below;
+  `GroupNav` tabs retired, `GroupBackNav` added to the Members/Exclusions pages. Browser-verified (390px,
+  en-US): no tab strip; Members/Exclusions rows with counts; adding an event lists it; row → `/members`
+  with a back-to-group link; console clean.
+- **DGH-3 · Group rename moved into the header overflow menu.** ✅ **Built, browser-verified.** The
+  always-visible group-name text field is gone; rename lives behind the header **⋮ → "Rename"**, opening
+  the W4 `TextInputSheet` (extended to pre-fill the current name). **Suggested label: "Rename"
+  (Umbenennen)** while the name is the only group setting; promote to **"Group settings"** if more arrive.
+  Browser-verified: sheet pre-fills "Familie"; renaming updates the hub title.
+- **DGH-4 · Pinned Settings link clipped by the screen corner (P2).** ✅ **Built, browser-verified.** The
+  bottom-pinned Settings link sat flush against the phone's rounded corner / gesture bar. Added
+  `padding-bottom: calc(env(safe-area-inset-bottom) + 12px)` to `.ct-drawer-bottom` so it clears both.
+  Browser-verified (no inset): 12px gap; on device the gesture-bar safe area adds more. **Confirm on the Pixel.**
+- **DGH-5 · Create group / add event via a FAB (P1).** ✅ **Built, browser-verified; device pass pending.**
+  Same pattern as adding members (FEAT-008 W4): on a phone the inline **create-group** field (Groups) and
+  **add-event** field (group hub) are hidden and a **"+" FAB** opens a bottom sheet to enter the name — so
+  each screen leads with the *existing* groups/events. The add-event sheet **pre-fills the default name**
+  (e.g. "Christmas 2026"). Onboarding copy reworded to drop directional "above/oben/ci-dessus" (now width-
+  neutral: "Add a group to get started."). Inline fields stay on wide. Browser-verified (390px, en-US):
+  Groups FAB → sheet → group hub; events FAB → **pre-filled** sheet → event hub; inline fields hidden on
+  narrow; console clean. **Confirm the FAB feel on the Pixel.**
+
 ## Mobile chrome & navigation review — Secret-Santa (2026-09-02)
 
 A pass over app-chrome placement and navigation against mobile conventions, driven by the maintainer's
@@ -28,11 +71,17 @@ own use, on top of the [native-feel pass](#mobile-native-feel-pass--secret-santa
   **29/29**. **Browser-verified** (Playwright, 390px, en-US): hub is the landing, no tab strip, four rows
   with status, row → route → back-to-Overview → hub, console clean. **Still to confirm on the Pixel:** the
   hub under a real finger in DE. Deferred: whether the **group level** (`GroupNav` tabs) gets a matching hub.
-- **MCN-3 · App chrome → a Settings screen on mobile (P2, open).** The theme switch (System/Light/Dark)
-  and, in the drawer, the language picker + version are app-bar / drawer controls today — a web pattern.
-  On mobile these belong in a **Settings/About screen** (theme defaults to System; language and version
-  live there). Recommend one shared Settings screen for web + mobile rather than diverging. Not yet
-  designed; would touch the shared shell (a small ADR/feature decision first).
+- **MCN-3 · App chrome → a Settings screen (P2).** ✅ **Built 2026-09-02, browser-verified; device pass
+  pending.** New `/settings` page (`Pages/Settings.razor`) gathers **Appearance** (System/Light/Dark),
+  **Language**, and the build **version** into one screen, composing the existing shared `ThemeState` /
+  `CultureSelector` / `AppVersion`. The **theme switch is removed from the app bar** (native-mobile
+  placement; declutters the bar on web too) and the drawer's language/version block is replaced with a
+  single **Settings** nav link. One screen for web + mobile (no divergence). Two new strings
+  (`SettingsTitle`, `SettingsAbout`) in all locales; parity green; Ui suite **29/29**. **Browser-verified**
+  (Playwright, 390px): the drawer Settings link opens `/settings`; Appearance + Language dropdowns + a
+  version label render; selecting **Dark** flips the app to dark (body background light→dark); app bar has
+  no theme toggle; console clean. **Still to confirm on the Pixel** in DE. The signed-in language
+  device-note + Profile link moved onto the Settings page unchanged.
 - **MCN-4 · Account entry top-right — keep.** The account/avatar menu top-right is the convention
   (kept). Minor refinement to consider: make the **signed-out** state read clearly as "Sign in" rather
   than an ambiguous avatar. No structural change.

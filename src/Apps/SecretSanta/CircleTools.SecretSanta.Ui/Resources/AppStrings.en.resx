@@ -198,4 +198,6 @@
   <data name="HubWishlistCount" xml:space="preserve"><value>{0} of {1}</value></data>
   <data name="HubDrawPending" xml:space="preserve"><value>Not drawn yet</value></data>
   <data name="HubShareReady" xml:space="preserve"><value>Ready</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Settings</value></data>
+  <data name="SettingsAbout" xml:space="preserve"><value>About</value></data>
 </root>

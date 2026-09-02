@@ -28,9 +28,17 @@ event navigation (presentation only — routes' semantics shift slightly, the do
   `/wishlists`, `/draw`, `/share` routes are unchanged.
 - **`EventBackNav`** (`Shared/EventBackNav.razor`) replaces the retired `EventNav` on every section page:
   a "← Overview" link back to the hub, and it records nav recency (as `EventNav` did).
-- **`EventNav`** (the tab strip) is **removed**. `GroupNav` (group level: Events / Members / Exclusions)
-  is unchanged — the group level keeps its tabs (fewer, shorter labels); a matching hub there is a
-  possible later consistency step, not done here.
+- **`EventNav`** (the tab strip) is **removed**.
+
+### Group level (ADR-0055 amendment, 2026-09-02)
+- **`GroupEditor`** (`/groups/{groupId}`) becomes the **group hub**: the occasions list (with add-event)
+  is the primary content, and **Members** / **Exclusions** are `ct-hub-row` section rows below (icon +
+  count + chevron). `GroupNav` (the tab strip) is **removed**; a new **`GroupBackNav`** ("← group name")
+  replaces it on the Members and Exclusions pages.
+- The **group-rename text field leaves the hub**: it moves behind the header's overflow menu → **"Rename"**,
+  which opens the W4 `TextInputSheet` (extended with an optional initial value, pre-filled with the current
+  name). Suggested label "Rename" now; promote to "Group settings" if more group-level settings appear.
+- The inline **event cards** (open / rename / remove an occasion) stay — they are the list, not a menu.
 
 ### Per-section status (from the one `GetEventQuery` the hub loads)
 - **Details** — the event date, when set.

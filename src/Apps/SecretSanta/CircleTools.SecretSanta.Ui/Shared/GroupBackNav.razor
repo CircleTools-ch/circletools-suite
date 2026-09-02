@@ -1,0 +1,30 @@
+@inject ISender Sender
+@inject RecentAccessService Recent
+@inject IStringLocalizer<AppStrings> L
+
+@* Back-to-group link shown at the top of the Members and Exclusions pages (ADR-0055 group level): it
+   replaces the retired GroupNav tab strip. Tapping it returns to the group hub. Records recency, as
+   GroupNav did, so a deep link straight to a section still counts. *@
+<div class="mb-4">
+    <MudButton Href="@($"groups/{GroupId}")" StartIcon="@Icons.Material.Filled.ArrowBack"
+               Size="Size.Small" Variant="Variant.Text">@BackLabel</MudButton>
+</div>
+
+@code {
+    /// <summary>The group whose section is shown.</summary>
+    [Parameter]
+    public Guid GroupId { get; set; }
+
+    private string? _groupName;
+
+    private string BackLabel => string.IsNullOrWhiteSpace(_groupName) ? L["GroupEditorTitle"] : _groupName!;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await Recent.RecordGroupAsync(GroupId);
+
+        // The group name is a header nicety; a read failure just falls back to the generic label.
+        var group = await Sender.Send(new GetGroupQuery(GroupId));
+        _groupName = group?.Name;
+    }
+}

@@ -84,10 +84,10 @@
   <data name="NewGroupPlaceholder" xml:space="preserve"><value>New group name</value></data>
   <data name="CreateGroup" xml:space="preserve"><value>Create group</value></data>
   <data name="EmptyStateHeadline" xml:space="preserve"><value>Run a Secret Santa with your group</value></data>
-  <data name="EmptyStateExplainer" xml:space="preserve"><value>Add everyone, mark who shouldn't draw whom, and draw names fairly. Each person gets a private link that reveals only who they got and their wishlist — it works offline, with no account. Name a group above to start.</value></data>
+  <data name="EmptyStateExplainer" xml:space="preserve"><value>Add everyone, mark who shouldn't draw whom, and draw names fairly. Each person gets a private link that reveals only who they got and their wishlist — it works offline, with no account. Add a group to get started.</value></data>
   <data name="EmptyStateAccountSell" xml:space="preserve"><value>Sign in to sync your groups across devices, see your own assignment, and keep your own wishlist.</value></data>
   <data name="EmptyStateSignIn" xml:space="preserve"><value>Sign in</value></data>
-  <data name="EmptyStateSignedInHint" xml:space="preserve"><value>No groups yet. Create one above, or start from one of your circles.</value></data>
+  <data name="EmptyStateSignedInHint" xml:space="preserve"><value>No groups yet. Add one, or start from one of your circles.</value></data>
   <data name="MembersColumn" xml:space="preserve"><value>Members</value></data>
   <data name="DrawCompleteBadge" xml:space="preserve"><value>Drawn</value></data>
   <data name="DrawInvalidatedBadge" xml:space="preserve"><value>Re-draw needed</value></data>
@@ -285,4 +285,6 @@
   <data name="HubWishlistCount" xml:space="preserve"><value>{0} of {1}</value></data>
   <data name="HubDrawPending" xml:space="preserve"><value>Not drawn yet</value></data>
   <data name="HubShareReady" xml:space="preserve"><value>Ready</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Settings</value></data>
+  <data name="SettingsAbout" xml:space="preserve"><value>About</value></data>
 </root>

@@ -73,6 +73,34 @@
     .mud-menu-item {
         min-height: 48px;
     }
+
+    /* Drawer navigation links are a touch small for a phone; give them a comfortable target (MCN review). */
+    .mud-nav-link,
+    .mud-nav-group > .mud-nav-link {
+        min-height: 48px;
+        font-size: 0.95rem;
+    }
+}
+
+/* Drawer as a full-height flex column so Settings can sit pinned at the very bottom (MCN review): the
+   main nav scrolls in the top region, the bottom region holds Settings, and the space between stays
+   empty when there are few groups/events. */
+.ct-drawer {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.ct-drawer-main {
+    flex: 1 1 auto;
+    overflow-y: auto;
+}
+
+.ct-drawer-bottom {
+    flex: 0 0 auto;
+    /* Keep the pinned Settings link clear of the phone's rounded screen corner and the gesture bar, so
+       it is never partly clipped at the very bottom edge. */
+    padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
 }
 
 /* Pull-to-refresh (FEAT-008 W3). A spinner that rides down from under the app bar as the user pulls the

@@ -17,19 +17,22 @@ public static class TextInputSheetExtensions
     /// <param name="label">Floating label for the field.</param>
     /// <param name="confirmLabel">Label for the confirming action.</param>
     /// <param name="cancelLabel">Label for the dismissing action.</param>
+    /// <param name="initial">Optional initial text (e.g. the current name when renaming).</param>
     /// <returns>The entered text, or <see langword="null"/> if cancelled.</returns>
     public static async Task<string?> ShowTextInputSheetAsync(
         this IDialogService dialogs,
         string title,
         string label,
         string confirmLabel,
-        string cancelLabel)
+        string cancelLabel,
+        string? initial = null)
     {
         var parameters = new DialogParameters<TextInputSheet>
         {
             { x => x.Label, label },
             { x => x.ConfirmLabel, confirmLabel },
             { x => x.CancelLabel, cancelLabel },
+            { x => x.Initial, initial },
         };
 
         var options = new DialogOptions

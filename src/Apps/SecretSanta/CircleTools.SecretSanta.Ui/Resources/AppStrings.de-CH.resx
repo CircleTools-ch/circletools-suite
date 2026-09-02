@@ -30,10 +30,10 @@
   <data name="NewGroupPlaceholder" xml:space="preserve"><value>Name der neuen Gruppe</value></data>
   <data name="CreateGroup" xml:space="preserve"><value>Gruppe erstellen</value></data>
   <data name="EmptyStateHeadline" xml:space="preserve"><value>Verlose ein Wichteln mit deiner Gruppe</value></data>
-  <data name="EmptyStateExplainer" xml:space="preserve"><value>Füge alle hinzu, lege fest, wer wen nicht ziehen soll, und lose fair aus. Jede Person erhält einen privaten Link, der nur die gezogene Person und deren Wunschliste zeigt – ganz offline und ohne Konto. Gib oben einer Gruppe einen Namen, um zu starten.</value></data>
+  <data name="EmptyStateExplainer" xml:space="preserve"><value>Füge alle hinzu, lege fest, wer wen nicht ziehen soll, und lose fair aus. Jede Person erhält einen privaten Link, der nur die gezogene Person und deren Wunschliste zeigt – ganz offline und ohne Konto. Erstelle eine Gruppe, um zu starten.</value></data>
   <data name="EmptyStateAccountSell" xml:space="preserve"><value>Melde dich an, um deine Gruppen geräteübergreifend zu synchronisieren, deine eigene Zuteilung zu sehen und deine eigene Wunschliste zu führen.</value></data>
   <data name="EmptyStateSignIn" xml:space="preserve"><value>Anmelden</value></data>
-  <data name="EmptyStateSignedInHint" xml:space="preserve"><value>Noch keine Gruppen. Erstelle oben eine – oder starte von einem deiner Kreise.</value></data>
+  <data name="EmptyStateSignedInHint" xml:space="preserve"><value>Noch keine Gruppen. Erstelle eine – oder starte von einem deiner Kreise.</value></data>
   <data name="MembersColumn" xml:space="preserve"><value>Mitglieder</value></data>
   <data name="DrawCompleteBadge" xml:space="preserve"><value>Ausgelost</value></data>
   <data name="DrawInvalidatedBadge" xml:space="preserve"><value>Neu auslosen nötig</value></data>
@@ -230,4 +230,6 @@
   <data name="HubWishlistCount" xml:space="preserve"><value>{0} von {1}</value></data>
   <data name="HubDrawPending" xml:space="preserve"><value>Noch nicht ausgelost</value></data>
   <data name="HubShareReady" xml:space="preserve"><value>Bereit</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Einstellungen</value></data>
+  <data name="SettingsAbout" xml:space="preserve"><value>Über</value></data>
 </root>
