@@ -89,3 +89,15 @@ Score candidates. Impact/effort/fit on a 1–5 scale (5 = best).
 - [ ] Add-to-calendar for an event — backlog item. — Adrian
 - [ ] Share all links at once — backlog item (follow-on to the share seam). — Adrian
 - [ ] Revisit local notifications after the reveal-origin/hosting decision. — Adrian
+
+## Promoted (2026-09-02)
+
+A mobile-first "native feel" review (on-device/on-screen) took these forward. The **governing decision** —
+one neutral Material design across web + both device heads, native feel earned through motion, touch
+ergonomics and OS integration rather than per-platform chrome — is [ADR-0054](../adr/0054-mobile-native-feel-strategy.md).
+The distribution/convenience/delight ideas above are now tracked as **MNF-1…10** in the
+[backlog](../roadmap/backlog.md#mobile-native-feel-pass--secret-santa-2026-09-02); the near-term subset
+(touch ergonomics, navigation clean-up, haptics, pull-to-refresh, action sheets, FAB) is specified as
+[FEAT-008](../features/FEAT-008-mobile-native-feel-polish.md). Material You stays rejected
+([ADR-0054](../adr/0054-mobile-native-feel-strategy.md) declines it, per
+[ADR-0040](../adr/0040-ui-component-library-mudblazor.md)).

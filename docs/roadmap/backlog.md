@@ -3,6 +3,61 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Mobile native-feel pass — Secret-Santa (2026-09-02)
+
+The MAUI head is at web parity and heading for a backend-free v1
+([ADR-0053](../adr/0053-backend-free-first-mobile-release.md)); the maintainer's priority is now
+**mobile-first — the phone gets the most attention**. An on-device/on-screen review asked how to make
+it feel more native. The governing decision — **one neutral Material design across web + both device
+heads, with "native feel" earned through motion, touch ergonomics and OS integration rather than
+per-platform (Cupertino) chrome** — is recorded as
+[ADR-0054](../adr/0054-mobile-native-feel-strategy.md). The near-term implementable subset (levers 1–4)
+is specified as [FEAT-008](../features/FEAT-008-mobile-native-feel-polish.md); the rest are stubs below,
+prioritized. This extends the [R2-6 mobile touch pass](#ux-round-2--secret-santa-usability-2026-09-01)
+and consumes the [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-secret-santa-mobile.md).
+
+**In [FEAT-008](../features/FEAT-008-mobile-native-feel-polish.md) (levers 1–4 — build first):**
+
+- **MNF-1 · Touch-ergonomics completion (P1).** Close the remaining sub-48 px tap targets the R2-6 pass
+  left (icon buttons, kebab menu items, list-row actions, from-circle checkboxes) and add a shared
+  mobile density baseline so new screens inherit it. Cheap, high-impact, cross-platform.
+- **MNF-2 · Navigation clean-up (P1).** Drop the redundant app-bar hamburger on narrow viewports (the
+  bottom bar's "More" already opens the drawer — two entry points to one drawer), and stop rendering a
+  **degenerate one-item bottom bar** when signed out (today "Groups + More").
+- **MNF-3 · Motion — haptics + pull-to-refresh (P1).** An `IHapticFeedback` seam (MAUI
+  `HapticFeedback`; web no-op — mirrors `IShareService`, [ADR-0028](../adr/0028-browser-platform-adapters-block.md)):
+  a light tap on draw, reveal, pin/delete (needs Android `VIBRATE`). Pull-to-refresh on the list screens
+  triggering the existing `AutoSyncService`. Single cheapest "feels native" levers.
+- **MNF-4 · Native interaction patterns (P2).** Bottom/action sheets for destructive confirmations and
+  overflow menus (replacing the inline `MudAlert` expanders), and a **FAB** for the primary create/add
+  actions on narrow viewports.
+
+**Selected earlier, distribution cluster (from the [mobile brainstorm](../brainstorming/2026-09-01-secret-santa-mobile.md)) — build next:**
+
+- **MNF-5 · QR code per reveal link (P2).** Show a scannable code so the recipient joins in the room with
+  no messaging app. Small, high-fit; spec as its own feature/backlog item.
+- **MNF-6 · Add-to-calendar for an event (P2).** One tap from the event's date/location/description into
+  the phone calendar.
+- **MNF-7 · Share all links for an event at once (P2).** Follow-on to the existing share seam.
+
+**Parked — need their own design/ADR before building:**
+
+- **MNF-8 · Local notifications (P1 value, parked).** Draw-reminder before the event, "event is
+  tomorrow", empty-wishlist nudge — the strongest reason to *install* rather than bookmark. Needs a
+  scheduling + permission design (and, for "remind everyone", a reachable origin). Parked in the
+  brainstorm pending the reveal-origin/hosting decision; promote once designed.
+- **MNF-9 · Biometric app lock (P2, parked).** Face/fingerprint on open — assignments are the one secret
+  the app keeps, and a phone left unlocked exposes who drew whom. Opt-in; warrants an
+  [NFR-004](../requirements/non-functional/NFR-004-data-protection-and-retention.md) privacy review first.
+- **MNF-10 · iOS App Links + edge-swipe-back (P2, gated).** iOS deep links are **not wired at all** today
+  (Android-only, [ADR-0053](../adr/0053-backend-free-first-mobile-release.md)); iOS also has no
+  edge-swipe-back. Bring the iOS head to the Android head's deep-link parity when iOS becomes a target
+  ([ADR-0031](../adr/0031-ios-build-host.md)).
+
+**Explicitly declined** ([ADR-0054](../adr/0054-mobile-native-feel-strategy.md), do not reopen without a
+new ADR): iOS Cupertino chrome / a platform-adaptive UI kit; Material You dynamic colour (conflicts with
+the neutral chrome, [ADR-0040](../adr/0040-ui-component-library-mudblazor.md)); platform-divergent layouts.
+
 ## UX round 2 — Secret-Santa usability (2026-09-01)
 
 A second UX pass on the Secret-Santa app, driven by the organizer's own use. Each item was built and
