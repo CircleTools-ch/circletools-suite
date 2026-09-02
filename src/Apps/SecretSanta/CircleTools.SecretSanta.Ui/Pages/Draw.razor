@@ -2,6 +2,7 @@
 @inject ISender Sender
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
+@inject IHapticFeedback Haptics
 
 <PageTitle>@L["DrawTitle"]</PageTitle>
 
@@ -109,6 +110,12 @@ else
         {
             _result = await Sender.Send(new RunDrawCommand(GroupId, EventId));
             _confirmRedraw = false;
+            // A confirmation buzz when the draw actually lands (FEAT-008 W3); a no-op on the web head.
+            if (_result.Success)
+            {
+                await Haptics.TapAsync();
+            }
+
             await LoadAsync();
         }
         finally
