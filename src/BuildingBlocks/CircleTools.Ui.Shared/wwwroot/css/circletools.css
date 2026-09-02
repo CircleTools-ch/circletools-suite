@@ -6,6 +6,16 @@
    screen-reader-only utility used for the accessible label on icon-only / spinner states.
 */
 
+/* MudBlazor's floating input label (ADR-0040) sets a fixed `line-height: 1.15rem` (18.4px) and clips
+   its box with `overflow: hidden`, which is a hair too short for the font's descenders — so letters
+   like g / p / y lose about a pixel off the bottom (e.g. the "g" in "New group name"). We give the
+   label a touch more line-height so the whole glyph fits; the horizontal ellipsis truncation is
+   unchanged. `!important` overrides MudBlazor's two-class rule cleanly without matching its exact
+   selector chain. */
+.mud-input-label-inputcontrol {
+    line-height: 1.3rem !important;
+}
+
 .visually-hidden {
     position: absolute !important;
     width: 1px;
@@ -41,4 +51,162 @@
     .ct-has-bottomnav {
         padding-bottom: calc(64px + env(safe-area-inset-bottom));
     }
+}
+
+/* Touch-ergonomics baseline for phones (FEAT-008 W1, ADR-0054). MudBlazor renders its compact
+   interactive controls smaller than a comfortable finger target (an icon button is ~34-40px; a menu
+   item shorter than 48px), so guarantee a ~48px hit area on the narrow (bottom-bar) breakpoint. Doing
+   it once here means every screen — and every new one — inherits a phone-sized target instead of
+   re-solving it per page. Desktop keeps MudBlazor's tighter sizing. */
+@media (max-width: 959.98px) {
+    .mud-icon-button {
+        min-width: 48px;
+        min-height: 48px;
+    }
+
+    /* Adornment icons inside a text field must stay compact, or a dense input grows to 48px. */
+    .mud-input-adornment .mud-icon-button {
+        min-width: 0;
+        min-height: 0;
+    }
+
+    .mud-menu-item {
+        min-height: 48px;
+    }
+
+    /* Drawer navigation links are a touch small for a phone; give them a comfortable target (MCN review). */
+    .mud-nav-link,
+    .mud-nav-group > .mud-nav-link {
+        min-height: 48px;
+        font-size: 0.95rem;
+    }
+}
+
+/* Drawer as a full-height flex column so Settings can sit pinned at the very bottom (MCN review): the
+   main nav scrolls in the top region, the bottom region holds Settings, and the space between stays
+   empty when there are few groups/events. */
+.ct-drawer {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.ct-drawer-main {
+    flex: 1 1 auto;
+    overflow-y: auto;
+}
+
+.ct-drawer-bottom {
+    flex: 0 0 auto;
+    /* Keep the pinned Settings link clear of the phone's rounded screen corner and the gesture bar, so
+       it is never partly clipped at the very bottom edge. */
+    padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
+}
+
+/* Pull-to-refresh (FEAT-008 W3). A spinner that rides down from under the app bar as the user pulls the
+   list at the top, and spins while the refresh is in flight. Position/opacity/rotation are driven by
+   js/pullToRefresh.js; this only styles it. Hidden (opacity 0) until a pull begins. */
+.ct-ptr-indicator {
+    position: fixed;
+    top: calc(env(safe-area-inset-top) + 8px);
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1250;
+}
+
+.ct-ptr-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--mud-palette-surface);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ct-ptr-spinner {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--mud-palette-lines-default);
+    border-top-color: var(--mud-palette-primary);
+}
+
+.ct-ptr-refreshing .ct-ptr-spinner {
+    animation: ct-ptr-spin 0.7s linear infinite;
+}
+
+@keyframes ct-ptr-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Suppress the browser's own pull-to-refresh (which would reload the WASM PWA) so our gesture owns the
+   top overscroll. A no-op in the MAUI WebView, which has no native pull-to-refresh. */
+html {
+    overscroll-behavior-y: contain;
+}
+
+/* Floating action button for the primary create/add action on phones (FEAT-008 W4). Fixed to the
+   bottom-right, cleared above the bottom navigation bar (56px) and the iOS home indicator. Shown by the
+   page inside a narrow-only MudHidden. */
+.ct-fab {
+    position: fixed;
+    right: 16px;
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    /* Above page content, but below MudBlazor's popovers/menus (so an open kebab menu is never covered
+       by the FAB), the bottom nav, and dialogs/sheets. */
+    z-index: 1100;
+}
+
+/* Reserve scrollable space at the bottom of a FAB list so the FAB always floats over empty space, never
+   over the last row's controls — and so a short list (which would otherwise not scroll) can still be
+   scrolled far enough to lift its last row out from under the FAB. The page renders this inside a
+   narrow-only MudHidden, next to the FAB. */
+.ct-fab-spacer {
+    height: calc(160px + env(safe-area-inset-bottom));
+}
+
+/* Event hub rows (ADR-0055): the whole card is a tappable navigation target, so give it a pointer and a
+   subtle hover/focus cue. The row's own layout (icon, label, status, chevron) is utility classes. */
+.ct-hub-row {
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.ct-hub-row:hover,
+.ct-hub-row:focus-visible {
+    border-color: var(--mud-palette-primary);
+    outline: none;
+}
+
+/* The event date uses a native <input type="date"> (EventEditor) so the OS date picker is used on a
+   device (the Mud calendar clipped on a phone). Hide the browser's default calendar/dropdown indicator —
+   the little chevron clashes with the Material field — and lean on a MudBlazor calendar adornment as the
+   affordance. Tapping the field still opens the OS picker. Only one date input exists, so this is global
+   and forced (!important) to beat the WebView's default UA styling. */
+input[type="date"] {
+    /* Android WebView ignores display:none on the picker-indicator pseudo-element and renders the
+       chevron as native chrome; stripping the input's own appearance is what actually removes it.
+       Tapping the field still opens the OS date picker. */
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    display: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+    opacity: 0;
+}
+
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-clear-button {
+    display: none !important;
 }

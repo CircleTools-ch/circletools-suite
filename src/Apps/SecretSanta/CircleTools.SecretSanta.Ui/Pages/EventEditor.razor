@@ -1,10 +1,11 @@
-@page "/groups/{GroupId:guid}/events/{EventId:guid}"
+@page "/groups/{GroupId:guid}/events/{EventId:guid}/details"
 @inject ISender Sender
 @inject IStringLocalizer<AppStrings> L
 
 <PageTitle>@L["EventDetailsTitle"]</PageTitle>
 
-<EventNav GroupId="GroupId" EventId="EventId" />
+<EventBackNav GroupId="GroupId" EventId="EventId" />
+<MudText Typo="Typo.h4" GutterBottom="true">@L["NavEventDetails"]</MudText>
 
 @if (_event is null)
 {
@@ -12,51 +13,70 @@
 }
 else
 {
-    <div class="d-flex gap-2 align-start flex-wrap mb-4">
+    @* One form, one Save (ADR/UX: a single save button per screen). Name, budget and details are all
+       persisted together by SaveAsync — the three separate per-section Save buttons were consolidated. *@
+    <MudStack Spacing="4">
         <MudTextField @bind-Value="_name" Label="@L["EventNameLabel"]" Placeholder="@L["EventNamePlaceholder"]"
-                      Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" Style="min-width:12rem;" />
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveNameAsync" Class="mt-1">@L["Save"]</MudButton>
-    </div>
+                      Variant="Variant.Outlined" Margin="Margin.Dense" />
 
-    <MudCard Elevation="1" Class="mb-4">
-        <MudCardContent>
-            <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["BudgetLabel"]</MudText>
-            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.End" Wrap="Wrap.Wrap">
-                <MudNumericField @bind-Value="_budgetAmount" Label="@L["AmountLabel"]" Variant="Variant.Outlined"
-                                 Margin="Margin.Dense" Step="0.01M" Min="0" HideSpinButtons="false" />
-                <MudTextField @bind-Value="_budgetCurrency" Label="@L["CurrencyLabel"]" Variant="Variant.Outlined"
-                              Margin="Margin.Dense" MaxLength="3" Immediate="true" />
-                <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveBudgetAsync">@L["Save"]</MudButton>
-                <MudButton Variant="Variant.Outlined" OnClick="ClearBudgetAsync">@L["ClearBudget"]</MudButton>
-            </MudStack>
-            @if (_budgetError is not null)
-            {
-                <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2" role="alert">@_budgetError</MudAlert>
-            }
-        </MudCardContent>
-    </MudCard>
+        <MudCard Elevation="1">
+            <MudCardContent>
+                <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["BudgetLabel"]</MudText>
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.End" Wrap="Wrap.Wrap">
+                    @* Explicit widths + hidden spinners so the budget row doesn't fragment on a narrow phone
+                       (the numeric spin buttons otherwise eat the little horizontal space there is). *@
+                    <MudNumericField @bind-Value="_budgetAmount" Label="@L["AmountLabel"]" Variant="Variant.Outlined"
+                                     Margin="Margin.Dense" Step="0.01M" Min="0" HideSpinButtons="true" Style="max-width:10rem;" />
+                    <MudTextField @bind-Value="_budgetCurrency" Label="@L["CurrencyLabel"]" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" MaxLength="3" Immediate="true" Style="max-width:7rem;" />
+                    @* Clears the amount locally; the budget is removed when the form is saved with no amount. *@
+                    <MudButton Variant="Variant.Outlined" OnClick="ClearBudget">@L["ClearBudget"]</MudButton>
+                </MudStack>
+                @if (_budgetError is not null)
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2" role="alert">@_budgetError</MudAlert>
+                }
+            </MudCardContent>
+        </MudCard>
 
-    <MudCard Elevation="1" Class="mb-4">
-        <MudCardContent>
-            <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["EventLabel"]</MudText>
-            <MudStack Spacing="2">
-                <MudDatePicker @bind-Date="_eventDate" Label="@L["DateLabel"]" Variant="Variant.Outlined"
-                               Margin="Margin.Dense" Editable="true" />
-                <MudTextField @bind-Value="_eventLocation" Label="@L["LocationLabel"]" Variant="Variant.Outlined"
-                              Margin="Margin.Dense" />
-                <MudTextField @bind-Value="_eventDescription" Label="@L["DescriptionLabel"]" Variant="Variant.Outlined"
-                              Margin="Margin.Dense" Lines="3" />
-                <div>
-                    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveEventAsync">@L["Save"]</MudButton>
-                </div>
-            </MudStack>
-        </MudCardContent>
-    </MudCard>
+        <MudCard Elevation="1">
+            <MudCardContent>
+                <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["EventLabel"]</MudText>
+                <MudStack Spacing="2">
+                    @* The date control differs per head. In the browser (OperatingSystem.IsBrowser() is true
+                       only under the WASM runtime) MudBlazor's date picker is used: it is themed and formats
+                       by the app culture, where the native <input type="date"> is unstyled and locale-fixed.
+                       On the device head a native input drives the OS picker instead — the Mud calendar clips
+                       and loses focus in the phone WebView (late-month days unreachable). The native value is
+                       the invariant "yyyy-MM-dd" string the input expects (EventDateText adapts it). *@
+                    @if (OperatingSystem.IsBrowser())
+                    {
+                        <MudDatePicker @bind-Date="_eventDate" Label="@L["DateLabel"]" Variant="Variant.Outlined"
+                                       Margin="Margin.Dense" Editable="true" />
+                    }
+                    else
+                    {
+                        <MudTextField @bind-Value="EventDateText" Label="@L["DateLabel"]" Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" InputType="InputType.Date" Class="ct-date-field"
+                                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.CalendarMonth" />
+                    }
+                    <MudTextField @bind-Value="_eventLocation" Label="@L["LocationLabel"]" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" />
+                    <MudTextField @bind-Value="_eventDescription" Label="@L["DescriptionLabel"]" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" Lines="3" />
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
 
-    @if (_status is not null)
-    {
-        <MudAlert Severity="Severity.Success" Dense="true" role="status">@_status</MudAlert>
-    }
+        <div>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync">@L["Save"]</MudButton>
+        </div>
+
+        @if (_status is not null)
+        {
+            <MudAlert Severity="Severity.Success" Dense="true" role="status">@_status</MudAlert>
+        }
+    </MudStack>
 }
 
 @code {
@@ -73,11 +93,25 @@ else
     private string _name = string.Empty;
     private decimal? _budgetAmount;
     private string _budgetCurrency = "CHF";
+    // The event date; null for no date. The browser binds this directly (MudDatePicker); the device head's
+    // native <input type="date"> binds EventDateText, which adapts it to/from the invariant string format.
     private DateTime? _eventDate;
     private string _eventLocation = string.Empty;
     private string _eventDescription = string.Empty;
     private string? _status;
     private string? _budgetError;
+
+    // Adapts the DateTime? model to the invariant "yyyy-MM-dd" string a native <input type="date"> uses
+    // (device head only). Empty string clears the date.
+    private string EventDateText
+    {
+        get => _eventDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        set => _eventDate = DateTime.TryParseExact(
+            value, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out var parsed)
+            ? parsed
+            : null;
+    }
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
@@ -98,47 +132,47 @@ else
         _eventDescription = _event.Details?.Description ?? string.Empty;
     }
 
-    private async Task SaveNameAsync()
-    {
-        await Sender.Send(new RenameEventCommand(GroupId, EventId, _name));
-        await Reload();
-    }
-
-    private async Task SaveBudgetAsync()
-    {
-        _budgetError = null;
-
-        // A set budget needs a positive amount; "no budget" is expressed with Clear, not a zero.
-        if (_budgetAmount is not { } amount || amount <= 0)
-        {
-            _budgetError = L["BudgetAmountInvalid"];
-            return;
-        }
-
-        // Currencies are 3-letter ISO codes (CHF, EUR, …); normalize case and reject anything else.
-        var currency = (_budgetCurrency ?? string.Empty).Trim().ToUpperInvariant();
-        if (currency.Length != 3 || !currency.All(char.IsLetter))
-        {
-            _budgetError = L["CurrencyInvalid"];
-            return;
-        }
-
-        _budgetCurrency = currency;
-        await Sender.Send(new SetBudgetCommand(GroupId, EventId, amount, currency));
-        await Reload();
-    }
-
-    private async Task ClearBudgetAsync()
+    // Clears the amount locally only; the budget is actually removed when the form is saved with no
+    // amount (SaveAsync sends a null budget in that case), keeping a single persistence path.
+    private void ClearBudget()
     {
         _budgetError = null;
         _budgetAmount = null;
-        await Sender.Send(new SetBudgetCommand(GroupId, EventId, null, null));
-        await Reload();
     }
 
-    private async Task SaveEventAsync()
+    // The screen's single Save: persists the name, budget and details together.
+    private async Task SaveAsync()
     {
+        _budgetError = null;
+
+        // A budget is optional: no amount clears it. A set amount must be positive with a valid currency.
+        decimal? budgetAmount = null;
+        string? budgetCurrency = null;
+        if (_budgetAmount is { } amount)
+        {
+            if (amount <= 0)
+            {
+                _budgetError = L["BudgetAmountInvalid"];
+                return;
+            }
+
+            // Currencies are 3-letter ISO codes (CHF, EUR, …); normalize case and reject anything else.
+            var currency = (_budgetCurrency ?? string.Empty).Trim().ToUpperInvariant();
+            if (currency.Length != 3 || !currency.All(char.IsLetter))
+            {
+                _budgetError = L["CurrencyInvalid"];
+                return;
+            }
+
+            _budgetCurrency = currency;
+            budgetAmount = amount;
+            budgetCurrency = currency;
+        }
+
         DateTimeOffset? date = _eventDate is { } value ? new DateTimeOffset(value, TimeSpan.Zero) : null;
+
+        await Sender.Send(new RenameEventCommand(GroupId, EventId, _name));
+        await Sender.Send(new SetBudgetCommand(GroupId, EventId, budgetAmount, budgetCurrency));
         await Sender.Send(new SetEventDetailsCommand(GroupId, EventId, date, _eventLocation, _eventDescription));
         await Reload();
     }

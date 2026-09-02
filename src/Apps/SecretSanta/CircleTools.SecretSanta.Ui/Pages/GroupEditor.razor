@@ -2,10 +2,20 @@
 @inject ISender Sender
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
+@inject TimeProvider Time
+@inject IDialogService Dialogs
 
-<PageTitle>@L["GroupEditorTitle"]</PageTitle>
+@* Group hub (ADR-0055 group level): the group's landing screen. The occasions (events) are the primary
+   content; Members and Exclusions are section rows below, mirroring the event hub. The group name is
+   edited from the header's overflow menu (a rename sheet) rather than an always-visible text field. *@
 
-<GroupNav GroupId="GroupId" />
+<PageTitle>@(_group?.Name ?? L["GroupEditorTitle"])</PageTitle>
+
+<div class="d-flex align-center flex-wrap gap-2 mb-2">
+    <MudButton OnClick="GoToAllGroups" StartIcon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Variant="Variant.Text">
+        @L["AllGroups"]
+    </MudButton>
+</div>
 
 @if (_group is null)
 {
@@ -13,27 +23,37 @@
 }
 else
 {
-    <MudText Typo="Typo.h4" GutterBottom="true">@_group.Name</MudText>
-
-    <div class="d-flex gap-2 align-start flex-wrap mb-4">
-        <MudTextField @bind-Value="_name" Immediate="true" Label="@L["NameLabel"]" Variant="Variant.Outlined"
-                      Margin="Margin.Dense" Class="flex-grow-1" Style="min-width:12rem;" />
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveNameAsync" Class="mt-1"
-                   Disabled="@string.IsNullOrWhiteSpace(_name)">@L["Save"]</MudButton>
+    <div class="d-flex align-center gap-1 mb-4">
+        <MudText Typo="Typo.h4">@_group.Name</MudText>
+        @* The rename field is tucked into an overflow menu (opens a rename sheet) so the hub leads with
+           the occasions, not a text box. *@
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" AriaLabel="@L["MoreActions"]"
+                 AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+            <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="RenameAsync">@L["Rename"]</MudMenuItem>
+        </MudMenu>
     </div>
 
     @* Events (occasions): the roster and exclusions are shared, but each event has its own draw,
        wishlists, budget and date (ADR-0042). *@
     <MudText Typo="Typo.h5" GutterBottom="true">@L["NavEvents"]</MudText>
 
-    <div class="d-flex gap-2 align-start flex-wrap mb-4">
-        <MudTextField @bind-Value="_newEventName" Immediate="true" OnKeyDown="OnNewEventKeyDown"
-                      Label="@L["EventNameLabel"]" Placeholder="@L["EventNamePlaceholder"]"
-                      Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" Style="min-width:12rem;" />
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddEventAsync"
-                   StartIcon="@Icons.Material.Filled.Add" Class="mt-1"
-                   Disabled="@string.IsNullOrWhiteSpace(_newEventName)">@L["AddEvent"]</MudButton>
-    </div>
+    @* Inline add-event field on wide screens; on a phone it moves behind the "+" FAB so the occasions
+       list leads. *@
+    <MudHidden Breakpoint="Breakpoint.SmAndDown">
+        <div class="d-flex gap-2 align-start flex-wrap mb-4">
+            <MudTextField @bind-Value="_newEventName" Immediate="true" OnKeyDown="OnNewEventKeyDown"
+                          Label="@L["EventNameLabel"]" Placeholder="@L["EventNamePlaceholder"]"
+                          Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" Style="min-width:12rem;" />
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddEventAsync"
+                       StartIcon="@Icons.Material.Filled.Add" Class="mt-1"
+                       Disabled="@string.IsNullOrWhiteSpace(_newEventName)">@L["AddEvent"]</MudButton>
+        </div>
+    </MudHidden>
+
+    @if (_group.Events.Count == 0)
+    {
+        <MudAlert Severity="Severity.Normal" Class="mb-2" role="note">@L["NoEventsYet"]</MudAlert>
+    }
 
     <MudStack Spacing="2">
         @foreach (var occasion in _group.Events)
@@ -53,26 +73,35 @@ else
                     {
                         <div class="d-flex justify-space-between align-center flex-wrap gap-2">
                             <div class="d-flex align-center flex-wrap gap-2">
-                                <MudText Typo="Typo.subtitle1"><strong>@EventLabel(occasion.Name)</strong></MudText>
-                                @if (occasion.HasCurrentDraw)
-                                {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
-                                }
-                                else if (occasion.DrawInvalidatedByMembershipChange)
+                                @* The name opens the occasion, the same as the Open button. *@
+                                <div class="ct-openable" role="button" tabindex="0"
+                                     @onclick="() => Open(occasion.Id)" @onkeydown="@(e => OpenOnEnter(e, occasion.Id))">
+                                    <MudText Typo="Typo.subtitle1"><strong>@EventLabel(occasion.Name)</strong></MudText>
+                                </div>
+                                @if (occasion.DrawInvalidatedByMembershipChange)
                                 {
                                     <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
                                 }
+                                else if (occasion.HasCurrentDraw)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
+                                }
                             </div>
                             <div class="d-flex align-center gap-1">
-                                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary"
                                            OnClick="() => Open(occasion.Id)">@L["Open"]</MudButton>
-                                <MudButton Size="Size.Small" Variant="Variant.Outlined"
-                                           OnClick="() => BeginEdit(occasion.Id, occasion.Name)">@L["Rename"]</MudButton>
-                                @if (_group.Events.Count > 1)
-                                {
-                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
-                                               OnClick="() => AskRemove(occasion.Id)">@L["Remove"]</MudButton>
-                                }
+                                @* Rename/Remove fold into an overflow menu so the row stays Open + a single
+                                   kebab on a phone rather than three crowded small buttons. *@
+                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
+                                         AriaLabel="@L["MoreActions"]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                                    <MudMenuItem Icon="@Icons.Material.Filled.Edit"
+                                                 OnClick="() => BeginEdit(occasion.Id, occasion.Name)">@L["Rename"]</MudMenuItem>
+                                    @if (_group.Events.Count > 1)
+                                    {
+                                        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error"
+                                                     OnClick="() => AskRemove(occasion.Id)">@L["Remove"]</MudMenuItem>
+                                    }
+                                </MudMenu>
                             </div>
                         </div>
 
@@ -92,6 +121,44 @@ else
             </MudCard>
         }
     </MudStack>
+
+    @* Shared group sections (ADR-0055 group level): the roster and exclusions apply across every
+       occasion, so they sit below the events as their own destinations rather than as tabs. *@
+    <MudDivider Class="my-6" />
+    <MudStack Spacing="2">
+        <MudPaper Outlined="true" Class="ct-hub-row" role="button" tabindex="0"
+                  @onclick="@(() => Go($"groups/{GroupId}/members"))" @onkeydown="@(e => GoOnEnter(e, $"groups/{GroupId}/members"))">
+            <div class="d-flex align-center gap-3 pa-3">
+                <MudIcon Icon="@Icons.Material.Filled.Group" Color="Color.Primary" />
+                <div class="flex-grow-1">
+                    <MudText Typo="Typo.subtitle1">@L["NavMembers"]</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@_group.Members.Count</MudText>
+                </div>
+                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+            </div>
+        </MudPaper>
+        <MudPaper Outlined="true" Class="ct-hub-row" role="button" tabindex="0"
+                  @onclick="@(() => Go($"groups/{GroupId}/exclusions"))" @onkeydown="@(e => GoOnEnter(e, $"groups/{GroupId}/exclusions"))">
+            <div class="d-flex align-center gap-3 pa-3">
+                <MudIcon Icon="@Icons.Material.Filled.Block" Color="Color.Primary" />
+                <div class="flex-grow-1">
+                    <MudText Typo="Typo.subtitle1">@L["NavExclusions"]</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@_group.Exclusions.Count</MudText>
+                </div>
+                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+            </div>
+        </MudPaper>
+    </MudStack>
+
+    @* Add an occasion via a FAB on phones; the inline field owns it on wide. The spacer keeps the FAB
+       clear of the last section row. *@
+    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+        <div class="ct-fab-spacer"></div>
+        <div class="ct-fab">
+            <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                    aria-label="@L["AddEvent"]" OnClick="AddEventViaFabAsync" />
+        </div>
+    </MudHidden>
 }
 
 @code {
@@ -101,7 +168,6 @@ else
 
     private GroupDto? _group;
     private bool _loaded;
-    private string _name = string.Empty;
     private string _newEventName = string.Empty;
     private Guid? _editingId;
     private string _editName = string.Empty;
@@ -115,17 +181,47 @@ else
         _loaded = true;
         if (_group is not null)
         {
-            _name = _group.Name;
+            // Offer a sensible default the user can accept or edit (item: default event name). Only
+            // pre-fill when the field is untouched, so a name the user is typing is never clobbered.
+            if (string.IsNullOrEmpty(_newEventName))
+            {
+                _newEventName = DefaultEventName();
+            }
         }
     }
 
+    // "Weihnachten 2026" / "Christmas 2026" / "Noël 2026" — the localized default gift-exchange occasion
+    // for the current year. A format string per culture keeps the word and word order translatable.
+    private string DefaultEventName() => string.Format(
+        System.Globalization.CultureInfo.CurrentCulture, L["DefaultEventNameFormat"], Time.GetLocalNow().Year);
+
     private string EventLabel(string name) => string.IsNullOrWhiteSpace(name) ? L["DefaultEventName"] : name;
 
-    private async Task SaveNameAsync()
+    // Rename the group from a bottom sheet pre-filled with the current name (ADR-0055 group level),
+    // instead of an always-visible text field on the hub.
+    private async Task RenameAsync()
     {
-        await Sender.Send(new RenameGroupCommand(GroupId, _name));
-        await LoadAsync();
+        var name = await Dialogs.ShowTextInputSheetAsync(L["Rename"], L["NameLabel"], L["Save"], L["Cancel"], _group?.Name);
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            await Sender.Send(new RenameGroupCommand(GroupId, name));
+            await LoadAsync();
+        }
     }
+
+    private void Go(string href) => Navigation.NavigateTo(href);
+
+    private void GoOnEnter(KeyboardEventArgs args, string href)
+    {
+        if (args.Key is "Enter" or " ")
+        {
+            Go(href);
+        }
+    }
+
+    // Empty string navigates to the app root (the groups list); NavigationManager resolves it against the
+    // base URI, unlike a bare href="" which would stay on the current page.
+    private void GoToAllGroups() => Navigation.NavigateTo(string.Empty);
 
     private async Task OnNewEventKeyDown(KeyboardEventArgs args)
     {
@@ -135,15 +231,28 @@ else
         }
     }
 
-    private async Task AddEventAsync()
+    // The inline field (wide screens) adds from the bound value.
+    private Task AddEventAsync() => AddEventNamedAsync(_newEventName);
+
+    // The phone FAB collects the name in a bottom sheet (pre-filled with the default), then adds it.
+    private async Task AddEventViaFabAsync()
     {
-        if (string.IsNullOrWhiteSpace(_newEventName))
+        var name = await Dialogs.ShowTextInputSheetAsync(L["AddEvent"], L["EventNameLabel"], L["AddEvent"], L["Cancel"], DefaultEventName());
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            await AddEventNamedAsync(name);
+        }
+    }
+
+    private async Task AddEventNamedAsync(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
         {
             return;
         }
 
-        var id = await Sender.Send(new AddEventCommand(GroupId, _newEventName));
-        _newEventName = string.Empty;
+        var id = await Sender.Send(new AddEventCommand(GroupId, name));
+        _newEventName = DefaultEventName();
         Open(id);
     }
 
@@ -183,4 +292,13 @@ else
     }
 
     private void Open(Guid eventId) => Navigation.NavigateTo($"groups/{GroupId}/events/{eventId}");
+
+    // Keyboard parity for the clickable name (Enter or Space opens, like the Open button).
+    private void OpenOnEnter(KeyboardEventArgs args, Guid eventId)
+    {
+        if (args.Key is "Enter" or " ")
+        {
+            Open(eventId);
+        }
+    }
 }

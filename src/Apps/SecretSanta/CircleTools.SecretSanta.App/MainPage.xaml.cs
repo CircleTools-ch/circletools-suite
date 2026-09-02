@@ -1,4 +1,6 @@
-﻿namespace CircleTools.SecretSanta.App;
+using Microsoft.AspNetCore.Components.WebView.Maui;
+
+namespace CircleTools.SecretSanta.App;
 
 public partial class MainPage : ContentPage
 {
@@ -6,4 +8,10 @@ public partial class MainPage : ContentPage
 	{
 		InitializeComponent();
 	}
+
+	/// <summary>
+	/// The hybrid WebView, exposed so the Android host can route the system Back gesture/button into the
+	/// app's own navigation history instead of finishing the activity.
+	/// </summary>
+	public BlazorWebView HybridWebView => blazorWebView;
 }

@@ -1,3 +1,4 @@
+using System.Reflection;
 using CircleTools.ApiClient;
 using CircleTools.Application;
 using CircleTools.SecretSanta.App.Platform;
@@ -25,10 +26,18 @@ namespace CircleTools.SecretSanta.App;
 public static class MauiProgram
 {
     /// <summary>
-    /// The base URL the reveal links point at. In development this is the local Blazor WebApp;
-    /// replace with the deployed reveal origin for release builds.
+    /// The base URL the reveal links generated on this device point at.
     /// </summary>
-    public const string RevealBaseUrl = "https://localhost:7081";
+    /// <remarks>
+    /// A build-time setting (ADR-0053): baked in from the <c>RevealBaseUrl</c> MSBuild property via
+    /// assembly metadata — a Release/store build defaults to the production origin
+    /// (<c>https://secretsanta.circletools.ch</c>), a Debug build to the dev machine's LAN address for
+    /// on-device testing (run the WebApp with <c>--urls http://0.0.0.0:5081</c>). Reveal links are fully
+    /// client-side (<c>/r#for=…</c>, ADR-0014): an installed app opens them via App Links and renders
+    /// them offline; a recipient without the app opens the static page at this origin. The fallback below
+    /// only applies if the metadata is somehow absent.
+    /// </remarks>
+    public static readonly string RevealBaseUrl = BuildSetting("RevealBaseUrl", "http://192.168.100.122:5081");
 
     /// <summary>
     /// The Main service origin — where a signed-in account syncs and where the account API lives.
@@ -36,10 +45,49 @@ public static class MauiProgram
     /// <remarks>
     /// Development default. With no session it is never contacted, so an account-free user is
     /// unaffected by its value (NFR-001). On the Android emulator the host loopback is reachable as
-    /// <c>10.0.2.2</c> (not <c>localhost</c>); a physical device needs the machine's LAN address. The
-    /// literal production origin lands with the suite domain (still deferred — see naming.md).
+    /// <c>10.0.2.2</c> (not <c>localhost</c>); a physical device needs the machine's LAN address.
+    /// <para>
+    /// <strong>Known limitation on a physical phone:</strong> the API is served over HTTPS with the
+    /// local dev certificate, which the phone does not trust — so sign-in and sync do not work over the
+    /// LAN until a real (trusted) origin exists. The offline product and reveal-link sharing do not need
+    /// the API, so they are unaffected.
+    /// </para>
+    /// <para>
+    /// A build-time setting (ADR-0053): a Release build defaults to <c>https://api.circletools.ch</c>, a
+    /// Debug build to the emulator host loopback. The fallback below only applies if the metadata is absent.
+    /// </para>
     /// </remarks>
-    public const string ApiBaseUrl = "https://10.0.2.2:7080";
+    public static readonly string ApiBaseUrl = BuildSetting("ApiBaseUrl", "https://10.0.2.2:7080");
+
+    /// <summary>
+    /// Reads a value baked in at build time as assembly metadata (the <c>RevealBaseUrl</c> / <c>ApiBaseUrl</c>
+    /// MSBuild properties, ADR-0053), falling back to <paramref name="fallback"/> only if it is absent.
+    /// </summary>
+    private static string BuildSetting(string key, string fallback) =>
+        typeof(MauiProgram).Assembly
+            .GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(a => string.Equals(a.Key, key, StringComparison.Ordinal))?.Value is { Length: > 0 } value
+            ? value
+            : fallback;
+
+    /// <summary>
+    /// The inner HTTP handler for the two account clients.
+    /// </summary>
+    /// <remarks>
+    /// In a DEBUG build this accepts the untrusted local ASP.NET dev certificate so sign-in and sync
+    /// can be exercised on a physical device against the local API over the LAN / a USB <c>adb reverse</c>
+    /// tunnel — the limitation documented on <see cref="ApiBaseUrl"/>. The bypass is compiled out of a
+    /// Release/store build entirely, which always talks to a real (trusted) origin.
+    /// </remarks>
+    private static HttpClientHandler CreateApiHandler()
+    {
+        var handler = new HttpClientHandler();
+#if DEBUG
+        handler.ServerCertificateCustomValidationCallback =
+            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+#endif
+        return handler;
+    }
 
     /// <summary>Builds and configures the MAUI application.</summary>
     /// <returns>The configured <see cref="MauiApp"/>.</returns>
@@ -71,12 +119,20 @@ public static class MauiProgram
         // so the bare name would be ambiguous here.
         builder.Services.AddScoped<CircleTools.Ui.Abstractions.IConnectivity, MauiConnectivity>();
         builder.Services.AddScoped<IPasskeyCeremony, MauiPasskeyCeremony>();
+        builder.Services.AddScoped<IShareService, MauiShareService>();
+        // Fully qualified: MAUI's global usings also expose Microsoft.Maui.Devices.IHapticFeedback,
+        // so the bare name is ambiguous here (as with IConnectivity above).
+        builder.Services.AddScoped<CircleTools.Ui.Abstractions.IHapticFeedback, MauiHapticFeedback>();
+
+        // Carries an incoming reveal App Link (ADR-0053) from the platform activation into the Blazor
+        // app; a singleton so a link that arrives on a cold start survives until the UI can consume it.
+        builder.Services.AddSingleton<DeepLinkService>();
 
         // Two clients over the same Main API, differing only in whether the authorizing handler is in
         // the chain (see AccountApiClients). The device head needs no browser-credentials handler, so
         // the inner handler is a plain HttpClientHandler.
         builder.Services.AddKeyedScoped<HttpClient>(AccountApiClients.Anonymous, (_, _) =>
-            new HttpClient(new HttpClientHandler()) { BaseAddress = apiBaseUrl });
+            new HttpClient(CreateApiHandler()) { BaseAddress = apiBaseUrl });
 
         builder.Services.AddKeyedScoped<HttpClient>(AccountApiClients.Authorized, (sp, _) =>
         {
@@ -84,7 +140,7 @@ public static class MauiProgram
                 sp.GetRequiredService<IAccessTokenStore>(),
                 sp.GetRequiredService<ISessionRefresher>())
             {
-                InnerHandler = new HttpClientHandler(),
+                InnerHandler = CreateApiHandler(),
             };
 
             return new HttpClient(handler) { BaseAddress = apiBaseUrl };

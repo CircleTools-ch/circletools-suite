@@ -1,7 +1,6 @@
 using CircleTools.Identity;
 using CircleTools.Identity.Tokens;
 using CircleTools.Infrastructure.Outbox;
-using CircleTools.Main.Service.Core.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -21,9 +20,6 @@ namespace CircleTools.Main.Service.Repository;
 public sealed class MainDbContext(DbContextOptions<MainDbContext> options)
     : IdentityDbContext<CircleToolsUser, IdentityRole<Guid>, Guid>(options)
 {
-    /// <summary>Gets the heartbeats table.</summary>
-    public DbSet<Heartbeat> Heartbeats => Set<Heartbeat>();
-
     /// <summary>Gets the refresh-token chains — one row per sign-in session (FR-008).</summary>
     public DbSet<RefreshTokenChain> RefreshTokenChains => Set<RefreshTokenChain>();
 
@@ -45,16 +41,6 @@ public sealed class MainDbContext(DbContextOptions<MainDbContext> options)
     {
         ArgumentNullException.ThrowIfNull(builder);
         base.OnModelCreating(builder);
-
-        builder.Entity<Heartbeat>(entity =>
-        {
-            entity.ToTable("heartbeats");
-            entity.HasKey(h => h.Id);
-            entity.Property(h => h.Id).ValueGeneratedNever();
-            entity.Property(h => h.Note).IsRequired().HasMaxLength(500);
-            entity.Property(h => h.CreatedAt).IsRequired();
-            entity.Ignore(h => h.DomainEvents);
-        });
 
         builder.Entity<CircleToolsUser>(entity =>
         {

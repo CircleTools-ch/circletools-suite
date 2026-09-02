@@ -183,24 +183,6 @@ namespace CircleTools.Main.Service.Repository.Migrations
                     b.ToTable("outbox_messages", (string)null);
                 });
 
-            modelBuilder.Entity("CircleTools.Main.Service.Core.Domain.Heartbeat", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Note")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("heartbeats", (string)null);
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole<System.Guid>", b =>
                 {
                     b.Property<Guid>("Id")

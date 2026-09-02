@@ -6,6 +6,7 @@
 @inject ILinkingApi Linking
 @inject IStringLocalizer<AppStrings> L
 @inject TimeProvider Time
+@inject IHapticFeedback Haptics
 
 @*
     See my assignment while signed in (FR-029). The server returns only the caller's own pairing, one
@@ -93,7 +94,7 @@
                                 <MudText Class="mud-text-secondary mt-2 mb-2">@L["RevealSpoilerNote"]</MudText>
                                 <MudButton Color="Color.Primary" Variant="Variant.Filled"
                                            StartIcon="@Icons.Material.Filled.CardGiftcard"
-                                           OnClick="() => _revealed.Add((assignment.GroupId, assignment.EventId))">
+                                           OnClick="() => RevealAsync((assignment.GroupId, assignment.EventId))">
                                     @L["RevealButton"]
                                 </MudButton>
                             }
@@ -114,6 +115,14 @@
     private string? _error;
 
     private string EventLabel(string name) => string.IsNullOrWhiteSpace(name) ? L["DefaultEventName"] : name;
+
+    // A small confirmation buzz as the giftee is shown (FEAT-008 W3), matching the reveal page; a no-op
+    // on the web head.
+    private async Task RevealAsync((Guid GroupId, Guid EventId) key)
+    {
+        _revealed.Add(key);
+        await Haptics.TapAsync();
+    }
 
     protected override async Task OnInitializedAsync()
     {

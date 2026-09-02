@@ -1,0 +1,74 @@
+@*
+    A single-line text-input bottom sheet (FEAT-008 W4). Slides up from the bottom edge with one field
+    and a confirm/cancel — the native pattern behind a FAB "add" action. Returns the trimmed text via
+    TextInputSheetExtensions.ShowTextInputSheetAsync (or null if cancelled).
+*@
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @ref="_field" @bind-Value="_value" Immediate="true" Label="@Label" Variant="Variant.Outlined"
+                      AutoFocus="true" OnKeyDown="OnKeyDownAsync" Class="mt-1" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@CancelLabel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
+                   Disabled="@string.IsNullOrWhiteSpace(_value)">@ConfirmLabel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance Dialog { get; set; } = default!;
+
+    /// <summary>Floating label for the field.</summary>
+    [Parameter] public string Label { get; set; } = string.Empty;
+
+    /// <summary>Label for the confirming action.</summary>
+    [Parameter] public string ConfirmLabel { get; set; } = string.Empty;
+
+    /// <summary>Label for the dismissing action.</summary>
+    [Parameter] public string CancelLabel { get; set; } = string.Empty;
+
+    /// <summary>Optional initial text (e.g. the current name when renaming).</summary>
+    [Parameter] public string? Initial { get; set; }
+
+    private MudTextField<string> _field = default!;
+
+    private string _value = string.Empty;
+
+    protected override void OnInitialized() => _value = Initial ?? string.Empty;
+
+    // MudBlazor's AutoFocus is unreliable for a field inside a dialog on mobile: it fires before the
+    // sheet's slide-up transition finishes, so the field never really takes focus and the soft keyboard
+    // stays closed. Focus explicitly once the sheet has settled so the user can start typing straight
+    // away — the caret sits at the end so an initial value (e.g. a name being renamed) stays editable.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.Delay(150);
+            await _field.FocusAsync();
+            await _field.SelectRangeAsync(_value.Length, _value.Length);
+        }
+    }
+
+    private void Submit()
+    {
+        if (!string.IsNullOrWhiteSpace(_value))
+        {
+            Dialog.Close(DialogResult.Ok(_value.Trim()));
+        }
+    }
+
+    private void Cancel() => Dialog.Cancel();
+
+    private Task OnKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            Submit();
+        }
+
+        return Task.CompletedTask;
+    }
+}

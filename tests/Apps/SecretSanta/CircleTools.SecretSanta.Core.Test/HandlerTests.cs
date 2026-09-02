@@ -19,20 +19,21 @@ public sealed class HandlerTests
         var codec = new RevealLinkCodec();
         var linkBuilder = new RevealLinkBuilder(new RevealLinkOptions("https://santa.example"), codec);
 
-        // Arrange a group with four members and a budget on its default event (id == group id).
+        // Arrange a group with an event, four members, and a budget on that event.
         var groupId = await new CreateGroupCommandHandler(repository).HandleAsync(new CreateGroupCommand("Family"), default);
-        await new SetBudgetCommandHandler(repository).HandleAsync(new SetBudgetCommand(groupId, groupId, 25m, "CHF"), default);
+        var eventId = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
+        await new SetBudgetCommandHandler(repository).HandleAsync(new SetBudgetCommand(groupId, eventId, 25m, "CHF"), default);
         var addMember = new AddMemberCommandHandler(repository);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Carol"), default);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Dan"), default);
 
-        // Act: run the draw for the default event, then generate reveal links for it.
+        // Act: run the draw for the event, then generate reveal links for it.
         var drawResult = await new RunDrawCommandHandler(repository, generator, TimeProvider.System)
-            .HandleAsync(new RunDrawCommand(groupId, groupId), default);
+            .HandleAsync(new RunDrawCommand(groupId, eventId), default);
         var links = await new GetRevealLinksQueryHandler(repository, linkBuilder)
-            .HandleAsync(new GetRevealLinksQuery(groupId, groupId), default);
+            .HandleAsync(new GetRevealLinksQuery(groupId, eventId), default);
 
         // Assert.
         Assert.True(drawResult.Success);
@@ -53,32 +54,36 @@ public sealed class HandlerTests
     }
 
     [Fact]
-    public async Task GetRevealLinks_AfterMemberRemoved_ReturnsNoLinks()
+    public async Task GetRevealLinks_AfterMemberArchived_KeepsTheDrawAndItsLinks()
     {
         var repository = new InMemoryGroupRepository();
         var linkBuilder = new RevealLinkBuilder(new RevealLinkOptions("https://santa.example"), new RevealLinkCodec());
 
         var groupId = await new CreateGroupCommandHandler(repository).HandleAsync(new CreateGroupCommand("Family"), default);
+        var eventId = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var addMember = new AddMemberCommandHandler(repository);
         var alice = await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Carol"), default);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Dan"), default);
         await new RunDrawCommandHandler(repository, new DrawGenerator(new SeededRandomSource(123)), TimeProvider.System)
-            .HandleAsync(new RunDrawCommand(groupId, groupId), default);
+            .HandleAsync(new RunDrawCommand(groupId, eventId), default);
 
         await new RemoveMemberCommandHandler(repository).HandleAsync(new RemoveMemberCommand(groupId, alice), default);
 
-        // A partial set of links would silently drop whoever is left dangling from the exchange.
+        // The draw is permanent history (ADR-0052): archiving a member keeps it, and its links still
+        // generate because the archived member's name resolves through FindMember — so a past occasion
+        // stays viewable and its already-issued links keep working. The UI flags it stale.
         var links = await new GetRevealLinksQueryHandler(repository, linkBuilder)
-            .HandleAsync(new GetRevealLinksQuery(groupId, groupId), default);
+            .HandleAsync(new GetRevealLinksQuery(groupId, eventId), default);
 
-        Assert.Empty(links);
+        Assert.Equal(4, links.Count);
 
-        var group = await new GetGroupQueryHandler(repository).HandleAsync(new GetGroupQuery(groupId), default);
+        var group = await new GetGroupQueryHandler(repository, TimeProvider.System).HandleAsync(new GetGroupQuery(groupId), default);
         var occasion = Assert.Single(group!.Events);
-        Assert.False(occasion.HasCurrentDraw);
+        Assert.True(occasion.HasCurrentDraw); // kept, only flagged stale
         Assert.True(occasion.DrawInvalidatedByMembershipChange);
+        Assert.Equal(3, group.Members.Count); // Alice is archived, off the active roster
     }
 
     [Fact]
@@ -123,12 +128,48 @@ public sealed class HandlerTests
         await create.HandleAsync(new CreateGroupCommand("One"), default);
         await create.HandleAsync(new CreateGroupCommand("Two"), default);
 
-        var summaries = await new GetGroupsQueryHandler(repository).HandleAsync(new GetGroupsQuery(), default);
+        var summaries = await new GetGroupsQueryHandler(repository, TimeProvider.System).HandleAsync(new GetGroupsQuery(), default);
 
         Assert.Equal(2, summaries.Count);
         Assert.Contains(summaries, s => s.Name == "One");
         Assert.Contains(summaries, s => s.Name == "Two");
-        // Every new group starts with exactly one (default) event.
-        Assert.All(summaries, s => Assert.Equal(1, s.EventCount));
+        // A new group starts with no event (ADR-0042 amendment); the user adds the first occasion.
+        Assert.All(summaries, s => Assert.Equal(0, s.EventCount));
+    }
+
+    [Fact]
+    public async Task StaleDraw_IsFlaggedOnAnUpcomingEvent_ButNotOnAPastOne()
+    {
+        // A past occasion's stale draw is history, not something to re-draw, so the read model suppresses
+        // the "re-draw needed" flag once the date is in the past — only the upcoming one keeps it (ADR-0052).
+        var repo = new InMemoryGroupRepository();
+        var groupId = await new CreateGroupCommandHandler(repo).HandleAsync(new CreateGroupCommand("Fam"), default);
+        var addEvent = new AddEventCommandHandler(repo);
+        var past = await addEvent.HandleAsync(new AddEventCommand(groupId, "Christmas 2024"), default);
+        var upcoming = await addEvent.HandleAsync(new AddEventCommand(groupId, "Christmas 2027"), default);
+        var setDetails = new SetEventDetailsCommandHandler(repo);
+        await setDetails.HandleAsync(new SetEventDetailsCommand(groupId, past, new DateTimeOffset(2024, 12, 24, 0, 0, 0, TimeSpan.Zero), "", ""), default);
+        await setDetails.HandleAsync(new SetEventDetailsCommand(groupId, upcoming, new DateTimeOffset(2027, 12, 24, 0, 0, 0, TimeSpan.Zero), "", ""), default);
+        var addMember = new AddMemberCommandHandler(repo);
+        var a = await addMember.HandleAsync(new AddMemberCommand(groupId, "A"), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "B"), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "C"), default);
+        var draw = new RunDrawCommandHandler(repo, new DrawGenerator(new SeededRandomSource(1)), TimeProvider.System);
+        await draw.HandleAsync(new RunDrawCommand(groupId, past), default);
+        await draw.HandleAsync(new RunDrawCommand(groupId, upcoming), default);
+
+        // A roster change flags both draws stale in the domain.
+        await new RemoveMemberCommandHandler(repo).HandleAsync(new RemoveMemberCommand(groupId, a), default);
+
+        var clock = new FixedClock(new DateTimeOffset(2026, 9, 1, 12, 0, 0, TimeSpan.Zero));
+        var group = await new GetGroupQueryHandler(repo, clock).HandleAsync(new GetGroupQuery(groupId), default);
+
+        Assert.False(group!.Events.Single(e => e.Id == past).DrawInvalidatedByMembershipChange);
+        Assert.True(group.Events.Single(e => e.Id == upcoming).DrawInvalidatedByMembershipChange);
+    }
+
+    private sealed class FixedClock(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
     }
 }

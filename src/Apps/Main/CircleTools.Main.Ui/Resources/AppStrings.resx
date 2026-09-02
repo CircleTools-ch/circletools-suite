@@ -73,9 +73,6 @@
   <data name="NavDashboard" xml:space="preserve">
     <value>Dashboard</value>
   </data>
-  <data name="NavHeartbeat" xml:space="preserve">
-    <value>Heartbeat</value>
-  </data>
   <data name="NavProfile" xml:space="preserve">
     <value>Profile</value>
   </data>

@@ -9,13 +9,15 @@ public sealed record GetGroupsQuery : IQuery<IReadOnlyList<GroupSummaryDto>>;
 
 /// <summary>Handles <see cref="GetGroupsQuery"/>.</summary>
 /// <param name="repository">The group repository port.</param>
-public sealed class GetGroupsQueryHandler(IGroupRepository repository)
+/// <param name="time">The clock, so a past occasion's stale draw is not flagged "re-draw needed" (ADR-0052).</param>
+public sealed class GetGroupsQueryHandler(IGroupRepository repository, TimeProvider time)
     : IQueryHandler<GetGroupsQuery, IReadOnlyList<GroupSummaryDto>>
 {
     /// <inheritdoc />
     public async Task<IReadOnlyList<GroupSummaryDto>> HandleAsync(GetGroupsQuery query, CancellationToken cancellationToken)
     {
+        var now = time.GetLocalNow();
         var groups = await repository.ListAsync(cancellationToken);
-        return groups.Select(GroupMapper.ToSummary).ToList();
+        return groups.Select(g => GroupMapper.ToSummary(g, now)).ToList();
     }
 }

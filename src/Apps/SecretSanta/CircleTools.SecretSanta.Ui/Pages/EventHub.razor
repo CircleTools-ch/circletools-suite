@@ -1,0 +1,130 @@
+@page "/groups/{GroupId:guid}/events/{EventId:guid}"
+@using System.Globalization
+@inject ISender Sender
+@inject NavigationManager Navigation
+@inject IStringLocalizer<AppStrings> L
+@inject RecentAccessService Recent
+
+@*
+    Event hub (ADR-0055): the event landing screen. A vertical list of the event's sections — Details,
+    Wishlists, Draw, Share — each with an icon, a one-line status, and a chevron, replacing the old
+    horizontally-scrolling tab strip. Native and thumb-friendly, and the per-section status turns a flat
+    menu into workflow guidance. Used on every viewport width (Details has its own route now).
+*@
+
+<PageTitle>@EventLabel</PageTitle>
+
+<div class="d-flex align-center flex-wrap gap-2 mb-2">
+    <MudButton Href="@($"groups/{GroupId}")" StartIcon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" Variant="Variant.Text">
+        @(string.IsNullOrEmpty(_groupName) ? L["AllGroups"] : _groupName)
+    </MudButton>
+</div>
+<MudText Typo="Typo.h4" GutterBottom="true">@EventLabel</MudText>
+
+@if (_event is null)
+{
+    <MudText>@(_loaded ? L["EventNotFound"] : L["Loading"])</MudText>
+}
+else
+{
+    <MudStack Spacing="2">
+        @foreach (var section in Sections)
+        {
+            <MudPaper Outlined="true" Class="ct-hub-row" role="button" tabindex="0"
+                      @onclick="() => Go(section.Href)" @onkeydown="@(e => GoOnEnter(e, section.Href))">
+                <div class="d-flex align-center gap-3 pa-3">
+                    <MudIcon Icon="@section.Icon" Color="Color.Primary" />
+                    <div class="flex-grow-1">
+                        <MudText Typo="Typo.subtitle1">@section.Label</MudText>
+                        @if (!string.IsNullOrEmpty(section.Status))
+                        {
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">@section.Status</MudText>
+                        }
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+                </div>
+            </MudPaper>
+        }
+    </MudStack>
+}
+
+@code {
+    /// <summary>The owning group.</summary>
+    [Parameter]
+    public Guid GroupId { get; set; }
+
+    /// <summary>The event this hub is for.</summary>
+    [Parameter]
+    public Guid EventId { get; set; }
+
+    private EventDto? _event;
+    private bool _loaded;
+    private string? _groupName;
+
+    private sealed record Section(string Href, string Icon, string Label, string? Status);
+
+    private IReadOnlyList<Section> Sections => _event is null ? [] :
+    [
+        new($"groups/{GroupId}/events/{EventId}/details", Icons.Material.Filled.Event, L["NavEventDetails"], DetailsStatus),
+        new($"groups/{GroupId}/events/{EventId}/wishlists", Icons.Material.Filled.CardGiftcard, L["NavWishlists"], WishlistStatus),
+        new($"groups/{GroupId}/events/{EventId}/draw", Icons.Material.Filled.Casino, L["NavDraw"], DrawStatus),
+        new($"groups/{GroupId}/events/{EventId}/share", Icons.Material.Filled.Share, L["NavShare"], ShareStatus),
+    ];
+
+    // Details: the date, when one is set — the single most useful at-a-glance fact.
+    private string? DetailsStatus =>
+        _event?.Details?.Date is { } date ? date.ToString("d", CultureInfo.CurrentCulture) : null;
+
+    // Wishlists: how many members have filled theirs in. No row-count when there are no members yet.
+    private string? WishlistStatus
+    {
+        get
+        {
+            var total = _event?.Wishlists.Count ?? 0;
+            if (total == 0)
+            {
+                return null;
+            }
+
+            var filled = _event!.Wishlists.Count(w => w.Items.Count > 0);
+            return L["HubWishlistCount", filled, total];
+        }
+    }
+
+    // Draw: drawn, drawn-but-stale, or not yet — the badges the group list already uses, plus a pending one.
+    private string? DrawStatus => _event switch
+    {
+        { HasCurrentDraw: true, DrawInvalidatedByMembershipChange: true } => L["DrawInvalidatedBadge"],
+        { HasCurrentDraw: true } => L["DrawCompleteBadge"],
+        _ => L["HubDrawPending"],
+    };
+
+    // Share: the links are ready once there is a draw; before that the row has nothing to offer yet.
+    private string? ShareStatus => _event?.HasCurrentDraw == true ? L["HubShareReady"].Value : null;
+
+    private string EventLabel => string.IsNullOrWhiteSpace(_event?.Name) ? L["DefaultEventName"] : _event!.Name;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _event = await Sender.Send(new GetEventQuery(GroupId, EventId));
+        _loaded = true;
+
+        // Opening the hub counts as opening the event and its group (nav quick access), like the old EventNav.
+        await Recent.RecordEventAsync(EventId);
+        await Recent.RecordGroupAsync(GroupId);
+
+        // The group name is a header nicety; a read failure just falls back to "All groups".
+        var group = await Sender.Send(new GetGroupQuery(GroupId));
+        _groupName = group?.Name;
+    }
+
+    private void Go(string href) => Navigation.NavigateTo(href);
+
+    private void GoOnEnter(KeyboardEventArgs args, string href)
+    {
+        if (args.Key is "Enter" or " ")
+        {
+            Go(href);
+        }
+    }
+}

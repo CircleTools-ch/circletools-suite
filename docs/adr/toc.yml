@@ -102,5 +102,15 @@
   href: 0050-secrets-management.md
 - name: 0051 Production observability backend
   href: 0051-production-observability-backend.md
+- name: 0052 Member archival & permanent draw history
+  href: 0052-member-archival-and-permanent-draw-history.md
+- name: 0053 Backend-free first mobile release
+  href: 0053-backend-free-first-mobile-release.md
+- name: 0054 Mobile native-feel strategy
+  href: 0054-mobile-native-feel-strategy.md
+- name: 0055 Event navigation mobile section hub
+  href: 0055-event-navigation-mobile-section-hub.md
+- name: 0056 Decouple UI language from formatting region
+  href: 0056-decouple-ui-language-from-formatting-region.md
 - name: Template
   href: _template-adr.md

@@ -9,22 +9,28 @@
 @inject LinkResolutionApplier Resolutions
 @inject BookmarkService Bookmarks
 @inject AutoSyncService AutoSync
+@inject IHapticFeedback Haptics
+@inject IDialogService Dialogs
 @implements IDisposable
 
 <PageTitle>@L["GroupsTitle"]</PageTitle>
 
 <MudText Typo="Typo.h4" GutterBottom="true">@L["GroupsTitle"]</MudText>
 
-<div class="d-flex gap-2 align-start flex-wrap mb-4">
-    <MudTextField @bind-Value="_newName" Immediate="true" OnKeyDown="OnNewNameKeyDown"
-                  Label="@L["NewGroupPlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense"
-                  Class="flex-grow-1" Style="min-width:12rem;" />
-    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync"
-               StartIcon="@Icons.Material.Filled.Add" Class="mt-1"
-               Disabled="@(_busy || string.IsNullOrWhiteSpace(_newName))">
-        @L["CreateGroup"]
-    </MudButton>
-</div>
+@* The inline create field is the wide-screen path; on a phone it moves behind the "+" FAB (like adding
+   members) so the list of groups leads. *@
+<MudHidden Breakpoint="Breakpoint.SmAndDown">
+    <div class="d-flex gap-2 align-start flex-wrap mb-4">
+        <MudTextField @bind-Value="_newName" Immediate="true" OnKeyDown="OnNewNameKeyDown"
+                      Label="@L["NewGroupPlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Class="flex-grow-1" Style="min-width:12rem;" />
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync"
+                   StartIcon="@Icons.Material.Filled.Add" Class="mt-1"
+                   Disabled="@(_busy || string.IsNullOrWhiteSpace(_newName))">
+            @L["CreateGroup"]
+        </MudButton>
+    </div>
+</MudHidden>
 
 @* Create a group from a circle (FR-027): only offered while signed in, since it reads the account's
    circles. The account-free flow above is unchanged. *@
@@ -43,7 +49,28 @@
 }
 else if (_groups.Count == 0)
 {
-    <MudText Class="mud-text-secondary">@L["NoGroups"]</MudText>
+    <AuthorizeView>
+        <Authorized>
+            @* Signed in with nothing on the account yet: point at the create field and the
+               from-circle shortcut above rather than re-selling the account (UX-003). *@
+            <MudText Class="mud-text-secondary">@L["EmptyStateSignedInHint"]</MudText>
+        </Authorized>
+        <NotAuthorized>
+            @* First run (UX-003): say what the app does, nudge to the create field above, and sell
+               the account at the point of choice (sync, own assignment, own wishlist). *@
+            <MudPaper Elevation="0" Outlined="true" Class="pa-6 mt-2">
+                <div class="d-flex flex-column align-center text-center gap-3">
+                    <MudIcon Icon="@Icons.Material.Filled.Redeem" Color="Color.Primary" Size="Size.Large" />
+                    <MudText Typo="Typo.h6">@L["EmptyStateHeadline"]</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="max-width:34rem;">@L["EmptyStateExplainer"]</MudText>
+                    <MudDivider Class="my-2" Style="width:100%;" />
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="max-width:34rem;">@L["EmptyStateAccountSell"]</MudText>
+                    <MudButton Href="/account/login" Variant="Variant.Outlined" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Login">@L["EmptyStateSignIn"]</MudButton>
+                </div>
+            </MudPaper>
+        </NotAuthorized>
+    </AuthorizeView>
 }
 else
 {
@@ -54,20 +81,25 @@ else
                 <MudCardContent Class="pb-2">
                     <div class="d-flex justify-space-between align-center flex-wrap gap-2">
                         <div class="d-flex align-center flex-wrap gap-2">
-                            <MudText Typo="Typo.subtitle1"><strong>@group.Name</strong></MudText>
+                            @* The name opens the group, the same as the Open button, so the whole row reads
+                               as a link — with keyboard support to match the button. *@
+                            <div class="ct-openable" role="button" tabindex="0"
+                                 @onclick="() => Open(group.Id)" @onkeydown="@(e => OpenOnEnter(e, group.Id))">
+                                <MudText Typo="Typo.subtitle1"><strong>@group.Name</strong></MudText>
+                            </div>
                             <MudText Typo="Typo.body2" Class="mud-text-secondary">
                                 @L["MembersColumn"]: @group.MemberCount
                             </MudText>
                             <MudText Typo="Typo.body2" Class="mud-text-secondary">
                                 @L["EventsColumn"]: @group.EventCount
                             </MudText>
-                            @if (group.HasAnyDraw)
-                            {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
-                            }
-                            else if (group.AnyDrawInvalidated)
+                            @if (group.AnyDrawInvalidated)
                             {
                                 <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
+                            }
+                            else if (group.HasAnyDraw)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
                             }
                         </div>
                         <div class="d-flex align-center gap-1">
@@ -76,38 +108,39 @@ else
                                     @{
                                         var isPinned = _pinned.Contains(group.Id);
                                     }
-                                    <MudIconButton Size="Size.Small"
-                                                   Icon="@(isPinned ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)"
+                                    <MudIconButton Icon="@(isPinned ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)"
                                                    Color="@(isPinned ? Color.Warning : Color.Default)"
                                                    OnClick="() => TogglePinAsync(group.Id)"
                                                    aria-label="@(isPinned ? L["UnpinGroup"] : L["PinGroup"])" />
                                 </Authorized>
                             </AuthorizeView>
-                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
                                        OnClick="() => Open(group.Id)">@L["Open"]</MudButton>
-                            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
-                                       OnClick="() => AskDelete(group.Id)">@L["Delete"]</MudButton>
+                            @* Delete is destructive and rare, so it moves out of the row into an overflow
+                               menu — keeping a phone row to pin + Open + a single kebab. *@
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
+                                     AriaLabel="@L["MoreActions"]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                                <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error"
+                                             OnClick="() => AskDeleteAsync(group.Id, group.Name)">@L["Delete"]</MudMenuItem>
+                            </MudMenu>
                         </div>
                     </div>
-
-                    @if (_pendingDeleteId == group.Id)
-                    {
-                        <MudAlert Severity="Severity.Warning" Class="mt-3" Dense="true">
-                            <MudText Class="mb-2">@L["ConfirmDeleteGroup", group.Name]</MudText>
-                            <div class="d-flex gap-1">
-                                <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Filled"
-                                           OnClick="() => DeleteAsync(group.Id)">@L["ConfirmYes"]</MudButton>
-                                <MudButton Size="Size.Small" Variant="Variant.Text"
-                                           OnClick="CancelDelete">@L["Cancel"]</MudButton>
-                            </div>
-                        </MudAlert>
-                    }
 
                 </MudCardContent>
             </MudCard>
         }
     </MudStack>
 }
+
+@* Create a group via a FAB on phones (like adding members); the inline field owns it on wide.
+   The spacer reserves scroll room so the FAB never traps the last group card's controls. *@
+<MudHidden Breakpoint="Breakpoint.MdAndUp">
+    <div class="ct-fab-spacer"></div>
+    <div class="ct-fab">
+        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                aria-label="@L["CreateGroup"]" OnClick="CreateViaFabAsync" />
+    </div>
+</MudHidden>
 
 @code {
     [CascadingParameter]
@@ -120,7 +153,6 @@ else
     private string _displayName = string.Empty;
     private string _newName = string.Empty;
     private bool _busy;
-    private Guid? _pendingDeleteId;
 
     protected override void OnInitialized() => AutoSync.SyncCompleted += OnSyncCompleted;
 
@@ -182,6 +214,8 @@ else
         {
             await Bookmarks.ToggleAsync(id);
             _pinned = [.. await Bookmarks.GetPinnedAsync()];
+            // A confirmation buzz on the pin/unpin (FEAT-008 W3); a no-op on the web head.
+            await Haptics.TapAsync();
         }
         catch (StorageUnavailableException)
         {
@@ -197,9 +231,22 @@ else
         }
     }
 
-    private async Task CreateAsync()
+    // The inline field (wide screens) creates from the bound value.
+    private Task CreateAsync() => CreateNamedAsync(_newName);
+
+    // The phone FAB collects the name in a bottom sheet, then creates it (like adding members).
+    private async Task CreateViaFabAsync()
     {
-        if (_busy || string.IsNullOrWhiteSpace(_newName))
+        var name = await Dialogs.ShowTextInputSheetAsync(L["CreateGroup"], L["NewGroupPlaceholder"], L["CreateGroup"], L["Cancel"]);
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            await CreateNamedAsync(name);
+        }
+    }
+
+    private async Task CreateNamedAsync(string rawName)
+    {
+        if (_busy || string.IsNullOrWhiteSpace(rawName))
         {
             return;
         }
@@ -207,7 +254,7 @@ else
         _busy = true;
         try
         {
-            var name = _newName.Trim();
+            var name = rawName.Trim();
             var id = await Sender.Send(new CreateGroupCommand(name));
 
             // The organizer is a member of the group they create. Signed in, add them and link their own
@@ -248,16 +295,31 @@ else
         }
     }
 
-    private void AskDelete(Guid id) => _pendingDeleteId = id;
-
-    private void CancelDelete() => _pendingDeleteId = null;
+    // Confirm a delete in a bottom sheet (FEAT-008 W4) rather than an inline warning that reflows the card.
+    private async Task AskDeleteAsync(Guid id, string name)
+    {
+        if (await Dialogs.ShowConfirmSheetAsync(L["ConfirmDeleteGroup", name], L["ConfirmYes"], L["Cancel"]))
+        {
+            await DeleteAsync(id);
+        }
+    }
 
     private async Task DeleteAsync(Guid id)
     {
-        _pendingDeleteId = null;
         await Sender.Send(new DeleteGroupCommand(id));
+        // A confirmation buzz on delete (FEAT-008 W3); a no-op on the web head.
+        await Haptics.TapAsync();
         await LoadAsync();
     }
 
     private void Open(Guid id) => Navigation.NavigateTo($"groups/{id}");
+
+    // Keyboard parity for the clickable name (Enter or Space opens, like the Open button).
+    private void OpenOnEnter(KeyboardEventArgs args, Guid id)
+    {
+        if (args.Key is "Enter" or " ")
+        {
+            Open(id);
+        }
+    }
 }

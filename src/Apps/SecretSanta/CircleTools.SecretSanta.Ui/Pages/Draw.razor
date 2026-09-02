@@ -2,10 +2,12 @@
 @inject ISender Sender
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
+@inject IHapticFeedback Haptics
+@inject IDialogService Dialogs
 
 <PageTitle>@L["DrawTitle"]</PageTitle>
 
-<EventNav GroupId="GroupId" EventId="EventId" />
+<EventBackNav GroupId="GroupId" EventId="EventId" />
 
 <MudText Typo="Typo.h4" GutterBottom="true">@L["DrawTitle"]</MudText>
 
@@ -26,17 +28,6 @@ else
 
     <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="mb-3"
                StartIcon="@Icons.Material.Filled.Casino" OnClick="OnDrawClickedAsync" Disabled="@_busy">@L["RunDraw"]</MudButton>
-
-    @if (_confirmRedraw)
-    {
-        <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true" role="alert">
-            <MudText Class="mb-2">@L["RedrawWarning"]</MudText>
-            <div class="d-flex gap-1">
-                <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Filled" OnClick="RunAsync" Disabled="@_busy">@L["RedrawConfirm"]</MudButton>
-                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelRedraw">@L["Cancel"]</MudButton>
-            </div>
-        </MudAlert>
-    }
 
     @if (_result is not null)
     {
@@ -74,7 +65,6 @@ else
     private int _memberCount;
     private RunDrawResultDto? _result;
     private bool _busy;
-    private bool _confirmRedraw;
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
@@ -91,16 +81,16 @@ else
     /// </summary>
     private async Task OnDrawClickedAsync()
     {
-        if (_event?.HasCurrentDraw == true && !_confirmRedraw)
+        // Re-drawing invalidates links already sent, so confirm it first — now in a bottom sheet
+        // (FEAT-008 W4) rather than an inline warning.
+        if (_event?.HasCurrentDraw == true &&
+            !await Dialogs.ShowConfirmSheetAsync(L["RedrawWarning"], L["RedrawConfirm"], L["Cancel"]))
         {
-            _confirmRedraw = true;
             return;
         }
 
         await RunAsync();
     }
-
-    private void CancelRedraw() => _confirmRedraw = false;
 
     private async Task RunAsync()
     {
@@ -108,7 +98,12 @@ else
         try
         {
             _result = await Sender.Send(new RunDrawCommand(GroupId, EventId));
-            _confirmRedraw = false;
+            // A confirmation buzz when the draw actually lands (FEAT-008 W3); a no-op on the web head.
+            if (_result.Success)
+            {
+                await Haptics.TapAsync();
+            }
+
             await LoadAsync();
         }
         finally

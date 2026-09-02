@@ -7,34 +7,32 @@ namespace CircleTools.SecretSanta.Core.Test;
 /// Domain-level tests for member↔account linking (M4). The load-bearing rule here is that linking or
 /// unlinking changes how a member is <em>served</em>, not the participant set, and so must not
 /// invalidate a completed draw — unlike adding or removing a member. ADR-0042: draws are per event; a
-/// new group's default event has id == group id.
+/// new group starts with no event, so the helper adds one before drawing.
 /// </summary>
 public sealed class MemberLinkingDomainTests
 {
-    private static Event DefaultEvent(Group group) => group.FindEvent(group.Id)!;
-
     [Fact]
     public void LinkMember_DoesNotInvalidateACompletedDraw()
     {
-        var group = DrawnGroupOfFour(out var members);
+        var group = DrawnGroupOfFour(out var members, out var eventId);
 
         group.LinkMember(members[0], Guid.NewGuid());
 
-        Assert.NotNull(DefaultEvent(group).CurrentDraw);
-        Assert.False(DefaultEvent(group).DrawInvalidatedByMembershipChange);
+        Assert.NotNull(group.FindEvent(eventId)!.CurrentDraw);
+        Assert.False(group.FindEvent(eventId)!.DrawInvalidatedByMembershipChange);
     }
 
     [Fact]
     public void UnlinkMember_DoesNotInvalidateACompletedDraw()
     {
-        var group = DrawnGroupOfFour(out var members);
+        var group = DrawnGroupOfFour(out var members, out var eventId);
         var user = Guid.NewGuid();
         group.LinkMember(members[0], user);
 
         group.UnlinkMember(members[0]);
 
-        Assert.NotNull(DefaultEvent(group).CurrentDraw);
-        Assert.False(DefaultEvent(group).DrawInvalidatedByMembershipChange);
+        Assert.NotNull(group.FindEvent(eventId)!.CurrentDraw);
+        Assert.False(group.FindEvent(eventId)!.DrawInvalidatedByMembershipChange);
         Assert.False(group.FindMember(members[0])!.IsLinked);
     }
 
@@ -119,16 +117,17 @@ public sealed class MemberLinkingDomainTests
         Assert.False(restoredAlice.IsLinked);
     }
 
-    private static Group DrawnGroupOfFour(out IReadOnlyList<Guid> memberIds)
+    private static Group DrawnGroupOfFour(out IReadOnlyList<Guid> memberIds, out Guid eventId)
     {
         var group = Group.Create("Friends");
+        eventId = group.AddEvent("Christmas");
         var ids = new List<Guid>();
         foreach (var name in new[] { "A", "B", "C", "D" })
         {
             ids.Add(group.AddMember(name));
         }
 
-        group.RunDraw(group.Id, new DrawGenerator(new SeededRandomSource(11)), DateTimeOffset.UtcNow);
+        group.RunDraw(eventId, new DrawGenerator(new SeededRandomSource(11)), DateTimeOffset.UtcNow);
         memberIds = ids;
         return group;
     }

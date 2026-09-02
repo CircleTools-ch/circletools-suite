@@ -70,6 +70,15 @@ public sealed class AutoSyncService(
     public event Action? SyncCompleted;
 
     /// <summary>
+    /// Raised as soon as a sync is requested — i.e. right after any local mutation (the after-change
+    /// behavior, ADR-0044), a reconnect, or app start. Unlike <see cref="SyncCompleted"/> it fires
+    /// <strong>regardless of sign-in state</strong>, so a signed-out change (e.g. deleting a group) still
+    /// tells device-local views like the drawer's quick-access to refresh — a cycle that no-ops while
+    /// signed out never reaches <see cref="SyncCompleted"/>. Subscribers marshal onto the render context.
+    /// </summary>
+    public event Action? LocalChanged;
+
+    /// <summary>
     /// Starts listening for reconnects and, if a session is already live, runs the app-start sync.
     /// Called once from the shell's first render, when the JS runtime is available. Idempotent.
     /// </summary>
@@ -98,6 +107,10 @@ public sealed class AutoSyncService(
     /// </summary>
     public void RequestSync()
     {
+        // Tell device-local views (drawer quick-access, listing screens) that the local data may have
+        // just changed, before any debounced sync runs and even when signed out (when the cycle no-ops).
+        LocalChanged?.Invoke();
+
         _debounce?.Cancel();
         _debounce?.Dispose();
 

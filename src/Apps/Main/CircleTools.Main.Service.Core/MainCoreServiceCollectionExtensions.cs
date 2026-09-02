@@ -1,7 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using CircleTools.Application;
-using CircleTools.Main.Contracts;
-using CircleTools.Main.Service.Core.Application;
 
 namespace CircleTools.Main.Service.Core;
 
@@ -16,9 +13,6 @@ public static class MainCoreServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.TryAddSingletonTimeProvider();
-
-        services.AddScoped<ICommandHandler<CreateHeartbeatCommand, Guid>, CreateHeartbeatCommandHandler>();
-        services.AddScoped<IQueryHandler<GetHeartbeatsQuery, IReadOnlyList<HeartbeatDto>>, GetHeartbeatsQueryHandler>();
 
         return services;
     }

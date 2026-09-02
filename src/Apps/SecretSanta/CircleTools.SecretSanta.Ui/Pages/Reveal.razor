@@ -4,6 +4,7 @@
 @inject RevealLinkCodec Codec
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
+@inject IHapticFeedback Haptics
 
 <PageTitle>@L["RevealTitle"]</PageTitle>
 
@@ -69,7 +70,7 @@ else if (_payload is not null)
     {
         <MudText Class="mud-text-secondary my-3">@L["RevealSpoilerNote"]</MudText>
         <MudButton Size="Size.Large" Color="Color.Primary" Variant="Variant.Filled"
-                   StartIcon="@Icons.Material.Filled.CardGiftcard" OnClick="() => _revealed = true">@L["RevealButton"]</MudButton>
+                   StartIcon="@Icons.Material.Filled.CardGiftcard" OnClick="RevealAsync">@L["RevealButton"]</MudButton>
     }
 }
 
@@ -79,6 +80,13 @@ else if (_payload is not null)
     private DateTimeOffset? _eventDate;
     private bool _revealed;
     private bool _error;
+
+    // A small confirmation buzz as the giftee is shown (FEAT-008 W3); a no-op on the web head.
+    private async Task RevealAsync()
+    {
+        _revealed = true;
+        await Haptics.TapAsync();
+    }
 
     private bool HasEvent =>
         _eventDate is not null ||
