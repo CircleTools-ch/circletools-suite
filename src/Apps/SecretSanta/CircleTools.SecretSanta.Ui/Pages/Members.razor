@@ -4,6 +4,7 @@
 @inject ISender Sender
 @inject ILinkingApi Linking
 @inject IStringLocalizer<AppStrings> L
+@inject IDialogService Dialogs
 
 <PageTitle>@L["MembersTitle"]</PageTitle>
 
@@ -16,23 +17,28 @@
     <MudAlert Severity="Severity.Warning" Class="mb-4" Dense="true" role="alert">@L["RemoveMemberVoidsDrawWarning"]</MudAlert>
 }
 
-<MudCard Elevation="1" Class="mb-4">
-    <MudCardContent>
-        <MudStack Spacing="2">
-            <MudTextField @bind-Value="_newName" Immediate="true" OnKeyDown="OnNewNameKeyDown" Label="@L["NameLabel"]"
-                          Placeholder="@L["MemberNamePlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
-            <div>
-                <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddAsync"
-                           StartIcon="@Icons.Material.Filled.PersonAdd"
-                           Disabled="@string.IsNullOrWhiteSpace(_newName)">@L["AddMember"]</MudButton>
-            </div>
-            @if (_error is not null)
-            {
-                <MudAlert Severity="Severity.Error" Dense="true" role="alert">@_error</MudAlert>
-            }
-        </MudStack>
-    </MudCardContent>
-</MudCard>
+@* The add-member form is the inline card on wide screens; on a phone it moves behind the "+" FAB
+   (FEAT-008 W4) to declutter the top of the list. *@
+<MudHidden Breakpoint="Breakpoint.SmAndDown">
+    <MudCard Elevation="1" Class="mb-4">
+        <MudCardContent>
+            <MudStack Spacing="2">
+                <MudTextField @bind-Value="_newName" Immediate="true" OnKeyDown="OnNewNameKeyDown" Label="@L["NameLabel"]"
+                              Placeholder="@L["MemberNamePlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                <div>
+                    <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddAsync"
+                               StartIcon="@Icons.Material.Filled.PersonAdd"
+                               Disabled="@string.IsNullOrWhiteSpace(_newName)">@L["AddMember"]</MudButton>
+                </div>
+            </MudStack>
+        </MudCardContent>
+    </MudCard>
+</MudHidden>
+
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Dense="true" role="alert" Class="mb-4">@_error</MudAlert>
+}
 
 @if (_members is null)
 {
@@ -98,7 +104,7 @@ else
                                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
                                          AriaLabel="@L["MoreActions"]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                                     <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => BeginEdit(member)">@L["Edit"]</MudMenuItem>
-                                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="() => AskRemove(member.Id)">@L["Remove"]</MudMenuItem>
+                                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="() => AskRemoveAsync(member.Id, member.Name)">@L["Remove"]</MudMenuItem>
                                 </MudMenu>
                             </div>
                         </div>
@@ -127,23 +133,22 @@ else
                             <MudAlert Severity="Severity.Info" Class="mt-2" Dense="true" role="status">@_linkMessage</MudAlert>
                         }
 
-                        @if (_pendingRemoveId == member.Id)
-                        {
-                            <MudAlert Severity="Severity.Warning" Class="mt-2" Dense="true" role="alert">
-                                <MudText Class="mb-2">@L["ConfirmRemoveMember", member.Name]</MudText>
-                                <div class="d-flex gap-1">
-                                    <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Filled"
-                                               OnClick="() => RemoveAsync(member.Id)">@L["ConfirmRemove"]</MudButton>
-                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelRemove">@L["Cancel"]</MudButton>
-                                </div>
-                            </MudAlert>
-                        }
                     }
                 </MudCardContent>
             </MudCard>
         }
     </MudStack>
 }
+
+@* Primary add action as a floating action button on phones (FEAT-008 W4); the inline card owns it on wide.
+   The spacer reserves scrollable room so the FAB never traps the last member row's overflow menu. *@
+<MudHidden Breakpoint="Breakpoint.MdAndUp">
+    <div class="ct-fab-spacer"></div>
+    <div class="ct-fab">
+        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
+                aria-label="@L["AddMember"]" OnClick="AddViaFabAsync" />
+    </div>
+</MudHidden>
 
 @code {
     /// <summary>The owning group.</summary>
@@ -161,7 +166,6 @@ else
 
     private Guid? _editingId;
     private string _editName = string.Empty;
-    private Guid? _pendingRemoveId;
     private bool _hasCurrentDraw;
     private string _groupName = string.Empty;
 
@@ -303,12 +307,30 @@ else
         }
     }
 
-    private async Task AddAsync()
+    // The inline card (wide screens) adds from the bound field.
+    private Task AddAsync() => AddNamedAsync(_newName);
+
+    // The phone FAB (FEAT-008 W4) collects the name in a bottom sheet, then adds it.
+    private async Task AddViaFabAsync()
     {
+        var name = await Dialogs.ShowTextInputSheetAsync(L["AddMember"], L["NameLabel"], L["AddMember"], L["Cancel"]);
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            await AddNamedAsync(name);
+        }
+    }
+
+    private async Task AddNamedAsync(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return;
+        }
+
         _error = null;
         try
         {
-            await Sender.Send(new AddMemberCommand(GroupId, _newName));
+            await Sender.Send(new AddMemberCommand(GroupId, name));
             _newName = string.Empty;
             await LoadAsync();
         }
@@ -355,17 +377,18 @@ else
         }
     }
 
-    private void AskRemove(Guid memberId)
+    // Confirm removal in a bottom sheet (FEAT-008 W4) rather than an inline warning that reflows the card.
+    private async Task AskRemoveAsync(Guid memberId, string name)
     {
-        _pendingRemoveId = memberId;
         _error = null;
+        if (await Dialogs.ShowConfirmSheetAsync(L["ConfirmRemoveMember", name], L["ConfirmRemove"], L["Cancel"]))
+        {
+            await RemoveAsync(memberId);
+        }
     }
-
-    private void CancelRemove() => _pendingRemoveId = null;
 
     private async Task RemoveAsync(Guid memberId)
     {
-        _pendingRemoveId = null;
         await Sender.Send(new RemoveMemberCommand(GroupId, memberId));
         await LoadAsync();
     }

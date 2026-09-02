@@ -1,0 +1,53 @@
+@*
+    A single-line text-input bottom sheet (FEAT-008 W4). Slides up from the bottom edge with one field
+    and a confirm/cancel — the native pattern behind a FAB "add" action. Returns the trimmed text via
+    TextInputSheetExtensions.ShowTextInputSheetAsync (or null if cancelled).
+*@
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @bind-Value="_value" Immediate="true" Label="@Label" Variant="Variant.Outlined"
+                      AutoFocus="true" OnKeyDown="OnKeyDownAsync" Class="mt-1" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@CancelLabel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
+                   Disabled="@string.IsNullOrWhiteSpace(_value)">@ConfirmLabel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance Dialog { get; set; } = default!;
+
+    /// <summary>Floating label for the field.</summary>
+    [Parameter] public string Label { get; set; } = string.Empty;
+
+    /// <summary>Label for the confirming action.</summary>
+    [Parameter] public string ConfirmLabel { get; set; } = string.Empty;
+
+    /// <summary>Label for the dismissing action.</summary>
+    [Parameter] public string CancelLabel { get; set; } = string.Empty;
+
+    private string _value = string.Empty;
+
+    private void Submit()
+    {
+        if (!string.IsNullOrWhiteSpace(_value))
+        {
+            Dialog.Close(DialogResult.Ok(_value.Trim()));
+        }
+    }
+
+    private void Cancel() => Dialog.Cancel();
+
+    private Task OnKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            Submit();
+        }
+
+        return Task.CompletedTask;
+    }
+}

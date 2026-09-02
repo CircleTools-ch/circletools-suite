@@ -10,6 +10,7 @@
 @inject BookmarkService Bookmarks
 @inject AutoSyncService AutoSync
 @inject IHapticFeedback Haptics
+@inject IDialogService Dialogs
 @implements IDisposable
 
 <PageTitle>@L["GroupsTitle"]</PageTitle>
@@ -116,23 +117,10 @@ else
                             <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
                                      AriaLabel="@L["MoreActions"]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                                 <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error"
-                                             OnClick="() => AskDelete(group.Id)">@L["Delete"]</MudMenuItem>
+                                             OnClick="() => AskDeleteAsync(group.Id, group.Name)">@L["Delete"]</MudMenuItem>
                             </MudMenu>
                         </div>
                     </div>
-
-                    @if (_pendingDeleteId == group.Id)
-                    {
-                        <MudAlert Severity="Severity.Warning" Class="mt-3" Dense="true">
-                            <MudText Class="mb-2">@L["ConfirmDeleteGroup", group.Name]</MudText>
-                            <div class="d-flex gap-1">
-                                <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Filled"
-                                           OnClick="() => DeleteAsync(group.Id)">@L["ConfirmYes"]</MudButton>
-                                <MudButton Size="Size.Small" Variant="Variant.Text"
-                                           OnClick="CancelDelete">@L["Cancel"]</MudButton>
-                            </div>
-                        </MudAlert>
-                    }
 
                 </MudCardContent>
             </MudCard>
@@ -151,7 +139,6 @@ else
     private string _displayName = string.Empty;
     private string _newName = string.Empty;
     private bool _busy;
-    private Guid? _pendingDeleteId;
 
     protected override void OnInitialized() => AutoSync.SyncCompleted += OnSyncCompleted;
 
@@ -281,13 +268,17 @@ else
         }
     }
 
-    private void AskDelete(Guid id) => _pendingDeleteId = id;
-
-    private void CancelDelete() => _pendingDeleteId = null;
+    // Confirm a delete in a bottom sheet (FEAT-008 W4) rather than an inline warning that reflows the card.
+    private async Task AskDeleteAsync(Guid id, string name)
+    {
+        if (await Dialogs.ShowConfirmSheetAsync(L["ConfirmDeleteGroup", name], L["ConfirmYes"], L["Cancel"]))
+        {
+            await DeleteAsync(id);
+        }
+    }
 
     private async Task DeleteAsync(Guid id)
     {
-        _pendingDeleteId = null;
         await Sender.Send(new DeleteGroupCommand(id));
         // A confirmation buzz on delete (FEAT-008 W3); a no-op on the web head.
         await Haptics.TapAsync();

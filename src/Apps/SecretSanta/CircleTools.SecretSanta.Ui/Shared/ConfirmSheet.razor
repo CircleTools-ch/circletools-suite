@@ -1,0 +1,42 @@
+@*
+    A confirmation bottom sheet (FEAT-008 W4). Shown via IDialogService with
+    DialogPosition.BottomCenter, it slides up from the bottom edge with a message and a confirm/cancel —
+    the native mobile pattern for a destructive choice, replacing the inline MudAlert confirmations that
+    used to expand in place and reflow the card. Resolve with ConfirmSheetExtensions.ShowConfirmSheetAsync.
+*@
+
+<MudDialog>
+    <DialogContent>
+        <div class="d-flex flex-column gap-2 pb-1">
+            @if (!string.IsNullOrWhiteSpace(Message))
+            {
+                <MudText Typo="Typo.body1">@Message</MudText>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@CancelLabel</MudButton>
+        <MudButton Color="@ConfirmColor" Variant="Variant.Filled" OnClick="Confirm">@ConfirmLabel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance Dialog { get; set; } = default!;
+
+    /// <summary>The question/warning shown in the sheet body.</summary>
+    [Parameter] public string Message { get; set; } = string.Empty;
+
+    /// <summary>Label for the confirming (destructive) action.</summary>
+    [Parameter] public string ConfirmLabel { get; set; } = string.Empty;
+
+    /// <summary>Label for the dismissing action.</summary>
+    [Parameter] public string CancelLabel { get; set; } = string.Empty;
+
+    /// <summary>Colour of the confirm button — Error for a destructive action (the default).</summary>
+    [Parameter] public Color ConfirmColor { get; set; } = Color.Error;
+
+    private void Confirm() => Dialog.Close(DialogResult.Ok(true));
+
+    private void Cancel() => Dialog.Cancel();
+}

@@ -60,9 +60,31 @@ and consumes the [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-se
   the maintainer confirmed the gesture feels good and **does not interfere with normal scrolling** — the
   on-device tuning [FEAT-008](../features/FEAT-008-mobile-native-feel-polish.md) flagged is satisfied; no
   threshold/resistance changes needed.
-- **MNF-4 · Native interaction patterns (P2).** Bottom/action sheets for destructive confirmations and
-  overflow menus (replacing the inline `MudAlert` expanders), and a **FAB** for the primary create/add
-  actions on narrow viewports.
+- **MNF-4 · Native interaction patterns (P2).** ✅ **Built 2026-09-02, browser-verified; device pass
+  pending.** Two shared bottom-sheet dialogs in `SecretSanta.Ui/Shared` shown via `IDialogService` at
+  `DialogPosition.BottomCenter`:
+  - **`ConfirmSheet`** replaces the inline `MudAlert` confirmations for the three destructive actions —
+    **delete group** (`Groups`), **remove member** (`Members`), **re-draw** (`Draw`) — with a bottom
+    sheet carrying a red confirm, instead of a warning box that reflowed the card.
+  - **`TextInputSheet` + a FAB** on the **Members** screen: on narrow the inline add-member card is
+    hidden and a **`MudFab`** (bottom-right, cleared above the bottom nav / home indicator) opens the
+    add-member sheet; the inline card stays on wide.
+
+  **Browser-verified** (Playwright, 390px): the delete sheet and add sheet both open from the bottom, a
+  member added via the sheet lands in the roster, the inline add-card is hidden on narrow, console clean.
+  **Scope decisions (deliberate):** (1) the **Groups create field is left as-is** — it is the UX-003
+  first-run funnel and the onboarding copy in DE/EN/FR literally points "above" at it, so converting it
+  to a FAB is its own small UX/copy decision, not this polish pass; a Groups FAB is a candidate follow-up.
+  (2) The **kebab overflow menus stay** (they already have 48px targets from W1) — only the destructive
+  *confirmations* became sheets, keeping the change focused.
+  - **On-device (Pixel) pass — mostly ✅, one bug found & fixed.** Delete/remove/re-draw sheets and the
+    add-member sheet all work under a real finger. **Bug (device-only):** the FAB overlapped the last
+    member row's kebab, and with too few members to scroll, that member's overflow menu was unreachable.
+    **Fixed:** a `.ct-fab-spacer` reserves scrollable room below the list so the FAB always floats over
+    empty space and any row can be scrolled clear; the FAB `z-index` was also lowered below MudBlazor's
+    popover layer so an open kebab menu is never covered. Browser-verified (Playwright, 6+ members): the
+    last row's kebab no longer overlaps the FAB and is clickable. **Redeploy to the Pixel pending** the
+    phone reconnecting.
 
 **Selected earlier, distribution cluster (from the [mobile brainstorm](../brainstorming/2026-09-01-secret-santa-mobile.md)) — build next:**
 
