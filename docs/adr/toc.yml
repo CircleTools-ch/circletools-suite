@@ -106,5 +106,7 @@
   href: 0052-member-archival-and-permanent-draw-history.md
 - name: 0053 Backend-free first mobile release
   href: 0053-backend-free-first-mobile-release.md
+- name: 0054 Mobile native-feel strategy
+  href: 0054-mobile-native-feel-strategy.md
 - name: Template
   href: _template-adr.md
