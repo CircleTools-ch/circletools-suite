@@ -115,7 +115,7 @@ flowchart TD
 
 ## Testing strategy
 
-Paired plan: **TP-008** (to be written). Because these are UX-and-motion changes, the plan is weighted
+Paired plan: [TP-008](TP-008-mobile-native-feel-polish.md). Because these are UX-and-motion changes, the plan is weighted
 toward **on-device verification** per `CLAUDE.md`'s "verify UI in a real browser / on the device" rule,
 not unit tests:
 
@@ -159,4 +159,4 @@ not unit tests:
   pull-to-refresh triggers)
 - Backlog: [Mobile native-feel pass (2026-09-02)](../roadmap/backlog.md)
 - Brainstorm: [Secret-Santa mobile features (2026-09-01)](../brainstorming/2026-09-01-secret-santa-mobile.md)
-- Test plan: TP-008 (to be written)
+- Test plan: [TP-008](TP-008-mobile-native-feel-polish.md)

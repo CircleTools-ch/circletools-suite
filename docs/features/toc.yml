@@ -30,6 +30,8 @@
   href: TP-007-events-per-group.md
 - name: FEAT-008 Mobile native-feel polish
   href: FEAT-008-mobile-native-feel-polish.md
+- name: TP-008 Mobile native-feel polish test plan
+  href: TP-008-mobile-native-feel-polish.md
 - name: Templates
   items:
     - name: Feature spec template
