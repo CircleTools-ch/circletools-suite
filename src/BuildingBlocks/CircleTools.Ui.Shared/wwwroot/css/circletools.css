@@ -124,3 +124,23 @@
 html {
     overscroll-behavior-y: contain;
 }
+
+/* Floating action button for the primary create/add action on phones (FEAT-008 W4). Fixed to the
+   bottom-right, cleared above the bottom navigation bar (56px) and the iOS home indicator. Shown by the
+   page inside a narrow-only MudHidden. */
+.ct-fab {
+    position: fixed;
+    right: 16px;
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    /* Above page content, but below MudBlazor's popovers/menus (so an open kebab menu is never covered
+       by the FAB), the bottom nav, and dialogs/sheets. */
+    z-index: 1100;
+}
+
+/* Reserve scrollable space at the bottom of a FAB list so the FAB always floats over empty space, never
+   over the last row's controls — and so a short list (which would otherwise not scroll) can still be
+   scrolled far enough to lift its last row out from under the FAB. The page renders this inside a
+   narrow-only MudHidden, next to the FAB. */
+.ct-fab-spacer {
+    height: calc(160px + env(safe-area-inset-bottom));
+}
