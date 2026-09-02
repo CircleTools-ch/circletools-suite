@@ -35,9 +35,12 @@ public static class TextInputSheetExtensions
             { x => x.Initial, initial },
         };
 
+        // Top, not bottom: this sheet always focuses its field and raises the soft keyboard, which slides
+        // up from the bottom edge and would cover a bottom sheet — hiding the field and the confirm button
+        // (the confirm-only ConfirmSheet has no keyboard, so it stays a bottom sheet).
         var options = new DialogOptions
         {
-            Position = DialogPosition.BottomCenter,
+            Position = DialogPosition.TopCenter,
             FullWidth = true,
             CloseOnEscapeKey = true,
         };

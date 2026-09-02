@@ -70,6 +70,25 @@ public static class MauiProgram
             ? value
             : fallback;
 
+    /// <summary>
+    /// The inner HTTP handler for the two account clients.
+    /// </summary>
+    /// <remarks>
+    /// In a DEBUG build this accepts the untrusted local ASP.NET dev certificate so sign-in and sync
+    /// can be exercised on a physical device against the local API over the LAN / a USB <c>adb reverse</c>
+    /// tunnel — the limitation documented on <see cref="ApiBaseUrl"/>. The bypass is compiled out of a
+    /// Release/store build entirely, which always talks to a real (trusted) origin.
+    /// </remarks>
+    private static HttpClientHandler CreateApiHandler()
+    {
+        var handler = new HttpClientHandler();
+#if DEBUG
+        handler.ServerCertificateCustomValidationCallback =
+            HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
+#endif
+        return handler;
+    }
+
     /// <summary>Builds and configures the MAUI application.</summary>
     /// <returns>The configured <see cref="MauiApp"/>.</returns>
     public static MauiApp CreateMauiApp()
@@ -113,7 +132,7 @@ public static class MauiProgram
         // the chain (see AccountApiClients). The device head needs no browser-credentials handler, so
         // the inner handler is a plain HttpClientHandler.
         builder.Services.AddKeyedScoped<HttpClient>(AccountApiClients.Anonymous, (_, _) =>
-            new HttpClient(new HttpClientHandler()) { BaseAddress = apiBaseUrl });
+            new HttpClient(CreateApiHandler()) { BaseAddress = apiBaseUrl });
 
         builder.Services.AddKeyedScoped<HttpClient>(AccountApiClients.Authorized, (sp, _) =>
         {
@@ -121,7 +140,7 @@ public static class MauiProgram
                 sp.GetRequiredService<IAccessTokenStore>(),
                 sp.GetRequiredService<ISessionRefresher>())
             {
-                InnerHandler = new HttpClientHandler(),
+                InnerHandler = CreateApiHandler(),
             };
 
             return new HttpClient(handler) { BaseAddress = apiBaseUrl };

@@ -6,7 +6,7 @@
 
 <MudDialog>
     <DialogContent>
-        <MudTextField @bind-Value="_value" Immediate="true" Label="@Label" Variant="Variant.Outlined"
+        <MudTextField @ref="_field" @bind-Value="_value" Immediate="true" Label="@Label" Variant="Variant.Outlined"
                       AutoFocus="true" OnKeyDown="OnKeyDownAsync" Class="mt-1" />
     </DialogContent>
     <DialogActions>
@@ -32,9 +32,25 @@
     /// <summary>Optional initial text (e.g. the current name when renaming).</summary>
     [Parameter] public string? Initial { get; set; }
 
+    private MudTextField<string> _field = default!;
+
     private string _value = string.Empty;
 
     protected override void OnInitialized() => _value = Initial ?? string.Empty;
+
+    // MudBlazor's AutoFocus is unreliable for a field inside a dialog on mobile: it fires before the
+    // sheet's slide-up transition finishes, so the field never really takes focus and the soft keyboard
+    // stays closed. Focus explicitly once the sheet has settled so the user can start typing straight
+    // away — the caret sits at the end so an initial value (e.g. a name being renamed) stays editable.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.Delay(150);
+            await _field.FocusAsync();
+            await _field.SelectRangeAsync(_value.Length, _value.Length);
+        }
+    }
 
     private void Submit()
     {
