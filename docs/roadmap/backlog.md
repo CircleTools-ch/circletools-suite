@@ -83,8 +83,8 @@ and consumes the [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-se
     **Fixed:** a `.ct-fab-spacer` reserves scrollable room below the list so the FAB always floats over
     empty space and any row can be scrolled clear; the FAB `z-index` was also lowered below MudBlazor's
     popover layer so an open kebab menu is never covered. Browser-verified (Playwright, 6+ members): the
-    last row's kebab no longer overlaps the FAB and is clickable. **Redeploy to the Pixel pending** the
-    phone reconnecting.
+    last row's kebab no longer overlaps the FAB and is clickable. **Confirmed fixed on the Pixel** — the
+    bottom member's overflow menu is reachable for both short and long lists.
 
 **Selected earlier, distribution cluster (from the [mobile brainstorm](../brainstorming/2026-09-01-secret-santa-mobile.md)) — build next:**
 
