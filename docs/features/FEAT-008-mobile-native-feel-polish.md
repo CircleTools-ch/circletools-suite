@@ -2,13 +2,35 @@
 id: FEAT-008
 title: Mobile native-feel polish pass (ergonomics, navigation, motion, interaction patterns)
 context: SecretSanta
-status: Draft
+status: In progress
 owner: Adrian
 target-milestone: Mobile v1 polish (post-parity)
 related: [ADR-0054, ADR-0040, ADR-0028, NFR-007, TP-008]
 ---
 
 # FEAT-008 — Mobile native-feel polish pass
+
+## Status (2026-09-02)
+
+All four workstreams are **built and confirmed on a Pixel 9 Pro** (see the
+[backlog MNF-1…4 entries](../roadmap/backlog.md#mobile-native-feel-pass--secret-santa-2026-09-02) for
+the per-item detail):
+
+- **W1 touch ergonomics** — shared ≥48px baseline; built, browser-verified (kebab measures 48×48).
+- **W2 navigation clean-up** — one menu entry on narrow, no degenerate one-item bottom bar; device-confirmed.
+- **W3 motion** — `IHapticFeedback` seam (buzz on draw/reveal/pin/delete; web no-op) and pull-to-refresh;
+  device-confirmed. On-device finding: the MAUI haptic no-ops unless `Perform` is marshalled onto the UI
+  thread (`MainThread.BeginInvokeOnMainThread`).
+- **W4 interaction patterns** — `ConfirmSheet` (delete group / remove member / re-draw) and a
+  `TextInputSheet` + FAB on Members; device-confirmed, including the fix for a FAB that trapped the last
+  row's kebab (a `.ct-fab-spacer` + lowered FAB z-index).
+
+**Carried, not done:** (1) the **Groups create FAB** is deliberately deferred — the Groups create field is
+the UX-003 first-run funnel whose DE/EN/FR onboarding copy points "above" at it, so a Groups FAB needs its
+own small UX/copy decision (tracked as a candidate follow-up in the backlog). (2) The on-device pass was
+driven primarily in **DE**; W1–W4 added little or no new copy (reusing existing localized strings), so
+EN/FR parity is inherited, but an **EN/FR on-device spot-check** is still outstanding. (3) **TP-008**'s
+planned bUnit checks beyond the haptic-reveal test are not all written yet.
 
 ## Problem & goals
 
