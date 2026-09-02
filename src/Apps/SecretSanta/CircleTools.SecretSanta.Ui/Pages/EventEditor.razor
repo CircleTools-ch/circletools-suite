@@ -1,10 +1,11 @@
-@page "/groups/{GroupId:guid}/events/{EventId:guid}"
+@page "/groups/{GroupId:guid}/events/{EventId:guid}/details"
 @inject ISender Sender
 @inject IStringLocalizer<AppStrings> L
 
 <PageTitle>@L["EventDetailsTitle"]</PageTitle>
 
-<EventNav GroupId="GroupId" EventId="EventId" />
+<EventBackNav GroupId="GroupId" EventId="EventId" />
+<MudText Typo="Typo.h4" GutterBottom="true">@L["NavEventDetails"]</MudText>
 
 @if (_event is null)
 {

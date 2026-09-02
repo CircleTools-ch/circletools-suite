@@ -144,3 +144,16 @@ html {
 .ct-fab-spacer {
     height: calc(160px + env(safe-area-inset-bottom));
 }
+
+/* Event hub rows (ADR-0055): the whole card is a tappable navigation target, so give it a pointer and a
+   subtle hover/focus cue. The row's own layout (icon, label, status, chevron) is utility classes. */
+.ct-hub-row {
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.ct-hub-row:hover,
+.ct-hub-row:focus-visible {
+    border-color: var(--mud-palette-primary);
+    outline: none;
+}

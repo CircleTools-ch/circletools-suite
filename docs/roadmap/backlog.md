@@ -3,6 +3,40 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Mobile chrome & navigation review — Secret-Santa (2026-09-02)
+
+A pass over app-chrome placement and navigation against mobile conventions, driven by the maintainer's
+own use, on top of the [native-feel pass](#mobile-native-feel-pass--secret-santa-2026-09-02) below.
+
+- **MCN-1 · First-run language follows the device (P1).** ✅ **Built 2026-09-02.** The app used to start
+  in `de-CH` for everyone with no stored preference — it never looked at the device. Now
+  `CultureProvider.InitializeAsync` uses the device/browser language on first run, and `AppCultures.Resolve`
+  gained **language-prefix matching** (any `de-*` → de-CH, `fr-*` → fr-CH, `en-*` → en, else de-CH). A
+  stored pick still wins; a signed-in account's language still overrides on sync
+  ([ADR-0035](../adr/0035-profile-sync-seam.md)); nothing is persisted on first run, so the default keeps
+  following the device until the user picks. **Browser-verified** (Playwright): browser `de-DE` → *Gruppen*,
+  `en-US` → *Groups*, `fr-FR` → *Groupes*.
+- **MCN-2 · Event section hub instead of router-tabs (P1).** ✅ **Built 2026-09-02, browser-verified;
+  device pass pending.** [ADR-0055](../adr/0055-event-navigation-mobile-section-hub.md) **Accepted** and
+  realised as [FEAT-009](../features/FEAT-009-event-section-hub.md): the event landing is now a **section
+  hub** on all widths — a vertical list of Details / Wishlists / Draw / Share, each a tappable card with an
+  icon, a one-line **status** ("Not drawn yet", "{x} of {y}", "Drawn"…) and a chevron — replacing the
+  horizontally-scrolling tab strip (`EventNav` retired). Details gained its own `/details` route; each
+  section page shows a "← Overview" back-link (`EventBackNav`). Refinement during build: the hub is the
+  landing on **all** widths (not "hub-narrow / tabs-wide") because the responsive split forced the landing
+  route to be two screens by width — see the ADR. Four new strings in all locales; parity green; Ui suite
+  **29/29**. **Browser-verified** (Playwright, 390px, en-US): hub is the landing, no tab strip, four rows
+  with status, row → route → back-to-Overview → hub, console clean. **Still to confirm on the Pixel:** the
+  hub under a real finger in DE. Deferred: whether the **group level** (`GroupNav` tabs) gets a matching hub.
+- **MCN-3 · App chrome → a Settings screen on mobile (P2, open).** The theme switch (System/Light/Dark)
+  and, in the drawer, the language picker + version are app-bar / drawer controls today — a web pattern.
+  On mobile these belong in a **Settings/About screen** (theme defaults to System; language and version
+  live there). Recommend one shared Settings screen for web + mobile rather than diverging. Not yet
+  designed; would touch the shared shell (a small ADR/feature decision first).
+- **MCN-4 · Account entry top-right — keep.** The account/avatar menu top-right is the convention
+  (kept). Minor refinement to consider: make the **signed-out** state read clearly as "Sign in" rather
+  than an ambiguous avatar. No structural change.
+
 ## Mobile native-feel pass — Secret-Santa (2026-09-02)
 
 The MAUI head is at web parity and heading for a backend-free v1

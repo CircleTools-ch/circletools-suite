@@ -226,4 +226,8 @@
   <data name="ReconcileBodyPlural" xml:space="preserve"><value>Du hast {0} Gruppen erstellt, während du abgemeldet warst. In dein Konto übernehmen, damit sie über deine Geräte synchronisiert werden, oder verwerfen? Verwerfen kann nicht rückgängig gemacht werden.</value></data>
   <data name="ReconcileImport" xml:space="preserve"><value>Übernehmen</value></data>
   <data name="ReconcileDiscard" xml:space="preserve"><value>Verwerfen</value></data>
+  <data name="EventOverview" xml:space="preserve"><value>Übersicht</value></data>
+  <data name="HubWishlistCount" xml:space="preserve"><value>{0} von {1}</value></data>
+  <data name="HubDrawPending" xml:space="preserve"><value>Noch nicht ausgelost</value></data>
+  <data name="HubShareReady" xml:space="preserve"><value>Bereit</value></data>
 </root>

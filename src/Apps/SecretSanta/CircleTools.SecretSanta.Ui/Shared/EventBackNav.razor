@@ -1,0 +1,27 @@
+@inject IStringLocalizer<AppStrings> L
+@inject RecentAccessService Recent
+
+@* Back-to-overview link shown at the top of each event section page (ADR-0055): it replaces the old
+   horizontal tab strip. Tapping it returns to the event hub. Also records recency for the nav
+   quick-access, the way the retired EventNav did, so a deep link straight to a section still counts. *@
+<div class="mb-4">
+    <MudButton Href="@($"groups/{GroupId}/events/{EventId}")" StartIcon="@Icons.Material.Filled.ArrowBack"
+               Size="Size.Small" Variant="Variant.Text">@L["EventOverview"]</MudButton>
+</div>
+
+@code {
+    /// <summary>The owning group.</summary>
+    [Parameter]
+    public Guid GroupId { get; set; }
+
+    /// <summary>The event whose section is shown.</summary>
+    [Parameter]
+    public Guid EventId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // Best-effort recency, matching the retired EventNav; a failure just leaves the quick-access as is.
+        await Recent.RecordEventAsync(EventId);
+        await Recent.RecordGroupAsync(GroupId);
+    }
+}

@@ -194,4 +194,8 @@
   <data name="ReconcileBodyPlural" xml:space="preserve"><value>You created {0} groups while signed out. Import them into your account to sync them across your devices, or discard them? Discarding can't be undone.</value></data>
   <data name="ReconcileImport" xml:space="preserve"><value>Import</value></data>
   <data name="ReconcileDiscard" xml:space="preserve"><value>Discard</value></data>
+  <data name="EventOverview" xml:space="preserve"><value>Overview</value></data>
+  <data name="HubWishlistCount" xml:space="preserve"><value>{0} of {1}</value></data>
+  <data name="HubDrawPending" xml:space="preserve"><value>Not drawn yet</value></data>
+  <data name="HubShareReady" xml:space="preserve"><value>Ready</value></data>
 </root>

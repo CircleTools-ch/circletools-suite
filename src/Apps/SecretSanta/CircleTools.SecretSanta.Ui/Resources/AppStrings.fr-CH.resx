@@ -226,4 +226,8 @@
   <data name="ReconcileBodyPlural" xml:space="preserve"><value>Vous avez créé {0} groupes en étant déconnecté. Les importer dans votre compte pour les synchroniser sur vos appareils, ou les supprimer ? La suppression est définitive.</value></data>
   <data name="ReconcileImport" xml:space="preserve"><value>Importer</value></data>
   <data name="ReconcileDiscard" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="EventOverview" xml:space="preserve"><value>Aperçu</value></data>
+  <data name="HubWishlistCount" xml:space="preserve"><value>{0} sur {1}</value></data>
+  <data name="HubDrawPending" xml:space="preserve"><value>Pas encore tiré</value></data>
+  <data name="HubShareReady" xml:space="preserve"><value>Prêt</value></data>
 </root>
