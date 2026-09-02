@@ -13,6 +13,12 @@ public sealed class CultureProvider(IKeyValueStore store, CultureOptions options
 {
     private CultureInfo _current = AppCultures.Resolve(null);
 
+    // The formatting culture (dates, numbers, currency): the device/OS region, kept independent of the
+    // chosen UI language (ADR-0056). A Swiss user reading the app in English still sees Swiss dates — the
+    // language only changes the words. Seeded from the process default and replaced with the real platform
+    // region in InitializeAsync, before any language is applied.
+    private CultureInfo _formatting = FormattingOrDefault(CultureInfo.CurrentCulture);
+
     /// <inheritdoc />
     public CultureInfo CurrentCulture => _current;
 
@@ -22,6 +28,11 @@ public sealed class CultureProvider(IKeyValueStore store, CultureOptions options
     /// <inheritdoc />
     public async ValueTask<CultureInfo> InitializeAsync(CancellationToken cancellationToken = default)
     {
+        // Capture the platform's region (browser/OS locale) for formatting before any UI language is
+        // applied — both heads seed CurrentCulture from the device at startup (ADR-0056). This is the
+        // formatting source of truth from here on; the language choice never overwrites it.
+        _formatting = FormattingOrDefault(CultureInfo.CurrentCulture);
+
         var stored = await store.GetAsync(StorageScope.Durable, options.StorageKey, cancellationToken);
 
         // First run (nothing stored): follow the device/browser language, mapped to the nearest supported
@@ -55,22 +66,40 @@ public sealed class CultureProvider(IKeyValueStore store, CultureOptions options
     }
 
     /// <summary>
-    /// Applies a culture to both the process defaults and the calling thread.
+    /// Applies a language: the UI culture follows it, the formatting culture stays on the device region.
     /// </summary>
     /// <remarks>
-    /// Setting only <see cref="CultureInfo.DefaultThreadCurrentCulture"/> is enough at startup, but not
-    /// for a change made while the app is running: the default is consulted only by threads that have
-    /// not already resolved their own <see cref="CultureInfo.CurrentCulture"/>, and by then this one
-    /// has. Assigning both is what lets the language switch take effect on a re-render instead of
-    /// needing a page reload.
+    /// <para>
+    /// Language and region are decoupled (ADR-0056). The chosen <paramref name="language"/> drives
+    /// <see cref="CultureInfo.CurrentUICulture"/> — what <c>IStringLocalizer</c> resolves — while
+    /// date/number/currency formatting stays on <see cref="_formatting"/>, the device region captured at
+    /// startup. So switching language changes the words, not the date format.
+    /// </para>
+    /// <para>
+    /// Both the process defaults and the calling thread are assigned: setting only
+    /// <see cref="CultureInfo.DefaultThreadCurrentUICulture"/> is enough at startup, but not for a change
+    /// made while the app is running — the default is consulted only by threads that have not already
+    /// resolved their own culture, and by then this one has. Assigning both is what lets a language switch
+    /// take effect on a re-render instead of needing a page reload.
+    /// </para>
     /// </remarks>
-    /// <param name="culture">The culture to apply.</param>
-    private void Apply(CultureInfo culture)
+    /// <param name="language">The UI language to apply.</param>
+    private void Apply(CultureInfo language)
     {
-        _current = culture;
-        CultureInfo.DefaultThreadCurrentCulture = culture;
-        CultureInfo.DefaultThreadCurrentUICulture = culture;
-        CultureInfo.CurrentCulture = culture;
-        CultureInfo.CurrentUICulture = culture;
+        _current = language;
+
+        // UI/resource lookup follows the chosen language...
+        CultureInfo.DefaultThreadCurrentUICulture = language;
+        CultureInfo.CurrentUICulture = language;
+
+        // ...while formatting follows the device region, independent of the language (ADR-0056). The
+        // region is fixed for the session, so a language switch never changes the date/number format.
+        CultureInfo.DefaultThreadCurrentCulture = _formatting;
+        CultureInfo.CurrentCulture = _formatting;
     }
+
+    // The device region to format with, or the Swiss-first default when the platform reports none (e.g.
+    // invariant globalization) — so formatting is never the culture-less invariant format.
+    private static CultureInfo FormattingOrDefault(CultureInfo platform) =>
+        string.IsNullOrEmpty(platform.Name) ? new CultureInfo(AppCultures.DefaultCulture) : platform;
 }

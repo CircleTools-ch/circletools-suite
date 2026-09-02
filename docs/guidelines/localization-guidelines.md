@@ -14,7 +14,10 @@
 ## 3. Rules
 - No user-facing string hard-coded in components or domain.
 - Keys are English, descriptive, and stable; one resource entry per concept.
-- Formatting (dates, numbers, currency) via `CultureInfo` — Swiss conventions; never in the domain.
+- Formatting (dates, numbers, currency) via `CultureInfo`; never in the domain. **Formatting follows the
+  device region, not the UI language** ([ADR-0056](../adr/0056-decouple-ui-language-from-formatting-region.md)):
+  a Swiss user reading the app in English still gets Swiss dates. Format with the ambient
+  `CultureInfo.CurrentCulture` (the region) — never the language — so this stays automatic.
 - New feature strings must ship with **DE + EN + FR** (see the feature-spec checklist).
 - **A string that interpolates a count needs a second entry for one.** There is no pluralization
   library here, and `string.Format` cannot inflect: DE, EN and FR all change the noun *and* the verb
@@ -37,8 +40,10 @@
   - Start the runtime with `loadAllSatelliteResources: true`. Otherwise only the startup culture's
     resource assemblies are downloaded and every other language falls back to the neutral strings —
     the picker "works" and shows English.
-  - Set `CultureInfo.CurrentCulture`/`CurrentUICulture`, not just the `DefaultThread*` properties.
-    The defaults are consulted only by threads that have not already resolved their own.
+  - Set `CultureInfo.CurrentUICulture` (the language) — and `CurrentCulture` (the region, from the
+    device, not the language — [ADR-0056](../adr/0056-decouple-ui-language-from-formatting-region.md)) —
+    not just the `DefaultThread*` properties. The defaults are consulted only by threads that have not
+    already resolved their own.
   - Rebuild the tree, don't just re-render it: wrap the router in `CultureBoundary` and put an
     `@key` on the `Router` bound to the culture name. A `StateHasChanged` above the router does not
     reliably reach the layout.

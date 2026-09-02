@@ -43,14 +43,23 @@ else
             <MudCardContent>
                 <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["EventLabel"]</MudText>
                 <MudStack Spacing="2">
-                    @* Native date input (<input type="date">) rather than MudDatePicker: on a phone the
-                       Mud calendar (inline popover or Dialog modal alike) clips and loses focus, so late-month
-                       days were unreachable. The native control opens the OS date picker on device and the
-                       browser's own picker on the web — no clipping, and localized by the device. The value is
-                       the invariant "yyyy-MM-dd" the input expects; see LoadAsync/SaveAsync for the mapping. *@
-                    <MudTextField @bind-Value="_eventDate" Label="@L["DateLabel"]" Variant="Variant.Outlined"
-                                  Margin="Margin.Dense" InputType="InputType.Date" Class="ct-date-field"
-                                  Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.CalendarMonth" />
+                    @* The date control differs per head. In the browser (OperatingSystem.IsBrowser() is true
+                       only under the WASM runtime) MudBlazor's date picker is used: it is themed and formats
+                       by the app culture, where the native <input type="date"> is unstyled and locale-fixed.
+                       On the device head a native input drives the OS picker instead — the Mud calendar clips
+                       and loses focus in the phone WebView (late-month days unreachable). The native value is
+                       the invariant "yyyy-MM-dd" string the input expects (EventDateText adapts it). *@
+                    @if (OperatingSystem.IsBrowser())
+                    {
+                        <MudDatePicker @bind-Date="_eventDate" Label="@L["DateLabel"]" Variant="Variant.Outlined"
+                                       Margin="Margin.Dense" Editable="true" />
+                    }
+                    else
+                    {
+                        <MudTextField @bind-Value="EventDateText" Label="@L["DateLabel"]" Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" InputType="InputType.Date" Class="ct-date-field"
+                                      Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.CalendarMonth" />
+                    }
                     <MudTextField @bind-Value="_eventLocation" Label="@L["LocationLabel"]" Variant="Variant.Outlined"
                                   Margin="Margin.Dense" />
                     <MudTextField @bind-Value="_eventDescription" Label="@L["DescriptionLabel"]" Variant="Variant.Outlined"
@@ -84,13 +93,25 @@ else
     private string _name = string.Empty;
     private decimal? _budgetAmount;
     private string _budgetCurrency = "CHF";
-    // The event date as the invariant "yyyy-MM-dd" string the native <input type="date"> uses; empty for
-    // no date. Mapped to/from the domain's DateTimeOffset? in LoadAsync/SaveAsync.
-    private string _eventDate = string.Empty;
+    // The event date; null for no date. The browser binds this directly (MudDatePicker); the device head's
+    // native <input type="date"> binds EventDateText, which adapts it to/from the invariant string format.
+    private DateTime? _eventDate;
     private string _eventLocation = string.Empty;
     private string _eventDescription = string.Empty;
     private string? _status;
     private string? _budgetError;
+
+    // Adapts the DateTime? model to the invariant "yyyy-MM-dd" string a native <input type="date"> uses
+    // (device head only). Empty string clears the date.
+    private string EventDateText
+    {
+        get => _eventDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        set => _eventDate = DateTime.TryParseExact(
+            value, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.DateTimeStyles.None, out var parsed)
+            ? parsed
+            : null;
+    }
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
@@ -106,7 +127,7 @@ else
         _name = _event.Name;
         _budgetAmount = _event.Budget?.Amount;
         _budgetCurrency = _event.Budget?.Currency ?? "CHF";
-        _eventDate = _event.Details?.Date?.DateTime.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+        _eventDate = _event.Details?.Date?.DateTime;
         _eventLocation = _event.Details?.Location ?? string.Empty;
         _eventDescription = _event.Details?.Description ?? string.Empty;
     }
@@ -148,11 +169,7 @@ else
             budgetCurrency = currency;
         }
 
-        DateTimeOffset? date = DateTime.TryParseExact(
-            _eventDate, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture,
-            System.Globalization.DateTimeStyles.None, out var parsedDate)
-            ? new DateTimeOffset(parsedDate, TimeSpan.Zero)
-            : null;
+        DateTimeOffset? date = _eventDate is { } value ? new DateTimeOffset(value, TimeSpan.Zero) : null;
 
         await Sender.Send(new RenameEventCommand(GroupId, EventId, _name));
         await Sender.Send(new SetBudgetCommand(GroupId, EventId, budgetAmount, budgetCurrency));
