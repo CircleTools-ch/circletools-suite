@@ -171,8 +171,28 @@ and consumes the [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-se
 
 **Selected earlier, distribution cluster (from the [mobile brainstorm](../brainstorming/2026-09-01-secret-santa-mobile.md)) — build next:**
 
-- **MNF-5 · QR code per reveal link (P2).** Show a scannable code so the recipient joins in the room with
-  no messaging app. Small, high-fit; spec as its own feature/backlog item.
+- **MNF-5 · QR code per reveal link (P2).** ✅ **Built 2026-09-02, browser-verified (DE/EN/FR); device
+  pass pending.** Each reveal link on the Share page gained a **QR CODE** button beside Copy/Share that
+  opens a centered dialog (`SecretSanta.Ui/Shared/QrDialog.razor` via `IDialogService`) titled with the
+  recipient's name, showing a large scannable QR of *their* link plus a one-line hint — so the organizer
+  holds up their phone and the recipient scans it, no messaging app needed. The code is drawn by a new
+  reusable `QrImage.razor` component over **QRCoder 1.8.0** `PngByteQRCode`: pure managed, no
+  System.Drawing and no JS interop, so it renders the same PNG data-URI **offline** in the WASM web head
+  and the MAUI Blazor Hybrid webview with **no platform seam** (unlike `IShareService`). ECC level M keeps
+  a 2 KB link (the `MaxRecommendedUrlLength` budget) within capacity while short links stay easy to scan;
+  the PNG renders `image-rendering: pixelated` on a white ground so it is crisp and scannable in dark
+  theme too. **Decision, no ADR:** QRCoder is a small, single-purpose, reversible dependency scoped to
+  `SecretSanta.Ui` (kept out of the Main bundle); recorded here and in `Directory.Packages.props` rather
+  than as an architecture decision — promote to `Ui.Shared` if a second app needs QR. Three new strings
+  (`ShowQr`, `QrHint`, `Close`) in all four resx (de-CH "Schliessen"; FR "vous"); parity green; Ui suite
+  **33/33** (added `QrImageTests` + a Share-page QR-button test). **Browser-verified** (Playwright,
+  1280px + 390px, DE/EN/FR): create → event → 3 members → draw → Share shows three QR CODE buttons →
+  the dialog renders a valid `data:image/png` QR titled per recipient with the localized hint and Close,
+  console clean (only the pre-existing `<link rel=preload>` boot warnings). **Still to confirm on the
+  Pixel:** the QR under a real camera scan, and the three-button (Copy/QR/Share) row on a phone where the
+  Web Share API is present (the headless desktop context hides Share, so only the two-button row was
+  captured on narrow). Deferred: a QR-decode assertion (the link → `QrImage.Value` wiring is unit-tested
+  and the code renders correctly on screen).
 - **MNF-6 · Add-to-calendar for an event (P2).** One tap from the event's date/location/description into
   the phone calendar.
 - **MNF-7 · Share all links for an event at once (P2).** Follow-on to the existing share seam.

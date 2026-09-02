@@ -1,0 +1,39 @@
+@*
+    Shows one reveal link as a large, scannable QR code (MNF-5). Presented via IDialogService so the
+    organizer can hold up their phone and let the recipient scan the code to open their reveal link —
+    no messaging app needed. Resolve with QrDialogExtensions.ShowQrDialogAsync.
+*@
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Label</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="d-flex flex-column align-center gap-3 pb-1">
+            <QrImage Value="@Url" Alt="@Label" Size="240" />
+            <MudText Typo="Typo.body2" Class="mud-text-secondary" Align="Align.Center">@Hint</MudText>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">@CloseLabel</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance Dialog { get; set; } = default!;
+
+    /// <summary>The recipient's name, shown as the dialog title.</summary>
+    [Parameter] public string Label { get; set; } = string.Empty;
+
+    /// <summary>The reveal-link URL to encode.</summary>
+    [Parameter] public string Url { get; set; } = string.Empty;
+
+    /// <summary>A one-line instruction under the code.</summary>
+    [Parameter] public string Hint { get; set; } = string.Empty;
+
+    /// <summary>Label for the dismiss button.</summary>
+    [Parameter] public string CloseLabel { get; set; } = string.Empty;
+
+    private void Close() => Dialog.Close();
+}

@@ -19,6 +19,9 @@
   <data name="Share" xml:space="preserve"><value>Partager</value></data>
   <data name="MoreActions" xml:space="preserve"><value>Plus d'actions</value></data>
   <data name="ShareMessage" xml:space="preserve"><value>Voici votre lien Père Noël secret 🎁</value></data>
+  <data name="ShowQr" xml:space="preserve"><value>Code QR</value></data>
+  <data name="QrHint" xml:space="preserve"><value>Faites scanner le code à cette personne pour ouvrir son lien.</value></data>
+  <data name="Close" xml:space="preserve"><value>Fermer</value></data>
   <data name="NavGroups" xml:space="preserve"><value>Groupes</value></data>
   <data name="NavMore" xml:space="preserve"><value>Plus</value></data>
   <data name="NavMoreEllipsis" xml:space="preserve"><value>Plus…</value></data>

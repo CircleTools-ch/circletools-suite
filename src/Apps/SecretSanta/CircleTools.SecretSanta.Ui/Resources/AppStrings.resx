@@ -73,6 +73,9 @@
   <data name="Share" xml:space="preserve"><value>Share</value></data>
   <data name="MoreActions" xml:space="preserve"><value>More actions</value></data>
   <data name="ShareMessage" xml:space="preserve"><value>Here's your Secret Santa link 🎁</value></data>
+  <data name="ShowQr" xml:space="preserve"><value>QR code</value></data>
+  <data name="QrHint" xml:space="preserve"><value>Have this person scan the code to open their reveal link.</value></data>
+  <data name="Close" xml:space="preserve"><value>Close</value></data>
   <data name="NavGroups" xml:space="preserve"><value>Groups</value></data>
   <data name="NavMore" xml:space="preserve"><value>More</value></data>
   <data name="NavMoreEllipsis" xml:space="preserve"><value>More…</value></data>
