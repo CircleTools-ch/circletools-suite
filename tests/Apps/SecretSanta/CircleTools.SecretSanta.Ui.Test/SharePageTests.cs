@@ -68,6 +68,19 @@ public sealed class SharePageTests : IDisposable
     }
 
     [Fact]
+    public void QrButtonIsOffered_ForEveryLink_RegardlessOfShareSupport()
+    {
+        // The QR code is generated client-side, so it is available on every platform — unlike Share,
+        // it does not gate on IShareService support.
+        _share.Supported = false;
+
+        var cut = RenderShare();
+
+        // The localizer under test echoes keys, so the QR button reads its key "ShowQr".
+        Assert.Contains(cut.FindAll("button"), b => b.TextContent.Trim() == "ShowQr");
+    }
+
+    [Fact]
     public void ClickingShare_HandsTheRevealLinkToTheShareService()
     {
         _share.Supported = true;

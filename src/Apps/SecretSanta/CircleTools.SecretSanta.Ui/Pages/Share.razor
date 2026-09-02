@@ -3,6 +3,7 @@
 @inject ISender Sender
 @inject IJSRuntime JS
 @inject IShareService ShareService
+@inject IDialogService Dialogs
 @inject IStringLocalizer<AppStrings> L
 
 <PageTitle>@L["ShareTitle"]</PageTitle>
@@ -51,6 +52,12 @@ else
                             <MudButton Variant="Variant.Outlined" Color="Color.Primary"
                                        StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="() => CopyAsync(link.Url)">
                                 @(_copiedUrl == link.Url ? L["Copied"] : L["Copy"])
+                            </MudButton>
+                            @* A QR code the recipient scans off the organizer's screen — no messaging app
+                               needed. Available on every platform (the code is generated client-side). *@
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.QrCode2" OnClick="() => ShowQrAsync(link)">
+                                @L["ShowQr"]
                             </MudButton>
                         </div>
                     </div>
@@ -113,6 +120,9 @@ else
         var text = $"{L["ShareMessage"]}\n{link.Url}";
         await ShareService.ShareAsync(L["AppName"], text, link.Url);
     }
+
+    private Task ShowQrAsync(RevealLinkDto link) =>
+        Dialogs.ShowQrDialogAsync(link.ForLabel, link.Url, L["QrHint"], L["Close"]);
 
     private async Task CopyAsync(string url)
     {

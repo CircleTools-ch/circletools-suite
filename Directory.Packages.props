@@ -120,6 +120,13 @@
     <PackageVersion Include="MudBlazor" Version="9.8.0" />
   </ItemGroup>
 
+  <!-- QR codes for reveal links (MNF-5). PngByteQRCode is pure managed (no System.Drawing), so it runs
+       identically in the WASM web head and the MAUI Blazor Hybrid webview with no platform seam. Scoped
+       to SecretSanta.Ui — the only app that shares reveal links today. -->
+  <ItemGroup>
+    <PackageVersion Include="QRCoder" Version="1.8.0" />
+  </ItemGroup>
+
   <!-- Secret-Santa (local-first): JS interop for browser localStorage; MAUI Blazor Hybrid head. -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.JSInterop" Version="10.0.10" />
