@@ -185,3 +185,28 @@ html {
     border-color: var(--mud-palette-primary);
     outline: none;
 }
+
+/* The event date uses a native <input type="date"> (EventEditor) so the OS date picker is used on a
+   device (the Mud calendar clipped on a phone). Hide the browser's default calendar/dropdown indicator —
+   the little chevron clashes with the Material field — and lean on a MudBlazor calendar adornment as the
+   affordance. Tapping the field still opens the OS picker. Only one date input exists, so this is global
+   and forced (!important) to beat the WebView's default UA styling. */
+input[type="date"] {
+    /* Android WebView ignores display:none on the picker-indicator pseudo-element and renders the
+       chevron as native chrome; stripping the input's own appearance is what actually removes it.
+       Tapping the field still opens the OS date picker. */
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    display: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+    opacity: 0;
+}
+
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-clear-button {
+    display: none !important;
+}
