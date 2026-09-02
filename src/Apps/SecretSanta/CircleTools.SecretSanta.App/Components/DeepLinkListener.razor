@@ -1,0 +1,25 @@
+@implements IDisposable
+@inject DeepLinkService DeepLinks
+@inject Microsoft.AspNetCore.Components.NavigationManager Navigation
+
+@* Non-visual (ADR-0053): routes an incoming reveal App Link to the in-app /r page, which renders it
+   offline from the baked-in UI. Mounted once, outside the culture boundary, so it subscribes a single
+   time for the app's life. A link that arrived on a cold start is consumed on first render. *@
+
+@code {
+    protected override void OnInitialized() => DeepLinks.LinkReceived += OnLink;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        // Only after the first render is the router mounted and ready to react to the navigation.
+        if (firstRender && DeepLinks.ConsumePending() is { } pending)
+        {
+            OnLink(pending);
+        }
+    }
+
+    private void OnLink(string relativeUrl) =>
+        _ = InvokeAsync(() => Navigation.NavigateTo(relativeUrl));
+
+    public void Dispose() => DeepLinks.LinkReceived -= OnLink;
+}

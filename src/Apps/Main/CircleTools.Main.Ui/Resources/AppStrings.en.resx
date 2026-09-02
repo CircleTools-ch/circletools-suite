@@ -9,7 +9,6 @@
   <data name="NavMenu" xml:space="preserve"><value>Navigation menu</value></data>
   <data name="NavMore" xml:space="preserve"><value>More</value></data>
   <data name="NavDashboard" xml:space="preserve"><value>Dashboard</value></data>
-  <data name="NavHeartbeat" xml:space="preserve"><value>Heartbeat</value></data>
   <data name="NavProfile" xml:space="preserve"><value>Profile</value></data>
   <data name="NavSecurity" xml:space="preserve"><value>Security</value></data>
   <data name="NavData" xml:space="preserve"><value>Data &amp; account</value></data>

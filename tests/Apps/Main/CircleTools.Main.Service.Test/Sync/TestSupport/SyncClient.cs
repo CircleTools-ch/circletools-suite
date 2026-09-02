@@ -84,15 +84,17 @@ public sealed class SyncClient
         var cora = group.AddMember("Cora");
         var deniz = group.AddMember("Deniz");
 
-        // Wishlists are per event (ADR-0042): seed them on the group's default event (id == group id).
-        group.SetMemberWishlist(group.Id, ada, Wishlist.Create(["Books", "Tea"]));
-        group.SetMemberWishlist(group.Id, bern, Wishlist.Create(["Socks"]));
-        group.SetMemberWishlist(group.Id, deniz, Wishlist.Create(["Chocolate"]));
+        // A new group starts with no event (ADR-0042 amendment): add the occasion, then seed its
+        // per-event wishlists and draw.
+        var eventId = group.AddEvent("Christmas");
+        group.SetMemberWishlist(eventId, ada, Wishlist.Create(["Books", "Tea"]));
+        group.SetMemberWishlist(eventId, bern, Wishlist.Create(["Socks"]));
+        group.SetMemberWishlist(eventId, deniz, Wishlist.Create(["Chocolate"]));
 
         // One exclusion the draw must honour, so the "exclusions crossed too" assertion has teeth.
         group.AddExclusion(ada, bern);
 
-        var result = group.RunDraw(group.Id, new DrawGenerator(new SystemRandomSource()), DateTimeOffset.UtcNow);
+        var result = group.RunDraw(eventId, new DrawGenerator(new SystemRandomSource()), DateTimeOffset.UtcNow);
         if (!result.IsSuccess)
         {
             throw new InvalidOperationException("The seeded draw did not succeed; the harness group is misconfigured.");

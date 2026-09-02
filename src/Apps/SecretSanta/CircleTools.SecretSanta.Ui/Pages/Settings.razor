@@ -1,0 +1,63 @@
+@page "/settings"
+@inject IStringLocalizer<AppStrings> L
+@inject IStringLocalizer<SharedStrings> LS
+@inject ThemeState Theme
+@implements IDisposable
+
+@*
+    Settings (MCN-3): the app-chrome controls gathered into one screen — appearance (System/Light/Dark),
+    language, and the build version — instead of a top-bar toggle and drawer odds-and-ends. The same
+    screen serves web and the device heads (ADR-0040 shell). Appearance and language are dropdowns so
+    they read the same; both write through the shared ThemeState / ICultureProvider, so the whole app
+    follows without a reload.
+*@
+
+<PageTitle>@L["SettingsTitle"]</PageTitle>
+
+<MudText Typo="Typo.h4" GutterBottom="true">@L["SettingsTitle"]</MudText>
+
+<MudStack Spacing="5" Class="mt-2" Style="max-width:28rem;">
+    <MudSelect T="ThemeMode" Value="Theme.Mode" ValueChanged="OnThemeChangedAsync"
+               Label="@LS["ThemeAppearance"]" Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined"
+               Adornment="Adornment.Start" AdornmentIcon="@CurrentThemeIcon">
+        <MudSelectItem T="ThemeMode" Value="ThemeMode.System">@LS["ThemeSystem"]</MudSelectItem>
+        <MudSelectItem T="ThemeMode" Value="ThemeMode.Light">@LS["ThemeLight"]</MudSelectItem>
+        <MudSelectItem T="ThemeMode" Value="ThemeMode.Dark">@LS["ThemeDark"]</MudSelectItem>
+    </MudSelect>
+
+    <div>
+        <CultureSelector />
+        @* Signed in, the picker is device-local; the account language is the synced one and reverts this
+           on the next reconcile (ADR-0035). Say so and point at the Profile page (the durable path). *@
+        <AuthorizeView>
+            <Authorized>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1 d-block">
+                    @L["NavLanguageDeviceNote"]
+                    <MudLink Href="/account/profile" Typo="Typo.caption">@L["NavLanguageProfileLink"]</MudLink>
+                </MudText>
+            </Authorized>
+        </AuthorizeView>
+    </div>
+
+    <div>
+        <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["SettingsAbout"]</MudText>
+        <AppVersion />
+    </div>
+</MudStack>
+
+@code {
+    protected override void OnInitialized() => Theme.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private Task OnThemeChangedAsync(ThemeMode mode) => Theme.SetModeAsync(mode);
+
+    private string CurrentThemeIcon => Theme.Mode switch
+    {
+        ThemeMode.Light => Icons.Material.Filled.LightMode,
+        ThemeMode.Dark => Icons.Material.Filled.DarkMode,
+        _ => Icons.Material.Filled.BrightnessAuto,
+    };
+
+    public void Dispose() => Theme.Changed -= OnChanged;
+}

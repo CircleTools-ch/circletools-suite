@@ -1,6 +1,0 @@
-/* The group sub-nav uses MudTabs purely as a navigation strip: each section is its own route rendered
-   below this component, so the tabs carry no panel content. Hide the (empty) MudTabs content region so
-   it does not add a blank gap under the tab header. ::deep reaches the MudTabs component's own markup. */
-.ct-group-tabs ::deep .mud-tabs-panels {
-    display: none;
-}

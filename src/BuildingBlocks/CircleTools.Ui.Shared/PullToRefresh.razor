@@ -1,0 +1,72 @@
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+@*
+    Pull-to-refresh (FEAT-008 W3, ADR-0054): a shared WebView/browser gesture for both heads. When the
+    page is at the top and dragged down past a threshold, it fires OnRefresh (the shell wires it to the
+    background sync) and shows a brief spinner. The gesture logic lives in js/pullToRefresh.js; this
+    component renders the indicator and bridges the JS callback to OnRefresh. It renders only the fixed
+    indicator overlay — mount it once in the shell. On a host with no touch/JS (prerender, desktop with a
+    mouse) the gesture is simply absent; nothing above depends on it.
+*@
+
+<div id="ct-ptr-indicator" class="ct-ptr-indicator" aria-hidden="true">
+    <div class="ct-ptr-circle">
+        <span class="ct-ptr-spinner"></span>
+    </div>
+</div>
+
+@code {
+    /// <summary>Raised when the user pulls past the threshold. Wire it to a refresh (e.g. a sync trigger).</summary>
+    [Parameter] public EventCallback OnRefresh { get; set; }
+
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<PullToRefresh>? _ref;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _ref = DotNetObjectReference.Create(this);
+        try
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./_content/CircleTools.Ui.Shared/js/pullToRefresh.js");
+            await _module.InvokeVoidAsync("attach", _ref);
+        }
+        catch (JSException)
+        {
+            // No touch/JS environment or the module is unavailable: the gesture is simply absent.
+        }
+    }
+
+    /// <summary>Called from JS when the user pulls past the threshold.</summary>
+    [JSInvokable]
+    public Task OnPulled() => OnRefresh.InvokeAsync();
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_module is not null)
+            {
+                await _module.InvokeVoidAsync("detach");
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // The page is going away; there is no runtime left to release the module in.
+        }
+        catch (JSException)
+        {
+            // Best-effort teardown.
+        }
+
+        _ref?.Dispose();
+    }
+}

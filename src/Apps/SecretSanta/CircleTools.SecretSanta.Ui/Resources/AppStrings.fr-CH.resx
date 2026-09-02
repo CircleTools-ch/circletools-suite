@@ -16,8 +16,12 @@
   <data name="Open" xml:space="preserve"><value>Ouvrir</value></data>
   <data name="Copy" xml:space="preserve"><value>Copier</value></data>
   <data name="Copied" xml:space="preserve"><value>Copié !</value></data>
+  <data name="Share" xml:space="preserve"><value>Partager</value></data>
+  <data name="MoreActions" xml:space="preserve"><value>Plus d'actions</value></data>
+  <data name="ShareMessage" xml:space="preserve"><value>Voici votre lien Père Noël secret 🎁</value></data>
   <data name="NavGroups" xml:space="preserve"><value>Groupes</value></data>
   <data name="NavMore" xml:space="preserve"><value>Plus</value></data>
+  <data name="NavMoreEllipsis" xml:space="preserve"><value>Plus…</value></data>
   <data name="NavMembers" xml:space="preserve"><value>Membres</value></data>
   <data name="NavExclusions" xml:space="preserve"><value>Exclusions</value></data>
   <data name="NavDraw" xml:space="preserve"><value>Tirage</value></data>
@@ -25,7 +29,11 @@
   <data name="GroupsTitle" xml:space="preserve"><value>Groupes</value></data>
   <data name="NewGroupPlaceholder" xml:space="preserve"><value>Nom du nouveau groupe</value></data>
   <data name="CreateGroup" xml:space="preserve"><value>Créer un groupe</value></data>
-  <data name="NoGroups" xml:space="preserve"><value>Aucun groupe pour l'instant.</value></data>
+  <data name="EmptyStateHeadline" xml:space="preserve"><value>Organisez un Père Noël secret avec votre groupe</value></data>
+  <data name="EmptyStateExplainer" xml:space="preserve"><value>Ajoutez tout le monde, indiquez qui ne doit pas tirer qui, et tirez les noms équitablement. Chaque personne reçoit un lien privé qui ne révèle que la personne tirée et sa liste de souhaits — sans connexion et sans compte. Créez un groupe pour commencer.</value></data>
+  <data name="EmptyStateAccountSell" xml:space="preserve"><value>Connectez-vous pour synchroniser vos groupes entre vos appareils, voir votre propre attribution et tenir votre propre liste de souhaits.</value></data>
+  <data name="EmptyStateSignIn" xml:space="preserve"><value>Se connecter</value></data>
+  <data name="EmptyStateSignedInHint" xml:space="preserve"><value>Aucun groupe pour l'instant. Créez-en un, ou partez de l'un de vos cercles.</value></data>
   <data name="MembersColumn" xml:space="preserve"><value>Membres</value></data>
   <data name="DrawCompleteBadge" xml:space="preserve"><value>Tirage effectué</value></data>
   <data name="DrawInvalidatedBadge" xml:space="preserve"><value>Nouveau tirage requis</value></data>
@@ -66,16 +74,16 @@
   <data name="ShareTitle" xml:space="preserve"><value>Partager les liens</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Envoyez à chaque personne son propre lien. Seul le destinataire voit à qui il offre.</value></data>
   <data name="NoDrawYet" xml:space="preserve"><value>Lancez d'abord un tirage pour générer les liens.</value></data>
-  <data name="DrawInvalidatedNotice" xml:space="preserve"><value>Les membres ont changé, le tirage précédent ne s'applique donc plus. Veuillez relancer le tirage.</value></data>
+  <data name="DrawInvalidatedNotice" xml:space="preserve"><value>Les membres ont changé depuis ce tirage, il ne couvre donc plus tout le monde. Relancez le tirage pour le mettre à jour — le résultat précédent reste visible jusque-là.</value></data>
   <data name="RedrawWarning" xml:space="preserve"><value>Cet événement a déjà été tiré au sort. Relancer le tirage remplace toutes les attributions - les liens déjà envoyés indiqueront la mauvaise personne.</value></data>
   <data name="RedrawConfirm" xml:space="preserve"><value>Relancer quand même le tirage</value></data>
-  <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>Ce groupe a déjà été tiré au sort. Ajouter ou retirer un membre annule ce tirage et vous devrez le relancer.</value></data>
+  <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>Ce groupe a déjà été tiré au sort. Ajouter ou retirer un membre implique de relancer le tirage pour inclure tout le monde. Les occasions déjà tirées conservent les personnes qui en faisaient partie.</value></data>
   <data name="DuplicateMemberError" xml:space="preserve"><value>Un membre nommé « {0} » existe déjà dans ce groupe.</value></data>
   <data name="MemberSaveFailed" xml:space="preserve"><value>Le membre n'a pas pu être enregistré.</value></data>
   <data name="BudgetAmountInvalid" xml:space="preserve"><value>Saisis un montant de budget supérieur à zéro.</value></data>
   <data name="CurrencyInvalid" xml:space="preserve"><value>Saisis un code de devise à 3 lettres (p. ex. CHF).</value></data>
   <data name="ConfirmDeleteGroup" xml:space="preserve"><value>Supprimer « {0} » et tout son contenu ? Cette action est irréversible.</value></data>
-  <data name="ConfirmRemoveMember" xml:space="preserve"><value>Retirer « {0} » de ce groupe ?</value></data>
+  <data name="ConfirmRemoveMember" xml:space="preserve"><value>Retirer « {0} » de ce groupe ? La personne reste dans les occasions déjà tirées.</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Oui, supprimer</value></data>
   <data name="ConfirmRemove" xml:space="preserve"><value>Oui, retirer</value></data>
   <data name="ExclusionSelfNotAllowed" xml:space="preserve"><value>Une personne ne peut pas être exclue d'elle-même - elle ne se voit jamais attribuer son propre nom.</value></data>
@@ -190,6 +198,8 @@
   <data name="NavMyLinks" xml:space="preserve"><value>Demandes de lien</value></data>
   <data name="NavMyAssignments" xml:space="preserve"><value>Mes attributions</value></data>
   <data name="NavMyWishlists" xml:space="preserve"><value>Mes listes de souhaits</value></data>
+  <data name="NavLanguageDeviceNote" xml:space="preserve"><value>Ceci change la langue sur cet appareil uniquement. La langue de votre compte se règle dans votre</value></data>
+  <data name="NavLanguageProfileLink" xml:space="preserve"><value>profil.</value></data>
   <data name="NavPinned" xml:space="preserve"><value>Épinglés</value></data>
   <data name="PinGroup" xml:space="preserve"><value>Épingler le groupe</value></data>
   <data name="UnpinGroup" xml:space="preserve"><value>Détacher le groupe</value></data>
@@ -198,6 +208,8 @@
   <data name="NavEventDetails" xml:space="preserve"><value>Détails</value></data>
   <data name="NavWishlists" xml:space="preserve"><value>Listes de souhaits</value></data>
   <data name="DefaultEventName" xml:space="preserve"><value>Événement</value></data>
+  <data name="DefaultEventNameFormat" xml:space="preserve"><value>Noël {0}</value></data>
+  <data name="NoEventsYet" xml:space="preserve"><value>Aucune occasion pour l'instant. Ajoutez la première ci-dessus pour tirer les noms, partager des liens et recueillir les listes de souhaits.</value></data>
   <data name="EventNameLabel" xml:space="preserve"><value>Nom de l'événement</value></data>
   <data name="EventNamePlaceholder" xml:space="preserve"><value>p. ex. Noël 2026</value></data>
   <data name="AddEvent" xml:space="preserve"><value>Ajouter un événement</value></data>
@@ -214,4 +226,10 @@
   <data name="ReconcileBodyPlural" xml:space="preserve"><value>Vous avez créé {0} groupes en étant déconnecté. Les importer dans votre compte pour les synchroniser sur vos appareils, ou les supprimer ? La suppression est définitive.</value></data>
   <data name="ReconcileImport" xml:space="preserve"><value>Importer</value></data>
   <data name="ReconcileDiscard" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="EventOverview" xml:space="preserve"><value>Aperçu</value></data>
+  <data name="HubWishlistCount" xml:space="preserve"><value>{0} sur {1}</value></data>
+  <data name="HubDrawPending" xml:space="preserve"><value>Pas encore tiré</value></data>
+  <data name="HubShareReady" xml:space="preserve"><value>Prêt</value></data>
+  <data name="SettingsTitle" xml:space="preserve"><value>Paramètres</value></data>
+  <data name="SettingsAbout" xml:space="preserve"><value>À propos</value></data>
 </root>

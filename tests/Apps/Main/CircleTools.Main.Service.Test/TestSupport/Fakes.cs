@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using CircleTools.Application;
-using CircleTools.Main.Service.Core.Domain;
 
 namespace CircleTools.Main.Service.Test.TestSupport;
 
@@ -15,23 +14,6 @@ public sealed class PingCommandHandler : ICommandHandler<PingCommand, string>
     /// <inheritdoc />
     public Task<string> HandleAsync(PingCommand command, CancellationToken cancellationToken) =>
         Task.FromResult($"pong:{command.Text}");
-}
-
-/// <summary>Hand-written in-memory <see cref="IHeartbeatRepository"/> fake.</summary>
-public sealed class InMemoryHeartbeatRepository : IHeartbeatRepository
-{
-    private readonly List<Heartbeat> _store = [];
-
-    /// <inheritdoc />
-    public Task AddAsync(Heartbeat heartbeat, CancellationToken cancellationToken)
-    {
-        _store.Add(heartbeat);
-        return Task.CompletedTask;
-    }
-
-    /// <inheritdoc />
-    public Task<IReadOnlyList<Heartbeat>> ListAsync(CancellationToken cancellationToken) =>
-        Task.FromResult<IReadOnlyList<Heartbeat>>(_store.ToList());
 }
 
 /// <summary>Logger provider that records formatted log messages for assertions.</summary>

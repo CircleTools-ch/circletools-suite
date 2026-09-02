@@ -11,7 +11,8 @@ public sealed record GetEventQuery(Guid GroupId, Guid EventId) : IQuery<EventDto
 
 /// <summary>Handles <see cref="GetEventQuery"/>.</summary>
 /// <param name="repository">The group repository port.</param>
-public sealed class GetEventQueryHandler(IGroupRepository repository)
+/// <param name="time">The clock, so a past occasion's stale draw is not flagged "re-draw needed" (ADR-0052).</param>
+public sealed class GetEventQueryHandler(IGroupRepository repository, TimeProvider time)
     : IQueryHandler<GetEventQuery, EventDto?>
 {
     /// <inheritdoc />
@@ -21,6 +22,6 @@ public sealed class GetEventQueryHandler(IGroupRepository repository)
 
         var group = await repository.GetAsync(query.GroupId, cancellationToken);
         var occasion = group?.FindEvent(query.EventId);
-        return group is null || occasion is null ? null : GroupMapper.ToEventDto(group, occasion);
+        return group is null || occasion is null ? null : GroupMapper.ToEventDto(group, occasion, time.GetLocalNow());
     }
 }

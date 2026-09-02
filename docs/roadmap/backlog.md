@@ -3,6 +3,272 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Drawer & group-hub refinements — Secret-Santa (2026-09-02)
+
+Follow-ups from the maintainer's use, on top of the [chrome/navigation review](#mobile-chrome--navigation-review--secret-santa-2026-09-02).
+
+- **DGH-6 · Deleted groups lingered in the drawer quick-access (bug, P1).** ✅ **Fixed, browser-verified.**
+  A group deleted **while signed out** stayed in the drawer's quick-access until the next navigation/sync:
+  the after-change trigger (`AutoSyncBehavior` → `RequestSync`) only reaches the drawer via `SyncCompleted`,
+  which a signed-out cycle never fires. Added a **`LocalChanged`** event on `AutoSyncService` (raised by
+  `RequestSync`, so on every mutation regardless of sign-in); the shell subscribes and re-reads
+  quick-access, which filters by `VisibleGroupsService` so a deleted group drops immediately. Browser-verified
+  (390px, signed out): create → group in drawer; delete (no navigation) → gone from the list **and** the
+  drawer.
+
+- **DGH-1 · Settings pinned to the drawer bottom + bigger nav targets.** ✅ **Built, browser-verified.**
+  The drawer is now a full-height flex column: the main nav scrolls in the top region and **Settings sits
+  pinned at the very bottom** (empty space between when there are few groups/events), so it reads as an
+  app-level control. Drawer nav links get a **≥48px** target and a slightly larger font on narrow
+  viewports. Browser-verified (390px): Groups link 48px tall; Settings link top at y≈796 of 844.
+- **DGH-2 · Group hub (ADR-0055 amendment).** ✅ **Built, browser-verified; device pass pending.** The
+  group landing is now a **hub** matching the event hub ([FEAT-009](../features/FEAT-009-event-section-hub.md),
+  [ADR-0055 amendment](../adr/0055-event-navigation-mobile-section-hub.md)): the **occasions list** is the
+  primary content, with **Members** and **Exclusions** as `ct-hub-row` rows (icon + count + chevron) below;
+  `GroupNav` tabs retired, `GroupBackNav` added to the Members/Exclusions pages. Browser-verified (390px,
+  en-US): no tab strip; Members/Exclusions rows with counts; adding an event lists it; row → `/members`
+  with a back-to-group link; console clean.
+- **DGH-3 · Group rename moved into the header overflow menu.** ✅ **Built, browser-verified.** The
+  always-visible group-name text field is gone; rename lives behind the header **⋮ → "Rename"**, opening
+  the W4 `TextInputSheet` (extended to pre-fill the current name). **Suggested label: "Rename"
+  (Umbenennen)** while the name is the only group setting; promote to **"Group settings"** if more arrive.
+  Browser-verified: sheet pre-fills "Familie"; renaming updates the hub title.
+- **DGH-4 · Pinned Settings link clipped by the screen corner (P2).** ✅ **Built, browser-verified.** The
+  bottom-pinned Settings link sat flush against the phone's rounded corner / gesture bar. Added
+  `padding-bottom: calc(env(safe-area-inset-bottom) + 12px)` to `.ct-drawer-bottom` so it clears both.
+  Browser-verified (no inset): 12px gap; on device the gesture-bar safe area adds more. **Confirm on the Pixel.**
+- **DGH-5 · Create group / add event via a FAB (P1).** ✅ **Built, browser-verified; device pass pending.**
+  Same pattern as adding members (FEAT-008 W4): on a phone the inline **create-group** field (Groups) and
+  **add-event** field (group hub) are hidden and a **"+" FAB** opens a bottom sheet to enter the name — so
+  each screen leads with the *existing* groups/events. The add-event sheet **pre-fills the default name**
+  (e.g. "Christmas 2026"). Onboarding copy reworded to drop directional "above/oben/ci-dessus" (now width-
+  neutral: "Add a group to get started."). Inline fields stay on wide. Browser-verified (390px, en-US):
+  Groups FAB → sheet → group hub; events FAB → **pre-filled** sheet → event hub; inline fields hidden on
+  narrow; console clean. **Confirm the FAB feel on the Pixel.**
+
+## Mobile chrome & navigation review — Secret-Santa (2026-09-02)
+
+A pass over app-chrome placement and navigation against mobile conventions, driven by the maintainer's
+own use, on top of the [native-feel pass](#mobile-native-feel-pass--secret-santa-2026-09-02) below.
+
+- **MCN-1 · First-run language follows the device (P1).** ✅ **Built 2026-09-02.** The app used to start
+  in `de-CH` for everyone with no stored preference — it never looked at the device. Now
+  `CultureProvider.InitializeAsync` uses the device/browser language on first run, and `AppCultures.Resolve`
+  gained **language-prefix matching** (any `de-*` → de-CH, `fr-*` → fr-CH, `en-*` → en, else de-CH). A
+  stored pick still wins; a signed-in account's language still overrides on sync
+  ([ADR-0035](../adr/0035-profile-sync-seam.md)); nothing is persisted on first run, so the default keeps
+  following the device until the user picks. **Browser-verified** (Playwright): browser `de-DE` → *Gruppen*,
+  `en-US` → *Groups*, `fr-FR` → *Groupes*.
+- **MCN-2 · Event section hub instead of router-tabs (P1).** ✅ **Built 2026-09-02, browser-verified;
+  device pass pending.** [ADR-0055](../adr/0055-event-navigation-mobile-section-hub.md) **Accepted** and
+  realised as [FEAT-009](../features/FEAT-009-event-section-hub.md): the event landing is now a **section
+  hub** on all widths — a vertical list of Details / Wishlists / Draw / Share, each a tappable card with an
+  icon, a one-line **status** ("Not drawn yet", "{x} of {y}", "Drawn"…) and a chevron — replacing the
+  horizontally-scrolling tab strip (`EventNav` retired). Details gained its own `/details` route; each
+  section page shows a "← Overview" back-link (`EventBackNav`). Refinement during build: the hub is the
+  landing on **all** widths (not "hub-narrow / tabs-wide") because the responsive split forced the landing
+  route to be two screens by width — see the ADR. Four new strings in all locales; parity green; Ui suite
+  **29/29**. **Browser-verified** (Playwright, 390px, en-US): hub is the landing, no tab strip, four rows
+  with status, row → route → back-to-Overview → hub, console clean. **Still to confirm on the Pixel:** the
+  hub under a real finger in DE. Deferred: whether the **group level** (`GroupNav` tabs) gets a matching hub.
+- **MCN-3 · App chrome → a Settings screen (P2).** ✅ **Built 2026-09-02, browser-verified; device pass
+  pending.** New `/settings` page (`Pages/Settings.razor`) gathers **Appearance** (System/Light/Dark),
+  **Language**, and the build **version** into one screen, composing the existing shared `ThemeState` /
+  `CultureSelector` / `AppVersion`. The **theme switch is removed from the app bar** (native-mobile
+  placement; declutters the bar on web too) and the drawer's language/version block is replaced with a
+  single **Settings** nav link. One screen for web + mobile (no divergence). Two new strings
+  (`SettingsTitle`, `SettingsAbout`) in all locales; parity green; Ui suite **29/29**. **Browser-verified**
+  (Playwright, 390px): the drawer Settings link opens `/settings`; Appearance + Language dropdowns + a
+  version label render; selecting **Dark** flips the app to dark (body background light→dark); app bar has
+  no theme toggle; console clean. **Still to confirm on the Pixel** in DE. The signed-in language
+  device-note + Profile link moved onto the Settings page unchanged.
+- **MCN-4 · Account entry top-right — keep.** The account/avatar menu top-right is the convention
+  (kept). Minor refinement to consider: make the **signed-out** state read clearly as "Sign in" rather
+  than an ambiguous avatar. No structural change.
+
+## Mobile native-feel pass — Secret-Santa (2026-09-02)
+
+The MAUI head is at web parity and heading for a backend-free v1
+([ADR-0053](../adr/0053-backend-free-first-mobile-release.md)); the maintainer's priority is now
+**mobile-first — the phone gets the most attention**. An on-device/on-screen review asked how to make
+it feel more native. The governing decision — **one neutral Material design across web + both device
+heads, with "native feel" earned through motion, touch ergonomics and OS integration rather than
+per-platform (Cupertino) chrome** — is recorded as
+[ADR-0054](../adr/0054-mobile-native-feel-strategy.md). The near-term implementable subset (levers 1–4)
+is specified as [FEAT-008](../features/FEAT-008-mobile-native-feel-polish.md); the rest are stubs below,
+prioritized. This extends the [R2-6 mobile touch pass](#ux-round-2--secret-santa-usability-2026-09-01)
+and consumes the [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-secret-santa-mobile.md).
+
+**In [FEAT-008](../features/FEAT-008-mobile-native-feel-polish.md) (levers 1–4 — build first):**
+
+- **MNF-1 · Touch-ergonomics completion (P1).** ✅ **Built 2026-09-02.** A shared **mobile density
+  baseline** in `circletools.css` (narrow breakpoint) gives every `.mud-icon-button` a ≥48 px hit area
+  (input-adornment icons excepted so dense fields don't grow) and every `.mud-menu-item` ≥48 px — so
+  every screen, and every new one, inherits a phone-sized target instead of re-solving it. **Browser-verified**
+  (Playwright, 390 px): the Groups kebab overflow button measures **48×48**. The transient
+  `Size.Small` buttons in the confirm/edit clusters are left for **MNF-4**, which replaces those inline
+  clusters with action sheets.
+- **MNF-2 · Navigation clean-up (P1).** ✅ **Built 2026-09-02.** `SecretSantaShell` now shows the bottom
+  bar **only when it carries more than the single "Groups" tab** (`_showBottomBar`), and the app-bar
+  hamburger is hidden on narrow **only when a bottom bar owns the drawer** — so a signed-out / not-linked
+  phone gets one menu entry (the hamburger + drawer) and no degenerate one-item bar, while a linked
+  member gets the real tab bar and no redundant hamburger. Content bottom-padding (`ct-has-bottomnav`) is
+  now conditional too, so there's no phantom strip without a bar. **Browser-verified** (Playwright,
+  390 px, signed out): hamburger present, **no bottom bar**, hamburger opens the drawer, console clean.
+  The **signed-in linked-member** path (bottom bar shown, hamburger hidden on narrow) needs the live
+  Aspire stack + a linked member — deferred to the [TP-008](../features/TP-008-mobile-native-feel-polish.md)
+  live-stack / on-device pass.
+- **MNF-3a · Motion — haptics (P1).** ✅ **Built 2026-09-02.** New `IHapticFeedback` seam in
+  `Ui.Abstractions` with a MAUI impl over `Microsoft.Maui.Devices.HapticFeedback` (`Click`) and a
+  **web no-op** (`BrowserHapticFeedback`) — mirrors `IShareService`
+  ([ADR-0028](../adr/0028-browser-platform-adapters-block.md)). A light tap fires on **draw success**
+  (`Draw`), **giftee reveal** (`Reveal` + `MyAssignments`), and **pin/delete** (`Groups`). Android
+  `VIBRATE` permission added to the manifest. Covered by a bUnit test (reveal taps once; the web impl is
+  a no-op) — Ui suite **29/29**. **On-device: confirmed on the Pixel 9 Pro** — the buzz fires on **Auslosen (draw)**
+  and **delete confirm** (the two offline-reachable points; pin and the signed-in *my-assignments*
+  reveal are gated behind sign-in, and the public reveal-link buzz needs an opened `/r` link).
+  **Root cause found on device:** the platform haptic silently no-ops unless `HapticFeedback.Perform`
+  is marshalled onto the UI thread — a Blazor event handler is not guaranteed to be on the main looper.
+  `MauiHapticFeedback` now wraps it in `MainThread.BeginInvokeOnMainThread`; that is what made the buzz
+  fire. (A clean build with the temporary diagnostic logging removed is in the working tree; it is
+  behaviourally identical to the confirmed build and ships with the next Android deploy.)
+- **MNF-3b · Motion — pull-to-refresh (P1).** ✅ **Built & confirmed on the Pixel 2026-09-02.** A shared
+  `PullToRefresh` component + `js/pullToRefresh.js` in `Ui.Shared` (works on both
+  heads — both render in a web view): a top-of-page pull past ~72px shows a spinner and fires the existing
+  `AutoSyncService.RequestSync()` (a no-op signed out; pulled data arrives via the ordinary
+  `SyncCompleted` re-render). The gesture only engages at scroll-top while dragging down, so ordinary
+  scrolling is never blocked; `overscroll-behavior-y: contain` suppresses the browser's own reload-on-pull.
+  **Browser-verified** (Playwright, 390px touch): the indicator reaches full opacity while pulling,
+  **triggers past the threshold**, **ignores a below-threshold pull**, console clean. **On-device (Pixel):**
+  the maintainer confirmed the gesture feels good and **does not interfere with normal scrolling** — the
+  on-device tuning [FEAT-008](../features/FEAT-008-mobile-native-feel-polish.md) flagged is satisfied; no
+  threshold/resistance changes needed.
+- **MNF-4 · Native interaction patterns (P2).** ✅ **Built 2026-09-02, browser-verified; device pass
+  pending.** Two shared bottom-sheet dialogs in `SecretSanta.Ui/Shared` shown via `IDialogService` at
+  `DialogPosition.BottomCenter`:
+  - **`ConfirmSheet`** replaces the inline `MudAlert` confirmations for the three destructive actions —
+    **delete group** (`Groups`), **remove member** (`Members`), **re-draw** (`Draw`) — with a bottom
+    sheet carrying a red confirm, instead of a warning box that reflowed the card.
+  - **`TextInputSheet` + a FAB** on the **Members** screen: on narrow the inline add-member card is
+    hidden and a **`MudFab`** (bottom-right, cleared above the bottom nav / home indicator) opens the
+    add-member sheet; the inline card stays on wide.
+
+  **Browser-verified** (Playwright, 390px): the delete sheet and add sheet both open from the bottom, a
+  member added via the sheet lands in the roster, the inline add-card is hidden on narrow, console clean.
+  **Scope decisions (deliberate):** (1) the **Groups create field is left as-is** — it is the UX-003
+  first-run funnel and the onboarding copy in DE/EN/FR literally points "above" at it, so converting it
+  to a FAB is its own small UX/copy decision, not this polish pass; a Groups FAB is a candidate follow-up.
+  (2) The **kebab overflow menus stay** (they already have 48px targets from W1) — only the destructive
+  *confirmations* became sheets, keeping the change focused.
+  - **On-device (Pixel) pass — mostly ✅, one bug found & fixed.** Delete/remove/re-draw sheets and the
+    add-member sheet all work under a real finger. **Bug (device-only):** the FAB overlapped the last
+    member row's kebab, and with too few members to scroll, that member's overflow menu was unreachable.
+    **Fixed:** a `.ct-fab-spacer` reserves scrollable room below the list so the FAB always floats over
+    empty space and any row can be scrolled clear; the FAB `z-index` was also lowered below MudBlazor's
+    popover layer so an open kebab menu is never covered. Browser-verified (Playwright, 6+ members): the
+    last row's kebab no longer overlaps the FAB and is clickable. **Confirmed fixed on the Pixel** — the
+    bottom member's overflow menu is reachable for both short and long lists.
+
+**Selected earlier, distribution cluster (from the [mobile brainstorm](../brainstorming/2026-09-01-secret-santa-mobile.md)) — build next:**
+
+- **MNF-5 · QR code per reveal link (P2).** Show a scannable code so the recipient joins in the room with
+  no messaging app. Small, high-fit; spec as its own feature/backlog item.
+- **MNF-6 · Add-to-calendar for an event (P2).** One tap from the event's date/location/description into
+  the phone calendar.
+- **MNF-7 · Share all links for an event at once (P2).** Follow-on to the existing share seam.
+
+**Parked — need their own design/ADR before building:**
+
+- **MNF-8 · Local notifications (P1 value, parked).** Draw-reminder before the event, "event is
+  tomorrow", empty-wishlist nudge — the strongest reason to *install* rather than bookmark. Needs a
+  scheduling + permission design (and, for "remind everyone", a reachable origin). Parked in the
+  brainstorm pending the reveal-origin/hosting decision; promote once designed.
+- **MNF-9 · Biometric app lock (P2, parked).** Face/fingerprint on open — assignments are the one secret
+  the app keeps, and a phone left unlocked exposes who drew whom. Opt-in; warrants an
+  [NFR-004](../requirements/non-functional/NFR-004-data-protection-and-retention.md) privacy review first.
+- **MNF-10 · iOS App Links + edge-swipe-back (P2, gated).** iOS deep links are **not wired at all** today
+  (Android-only, [ADR-0053](../adr/0053-backend-free-first-mobile-release.md)); iOS also has no
+  edge-swipe-back. Bring the iOS head to the Android head's deep-link parity when iOS becomes a target
+  ([ADR-0031](../adr/0031-ios-build-host.md)).
+
+**Explicitly declined** ([ADR-0054](../adr/0054-mobile-native-feel-strategy.md), do not reopen without a
+new ADR): iOS Cupertino chrome / a platform-adaptive UI kit; Material You dynamic colour (conflicts with
+the neutral chrome, [ADR-0040](../adr/0040-ui-component-library-mudblazor.md)); platform-divergent layouts.
+
+## UX round 2 — Secret-Santa usability (2026-09-01)
+
+A second UX pass on the Secret-Santa app, driven by the organizer's own use. Each item was built and
+**verified in a real browser** (Playwright/Chromium, DE + EN, account-free flow), console clean.
+
+- **R2-1/R2-2 · Member history: delete keeps past events; rename propagates (P1).** ✅ **Done —
+  [ADR-0052](../adr/0052-member-archival-and-permanent-draw-history.md).** Removing a member used to
+  delete them from the roster *and* clear every event's draw (and adding a member cleared past draws
+  too), so a completed occasion lost both the person and the result. Now removal **archives** the member
+  (kept in the aggregate for name resolution and rename propagation, off the active roster and out of
+  future draws), and a roster change **flags** each event's draw stale instead of clearing it — draws
+  are permanent history. A rename reaches past occasions because names resolve by id through
+  `FindMember`. Reveal links for a kept draw still generate (the archived name resolves), with a "roster
+  changed" warning on the draw/share screens; the remove confirmation says the person stays in occasions
+  already drawn. Additive `MemberState.IsArchived`, opaque to sync (no server change). **Browser-verified
+  end to end:** draw 4 people → remove one → the Share page still lists all 4 links (incl. the removed
+  person) under the stale warning → rename another → the kept draw's link shows the new name.
+- **R2-3 · A new group starts with no event (P2).** ✅ **Done — [ADR-0042 amendment](../adr/0042-events-as-first-class-entities.md).**
+  A new group no longer auto-creates an unnamed event; the group editor opens on an empty occasions list
+  with a hint, and the user creates the first occasion. `Group.RemoveEvent` may now go to zero;
+  create-from-circle is eventless too. A pre-events snapshot (null `Events`) still migrates; an empty
+  list is a real state.
+- **R2-4 · Default event name "Christmas {year}" (P2).** ✅ **Done.** The add-event field is pre-filled
+  with a localized default — *Weihnachten 2026* / *Christmas 2026* / *Noël 2026* (`DefaultEventNameFormat`
+  + the current year) — which the user can accept or edit.
+- **R2-5 · Nav quick-access submenu (groups → recent events) (P2).** ✅ **Done.** The drawer now shows,
+  under *Groups*, the recently-opened (and still-visible) groups — each an expandable `MudNavGroup`
+  listing its most recent occasions (dated newest-first, then undated by last-opened) plus a **Mehr…**
+  link into the group — and, when more groups exist than are shown, an **Alle Gruppen** link to the full
+  list. Recency is a device-local `RecentAccessService` over the plain `IKeyValueStore` (like the culture
+  choice, not synced); `GroupNav`/`EventNav` record opens, and the shell refreshes the section on
+  navigation, sign-in change and sync. The current group's submenu auto-expands. Event ordering needed a
+  new `EventSummaryDto.Date`. **Browser-verified** (DE): the group and its two occasions appear nested in
+  the drawer, current event highlighted.
+- **R2-1b · A past occasion's stale draw is not flagged "re-draw needed" (refinement of R2-1/2).** ✅
+  **Done.** After removing a member, a *past* occasion (its date has gone by) was still showing
+  "re-draw needed", which is noise — a finished exchange is history, not something to re-draw. The read
+  model ([ADR-0052](../adr/0052-member-archival-and-permanent-draw-history.md)) now suppresses the stale
+  flag once the occasion's date is in the past (undated/upcoming still show it); the query handlers take a
+  `TimeProvider`. Applies everywhere the flag surfaces (badges, draw/share notices). Browser-verified: a
+  2024 occasion reads "Ausgelost", a 2027 occasion "Neu auslosen nötig".
+- **R2-6 · Broader mobile/UX polish (P3, open).** Ongoing: make the app easy to understand and quick to
+  reach the common things, on web and especially on phones. Candidates to be gathered as they surface.
+  - **Mobile touch/layout pass — ✅ done 2026-09-01** (alongside making the Android head installable on a
+    physical phone). From an on-screen inventory of every Secret-Santa screen: primary row-action buttons
+    no longer use `Size.Small` (~30px → default, ~44px touch target); crowded per-row button clusters fold
+    into an overflow **kebab menu** keeping one primary action visible (`Members` — was up to 5 inline
+    buttons; `Groups`; `GroupEditor`); non-wrapping rows gained `flex-wrap` (`Share` card header,
+    `Exclusions` list row); the app bar drops the cross-app switcher on narrow viewports
+    (`SecretSantaShell`); the budget fields get explicit widths + hidden spinners (`EventEditor`); the
+    from-circle person checkboxes lose `Dense` for a bigger hit area. A new **`MoreActions`** string in all
+    four resx. Build + Ui tests green. **Still to verify on the Pixel:** the Android top safe-area /
+    status-bar behaviour (currently tinted via `colorPrimaryDark`, neutral per ADR-0040 by design) and the
+    kebab/tap targets under a real finger.
+  - **Installable on a physical Android phone — ✅ done 2026-09-01.** `RevealBaseUrl` in `MauiProgram.cs`
+    now points at the dev machine's **LAN address** (`http://192.168.100.122:5081`) so a link shared from
+    the phone opens on any device on the home Wi-Fi (run the WebApp with `--urls http://0.0.0.0:5081`).
+    USB-deploy runbook added to [device testing](../deployment/device-testing.md). **Known limitation:**
+    account sign-in/sync over the LAN needs a trusted cert / real origin — deferred with hosting; the
+    offline + share flow is unaffected.
+  - **Backend-free v1 reveal path — ✅ implemented 2026-09-01 ([ADR-0053](../adr/0053-backend-free-first-mobile-release.md)).**
+    `RevealBaseUrl` (and `ApiBaseUrl`) are now **build-time settings** on the MAUI head (Release defaults to
+    the production origins; `release-mobile.yml` passes them), so a store build no longer ships a dev URL.
+    **Android App Links** for `secretsanta.circletools.ch/r` open the installed app and render the reveal
+    **offline from the baked-in UI** (`MainActivity` intent-filter + `DeepLinkService` + `DeepLinkListener`,
+    `LaunchMode=SingleTask`); a recipient without the app falls back to the static page. **Verified on the
+    Pixel 9 Pro:** a reveal App Link opened the app and showed "Hallo Katy! … Du bist Wichtel für: Vreni",
+    fully offline. `assetlinks.json` ships in the web app with a **placeholder** fingerprint —
+    **still to do before go-live:** replace it with the real Play App Signing SHA-256 (see `deploy/README.md`)
+    so links auto-open silently instead of via the chooser.
+  - More mobile-feature candidates gathered in the
+    [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-secret-santa-mobile.md): QR codes,
+    add-to-calendar, share-all, local notifications, biometric lock.
+
 ## UX & platform-parity review — 2026-08-12
 
 A usability pass taken after M4 closed, to answer two questions directly: is the suite built on
@@ -55,35 +321,82 @@ live two-account pass to confirm.
   The link/unlink cluster is now wrapped in `<AuthorizeView>` so it appears only when signed in; Edit
   and Remove (local, offline actions) stay for everyone. Verified in a real browser (signed out: no Link
   button, Edit/Remove present, console clean).
-- **UX-003 · First-run / empty states are bare (P2, browser-verified).** Signed out, `/` is a title,
-  an input, and the literal line "No groups yet." — no explanation of what the app does, no example, no
-  cue to sign in for cross-device sync. Add a short explainer + a real call-to-action on the empty
-  Groups screen, and **sell the account at the point of choice** (sync, see your own assignment, own
-  your wishlist).
+- **UX-003 · First-run / empty states are bare (P2, browser-verified).** ✅ **Fixed 2026-09-01.**
+  Signed out, `/` was a title, an input, and the literal line "No groups yet." — no explanation of what
+  the app does, no cue to sign in for cross-device sync. The empty Groups state is now an
+  `AuthorizeView`-split onboarding block (`Groups.razor`): **signed out**, a gift-icon card with a
+  headline (per app name — *Wichteln* / *Secret Santa* / *Père Noël secret*), a one-paragraph explainer
+  of the whole flow that nudges to the create field above, a divider, and the **account sell at the
+  point of choice** (sync across devices, see your own assignment, own your wishlist) with a **Sign in**
+  button to `/account/login`; **signed in**, a shorter hint pointing at the create field and the
+  from-circle shortcut. Five new strings (`EmptyState*`) added to all three cultures + neutral (the dead
+  `NoGroups` key it replaces was removed); DE `du` / FR `vous` per ADR-0032; no counts, so no
+  singular-form concern. Parity test green, project builds clean. **Verified in a real browser**
+  (Playwright/Chromium, signed-out first-run in DE/EN/FR): the card renders correctly in all three
+  languages, the create field stays the primary action above, and the change adds no console
+  errors/warnings.
 - **UX-004 · The share screen dumps raw encoded URLs (P2, browser-verified).** ✅ **Partly fixed
   2026-08-13.** Each person's reveal link was printed verbatim as a ~197-character base64 blob. The
   "Copy" button is the right primary action, but the raw string is noise and can alarm users. The raw
   URL is now collapsed behind a native `<details>` disclosure ("Show link" / "Link anzeigen" /
   "Afficher le lien"), so Copy is the clear primary action and the URL stays available for anyone who
   wants to inspect or paste it. Verified in a real browser (collapsed by default, expands on click,
-  console clean). **Still open (deferred):** a **QR code** and/or the native share sheet per person.
-- **UX-005 · Signed-in navigation shows dead ends and a reverting language picker (P2, from
-  code+docs — not browser-verified this pass).** The nav shows **My links / My assignments / My
-  wishlists** to *every* signed-in user, though they are inert unless the user is a linked member — make
-  them contextual. **Claim** is a nav link, not an auto-prompt on first sign-in with local groups
-  (already recorded as an M3 behaviour question). The **nav language picker is local-only** and reverts
-  to the profile preference on the next reconcile ([ADR-0035](../adr/0035-profile-sync-seam.md)); the
-  synced path is the Profile page — unify them or warn.
-- **UX-006 · Sync is manual (P2, known parked decision).** No continuous/background sync
-  ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md) parked it), so device B won't reflect device
-  A until someone presses "Sync now" or reloads — a weak spot for the "follows you between devices"
-  promise. A **pull-on-focus/startup** refresh would close most of the gap without reopening the parked
-  continuous-sync decision.
-- **UX-007 · Group editor has three separate Save buttons and one shared status line (P3,
-  browser-verified).** Name, Budget and Event each save independently, and a single "Saved." line at the
-  bottom does not say which section it refers to — easy to edit one section and forget to save another.
-  Prefer a single save, or per-section confirmation. (Also minor/cosmetic: the desktop sidebar is
-  mostly empty dead space.)
+  console clean).
+  - **Native share sheet — ✅ done 2026-09-01.** Each link now has a **Share** button beside Copy that
+    opens the OS share sheet (WhatsApp / Messages / e-mail), carrying the reveal link. It is a new
+    platform seam, `IShareService` ([ADR-0028](../adr/0028-browser-platform-adapters-block.md) amendment):
+    a browser impl over the Web Share API (`SecretSanta.WebApp/Interop/BrowserShareService.cs` +
+    `wwwroot/js/share.js`) and a device impl over MAUI's `Share` (`App/Platform/MauiShareService.cs`).
+    The button self-hides where the platform has no share sheet (most desktop browsers), so Copy stays
+    the fallback. Covered by `SharePageTests` (button gates on support; click hands the link to the
+    seam). WebApp + Android head build clean; Ui tests 28/28. **On-device (Pixel) confirmation pending**
+    the USB-deploy pass.
+  - **Still open (deferred):** a **QR code** per person (see the
+    [mobile brainstorm](../brainstorming/2026-09-01-secret-santa-mobile.md)).
+- **UX-005 · Signed-in navigation shows dead ends and a reverting language picker (P2).** ✅ **Fixed
+  2026-09-01** (the **Claim** sub-finding was already closed earlier by ADR-0044, which retired the
+  `/claim` screen for the silent `AutoSyncService` + `SignInReconciler` prompt). Two changes to
+  `SecretSantaShell.razor`, both verified live:
+  - **Contextual personal nav.** *My links / My assignments / My wishlists* were shown to **every**
+    signed-in user, inert unless they were a linked member. They are now gated: **My links** appears
+    only when a member-link request is actually waiting (`ILinkingApi.GetPendingAsync` > 0), and **My
+    assignments / My wishlists** only for a linked member (`GetMyMembershipsAsync` > 0). The gate is
+    **server-authoritative on purpose** — a member of *someone else's* group has no local group document
+    to read `Member.UserId` from, so a local check would wrongly hide the screens from exactly the people
+    they are for. The two gates recompute when the account changes and after each background sync (so
+    they appear on their own once a create/self-link or an accepted link lands), and stay hidden when the
+    server is unreachable, reappearing on the next sync. The mobile bottom bar gates its two personal
+    tabs the same way.
+  - **Language picker — warn (not unify).** The nav `CultureSelector` is device-local; for a signed-in
+    user the account language wins and reverts the pick on the next reconcile
+    ([ADR-0035](../adr/0035-profile-sync-seam.md)). Chosen fix: when signed in, a caption under the
+    picker says so and links to the **Profile** page (the durable, synced path). Kept the shared
+    `Ui.Shared/CultureSelector` device-local rather than wiring it to `IProfileWriter`, so the shared
+    component's behavior is unchanged across apps; persisting-from-nav ("unify") is a recorded follow-up
+    (would add an optional persistence callback to `CultureSelector`). Two new `NavLanguage*` strings in
+    all three cultures + neutral.
+  - **Verified against the live Aspire stack** (Playwright/Chromium, real register→verify→sign-in via
+    the API + Mailpit): signed-in-but-not-linked hides all three personal links and shows the device
+    note; after creating a group (FR-032 self-link) *My assignments* + *My wishlists* appear on their own
+    via the post-create sync while *My links* stays hidden; the device note reads correctly in **DE / EN
+    / FR** (the account language winning over the local pick was observed directly — a live demonstration
+    of the very revert the note explains). Console clean; 8/8 assertions green.
+  - **Follow-up (optional):** a bUnit regression test for the two nav gates (the shell needs MudBlazor
+    providers + fakes for `ILinkingApi`/`AutoSyncService`/`ISender`, so it was left as a follow-up rather
+    than built here); and the "unify" language-picker option if device-local-plus-warn proves too subtle
+    in use.
+- **UX-006 · Sync is manual (P2).** ✅ **Resolved by ADR-0044 (2026-08-17).** The manual "Sync now"
+  button is gone; `AutoSyncService` runs a silent, debounced sync on four triggers — app start (restored
+  session), reconnect, post-edit, and the sign-in reconciler — so device B converges without anyone
+  pressing anything, and the shell shows only a passive last-outcome status line. The parked
+  continuous-sync decision ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md)) was **not**
+  reopened. A pure *pull-on-tab-focus* refresh for a long-idle open tab is the only sliver left, and it
+  is marginal; parked with the continuous-sync decision.
+- **UX-007 · Group editor has three separate Save buttons and one shared status line (P3).** ✅
+  **Obsolete after ADR-0042 (events as first-class).** The editor was restructured to **Name + Events**;
+  budget and date/location moved into the **per-event** editor, so the "three saves under one ambiguous
+  status line" arrangement no longer exists. `GroupEditor.razor` now has one name save plus per-event
+  add/rename/remove, each with its own inline control. Nothing to do.
 
 These are review findings, not yet promoted; the P1/P2 items are the candidates to turn into use
 cases/requirements (or ADRs, for the mobile-scope decision) if taken forward.

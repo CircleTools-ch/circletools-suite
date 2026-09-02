@@ -56,9 +56,11 @@ public sealed class Event : Entity
     public Draw? CurrentDraw => _draws.Count > 0 ? _draws[^1] : null;
 
     /// <summary>
-    /// Gets a value indicating whether this event's draw was discarded because the shared member set
-    /// changed. A draw belongs to the exact roster it was generated for, so adding or removing a member
-    /// voids it in every event; this flag lets the UI tell "never drawn" from "drawn, then invalidated".
+    /// Gets a value indicating whether the shared roster changed after this event's current draw was
+    /// produced, so the draw no longer matches it. Under the "archive, don't delete" model (ADR-0052)
+    /// the draw is <strong>kept</strong> as history — this is a <em>stale</em> flag, not a deletion — so
+    /// the UI can show the completed draw while inviting a re-draw that includes (or drops) whoever
+    /// changed. A fresh draw for the current roster clears it.
     /// </summary>
     public bool DrawInvalidatedByMembershipChange { get; private set; }
 
@@ -114,10 +116,7 @@ public sealed class Event : Entity
         }
     }
 
-    /// <summary>Drops a member's wishlist from this event — called when the member leaves the group.</summary>
-    internal void RemoveMember(Guid memberId) => _wishlists.Remove(memberId);
-
-    /// <summary>Appends a successful draw and clears the membership-invalidation flag.</summary>
+    /// <summary>Appends a successful draw and clears the roster-changed flag (the draw now matches the roster).</summary>
     internal void AppendDraw(IReadOnlyList<Assignment> assignments, DateTimeOffset now)
     {
         _draws.Add(Draw.Create(assignments, now));
@@ -125,18 +124,18 @@ public sealed class Event : Entity
     }
 
     /// <summary>
-    /// Discards this event's draw history because the shared member set changed. Mirrors the pre-events
-    /// behaviour, now per occasion: a draw maps a fixed set of givers to recipients, so once that set
-    /// changes it no longer describes the group.
+    /// Flags this event's current draw as no longer matching the shared roster, because a member was
+    /// added or archived. The draw is <strong>kept</strong> (ADR-0052: draws are permanent history) — a
+    /// completed draw is a real past result the organizer may still want to see — so this only sets the
+    /// stale flag; a re-draw clears it. A no-op when there is no draw to flag.
     /// </summary>
-    internal void InvalidateDraws()
+    internal void MarkRosterChanged()
     {
         if (_draws.Count == 0)
         {
             return;
         }
 
-        _draws.Clear();
         DrawInvalidatedByMembershipChange = true;
     }
 

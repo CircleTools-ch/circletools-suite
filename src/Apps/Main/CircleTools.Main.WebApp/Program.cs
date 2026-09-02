@@ -50,8 +50,8 @@ builder.Services.AddKeyedScoped<HttpClient>(AccountApiClients.Authorized, (sp, _
     return new HttpClient(handler) { BaseAddress = apiBaseUrl };
 });
 
-// The unkeyed HttpClient the Heartbeat sample injects. It is the authorized one, so anything added
-// later that reaches for a plain HttpClient gets a session rather than silent 401s.
+// An unkeyed HttpClient bound to the authorized (session-carrying) client, so anything that reaches
+// for a plain HttpClient gets a session rather than silent 401s.
 builder.Services.AddScoped(sp => sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized));
 
 // Every AuthorizeView an anonymous visitor renders logs "Authorization failed:

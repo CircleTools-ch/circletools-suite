@@ -4,12 +4,13 @@ using CircleTools.SecretSanta.Core.Test.TestSupport;
 namespace CircleTools.SecretSanta.Core.Test;
 
 /// <summary>Tests for the <see cref="Group"/> aggregate invariants and its state memento (ADR-0042: events).</summary>
+/// <remarks>
+/// A new group starts with <strong>no</strong> event (ADR-0042 amendment, 2026-09-01), so tests that
+/// need an occasion add one and address it by the returned id.
+/// </remarks>
 public sealed class GroupTests
 {
     private static readonly string[] _expectedWishlist = ["Scarf", "Book"];
-
-    // A group's first/default event takes the group's own id (ADR-0042), so tests address it by that.
-    private static Event DefaultEvent(Group group) => group.FindEvent(group.Id)!;
 
     [Theory]
     [InlineData("")]
@@ -18,14 +19,13 @@ public sealed class GroupTests
         Assert.Throws<ArgumentException>(() => Group.Create(name));
 
     [Fact]
-    public void Create_TrimsNameAndAssignsId_AndHasOneDefaultEvent()
+    public void Create_TrimsNameAndAssignsId_AndHasNoEvent()
     {
         var group = Group.Create("  Family  ");
 
         Assert.Equal("Family", group.Name);
         Assert.NotEqual(Guid.Empty, group.Id);
-        var occasion = Assert.Single(group.Events);
-        Assert.Equal(group.Id, occasion.Id);
+        Assert.Empty(group.Events);
     }
 
     [Fact]
@@ -94,19 +94,31 @@ public sealed class GroupTests
     }
 
     [Fact]
+    public void ToState_FromState_KeepsAnEventlessGroupEventless()
+    {
+        var group = Group.Create("Friends");
+
+        var restored = Group.FromState(group.ToState());
+
+        Assert.Empty(restored.Events);
+    }
+
+    [Fact]
     public void RunDraw_WithFewerThanTwoMembers_Throws()
     {
         var group = Group.Create("Friends");
+        var eventId = group.AddEvent("Christmas");
         group.AddMember("Alice");
         var generator = new DrawGenerator(new SeededRandomSource(1));
 
-        Assert.Throws<InvalidOperationException>(() => group.RunDraw(group.Id, generator, DateTimeOffset.UtcNow));
+        Assert.Throws<InvalidOperationException>(() => group.RunDraw(eventId, generator, DateTimeOffset.UtcNow));
     }
 
     [Fact]
     public void RunDraw_AppendsCurrentDraw_OnSuccess()
     {
         var group = Group.Create("Friends");
+        var eventId = group.AddEvent("Christmas");
         foreach (var name in new[] { "A", "B", "C", "D" })
         {
             group.AddMember(name);
@@ -114,105 +126,130 @@ public sealed class GroupTests
 
         var generator = new DrawGenerator(new SeededRandomSource(11));
 
-        var result = group.RunDraw(group.Id, generator, DateTimeOffset.UtcNow);
+        var result = group.RunDraw(eventId, generator, DateTimeOffset.UtcNow);
 
         Assert.True(result.IsSuccess);
-        Assert.NotNull(DefaultEvent(group).CurrentDraw);
-        Assert.Equal(4, DefaultEvent(group).CurrentDraw!.Assignments.Count);
+        Assert.NotNull(group.FindEvent(eventId)!.CurrentDraw);
+        Assert.Equal(4, group.FindEvent(eventId)!.CurrentDraw!.Assignments.Count);
     }
 
     [Fact]
-    public void RemoveMember_VoidsCurrentDraw()
+    public void RemoveMember_ArchivesAndMarksDrawStale_KeepingHistory()
     {
-        var group = DrawnGroupOfFour(out var members);
+        var group = DrawnGroupOfFour(out var members, out var eventId);
 
         group.RemoveMember(members[0]);
 
-        Assert.Null(DefaultEvent(group).CurrentDraw);
-        Assert.True(DefaultEvent(group).DrawInvalidatedByMembershipChange);
+        // The completed draw is kept as history, only flagged as no longer matching the roster (ADR-0052).
+        var occasion = group.FindEvent(eventId)!;
+        Assert.NotNull(occasion.CurrentDraw);
+        Assert.True(occasion.DrawInvalidatedByMembershipChange);
+
+        // The member is archived: gone from the active roster, still resolvable so the past draw reads.
+        Assert.Equal(3, group.Members.Count);
+        Assert.DoesNotContain(group.Members, m => m.Id == members[0]);
+        Assert.True(group.FindMember(members[0])!.IsArchived);
+        Assert.Equal("A", group.FindMember(members[0])!.Name);
     }
 
     [Fact]
-    public void AddMember_VoidsCurrentDraw()
+    public void EditMember_RenameIsVisibleForPastDraws()
     {
-        var group = DrawnGroupOfFour(out _);
+        var group = DrawnGroupOfFour(out var members, out var eventId);
+
+        group.EditMember(members[0], "Renamed");
+
+        // A past draw resolves names through FindMember, so a rename reaches it too.
+        Assert.Equal("Renamed", group.FindMember(members[0])!.Name);
+        Assert.NotNull(group.FindEvent(eventId)!.CurrentDraw);
+    }
+
+    [Fact]
+    public void AddMember_MarksDrawStale_ButKeepsIt()
+    {
+        var group = DrawnGroupOfFour(out _, out var eventId);
 
         group.AddMember("Erin");
 
-        Assert.Null(DefaultEvent(group).CurrentDraw);
-        Assert.True(DefaultEvent(group).DrawInvalidatedByMembershipChange);
+        Assert.NotNull(group.FindEvent(eventId)!.CurrentDraw);
+        Assert.True(group.FindEvent(eventId)!.DrawInvalidatedByMembershipChange);
     }
 
     [Fact]
     public void AddMember_BeforeAnyDraw_DoesNotFlagInvalidation()
     {
         var group = Group.Create("Friends");
+        var eventId = group.AddEvent("Christmas");
 
         group.AddMember("Alice");
 
-        Assert.False(DefaultEvent(group).DrawInvalidatedByMembershipChange);
+        Assert.False(group.FindEvent(eventId)!.DrawInvalidatedByMembershipChange);
     }
 
     [Fact]
     public void EditMember_KeepsCurrentDraw()
     {
-        var group = DrawnGroupOfFour(out var members);
+        var group = DrawnGroupOfFour(out var members, out var eventId);
 
         group.EditMember(members[0], "Alicia");
 
-        Assert.NotNull(DefaultEvent(group).CurrentDraw);
-        Assert.False(DefaultEvent(group).DrawInvalidatedByMembershipChange);
+        Assert.NotNull(group.FindEvent(eventId)!.CurrentDraw);
+        Assert.False(group.FindEvent(eventId)!.DrawInvalidatedByMembershipChange);
     }
 
     [Fact]
     public void RunDraw_AfterInvalidation_ClearsTheFlag()
     {
-        var group = DrawnGroupOfFour(out var members);
+        var group = DrawnGroupOfFour(out var members, out var eventId);
         group.RemoveMember(members[0]);
 
-        var result = group.RunDraw(group.Id, new DrawGenerator(new SeededRandomSource(7)), DateTimeOffset.UtcNow);
+        var result = group.RunDraw(eventId, new DrawGenerator(new SeededRandomSource(7)), DateTimeOffset.UtcNow);
 
         Assert.True(result.IsSuccess);
-        Assert.False(DefaultEvent(group).DrawInvalidatedByMembershipChange);
-        Assert.NotNull(DefaultEvent(group).CurrentDraw);
+        Assert.False(group.FindEvent(eventId)!.DrawInvalidatedByMembershipChange);
+        Assert.NotNull(group.FindEvent(eventId)!.CurrentDraw);
     }
 
     [Fact]
-    public void AddMember_VoidsEveryEventsDraw()
+    public void AddMember_MarksEveryEventsDrawStale_ButKeepsThem()
     {
-        var group = DrawnGroupOfFour(out _);
+        var group = DrawnGroupOfFour(out _, out var eventId);
         var second = group.AddEvent("Birthday");
         group.RunDraw(second, new DrawGenerator(new SeededRandomSource(3)), DateTimeOffset.UtcNow);
         Assert.NotNull(group.FindEvent(second)!.CurrentDraw);
 
         group.AddMember("Erin");
 
-        // A roster change voids the draw of every event, not just one.
-        Assert.Null(DefaultEvent(group).CurrentDraw);
-        Assert.Null(group.FindEvent(second)!.CurrentDraw);
+        // A roster change flags every event's draw (not just one), but keeps them all (ADR-0052).
+        Assert.NotNull(group.FindEvent(eventId)!.CurrentDraw);
+        Assert.NotNull(group.FindEvent(second)!.CurrentDraw);
+        Assert.True(group.FindEvent(eventId)!.DrawInvalidatedByMembershipChange);
         Assert.True(group.FindEvent(second)!.DrawInvalidatedByMembershipChange);
     }
 
     [Fact]
     public void EventsAreIndependent_ReDrawingOneLeavesAnotherAlone()
     {
-        var group = DrawnGroupOfFour(out _);
+        var group = DrawnGroupOfFour(out _, out var eventId);
         var second = group.AddEvent("Birthday");
         group.RunDraw(second, new DrawGenerator(new SeededRandomSource(3)), DateTimeOffset.UtcNow);
-        var firstDrawId = DefaultEvent(group).CurrentDraw!.Id;
+        var firstDrawId = group.FindEvent(eventId)!.CurrentDraw!.Id;
 
         // Re-draw only the second event.
         group.RunDraw(second, new DrawGenerator(new SeededRandomSource(99)), DateTimeOffset.UtcNow);
 
-        Assert.Equal(firstDrawId, DefaultEvent(group).CurrentDraw!.Id);
+        Assert.Equal(firstDrawId, group.FindEvent(eventId)!.CurrentDraw!.Id);
     }
 
     [Fact]
-    public void RemoveEvent_RejectsRemovingTheLastEvent()
+    public void RemoveEvent_CanRemoveTheOnlyEvent()
     {
         var group = Group.Create("Friends");
+        var eventId = group.AddEvent("Christmas");
 
-        Assert.Throws<InvalidOperationException>(() => group.RemoveEvent(group.Id));
+        group.RemoveEvent(eventId);
+
+        Assert.Empty(group.Events);
     }
 
     [Fact]
@@ -220,37 +257,43 @@ public sealed class GroupTests
     {
         var group = Group.Create("Friends");
         var alice = group.AddMember("Alice");
+        var first = group.AddEvent("Christmas");
         var second = group.AddEvent("Birthday");
 
-        group.SetMemberWishlist(group.Id, alice, Wishlist.Create(["Scarf"]));
+        group.SetMemberWishlist(first, alice, Wishlist.Create(["Scarf"]));
         group.SetMemberWishlist(second, alice, Wishlist.Create(["Bike"]));
 
-        Assert.Equal(["Scarf"], DefaultEvent(group).WishlistFor(alice).Items);
+        Assert.Equal(["Scarf"], group.FindEvent(first)!.WishlistFor(alice).Items);
         Assert.Equal(["Bike"], group.FindEvent(second)!.WishlistFor(alice).Items);
     }
 
     [Fact]
-    public void ToState_FromState_RoundTripsInvalidationFlag()
+    public void ToState_FromState_RoundTripsInvalidationFlag_AndArchivedMember()
     {
-        var group = DrawnGroupOfFour(out var members);
+        var group = DrawnGroupOfFour(out var members, out var eventId);
         group.RemoveMember(members[0]);
 
         var restored = Group.FromState(group.ToState());
 
-        Assert.True(DefaultEvent(restored).DrawInvalidatedByMembershipChange);
-        Assert.Null(DefaultEvent(restored).CurrentDraw);
+        Assert.True(restored.FindEvent(eventId)!.DrawInvalidatedByMembershipChange);
+        Assert.NotNull(restored.FindEvent(eventId)!.CurrentDraw); // draw kept as history
+
+        // The archived member survives the round-trip: absent from the roster, present for resolution.
+        Assert.Equal(3, restored.Members.Count);
+        Assert.True(restored.FindMember(members[0])!.IsArchived);
     }
 
-    private static Group DrawnGroupOfFour(out IReadOnlyList<Guid> memberIds)
+    private static Group DrawnGroupOfFour(out IReadOnlyList<Guid> memberIds, out Guid eventId)
     {
         var group = Group.Create("Friends");
+        eventId = group.AddEvent("Christmas");
         var ids = new List<Guid>();
         foreach (var name in new[] { "A", "B", "C", "D" })
         {
             ids.Add(group.AddMember(name));
         }
 
-        group.RunDraw(group.Id, new DrawGenerator(new SeededRandomSource(11)), DateTimeOffset.UtcNow);
+        group.RunDraw(eventId, new DrawGenerator(new SeededRandomSource(11)), DateTimeOffset.UtcNow);
         memberIds = ids;
         return group;
     }
@@ -259,27 +302,28 @@ public sealed class GroupTests
     public void ToState_FromState_RoundTrips()
     {
         var group = Group.Create("Family");
-        group.SetEventBudget(group.Id, Budget.Create(40m, "CHF"));
-        group.SetEventDetails(group.Id, EventDetails.Create(
+        var eventId = group.AddEvent("Christmas");
+        group.SetEventBudget(eventId, Budget.Create(40m, "CHF"));
+        group.SetEventDetails(eventId, EventDetails.Create(
             new DateTimeOffset(2026, 12, 24, 18, 0, 0, TimeSpan.Zero), "Grandma's", "Bring dessert"));
         var alice = group.AddMember("Alice");
         var bob = group.AddMember("Bob");
         group.AddMember("Carol");
         group.AddMember("Dan");
-        group.SetMemberWishlist(group.Id, alice, Wishlist.Create(["Scarf", "Book"]));
+        group.SetMemberWishlist(eventId, alice, Wishlist.Create(["Scarf", "Book"]));
         group.AddExclusion(alice, bob);
-        group.RunDraw(group.Id, new DrawGenerator(new SeededRandomSource(11)), DateTimeOffset.UtcNow);
+        group.RunDraw(eventId, new DrawGenerator(new SeededRandomSource(11)), DateTimeOffset.UtcNow);
 
         var restored = Group.FromState(group.ToState());
 
         Assert.Equal(group.Id, restored.Id);
         Assert.Equal(group.Name, restored.Name);
-        Assert.Equal(DefaultEvent(group).Budget, DefaultEvent(restored).Budget);
-        Assert.Equal(DefaultEvent(group).EventDetails, DefaultEvent(restored).EventDetails);
+        Assert.Equal(group.FindEvent(eventId)!.Budget, restored.FindEvent(eventId)!.Budget);
+        Assert.Equal(group.FindEvent(eventId)!.EventDetails, restored.FindEvent(eventId)!.EventDetails);
         Assert.Equal(group.Members.Count, restored.Members.Count);
         Assert.Equal(group.Exclusions, restored.Exclusions);
-        Assert.NotNull(DefaultEvent(restored).CurrentDraw);
-        Assert.Equal(DefaultEvent(group).CurrentDraw!.Assignments, DefaultEvent(restored).CurrentDraw!.Assignments);
-        Assert.Equal(_expectedWishlist, DefaultEvent(restored).WishlistFor(alice).Items);
+        Assert.NotNull(restored.FindEvent(eventId)!.CurrentDraw);
+        Assert.Equal(group.FindEvent(eventId)!.CurrentDraw!.Assignments, restored.FindEvent(eventId)!.CurrentDraw!.Assignments);
+        Assert.Equal(_expectedWishlist, restored.FindEvent(eventId)!.WishlistFor(alice).Items);
     }
 }

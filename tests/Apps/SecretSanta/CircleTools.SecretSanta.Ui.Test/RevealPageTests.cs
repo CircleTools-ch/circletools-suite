@@ -2,6 +2,7 @@ using CircleTools.SecretSanta.Contracts;
 using CircleTools.SecretSanta.Core.Reveal;
 using CircleTools.SecretSanta.Ui.Pages;
 using CircleTools.SecretSanta.Ui.Test.TestSupport;
+using CircleTools.Ui.Abstractions;
 using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,7 @@ public sealed class RevealPageTests : IDisposable
     private const string RecipientName = "Recipient-Zoe";
 
     private readonly Bunit.TestContext _ctx = new();
+    private readonly FakeHapticFeedback _haptics = new();
 
     public RevealPageTests()
     {
@@ -29,6 +31,7 @@ public sealed class RevealPageTests : IDisposable
 
         _ctx.Services.AddSingleton(new RevealLinkCodec());
         _ctx.Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassThroughStringLocalizer<AppStrings>());
+        _ctx.Services.AddSingleton<IHapticFeedback>(_haptics);
     }
 
     private void NavigateToRevealLink(string fragment)
@@ -60,6 +63,22 @@ public sealed class RevealPageTests : IDisposable
 
         // After clicking "Reveal", the giftee is shown.
         Assert.Contains(RecipientName, cut.Markup);
+    }
+
+    [Fact]
+    public void RevealPage_TapsHapticWhenTheGifteeIsRevealed()
+    {
+        var payload = new RevealPayload(
+            RevealPayload.CurrentVersion, RecipientName, ["Book"], 25m, "CHF", null, null, null);
+        NavigateToRevealLink(BuildFragment(payload));
+
+        var cut = _ctx.RenderComponent<Reveal>();
+        Assert.Equal(0, _haptics.Taps); // no buzz merely on render
+
+        cut.Find("button").Click();
+
+        // Revealing the giftee produces exactly one confirmation buzz (FEAT-008 W3).
+        Assert.Equal(1, _haptics.Taps);
     }
 
     [Fact]
