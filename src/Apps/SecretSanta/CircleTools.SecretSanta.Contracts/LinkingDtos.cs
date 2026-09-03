@@ -216,11 +216,13 @@ public sealed record GroupEventEntry(Guid EventId, string Name, DateTimeOffset? 
 /// <param name="RecipientMemberId">The recipient member's identity, used to compose their current wishlist at read time.</param>
 /// <param name="RecipientName">The recipient's display name.</param>
 /// <param name="RecipientWishlistSnapshot">The recipient's wishlist as the organizer holds it at publish time.</param>
+/// <param name="RecipientGiftNote">The recipient's stable gift note shown to the giver (FR-037); empty when unset.</param>
 public sealed record PublishedAssignment(
     Guid GiverUserId,
     Guid RecipientMemberId,
     string RecipientName,
-    IReadOnlyList<string> RecipientWishlistSnapshot);
+    IReadOnlyList<string> RecipientWishlistSnapshot,
+    string RecipientGiftNote = "");
 
 /// <summary>
 /// The signed-in caller's <em>own</em> assignment in one group (FR-029). A request for anyone else's
@@ -234,6 +236,7 @@ public sealed record PublishedAssignment(
 /// <param name="RecipientWishlist">The recipient's <em>current</em> wishlist (their own row if linked, else the published snapshot).</param>
 /// <param name="Budget">The gift budget, or <see langword="null"/>.</param>
 /// <param name="Event">The event details, or <see langword="null"/>.</param>
+/// <param name="RecipientGiftNote">The recipient's stable gift note shown to the giver (FR-037); empty when unset.</param>
 public sealed record MyAssignmentResponse(
     Guid GroupId,
     string GroupName,
@@ -242,7 +245,8 @@ public sealed record MyAssignmentResponse(
     string RecipientName,
     IReadOnlyList<string> RecipientWishlist,
     BudgetDto? Budget,
-    EventDetailsDto? Event);
+    EventDetailsDto? Event,
+    string RecipientGiftNote = "");
 
 /// <summary>The caller's assignments across every event they are linked in, each gated client-side.</summary>
 /// <param name="Assignments">One row per drawn event the caller is a linked member of.</param>

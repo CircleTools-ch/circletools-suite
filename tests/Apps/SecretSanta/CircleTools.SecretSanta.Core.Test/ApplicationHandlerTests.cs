@@ -165,6 +165,31 @@ public sealed class ApplicationHandlerTests
     }
 
     [Fact]
+    public async Task SetMemberGiftNote_SetsThenClears_AndSurvivesRename()
+    {
+        var (repository, groupId) = await CreateGroupAsync();
+        var memberId = await new AddMemberCommandHandler(repository)
+            .HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
+        var getGroup = new GetGroupQueryHandler(repository, TimeProvider.System);
+
+        await new SetMemberGiftNoteCommandHandler(repository)
+            .HandleAsync(new SetMemberGiftNoteCommand(groupId, memberId, "  No nuts — allergy  "), default);
+        var afterSet = await getGroup.HandleAsync(new GetGroupQuery(groupId), default);
+        Assert.Equal("No nuts — allergy", Assert.Single(afterSet!.Members).GiftNote);
+
+        // A rename must not wipe the note (they are independent operations, FR-037).
+        await new EditMemberCommandHandler(repository)
+            .HandleAsync(new EditMemberCommand(groupId, memberId, "Robert"), default);
+        var afterRename = await getGroup.HandleAsync(new GetGroupQuery(groupId), default);
+        Assert.Equal("No nuts — allergy", Assert.Single(afterRename!.Members).GiftNote);
+
+        await new SetMemberGiftNoteCommandHandler(repository)
+            .HandleAsync(new SetMemberGiftNoteCommand(groupId, memberId, "   "), default);
+        var afterClear = await getGroup.HandleAsync(new GetGroupQuery(groupId), default);
+        Assert.Equal(string.Empty, Assert.Single(afterClear!.Members).GiftNote);
+    }
+
+    [Fact]
     public async Task EditMember_UnknownMember_Throws()
     {
         var (repository, groupId) = await CreateGroupAsync();

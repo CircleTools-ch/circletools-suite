@@ -56,6 +56,7 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-034](functional/FR-034-multiple-events-per-group.md) | Multiple events (occasions) per group, sharing one roster | Functional | Should | Implemented |
 | [FR-035](functional/FR-035-carry-forward-new-occasion.md) | Carry forward wishlists, budget and prior draw when creating an event | Functional | Should | Implemented |
 | [FR-036](functional/FR-036-budget-minimum-and-maximum.md) | Gift budget supports an optional minimum as well as a maximum | Functional | Could | Implemented |
+| [FR-037](functional/FR-037-member-gift-note.md) | A member has a stable gift note (allergies / dietary / do-not-gift) shown to their giver | Functional | Could | Implemented |
 
 _Add a row per requirement._
 

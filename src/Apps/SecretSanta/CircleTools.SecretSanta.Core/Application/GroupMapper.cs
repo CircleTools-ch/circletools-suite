@@ -18,7 +18,7 @@ internal static class GroupMapper
     public static GroupDto ToDto(Group group, DateTimeOffset now)
     {
         var members = group.Members
-            .Select(m => new MemberDto(m.Id, m.Name, m.UserId))
+            .Select(m => new MemberDto(m.Id, m.Name, m.UserId, m.GiftNote))
             .ToList();
 
         var exclusions = group.Exclusions

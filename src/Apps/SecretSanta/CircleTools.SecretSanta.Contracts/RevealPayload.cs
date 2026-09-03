@@ -20,6 +20,11 @@ namespace CircleTools.SecretSanta.Contracts;
 /// Additive and optional: a link written before this field existed omits it and decodes to
 /// <see langword="null"/>, so the payload version is unchanged.
 /// </param>
+/// <param name="GiftNote">
+/// The recipient's optional gift note — allergies, dietary/lifestyle needs, things not to buy (FR-037),
+/// or <see langword="null"/> when unset. Additive and optional like <paramref name="BudgetMin"/>:
+/// omitted from the link when absent, so the payload version is unchanged.
+/// </param>
 public sealed record RevealPayload(
     [property: JsonPropertyName("v")] int Version,
     [property: JsonPropertyName("n")] string RecipientName,
@@ -29,7 +34,8 @@ public sealed record RevealPayload(
     [property: JsonPropertyName("ed")] string? EventDate,
     [property: JsonPropertyName("el")] string? EventLocation,
     [property: JsonPropertyName("en")] string? EventNotes,
-    [property: JsonPropertyName("bm")] decimal? BudgetMin = null)
+    [property: JsonPropertyName("bm")] decimal? BudgetMin = null,
+    [property: JsonPropertyName("gn")] string? GiftNote = null)
 {
     /// <summary>The current reveal-payload format version.</summary>
     public const int CurrentVersion = 1;

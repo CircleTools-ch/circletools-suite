@@ -78,5 +78,7 @@
       href: secret-santa/UC-SS-014-carry-forward-new-occasion.md
     - name: UC-SS-015 Budget minimum and maximum
       href: secret-santa/UC-SS-015-budget-minimum-and-maximum.md
+    - name: UC-SS-016 Member gift note
+      href: secret-santa/UC-SS-016-member-gift-note.md
 - name: Template
   href: _template-use-case.md

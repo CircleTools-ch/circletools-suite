@@ -75,11 +75,13 @@ public enum AcceptResult
 /// <param name="RecipientMemberId">The recipient member, used to compose their current wishlist at read time.</param>
 /// <param name="RecipientName">The recipient's display name.</param>
 /// <param name="RecipientWishlistSnapshot">The recipient's wishlist as the organizer holds it at publish time.</param>
+/// <param name="RecipientGiftNote">The recipient's stable gift note, shown to the giver (FR-037); empty when unset.</param>
 public sealed record AssignmentPublication(
     Guid GiverAccountId,
     Guid RecipientMemberId,
     string RecipientName,
-    IReadOnlyList<string> RecipientWishlistSnapshot);
+    IReadOnlyList<string> RecipientWishlistSnapshot,
+    string RecipientGiftNote = "");
 
 /// <summary>A resolved assignment view for one caller in one event, composed at read time (ADR-0042).</summary>
 /// <param name="GroupId">The group.</param>
@@ -90,6 +92,7 @@ public sealed record AssignmentPublication(
 /// <param name="RecipientWishlist">The recipient's current wishlist (their own row if linked, else the published snapshot).</param>
 /// <param name="Budget">The gift budget, or <see langword="null"/>.</param>
 /// <param name="Event">The event details, or <see langword="null"/>.</param>
+/// <param name="RecipientGiftNote">The recipient's stable gift note, shown to the giver (FR-037); empty when unset.</param>
 public sealed record AssignmentView(
     Guid GroupId,
     string GroupName,
@@ -98,7 +101,8 @@ public sealed record AssignmentView(
     string RecipientName,
     IReadOnlyList<string> RecipientWishlist,
     LinkingBudget? Budget,
-    LinkingEvent? Event);
+    LinkingEvent? Event,
+    string RecipientGiftNote = "");
 
 /// <summary>One event the organizer publishes to the registry so linked members can enumerate it (ADR-0042).</summary>
 /// <param name="EventId">The event identity.</param>
@@ -107,9 +111,10 @@ public sealed record AssignmentView(
 public sealed record GroupEventInput(Guid EventId, string EventName, DateTimeOffset? Date);
 
 /// <summary>A gift budget as the linking store keeps it (mirrors the Secret-Santa contract without referencing it).</summary>
-/// <param name="Amount">The amount.</param>
+/// <param name="Amount">The maximum amount.</param>
 /// <param name="Currency">The ISO currency code.</param>
-public sealed record LinkingBudget(decimal Amount, string Currency);
+/// <param name="MinAmount">The optional minimum (lower bound), or <see langword="null"/> for a bare maximum (FR-036).</param>
+public sealed record LinkingBudget(decimal Amount, string Currency, decimal? MinAmount = null);
 
 /// <summary>Event details as the linking store keeps them.</summary>
 /// <param name="Date">The optional date.</param>

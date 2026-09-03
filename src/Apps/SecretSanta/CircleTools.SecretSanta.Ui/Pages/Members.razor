@@ -1,5 +1,6 @@
 @page "/groups/{GroupId:guid}/members"
 @using CircleTools.SecretSanta.Contracts
+@using CircleTools.SecretSanta.Core.Domain
 @using CircleTools.SecretSanta.LocalStore.Linking
 @inject ISender Sender
 @inject ILinkingApi Linking
@@ -59,6 +60,12 @@ else
                     {
                         <MudStack Spacing="2">
                             <MudTextField @bind-Value="_editName" Immediate="true" Label="@L["NameLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            @* The gift note is a stable per-person hint the giver sees on the reveal (FR-037):
+                               allergies, dietary/lifestyle needs, things not to buy. Capped to protect the
+                               encoded reveal link (ADR-0014). *@
+                            <MudTextField @bind-Value="_editGiftNote" Label="@L["GiftNoteLabel"]" HelperText="@L["GiftNoteHint"]"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2"
+                                          MaxLength="Member.MaxGiftNoteLength" Counter="Member.MaxGiftNoteLength" />
                             <div class="d-flex gap-1">
                                 <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled"
                                            OnClick="SaveEditAsync" Disabled="@string.IsNullOrWhiteSpace(_editName)">@L["Save"]</MudButton>
@@ -71,6 +78,11 @@ else
                         <div class="d-flex justify-space-between align-start flex-wrap gap-2">
                             <div>
                                 <MudText Typo="Typo.subtitle1"><strong>@member.Name</strong></MudText>
+                                @if (!string.IsNullOrWhiteSpace(member.GiftNote))
+                                {
+                                    @* A stable per-person note the giver sees on the reveal (FR-037). *@
+                                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["GiftNoteLabel"]: @member.GiftNote</MudText>
+                                }
                             </div>
                             <div class="d-flex align-center flex-wrap gap-1">
                                 @* Linking is an account-only action (it calls the authorized server API), so
@@ -166,6 +178,7 @@ else
 
     private Guid? _editingId;
     private string _editName = string.Empty;
+    private string _editGiftNote = string.Empty;
     private bool _hasCurrentDraw;
     private string _groupName = string.Empty;
 
@@ -348,6 +361,7 @@ else
     {
         _editingId = member.Id;
         _editName = member.Name;
+        _editGiftNote = member.GiftNote;
         _error = null;
     }
 
@@ -364,6 +378,7 @@ else
         try
         {
             await Sender.Send(new EditMemberCommand(GroupId, id, _editName));
+            await Sender.Send(new SetMemberGiftNoteCommand(GroupId, id, _editGiftNote));
             _editingId = null;
             await LoadAsync();
         }

@@ -141,6 +141,17 @@ public sealed class Group : AggregateRoot
     }
 
     /// <summary>
+    /// Sets (or clears, when empty) a member's <see cref="Member.GiftNote"/> — the stable, per-person
+    /// note their giver sees on the reveal (FR-037). Independent of renaming so neither clobbers the other.
+    /// </summary>
+    /// <param name="memberId">The member whose gift note is set.</param>
+    /// <param name="giftNote">The gift note; empty or whitespace clears it.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the member is unknown.</exception>
+    /// <exception cref="ArgumentException">Thrown when the gift note exceeds <see cref="Member.MaxGiftNoteLength"/>.</exception>
+    public void SetMemberGiftNote(Guid memberId, string? giftNote) =>
+        RequireMember(memberId).SetGiftNote(giftNote);
+
+    /// <summary>
     /// Removes a member from the active roster by <strong>archiving</strong> them (ADR-0052): the member
     /// is kept in the aggregate, so a past draw that includes them still resolves their name and a later
     /// rename still reaches them, but they take part in no future draw and are hidden from the roster.
@@ -340,7 +351,7 @@ public sealed class Group : AggregateRoot
         // still be read and migrated (see FromState). New writes carry everything under Events.
         Budget: null,
         Event: null,
-        _members.Select(m => new MemberState(m.Id, m.Name, UserId: m.UserId, OriginCirclePersonId: m.OriginCirclePersonId, IsArchived: m.IsArchived)).ToList(),
+        _members.Select(m => new MemberState(m.Id, m.Name, UserId: m.UserId, OriginCirclePersonId: m.OriginCirclePersonId, IsArchived: m.IsArchived, GiftNote: m.GiftNote)).ToList(),
         _exclusions.Select(e => new ExclusionState(e.GiverMemberId, e.RecipientMemberId, e.Mutual)).ToList(),
         Draws: [],
         DrawInvalidatedByMembershipChange: false,
@@ -354,7 +365,7 @@ public sealed class Group : AggregateRoot
         ArgumentNullException.ThrowIfNull(state);
 
         var members = state.Members
-            .Select(m => Member.Restore(m.Id, m.Name, m.UserId, m.OriginCirclePersonId, m.IsArchived))
+            .Select(m => Member.Restore(m.Id, m.Name, m.GiftNote, m.UserId, m.OriginCirclePersonId, m.IsArchived))
             .ToList();
 
         var exclusions = state.Exclusions

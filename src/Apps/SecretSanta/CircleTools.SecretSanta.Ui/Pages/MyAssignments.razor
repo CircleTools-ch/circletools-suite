@@ -73,6 +73,11 @@
                                 <MudAlert Severity="Severity.Success" Class="mt-2">
                                     <MudText Class="mb-1">@L["RevealRecipientLabel"]:</MudText>
                                     <MudText Typo="Typo.h5" Class="mb-3">@assignment.RecipientName</MudText>
+                                    @if (!string.IsNullOrWhiteSpace(assignment.RecipientGiftNote))
+                                    {
+                                        @* The recipient's stable gift note — allergies, dietary/lifestyle, do-not-gift (FR-037). *@
+                                        <MudText Class="mb-3"><strong>@L["RevealGiftNoteLabel"]:</strong> @assignment.RecipientGiftNote</MudText>
+                                    }
                                     <MudText Class="mb-1"><strong>@L["RevealWishlistLabel"]:</strong></MudText>
                                     @if (assignment.RecipientWishlist.Count == 0)
                                     {

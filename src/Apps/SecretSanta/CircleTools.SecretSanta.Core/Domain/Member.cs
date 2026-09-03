@@ -6,14 +6,21 @@ namespace CircleTools.SecretSanta.Core.Domain;
 /// A member of a Secret-Santa group — identity within the shared roster (a name, an optional account
 /// link, an optional circle origin). What a member <em>wants</em> is not held here: wishlists are
 /// per-<see cref="Event"/> (ADR-0042), because a member's list for one occasion is not their list for
-/// another. Owned by the <see cref="Group"/> aggregate root.
+/// another. What a member's giver should <em>know</em> — allergies, dietary needs, "please don't get
+/// me…" (the <see cref="GiftNote"/>, FR-037) — <strong>is</strong> held here, because unlike a wishlist
+/// it is a stable property of the person, the same for every occasion. Owned by the <see cref="Group"/>
+/// aggregate root.
 /// </summary>
 public sealed class Member : Entity
 {
-    private Member(Guid id, string name, Guid? userId, Guid? originCirclePersonId, bool isArchived)
+    /// <summary>The maximum length of a <see cref="GiftNote"/>, bounding the encoded reveal link (ADR-0014).</summary>
+    public const int MaxGiftNoteLength = 500;
+
+    private Member(Guid id, string name, string giftNote, Guid? userId, Guid? originCirclePersonId, bool isArchived)
     {
         Id = id;
         Name = name;
+        GiftNote = giftNote;
         UserId = userId;
         OriginCirclePersonId = originCirclePersonId;
         IsArchived = isArchived;
@@ -21,6 +28,14 @@ public sealed class Member : Entity
 
     /// <summary>Gets the member's display name.</summary>
     public string Name { get; private set; }
+
+    /// <summary>
+    /// Gets the member's <em>gift note</em> — free-text guidance the assigned giver sees on the reveal:
+    /// allergies, dietary or lifestyle needs, and things <em>not</em> to buy (FR-037). Empty when unset.
+    /// It is a stable attribute of the person (not per occasion, unlike a wishlist), so one note serves
+    /// every event's draw. Distinct from an <see cref="Exclusion"/>, which constrains <em>who draws whom</em>.
+    /// </summary>
+    public string GiftNote { get; private set; }
 
     /// <summary>
     /// Gets a value indicating whether this member has been <em>archived</em> — removed from the active
@@ -53,15 +68,18 @@ public sealed class Member : Entity
     public Guid? OriginCirclePersonId { get; private set; }
 
     internal static Member Create(string name) =>
-        new(GuidV7.New(), NormalizeName(name), userId: null, originCirclePersonId: null, isArchived: false);
+        new(GuidV7.New(), NormalizeName(name), giftNote: string.Empty, userId: null, originCirclePersonId: null, isArchived: false);
 
     internal static Member CreateFromCircle(string name, Guid? userId, Guid? originCirclePersonId) =>
-        new(GuidV7.New(), NormalizeName(name), userId, originCirclePersonId, isArchived: false);
+        new(GuidV7.New(), NormalizeName(name), giftNote: string.Empty, userId, originCirclePersonId, isArchived: false);
 
-    internal static Member Restore(Guid id, string name, Guid? userId, Guid? originCirclePersonId, bool isArchived) =>
-        new(id, name, userId, originCirclePersonId, isArchived);
+    internal static Member Restore(Guid id, string name, string? giftNote, Guid? userId, Guid? originCirclePersonId, bool isArchived) =>
+        new(id, name, NormalizeGiftNote(giftNote), userId, originCirclePersonId, isArchived);
 
     internal void Rename(string name) => Name = NormalizeName(name);
+
+    /// <summary>Sets (or clears, when empty) the member's <see cref="GiftNote"/>.</summary>
+    internal void SetGiftNote(string? giftNote) => GiftNote = NormalizeGiftNote(giftNote);
 
     /// <summary>Archives the member: kept for history, but removed from the active roster (ADR-0052).</summary>
     internal void Archive() => IsArchived = true;
@@ -78,5 +96,17 @@ public sealed class Member : Entity
         }
 
         return name.Trim();
+    }
+
+    private static string NormalizeGiftNote(string? giftNote)
+    {
+        var trimmed = (giftNote ?? string.Empty).Trim();
+        if (trimmed.Length > MaxGiftNoteLength)
+        {
+            throw new ArgumentException(
+                $"Gift note must be at most {MaxGiftNoteLength} characters.", nameof(giftNote));
+        }
+
+        return trimmed;
     }
 }

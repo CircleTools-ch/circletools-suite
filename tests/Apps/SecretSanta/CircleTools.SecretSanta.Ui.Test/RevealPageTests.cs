@@ -109,6 +109,24 @@ public sealed class RevealPageTests : IDisposable
     }
 
     [Fact]
+    public void RevealPage_ShowsRecipientGiftNote_OnlyAfterReveal()
+    {
+        // FR-037: the recipient's gift note is shown with the revealed giftee (it names the giftee's needs),
+        // so it must stay behind the spoiler gate like the wishlist.
+        const string note = "No nuts, please — severe allergy";
+        var payload = new RevealPayload(
+            RevealPayload.CurrentVersion, RecipientName, ["Book"], 30m, "CHF", null, null, null, GiftNote: note);
+        NavigateToRevealLink(BuildFragment(payload));
+
+        var cut = _ctx.RenderComponent<Reveal>();
+        Assert.DoesNotContain(note, cut.Markup); // hidden before reveal
+
+        cut.Find("button").Click();
+
+        Assert.Contains(note, cut.Markup); // shown after reveal
+    }
+
+    [Fact]
     public void RevealPage_MalformedFragment_ShowsErrorAndNoRevealButton()
     {
         NavigateToRevealLink("#for=nobody"); // missing the required payload token
