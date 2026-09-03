@@ -15,7 +15,8 @@ public sealed class RevealLinkTests
         "2026-12-24T18:00:00.0000000+00:00",
         "Grandma's house",
         "Bring a dessert",
-        BudgetMin: 10m);
+        BudgetMin: 10m,
+        GiftNote: "No nuts, please — severe allergy");
 
     private static void AssertPayloadEqual(RevealPayload expected, RevealPayload actual)
     {
@@ -28,6 +29,7 @@ public sealed class RevealLinkTests
         Assert.Equal(expected.EventDate, actual.EventDate);
         Assert.Equal(expected.EventLocation, actual.EventLocation);
         Assert.Equal(expected.EventNotes, actual.EventNotes);
+        Assert.Equal(expected.GiftNote, actual.GiftNote);
     }
 
     [Fact]
@@ -67,6 +69,18 @@ public sealed class RevealLinkTests
 
         Assert.Null(decoded.BudgetMin);
         Assert.Equal(30m, decoded.BudgetAmount);
+    }
+
+    [Fact]
+    public void Codec_OmitsGiftNote_WhenAbsent()
+    {
+        // FR-037: the gift note is additive and optional; a payload without one must not carry the "gn" key.
+        var codec = new RevealLinkCodec();
+        var noNote = SamplePayload() with { GiftNote = null };
+
+        var decoded = codec.Decode(codec.Encode(noNote));
+
+        Assert.Null(decoded.GiftNote);
     }
 
     [Fact]

@@ -50,11 +50,30 @@ raises its motivation).
   **Maximum**), and a shared `BudgetDisplay.Format` rendering "10–30 CHF" (range) or "30 CHF" (bare max) on the reveal +
   my-assignments screens. Solution builds clean; **208 tests green** (incl. 10 new); Playwright DE/EN/FR walkthrough
   clean-console — range shown, max-only unchanged, min-exceeds-max rejected inline.
+  **Gap found & closed (2026-09-03):** at ship time the range reached only the account-free **reveal link** — a linked
+  member's *my-assignments* rebuilds from a server projection that stored only budget amount+currency, so it showed the
+  bare max. **CR-3** carried the minimum through that projection (new `BudgetMinAmount` column + Linking migration,
+  needed there anyway for the gift note), so my-assignments now shows the range too. FEAT-011 corrected accordingly.
 - **CR-3 · "Do-not-gift" / dietary & lifestyle notes per member (P2).** Distinct from person-*exclusions* (who draws
   whom): a free-text/tagged **"please don't get me…" / allergies / dietary / lifestyle** note the giver sees on the
   reveal. Repeatedly wished-for across markets, done well by nobody. Rides on the existing wishlist plumbing and the
   self-contained reveal payload ([ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md)) — mind the encoded-link
   size budget. Glossary: may want a term (extends [wishlist](../glossary/wishlist.md)).
+  **✅ Promoted through the process (2026-09-03):** [UC-SS-016](../use-cases/secret-santa/UC-SS-016-member-gift-note.md)
+  → [FR-037](../requirements/functional/FR-037-member-gift-note.md) →
+  [FEAT-012](../features/FEAT-012-member-gift-note.md) / [TP-012](../features/TP-012-member-gift-note.md),
+  new glossary term [Gift note](../glossary/gift-note.md). **Design call (recorded, no ADR):** modelled **on the
+  `Member`** (a stable per-person attribute — an allergy is the same every occasion), *not* per-event like a wishlist,
+  so it is set once and shown on every draw; organizer-authored in v1 (linked-member self-authoring parked). Free text
+  capped at **500 chars** to protect the encoded link; carried as an **additive optional** reveal-payload field (`gn`)
+  omitted when unset (version unchanged). ✅ **Built & browser-verified 2026-09-03**
+  ([FEAT-012](../features/FEAT-012-member-gift-note.md) *Done*): `Member.GiftNote` + `Group.SetMemberGiftNote`
+  (independent of rename), a gift-note field on the members editor, and a **"Good to know"** line on the reveal +
+  my-assignments (after the giftee is revealed). The linked-member path required a **Linking Postgres migration**
+  (`AddAssignmentBudgetMinAndGiftNote`) adding `RecipientGiftNote` **and** `BudgetMinAmount` to the assignment
+  projection — which **also closed the CR-2 gap** (the budget range now reaches my-assignments, not only the reveal
+  link). Solution builds clean; **218 SecretSanta+arch tests green** (incl. 11 new) + a Docker-only Main projection
+  test; Playwright DE/EN/FR walkthrough clean-console.
 - **CR-4 · Schrottwichteln variant — each person draws 2 recipients (P3, DACH differentiator).** A culturally
   distinct DACH format (each participant is Wichtel for **two** people) that **native apps largely ignore** — only
   web tools (Wichtlify) model it. Sits naturally with the Swiss-first stance. Needs a draw-algorithm variant (the

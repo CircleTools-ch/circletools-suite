@@ -23,6 +23,7 @@ only — they are **not** code names.
 | [Event](event.md) | Secret-Santa | One gift-exchange occasion within a group, with its own draw, wishlists, budget and date. |
 | [Event details](event-details.md) | Secret-Santa | One event's occasion info: date, location, notes. |
 | [Exclusion](exclusion.md) | Secret-Santa | A one-directional rule preventing a giver from being matched to a recipient. |
+| [Gift note](gift-note.md) | Secret-Santa | A stable per-member note (allergies / dietary / do-not-gift) the giver sees on the reveal. |
 | [Group](group.md) | Secret-Santa | A shared roster of participants who exchange gifts across one or more events. |
 | [Invitation](invitation.md) | Circles | A pending offer to join a circle, sent to an email address. |
 | [Managed member](managed-member.md) | Circles | A person in a circle with a profile but no account, maintained by an admin. |

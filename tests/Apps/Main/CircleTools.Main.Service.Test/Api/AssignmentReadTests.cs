@@ -34,6 +34,38 @@ public sealed class AssignmentReadTests(MailApiFactory factory)
     }
 
     [Fact]
+    public async Task ALinkedMember_SeesTheBudgetRange_AndTheRecipientsGiftNote()
+    {
+        // FR-036 (budget min) + FR-037 (gift note): both must survive the server assignment projection and
+        // reach the linked giver's my-assignment view, not only the account-free reveal link.
+        var organizer = await CircleTestAccounts.SignUpAsync(factory, "Organizer");
+        var member = await CircleTestAccounts.SignUpAsync(factory, "Member");
+        var groupId = Guid.NewGuid();
+
+        var memberAccountId = await LinkingScenario.LinkMemberAsync(factory, organizer, member, groupId, Guid.NewGuid());
+
+        var publish = await organizer.Client.PostAsJsonAsync(
+            $"/api/v1/groups/{groupId}/assignments/publish",
+            new PublishAssignmentsRequest(
+                groupId,
+                "December",
+                groupId,
+                "December event",
+                DrawVersion: 1,
+                new BudgetDto(30m, "CHF", MinAmount: 10m),
+                new EventDetailsDto(null, string.Empty, string.Empty),
+                [new PublishedAssignment(memberAccountId, Guid.NewGuid(), "Carol", ["Tea"], RecipientGiftNote: "No nuts — allergy")]));
+        publish.EnsureSuccessStatusCode();
+
+        var response = await LinkingScenario.GetMyAssignmentAsync(member, groupId);
+        var pairing = (await response.Content.ReadFromJsonAsync<MyAssignmentResponse>())!;
+
+        Assert.Equal(30m, pairing.Budget!.Amount);
+        Assert.Equal(10m, pairing.Budget.MinAmount);
+        Assert.Equal("No nuts — allergy", pairing.RecipientGiftNote);
+    }
+
+    [Fact]
     public async Task TheRecipientsCurrentWishlist_IsShown_NotTheDrawTimeSnapshot()
     {
         var organizer = await CircleTestAccounts.SignUpAsync(factory, "Organizer");

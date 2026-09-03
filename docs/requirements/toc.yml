@@ -74,6 +74,8 @@
       href: functional/FR-035-carry-forward-new-occasion.md
     - name: FR-036 Budget minimum and maximum
       href: functional/FR-036-budget-minimum-and-maximum.md
+    - name: FR-037 Member gift note
+      href: functional/FR-037-member-gift-note.md
 - name: Non-functional
   items:
     - name: NFR-001 Local-first & offline

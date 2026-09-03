@@ -75,7 +75,8 @@ public sealed class AssignmentPublisher(ILinkingApi api)
                 continue;
             }
 
-            rows.Add(new PublishedAssignment(giverUserId, recipient.Id, recipient.Name, [.. occasion.WishlistFor(recipient.Id).Items]));
+            rows.Add(new PublishedAssignment(
+                giverUserId, recipient.Id, recipient.Name, [.. occasion.WishlistFor(recipient.Id).Items], recipient.GiftNote));
         }
 
         if (rows.Count == 0)

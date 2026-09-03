@@ -38,13 +38,19 @@ public sealed record EventDetailsState(DateTimeOffset? Date, string Location, st
 /// (ADR-0052). Snapshots written before this field existed deserialize to <see langword="false"/>
 /// (active), so no existing member is lost or hidden by the schema bump.
 /// </param>
+/// <param name="GiftNote">
+/// The member's stable gift note — allergies, dietary/lifestyle needs, "please don't get me…" shown to
+/// their giver (FR-037), or <see langword="null"/> when unset. Snapshots written before this field
+/// existed deserialize to <see langword="null"/> (no note), so no existing member changes.
+/// </param>
 public sealed record MemberState(
     Guid Id,
     string Name,
     IReadOnlyList<string>? Wishlist = null,
     Guid? UserId = null,
     Guid? OriginCirclePersonId = null,
-    bool IsArchived = false);
+    bool IsArchived = false,
+    string? GiftNote = null);
 
 /// <summary>Serializable snapshot of an <c>Exclusion</c>.</summary>
 /// <param name="GiverMemberId">The giver member identity.</param>

@@ -88,6 +88,9 @@
   <data name="BudgetAmountInvalid" xml:space="preserve"><value>Saisis un montant de budget supérieur à zéro.</value></data>
   <data name="CurrencyInvalid" xml:space="preserve"><value>Saisis un code de devise à 3 lettres (p. ex. CHF).</value></data>
   <data name="BudgetMinExceedsMax" xml:space="preserve"><value>Le minimum ne doit pas dépasser le maximum.</value></data>
+  <data name="GiftNoteLabel" xml:space="preserve"><value>Note pour le cadeau</value></data>
+  <data name="GiftNoteHint" xml:space="preserve"><value>Allergies, régime ou mode de vie, ou ce qu'il ne faut pas offrir — visible par la personne qui offre.</value></data>
+  <data name="RevealGiftNoteLabel" xml:space="preserve"><value>Bon à savoir</value></data>
   <data name="ConfirmDeleteGroup" xml:space="preserve"><value>Supprimer « {0} » et tout son contenu ? Cette action est irréversible.</value></data>
   <data name="ConfirmRemoveMember" xml:space="preserve"><value>Retirer « {0} » de ce groupe ? La personne reste dans les occasions déjà tirées.</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Oui, supprimer</value></data>

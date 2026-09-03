@@ -32,6 +32,8 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-010](TP-010-carry-forward-new-occasion.md) | Test plan — Carry forward a new occasion | SecretSanta | Reviewed |
 | [FEAT-011](FEAT-011-budget-minimum-and-maximum.md) | Gift budget minimum as well as maximum | SecretSanta | Done |
 | [TP-011](TP-011-budget-minimum-and-maximum.md) | Test plan — Budget minimum and maximum | SecretSanta | Reviewed |
+| [FEAT-012](FEAT-012-member-gift-note.md) | Member gift note (allergies / dietary / do-not-gift) | SecretSanta | Done |
+| [TP-012](TP-012-member-gift-note.md) | Test plan — Member gift note | SecretSanta | Reviewed |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and

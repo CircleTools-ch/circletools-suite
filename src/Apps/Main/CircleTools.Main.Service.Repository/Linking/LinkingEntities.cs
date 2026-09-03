@@ -75,11 +75,17 @@ public sealed class AssignmentRow
     /// <summary>The recipient's wishlist as the organizer held it at publish time (the fallback for the current one).</summary>
     public string RecipientWishlistSnapshot { get; set; } = "[]";
 
-    /// <summary>The gift budget amount, or <see langword="null"/>.</summary>
+    /// <summary>The gift budget maximum amount, or <see langword="null"/>.</summary>
     public decimal? BudgetAmount { get; set; }
 
     /// <summary>The gift budget currency, or <see langword="null"/>.</summary>
     public string? BudgetCurrency { get; set; }
+
+    /// <summary>The gift budget minimum (lower bound), or <see langword="null"/> for a bare maximum (FR-036).</summary>
+    public decimal? BudgetMinAmount { get; set; }
+
+    /// <summary>The recipient's stable gift note shown to the giver (FR-037); empty when unset.</summary>
+    public string RecipientGiftNote { get; set; } = string.Empty;
 
     /// <summary>The event date, or <see langword="null"/>.</summary>
     public DateTimeOffset? EventDate { get; set; }

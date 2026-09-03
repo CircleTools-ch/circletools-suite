@@ -44,6 +44,10 @@
   href: FEAT-011-budget-minimum-and-maximum.md
 - name: TP-011 Budget minimum and maximum test plan
   href: TP-011-budget-minimum-and-maximum.md
+- name: FEAT-012 Member gift note
+  href: FEAT-012-member-gift-note.md
+- name: TP-012 Member gift note test plan
+  href: TP-012-member-gift-note.md
 - name: Templates
   items:
     - name: Feature spec template

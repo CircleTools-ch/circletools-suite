@@ -54,6 +54,39 @@ public sealed class HandlerTests
     }
 
     [Fact]
+    public async Task GetRevealLinks_CarriesEachRecipientsGiftNote_ToTheirGiversLink()
+    {
+        // FR-037: the giver sees their *recipient's* gift note on the reveal. Give exactly one member a
+        // note, then assert exactly one link decodes to it — and it is not that member's own link.
+        var repository = new InMemoryGroupRepository();
+        var codec = new RevealLinkCodec();
+        var linkBuilder = new RevealLinkBuilder(new RevealLinkOptions("https://santa.example"), codec);
+
+        var groupId = await new CreateGroupCommandHandler(repository).HandleAsync(new CreateGroupCommand("Family"), default);
+        var eventId = await new AddEventCommandHandler(repository, TimeProvider.System).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
+        var addMember = new AddMemberCommandHandler(repository);
+        var alice = await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "Carol"), default);
+        await new SetMemberGiftNoteCommandHandler(repository)
+            .HandleAsync(new SetMemberGiftNoteCommand(groupId, alice, "No nuts — allergy"), default);
+        await new RunDrawCommandHandler(repository, new DrawGenerator(new SeededRandomSource(7)), TimeProvider.System)
+            .HandleAsync(new RunDrawCommand(groupId, eventId), default);
+
+        var links = await new GetRevealLinksQueryHandler(repository, linkBuilder)
+            .HandleAsync(new GetRevealLinksQuery(groupId, eventId), default);
+
+        var withNote = links
+            .Select(l => codec.Decode(RevealLinkBuilder.ParseFragment(new Uri(l.Url).Fragment).Item2))
+            .Where(p => p.GiftNote is not null)
+            .ToList();
+
+        var only = Assert.Single(withNote);
+        Assert.Equal("No nuts — allergy", only.GiftNote);
+        Assert.Equal("Alice", only.RecipientName); // the note is the *recipient's*, shown to whoever drew Alice
+    }
+
+    [Fact]
     public async Task AddEvent_CarryingForward_CopiesBudgetAndWishlist_IsUndrawn_AndCarriesBaseline()
     {
         var repository = new InMemoryGroupRepository();

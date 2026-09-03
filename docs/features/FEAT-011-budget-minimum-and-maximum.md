@@ -21,6 +21,13 @@ related: [FR-036, UC-SS-015, FR-034, ADR-0014, ADR-0042, ADR-0056, TP-011]
 > 10–30 budget shows "10–30 CHF" on every reveal link; a max-only budget still shows "30 CHF" with no
 > range; the min-exceeds-max save is rejected with the localized inline error; **console error count 0**
 > in every locale. Carried project-wide item only: "CI green" (no pipeline yet).
+>
+> **Correction (2026-09-03):** at ship time the range reached only the **account-free reveal link** — the
+> linked-member *my-assignments* view rebuilds the assignment from a server projection that stored budget as
+> amount+currency columns only, so the `BudgetDisplay.Format` call there rendered the bare maximum. The
+> minimum was carried through that projection (a new `BudgetMinAmount` column + migration) as part of
+> **[FEAT-012](FEAT-012-member-gift-note.md)**, which needed the same projection change for the gift note —
+> so my-assignments now shows the range too.
 
 ## Problem & goals
 
