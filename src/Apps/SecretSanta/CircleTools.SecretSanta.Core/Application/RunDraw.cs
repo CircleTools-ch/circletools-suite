@@ -7,7 +7,11 @@ namespace CircleTools.SecretSanta.Core.Application;
 /// <summary>Command to run (or re-run) the draw for one event of a group.</summary>
 /// <param name="GroupId">The group to draw.</param>
 /// <param name="EventId">The event to draw.</param>
-public sealed record RunDrawCommand(Guid GroupId, Guid EventId) : ICommand<RunDrawResultDto>;
+/// <param name="IgnoreCarriedBaseline">
+/// When <see langword="true"/>, ignore a draw baseline carried forward from a previous occasion (FR-035) —
+/// the escape hatch when carrying forward over-constrains a small roster (UC-SS-014 5a).
+/// </param>
+public sealed record RunDrawCommand(Guid GroupId, Guid EventId, bool IgnoreCarriedBaseline = false) : ICommand<RunDrawResultDto>;
 
 /// <summary>Handles <see cref="RunDrawCommand"/> by generating a draw and persisting it on success.</summary>
 /// <param name="repository">The group repository port.</param>
@@ -22,7 +26,7 @@ public sealed class RunDrawCommandHandler(IGroupRepository repository, DrawGener
         ArgumentNullException.ThrowIfNull(command);
 
         var group = await repository.RequireAsync(command.GroupId, cancellationToken);
-        var result = group.RunDraw(command.EventId, generator, timeProvider.GetUtcNow());
+        var result = group.RunDraw(command.EventId, generator, timeProvider.GetUtcNow(), command.IgnoreCarriedBaseline);
 
         if (result.IsSuccess)
         {

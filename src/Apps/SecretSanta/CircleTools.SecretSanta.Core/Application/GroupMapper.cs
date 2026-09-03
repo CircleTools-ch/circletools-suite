@@ -69,6 +69,7 @@ internal static class GroupMapper
             occasion.CurrentDraw is not null,
             assignments,
             IsStaleAndActionable(occasion, now),
-            wishlists);
+            wishlists,
+            occasion.BaselineDraw is not null);
     }
 }

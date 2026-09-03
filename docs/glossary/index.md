@@ -15,6 +15,7 @@ only — they are **not** code names.
 |------|---------|------------|
 | [Assignment](assignment.md) | Secret-Santa | A single giver→recipient pairing produced by a draw. |
 | [Budget](budget.md) | Secret-Santa | The agreed spending limit for gifts in a group. |
+| [Carry-forward](carry-forward.md) | Secret-Santa | Creating a new event by copying wishlists, budget and the prior draw (as the no-repeat baseline) from an existing event. |
 | [Circle](circle.md) | Circles | A persistent named set of people sharing apps and data; UI label is user-chosen. |
 | [Circle membership](circle-membership.md) | Circles | A person's link to a circle, carrying their role (owner/admin/member). |
 | [Claim](claim.md) | Platform · Secret-Santa | Taking account-free local data into a user's account, per aggregate and by explicit choice. |

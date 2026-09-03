@@ -184,8 +184,14 @@ finding is **confirmation**, not new work.
 
 ## Follow-up actions
 
-- [ ] Add backlog items: **recurring event carries wish lists + exclusions forward**;
-  **budget min+max**; **do-not-gift/dietary list**; **Schrottwichteln variant**. — Adrian
+- [x] Add backlog items: **recurring event carries wish lists + exclusions forward** (CR-1);
+  **budget min+max** (CR-2); **do-not-gift/dietary list** (CR-3); **Schrottwichteln variant** (CR-4).
+  — Adrian, 2026-09-02. **CR-1 taken through the process** →
+  [UC-SS-014](../use-cases/secret-santa/UC-SS-014-carry-forward-new-occasion.md) /
+  [FR-035](../requirements/functional/FR-035-carry-forward-new-occasion.md) /
+  [FEAT-010](../features/FEAT-010-carry-forward-new-occasion.md) /
+  [TP-010](../features/TP-010-carry-forward-new-occasion.md); reading the model sharpened it (exclusions already
+  carry; added the draw-baseline anti-repeat piece).
 - [ ] Re-prioritise **MNF-8 (reminders/notifications)** with the wish-list-nudge motivation from
   this scan; still gated on the scheduling/origin design. — Adrian
 - [ ] Fold a **"free · no ads · no account · no spam"** promise into store copy / onboarding when

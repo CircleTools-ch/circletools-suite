@@ -74,5 +74,7 @@
   items:
     - name: UC-SS-013 Manage multiple events in a group
       href: secret-santa/UC-SS-013-manage-events.md
+    - name: UC-SS-014 Carry forward a new occasion
+      href: secret-santa/UC-SS-014-carry-forward-new-occasion.md
 - name: Template
   href: _template-use-case.md

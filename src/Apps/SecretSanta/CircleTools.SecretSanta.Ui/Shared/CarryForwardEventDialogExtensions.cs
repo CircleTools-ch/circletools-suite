@@ -1,0 +1,54 @@
+using CircleTools.SecretSanta.Contracts;
+using CircleTools.SecretSanta.Ui.Shared;
+using MudBlazor;
+
+namespace CircleTools.SecretSanta.Ui;
+
+/// <summary>The organizer's choice from the carry-forward add-event dialog (FR-035).</summary>
+/// <param name="Name">The new occasion's name (trimmed, non-empty).</param>
+/// <param name="SourceEventId">
+/// The event to carry forward from, or <see langword="null"/> to start blank.
+/// </param>
+public sealed record CarryForwardEventChoice(string Name, Guid? SourceEventId);
+
+/// <summary>
+/// Shows the <see cref="CarryForwardEventDialog"/> — add a new occasion, optionally carrying forward
+/// wishlists, budget and the no-repeat draw baseline from a previous one (FR-035 / UC-SS-014).
+/// </summary>
+public static class CarryForwardEventDialogExtensions
+{
+    /// <summary>
+    /// Presents the add-with-carry-forward dialog and returns the organizer's choice, or
+    /// <see langword="null"/> if cancelled.
+    /// </summary>
+    /// <param name="dialogs">The dialog service.</param>
+    /// <param name="title">The dialog title.</param>
+    /// <param name="events">The group's existing events to offer as carry-forward sources.</param>
+    /// <param name="initialName">The pre-filled default name for the new occasion.</param>
+    /// <returns>The choice (name + optional source event), or <see langword="null"/> if cancelled.</returns>
+    public static async Task<CarryForwardEventChoice?> ShowCarryForwardEventDialogAsync(
+        this IDialogService dialogs,
+        string title,
+        IReadOnlyList<EventSummaryDto> events,
+        string? initialName = null)
+    {
+        var parameters = new DialogParameters<CarryForwardEventDialog>
+        {
+            { x => x.Events, events },
+            { x => x.InitialName, initialName },
+        };
+
+        // Top, not bottom: the name field raises the soft keyboard, which would cover a bottom sheet
+        // (same reasoning as TextInputSheet).
+        var options = new DialogOptions
+        {
+            Position = DialogPosition.TopCenter,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+        };
+
+        var reference = await dialogs.ShowAsync<CarryForwardEventDialog>(title, parameters, options);
+        var result = await reference.Result;
+        return result is { Canceled: false, Data: CarryForwardEventChoice choice } ? choice : null;
+    }
+}

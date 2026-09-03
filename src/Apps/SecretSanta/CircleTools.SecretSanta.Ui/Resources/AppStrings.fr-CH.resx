@@ -71,6 +71,7 @@
   <data name="DrawSuccess" xml:space="preserve"><value>Tirage terminé.</value></data>
   <data name="DrawAssignmentCount" xml:space="preserve"><value>{0} attributions ont été générées.</value></data>
   <data name="DrawFailedOverConstrained" xml:space="preserve"><value>Aucun tirage valide n'est possible avec les exclusions actuelles. Essayez d'en retirer.</value></data>
+  <data name="DrawIgnoreBaseline" xml:space="preserve"><value>Tirer quand même (peut répéter la dernière fois)</value></data>
   <data name="DrawFailedTwoMember" xml:space="preserve"><value>Un groupe de deux personnes ne peut pas être tiré sans que chacune offre à l'autre. Ajoutez d'autres membres.</value></data>
   <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Ajoutez au moins deux membres pour lancer le tirage.</value></data>
   <data name="DrawSpoilerNote" xml:space="preserve"><value>Les attributions sont masquées ici pour éviter les divulgations. Partagez plutôt les liens.</value></data>
@@ -216,6 +217,9 @@
   <data name="EventNameLabel" xml:space="preserve"><value>Nom de l'événement</value></data>
   <data name="EventNamePlaceholder" xml:space="preserve"><value>p. ex. Noël 2026</value></data>
   <data name="AddEvent" xml:space="preserve"><value>Ajouter un événement</value></data>
+  <data name="CarryForwardCheckbox" xml:space="preserve"><value>Reprendre d'un événement précédent</value></data>
+  <data name="CarryForwardSourceLabel" xml:space="preserve"><value>Reprendre de</value></data>
+  <data name="CarryForwardHint" xml:space="preserve"><value>Les listes de souhaits et le budget sont repris (vous pouvez les modifier), et le tirage évitera les attributions de la dernière fois.</value></data>
   <data name="EventsColumn" xml:space="preserve"><value>Événements</value></data>
   <data name="EventDetailsTitle" xml:space="preserve"><value>Événement</value></data>
   <data name="EventNotFound" xml:space="preserve"><value>Événement introuvable.</value></data>

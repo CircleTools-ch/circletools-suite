@@ -125,6 +125,7 @@
   <data name="DrawSuccess" xml:space="preserve"><value>Draw complete.</value></data>
   <data name="DrawAssignmentCount" xml:space="preserve"><value>{0} assignments were generated.</value></data>
   <data name="DrawFailedOverConstrained" xml:space="preserve"><value>No valid draw exists with the current exclusions. Try removing some.</value></data>
+  <data name="DrawIgnoreBaseline" xml:space="preserve"><value>Draw anyway (may repeat last time)</value><comment>FR-035 5a: escape when carrying forward over-constrains the draw; runs it ignoring the carried baseline.</comment></data>
   <data name="DrawFailedTwoMember" xml:space="preserve"><value>A two-person group cannot be drawn without both giving to each other. Add more members.</value></data>
   <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Add at least two members to run a draw.</value></data>
   <data name="DrawSpoilerNote" xml:space="preserve"><value>Assignments are hidden here to avoid spoilers. Share the reveal links instead.</value></data>
@@ -271,6 +272,9 @@
   <data name="EventNameLabel" xml:space="preserve"><value>Event name</value></data>
   <data name="EventNamePlaceholder" xml:space="preserve"><value>e.g. Christmas 2026</value></data>
   <data name="AddEvent" xml:space="preserve"><value>Add event</value></data>
+  <data name="CarryForwardCheckbox" xml:space="preserve"><value>Carry forward from a previous occasion</value><comment>FR-035: opt-in to seed a new event from an existing one (default on when the group already has an event).</comment></data>
+  <data name="CarryForwardSourceLabel" xml:space="preserve"><value>Carry forward from</value><comment>FR-035: label for the source-event picker.</comment></data>
+  <data name="CarryForwardHint" xml:space="preserve"><value>Wishlists and the budget are copied (you can edit them), and the draw will avoid last time's pairings.</value><comment>FR-035: explains what carry-forward does.</comment></data>
   <data name="EventsColumn" xml:space="preserve"><value>Events</value></data>
   <data name="EventDetailsTitle" xml:space="preserve"><value>Event</value></data>
   <data name="EventNotFound" xml:space="preserve"><value>Event not found.</value></data>
