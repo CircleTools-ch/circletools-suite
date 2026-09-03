@@ -70,6 +70,8 @@
       href: functional/FR-033-bookmark-groups.md
     - name: FR-034 Multiple events per group
       href: functional/FR-034-multiple-events-per-group.md
+    - name: FR-035 Carry forward a new occasion
+      href: functional/FR-035-carry-forward-new-occasion.md
 - name: Non-functional
   items:
     - name: NFR-001 Local-first & offline

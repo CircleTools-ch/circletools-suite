@@ -3,6 +3,53 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Competitor-research candidates — Secret-Santa (2026-09-02)
+
+Promoted from the [DE/EN/FR app-store competitor & review scan](../brainstorming/2026-09-02-secret-santa-competitor-research.md).
+The scan's headline is that our **no-account / offline / link-or-QR / non-spoiling-reveal / draw-that-never-repeats**
+spine is exactly what reviewers reward and incumbents get wrong — so these are the *on-strategy additions* it
+surfaced, not a pivot. Each is a stub; take through the [process](../process/ways-of-working.md) (use case →
+requirement → feature spec) if pursued. The QR work already in flight is **MNF-5** in the
+[distribution cluster](#mobile-native-feel-pass--secret-santa-2026-09-02); reminders are **MNF-8** below (this scan
+raises its motivation).
+
+- **CR-1 · Recurring event carries wish lists + exclusions forward (P1).** Highest-value new candidate. Reviewers
+  in all three markets complain that copying last year's event **loses the wish lists** (children's lists must be
+  re-typed) and sometimes the exclusions too (DrawNames, Giftster). When creating a new occasion from a group that
+  already has a past one, offer to **carry forward each member's wishlist and the exclusion set** (editable, not
+  forced). Fits the events-as-first-class model ([ADR-0042](../adr/0042-events-as-first-class-entities.md)) and the
+  member-archival/draw-history work ([ADR-0052](../adr/0052-member-archival-and-permanent-draw-history.md)). Design
+  q: carry-forward as a copy at creation vs. a live link to the prior occasion.
+  **✅ Promoted through the process (2026-09-02):** [UC-SS-014](../use-cases/secret-santa/UC-SS-014-carry-forward-new-occasion.md)
+  → [FR-035](../requirements/functional/FR-035-carry-forward-new-occasion.md) →
+  [FEAT-010](../features/FEAT-010-carry-forward-new-occasion.md) / [TP-010](../features/TP-010-carry-forward-new-occasion.md),
+  new glossary term [Carry-forward](../glossary/carry-forward.md). Scope **sharpened against the model**: exclusions
+  already carry (shared at group level, FR-034), so carry-forward copies **wishlists + budget** and seeds the new
+  event's **draw-history baseline** with the source draw so the next draw won't repeat last year's pairing — which
+  also answers the "same recipient every year" complaint. Copy-at-creation chosen (events stay independent, ADR-0042);
+  no new ADR. Distinct from the account-only linked-member self-copy (`CopyFrom`, FR-030). ✅ **Built & browser-verified
+  2026-09-02** ([FEAT-010](../features/FEAT-010-carry-forward-new-occasion.md) *Done*): `Group.AddEventFrom`
+  + an `Event` baseline draw (separate from the draw history, so a carried occasion reads as undrawn but its
+  first draw avoids last time's pairings), `CarryForwardEventDialog` on the group hub, and a "draw anyway"
+  escape on the Draw screen for the rare over-constrained roster. Solution builds clean; 198 tests green
+  (incl. 8 new); Playwright DE/EN/FR walkthrough clean-console, carried occasion draws.
+- **CR-2 · Budget minimum *and* maximum (P2, cheap).** Every surveyed app offers only a **max** price; a recurring
+  wish is a **minimum** too (so cheap-out gifts don't undercut the exchange). The event already has budget fields
+  ([per-event editor](../features/FEAT-007-events-per-group.md)); add an optional lower bound and show the range on
+  the reveal link. Small, closes a universal gap. Watch localization: CHF/EUR formatting per
+  [ADR-0056](../adr/0056-decouple-ui-language-from-formatting-region.md).
+- **CR-3 · "Do-not-gift" / dietary & lifestyle notes per member (P2).** Distinct from person-*exclusions* (who draws
+  whom): a free-text/tagged **"please don't get me…" / allergies / dietary / lifestyle** note the giver sees on the
+  reveal. Repeatedly wished-for across markets, done well by nobody. Rides on the existing wishlist plumbing and the
+  self-contained reveal payload ([ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md)) — mind the encoded-link
+  size budget. Glossary: may want a term (extends [wishlist](../glossary/wishlist.md)).
+- **CR-4 · Schrottwichteln variant — each person draws 2 recipients (P3, DACH differentiator).** A culturally
+  distinct DACH format (each participant is Wichtel for **two** people) that **native apps largely ignore** — only
+  web tools (Wichtlify) model it. Sits naturally with the Swiss-first stance. Needs a draw-algorithm variant (the
+  fair-draw/no-reciprocal/no-repeat invariants must extend to a 2-recipient assignment) and a reveal that shows both
+  giftees. Bigger than CR-1..3; spec as its own feature if pursued. Ubiquitous-language check first — add a
+  **Schrottwichteln** glossary entry before naming it in code.
+
 ## Drawer & group-hub refinements — Secret-Santa (2026-09-02)
 
 Follow-ups from the maintainer's use, on top of the [chrome/navigation review](#mobile-chrome--navigation-review--secret-santa-2026-09-02).
@@ -203,6 +250,9 @@ and consumes the [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-se
   tomorrow", empty-wishlist nudge — the strongest reason to *install* rather than bookmark. Needs a
   scheduling + permission design (and, for "remind everyone", a reachable origin). Parked in the
   brainstorm pending the reveal-origin/hosting decision; promote once designed.
+  **Motivation reinforced (2026-09-02):** the [competitor scan](../brainstorming/2026-09-02-secret-santa-competitor-research.md)
+  found reviewers specifically asking to be **nudged to fill their wish list** — the empty-wishlist reminder is a
+  named, cross-market wish, not just an install hook. Still gated on the same scheduling/origin design.
 - **MNF-9 · Biometric app lock (P2, parked).** Face/fingerprint on open — assignments are the one secret
   the app keeps, and a phone left unlocked exposes who drew whom. Opt-in; warrants an
   [NFR-004](../requirements/non-functional/NFR-004-data-protection-and-retention.md) privacy review first.

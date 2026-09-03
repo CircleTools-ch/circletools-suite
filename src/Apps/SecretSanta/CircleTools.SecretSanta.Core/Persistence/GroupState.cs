@@ -78,6 +78,12 @@ public sealed record EventWishlistState(Guid MemberId, IReadOnlyList<string> Ite
 /// <param name="Draws">The event's ordered draw history.</param>
 /// <param name="DrawInvalidatedByMembershipChange">Whether this event's draw was voided by a roster change.</param>
 /// <param name="Wishlists">The per-member wishlists for this event.</param>
+/// <param name="CarriedForwardBaseline">
+/// The draw carried forward from a previous occasion (FR-035), kept only as the no-repeat baseline for
+/// this event's first draw — it is <strong>not</strong> part of <paramref name="Draws"/> and the event
+/// stays undrawn. <see langword="null"/> when nothing was carried forward or a real draw has since run;
+/// snapshots written before this field existed deserialize to <see langword="null"/>, so no group changes.
+/// </param>
 public sealed record EventState(
     Guid Id,
     string Name,
@@ -85,7 +91,8 @@ public sealed record EventState(
     EventDetailsState? EventDetails,
     IReadOnlyList<DrawState> Draws,
     bool DrawInvalidatedByMembershipChange,
-    IReadOnlyList<EventWishlistState> Wishlists);
+    IReadOnlyList<EventWishlistState> Wishlists,
+    DrawState? CarriedForwardBaseline = null);
 
 /// <summary>
 /// Serializable memento of the whole <c>Group</c> aggregate. Lets persistence adapters store and

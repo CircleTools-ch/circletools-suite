@@ -112,5 +112,7 @@
   href: 0055-event-navigation-mobile-section-hub.md
 - name: 0056 Decouple UI language from formatting region
   href: 0056-decouple-ui-language-from-formatting-region.md
+- name: 0057 App store naming & listing localization
+  href: 0057-app-store-naming-and-localization.md
 - name: Template
   href: _template-adr.md

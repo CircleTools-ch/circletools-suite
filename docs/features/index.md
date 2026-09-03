@@ -28,6 +28,8 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-008](TP-008-mobile-native-feel-polish.md) | Test plan — Mobile native-feel polish | SecretSanta | Draft |
 | [FEAT-009](FEAT-009-event-section-hub.md) | Event section hub (mobile-native event navigation) | SecretSanta | In progress |
 | [TP-009](TP-009-event-section-hub.md) | Test plan — Event section hub | SecretSanta | Draft |
+| [FEAT-010](FEAT-010-carry-forward-new-occasion.md) | Carry forward a new occasion from a previous event | SecretSanta | Done |
+| [TP-010](TP-010-carry-forward-new-occasion.md) | Test plan — Carry forward a new occasion | SecretSanta | Reviewed |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and

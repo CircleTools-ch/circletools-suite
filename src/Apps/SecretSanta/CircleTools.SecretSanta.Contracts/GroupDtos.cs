@@ -94,6 +94,11 @@ public sealed record MemberWishlistDto(Guid MemberId, string MemberName, IReadOn
 /// <param name="CurrentAssignments">The assignments of this event's current draw (empty when none).</param>
 /// <param name="DrawInvalidatedByMembershipChange">Whether this event's draw was voided by a roster change.</param>
 /// <param name="Wishlists">Each member's wishlist for this event (one row per member; items may be empty).</param>
+/// <param name="HasCarriedForwardBaseline">
+/// Whether this (still undrawn) event carries a draw baseline from a previous occasion (FR-035), so its
+/// first draw avoids last time's pairings. Lets the draw screen offer an "ignore last time" retry if that
+/// constraint over-constrains a small roster. <see langword="false"/> once a real draw has run.
+/// </param>
 public sealed record EventDto(
     Guid Id,
     Guid GroupId,
@@ -103,7 +108,8 @@ public sealed record EventDto(
     bool HasCurrentDraw,
     IReadOnlyList<AssignmentDto> CurrentAssignments,
     bool DrawInvalidatedByMembershipChange,
-    IReadOnlyList<MemberWishlistDto> Wishlists);
+    IReadOnlyList<MemberWishlistDto> Wishlists,
+    bool HasCarriedForwardBaseline = false);
 
 /// <summary>Outcome of a draw attempt.</summary>
 /// <param name="Success">Whether a valid draw was produced.</param>

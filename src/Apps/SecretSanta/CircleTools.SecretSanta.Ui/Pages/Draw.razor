@@ -43,6 +43,13 @@ else
         else
         {
             <MudAlert Severity="Severity.Error" Dense="true" role="alert">@FailureMessage(_result.FailureReason)</MudAlert>
+            @* Escape hatch (FR-035 5a): if the failure is because carrying forward left no room to avoid
+               last time's pairings, let the organizer draw anyway, ignoring that one constraint. *@
+            @if (_event.HasCarriedForwardBaseline)
+            {
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mt-2"
+                           OnClick="() => RunAsync(ignoreBaseline: true)" Disabled="@_busy">@L["DrawIgnoreBaseline"]</MudButton>
+            }
         }
     }
     else if (_event.HasCurrentDraw)
@@ -92,12 +99,12 @@ else
         await RunAsync();
     }
 
-    private async Task RunAsync()
+    private async Task RunAsync(bool ignoreBaseline = false)
     {
         _busy = true;
         try
         {
-            _result = await Sender.Send(new RunDrawCommand(GroupId, EventId));
+            _result = await Sender.Send(new RunDrawCommand(GroupId, EventId, ignoreBaseline));
             // A confirmation buzz when the draw actually lands (FEAT-008 W3); a no-op on the web head.
             if (_result.Success)
             {

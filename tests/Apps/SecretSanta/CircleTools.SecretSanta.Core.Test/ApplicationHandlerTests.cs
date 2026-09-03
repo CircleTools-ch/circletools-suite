@@ -55,7 +55,7 @@ public sealed class ApplicationHandlerTests
     public async Task SetBudget_SetsThenClears()
     {
         var (repository, groupId) = await CreateGroupAsync();
-        var eventId = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
+        var eventId = await new AddEventCommandHandler(repository, TimeProvider.System).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var handler = new SetBudgetCommandHandler(repository);
         var getEvent = new GetEventQueryHandler(repository, TimeProvider.System);
 
@@ -74,7 +74,7 @@ public sealed class ApplicationHandlerTests
     public async Task SetEventDetails_SetsThenClears()
     {
         var (repository, groupId) = await CreateGroupAsync();
-        var eventId = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
+        var eventId = await new AddEventCommandHandler(repository, TimeProvider.System).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var handler = new SetEventDetailsCommandHandler(repository);
         var getEvent = new GetEventQueryHandler(repository, TimeProvider.System);
         var date = new DateTimeOffset(2026, 12, 24, 18, 0, 0, TimeSpan.Zero);
@@ -109,7 +109,7 @@ public sealed class ApplicationHandlerTests
         var (repository, groupId) = await CreateGroupAsync();
         var memberId = await new AddMemberCommandHandler(repository)
             .HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
-        var addEvent = new AddEventCommandHandler(repository);
+        var addEvent = new AddEventCommandHandler(repository, TimeProvider.System);
         var first = await addEvent.HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var second = await addEvent.HandleAsync(new AddEventCommand(groupId, "Birthday"), default);
 
@@ -231,7 +231,7 @@ public sealed class ApplicationHandlerTests
         var group = await getGroup.HandleAsync(new GetGroupQuery(groupId), default);
         Assert.Empty(group!.Events);
 
-        var addEvent = new AddEventCommandHandler(repository);
+        var addEvent = new AddEventCommandHandler(repository, TimeProvider.System);
         var first = await addEvent.HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var second = await addEvent.HandleAsync(new AddEventCommand(groupId, "Birthday"), default);
         group = await getGroup.HandleAsync(new GetGroupQuery(groupId), default);

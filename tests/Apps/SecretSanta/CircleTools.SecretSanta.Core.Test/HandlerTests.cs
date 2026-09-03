@@ -21,7 +21,7 @@ public sealed class HandlerTests
 
         // Arrange a group with an event, four members, and a budget on that event.
         var groupId = await new CreateGroupCommandHandler(repository).HandleAsync(new CreateGroupCommand("Family"), default);
-        var eventId = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
+        var eventId = await new AddEventCommandHandler(repository, TimeProvider.System).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         await new SetBudgetCommandHandler(repository).HandleAsync(new SetBudgetCommand(groupId, eventId, 25m, "CHF"), default);
         var addMember = new AddMemberCommandHandler(repository);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
@@ -54,13 +54,55 @@ public sealed class HandlerTests
     }
 
     [Fact]
+    public async Task AddEvent_CarryingForward_CopiesBudgetAndWishlist_IsUndrawn_AndCarriesBaseline()
+    {
+        var repository = new InMemoryGroupRepository();
+
+        // A first, drawn occasion with a budget and one member's wishlist.
+        var groupId = await new CreateGroupCommandHandler(repository).HandleAsync(new CreateGroupCommand("Family"), default);
+        var source = await new AddEventCommandHandler(repository, TimeProvider.System).HandleAsync(new AddEventCommand(groupId, "Christmas 2026"), default);
+        await new SetBudgetCommandHandler(repository).HandleAsync(new SetBudgetCommand(groupId, source, 30m, "CHF"), default);
+        var addMember = new AddMemberCommandHandler(repository);
+        var alice = await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
+        await addMember.HandleAsync(new AddMemberCommand(groupId, "Carol"), default);
+        await new SetMemberWishlistCommandHandler(repository).HandleAsync(new SetMemberWishlistCommand(groupId, source, alice, ["Scarf"]), default);
+        await new RunDrawCommandHandler(repository, new DrawGenerator(new SeededRandomSource(11)), TimeProvider.System)
+            .HandleAsync(new RunDrawCommand(groupId, source), default);
+
+        // Carry a new occasion forward from it.
+        var next = await new AddEventCommandHandler(repository, TimeProvider.System)
+            .HandleAsync(new AddEventCommand(groupId, "Christmas 2027", source), default);
+
+        var getEvent = new GetEventQueryHandler(repository, TimeProvider.System);
+        var nextDto = await getEvent.HandleAsync(new GetEventQuery(groupId, next), default);
+
+        Assert.NotNull(nextDto);
+        Assert.Equal(30m, nextDto!.Budget!.Amount);                                   // budget copied
+        Assert.Equal(["Scarf"], Assert.Single(nextDto.Wishlists, w => w.MemberId == alice).Items); // wishlist copied
+        Assert.False(nextDto.HasCurrentDraw);                                          // undrawn — no reveal links
+        Assert.True(nextDto.HasCarriedForwardBaseline);                               // baseline present for rule (c)
+
+        // The new draw avoids the source's pairings.
+        var sourceDto = await getEvent.HandleAsync(new GetEventQuery(groupId, source), default);
+        await new RunDrawCommandHandler(repository, new DrawGenerator(new SeededRandomSource(11)), TimeProvider.System)
+            .HandleAsync(new RunDrawCommand(groupId, next), default);
+        var drawnNext = await getEvent.HandleAsync(new GetEventQuery(groupId, next), default);
+
+        var sourcePairs = sourceDto!.CurrentAssignments.Select(a => (a.GiverMemberId, a.RecipientMemberId)).OrderBy(p => p.GiverMemberId).ToList();
+        var nextPairs = drawnNext!.CurrentAssignments.Select(a => (a.GiverMemberId, a.RecipientMemberId)).OrderBy(p => p.GiverMemberId).ToList();
+        Assert.NotEqual(sourcePairs, nextPairs);
+        Assert.False(drawnNext.HasCarriedForwardBaseline);                           // cleared once a real draw ran
+    }
+
+    [Fact]
     public async Task GetRevealLinks_AfterMemberArchived_KeepsTheDrawAndItsLinks()
     {
         var repository = new InMemoryGroupRepository();
         var linkBuilder = new RevealLinkBuilder(new RevealLinkOptions("https://santa.example"), new RevealLinkCodec());
 
         var groupId = await new CreateGroupCommandHandler(repository).HandleAsync(new CreateGroupCommand("Family"), default);
-        var eventId = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
+        var eventId = await new AddEventCommandHandler(repository, TimeProvider.System).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var addMember = new AddMemberCommandHandler(repository);
         var alice = await addMember.HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
         await addMember.HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
@@ -144,7 +186,7 @@ public sealed class HandlerTests
         // the "re-draw needed" flag once the date is in the past — only the upcoming one keeps it (ADR-0052).
         var repo = new InMemoryGroupRepository();
         var groupId = await new CreateGroupCommandHandler(repo).HandleAsync(new CreateGroupCommand("Fam"), default);
-        var addEvent = new AddEventCommandHandler(repo);
+        var addEvent = new AddEventCommandHandler(repo, TimeProvider.System);
         var past = await addEvent.HandleAsync(new AddEventCommand(groupId, "Christmas 2024"), default);
         var upcoming = await addEvent.HandleAsync(new AddEventCommand(groupId, "Christmas 2027"), default);
         var setDetails = new SetEventDetailsCommandHandler(repo);

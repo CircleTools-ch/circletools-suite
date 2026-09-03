@@ -71,6 +71,7 @@
   <data name="DrawSuccess" xml:space="preserve"><value>Auslosung abgeschlossen.</value></data>
   <data name="DrawAssignmentCount" xml:space="preserve"><value>{0} Zuordnungen wurden erstellt.</value></data>
   <data name="DrawFailedOverConstrained" xml:space="preserve"><value>Mit den aktuellen Ausschlüssen ist keine gültige Auslosung möglich. Entferne einige davon.</value></data>
+  <data name="DrawIgnoreBaseline" xml:space="preserve"><value>Trotzdem auslosen (kann sich wie letztes Mal wiederholen)</value></data>
   <data name="DrawFailedTwoMember" xml:space="preserve"><value>Eine Zweiergruppe lässt sich nicht auslosen, ohne dass sich beide gegenseitig beschenken. Füge weitere Mitglieder hinzu.</value></data>
   <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Füge mindestens zwei Mitglieder hinzu, um auszulosen.</value></data>
   <data name="DrawSpoilerNote" xml:space="preserve"><value>Die Zuordnungen werden hier nicht angezeigt, um nichts zu verraten. Teile stattdessen die Links.</value></data>
@@ -216,6 +217,9 @@
   <data name="EventNameLabel" xml:space="preserve"><value>Anlassname</value></data>
   <data name="EventNamePlaceholder" xml:space="preserve"><value>z. B. Weihnachten 2026</value></data>
   <data name="AddEvent" xml:space="preserve"><value>Anlass hinzufügen</value></data>
+  <data name="CarryForwardCheckbox" xml:space="preserve"><value>Von einem früheren Anlass übernehmen</value></data>
+  <data name="CarryForwardSourceLabel" xml:space="preserve"><value>Übernehmen von</value></data>
+  <data name="CarryForwardHint" xml:space="preserve"><value>Wunschlisten und Budget werden übernommen (du kannst sie anpassen), und die Auslosung vermeidet die Paarungen vom letzten Mal.</value></data>
   <data name="EventsColumn" xml:space="preserve"><value>Anlässe</value></data>
   <data name="EventDetailsTitle" xml:space="preserve"><value>Anlass</value></data>
   <data name="EventNotFound" xml:space="preserve"><value>Anlass nicht gefunden.</value></data>

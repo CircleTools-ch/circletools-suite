@@ -1,0 +1,102 @@
+@using CircleTools.SecretSanta.Contracts
+@inject IStringLocalizer<AppStrings> L
+
+@*
+    Add-a-new-occasion dialog with carry-forward (FR-035 / UC-SS-014). Shown when a group already has at
+    least one event: the organizer names the new occasion and chooses to carry forward from a previous one
+    (default: the most recent) or to start blank. Carrying forward copies each current member's wishlist and
+    the budget, and makes the new draw avoid the source's pairings. Returns a CarryForwardEventChoice, or
+    null if cancelled, via CarryForwardEventDialogExtensions.ShowCarryForwardEventDialogAsync.
+*@
+
+<MudDialog>
+    <DialogContent>
+        <MudTextField @ref="_field" @bind-Value="_name" Immediate="true" Label="@L["EventNameLabel"]"
+                      Variant="Variant.Outlined" OnKeyDown="OnKeyDownAsync" Class="mt-1" />
+
+        <MudCheckBox @bind-Value="_carryForward" Color="Color.Primary" Class="mt-3"
+                     Label="@L["CarryForwardCheckbox"]" />
+
+        @if (_carryForward)
+        {
+            <MudSelect @bind-Value="_sourceId" Label="@L["CarryForwardSourceLabel"]" Variant="Variant.Outlined"
+                       Dense="true" Class="mt-1">
+                @foreach (var occasion in _sources)
+                {
+                    <MudSelectItem Value="@occasion.Id">@EventLabel(occasion.Name)</MudSelectItem>
+                }
+            </MudSelect>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">@L["CarryForwardHint"]</MudText>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
+                   Disabled="@string.IsNullOrWhiteSpace(_name)">@L["AddEvent"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance Dialog { get; set; } = default!;
+
+    /// <summary>The existing events to offer as carry-forward sources (the group's current occasions).</summary>
+    [Parameter] public IReadOnlyList<EventSummaryDto> Events { get; set; } = [];
+
+    /// <summary>The initial (pre-filled) name for the new occasion.</summary>
+    [Parameter] public string? InitialName { get; set; }
+
+    private MudTextField<string> _field = default!;
+    private string _name = string.Empty;
+    private bool _carryForward = true;
+    private Guid _sourceId;
+
+    // Newest first, so the default source (and the top of the list) is the most recent occasion.
+    private IReadOnlyList<EventSummaryDto> _sources = [];
+
+    protected override void OnInitialized()
+    {
+        _name = InitialName ?? string.Empty;
+        _sources = [.. Events.Reverse()];
+        _sourceId = _sources.Count > 0 ? _sources[0].Id : Guid.Empty;
+    }
+
+    private string EventLabel(string name) => string.IsNullOrWhiteSpace(name) ? L["DefaultEventName"] : name;
+
+    // Same focus dance as TextInputSheet: MudBlazor's AutoFocus fires before the dialog transition settles,
+    // so focus the field once the sheet has appeared and place the caret at the end of the pre-filled name.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.Delay(150);
+            await _field.FocusAsync();
+            await _field.SelectRangeAsync(_name.Length, _name.Length);
+        }
+    }
+
+    private void Submit()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            return;
+        }
+
+        var source = _carryForward && _sourceId != Guid.Empty ? _sourceId : (Guid?)null;
+        Dialog.Close(DialogResult.Ok(new CarryForwardEventChoice(_name.Trim(), source)));
+    }
+
+    private void Cancel() => Dialog.Cancel();
+
+    private Task OnKeyDownAsync(KeyboardEventArgs args)
+    {
+        // Enter submits only from the name field when it is the whole story; with the source select open the
+        // user tabs to it, so Enter here still means "go".
+        if (args.Key == "Enter")
+        {
+            Submit();
+        }
+
+        return Task.CompletedTask;
+    }
+}

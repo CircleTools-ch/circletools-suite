@@ -36,6 +36,10 @@
   href: FEAT-009-event-section-hub.md
 - name: TP-009 Event section hub test plan
   href: TP-009-event-section-hub.md
+- name: FEAT-010 Carry forward a new occasion
+  href: FEAT-010-carry-forward-new-occasion.md
+- name: TP-010 Carry forward a new occasion test plan
+  href: TP-010-carry-forward-new-occasion.md
 - name: Templates
   items:
     - name: Feature spec template
