@@ -38,6 +38,18 @@ raises its motivation).
   ([per-event editor](../features/FEAT-007-events-per-group.md)); add an optional lower bound and show the range on
   the reveal link. Small, closes a universal gap. Watch localization: CHF/EUR formatting per
   [ADR-0056](../adr/0056-decouple-ui-language-from-formatting-region.md).
+  **✅ Promoted through the process (2026-09-03):** [UC-SS-015](../use-cases/secret-santa/UC-SS-015-budget-minimum-and-maximum.md)
+  → [FR-036](../requirements/functional/FR-036-budget-minimum-and-maximum.md) →
+  [FEAT-011](../features/FEAT-011-budget-minimum-and-maximum.md) / [TP-011](../features/TP-011-budget-minimum-and-maximum.md),
+  glossary [Budget](../glossary/budget.md) amended to define the range. Design calls (recorded in the FEAT, **no ADR**):
+  the existing single amount **is the maximum** and the new field is an optional floor (`0 ≤ min ≤ max`, one currency);
+  min-only budgets are not offered. The minimum rides the reveal payload as an **additive optional field** (`bm`)
+  **omitted when unset**, so max-only and pre-existing links are byte-for-byte unchanged and the payload version does
+  not bump. ✅ **Built & browser-verified 2026-09-03** ([FEAT-011](../features/FEAT-011-budget-minimum-and-maximum.md)
+  *Done*): `Budget.MinAmount` + invariant, a **Minimum** field on the event-details editor (old "Amount" relabelled
+  **Maximum**), and a shared `BudgetDisplay.Format` rendering "10–30 CHF" (range) or "30 CHF" (bare max) on the reveal +
+  my-assignments screens. Solution builds clean; **208 tests green** (incl. 10 new); Playwright DE/EN/FR walkthrough
+  clean-console — range shown, max-only unchanged, min-exceeds-max rejected inline.
 - **CR-3 · "Do-not-gift" / dietary & lifestyle notes per member (P2).** Distinct from person-*exclusions* (who draws
   whom): a free-text/tagged **"please don't get me…" / allergies / dietary / lifestyle** note the giver sees on the
   reveal. Repeatedly wished-for across markets, done well by nobody. Rides on the existing wishlist plumbing and the

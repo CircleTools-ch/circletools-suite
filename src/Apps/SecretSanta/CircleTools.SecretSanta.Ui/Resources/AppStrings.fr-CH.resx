@@ -43,7 +43,8 @@
   <data name="GroupEditorTitle" xml:space="preserve"><value>Groupe</value></data>
   <data name="NameLabel" xml:space="preserve"><value>Nom</value></data>
   <data name="BudgetLabel" xml:space="preserve"><value>Budget</value></data>
-  <data name="AmountLabel" xml:space="preserve"><value>Montant</value></data>
+  <data name="BudgetMinLabel" xml:space="preserve"><value>Minimum</value></data>
+  <data name="BudgetMaxLabel" xml:space="preserve"><value>Maximum</value></data>
   <data name="CurrencyLabel" xml:space="preserve"><value>Devise</value></data>
   <data name="ClearBudget" xml:space="preserve"><value>Effacer le budget</value></data>
   <data name="EventLabel" xml:space="preserve"><value>Événement</value></data>
@@ -86,6 +87,7 @@
   <data name="MemberSaveFailed" xml:space="preserve"><value>Le membre n'a pas pu être enregistré.</value></data>
   <data name="BudgetAmountInvalid" xml:space="preserve"><value>Saisis un montant de budget supérieur à zéro.</value></data>
   <data name="CurrencyInvalid" xml:space="preserve"><value>Saisis un code de devise à 3 lettres (p. ex. CHF).</value></data>
+  <data name="BudgetMinExceedsMax" xml:space="preserve"><value>Le minimum ne doit pas dépasser le maximum.</value></data>
   <data name="ConfirmDeleteGroup" xml:space="preserve"><value>Supprimer « {0} » et tout son contenu ? Cette action est irréversible.</value></data>
   <data name="ConfirmRemoveMember" xml:space="preserve"><value>Retirer « {0} » de ce groupe ? La personne reste dans les occasions déjà tirées.</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Oui, supprimer</value></data>

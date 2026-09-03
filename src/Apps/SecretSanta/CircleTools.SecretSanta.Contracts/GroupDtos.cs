@@ -16,9 +16,10 @@ public sealed record GroupSummaryDto(
     bool AnyDrawInvalidated);
 
 /// <summary>Gift budget for an event.</summary>
-/// <param name="Amount">The monetary amount.</param>
+/// <param name="Amount">The maximum (upper-limit) monetary amount.</param>
 /// <param name="Currency">The ISO currency code (e.g. CHF).</param>
-public sealed record BudgetDto(decimal Amount, string Currency);
+/// <param name="MinAmount">The optional minimum (lower-bound) amount, or <see langword="null"/> for a bare maximum (FR-036).</param>
+public sealed record BudgetDto(decimal Amount, string Currency, decimal? MinAmount = null);
 
 /// <summary>Details describing a gift-exchange occasion.</summary>
 /// <param name="Date">The optional event date and time.</param>

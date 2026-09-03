@@ -42,6 +42,7 @@ Use cases describe how actors achieve goals with the system. They are the bridge
 | [UC-SS-013](secret-santa/UC-SS-013-manage-events.md) | Manage multiple events (occasions) in a group | Secret-Santa | Approved |
 | [UC-MAIN-017](main/UC-MAIN-017-single-sign-on-across-apps.md) | Stay signed in when moving between suite apps | Main | Approved |
 | [UC-SS-014](secret-santa/UC-SS-014-carry-forward-new-occasion.md) | Create a new occasion carrying forward from a previous one | Secret-Santa | Draft |
+| [UC-SS-015](secret-santa/UC-SS-015-budget-minimum-and-maximum.md) | Set a minimum as well as a maximum gift budget | Secret-Santa | Reviewed |
 
 _Add a row per use case._
 

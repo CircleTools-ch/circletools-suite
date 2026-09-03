@@ -82,6 +82,33 @@ public sealed class RevealPageTests : IDisposable
     }
 
     [Fact]
+    public void RevealPage_ShowsBudgetRange_WhenAMinimumIsSet()
+    {
+        // FR-036: a budget with both bounds reads as a range (min–max), not a single figure.
+        var payload = new RevealPayload(
+            RevealPayload.CurrentVersion, RecipientName, ["Book"], 30m, "CHF", null, null, null, BudgetMin: 10m);
+        NavigateToRevealLink(BuildFragment(payload));
+
+        var cut = _ctx.RenderComponent<Reveal>();
+
+        // The budget is shown before the reveal (it is not spoiler-sensitive).
+        Assert.Contains("10–30 CHF", cut.Markup);
+    }
+
+    [Fact]
+    public void RevealPage_ShowsBareMaximum_WhenNoMinimumIsSet()
+    {
+        var payload = new RevealPayload(
+            RevealPayload.CurrentVersion, RecipientName, ["Book"], 30m, "CHF", null, null, null);
+        NavigateToRevealLink(BuildFragment(payload));
+
+        var cut = _ctx.RenderComponent<Reveal>();
+
+        Assert.Contains("30 CHF", cut.Markup);
+        Assert.DoesNotContain("–", cut.Markup); // no range dash for a max-only budget
+    }
+
+    [Fact]
     public void RevealPage_MalformedFragment_ShowsErrorAndNoRevealButton()
     {
         NavigateToRevealLink("#for=nobody"); // missing the required payload token

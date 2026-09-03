@@ -43,7 +43,8 @@
   <data name="GroupEditorTitle" xml:space="preserve"><value>Gruppe</value></data>
   <data name="NameLabel" xml:space="preserve"><value>Name</value></data>
   <data name="BudgetLabel" xml:space="preserve"><value>Budget</value></data>
-  <data name="AmountLabel" xml:space="preserve"><value>Betrag</value></data>
+  <data name="BudgetMinLabel" xml:space="preserve"><value>Minimum</value></data>
+  <data name="BudgetMaxLabel" xml:space="preserve"><value>Maximum</value></data>
   <data name="CurrencyLabel" xml:space="preserve"><value>Währung</value></data>
   <data name="ClearBudget" xml:space="preserve"><value>Budget entfernen</value></data>
   <data name="EventLabel" xml:space="preserve"><value>Anlass</value></data>
@@ -86,6 +87,7 @@
   <data name="MemberSaveFailed" xml:space="preserve"><value>Das Mitglied konnte nicht gespeichert werden.</value></data>
   <data name="BudgetAmountInvalid" xml:space="preserve"><value>Gib einen Budgetbetrag grösser als null ein.</value></data>
   <data name="CurrencyInvalid" xml:space="preserve"><value>Gib einen dreistelligen Währungscode ein (z. B. CHF).</value></data>
+  <data name="BudgetMinExceedsMax" xml:space="preserve"><value>Das Minimum darf nicht grösser als das Maximum sein.</value></data>
   <data name="ConfirmDeleteGroup" xml:space="preserve"><value>"{0}" mit allen Inhalten löschen? Das lässt sich nicht rückgängig machen.</value></data>
   <data name="ConfirmRemoveMember" xml:space="preserve"><value>"{0}" aus dieser Gruppe entfernen? Die Person bleibt in bereits ausgelosten Anlässen erhalten.</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Ja, löschen</value></data>

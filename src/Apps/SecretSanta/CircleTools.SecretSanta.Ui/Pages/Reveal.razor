@@ -18,7 +18,7 @@ else if (_payload is not null)
 
     @if (_payload.BudgetAmount is { } amount)
     {
-        <MudText Class="mb-1"><strong>@L["RevealBudgetLabel"]:</strong> @amount.ToString("0.##", CultureInfo.CurrentCulture) @_payload.BudgetCurrency</MudText>
+        <MudText Class="mb-1"><strong>@L["RevealBudgetLabel"]:</strong> @BudgetDisplay.Format(_payload.BudgetMin, amount, _payload.BudgetCurrency)</MudText>
     }
 
     @if (HasEvent)

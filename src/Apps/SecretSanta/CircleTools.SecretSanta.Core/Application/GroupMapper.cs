@@ -62,7 +62,7 @@ internal static class GroupMapper
             occasion.Id,
             group.Id,
             occasion.Name,
-            occasion.Budget is null ? null : new BudgetDto(occasion.Budget.Amount, occasion.Budget.Currency),
+            occasion.Budget is null ? null : new BudgetDto(occasion.Budget.Amount, occasion.Budget.Currency, occasion.Budget.MinAmount),
             occasion.EventDetails is null
                 ? null
                 : new EventDetailsDto(occasion.EventDetails.Date, occasion.EventDetails.Location, occasion.EventDetails.Description),

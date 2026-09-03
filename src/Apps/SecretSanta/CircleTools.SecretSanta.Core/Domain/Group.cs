@@ -385,7 +385,7 @@ public sealed class Group : AggregateRoot
             .Where(m => m.Wishlist is { Count: > 0 })
             .ToDictionary(m => m.Id, m => Wishlist.Create(m.Wishlist));
 
-        var budget = state.Budget is null ? null : Budget.Create(state.Budget.Amount, state.Budget.Currency);
+        var budget = state.Budget is null ? null : Budget.Create(state.Budget.Amount, state.Budget.Currency, state.Budget.MinAmount);
         var details = state.Event is null
             ? null
             : EventDetails.Create(state.Event.Date, state.Event.Location, state.Event.Description);
@@ -401,7 +401,7 @@ public sealed class Group : AggregateRoot
             .ToList();
 
         var wishlists = state.Wishlists.ToDictionary(w => w.MemberId, w => Wishlist.Create(w.Items));
-        var budget = state.Budget is null ? null : Budget.Create(state.Budget.Amount, state.Budget.Currency);
+        var budget = state.Budget is null ? null : Budget.Create(state.Budget.Amount, state.Budget.Currency, state.Budget.MinAmount);
         var details = state.EventDetails is null
             ? null
             : EventDetails.Create(state.EventDetails.Date, state.EventDetails.Location, state.EventDetails.Description);
@@ -416,7 +416,7 @@ public sealed class Group : AggregateRoot
     private static EventState ToEventState(Event occasion) => new(
         occasion.Id,
         occasion.Name,
-        occasion.Budget is null ? null : new BudgetState(occasion.Budget.Amount, occasion.Budget.Currency),
+        occasion.Budget is null ? null : new BudgetState(occasion.Budget.Amount, occasion.Budget.Currency, occasion.Budget.MinAmount),
         occasion.EventDetails is null
             ? null
             : new EventDetailsState(occasion.EventDetails.Date, occasion.EventDetails.Location, occasion.EventDetails.Description),

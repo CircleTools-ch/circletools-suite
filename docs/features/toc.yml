@@ -40,6 +40,10 @@
   href: FEAT-010-carry-forward-new-occasion.md
 - name: TP-010 Carry forward a new occasion test plan
   href: TP-010-carry-forward-new-occasion.md
+- name: FEAT-011 Budget minimum and maximum
+  href: FEAT-011-budget-minimum-and-maximum.md
+- name: TP-011 Budget minimum and maximum test plan
+  href: TP-011-budget-minimum-and-maximum.md
 - name: Templates
   items:
     - name: Feature spec template

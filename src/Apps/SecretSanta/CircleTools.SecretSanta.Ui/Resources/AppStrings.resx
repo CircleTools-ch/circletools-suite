@@ -97,7 +97,8 @@
   <data name="GroupEditorTitle" xml:space="preserve"><value>Group</value></data>
   <data name="NameLabel" xml:space="preserve"><value>Name</value></data>
   <data name="BudgetLabel" xml:space="preserve"><value>Budget</value></data>
-  <data name="AmountLabel" xml:space="preserve"><value>Amount</value></data>
+  <data name="BudgetMinLabel" xml:space="preserve"><value>Minimum</value></data>
+  <data name="BudgetMaxLabel" xml:space="preserve"><value>Maximum</value></data>
   <data name="CurrencyLabel" xml:space="preserve"><value>Currency</value></data>
   <data name="ClearBudget" xml:space="preserve"><value>Clear budget</value></data>
   <data name="EventLabel" xml:space="preserve"><value>Event</value></data>
@@ -140,6 +141,7 @@
   <data name="MemberSaveFailed" xml:space="preserve"><value>The member could not be saved.</value></data>
   <data name="BudgetAmountInvalid" xml:space="preserve"><value>Enter a budget amount greater than zero.</value></data>
   <data name="CurrencyInvalid" xml:space="preserve"><value>Enter a 3-letter currency code (e.g. CHF).</value></data>
+  <data name="BudgetMinExceedsMax" xml:space="preserve"><value>The minimum must not be greater than the maximum.</value></data>
   <data name="ConfirmDeleteGroup" xml:space="preserve"><value>Delete "{0}" and everything in it? This cannot be undone.</value></data>
   <data name="ConfirmRemoveMember" xml:space="preserve"><value>Remove "{0}" from this group? They stay in occasions you've already drawn.</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Yes, delete</value></data>
