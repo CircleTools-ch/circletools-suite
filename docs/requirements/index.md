@@ -55,6 +55,7 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-033](functional/FR-033-bookmark-groups.md) | Bookmark groups for quick access (synced across devices) | Functional | Could | Implemented |
 | [FR-034](functional/FR-034-multiple-events-per-group.md) | Multiple events (occasions) per group, sharing one roster | Functional | Should | Implemented |
 | [FR-035](functional/FR-035-carry-forward-new-occasion.md) | Carry forward wishlists, budget and prior draw when creating an event | Functional | Should | Implemented |
+| [FR-036](functional/FR-036-budget-minimum-and-maximum.md) | Gift budget supports an optional minimum as well as a maximum | Functional | Could | Implemented |
 
 _Add a row per requirement._
 

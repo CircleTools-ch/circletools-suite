@@ -47,7 +47,7 @@
                             @if (assignment.Budget is { } budget)
                             {
                                 <MudText Class="mb-1"><strong>@L["RevealBudgetLabel"]:</strong>
-                                    @budget.Amount.ToString("0.##", CultureInfo.CurrentCulture) @budget.Currency</MudText>
+                                    @BudgetDisplay.Format(budget.MinAmount, budget.Amount, budget.Currency)</MudText>
                             }
                             @if (assignment.Event is { } ev && HasEvent(ev))
                             {

@@ -8,14 +8,20 @@ status: Draft
 
 ## Definition
 
-The agreed spending limit for gifts in a [Group](group.md), expressed as an amount and a currency.
-A budget belongs to exactly one group and is optional. It is carried into each
+The agreed spending guidance for gifts in an [Event](event.md), expressed as a **maximum** amount and a
+currency, with an **optional minimum** (lower bound) in the same currency — so a budget may be a single
+limit ("up to 30 CHF") or a **range** ("10–30 CHF"). A budget is optional and belongs to exactly one
+event ([FR-034](../requirements/functional/FR-034-multiple-events-per-group.md)); the maximum is required
+for a budget to exist and the minimum, when set, satisfies `0 ≤ minimum ≤ maximum`
+([FR-036](../requirements/functional/FR-036-budget-minimum-and-maximum.md)). It is carried into each
 [Reveal link](reveal-link.md) so every giver sees the same spending guidance.
 
 ## Bounded context(s)
 
-- **Secret-Santa:** one budget per group; amount and currency are formatted for the active culture
-  (`de-CH` default) — see [NFR-003](../requirements/non-functional/NFR-003-multilingual-de-en-fr.md).
+- **Secret-Santa:** one budget per event; amounts and currency are formatted for the active region
+  ([ADR-0056](../adr/0056-decouple-ui-language-from-formatting-region.md)), and the range shows with an
+  en-dash when a minimum is set — see
+  [NFR-003](../requirements/non-functional/NFR-003-multilingual-de-en-fr.md).
 
 ## Synonyms / do-not-use
 

@@ -1,9 +1,14 @@
 namespace CircleTools.SecretSanta.Core.Persistence;
 
 /// <summary>Serializable snapshot of a <c>Budget</c> value object.</summary>
-/// <param name="Amount">The budget amount.</param>
+/// <param name="Amount">The budget maximum (upper-limit) amount.</param>
 /// <param name="Currency">The currency code.</param>
-public sealed record BudgetState(decimal Amount, string Currency);
+/// <param name="MinAmount">
+/// The optional budget minimum (lower bound), or <see langword="null"/> for a bare maximum. Snapshots
+/// written before this field existed deserialize to <see langword="null"/>, so no existing budget changes
+/// meaning (FR-036).
+/// </param>
+public sealed record BudgetState(decimal Amount, string Currency, decimal? MinAmount = null);
 
 /// <summary>Serializable snapshot of an <c>EventDetails</c> value object.</summary>
 /// <param name="Date">The optional event date.</param>

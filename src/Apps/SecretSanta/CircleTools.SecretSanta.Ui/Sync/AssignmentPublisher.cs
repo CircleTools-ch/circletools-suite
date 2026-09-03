@@ -89,7 +89,7 @@ public sealed class AssignmentPublisher(ILinkingApi api)
             occasion.Id,
             occasion.Name,
             draw.CreatedAt.ToUnixTimeMilliseconds(),
-            occasion.Budget is null ? null : new BudgetDto(occasion.Budget.Amount, occasion.Budget.Currency),
+            occasion.Budget is null ? null : new BudgetDto(occasion.Budget.Amount, occasion.Budget.Currency, occasion.Budget.MinAmount),
             occasion.EventDetails is null
                 ? null
                 : new EventDetailsDto(occasion.EventDetails.Date, occasion.EventDetails.Location, occasion.EventDetails.Description),

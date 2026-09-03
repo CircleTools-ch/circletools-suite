@@ -59,15 +59,28 @@ public sealed class ApplicationHandlerTests
         var handler = new SetBudgetCommandHandler(repository);
         var getEvent = new GetEventQueryHandler(repository, TimeProvider.System);
 
-        await handler.HandleAsync(new SetBudgetCommand(groupId, eventId, 30m, "CHF"), default);
+        await handler.HandleAsync(new SetBudgetCommand(groupId, eventId, 30m, "CHF", 10m), default);
         var withBudget = await getEvent.HandleAsync(new GetEventQuery(groupId, eventId), default);
         Assert.NotNull(withBudget!.Budget);
         Assert.Equal(30m, withBudget.Budget!.Amount);
+        Assert.Equal(10m, withBudget.Budget.MinAmount);
         Assert.Equal("CHF", withBudget.Budget.Currency);
 
         await handler.HandleAsync(new SetBudgetCommand(groupId, eventId, null, null), default);
         var cleared = await getEvent.HandleAsync(new GetEventQuery(groupId, eventId), default);
         Assert.Null(cleared!.Budget);
+    }
+
+    [Fact]
+    public async Task SetBudget_RejectsMinimumGreaterThanMaximum()
+    {
+        var (repository, groupId) = await CreateGroupAsync();
+        var eventId = await new AddEventCommandHandler(repository, TimeProvider.System).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
+        var handler = new SetBudgetCommandHandler(repository);
+
+        // The UI guards this too (FR-036), but the domain invariant is the backstop.
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            handler.HandleAsync(new SetBudgetCommand(groupId, eventId, 20m, "CHF", 30m), default));
     }
 
     [Fact]
