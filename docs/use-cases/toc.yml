@@ -80,5 +80,13 @@
       href: secret-santa/UC-SS-015-budget-minimum-and-maximum.md
     - name: UC-SS-016 Member gift note
       href: secret-santa/UC-SS-016-member-gift-note.md
+    - name: UC-SS-017 Choose & switch storage mode
+      href: secret-santa/UC-SS-017-choose-and-switch-storage-mode.md
+    - name: UC-SS-018 Share & manage as admin
+      href: secret-santa/UC-SS-018-share-and-manage-as-admin.md
+    - name: UC-SS-019 Join a shared group
+      href: secret-santa/UC-SS-019-join-a-shared-group.md
+    - name: UC-SS-020 Release a claimed person
+      href: secret-santa/UC-SS-020-release-a-claimed-person.md
 - name: Template
   href: _template-use-case.md

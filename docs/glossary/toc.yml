@@ -1,5 +1,7 @@
 - name: Overview
   href: index.md
+- name: Admin link
+  href: admin-link.md
 - name: Assignment
   href: assignment.md
 - name: Budget
@@ -26,14 +28,22 @@
   href: group.md
 - name: Invitation
   href: invitation.md
+- name: Join link
+  href: join-link.md
 - name: Managed member
   href: managed-member.md
 - name: Member
   href: member.md
 - name: Passkey
   href: passkey.md
+- name: Person claim
+  href: person-claim.md
 - name: Reveal link
   href: reveal-link.md
+- name: Share token
+  href: share-token.md
+- name: Shared-by-link group
+  href: shared-by-link-group.md
 - name: Sync
   href: sync.md
 - name: Tombstone
