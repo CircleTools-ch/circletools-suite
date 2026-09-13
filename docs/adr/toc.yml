@@ -114,5 +114,7 @@
   href: 0056-decouple-ui-language-from-formatting-region.md
 - name: 0057 App store naming & listing localization
   href: 0057-app-store-naming-and-localization.md
+- name: 0058 Account-free link-shared groups (third storage tier)
+  href: 0058-account-free-link-shared-groups.md
 - name: Template
   href: _template-adr.md

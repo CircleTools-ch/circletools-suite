@@ -5,7 +5,7 @@ app: Main
 actors: [User]
 status: Approved
 priority: Must
-related: [NFR-001, NFR-002, ADR-0017, ADR-0018, ADR-0019, ADR-0020, ADR-0022]
+related: [NFR-001, NFR-002, FR-043, ADR-0017, ADR-0018, ADR-0019, ADR-0020, ADR-0022, ADR-0058]
 ---
 
 # UC-MAIN-006 — Delete the account and export personal data
@@ -70,6 +70,20 @@ The user opens **Profile → Data & account** and chooses **Export my data** or 
   another admin or accept that the circle is deleted with them. This interaction is defined by the
   circle roles in [ADR-0018](../../adr/0018-circle-and-sharing-model.md) and its UI lands in **M2** —
   but M1 must not ship a deletion that silently orphans a circle.
+- **Deletion 2b. The user owns [Shared-by-link groups](../../glossary/shared-by-link-group.md)** →
+  before deletion, each account-owned Secret-Santa group is routed through a **per-group disposition**
+  ([ADR-0058](../../adr/0058-account-free-link-shared-groups.md),
+  [FR-043](../../requirements/functional/FR-043-release-ownership-and-deletion-disposition.md)),
+  mirroring the sole-circle-owner rule in 2a so deletion never silently strands other participants:
+  - **Hand off as shared by link** — runs *release-admin*: the group stays online and an
+    [admin link](../../glossary/admin-link.md) is minted for whoever continues to organize it, so
+    everyone keeps access. **This is the default when the group has other joined people.**
+  - **Keep on this device** — the local copy survives (the general deletion rule); the online copy is
+    removed. The default when the owner is effectively the only participant.
+  - **Delete the online copy** — the explicit destructive choice.
+
+  The deletion confirmation (step 2, deletion flow) **enumerates the owned shared groups and their
+  chosen disposition**, not just "your data will be deleted."
 - **Deletion 5a. Completed draws referencing the user** → a finished
   [Draw](../../glossary/draw.md) is history and is **not** rewritten. The organizer's group keeps the
   member record (a name in someone else's list); only the account link disappears
@@ -136,7 +150,9 @@ The user opens **Profile → Data & account** and chooses **Export my data** or 
   case), [ADR-0017](../../adr/0017-anonymous-to-account-claim.md),
   [ADR-0018](../../adr/0018-circle-and-sharing-model.md),
   [ADR-0019](../../adr/0019-member-user-linking.md),
-  [ADR-0020](../../adr/0020-server-side-assignment-privacy.md)
+  [ADR-0020](../../adr/0020-server-side-assignment-privacy.md),
+  [ADR-0058](../../adr/0058-account-free-link-shared-groups.md) (extends the deletion flow with the
+  per-group disposition, via [FR-043](../../requirements/functional/FR-043-release-ownership-and-deletion-disposition.md))
 - Glossary: [User](../../glossary/user.md), [Member](../../glossary/member.md),
   [Managed member](../../glossary/managed-member.md), [Assignment](../../glossary/assignment.md),
   [Wishlist](../../glossary/wishlist.md), [Draw](../../glossary/draw.md)

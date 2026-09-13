@@ -48,6 +48,10 @@
   href: FEAT-012-member-gift-note.md
 - name: TP-012 Member gift note test plan
   href: TP-012-member-gift-note.md
+- name: FEAT-013 Account-free link-shared groups
+  href: FEAT-013-account-free-link-shared-groups.md
+- name: TP-013 Account-free link-shared groups test plan
+  href: TP-013-account-free-link-shared-groups.md
 - name: Templates
   items:
     - name: Feature spec template

@@ -76,6 +76,18 @@
       href: functional/FR-036-budget-minimum-and-maximum.md
     - name: FR-037 Member gift note
       href: functional/FR-037-member-gift-note.md
+    - name: FR-038 Per-group storage mode
+      href: functional/FR-038-per-group-storage-mode.md
+    - name: FR-039 Shared-by-link storage & sync
+      href: functional/FR-039-shared-by-link-storage-and-sync.md
+    - name: FR-040 Admin link capability
+      href: functional/FR-040-admin-link-capability.md
+    - name: FR-041 Join link & person claim
+      href: functional/FR-041-join-link-and-person-claim.md
+    - name: FR-042 Release a claimed person
+      href: functional/FR-042-release-a-claimed-person.md
+    - name: FR-043 Release ownership & deletion disposition
+      href: functional/FR-043-release-ownership-and-deletion-disposition.md
 - name: Non-functional
   items:
     - name: NFR-001 Local-first & offline
@@ -94,6 +106,10 @@
       href: non-functional/NFR-007-store-distributability.md
     - name: NFR-008 Sync convergence & data safety
       href: non-functional/NFR-008-sync-convergence-and-data-safety.md
+    - name: NFR-009 Account-free write abuse-resistance
+      href: non-functional/NFR-009-account-free-write-abuse-resistance.md
+    - name: NFR-010 Shared-group retention & lifecycle
+      href: non-functional/NFR-010-shared-group-retention-lifecycle.md
 - name: Templates
   items:
     - name: Requirement template

@@ -57,6 +57,14 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-035](functional/FR-035-carry-forward-new-occasion.md) | Carry forward wishlists, budget and prior draw when creating an event | Functional | Should | Implemented |
 | [FR-036](functional/FR-036-budget-minimum-and-maximum.md) | Gift budget supports an optional minimum as well as a maximum | Functional | Could | Implemented |
 | [FR-037](functional/FR-037-member-gift-note.md) | A member has a stable gift note (allergies / dietary / do-not-gift) shown to their giver | Functional | Could | Implemented |
+| [FR-038](functional/FR-038-per-group-storage-mode.md) | A group has one of three storage modes, chosen at creation and switchable | Functional | Must | Draft |
+| [FR-039](functional/FR-039-shared-by-link-storage-and-sync.md) | A shared-by-link group is stored on the server by share token and synced to link-holders | Functional | Must | Draft |
+| [FR-040](functional/FR-040-admin-link-capability.md) | An admin link grants a shared, account-free, revocable admin capability | Functional | Must | Draft |
+| [FR-041](functional/FR-041-join-link-and-person-claim.md) | A join link lets a person join a shared group and claim which member they are | Functional | Must | Draft |
+| [FR-042](functional/FR-042-release-a-claimed-person.md) | An admin can release a claimed person so they can be claimed again | Functional | Should | Draft |
+| [FR-043](functional/FR-043-release-ownership-and-deletion-disposition.md) | Release a group to shared-by-link, and dispose of owned groups on account deletion | Functional | Must | Draft |
+| [NFR-009](non-functional/NFR-009-account-free-write-abuse-resistance.md) | Account-free backend writes are abuse-resistant | Non-functional | Must | Draft |
+| [NFR-010](non-functional/NFR-010-shared-group-retention-lifecycle.md) | Shared-by-link groups have a defined retention & deletion lifecycle | Non-functional | Must | Draft |
 
 _Add a row per requirement._
 
