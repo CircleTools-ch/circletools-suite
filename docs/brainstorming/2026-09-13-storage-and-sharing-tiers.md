@@ -15,8 +15,9 @@ status: Concluded
 > stance changes a published promise** — [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)
 > and the sync definition ([glossary/sync.md](../glossary/sync.md)) will be amended by the ADR.
 > **Recorded as [ADR-0058](../adr/0058-account-free-link-shared-groups.md)** (Accepted 2026-09-13).
-> Its doc amendments are applied (NFR-002, glossary/sync, arc42 §8, and five new glossary terms).
-> **Next: the use-case → requirement → feature-spec pass.**
+> Its doc amendments are applied (NFR-002, glossary/sync, arc42 §8, and five new glossary terms), and
+> the full process pass is written: **UC-SS-017…020** (+ UC-MAIN-006 extended), **FR-038…043**,
+> **NFR-009/010**, and **FEAT-013 / TP-013**. Docs build clean. Ready for the review/approve pass.
 
 ## Objective / framing question
 
@@ -388,12 +389,21 @@ supersede or amend:
 - [x] **ADR written & [ADR-0058](../adr/0058-account-free-link-shared-groups.md) Accepted**
       (2026-09-13), cross-referencing ADR-0014/0015/0016/0017/0018/0019/0020/0022/0033/0043/0053 and
       NFR-001/002. Next: apply its amendments to glossary/sync + arc42 §8 + NFR-002.
-- [ ] Add/adjust **glossary term(s)** for the middle tier (e.g. *shared group* / *admin link* /
-      *join link* / *account-free sync*) before naming them in code. — target: with the ADR
-- [ ] Take through the process: **use case(s)** (choose storage mode at creation; switch mode;
-      admin-share by admin link; join via join link incl. the identity/persistence flow; claim admin
-      to an account; admin releases a claimed person) → **requirements** → **feature spec + test plan**.
-- [ ] Capture **anti-abuse & retention** requirements (TTL, size caps, rate limits, owner-less delete)
-      as NFRs.
-- [ ] **UX pass** — wireframes for Group settings (mode + sharing), the join flow, and the mode
-      chip/hub row, likely a `design` canvas, before the feature spec.
+- [x] **Glossary terms added** (2026-09-13): [Shared-by-link group](../glossary/shared-by-link-group.md),
+      [Admin link](../glossary/admin-link.md), [Join link](../glossary/join-link.md),
+      [Share token](../glossary/share-token.md), [Person claim](../glossary/person-claim.md).
+- [x] **Process pass written** (2026-09-13): use cases
+      [UC-SS-017](../use-cases/secret-santa/UC-SS-017-choose-and-switch-storage-mode.md)…
+      [UC-SS-020](../use-cases/secret-santa/UC-SS-020-release-a-claimed-person.md) (+ UC-MAIN-006
+      extended) → requirements
+      [FR-038](../requirements/functional/FR-038-per-group-storage-mode.md)…FR-043 → feature spec
+      [FEAT-013](../features/FEAT-013-account-free-link-shared-groups.md) +
+      [TP-013](../features/TP-013-account-free-link-shared-groups.md). Docs build clean.
+- [x] **Anti-abuse & retention NFRs written** (2026-09-13):
+      [NFR-009](../requirements/non-functional/NFR-009-account-free-write-abuse-resistance.md) (abuse
+      resistance) and [NFR-010](../requirements/non-functional/NFR-010-shared-group-retention-lifecycle.md)
+      (retention & lifecycle).
+- [x] **UX mockups drafted** (2026-09-13): 8-screen preview (static, matched to the app theme);
+      interactive `design` canvas pending Node on the machine.
+- [ ] **Review/approve pass** — move the new UC/FR/NFR/FEAT from Draft toward Reviewed/Approved, then
+      an implementation plan (server token-keyed store, endpoints, client repository, UI).
