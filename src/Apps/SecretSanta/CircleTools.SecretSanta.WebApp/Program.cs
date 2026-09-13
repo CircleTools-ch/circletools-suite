@@ -75,6 +75,11 @@ builder.Services.AddSecretSantaSyncEngine();
 builder.Services.AddScoped<ISyncApi>(sp =>
     new HttpSyncApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized)));
 
+// The shared-by-link surface over the ANONYMOUS client (FEAT-013, ADR-0058): a shared group is
+// addressed by a share token, never a bearer, so it must work signed out and must not attach a token.
+builder.Services.AddScoped<ISharedGroupApi>(sp =>
+    new HttpSharedGroupApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Anonymous)));
+
 // The M4 linking surface over the same authorized client (FEAT-005): member-links, the assignment
 // projection and self-owned wishlists. Inert for account-free users and unlinked members (NFR-001).
 builder.Services.AddScoped<ILinkingApi>(sp =>

@@ -52,6 +52,7 @@ public static class SecretSantaLocalStoreServiceCollectionExtensions
         services.AddScoped<ILocalSyncStore, LocalSyncStore>();
         services.AddScoped<IGroupRepository, SyncingGroupRepository>();
         services.AddScoped<SyncService>();
+        services.AddScoped<SharedSyncService>();
         services.AddScoped<ClaimableGroupsService>();
         return services;
     }

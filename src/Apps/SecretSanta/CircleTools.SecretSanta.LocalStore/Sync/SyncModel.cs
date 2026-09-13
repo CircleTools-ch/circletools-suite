@@ -46,6 +46,34 @@ public sealed record SyncedPreferencesRecord(
     bool Dirty);
 
 /// <summary>
+/// Where a group's data lives — the per-group storage mode a user chooses (ADR-0058, FEAT-013).
+/// Client-side state: like the account scope it wraps the domain memento in
+/// <see cref="SyncedGroupRecord"/> and is never part of the <see cref="GroupState"/> the domain
+/// produces (the <c>SyncLayeringTests</c> fitness function keeps sync/storage metadata out of the
+/// memento).
+/// </summary>
+public enum StorageMode
+{
+    /// <summary>Local-only, offline, account-free — the default. Sharing is per-person reveal links only (NFR-001).</summary>
+    OnThisDevice = 0,
+
+    /// <summary>Stored on the server keyed by a share token, no account; reachable by an admin or join link (ADR-0058).</summary>
+    SharedByLink = 1,
+
+    /// <summary>Synced to the signed-in account across that user's devices.</summary>
+    Account = 2,
+}
+
+/// <summary>
+/// The share tokens this device holds for a <see cref="StorageMode.SharedByLink"/> group (ADR-0058):
+/// the admin-capability token (present only for a holder of the admin link) and/or the join token.
+/// Client-side metadata carried on <see cref="SyncedGroupRecord"/> — never in the domain memento.
+/// </summary>
+/// <param name="AdminToken">The admin-capability token, or <see langword="null"/> if this device holds only the join link.</param>
+/// <param name="JoinToken">The join (participant) token, or <see langword="null"/>.</param>
+public sealed record SharedGroupTokens(string? AdminToken, string? JoinToken);
+
+/// <summary>
 /// A persisted group together with the sync metadata the client needs to reconcile it (FEAT-004).
 /// </summary>
 /// <remarks>
@@ -69,11 +97,21 @@ public sealed record SyncedPreferencesRecord(
 /// Whether the local copy holds an edit not yet accepted by the server. Set on every local write,
 /// cleared once a cycle has pushed the copy the flag was set for.
 /// </param>
+/// <param name="Mode">
+/// The group's storage mode (ADR-0058): on this device (default), shared by link, or account-synced.
+/// Additive since schema v3; an older record without it loads as <see cref="StorageMode.OnThisDevice"/>.
+/// </param>
+/// <param name="Tokens">
+/// For a <see cref="StorageMode.SharedByLink"/> group, the share tokens this device holds; otherwise
+/// <see langword="null"/>. Additive since schema v3.
+/// </param>
 public sealed record SyncedGroupRecord(
     GroupState State,
     long Version,
     Guid? AccountScope,
-    bool Dirty);
+    bool Dirty,
+    StorageMode Mode = StorageMode.OnThisDevice,
+    SharedGroupTokens? Tokens = null);
 
 /// <summary>
 /// The whole persisted group collection under the local-store key, carrying a schema version so an
@@ -85,10 +123,13 @@ public sealed record SyncGroupDocument(int SchemaVersion, IReadOnlyList<SyncedGr
 {
     /// <summary>
     /// The current storage schema version. Version 1 was the bare <c>List&lt;GroupState&gt;</c> array
-    /// (no wrapper, no sync metadata); version 2 is this document. A load recognises the old array and
-    /// lifts each element into a <see cref="SyncedGroupRecord"/> — no user loses a group.
+    /// (no wrapper, no sync metadata); version 2 wrapped each in a <see cref="SyncedGroupRecord"/>;
+    /// version 3 adds the per-group <see cref="StorageMode"/> and its share tokens (ADR-0058) as
+    /// additive record fields — a v2 document loads unchanged, every group defaulting to
+    /// <see cref="StorageMode.OnThisDevice"/> with no tokens. A load also recognises the v1 array and
+    /// lifts each element — no user loses a group.
     /// </summary>
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
 }
 
 /// <summary>

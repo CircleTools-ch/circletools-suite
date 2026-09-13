@@ -25,4 +25,10 @@ namespace CircleTools.SecretSanta.LocalStore;
 [JsonSerializable(typeof(SyncRequest))]
 [JsonSerializable(typeof(SyncResponse))]
 [JsonSerializable(typeof(ClaimGroupRequest))]
+[JsonSerializable(typeof(CreateSharedGroupRequest))]
+[JsonSerializable(typeof(PushSharedGroupRequest))]
+[JsonSerializable(typeof(PushSharedGroupResult))]
+[JsonSerializable(typeof(MintedLinks))]
+[JsonSerializable(typeof(SharedGroupView))]
+[JsonSerializable(typeof(RotatedAdminLink))]
 public sealed partial class SyncJsonContext : JsonSerializerContext;
