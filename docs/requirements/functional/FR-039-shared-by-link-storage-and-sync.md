@@ -2,7 +2,7 @@
 id: FR-039
 title: A shared-by-link group is stored on the server by share token and synced to link-holders
 type: functional
-status: Draft
+status: Approved
 priority: Must
 source: UC-SS-017
 verification: test

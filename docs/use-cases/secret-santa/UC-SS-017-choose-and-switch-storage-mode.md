@@ -3,7 +3,7 @@ id: UC-SS-017
 title: Choose a group's storage mode at creation and switch it later
 app: Secret-Santa
 actors: [Organizer]
-status: Draft
+status: Approved
 priority: Should
 related: [FR-038, FR-043, UC-SS-018, NFR-001, ADR-0058]
 ---

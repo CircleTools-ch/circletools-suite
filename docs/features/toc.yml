@@ -52,6 +52,8 @@
   href: FEAT-013-account-free-link-shared-groups.md
 - name: TP-013 Account-free link-shared groups test plan
   href: TP-013-account-free-link-shared-groups.md
+- name: FEAT-013 Implementation plan
+  href: FEAT-013-implementation-plan.md
 - name: Templates
   items:
     - name: Feature spec template

@@ -2,7 +2,7 @@
 id: FR-041
 title: A join link lets a person join a shared group and claim which member they are
 type: functional
-status: Draft
+status: Approved
 priority: Must
 source: UC-SS-019
 verification: test

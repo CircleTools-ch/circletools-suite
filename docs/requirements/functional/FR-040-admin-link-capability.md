@@ -2,7 +2,7 @@
 id: FR-040
 title: An admin link grants a shared, account-free, revocable admin capability
 type: functional
-status: Draft
+status: Approved
 priority: Must
 source: UC-SS-018
 verification: test

@@ -3,7 +3,7 @@ id: UC-SS-019
 title: Join a shared-by-link group via the join link
 app: Secret-Santa
 actors: [Participant]
-status: Draft
+status: Approved
 priority: Should
 related: [FR-041, FR-039, NFR-002, UC-SS-018, UC-SS-020, ADR-0058, ADR-0019, ADR-0043]
 ---

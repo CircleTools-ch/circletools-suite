@@ -3,7 +3,7 @@ id: UC-SS-018
 title: Share and manage a shared-by-link group as an admin
 app: Secret-Santa
 actors: [Organizer, Admin]
-status: Draft
+status: Approved
 priority: Should
 related: [FR-040, FR-043, FR-039, NFR-009, UC-SS-017, UC-SS-019, ADR-0058, ADR-0017]
 ---
