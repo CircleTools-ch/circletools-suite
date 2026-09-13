@@ -2,7 +2,7 @@
 id: FR-042
 title: An admin can release a claimed person so they can be claimed again
 type: functional
-status: Draft
+status: Approved
 priority: Should
 source: UC-SS-020
 verification: test

@@ -2,7 +2,7 @@
 id: FR-043
 title: Ownership is not a trap — release a group to shared-by-link, and dispose of owned groups on account deletion
 type: functional
-status: Draft
+status: Approved
 priority: Must
 source: UC-SS-017, UC-MAIN-006
 verification: test

@@ -1,7 +1,7 @@
 ---
 id: FEAT-013
 title: Account-free, link-shared groups (third storage tier)
-status: Draft
+status: Approved
 owner: Adrian
 target-milestone: Post-v1 sync / M5 (tentative)
 bounded-context: SecretSanta
@@ -9,6 +9,9 @@ related: [UC-SS-017, UC-SS-018, UC-SS-019, UC-SS-020, UC-MAIN-006, FR-038, FR-03
 ---
 
 # FEAT-013 — Account-free, link-shared groups (third storage tier)
+
+> **Build plan:** the phased, codebase-grounded implementation sequence lives in
+> [FEAT-013 Implementation Plan](FEAT-013-implementation-plan.md).
 
 ## Problem & goals
 

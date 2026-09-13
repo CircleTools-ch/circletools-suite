@@ -2,7 +2,7 @@
 id: FR-038
 title: A group has one of three storage modes, chosen at creation and switchable
 type: functional
-status: Draft
+status: Approved
 priority: Must
 source: UC-SS-017
 verification: test

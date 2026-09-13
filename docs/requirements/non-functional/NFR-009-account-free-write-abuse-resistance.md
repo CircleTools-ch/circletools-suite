@@ -2,7 +2,7 @@
 id: NFR-009
 title: Account-free backend writes are abuse-resistant
 type: non-functional
-status: Draft
+status: Approved
 priority: Must
 source: FR-039, FR-040
 verification: test

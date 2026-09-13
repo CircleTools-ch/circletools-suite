@@ -2,7 +2,7 @@
 id: NFR-010
 title: Shared-by-link groups have a defined retention & deletion lifecycle
 type: non-functional
-status: Draft
+status: Approved
 priority: Must
 source: FR-039
 verification: test

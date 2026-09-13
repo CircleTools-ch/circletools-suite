@@ -3,7 +3,7 @@ id: UC-SS-020
 title: Free (release) a claimed person so they can rejoin
 app: Secret-Santa
 actors: [Admin]
-status: Draft
+status: Approved
 priority: Could
 related: [FR-042, FR-041, UC-SS-019, ADR-0058]
 ---
