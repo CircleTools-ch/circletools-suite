@@ -45,6 +45,12 @@ builder.Services.AddSyncRepository(mainConnectionString);
 // the opaque sync store, and is the only place the host understands the Secret-Santa schema.
 builder.Services.AddLinkingRepository(mainConnectionString);
 
+// Shared-by-link groups (FEAT-013). A fifth context and schema — the account-free, token-keyed store
+// that holds a group reachable by an admin or join link, with no account behind it (ADR-0058). Its
+// write path is anonymous, so it is rate-limited and size-capped (NFR-009/010).
+builder.Services.AddSharedGroupsRepository(mainConnectionString);
+builder.Services.Configure<SharedGroupLimits>(builder.Configuration.GetSection(SharedGroupLimits.SectionName));
+
 // Circles (FEAT-003). Its own DbContext and its own schema inside the same database — a modular
 // monolith with a visible seam, not a second database (ADR-0003).
 builder.Services.AddCirclesCore();
@@ -159,6 +165,19 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
             }));
 
+    // The account-free shared-group write path (FEAT-013, NFR-009): a per-IP fixed window on the
+    // anonymous create/push/rotate routes, so the token store cannot be flooded by a client with no
+    // account behind it. Separate, more generous ceiling than the sensitive-address policy above.
+    options.AddPolicy(SharedGroupEndpoints.AccountFreeRateLimitPolicy, context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = builder.Configuration.GetValue("RateLimiting:SharedWritePermitLimit", 120),
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
+
     // A rejection must look the same whether or not the account exists — a lockout message that
     // only appears for real accounts is itself an enumeration oracle (NFR-005).
     options.OnRejected = async (context, cancellationToken) =>
@@ -229,7 +248,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// Apply pending migrations for the four contexts (independent histories, one database). Automatic in
+// Apply pending migrations for the five contexts (independent histories, one database). Automatic in
 // Development; elsewhere it is an *explicit* release step, never silent (ADR-0036 runbook): run the
 // image with the `--migrate` argument as a one-shot job that migrates and exits, or set
 // `Database:ApplyMigrationsOnStartup=true` on the running host. The API container starts with neither,
@@ -245,6 +264,7 @@ if (app.Environment.IsDevelopment()
     services.GetRequiredService<SyncDbContext>().Database.Migrate();
     services.GetRequiredService<CirclesDbContext>().Database.Migrate();
     services.GetRequiredService<LinkingDbContext>().Database.Migrate();
+    services.GetRequiredService<SharedGroupDbContext>().Database.Migrate();
 
     if (runMigrateAndExit)
     {
@@ -291,6 +311,15 @@ var sync = app
     .MapToApiVersion(new ApiVersion(1, 0));
 
 sync.MapSyncEndpoints();
+
+// Shared-by-link groups (FEAT-013): the account-free, token-authorized store. Not bearer-authorized —
+// the share token is the credential (ADR-0058); guessing is defeated by token entropy (NFR-009).
+var shared = app
+    .MapGroup("/api/v{version:apiVersion}/shared")
+    .WithApiVersionSet(versionSet)
+    .MapToApiVersion(new ApiVersion(1, 0));
+
+shared.MapSharedGroupEndpoints();
 
 // Linking (FEAT-005): member-links, the group-scoped assignment/wishlist/publish routes, and the two
 // cross-group overviews. All bearer-authorized and per-caller-scoped on this same host.

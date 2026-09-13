@@ -24,12 +24,17 @@ namespace CircleTools.SecretSanta.LocalStore;
 /// Whether the group is still local-only (not claimed into any account). The claim screen lists
 /// exactly these; the sync-status and un-claim surfaces show their complement.
 /// </param>
+/// <param name="Mode">
+/// The group's storage mode (ADR-0058), so mode-aware surfaces (the hub chip, Sharing &amp; sync) can
+/// show it without reaching into the sync record directly.
+/// </param>
 public sealed record ClaimableGroup(
     Guid Id,
     string Name,
     int MemberCount,
     bool HasCurrentDraw,
-    bool IsAccountFree);
+    bool IsAccountFree,
+    StorageMode Mode);
 
 /// <summary>
 /// Reads the local groups as the claim / un-claim / sync-status screens need them (FEAT-004), over the
@@ -72,6 +77,7 @@ public sealed class ClaimableGroupsService(ILocalSyncStore local)
             state.Name,
             state.Members.Count,
             hasCurrentDraw,
-            IsAccountFree: record.AccountScope is null);
+            IsAccountFree: record.AccountScope is null,
+            record.Mode);
     }
 }
