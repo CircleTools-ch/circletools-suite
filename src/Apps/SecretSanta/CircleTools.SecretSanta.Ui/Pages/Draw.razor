@@ -4,6 +4,8 @@
 @inject IStringLocalizer<AppStrings> L
 @inject IHapticFeedback Haptics
 @inject IDialogService Dialogs
+@inject ISyncSignals SyncSignals
+@implements IDisposable
 
 <PageTitle>@L["DrawTitle"]</PageTitle>
 
@@ -73,7 +75,20 @@ else
     private RunDrawResultDto? _result;
     private bool _busy;
 
+    protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
+
     protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    // A background sync may have pulled a co-organizer's edits (roster changes that stale the draw, or a
+    // draw they ran) into the local store (shared-by-link, FEAT-013); reload so the draw state is current
+    // without a manual refresh. A just-run local result is separate state and is not disturbed.
+    private void OnSyncCompleted() => _ = InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => SyncSignals.SyncCompleted -= OnSyncCompleted;
 
     private async Task LoadAsync()
     {

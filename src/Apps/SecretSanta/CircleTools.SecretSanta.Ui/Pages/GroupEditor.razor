@@ -6,6 +6,8 @@
 @inject TimeProvider Time
 @inject IDialogService Dialogs
 @inject ILocalSyncStore Local
+@inject ISyncSignals SyncSignals
+@implements IDisposable
 
 @* Group hub (ADR-0055 group level): the group's landing screen. The occasions (events) are the primary
    content; Members and Exclusions are section rows below, mirroring the event hub. The group name is
@@ -211,7 +213,20 @@ else
     private string _editName = string.Empty;
     private Guid? _pendingRemoveId;
 
+    protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
+
     protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    // A background sync may have pulled a co-organizer's edits (events, roster, mode) into the local store
+    // (shared-by-link, FEAT-013); reload so the hub reflects them without a manual refresh. The inline
+    // add-event and rename fields are separate state, so in-progress typing is not disturbed.
+    private void OnSyncCompleted() => _ = InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => SyncSignals.SyncCompleted -= OnSyncCompleted;
 
     private async Task LoadAsync()
     {

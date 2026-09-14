@@ -3,6 +3,48 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Shared-by-link sync — Secret-Santa (2026-09-14)
+
+Found while re-testing the account-free **link-shared groups** ([FEAT-013](../features/FEAT-013-account-free-link-shared-groups.md),
+[ADR-0058](../adr/0058-account-free-link-shared-groups.md)) end-to-end in **two independent real browsers** against
+the live Aspire stack — the admin↔admin path the earlier pass missed (it only drove the participant *join* link).
+
+- **SBL-1 · Shared-by-link changes never pull on a plain refresh while signed out (bug, P1).** ✅ **Fixed,
+  browser-verified.** A co-organizer who opened the **admin link** in a second browser and added members saw them
+  pushed to the server correctly, but the **creator's browser never showed them on refresh** — not even on repeated
+  refreshes. Same class as **DGH-6**: a sync path that only fires when signed in, applied to data that is
+  account-free. `AutoSyncService.RunSharedCycleAsync` is explicitly built to reconcile shared-by-link groups
+  **signed in or out**, but the **app-start trigger** in `InitializeAsync` only called `RequestSync()` when
+  `CurrentAccountAsync() != Guid.Empty` — so a signed-out shared-by-link holder's cycle only ran after a *local*
+  edit (which then clobbers the un-pulled change via last-write-wins), a reconnect, or (touch-only) pull-to-refresh.
+  A plain desktop refresh triggered nothing. **Fix:** `InitializeAsync` now calls `RequestSync()` unconditionally on
+  app start — the shared cycle runs first and always, the account cycle self-gates on sign-in, and the whole cycle is
+  a cheap no-op when there is nothing to reconcile. **Diagnosis proof:** before the fix, adding any member on the
+  creator's device (which *does* trigger `RequestSync`) immediately pulled the co-admin's members on the next refresh,
+  isolating the bug to the missing trigger rather than the reconcile. **Browser-verified (two browsers, live stack):**
+  B1 creates a shared group → B2 opens the admin link and adds Carol+Dan (server reaches v3) → **B1 pulls both on a
+  pure refresh with no local edit** (was empty on every refresh before the fix); console clean.
+- **SBL-2 · Section pages didn't refresh in place when a background sync landed (bug, P2).** ✅ **Fixed,
+  unit-verified; two-browser re-verify pending (deferred under memory pressure).** Follow-on found by the maintainer editing the same group in two admin windows: after SBL-1 a
+  co-admin's edit *did* sync, but the open page only showed it on the *next* refresh — the refresh that triggered the
+  pull rendered the pre-pull state, so it felt like "several refreshes" or "only a force-refresh (Ctrl+Shift+R) works."
+  Confirmed it was **not** the HTTP cache (verified: a default-cache fetch and a `no-store` fetch both returned the
+  fresh version; the API sends no cache headers but Chrome was not serving stale) — the page simply never re-read the
+  store after a background pull. **Fix:** a small `ISyncSignals` seam (just the `SyncCompleted` event, implemented by
+  `AutoSyncService`, resolved to the same instance) that the group/event **read** pages — Members, group hub
+  (`GroupEditor`), Exclusions, `EventHub`, Draw, Share — subscribe to and reload on, mirroring what the shell already
+  does for the drawer. The two **form** pages (`EventEditor` details, `EventWishlists`) were deliberately left out: a
+  live reload there would discard the editor's in-progress typing. A page depends only on the notification, so a
+  component test supplies a trivial `FakeSyncSignals` instead of the whole sync graph. Covered by a new bUnit
+  regression (`MembersPageSyncRefreshTests`: firing `SyncCompleted` swaps the roster in place); **37/37 Ui tests
+  green**. Still a known limit (P3, parked): an **idle** open tab with no trigger doesn't pull at all — a co-admin's
+  change needs a refresh (or reconnect / pull-to-refresh) to *start* a cycle; a focus/`visibilitychange` or periodic
+  pull would make an idle tab live, but that nudges the deliberately-parked continuous-sync decision
+  ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md)).
+  - **Also observed (expected, note only):** shared reconcile is last-write-wins per aggregate, so a local edit made
+    on one device *before* it has pulled a newer server version is silently superseded on the next cycle. Inherent to
+    the ADR-0058 whole-aggregate model; flagged so it is a known trade-off, not a surprise.
+
 ## Competitor-research candidates — Secret-Santa (2026-09-02)
 
 Promoted from the [DE/EN/FR app-store competitor & review scan](../brainstorming/2026-09-02-secret-santa-competitor-research.md).

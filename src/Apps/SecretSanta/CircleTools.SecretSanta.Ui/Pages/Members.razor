@@ -9,6 +9,8 @@
 @inject IServiceProvider Services
 @inject IStringLocalizer<AppStrings> L
 @inject IDialogService Dialogs
+@inject ISyncSignals SyncSignals
+@implements IDisposable
 
 <PageTitle>@L["MembersTitle"]</PageTitle>
 
@@ -208,7 +210,20 @@ else
     private bool _iAmLinkedInGroup =>
         _myUserId != Guid.Empty && (_members?.Any(m => m.UserId == _myUserId) ?? false);
 
+    protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
+
     protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    // A background sync (ADR-0044) may have pulled a co-organizer's roster edits into the local store
+    // (shared-by-link, FEAT-013); reload so they appear without a manual refresh. The add/edit fields are
+    // separate state, so an in-progress add or open edit form is not disturbed.
+    private void OnSyncCompleted() => _ = InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => SyncSignals.SyncCompleted -= OnSyncCompleted;
 
     private async Task LoadAsync()
     {

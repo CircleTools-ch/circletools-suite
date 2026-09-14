@@ -5,6 +5,8 @@
 @inject IShareService ShareService
 @inject IDialogService Dialogs
 @inject IStringLocalizer<AppStrings> L
+@inject ISyncSignals SyncSignals
+@implements IDisposable
 
 <PageTitle>@L["ShareTitle"]</PageTitle>
 
@@ -91,12 +93,27 @@ else
     private bool _drawInvalidated;
     private bool _canShare;
 
-    protected override async Task OnParametersSetAsync()
+    protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
     {
         _links = await Sender.Send(new GetRevealLinksQuery(GroupId, EventId));
         var occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));
         _drawInvalidated = occasion?.DrawInvalidatedByMembershipChange ?? false;
     }
+
+    // A background sync may have pulled a co-organizer's re-draw or roster change into the local store
+    // (shared-by-link, FEAT-013); reload so the reveal links and the stale-draw warning are current
+    // without a manual refresh.
+    private void OnSyncCompleted() => _ = InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => SyncSignals.SyncCompleted -= OnSyncCompleted;
 
     // Decide up front whether this platform can present a share sheet (and, on the browser, warm the
     // JS module so the later share() runs inside the click's user activation). Done after first render

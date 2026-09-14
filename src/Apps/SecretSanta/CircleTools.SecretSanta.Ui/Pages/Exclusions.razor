@@ -1,6 +1,8 @@
 @page "/groups/{GroupId:guid}/exclusions"
 @inject ISender Sender
 @inject IStringLocalizer<AppStrings> L
+@inject ISyncSignals SyncSignals
+@implements IDisposable
 
 <PageTitle>@L["ExclusionsTitle"]</PageTitle>
 
@@ -126,7 +128,20 @@ else
         }
     }
 
+    protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
+
     protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    // A background sync may have pulled a co-organizer's roster/exclusion edits into the local store
+    // (shared-by-link, FEAT-013); reload so they appear without a manual refresh. The giver/recipient
+    // selection is separate state, so an in-progress pick is not disturbed.
+    private void OnSyncCompleted() => _ = InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => SyncSignals.SyncCompleted -= OnSyncCompleted;
 
     private async Task LoadAsync() => _group = await Sender.Send(new GetGroupQuery(GroupId));
 

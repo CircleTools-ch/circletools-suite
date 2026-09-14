@@ -41,7 +41,7 @@ public sealed class AutoSyncService(
     SyncService sync,
     SharedSyncService sharedSync,
     AuthenticationStateProvider auth,
-    IConnectivity connectivity) : IDisposable
+    IConnectivity connectivity) : IDisposable, ISyncSignals
 {
     private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(750);
 
@@ -96,11 +96,12 @@ public sealed class AutoSyncService(
         connectivity.Changed += OnConnectivityChanged;
         await connectivity.InitializeAsync();
 
-        // App-start trigger: a restored session (ADR-0021) skips the sign-in dialog, so pull its data now.
-        if (await CurrentAccountAsync() != Guid.Empty)
-        {
-            RequestSync();
-        }
+        // App-start trigger: reconcile on every start, signed in OR out. The shared-by-link cycle
+        // (FEAT-013) is account-free and must run for a signed-out co-organizer/participant so a plain
+        // refresh pulls a co-admin's changes; without this only a local edit, a reconnect, or (touch-only)
+        // pull-to-refresh triggered it. The account cycle self-gates on sign-in, and the whole cycle is a
+        // cheap no-op when there are no shared or account groups to reconcile.
+        RequestSync();
     }
 
     /// <summary>
