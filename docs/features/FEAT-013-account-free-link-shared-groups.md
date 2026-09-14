@@ -1,7 +1,7 @@
 ---
 id: FEAT-013
 title: Account-free, link-shared groups (third storage tier)
-status: Approved
+status: In progress
 owner: Adrian
 target-milestone: Post-v1 sync / M5 (tentative)
 bounded-context: SecretSanta

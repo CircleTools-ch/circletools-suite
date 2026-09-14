@@ -50,6 +50,7 @@ builder.Services.AddLinkingRepository(mainConnectionString);
 // write path is anonymous, so it is rate-limited and size-capped (NFR-009/010).
 builder.Services.AddSharedGroupsRepository(mainConnectionString);
 builder.Services.Configure<SharedGroupLimits>(builder.Configuration.GetSection(SharedGroupLimits.SectionName));
+builder.Services.AddHostedService<SharedGroupRetentionService>();
 
 // Circles (FEAT-003). Its own DbContext and its own schema inside the same database — a modular
 // monolith with a visible seam, not a second database (ADR-0003).
@@ -73,6 +74,10 @@ builder.Services.AddScoped<IAccountDeletionCleanup, CircleMembershipCleanup>();
 // the departing account backed, so no group is left with a dangling UserId. The delete flow resolves
 // the whole set of cleanups and runs each.
 builder.Services.AddScoped<IAccountDeletionCleanup, LinkingAccountCleanup>();
+
+// The shared-group context's half of account deletion (FR-043): hand each owned shared-by-link group
+// back to shared-by-link so its join-link participants keep access (ADR-0058, the default disposition).
+builder.Services.AddScoped<IAccountDeletionCleanup, SharedGroupAccountCleanup>();
 
 // Identity, sessions and bearer-token validation — ADR-0009, ADR-0021.
 // AddDefaultTokenProviders must be applied here: it lives in the ASP.NET Core framework

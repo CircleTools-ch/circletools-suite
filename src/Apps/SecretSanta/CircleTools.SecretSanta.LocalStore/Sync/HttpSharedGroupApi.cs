@@ -75,6 +75,43 @@ public sealed class HttpSharedGroupApi(HttpClient client) : ISharedGroupApi
         }
     }
 
+    /// <inheritdoc />
+    public async Task<ApiResult<ClaimedMembers>> GetClaimsAsync(string token, CancellationToken cancellationToken = default)
+    {
+        return await SendForAsync(new HttpRequestMessage(HttpMethod.Get, $"{Route}/{Uri.EscapeDataString(token)}/claims"),
+            SyncJsonContext.Default.ClaimedMembers, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult<PersonClaimResponse>> ClaimPersonAsync(
+        string token,
+        ClaimPersonRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var content = JsonContent.Create(request, SyncJsonContext.Default.ClaimPersonRequest);
+        return await SendForAsync(
+            new HttpRequestMessage(HttpMethod.Post, $"{Route}/{Uri.EscapeDataString(token)}/claims") { Content = content },
+            SyncJsonContext.Default.PersonClaimResponse, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult> ReleasePersonAsync(string adminToken, Guid memberId, CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(HttpMethod.Delete, $"{Route}/{Uri.EscapeDataString(adminToken)}/claims/{memberId}");
+        try
+        {
+            using var response = await client.SendAsync(message, cancellationToken);
+            return response.IsSuccessStatusCode
+                ? ApiResult.Ok()
+                : ApiResult.Failed(await ApiResponseReader.ReadErrorAsync(response, cancellationToken));
+        }
+        catch (HttpRequestException)
+        {
+            return ApiResult.Failed(new ApiError(ApiFailure.Unreachable));
+        }
+    }
+
     private async Task<ApiResult<T>> SendForAsync<T>(
         HttpRequestMessage message,
         JsonTypeInfo<T> typeInfo,

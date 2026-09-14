@@ -789,6 +789,7 @@ public static class AccountEndpoints
         SessionService sessions,
         IEnumerable<IAccountDeletionGuard> guards,
         IEnumerable<IAccountDeletionCleanup> cleanups,
+        ISharedGroupStore sharedGroups,
         CancellationToken cancellationToken)
     {
         if (!TryGetUserId(principal, out var userId))
@@ -828,6 +829,14 @@ public static class AccountEndpoints
         // Sessions first: if the delete fails afterwards the account is at worst signed out, which
         // is recoverable. The reverse order could leave live tokens for a deleted account.
         await sessions.RevokeAllAsync(user.Id, cancellationToken).ConfigureAwait(false);
+
+        // The owner's shared-group disposition (FR-043): by default the SharedGroupAccountCleanup below
+        // hands owned groups back to shared-by-link so joiners keep access. If the user chose to delete
+        // them too, remove them first — the cleanup then finds nothing left to hand off.
+        if (request.DeleteSharedGroups)
+        {
+            await sharedGroups.DeleteAllOwnedAsync(user.Id, cancellationToken).ConfigureAwait(false);
+        }
 
         // Then the other contexts, while the account still exists to be cleaned up after.
         foreach (var cleanup in cleanups)

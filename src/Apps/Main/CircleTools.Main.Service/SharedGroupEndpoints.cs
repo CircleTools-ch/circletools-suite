@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using CircleTools.Main.Contracts;
 using CircleTools.Main.Service.Core.Domain;
 
@@ -27,6 +28,10 @@ public static class SharedGroupEndpoints
         group.MapPost("/", CreateAsync).WithName("CreateSharedGroup")
             .RequireRateLimiting(AccountFreeRateLimitPolicy);
 
+        // List the groups the signed-in account owns, so a second device discovers them (D2). A literal
+        // segment, so it takes precedence over the "/{token}" route below.
+        group.MapGet("/owned", ListOwnedAsync).WithName("ListOwnedSharedGroups").RequireAuthorization();
+
         // Resolve a token to the group + capability. A wrong/disabled token is an indistinguishable 404.
         group.MapGet("/{token}", GetAsync).WithName("GetSharedGroup");
 
@@ -40,6 +45,29 @@ public static class SharedGroupEndpoints
 
         // Delete the online copy and all its tokens (owner-less delete, NFR-010).
         group.MapDelete("/{token}", DeleteAsync).WithName("DeleteSharedGroup");
+
+        // Which members are already claimed (join or admin token) — so the join UI can lock them.
+        group.MapGet("/{token}/claims", GetClaimsAsync).WithName("GetSharedGroupClaims");
+
+        // Claim a member ("this is me") through the join link. Rate-limited (account-free write).
+        group.MapPost("/{token}/claims", ClaimPersonAsync).WithName("ClaimSharedGroupPerson")
+            .RequireRateLimiting(AccountFreeRateLimitPolicy);
+
+        // Release a claimed member (admin only) — the sole recovery path.
+        group.MapDelete("/{token}/claims/{memberId:guid}", ReleasePersonAsync).WithName("ReleaseSharedGroupPerson");
+
+        // Claim admin into an account (Shared by link → My account) — bearer-authorized (the claimer
+        // signs in). Retires the admin link; the join link keeps working (ADR-0058).
+        group.MapPost("/{token}/claim-admin", ClaimAdminAsync).WithName("ClaimSharedGroupAdmin").RequireAuthorization();
+
+        // Release an account-owned group back to shared-by-link (My account → Shared by link) —
+        // bearer-authorized, keyed by group id (the admin token is retired by then).
+        group.MapPost("/{groupId:guid}/release-to-link", ReleaseAdminAsync).WithName("ReleaseSharedGroupAdmin").RequireAuthorization();
+
+        // Owner read/write of a claimed (My account) group (D2) — the owner has no admin token, so they
+        // address the group by id and authorize with their bearer.
+        group.MapGet("/{groupId:guid}/owned", GetOwnedAsync).WithName("GetOwnedSharedGroup").RequireAuthorization();
+        group.MapPut("/{groupId:guid}/owned", PushOwnedAsync).WithName("PushOwnedSharedGroup").RequireAuthorization();
 
         return group;
     }
@@ -96,5 +124,120 @@ public static class SharedGroupEndpoints
     {
         var deleted = await store.DeleteAsync(token, cancellationToken);
         return deleted ? Results.NoContent() : Results.Forbid();
+    }
+
+    private static async Task<IResult> GetClaimsAsync(
+        string token,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        var claimed = await store.GetClaimedMembersAsync(token, cancellationToken);
+        return claimed is null ? Results.NotFound() : Results.Ok(new ClaimedMembers(claimed));
+    }
+
+    private static async Task<IResult> ClaimPersonAsync(
+        string token,
+        ClaimPersonRequest request,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        var result = await store.ClaimPersonAsync(token, request, cancellationToken);
+        return result.Status switch
+        {
+            PersonClaimStatus.NotFound => Results.NotFound(),
+            PersonClaimStatus.AlreadyClaimed => Results.Ok(new PersonClaimResponse(false, true)),
+            _ => Results.Ok(new PersonClaimResponse(true, false)),
+        };
+    }
+
+    private static async Task<IResult> ReleasePersonAsync(
+        string token,
+        Guid memberId,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        var released = await store.ReleasePersonAsync(token, memberId, cancellationToken);
+        return released ? Results.NoContent() : Results.Forbid();
+    }
+
+    private static async Task<IResult> ClaimAdminAsync(
+        string token,
+        ClaimsPrincipal principal,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        if (!principal.TryGetUserId(out var accountId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var claimed = await store.ClaimAdminAsync(token, accountId, principal.DisplayName(), cancellationToken);
+        return claimed ? Results.NoContent() : Results.Forbid();
+    }
+
+    private static async Task<IResult> ReleaseAdminAsync(
+        Guid groupId,
+        ClaimsPrincipal principal,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        if (!principal.TryGetUserId(out var accountId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var rotated = await store.ReleaseAdminAsync(accountId, groupId, cancellationToken);
+        return rotated is null ? Results.Forbid() : Results.Ok(rotated);
+    }
+
+    private static async Task<IResult> ListOwnedAsync(
+        ClaimsPrincipal principal,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        if (!principal.TryGetUserId(out var accountId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var owned = await store.ListOwnedAsync(accountId, cancellationToken);
+        return Results.Ok(new OwnedSharedGroups(owned));
+    }
+
+    private static async Task<IResult> GetOwnedAsync(
+        Guid groupId,
+        ClaimsPrincipal principal,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        if (!principal.TryGetUserId(out var accountId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var view = await store.GetAsOwnerAsync(accountId, groupId, cancellationToken);
+        return view is null ? Results.NotFound() : Results.Ok(view);
+    }
+
+    private static async Task<IResult> PushOwnedAsync(
+        Guid groupId,
+        PushSharedGroupRequest request,
+        ClaimsPrincipal principal,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        if (!principal.TryGetUserId(out var accountId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await store.PushAsOwnerAsync(accountId, groupId, request.Version, request.Body, cancellationToken);
+        return result.Status switch
+        {
+            SharedWriteStatus.NotFound => Results.NotFound(),
+            SharedWriteStatus.Forbidden => Results.Forbid(),
+            SharedWriteStatus.TooLarge => Results.StatusCode(StatusCodes.Status413PayloadTooLarge),
+            _ => Results.Ok(new PushSharedGroupResult(result.Version, result.Status == SharedWriteStatus.Collision)),
+        };
     }
 }

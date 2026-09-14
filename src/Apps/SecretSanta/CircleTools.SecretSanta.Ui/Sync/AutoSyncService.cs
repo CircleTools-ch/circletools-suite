@@ -192,7 +192,7 @@ public sealed class AutoSyncService(
     private async Task RunSharedCycleAsync()
     {
         var shared = (await claimable.GetAllAsync())
-            .Where(g => g.Mode == StorageMode.SharedByLink)
+            .Where(g => g.Mode is StorageMode.SharedByLink or StorageMode.Account)
             .Select(g => g.Id)
             .ToList();
 
@@ -210,7 +210,17 @@ public sealed class AutoSyncService(
     // groups the user chose to discard are already gone and never claimed.
     private async Task RunCycleAsync(Guid accountId)
     {
-        var accountFree = (await claimable.GetAccountFreeAsync()).Select(g => g.Id).ToList();
+        // Discover any groups this account claimed admin of on another device (D2), so they appear and
+        // are manageable here too. Signed-in only (this cycle), so the bearer is present.
+        await sharedSync.MergeOwnedAsync();
+
+        // Auto-claim only on-this-device groups into the account (the M3 flow). Shared-by-link and
+        // account-owned-shared groups (FEAT-013) live in the token-keyed store, not the account sync
+        // store, so they must never be M3-claimed.
+        var accountFree = (await claimable.GetAccountFreeAsync())
+            .Where(g => g.Mode == StorageMode.OnThisDevice)
+            .Select(g => g.Id)
+            .ToList();
         if (accountFree.Count > 0)
         {
             await sync.ClaimAsync(accountId, accountFree);

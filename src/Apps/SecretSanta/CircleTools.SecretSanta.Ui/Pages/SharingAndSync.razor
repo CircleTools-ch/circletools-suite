@@ -1,0 +1,250 @@
+@page "/groups/{GroupId:guid}/sharing"
+@using CircleTools.SecretSanta.Core.Application
+@using CircleTools.SecretSanta.Core.Reveal
+@using CircleTools.SecretSanta.LocalStore
+@using CircleTools.Ui.Account.Auth
+@using Microsoft.AspNetCore.Components.Authorization
+@inject ISender Sender
+@inject ILocalSyncStore Local
+@inject SharedSyncService Shared
+@inject RevealLinkOptions RevealOptions
+@inject IDialogService Dialogs
+@inject IShareService ShareService
+@inject IJSRuntime JS
+@inject AuthenticationStateProvider Auth
+@inject IStringLocalizer<AppStrings> L
+
+<PageTitle>@L["SharingTitle"]</PageTitle>
+
+<GroupBackNav GroupId="GroupId" />
+
+<MudText Typo="Typo.h4" GutterBottom="true">@L["SharingTitle"]</MudText>
+
+@if (_loaded && _groupName is null)
+{
+    <MudText>@L["GroupNotFound"]</MudText>
+}
+else if (!_loaded)
+{
+    <MudText>@L["Loading"]</MudText>
+}
+else
+{
+    <MudText Class="mud-text-secondary mb-4">@L["SharingLead"]</MudText>
+
+    <div class="mb-2"><MudText Typo="Typo.overline">@L["StorageModeLabel"]</MudText></div>
+    <MudPaper Elevation="0" Outlined="true" Class="pa-3 mb-2">
+        <StorageModePicker Value="_mode" ValueChanged="OnModeChosenAsync" AccountEnabled="_signedIn" />
+    </MudPaper>
+    @if (_busy)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" />
+    }
+
+    @if (_mode == StorageMode.Account)
+    {
+        <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true" id="account-owned">@L["AccountOwnedNote"]</MudAlert>
+    }
+
+    @if (_mode == StorageMode.SharedByLink && _tokens is not null)
+    {
+        <MudText Class="mud-text-secondary mb-3">@L["SharingSharedLead"]</MudText>
+
+        @if (_tokens.AdminToken is { } adminToken)
+        {
+            <MudCard Elevation="1" Class="mb-3" id="admin-link-card">
+                <MudCardContent class="pb-2">
+                    <div class="d-flex align-center gap-2 mb-1">
+                        <MudIcon Icon="@Icons.Material.Filled.Shield" Color="Color.Error" />
+                        <MudText Typo="Typo.subtitle1"><strong>@L["AdminLink"]</strong></MudText>
+                    </div>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["AdminLinkHint"]</MudText>
+                    @LinkActions(AdminUrl(adminToken), L["AdminLink"])
+                    <MudDivider Class="my-2" />
+                    <div class="d-flex flex-wrap gap-2">
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Autorenew"
+                                   OnClick="RotateAsync" id="rotate-admin">@L["DisableRegenerate"]</MudButton>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        }
+
+        @if (_tokens.JoinToken is { } joinToken)
+        {
+            <MudCard Elevation="1" Class="mb-3" id="join-link-card">
+                <MudCardContent class="pb-2">
+                    <div class="d-flex align-center gap-2 mb-1">
+                        <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Color="Color.Primary" />
+                        <MudText Typo="Typo.subtitle1"><strong>@L["JoinLink"]</strong></MudText>
+                    </div>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["JoinLinkHint"]</MudText>
+                    @LinkActions(JoinUrl(joinToken), L["JoinLink"])
+                </MudCardContent>
+            </MudCard>
+        }
+    }
+}
+
+@code {
+    /// <summary>The group whose sharing is managed.</summary>
+    [Parameter]
+    public Guid GroupId { get; set; }
+
+    private bool _loaded;
+    private bool _busy;
+    private bool _signedIn;
+    private string? _groupName;
+    private StorageMode _mode;
+    private SharedGroupTokens? _tokens;
+    private string? _copiedUrl;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var state = await Auth.GetAuthenticationStateAsync();
+        _signedIn = state.User.UserId() != Guid.Empty;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        var group = await Sender.Send(new GetGroupQuery(GroupId));
+        _groupName = group?.Name;
+
+        var record = (await Local.LoadGroupsAsync()).FirstOrDefault(r => r.State.Id == GroupId);
+        _mode = record?.Mode ?? StorageMode.OnThisDevice;
+        _tokens = record?.Tokens;
+        _loaded = true;
+    }
+
+    private string Base => RevealOptions.BaseUrl.TrimEnd('/');
+
+    private string AdminUrl(string token) => $"{Base}/admin#t={token}";
+
+    private string JoinUrl(string token) => $"{Base}/join#t={token}";
+
+    private async Task OnModeChosenAsync(StorageMode mode)
+    {
+        if (mode == _mode || _busy)
+        {
+            return;
+        }
+
+        // Local → Shared by link: upload and mint links, after a plain consequence prompt.
+        if (mode == StorageMode.SharedByLink && _mode == StorageMode.OnThisDevice)
+        {
+            if (await Dialogs.ShowConfirmSheetAsync(L["ShareByLinkConfirm"], L["ShareByLinkConfirmYes"], L["Cancel"], Color.Primary))
+            {
+                await RunAsync(() => Shared.ShareByLinkAsync(GroupId));
+            }
+
+            return;
+        }
+
+        // Shared by link → On this device: remove the online copy, keep the local one.
+        if (mode == StorageMode.OnThisDevice && _mode == StorageMode.SharedByLink)
+        {
+            if (await Dialogs.ShowConfirmSheetAsync(L["MakeLocalConfirm"], L["MakeLocalConfirmYes"], L["Cancel"]))
+            {
+                await RunAsync(() => Shared.MakeLocalAsync(GroupId));
+            }
+
+            return;
+        }
+
+        // Shared by link → My account (claim admin): sole admin, admin link retired, join link lives on.
+        if (mode == StorageMode.Account && _mode == StorageMode.SharedByLink && _signedIn)
+        {
+            if (await Dialogs.ShowConfirmSheetAsync(L["ClaimAdminConfirm"], L["ClaimAdminConfirmYes"], L["Cancel"], Color.Primary))
+            {
+                await RunAsync(() => Shared.ClaimAdminToAccountAsync(GroupId));
+            }
+
+            return;
+        }
+
+        // My account → Shared by link (release-admin): ownership is not a trap.
+        if (mode == StorageMode.SharedByLink && _mode == StorageMode.Account)
+        {
+            if (await Dialogs.ShowConfirmSheetAsync(L["ReleaseToLinkConfirm"], L["ReleaseToLinkConfirmYes"], L["Cancel"], Color.Primary))
+            {
+                await RunAsync(() => Shared.ReleaseToLinkAsync(GroupId));
+            }
+        }
+    }
+
+    private async Task RotateAsync()
+    {
+        if (await Dialogs.ShowConfirmSheetAsync(L["RotateAdminConfirm"], L["RotateAdminConfirmYes"], L["Cancel"], Color.Primary))
+        {
+            await RunAsync(() => Shared.RotateAdminAsync(GroupId));
+        }
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        try
+        {
+            await action();
+        }
+        finally
+        {
+            _busy = false;
+        }
+
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    private RenderFragment LinkActions(string url, string label) =>@<div>
+        <div class="ct-linkbox mb-2">@url</div>
+        <div class="d-flex flex-wrap gap-2">
+            @if (_canShare)
+            {
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Share" OnClick="() => ShareAsync(url)">@L["Share"]</MudButton>
+            }
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="() => CopyAsync(url)">
+                @(_copiedUrl == url ? L["Copied"] : L["Copy"])
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.QrCode2" OnClick="() => ShowQrAsync(label, url)">@L["ShowQr"]</MudButton>
+        </div>
+    </div>;
+
+    private bool _canShare;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _canShare = await ShareService.IsSupportedAsync();
+            if (_canShare)
+            {
+                StateHasChanged();
+            }
+        }
+    }
+
+    private Task ShowQrAsync(string label, string url) =>
+        Dialogs.ShowQrDialogAsync(label, url, L["ShareGroupQrHint"], L["Close"]);
+
+    private async Task ShareAsync(string url)
+    {
+        await ShareService.ShareAsync(L["AppName"], $"{L["ShareGroupMessage"]}\n{url}", url);
+    }
+
+    private async Task CopyAsync(string url)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", url);
+            _copiedUrl = url;
+        }
+        catch (JSException)
+        {
+            _copiedUrl = null;
+        }
+    }
+}

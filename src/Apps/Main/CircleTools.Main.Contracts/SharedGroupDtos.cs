@@ -68,3 +68,39 @@ public sealed record PushSharedGroupResult(long Version, bool Collision);
 /// <summary>The result of rotating (disabling + regenerating) a group's admin link (ADR-0058).</summary>
 /// <param name="AdminToken">The freshly-minted admin token; the previous one no longer resolves.</param>
 public sealed record RotatedAdminLink(string AdminToken);
+
+/// <summary>How a person-claim on a shared-by-link group is remembered (ADR-0058, FEAT-013).</summary>
+public enum PersonClaimKind
+{
+    /// <summary>The claim lives on one device only — no account behind it.</summary>
+    Device,
+
+    /// <summary>The claim is bound to a signed-in account, durable across that user's devices.</summary>
+    Account,
+}
+
+/// <summary>The set of members already claimed in a shared-by-link group (ADR-0058) — so the join UI can lock them.</summary>
+/// <param name="MemberIds">The claimed member ids.</param>
+public sealed record ClaimedMembers(IReadOnlyList<Guid> MemberIds);
+
+/// <summary>A person-claim through the join link (ADR-0058): "this is me".</summary>
+/// <param name="MemberId">The member the joiner is claiming.</param>
+/// <param name="Kind">Whether the claim is device-only or bound to an account.</param>
+/// <param name="DeviceHandle">The claiming device's stable handle, for a device claim.</param>
+/// <param name="AccountId">The claiming account, for an account claim (trust-based; the join path is anonymous).</param>
+public sealed record ClaimPersonRequest(Guid MemberId, PersonClaimKind Kind, string? DeviceHandle, Guid? AccountId);
+
+/// <summary>The outcome of a person-claim (ADR-0058): claimed, or already taken (first-claim-locks).</summary>
+/// <param name="Claimed">Whether this call claimed the member.</param>
+/// <param name="AlreadyClaimed">Whether the member was already claimed by someone else (the lock held).</param>
+public sealed record PersonClaimResponse(bool Claimed, bool AlreadyClaimed);
+
+/// <summary>One group the calling account owns in shared-by-link storage (ADR-0058, D2 discovery).</summary>
+/// <param name="GroupId">The group's id.</param>
+/// <param name="Version">The stored version.</param>
+/// <param name="Body">The opaque group body.</param>
+public sealed record OwnedSharedGroup(Guid GroupId, long Version, JsonElement Body);
+
+/// <summary>The groups the calling account owns, so a second device can discover and manage them (D2).</summary>
+/// <param name="Groups">The owned groups.</param>
+public sealed record OwnedSharedGroups(IReadOnlyList<OwnedSharedGroup> Groups);

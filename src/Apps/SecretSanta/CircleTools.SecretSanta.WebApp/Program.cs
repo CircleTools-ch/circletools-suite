@@ -80,6 +80,10 @@ builder.Services.AddScoped<ISyncApi>(sp =>
 builder.Services.AddScoped<ISharedGroupApi>(sp =>
     new HttpSharedGroupApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Anonymous)));
 
+// Claim-admin / release-admin require identity, so they go over the AUTHORIZED client (FEAT-013).
+builder.Services.AddScoped<ISharedGroupAccountApi>(sp =>
+    new HttpSharedGroupAccountApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized)));
+
 // The M4 linking surface over the same authorized client (FEAT-005): member-links, the assignment
 // projection and self-owned wishlists. Inert for account-free users and unlinked members (NFR-001).
 builder.Services.AddScoped<ILinkingApi>(sp =>

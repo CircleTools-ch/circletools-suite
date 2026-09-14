@@ -34,7 +34,7 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-011](TP-011-budget-minimum-and-maximum.md) | Test plan — Budget minimum and maximum | SecretSanta | Reviewed |
 | [FEAT-012](FEAT-012-member-gift-note.md) | Member gift note (allergies / dietary / do-not-gift) | SecretSanta | Done |
 | [TP-012](TP-012-member-gift-note.md) | Test plan — Member gift note | SecretSanta | Reviewed |
-| [FEAT-013](FEAT-013-account-free-link-shared-groups.md) | Account-free, link-shared groups (third storage tier) | SecretSanta | Approved |
+| [FEAT-013](FEAT-013-account-free-link-shared-groups.md) | Account-free, link-shared groups (third storage tier) | SecretSanta | In progress |
 | [TP-013](TP-013-account-free-link-shared-groups.md) | Test plan — Account-free, link-shared groups | SecretSanta | Approved |
 | [FEAT-013 Implementation Plan](FEAT-013-implementation-plan.md) | Build plan — Account-free, link-shared groups (phased) | SecretSanta | Draft |
 

@@ -1,8 +1,10 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 using CircleTools.Infrastructure.Outbox;
 using CircleTools.Main.Contracts;
+using CircleTools.Main.Service.Core.Domain;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CircleTools.Main.Service.Test.Api;
@@ -151,6 +153,58 @@ public sealed class ExportAndDeletionTests(MailApiFactory factory)
             "/api/v1/account/delete", new DeleteAccountRequest(Password));
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_ByDefault_HandsOwnedSharedGroupsBackToSharedByLink()
+    {
+        // FR-043 / ADR-0058 default: the owner leaves, but the online group stays so everyone who
+        // joined by link keeps access. It simply becomes owner-less again.
+        var (_, client, _) = await SignedInAsync();
+        var (accountId, group) = await OwnedSharedGroupFor(client);
+
+        var deleted = await client.PostAsJsonAsync(
+            "/api/v1/account/delete", new DeleteAccountRequest(Password, DeleteSharedGroups: false));
+        deleted.EnsureSuccessStatusCode();
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var store = scope.ServiceProvider.GetRequiredService<ISharedGroupStore>();
+        // The join link still resolves — participants are not stranded — but nobody owns it now.
+        Assert.NotNull(await store.GetAsync(group.JoinToken));
+        Assert.Empty(await store.ListOwnedAsync(accountId));
+    }
+
+    [Fact]
+    public async Task Delete_WhenAsked_RemovesOwnedSharedGroupsToo()
+    {
+        // FR-043 / ADR-0058 alternative disposition: the owner chose to take the online copies with them.
+        var (_, client, _) = await SignedInAsync();
+        var (accountId, group) = await OwnedSharedGroupFor(client);
+
+        var deleted = await client.PostAsJsonAsync(
+            "/api/v1/account/delete", new DeleteAccountRequest(Password, DeleteSharedGroups: true));
+        deleted.EnsureSuccessStatusCode();
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var store = scope.ServiceProvider.GetRequiredService<ISharedGroupStore>();
+        // The online copy is gone: the join link no longer resolves.
+        Assert.Null(await store.GetAsync(group.JoinToken));
+        Assert.Empty(await store.ListOwnedAsync(accountId));
+    }
+
+    /// <summary>Creates a shared-by-link group owned by the signed-in account, for the deletion tests.</summary>
+    private async Task<(Guid AccountId, MintedLinks Links)> OwnedSharedGroupFor(HttpClient client)
+    {
+        var profile = await (await client.GetAsync(new Uri("/api/v1/account/profile", UriKind.Relative)))
+            .Content.ReadFromJsonAsync<ProfileResponse>();
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var store = scope.ServiceProvider.GetRequiredService<ISharedGroupStore>();
+
+        using var body = JsonDocument.Parse("""{ "name": "Family" }""");
+        var links = await store.CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, body.RootElement.Clone()));
+        await store.ClaimAdminAsync(links!.AdminToken, profile!.Id, profile.DisplayName);
+        return (profile.Id, links);
     }
 
     [Fact]

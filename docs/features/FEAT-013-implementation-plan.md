@@ -12,6 +12,26 @@ Companion build plan for [FEAT-013](FEAT-013-account-free-link-shared-groups.md)
 ([ADR-0058](../adr/0058-account-free-link-shared-groups.md)) — not a design re-litigation.
 Repo: .NET 10 / Aspire / DDD, local-first Blazor WASM + MAUI.
 
+> **Implementation status (2026-09-14):** Phases A–H are **built and tested**. Server token-keyed
+> store + endpoints + anti-abuse + retention + account-deletion hand-off; client sync engine + all
+> transitions (share / join / person-claim / release / claim-admin / release-admin / adopt); the full
+> UI (mode picker, Sharing & sync, join page, admin release, retired-admin/adopt page) in DE/EN/FR.
+> Verified by unit tests (LocalStore engine, bUnit components), integration tests against real Postgres
+> (shared store + Main API), and **Chromium E2E** for the organizer, join, admin-release and claim-admin
+> journeys. **D2 is implemented**: after claiming admin the owner reads/writes the group by id + bearer,
+> and a second device discovers its owned groups (`GET /shared/owned` → merged as My-account groups) —
+> both integration- and unit-tested. The **account-deletion disposition** screen is now built too: the
+> Data & account page fetches the owner's shared-group count (`GET /shared/owned`) and, when it is
+> non-zero, offers a hand-off-vs-delete choice carried through `DeleteAccountRequest.DeleteSharedGroups`
+> (default = hand off, so joiners keep access); `SharedGroupStore.DeleteAllOwnedAsync` backs the
+> delete-too path. Covered by repository, endpoint-integration and bUnit tests plus a cross-app
+> **Chromium E2E** (`AccountDeletionDispositionTests`: create + claim-admin in Secret-Santa, then delete
+> in main-web). A latent account-deletion bug surfaced and was fixed while verifying this: an organizer
+> who self-linked into their own group (`POST /member-links/self`) could not delete their account — the
+> linking cleanup closed (tracked) the self-link that a later bulk delete then removed, throwing a
+> `DbUpdateConcurrencyException` (500). `LinkingStore.CleanUpAccountAsync` now excludes self-organized
+> links from the close step (they are deleted wholesale anyway); regression-tested.
+
 ## 0. Orientation — what exists and what it teaches us
 
 The whole feature is an extension of machinery that already ships. The plan reuses these seams rather than inventing parallel ones:
@@ -281,13 +301,15 @@ Every phase leaves `On this device` untouched and the network-capture invariant 
 - Local copy never destroyed by server expiry/delete: on the next open of an expired/deleted group, the client flips it to `OnThisDevice` locally (already the downgrade path) — no data loss.
 - Tests: advance clock past window → purged; local survives; any admin-link holder can delete online copy → links 404-equivalent (NFR-010 ACs).
 
-**H-deletion (depends on G):**
-- Extend `DeleteAccountAsync` (`AccountEndpoints.cs`) via a new `IAccountDeletionCleanup`-style participant, `SharedGroupAccountDisposition`, plus a **per-group disposition** carried on `DeleteAccountRequest` (additive field): for each shared group the account owns (`OwnerAccountId==caller`):
-  - **Hand off as shared by link** (default when others joined) → run release-admin (clear owner, mint admin token); group stays online, everyone keeps access.
-  - **Keep on this device** (default when owner is sole participant) → remove online copy; local survives.
-  - **Delete the online copy** → purge the `shared` row + tokens.
-- The deletion confirmation screen (ADR-0022 requirement) must **enumerate** the owned shared groups + chosen disposition. UI: extend the existing account-deletion confirm surface in the account UI to list them (compute "others joined?" from `MemberClaim` count).
-- Order: dispositions run before the account row delete (same fail-safe ordering as existing cleanups).
+**H-deletion (depends on G): _done (2026-09-14)._**
+- `DeleteAccountAsync` (`AccountEndpoints.cs`) carries a **disposition** on `DeleteAccountRequest.DeleteSharedGroups` (additive, default `false`) covering every shared group the account owns (`OwnerAccountId==caller`):
+  - **Hand off as shared by link** (default, `false`) → `SharedGroupAccountCleanup` (an `IAccountDeletionCleanup`) runs `ReleaseAllOwnedAsync` (clear owner, mint fresh admin token); groups stay online, everyone keeps access.
+  - **Delete the online copies** (`true`) → `SharedGroupStore.DeleteAllOwnedAsync` purges the owner's `shared` rows + tokens + claims before the cleanups run.
+  - In both cases each device's local copy is untouched (client flips to `OnThisDevice` on next open of a hand-off/deleted group).
+- The Data & account screen (`AccountData.razor`, ADR-0022 surface) fetches the owned-group count (`AccountApiClient.GetOwnedSharedGroupCountAsync` → `GET /shared/owned`) and, when non-zero, shows the hand-off-vs-delete choice; the flag rides the existing password-confirmed delete.
+- Order: the delete-too purge and the cleanups run before the account row delete (same fail-safe ordering as existing cleanups).
+- Tests: `SharedGroupStoreTests.DeleteAllOwned_*` (repository), `ExportAndDeletionTests.Delete_ByDefault_HandsOwnedSharedGroupsBackToSharedByLink` / `Delete_WhenAsked_RemovesOwnedSharedGroupsToo` (endpoint), `AccountPageTests.DeleteAccount_When*SharedGroups*` (bUnit, both states), and `AccountDeletionDispositionTests` (cross-app Chromium E2E).
+- Fixed in passing: `LinkingStore.CleanUpAccountAsync` no longer closes (tracks) an organizer's self-link that a later bulk delete removes — that `DbUpdateConcurrencyException` had made deletion 500 for any organizer who self-linked into their own group (`DeletingAnOrganizerWhoSelfLinkedIntoTheirOwnGroup_Succeeds`).
 
 **Tests (TP-013):** Integration + E2E — deletion routes each owned group (hand-off default when others joined; keep-on-device when sole; explicit delete); confirmation enumerates; after any disposition the deleting user's **local copy is intact** (FR-043 / NFR-010 ACs).
 

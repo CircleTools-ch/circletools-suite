@@ -263,6 +263,302 @@ public sealed class SharedGroupStore(
         return true;
     }
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Guid>?> GetClaimedMembersAsync(string token, CancellationToken cancellationToken = default)
+    {
+        var tokenRow = await context.Tokens.FindAsync([token], cancellationToken).ConfigureAwait(false);
+        if (tokenRow is not { Active: true })
+        {
+            return null;
+        }
+
+        var exists = await context.Groups
+            .AnyAsync(g => g.GroupId == tokenRow.GroupId, cancellationToken).ConfigureAwait(false);
+        if (!exists)
+        {
+            return null;
+        }
+
+        return await context.MemberClaims
+            .Where(c => c.GroupId == tokenRow.GroupId)
+            .Select(c => c.MemberId)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<PersonClaimResult> ClaimPersonAsync(
+        string token,
+        ClaimPersonRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var tokenRow = await context.Tokens.FindAsync([token], cancellationToken).ConfigureAwait(false);
+        if (tokenRow is not { Active: true })
+        {
+            return new PersonClaimResult(PersonClaimStatus.NotFound);
+        }
+
+        var now = timeProvider.GetUtcNow();
+
+        await using var transaction = await context.Database
+            .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        var group = await context.Groups
+            .FindAsync([tokenRow.GroupId], cancellationToken).ConfigureAwait(false);
+        if (group is null)
+        {
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return new PersonClaimResult(PersonClaimStatus.NotFound);
+        }
+
+        // First claim wins and locks: a member already claimed cannot be re-claimed (ADR-0058).
+        var existing = await context.MemberClaims
+            .FindAsync([tokenRow.GroupId, request.MemberId], cancellationToken).ConfigureAwait(false);
+        if (existing is not null)
+        {
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return new PersonClaimResult(PersonClaimStatus.AlreadyClaimed);
+        }
+
+        context.MemberClaims.Add(new SharedMemberClaim
+        {
+            GroupId = tokenRow.GroupId,
+            MemberId = request.MemberId,
+            ClaimKind = request.Kind,
+            DeviceHandle = request.DeviceHandle,
+            AccountId = request.AccountId,
+            ClaimedAt = now,
+        });
+        group.LastActivityAt = now;
+
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateException)
+        {
+            // A concurrent claim won the race on the (group, member) key — the lock held.
+            await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+            return new PersonClaimResult(PersonClaimStatus.AlreadyClaimed);
+        }
+
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        return new PersonClaimResult(PersonClaimStatus.Claimed);
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> ReleasePersonAsync(string adminToken, Guid memberId, CancellationToken cancellationToken = default)
+    {
+        var tokenRow = await context.Tokens.FindAsync([adminToken], cancellationToken).ConfigureAwait(false);
+        if (tokenRow is not { Active: true, Capability: SharedCapability.Admin })
+        {
+            return false;
+        }
+
+        // Idempotent: releasing an already-free member still succeeds.
+        await context.MemberClaims
+            .Where(c => c.GroupId == tokenRow.GroupId && c.MemberId == memberId)
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> ClaimAdminAsync(string adminToken, Guid accountId, string displayName, CancellationToken cancellationToken = default)
+    {
+        var tokenRow = await context.Tokens.FindAsync([adminToken], cancellationToken).ConfigureAwait(false);
+        if (tokenRow is not { Active: true, Capability: SharedCapability.Admin })
+        {
+            return false;
+        }
+
+        var now = timeProvider.GetUtcNow();
+
+        await using var transaction = await context.Database
+            .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        var group = await context.Groups
+            .FindAsync([tokenRow.GroupId], cancellationToken).ConfigureAwait(false);
+        if (group is null || group.OwnerAccountId is not null)
+        {
+            // One owner, no ambiguity: a group already claimed cannot be claimed again.
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return false;
+        }
+
+        group.OwnerAccountId = accountId;
+        group.AdminClaimedByName = displayName;
+        group.LastActivityAt = now;
+
+        // Retire every active admin token (a claim, not a rotation) so holders learn who took over; the
+        // join token is untouched.
+        var activeAdmins = await context.Tokens
+            .Where(t => t.GroupId == tokenRow.GroupId && t.Active && t.Capability == SharedCapability.Admin)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var admin in activeAdmins)
+        {
+            admin.Active = false;
+            admin.RetiredByClaim = true;
+        }
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    /// <inheritdoc />
+    public async Task<RotatedAdminLink?> ReleaseAdminAsync(Guid accountId, Guid groupId, CancellationToken cancellationToken = default)
+    {
+        var now = timeProvider.GetUtcNow();
+
+        await using var transaction = await context.Database
+            .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        var group = await context.Groups
+            .FindAsync([groupId], cancellationToken).ConfigureAwait(false);
+        if (group is null || group.OwnerAccountId != accountId)
+        {
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return null;
+        }
+
+        group.OwnerAccountId = null;
+        group.AdminClaimedByName = null;
+        group.LastActivityAt = now;
+
+        var fresh = tokens.Create();
+        context.Tokens.Add(NewToken(fresh, groupId, SharedCapability.Admin, now));
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        return new RotatedAdminLink(fresh);
+    }
+
+    /// <inheritdoc />
+    public async Task<int> PruneExpiredAsync(DateTimeOffset olderThan, CancellationToken cancellationToken = default)
+    {
+        // Owner-less groups only: an account-owned group's lifecycle is the account's (deletion), not
+        // the retention sweep's (NFR-010).
+        var expired = await context.Groups
+            .Where(g => g.OwnerAccountId == null && g.LastActivityAt < olderThan)
+            .Select(g => g.GroupId)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        foreach (var groupId in expired)
+        {
+            await context.MemberClaims.Where(c => c.GroupId == groupId).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+            await context.Tokens.Where(t => t.GroupId == groupId).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+            await context.Groups.Where(g => g.GroupId == groupId).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return expired.Count;
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<OwnedSharedGroup>> ListOwnedAsync(Guid accountId, CancellationToken cancellationToken = default)
+    {
+        var owned = await context.Groups
+            .Where(g => g.OwnerAccountId == accountId)
+            .Select(g => new { g.GroupId, g.Version, g.Body })
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        return [.. owned.Select(g => new OwnedSharedGroup(g.GroupId, g.Version, ParseBody(g.Body)))];
+    }
+
+    /// <inheritdoc />
+    public async Task<SharedGroupView?> GetAsOwnerAsync(Guid accountId, Guid groupId, CancellationToken cancellationToken = default)
+    {
+        var group = await context.Groups.FindAsync([groupId], cancellationToken).ConfigureAwait(false);
+        if (group is null || group.OwnerAccountId != accountId)
+        {
+            return null;
+        }
+
+        group.LastActivityAt = timeProvider.GetUtcNow();
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return new SharedGroupView(
+            group.GroupId, group.Version, ParseBody(group.Body),
+            SharedCapability.Admin, AdminRetired: false, AdminClaimedByName: null);
+    }
+
+    /// <inheritdoc />
+    public async Task<SharedWriteResult> PushAsOwnerAsync(
+        Guid accountId,
+        Guid groupId,
+        long version,
+        JsonElement body,
+        CancellationToken cancellationToken = default)
+    {
+        if (!WithinLimits(body))
+        {
+            return new SharedWriteResult(SharedWriteStatus.TooLarge, 0);
+        }
+
+        var now = timeProvider.GetUtcNow();
+        var bodyText = body.GetRawText();
+
+        await using var transaction = await context.Database
+            .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        var group = await context.Groups.FindAsync([groupId], cancellationToken).ConfigureAwait(false);
+        if (group is null)
+        {
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return new SharedWriteResult(SharedWriteStatus.NotFound, 0);
+        }
+
+        if (group.OwnerAccountId != accountId)
+        {
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return new SharedWriteResult(SharedWriteStatus.Forbidden, 0);
+        }
+
+        var collided = version <= group.Version;
+        group.Body = bodyText;
+        group.Version = Math.Max(version, group.Version);
+        group.ServerModifiedAt = now;
+        group.LastActivityAt = now;
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+
+        return new SharedWriteResult(
+            collided ? SharedWriteStatus.Collision : SharedWriteStatus.Applied,
+            group.Version);
+    }
+
+    /// <inheritdoc />
+    public async Task<int> ReleaseAllOwnedAsync(Guid accountId, CancellationToken cancellationToken = default)
+    {
+        // Clear ownership on every group this account owns — they revert to owner-less shared-by-link,
+        // so join-link participants keep access. The retired admin tokens stay retired (the departing
+        // owner can hand off an admin link beforehand via release-to-link); no local copy is touched.
+        return await context.Groups
+            .Where(g => g.OwnerAccountId == accountId)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(g => g.OwnerAccountId, (Guid?)null).SetProperty(g => g.AdminClaimedByName, (string?)null),
+                cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<int> DeleteAllOwnedAsync(Guid accountId, CancellationToken cancellationToken = default)
+    {
+        var owned = await context.Groups
+            .Where(g => g.OwnerAccountId == accountId)
+            .Select(g => g.GroupId)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+
+        foreach (var groupId in owned)
+        {
+            await context.MemberClaims.Where(c => c.GroupId == groupId).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+            await context.Tokens.Where(t => t.GroupId == groupId).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+            await context.Groups.Where(g => g.GroupId == groupId).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        return owned.Count;
+    }
+
     private static SharedGroupToken NewToken(string token, Guid groupId, SharedCapability capability, DateTimeOffset now) =>
         new()
         {

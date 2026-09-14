@@ -25,4 +25,13 @@ public interface ISharedGroupApi
 
     /// <summary>Deletes the online copy of a group and all its links (owner-less delete, NFR-010).</summary>
     Task<ApiResult> DeleteAsync(string adminToken, CancellationToken cancellationToken = default);
+
+    /// <summary>Reads which members are already claimed, so the join UI can lock them.</summary>
+    Task<ApiResult<ClaimedMembers>> GetClaimsAsync(string token, CancellationToken cancellationToken = default);
+
+    /// <summary>Claims a member ("this is me") through the join link — first claim wins.</summary>
+    Task<ApiResult<PersonClaimResponse>> ClaimPersonAsync(string token, ClaimPersonRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Releases a claimed member (admin only), so it can be claimed again.</summary>
+    Task<ApiResult> ReleasePersonAsync(string adminToken, Guid memberId, CancellationToken cancellationToken = default);
 }

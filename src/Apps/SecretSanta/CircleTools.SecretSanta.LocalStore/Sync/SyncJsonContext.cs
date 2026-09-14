@@ -31,4 +31,8 @@ namespace CircleTools.SecretSanta.LocalStore;
 [JsonSerializable(typeof(MintedLinks))]
 [JsonSerializable(typeof(SharedGroupView))]
 [JsonSerializable(typeof(RotatedAdminLink))]
+[JsonSerializable(typeof(ClaimedMembers))]
+[JsonSerializable(typeof(ClaimPersonRequest))]
+[JsonSerializable(typeof(PersonClaimResponse))]
+[JsonSerializable(typeof(OwnedSharedGroups))]
 public sealed partial class SyncJsonContext : JsonSerializerContext;
