@@ -71,7 +71,14 @@ public enum StorageMode
 /// </summary>
 /// <param name="AdminToken">The admin-capability token, or <see langword="null"/> if this device holds only the join link.</param>
 /// <param name="JoinToken">The join (participant) token, or <see langword="null"/>.</param>
-public sealed record SharedGroupTokens(string? AdminToken, string? JoinToken);
+/// <param name="CreatorKey">
+/// The creator secret this device minted when it first shared the group (ADR-0058 security note): it is
+/// what a lost-response retry of the create re-presents to recover the links, and it is what proves this
+/// device is the creator rather than merely someone who learned the group id from a join link. Minted and
+/// persisted before the first create call so a retry reuses it; kept on the record thereafter. Present
+/// only for the device that created the share.
+/// </param>
+public sealed record SharedGroupTokens(string? AdminToken, string? JoinToken, string? CreatorKey = null);
 
 /// <summary>
 /// A persisted group together with the sync metadata the client needs to reconcile it (FEAT-004).

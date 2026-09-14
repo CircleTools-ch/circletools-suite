@@ -124,6 +124,25 @@ delete of the server copy, **not** a tombstone).
   A joined participant sees the group, edits **their own** wishlist / gift note, and sees **their own**
   assignment once drawn — never others'.
 
+### Creating a share — the creator key (security note)
+
+`POST /shared` is **anonymous** (the account-free tier has no bearer) and takes the client-minted
+**group id**. But the group id is **not a secret** — the server returns it in every resolved view, so
+every **join-link** holder learns it. The create must therefore never hand back (or re-mint) the
+**admin** token on the strength of the group id alone; if it did, anyone you gave a *join* link could
+re-`POST /shared` with that id and be handed *admin* — collapsing the admin-vs-join boundary and
+allowing group takeover or deletion.
+
+So the sharing client mints a high-entropy **creator key** once, **persists it locally before the first
+create call**, and sends it with every create for that group. The server stores it on the group row and
+**returns the existing links only to a re-create that re-presents the matching key** (fixed-time
+compare); a create that omits the key, presents a wrong key, or targets an **account-owned** group is
+**refused** with an indistinguishable `403` (no existence oracle). This keeps the *legitimate* purpose
+of the idempotent create — a **lost-response retry** by the original creator, whose persisted key
+survives the retry — while denying it to a join-link holder, who never learns the key. The anonymous
+mutating routes (create, push, rotate, delete, release-person) **and** the activity-stamping read are
+per-IP rate-limited (NFR-009); the whole-account delete-owned path runs in one transaction.
+
 ### Claim-admin (Shared-by-link → My account)
 
 Signing in and **claiming admin** makes that account the **sole admin**, retires the admin link, and

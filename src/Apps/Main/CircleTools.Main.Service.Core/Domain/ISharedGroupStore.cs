@@ -18,13 +18,18 @@ namespace CircleTools.Main.Service.Core.Domain;
 public interface ISharedGroupStore
 {
     /// <summary>Uploads a group into shared-by-link storage and mints its admin + join tokens.</summary>
-    /// <param name="request">The group id, version and opaque body.</param>
+    /// <param name="request">The group id, version, opaque body and the creator key (ADR-0058).</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>
-    /// The minted links, or <see langword="null"/> when the body exceeds the NFR-009 abuse limits.
-    /// Re-creating a group already shared returns its current active links (idempotent share).
+    /// The outcome: <see cref="CreateSharedGroupStatus.Created"/> with the links on a first share;
+    /// <see cref="CreateSharedGroupStatus.TooLarge"/> when the body exceeds the NFR-009 abuse limits; or
+    /// <see cref="CreateSharedGroupStatus.Refused"/>. Re-creating a group already shared returns its
+    /// current active links <em>only</em> when the request carries the matching creator key (an
+    /// idempotent, lost-response-safe retry by the original creator) — a caller who knows just the group
+    /// id, or who omits the key, or who targets an account-owned group, is refused, so a join-link
+    /// holder cannot escalate to admin.
     /// </returns>
-    Task<MintedLinks?> CreateAsync(CreateSharedGroupRequest request, CancellationToken cancellationToken = default);
+    Task<CreateSharedGroupResult> CreateAsync(CreateSharedGroupRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>Resolves a token to the group it addresses and the capability it grants.</summary>
     /// <param name="token">The admin or join token from a link.</param>
@@ -145,6 +150,27 @@ public interface ISharedGroupStore
     /// <returns>The number of groups deleted.</returns>
     Task<int> DeleteAllOwnedAsync(Guid accountId, CancellationToken cancellationToken = default);
 }
+
+/// <summary>How a share-by-link create ended (ADR-0058).</summary>
+public enum CreateSharedGroupStatus
+{
+    /// <summary>The group was stored and its links minted (or returned to the matching-key creator).</summary>
+    Created,
+
+    /// <summary>The body exceeded the NFR-009 abuse limits; nothing was stored.</summary>
+    TooLarge,
+
+    /// <summary>
+    /// The create was refused: the creator key was missing, or the group already exists and the request
+    /// did not present its matching creator key, or the group is account-owned. No links are disclosed.
+    /// </summary>
+    Refused,
+}
+
+/// <summary>The outcome of <see cref="ISharedGroupStore.CreateAsync"/>.</summary>
+/// <param name="Status">How the create ended.</param>
+/// <param name="Links">The minted (or resumed) links, present only when <see cref="Status"/> is <see cref="CreateSharedGroupStatus.Created"/>.</param>
+public sealed record CreateSharedGroupResult(CreateSharedGroupStatus Status, MintedLinks? Links);
 
 /// <summary>How a person-claim ended.</summary>
 public enum PersonClaimStatus

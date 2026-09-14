@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 using CircleTools.ApiClient;
 using CircleTools.Main.Contracts;
@@ -61,8 +62,21 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
             return new MintedLinks(groupId, admin, join); // already shared — idempotent
         }
 
+        // The creator key proves, on this and any retry, that we are the group's creator rather than
+        // someone who merely learned the group id from a join link (ADR-0058 security note). Mint it once
+        // and persist it before the create call, so a lost-response retry re-presents the same key and the
+        // server hands the links back rather than refusing.
+        var creatorKey = record.Tokens?.CreatorKey;
+        if (creatorKey is null)
+        {
+            creatorKey = NewCreatorKey();
+            record = record with { Tokens = new SharedGroupTokens(null, null, creatorKey) };
+            records[index] = record;
+            await local.SaveGroupsAsync(records, cancellationToken);
+        }
+
         var body = JsonSerializer.SerializeToElement(record.State, SyncJsonContext.Default.GroupState);
-        var result = await api.CreateAsync(new CreateSharedGroupRequest(groupId, record.Version, body), cancellationToken);
+        var result = await api.CreateAsync(new CreateSharedGroupRequest(groupId, record.Version, body, creatorKey), cancellationToken);
         if (!result.IsSuccess || result.Value is null)
         {
             return null;
@@ -72,7 +86,7 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
         records[index] = record with
         {
             Mode = StorageMode.SharedByLink,
-            Tokens = new SharedGroupTokens(links.AdminToken, links.JoinToken),
+            Tokens = new SharedGroupTokens(links.AdminToken, links.JoinToken, creatorKey),
             Dirty = false,
         };
         await local.SaveGroupsAsync(records, cancellationToken);
@@ -100,6 +114,8 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
             await api.DeleteAsync(adminToken, cancellationToken);
         }
 
+        // Tokens (including the creator key) are dropped: the server copy is gone, so a later re-share is
+        // a fresh group as far as the server is concerned and mints a new creator key.
         records[index] = record with { Mode = StorageMode.OnThisDevice, Tokens = null, Dirty = false };
         await local.SaveGroupsAsync(records, cancellationToken);
     }
@@ -482,4 +498,11 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
             }
         }
     }
+
+    /// <summary>Mints a fresh, unguessable creator key (256 bits, URL-safe) for a first share (ADR-0058).</summary>
+    private static string NewCreatorKey() =>
+        Base64Url(RandomNumberGenerator.GetBytes(32));
+
+    private static string Base64Url(byte[] bytes) =>
+        Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 }

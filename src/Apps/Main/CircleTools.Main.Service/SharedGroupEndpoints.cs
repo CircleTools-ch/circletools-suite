@@ -33,7 +33,10 @@ public static class SharedGroupEndpoints
         group.MapGet("/owned", ListOwnedAsync).WithName("ListOwnedSharedGroups").RequireAuthorization();
 
         // Resolve a token to the group + capability. A wrong/disabled token is an indistinguishable 404.
-        group.MapGet("/{token}", GetAsync).WithName("GetSharedGroup");
+        // Rate-limited: a successful resolve stamps LastActivityAt (a DB write), so an unthrottled read is
+        // a write-amplification vector for any valid-token holder (NFR-009).
+        group.MapGet("/{token}", GetAsync).WithName("GetSharedGroup")
+            .RequireRateLimiting(AccountFreeRateLimitPolicy);
 
         // Push a new body (admin capability). Rate-limited.
         group.MapPut("/{token}", PushAsync).WithName("PushSharedGroup")
@@ -43,8 +46,10 @@ public static class SharedGroupEndpoints
         group.MapPost("/{token}/rotate-admin", RotateAdminAsync).WithName("RotateSharedGroupAdmin")
             .RequireRateLimiting(AccountFreeRateLimitPolicy);
 
-        // Delete the online copy and all its tokens (owner-less delete, NFR-010).
-        group.MapDelete("/{token}", DeleteAsync).WithName("DeleteSharedGroup");
+        // Delete the online copy and all its tokens (owner-less delete, NFR-010). Rate-limited: an
+        // anonymous, account-free mutation like the others (NFR-009).
+        group.MapDelete("/{token}", DeleteAsync).WithName("DeleteSharedGroup")
+            .RequireRateLimiting(AccountFreeRateLimitPolicy);
 
         // Which members are already claimed (join or admin token) — so the join UI can lock them.
         group.MapGet("/{token}/claims", GetClaimsAsync).WithName("GetSharedGroupClaims");
@@ -53,8 +58,9 @@ public static class SharedGroupEndpoints
         group.MapPost("/{token}/claims", ClaimPersonAsync).WithName("ClaimSharedGroupPerson")
             .RequireRateLimiting(AccountFreeRateLimitPolicy);
 
-        // Release a claimed member (admin only) — the sole recovery path.
-        group.MapDelete("/{token}/claims/{memberId:guid}", ReleasePersonAsync).WithName("ReleaseSharedGroupPerson");
+        // Release a claimed member (admin only) — the sole recovery path. Rate-limited (account-free write).
+        group.MapDelete("/{token}/claims/{memberId:guid}", ReleasePersonAsync).WithName("ReleaseSharedGroupPerson")
+            .RequireRateLimiting(AccountFreeRateLimitPolicy);
 
         // Claim admin into an account (Shared by link → My account) — bearer-authorized (the claimer
         // signs in). Retires the admin link; the join link keeps working (ADR-0058).
@@ -77,10 +83,15 @@ public static class SharedGroupEndpoints
         ISharedGroupStore store,
         CancellationToken cancellationToken)
     {
-        var links = await store.CreateAsync(request, cancellationToken);
-        return links is null
-            ? Results.StatusCode(StatusCodes.Status413PayloadTooLarge)
-            : Results.Ok(links);
+        var result = await store.CreateAsync(request, cancellationToken);
+        return result.Status switch
+        {
+            CreateSharedGroupStatus.TooLarge => Results.StatusCode(StatusCodes.Status413PayloadTooLarge),
+            // A create that is not the group's creator (or targets an account-owned group) is refused
+            // with the same 403 whatever the reason — no oracle for "does this group id exist" (ADR-0058).
+            CreateSharedGroupStatus.Refused => Results.StatusCode(StatusCodes.Status403Forbidden),
+            _ => Results.Ok(result.Links),
+        };
     }
 
     private static async Task<IResult> GetAsync(
