@@ -32,7 +32,14 @@ public sealed record MintedLinks(Guid GroupId, string AdminToken, string JoinTok
 /// <param name="GroupId">The group's client-minted id (ADR-0008).</param>
 /// <param name="Version">The per-aggregate version the client holds for the group.</param>
 /// <param name="Body">The group's full body as opaque JSON.</param>
-public sealed record CreateSharedGroupRequest(Guid GroupId, long Version, JsonElement Body);
+/// <param name="CreatorKey">
+/// A high-entropy secret the sharing client mints once and keeps with the group, proving it is the
+/// creator (ADR-0058 security note). This route is anonymous and the group id is <em>not</em> secret —
+/// it is disclosed to every join-link holder — so the id alone must never hand back the admin token.
+/// The creator key is what a lost-response retry re-presents to recover its links; a caller who knows
+/// only the group id (a join-link participant) cannot, so they cannot escalate a join link to admin.
+/// </param>
+public sealed record CreateSharedGroupRequest(Guid GroupId, long Version, JsonElement Body, string CreatorKey);
 
 /// <summary>A push of a shared-by-link group's whole body (<c>PUT /api/v1/shared/{token}</c>, admin capability).</summary>
 /// <param name="Version">The per-aggregate version the client holds — the client's half of last-write-wins.</param>

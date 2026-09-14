@@ -31,6 +31,19 @@ Repo: .NET 10 / Aspire / DDD, local-first Blazor WASM + MAUI.
 > linking cleanup closed (tracked) the self-link that a later bulk delete then removed, throwing a
 > `DbUpdateConcurrencyException` (500). `LinkingStore.CleanUpAccountAsync` now excludes self-organized
 > links from the close step (they are deleted wholesale anyway); regression-tested.
+>
+> **Security hardening (2026-09-14, from a full review):** a critical flaw was found and fixed in the
+> anonymous `POST /shared` create — its idempotent branch returned/re-minted the **admin** token for any
+> caller who knew the group id, which every **join-link** holder learns, so a join-link holder could
+> escalate to admin (overwrite, rotate, delete, steal claims). Fix: a client-minted **creator key**
+> (persisted before the first create, so a lost-response retry re-presents it) now gates the resumed
+> share — the server returns the links only on a fixed-time key match, refuses a missing/wrong key or an
+> account-owned group with an indistinguishable `403`, and the group id alone discloses nothing. Added
+> the `CreatorKey` column (migration `AddSharedGroupCreatorKey`), a contract field, and the client mint/
+> persist/reuse. Also hardened: rate-limits added to the anonymous `DELETE /{token}`, release-person, and
+> the activity-stamping `GET /{token}`; `DeleteAllOwnedAsync` wrapped in a transaction; the concurrent
+> first-share PK race falls back to the resumed-share path. Covered by repository, endpoint-HTTP, and
+> client unit tests. See the ADR-0058 "Creating a share — the creator key" security note.
 
 ## 0. Orientation — what exists and what it teaches us
 

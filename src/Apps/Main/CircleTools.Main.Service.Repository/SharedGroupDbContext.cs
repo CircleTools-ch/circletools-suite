@@ -43,6 +43,7 @@ public sealed class SharedGroupDbContext(DbContextOptions<SharedGroupDbContext> 
             entity.Property(g => g.Body).IsRequired().HasColumnType("jsonb");
             entity.Property(g => g.Version).IsRequired();
             entity.Property(g => g.ServerModifiedAt).IsRequired();
+            entity.Property(g => g.CreatorKey).HasMaxLength(128);
             entity.Property(g => g.AdminClaimedByName).HasMaxLength(128);
             entity.Property(g => g.CreatedAt).IsRequired();
             entity.Property(g => g.LastActivityAt).IsRequired();

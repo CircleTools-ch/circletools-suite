@@ -202,8 +202,9 @@ public sealed class ExportAndDeletionTests(MailApiFactory factory)
         var store = scope.ServiceProvider.GetRequiredService<ISharedGroupStore>();
 
         using var body = JsonDocument.Parse("""{ "name": "Family" }""");
-        var links = await store.CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, body.RootElement.Clone()));
-        await store.ClaimAdminAsync(links!.AdminToken, profile!.Id, profile.DisplayName);
+        var created = await store.CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, body.RootElement.Clone(), "creator-key"));
+        var links = created.Links!;
+        await store.ClaimAdminAsync(links.AdminToken, profile!.Id, profile.DisplayName);
         return (profile.Id, links);
     }
 

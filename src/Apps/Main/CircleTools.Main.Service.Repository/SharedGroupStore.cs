@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using CircleTools.Main.Contracts;
@@ -25,15 +26,22 @@ public sealed class SharedGroupStore(
     private readonly SharedGroupLimits _limits = limits.Value;
 
     /// <inheritdoc />
-    public async Task<MintedLinks?> CreateAsync(
+    public async Task<CreateSharedGroupResult> CreateAsync(
         CreateSharedGroupRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
 
+        // This route is anonymous and the group id is disclosed to every join-link holder, so a create
+        // must prove it is the group's creator (ADR-0058 security note). No key at all is a refusal.
+        if (string.IsNullOrEmpty(request.CreatorKey))
+        {
+            return Refused;
+        }
+
         if (!WithinLimits(request.Body))
         {
-            return null;
+            return new CreateSharedGroupResult(CreateSharedGroupStatus.TooLarge, null);
         }
 
         var now = timeProvider.GetUtcNow();
@@ -45,45 +53,94 @@ public sealed class SharedGroupStore(
         var existing = await context.Groups
             .FindAsync([request.GroupId], cancellationToken).ConfigureAwait(false);
 
-        // Sharing a group that is already shared is idempotent: return its current active links rather
-        // than duplicating the row (a retried ShareByLink, or a device re-uploading).
+        // Sharing a group that already exists is only ever a resumed share by the original creator (a
+        // retried ShareByLink whose response was lost, or a device re-uploading). It returns the current
+        // links exclusively to a caller that re-presents the matching creator key — never on the strength
+        // of the group id alone, which a join-link participant also holds.
         if (existing is not null)
         {
-            var activeTokens = await context.Tokens
-                .Where(t => t.GroupId == request.GroupId && t.Active)
-                .ToListAsync(cancellationToken).ConfigureAwait(false);
-            var admin = activeTokens.FirstOrDefault(t => t.Capability == SharedCapability.Admin);
-            var join = activeTokens.FirstOrDefault(t => t.Capability == SharedCapability.Join);
-            if (admin is not null && join is not null)
-            {
-                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-                return new MintedLinks(request.GroupId, admin.Token, join.Token);
-            }
+            var resumed = await TryResumeShareAsync(existing, request.CreatorKey, cancellationToken)
+                .ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return resumed;
         }
 
-        if (existing is null)
+        context.Groups.Add(new SharedGroupRow
         {
-            context.Groups.Add(new SharedGroupRow
-            {
-                GroupId = request.GroupId,
-                Body = bodyText,
-                Version = request.Version,
-                ServerModifiedAt = now,
-                OwnerAccountId = null,
-                CreatedAt = now,
-                LastActivityAt = now,
-            });
-        }
+            GroupId = request.GroupId,
+            Body = bodyText,
+            Version = request.Version,
+            CreatorKey = request.CreatorKey,
+            ServerModifiedAt = now,
+            OwnerAccountId = null,
+            CreatedAt = now,
+            LastActivityAt = now,
+        });
 
         var adminToken = tokens.Create();
         var joinToken = tokens.Create();
         context.Tokens.Add(NewToken(adminToken, request.GroupId, SharedCapability.Admin, now));
         context.Tokens.Add(NewToken(joinToken, request.GroupId, SharedCapability.Join, now));
 
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (DbUpdateException)
+        {
+            // A concurrent create won the race on the group-id primary key. Fall back to the resumed-share
+            // path so the idempotency contract still holds (the winner and this retry share a key).
+            context.ChangeTracker.Clear();
+            var winner = await context.Groups
+                .FindAsync([request.GroupId], cancellationToken).ConfigureAwait(false);
+            var resumed = winner is null
+                ? Refused
+                : await TryResumeShareAsync(winner, request.CreatorKey, cancellationToken).ConfigureAwait(false);
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return resumed;
+        }
+
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
 
-        return new MintedLinks(request.GroupId, adminToken, joinToken);
+        return new CreateSharedGroupResult(
+            CreateSharedGroupStatus.Created,
+            new MintedLinks(request.GroupId, adminToken, joinToken));
+    }
+
+    private static readonly CreateSharedGroupResult Refused = new(CreateSharedGroupStatus.Refused, null);
+
+    /// <summary>
+    /// Returns an existing group's active links only to a caller that proves it is the creator (ADR-0058):
+    /// the presented key must match the stored one (fixed-time compare), the group must be owner-less, and
+    /// an active admin+join pair must exist. Anything else is an indistinguishable refusal.
+    /// </summary>
+    private async Task<CreateSharedGroupResult> TryResumeShareAsync(
+        SharedGroupRow existing,
+        string presentedKey,
+        CancellationToken cancellationToken)
+    {
+        // An account-owned group has no live admin link; it must never be re-minted or disclosed here.
+        if (existing.OwnerAccountId is not null || string.IsNullOrEmpty(existing.CreatorKey))
+        {
+            return Refused;
+        }
+
+        if (!CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(existing.CreatorKey), Encoding.UTF8.GetBytes(presentedKey)))
+        {
+            return Refused;
+        }
+
+        var activeTokens = await context.Tokens
+            .Where(t => t.GroupId == existing.GroupId && t.Active)
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        var admin = activeTokens.FirstOrDefault(t => t.Capability == SharedCapability.Admin);
+        var join = activeTokens.FirstOrDefault(t => t.Capability == SharedCapability.Join);
+
+        return admin is not null && join is not null
+            ? new CreateSharedGroupResult(
+                CreateSharedGroupStatus.Created, new MintedLinks(existing.GroupId, admin.Token, join.Token))
+            : Refused;
     }
 
     /// <inheritdoc />
@@ -549,13 +606,21 @@ public sealed class SharedGroupStore(
             .Select(g => g.GroupId)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
 
-        foreach (var groupId in owned)
+        if (owned.Count == 0)
         {
-            await context.MemberClaims.Where(c => c.GroupId == groupId).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
-            await context.Tokens.Where(t => t.GroupId == groupId).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
-            await context.Groups.Where(g => g.GroupId == groupId).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+            return 0;
         }
 
+        // One transaction across the three tables: a mid-way failure must not leave a token-less,
+        // unreachable group behind (the account row it belonged to may be deleted moments later).
+        await using var transaction = await context.Database
+            .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        await context.MemberClaims.Where(c => owned.Contains(c.GroupId)).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+        await context.Tokens.Where(t => owned.Contains(t.GroupId)).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+        await context.Groups.Where(g => owned.Contains(g.GroupId)).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         return owned.Count;
     }
 

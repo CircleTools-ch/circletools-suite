@@ -62,6 +62,29 @@ public sealed class SharedSyncServiceTests
     }
 
     [Fact]
+    public async Task ShareByLink_RetryAfterAnUnreachableServer_ReusesTheSameCreatorKey()
+    {
+        // The creator key is minted and persisted before the create call, so a lost-response retry
+        // presents the same key — the server-side gate then hands the links back rather than refusing
+        // a caller it cannot tell apart from a join-link holder (ADR-0058 security note).
+        var store = NewStore();
+        var api = new FakeSharedGroupApi { Unreachable = true };
+        var groupId = await SeedLocalGroupAsync(store, "Family");
+
+        var failed = await Service(store, api).ShareByLinkAsync(groupId);
+        Assert.Null(failed);
+        var afterFailure = await SingleAsync(store);
+        Assert.False(string.IsNullOrEmpty(afterFailure.Tokens?.CreatorKey)); // persisted before the call
+
+        api.Unreachable = false;
+        var links = await Service(store, api).ShareByLinkAsync(groupId);
+
+        Assert.NotNull(links);
+        Assert.Equal(afterFailure.Tokens!.CreatorKey, api.CreatorKeyFor(groupId)); // same key on the retry
+        Assert.Equal(afterFailure.Tokens.CreatorKey, (await SingleAsync(store)).Tokens!.CreatorKey); // kept on the record
+    }
+
+    [Fact]
     public async Task SyncGroup_PullsAServerCopyThatIsNewer()
     {
         var store = NewStore();

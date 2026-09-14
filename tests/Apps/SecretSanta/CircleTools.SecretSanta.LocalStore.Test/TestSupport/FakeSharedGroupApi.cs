@@ -16,10 +16,14 @@ public sealed class FakeSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
     private readonly Dictionary<Guid, Group> _groups = [];
     private readonly Dictionary<string, (Guid GroupId, SharedCapability Capability, bool Active, bool RetiredByClaim)> _tokens = [];
     private readonly HashSet<(Guid GroupId, Guid MemberId)> _claims = [];
+    private readonly Dictionary<Guid, string> _creatorKeys = [];
     private int _counter;
 
     /// <summary>Set to make the next call behave as if the server is unreachable.</summary>
     public bool Unreachable { get; set; }
+
+    /// <summary>The creator key the client last presented on a create for <paramref name="groupId"/>, or null.</summary>
+    public string? CreatorKeyFor(Guid groupId) => _creatorKeys.GetValueOrDefault(groupId);
 
     /// <summary>Directly sets a group's server body/version, simulating a push from another device.</summary>
     public void SeedServer(Guid groupId, string body, long version)
@@ -55,6 +59,8 @@ public sealed class FakeSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
         {
             return Fail<MintedLinks>(ApiFailure.Unreachable);
         }
+
+        _creatorKeys[request.GroupId] = request.CreatorKey;
 
         if (!_groups.ContainsKey(request.GroupId))
         {

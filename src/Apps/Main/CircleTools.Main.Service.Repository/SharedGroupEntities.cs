@@ -23,6 +23,14 @@ public sealed class SharedGroupRow
     /// <summary>The server-clock instant this body was last stored — the last-write-wins ordering key.</summary>
     public DateTimeOffset ServerModifiedAt { get; set; }
 
+    /// <summary>
+    /// The creator's secret (ADR-0058 security note): the high-entropy key the sharing client presented
+    /// on the first upload. Only a re-create that re-presents this exact key may recover the group's
+    /// admin/join links — the group id alone (which every join-link holder learns) must not. Null only
+    /// for rows created before the key existed.
+    /// </summary>
+    public string? CreatorKey { get; set; }
+
     /// <summary>The account that has claimed admin, or null while the group is account-free.</summary>
     public Guid? OwnerAccountId { get; set; }
 
