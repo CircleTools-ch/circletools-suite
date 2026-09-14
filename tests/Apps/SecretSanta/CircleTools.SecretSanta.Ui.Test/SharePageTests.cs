@@ -37,6 +37,7 @@ public sealed class SharePageTests : IDisposable
         _ctx.Services.AddSingleton<IKeyValueStore>(new ShareStubKeyValueStore());
         _ctx.Services.AddSingleton<RecentAccessService>();
         _ctx.Services.AddSingleton<ISender>(new ShareSender(RevealUrl));
+        _ctx.Services.AddSingleton<ISyncSignals>(new FakeSyncSignals());
     }
 
     private IRenderedComponent<Share> RenderShare() =>

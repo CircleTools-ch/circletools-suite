@@ -4,6 +4,8 @@
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
 @inject RecentAccessService Recent
+@inject ISyncSignals SyncSignals
+@implements IDisposable
 
 @*
     Event hub (ADR-0055): the event landing screen. A vertical list of the event's sections — Details,
@@ -104,19 +106,37 @@ else
 
     private string EventLabel => string.IsNullOrWhiteSpace(_event?.Name) ? L["DefaultEventName"] : _event!.Name;
 
+    protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
+
     protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+
+        // Opening the hub counts as opening the event and its group (nav quick access), like the old EventNav.
+        // Kept out of LoadAsync so a background-sync reload does not re-record recency.
+        await Recent.RecordEventAsync(EventId);
+        await Recent.RecordGroupAsync(GroupId);
+    }
+
+    private async Task LoadAsync()
     {
         _event = await Sender.Send(new GetEventQuery(GroupId, EventId));
         _loaded = true;
-
-        // Opening the hub counts as opening the event and its group (nav quick access), like the old EventNav.
-        await Recent.RecordEventAsync(EventId);
-        await Recent.RecordGroupAsync(GroupId);
 
         // The group name is a header nicety; a read failure just falls back to "All groups".
         var group = await Sender.Send(new GetGroupQuery(GroupId));
         _groupName = group?.Name;
     }
+
+    // A background sync may have pulled a co-organizer's edits into the local store (shared-by-link,
+    // FEAT-013); reload so the section statuses (draw/wishlists/date) are current without a manual refresh.
+    private void OnSyncCompleted() => _ = InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => SyncSignals.SyncCompleted -= OnSyncCompleted;
 
     private void Go(string href) => Navigation.NavigateTo(href);
 

@@ -220,6 +220,7 @@ public sealed class MembersPageLinkGuardTests : IDisposable
         var groupId = Guid.NewGuid();
         var group = new GroupDto(groupId, "Familie", [new MemberDto(Guid.NewGuid(), "Anna")], [], []);
         _ctx.Services.AddSingleton<ISender>(new GroupSender(group));
+        _ctx.Services.AddSingleton<ISyncSignals>(new FakeSyncSignals());
 
         var api = new FakeLinkingApi();
         _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.Linking.ILinkingApi>(api);
@@ -318,6 +319,7 @@ public sealed class MembersPageSelfLinkTests : IDisposable
     {
         var group = new GroupDto(groupId, "Familie", [member], [], []);
         _ctx.Services.AddSingleton<ISender>(new GroupSender(group));
+        _ctx.Services.AddSingleton<ISyncSignals>(new FakeSyncSignals());
 
         api = new FakeLinkingApi();
         _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.Linking.ILinkingApi>(api);
@@ -391,4 +393,68 @@ public sealed class AssignmentPublisherTests
         var entry = Assert.Single(published.Request.Events);
         Assert.Equal(date, entry.Date);
     }
+}
+
+/// <summary>
+/// Regression for the shared-by-link co-admin refresh gap (FEAT-013, SBL-2): when a background sync
+/// pulls another admin's roster edit into the local store, the open Members page must refresh itself on
+/// <see cref="ISyncSignals.SyncCompleted"/> — not wait for a manual (or force) refresh.
+/// </summary>
+public sealed class MembersPageSyncRefreshTests : IDisposable
+{
+    private readonly Bunit.TestContext _ctx = new();
+
+    public MembersPageSyncRefreshTests()
+    {
+        _ctx.Services.AddMudServices();
+        _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _ctx.Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassThroughStringLocalizer<AppStrings>());
+        _ctx.Services.AddSingleton<IKeyValueStore>(new StubKeyValueStore());
+        _ctx.Services.AddSingleton<RecentAccessService>();
+    }
+
+    [Fact]
+    public void Roster_RefreshesInPlace_WhenABackgroundSyncCompletes()
+    {
+        var groupId = Guid.NewGuid();
+        var sender = new MutableGroupSender(
+            new GroupDto(groupId, "Familie", [new MemberDto(Guid.NewGuid(), "Anna")], [], []));
+        _ctx.Services.AddSingleton<ISender>(sender);
+
+        var signals = new FakeSyncSignals();
+        _ctx.Services.AddSingleton<ISyncSignals>(signals);
+        _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.Linking.ILinkingApi>(new FakeLinkingApi());
+
+        // Account-free shared-by-link co-organizer (the reported scenario is signed out).
+        _ctx.AddTestAuthorization().SetNotAuthorized();
+
+        var cut = _ctx.RenderComponent<Members>(p => p.Add(m => m.GroupId, groupId));
+        Assert.Contains("Anna", cut.Markup);
+        Assert.DoesNotContain("Bruno", cut.Markup);
+
+        // A co-admin's add is pulled into the local store; the background cycle then signals completion.
+        sender.Group = new GroupDto(groupId, "Familie",
+            [new MemberDto(Guid.NewGuid(), "Anna"), new MemberDto(Guid.NewGuid(), "Bruno")], [], []);
+        cut.InvokeAsync(signals.RaiseSyncCompleted);
+
+        // The page reloads itself — no manual refresh needed.
+        cut.WaitForAssertion(() => Assert.Contains("Bruno", cut.Markup));
+    }
+
+    /// <inheritdoc />
+    public void Dispose() => _ctx.Dispose();
+}
+
+// Like GroupSender, but the answered group can be swapped mid-test to model a background pull.
+file sealed class MutableGroupSender(GroupDto group) : ISender
+{
+    public GroupDto Group { get; set; } = group;
+
+    public Task Send(ICommand command, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+    public Task<TResult> Send<TResult>(ICommand<TResult> command, CancellationToken cancellationToken = default) =>
+        throw new NotSupportedException();
+
+    public Task<TResult> Send<TResult>(IQuery<TResult> query, CancellationToken cancellationToken = default) =>
+        Task.FromResult((TResult)(object)Group);
 }
