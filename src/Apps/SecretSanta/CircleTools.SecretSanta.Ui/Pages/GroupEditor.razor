@@ -1,9 +1,11 @@
 @page "/groups/{GroupId:guid}"
+@using CircleTools.SecretSanta.LocalStore
 @inject ISender Sender
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
 @inject TimeProvider Time
 @inject IDialogService Dialogs
+@inject ILocalSyncStore Local
 
 @* Group hub (ADR-0055 group level): the group's landing screen. The occasions (events) are the primary
    content; Members and Exclusions are section rows below, mirroring the event hub. The group name is
@@ -25,6 +27,19 @@ else
 {
     <div class="d-flex align-center gap-1 mb-4">
         <MudText Typo="Typo.h4">@_group.Name</MudText>
+        @* Storage-mode chip (ADR-0058): a glanceable "which mode is this group in?", tapping through to
+           Sharing & sync. Only shown once escalated beyond the private default, so a local group stays
+           uncluttered. *@
+        @if (_mode == StorageMode.SharedByLink)
+        {
+            <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text"
+                     Icon="@Icons.Material.Filled.Link" OnClick="GoToSharing" id="mode-chip">@L["ModeChipShared"]</MudChip>
+        }
+        else if (_mode == StorageMode.Account)
+        {
+            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text"
+                     Icon="@Icons.Material.Filled.CloudDone" OnClick="GoToSharing" id="mode-chip">@L["ModeChipAccount"]</MudChip>
+        }
         @* The rename field is tucked into an overflow menu (opens a rename sheet) so the hub leads with
            the occasions, not a text box. *@
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" AriaLabel="@L["MoreActions"]"
@@ -32,6 +47,15 @@ else
             <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="RenameAsync">@L["Rename"]</MudMenuItem>
         </MudMenu>
     </div>
+
+    @* When this device joined via a join link (ADR-0058), confirm which member it claimed — the
+       participant's "this is me". *@
+    @if (_claimedMemberName is not null)
+    {
+        <MudAlert Severity="Severity.Info" Class="mb-4" Dense="true" id="joined-as">
+            @L["YouAreMember", _claimedMemberName]
+        </MudAlert>
+    }
 
     @* Events (occasions): the roster and exclusions are shared, but each event has its own draw,
        wishlists, budget and date (ADR-0042). *@
@@ -148,6 +172,18 @@ else
                 <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
             </div>
         </MudPaper>
+        @* Sharing & sync (ADR-0058, FEAT-013): choose where the group lives and manage its links. *@
+        <MudPaper Outlined="true" Class="ct-hub-row" role="button" tabindex="0" id="sharing-row"
+                  @onclick="GoToSharing" @onkeydown="@(e => GoOnEnter(e, $"groups/{GroupId}/sharing"))">
+            <div class="d-flex align-center gap-3 pa-3">
+                <MudIcon Icon="@Icons.Material.Filled.Share" Color="Color.Primary" />
+                <div class="flex-grow-1">
+                    <MudText Typo="Typo.subtitle1">@L["SharingRow"]</MudText>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@SharingSubtitle()</MudText>
+                </div>
+                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+            </div>
+        </MudPaper>
     </MudStack>
 
     @* Add an occasion via a FAB on phones; the inline field owns it on wide. The spacer keeps the FAB
@@ -168,6 +204,8 @@ else
 
     private GroupDto? _group;
     private bool _loaded;
+    private StorageMode _mode;
+    private string? _claimedMemberName;
     private string _newEventName = string.Empty;
     private Guid? _editingId;
     private string _editName = string.Empty;
@@ -179,6 +217,17 @@ else
     {
         _group = await Sender.Send(new GetGroupQuery(GroupId));
         _loaded = true;
+
+        // The storage mode lives in the sync record, not the domain group (ADR-0016) — read it here for
+        // the chip and the Sharing & sync row's subtitle.
+        var record = (await Local.LoadGroupsAsync()).FirstOrDefault(r => r.State.Id == GroupId);
+        _mode = record?.Mode ?? StorageMode.OnThisDevice;
+
+        // If this device joined the group as a participant, resolve the claimed member's name for the
+        // "this is me" banner.
+        _claimedMemberName = record?.ClaimedMemberId is { } claimedId && _group is not null
+            ? _group.Members.FirstOrDefault(m => m.Id == claimedId)?.Name
+            : null;
         if (_group is not null)
         {
             // Offer a sensible default the user can accept or edit (item: default event name). Only
@@ -196,6 +245,15 @@ else
         System.Globalization.CultureInfo.CurrentCulture, L["DefaultEventNameFormat"], Time.GetLocalNow().Year);
 
     private string EventLabel(string name) => string.IsNullOrWhiteSpace(name) ? L["DefaultEventName"] : name;
+
+    private void GoToSharing() => Navigation.NavigateTo($"groups/{GroupId}/sharing");
+
+    private string SharingSubtitle() => _mode switch
+    {
+        StorageMode.SharedByLink => L["SharingSubtitleShared"],
+        StorageMode.Account => L["SharingSubtitleAccount"],
+        _ => L["SharingSubtitleLocal"],
+    };
 
     // Rename the group from a bottom sheet pre-filled with the current name (ADR-0055 group level),
     // instead of an always-visible text field on the hub.

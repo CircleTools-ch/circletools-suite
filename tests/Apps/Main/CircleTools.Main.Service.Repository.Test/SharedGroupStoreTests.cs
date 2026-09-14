@@ -168,6 +168,159 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
         Assert.Equal(SharedWriteStatus.TooLarge, result.Status);
     }
 
+    [Fact]
+    public async Task ClaimPerson_LocksTheMember_SoASecondClaimIsRefused()
+    {
+        await using var provider = fixture.CreateProvider();
+        var links = await Store(provider).CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, Body("""{}""")));
+        var member = Guid.NewGuid();
+
+        var first = await Store(provider).ClaimPersonAsync(links!.JoinToken,
+            new ClaimPersonRequest(member, PersonClaimKind.Device, "device-a", null));
+        var second = await Store(provider).ClaimPersonAsync(links.JoinToken,
+            new ClaimPersonRequest(member, PersonClaimKind.Account, null, Guid.NewGuid()));
+
+        Assert.Equal(PersonClaimStatus.Claimed, first.Status);
+        Assert.Equal(PersonClaimStatus.AlreadyClaimed, second.Status);
+        var claimed = await Store(provider).GetClaimedMembersAsync(links.JoinToken);
+        Assert.Contains(member, claimed!);
+    }
+
+    [Fact]
+    public async Task ReleasePerson_ByAdmin_FreesTheMemberToBeClaimedAgain()
+    {
+        await using var provider = fixture.CreateProvider();
+        var links = await Store(provider).CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, Body("""{}""")));
+        var member = Guid.NewGuid();
+        await Store(provider).ClaimPersonAsync(links!.JoinToken, new ClaimPersonRequest(member, PersonClaimKind.Device, "d", null));
+
+        // A join token cannot release; an admin token can.
+        Assert.False(await Store(provider).ReleasePersonAsync(links.JoinToken, member));
+        Assert.True(await Store(provider).ReleasePersonAsync(links.AdminToken, member));
+
+        // Freed — claimable again.
+        var reclaim = await Store(provider).ClaimPersonAsync(links.JoinToken,
+            new ClaimPersonRequest(member, PersonClaimKind.Device, "d2", null));
+        Assert.Equal(PersonClaimStatus.Claimed, reclaim.Status);
+    }
+
+    [Fact]
+    public async Task ClaimAdmin_RetiresTheAdminLink_ButTheJoinLinkKeepsWorking()
+    {
+        await using var provider = fixture.CreateProvider();
+        var links = await Store(provider).CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, Body("""{}""")));
+        var account = Guid.NewGuid();
+
+        Assert.True(await Store(provider).ClaimAdminAsync(links!.AdminToken, account, "Anna"));
+
+        // The admin link now resolves to a "retired" view naming who took over; the join link is normal.
+        var adminView = await Store(provider).GetAsync(links.AdminToken);
+        Assert.True(adminView!.AdminRetired);
+        Assert.Equal("Anna", adminView.AdminClaimedByName);
+        var joinView = await Store(provider).GetAsync(links.JoinToken);
+        Assert.False(joinView!.AdminRetired);
+
+        // The retired admin token can no longer push.
+        Assert.Equal(SharedWriteStatus.Forbidden, (await Store(provider).PushAsync(links.AdminToken, 2, Body("""{}"""))).Status);
+    }
+
+    [Fact]
+    public async Task ReleaseAdmin_ByOwner_MintsAFreshAdminLink()
+    {
+        await using var provider = fixture.CreateProvider();
+        var links = await Store(provider).CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, Body("""{}""")));
+        var account = Guid.NewGuid();
+        await Store(provider).ClaimAdminAsync(links!.AdminToken, account, "Anna");
+
+        Assert.Null(await Store(provider).ReleaseAdminAsync(Guid.NewGuid(), links.GroupId)); // not the owner
+        var rotated = await Store(provider).ReleaseAdminAsync(account, links.GroupId);
+
+        Assert.NotNull(rotated);
+        var view = await Store(provider).GetAsync(rotated!.AdminToken);
+        Assert.False(view!.AdminRetired);
+        Assert.Equal(SharedWriteStatus.Applied, (await Store(provider).PushAsync(rotated.AdminToken, 2, Body("""{}"""))).Status);
+    }
+
+    [Fact]
+    public async Task PruneExpired_RemovesOwnerLessInactiveGroups_ButKeepsOwnedOnes()
+    {
+        await using var provider = fixture.CreateProvider();
+        var ownerLess = await Store(provider).CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, Body("""{}""")));
+        var owned = await Store(provider).CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, Body("""{}""")));
+        await Store(provider).ClaimAdminAsync(owned!.AdminToken, Guid.NewGuid(), "Owner");
+
+        var removed = await Store(provider).PruneExpiredAsync(DateTimeOffset.UtcNow.AddDays(1));
+
+        Assert.True(removed >= 1);
+        Assert.Null(await Store(provider).GetAsync(ownerLess!.JoinToken)); // owner-less + inactive: swept
+        Assert.NotNull(await Store(provider).GetAsync(owned.JoinToken)); // account-owned: kept
+    }
+
+    [Fact]
+    public async Task ReleaseAllOwned_HandsOffAnAccountsGroups_LeavingJoinAccessIntact()
+    {
+        await using var provider = fixture.CreateProvider();
+        var account = Guid.NewGuid();
+        var owned = await Store(provider).CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, Body("""{}""")));
+        await Store(provider).ClaimAdminAsync(owned!.AdminToken, account, "Anna");
+        var otherOwned = await Store(provider).CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, Body("""{}""")));
+        await Store(provider).ClaimAdminAsync(otherOwned!.AdminToken, Guid.NewGuid(), "Bruno");
+
+        var handed = await Store(provider).ReleaseAllOwnedAsync(account);
+
+        Assert.Equal(1, handed); // only the departing account's group
+        Assert.NotNull(await Store(provider).GetAsync(owned.JoinToken)); // participants keep join access
+        // The released group is now owner-less; the account can no longer release it as owner.
+        Assert.Null(await Store(provider).ReleaseAdminAsync(account, owned.GroupId));
+    }
+
+    [Fact]
+    public async Task DeleteAllOwned_RemovesAnAccountsGroupsEntirely_ButLeavesOthers()
+    {
+        await using var provider = fixture.CreateProvider();
+        var account = Guid.NewGuid();
+        var owned = await Store(provider).CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, Body("""{}""")));
+        await Store(provider).ClaimAdminAsync(owned!.AdminToken, account, "Anna");
+        // A member is claimed, to prove the delete takes the claims with it.
+        await Store(provider).ClaimPersonAsync(owned.JoinToken, new ClaimPersonRequest(Guid.NewGuid(), PersonClaimKind.Device, "d", null));
+        var otherOwned = await Store(provider).CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, Body("""{}""")));
+        await Store(provider).ClaimAdminAsync(otherOwned!.AdminToken, Guid.NewGuid(), "Bruno");
+
+        var deleted = await Store(provider).DeleteAllOwnedAsync(account);
+
+        Assert.Equal(1, deleted); // only the departing account's group
+        Assert.Null(await Store(provider).GetAsync(owned.JoinToken)); // the online copy is gone — no hand-off
+        Assert.Null(await Store(provider).GetAsync(owned.AdminToken));
+        Assert.NotNull(await Store(provider).GetAsync(otherOwned.JoinToken)); // another owner's group untouched
+    }
+
+    [Fact]
+    public async Task Owner_CanReadAndWriteTheirClaimedGroup_ButOthersCannot()
+    {
+        await using var provider = fixture.CreateProvider();
+        var links = await Store(provider).CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, Body("""{ "v": "a" }""")));
+        var account = Guid.NewGuid();
+        await Store(provider).ClaimAdminAsync(links!.AdminToken, account, "Anna");
+
+        // The owner reads and writes their claimed group by id + identity (no admin token).
+        var view = await Store(provider).GetAsOwnerAsync(account, links.GroupId);
+        Assert.NotNull(view);
+        Assert.False(view!.AdminRetired);
+        var push = await Store(provider).PushAsOwnerAsync(account, links.GroupId, view.Version + 1, Body("""{ "v": "b" }"""));
+        Assert.Equal(SharedWriteStatus.Applied, push.Status);
+        Assert.Equal("b", (await Store(provider).GetAsOwnerAsync(account, links.GroupId))!.Body.GetProperty("v").GetString());
+
+        // A different account is not the owner.
+        Assert.Null(await Store(provider).GetAsOwnerAsync(Guid.NewGuid(), links.GroupId));
+        Assert.Equal(SharedWriteStatus.Forbidden,
+            (await Store(provider).PushAsOwnerAsync(Guid.NewGuid(), links.GroupId, 99, Body("""{}"""))).Status);
+
+        // The owner can discover their claimed groups from another device (D2 discovery).
+        var owned = await Store(provider).ListOwnedAsync(account);
+        Assert.Contains(owned, g => g.GroupId == links.GroupId);
+        Assert.Empty(await Store(provider).ListOwnedAsync(Guid.NewGuid()));
+    }
+
     private static ISharedGroupStore Store(ServiceProvider provider) =>
         provider.CreateScope().ServiceProvider.GetRequiredService<ISharedGroupStore>();
 

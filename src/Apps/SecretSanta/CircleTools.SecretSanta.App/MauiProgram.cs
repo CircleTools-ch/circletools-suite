@@ -160,6 +160,8 @@ public static class MauiProgram
         // Shared-by-link (FEAT-013, ADR-0058): token-addressed, over the anonymous client (no bearer).
         builder.Services.AddScoped<ISharedGroupApi>(sp =>
             new HttpSharedGroupApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Anonymous)));
+        builder.Services.AddScoped<ISharedGroupAccountApi>(sp =>
+            new HttpSharedGroupAccountApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized)));
         builder.Services.AddScoped<ILinkingApi>(sp =>
             new HttpLinkingApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized)));
         builder.Services.AddScoped<ICircleDirectoryApi>(sp =>

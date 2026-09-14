@@ -1,5 +1,6 @@
 @page "/"
 @using CircleTools.SecretSanta.Contracts
+@using CircleTools.SecretSanta.LocalStore
 @using CircleTools.SecretSanta.LocalStore.Linking
 @inject ISender Sender
 @inject NavigationManager Navigation
@@ -9,6 +10,7 @@
 @inject LinkResolutionApplier Resolutions
 @inject BookmarkService Bookmarks
 @inject AutoSyncService AutoSync
+@inject SharedSyncService SharedSync
 @inject IHapticFeedback Haptics
 @inject IDialogService Dialogs
 @implements IDisposable
@@ -20,16 +22,23 @@
 @* The inline create field is the wide-screen path; on a phone it moves behind the "+" FAB (like adding
    members) so the list of groups leads. *@
 <MudHidden Breakpoint="Breakpoint.SmAndDown">
-    <div class="d-flex gap-2 align-start flex-wrap mb-4">
-        <MudTextField @bind-Value="_newName" Immediate="true" OnKeyDown="OnNewNameKeyDown"
-                      Label="@L["NewGroupPlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense"
-                      Class="flex-grow-1" Style="min-width:12rem;" />
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync"
-                   StartIcon="@Icons.Material.Filled.Add" Class="mt-1"
-                   Disabled="@(_busy || string.IsNullOrWhiteSpace(_newName))">
-            @L["CreateGroup"]
-        </MudButton>
-    </div>
+    <MudPaper Outlined="true" Class="pa-3 mb-4">
+        <div class="d-flex gap-2 align-start flex-wrap mb-2">
+            <MudTextField @bind-Value="_newName" Immediate="true" OnKeyDown="OnNewNameKeyDown"
+                          Label="@L["NewGroupPlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                          Class="flex-grow-1" Style="min-width:12rem;" id="new-group-name" />
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="CreateAsync"
+                       StartIcon="@Icons.Material.Filled.Add" Class="mt-1" id="create-group-btn"
+                       Disabled="@(_busy || string.IsNullOrWhiteSpace(_newName))">
+                @L["CreateGroup"]
+            </MudButton>
+        </div>
+        @* The storage mode is offered at creation (ADR-0058, FR-038); "On this device" is preselected
+           so the private default needs no decision. It is changeable later in Sharing & sync. *@
+        <MudText Typo="Typo.overline">@L["StorageModeLabel"]</MudText>
+        <StorageModePicker Value="_createMode" ValueChanged="@(m => _createMode = m)"
+                           AccountEnabled="@(_accountId != Guid.Empty)" />
+    </MudPaper>
 </MudHidden>
 
 @* Create a group from a circle (FR-027): only offered while signed in, since it reads the account's
@@ -152,6 +161,7 @@ else
     private bool _accountKnown;
     private string _displayName = string.Empty;
     private string _newName = string.Empty;
+    private StorageMode _createMode = StorageMode.OnThisDevice;
     private bool _busy;
 
     protected override void OnInitialized() => AutoSync.SyncCompleted += OnSyncCompleted;
@@ -263,6 +273,14 @@ else
             if (_accountId != Guid.Empty && !string.IsNullOrWhiteSpace(_displayName))
             {
                 await AddSelfAsync(id, name, _displayName.Trim());
+            }
+
+            // If the organizer chose "Shared by link" at creation, upload it and mint its links now
+            // (ADR-0058). "My account" needs no action here — a signed-in device auto-claims it on the
+            // next background cycle; "On this device" is the default and stays local.
+            if (_createMode == StorageMode.SharedByLink)
+            {
+                await SharedSync.ShareByLinkAsync(id);
             }
 
             _newName = string.Empty;

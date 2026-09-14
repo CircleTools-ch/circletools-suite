@@ -49,6 +49,7 @@ public sealed class MailApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         await scope.ServiceProvider.GetRequiredService<MainDbContext>().Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<CirclesDbContext>().Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<LinkingDbContext>().Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<SharedGroupDbContext>().Database.MigrateAsync();
     }
 
     async Task IAsyncLifetime.DisposeAsync()

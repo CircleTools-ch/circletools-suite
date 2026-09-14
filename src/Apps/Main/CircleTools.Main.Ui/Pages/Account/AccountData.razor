@@ -48,6 +48,29 @@ else
                     <ProblemAlert Message="@_deleteError" Details="@_deleteDetails" />
 
                     <MudStack Spacing="3" Style="max-width:26rem;">
+                        @* Only shown when the account actually owns shared-by-link groups (FR-043,
+                           ADR-0058): the owner decides whether those online copies are handed back to
+                           shared-by-link (default — everyone who joined keeps access) or deleted too. *@
+                        @if (_ownedSharedGroups > 0)
+                        {
+                            <MudPaper Elevation="0" Outlined="true" Class="pa-3" id="delete-shared-disposition">
+                                <MudText Typo="Typo.subtitle2">
+                                    @L["DeleteSharedGroupsTitle"]
+                                </MudText>
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
+                                    @string.Format(CultureInfo.CurrentCulture, L["DeleteSharedGroupsLead"], _ownedSharedGroups)
+                                </MudText>
+                                <MudRadioGroup @bind-Value="_deleteSharedGroups" T="bool">
+                                    <MudRadio Value="false" Color="Color.Primary" Dense="true">
+                                        @L["DeleteSharedGroupsHandOff"]
+                                    </MudRadio>
+                                    <MudRadio Value="true" Color="Color.Error" Dense="true">
+                                        @L["DeleteSharedGroupsRemove"]
+                                    </MudRadio>
+                                </MudRadioGroup>
+                            </MudPaper>
+                        }
+
                         @* Bound on input, not on change: the button below is gated on this field, and
                            with the default change binding it only unlocks when the field loses focus —
                            so the user's first click lands on a button still disabled that does nothing. *@
@@ -86,6 +109,11 @@ else
     private bool _exporting;
     private bool _deleting;
     private bool _deleted;
+    private int _ownedSharedGroups;
+    private bool _deleteSharedGroups;
+
+    protected override async Task OnInitializedAsync() =>
+        _ownedSharedGroups = await Api.GetOwnedSharedGroupCountAsync();
 
     private async Task ExportAsync()
     {
@@ -115,7 +143,7 @@ else
         _deleteError = null;
         _deleteDetails = null;
 
-        var result = await Api.DeleteAccountAsync(new DeleteAccountRequest(_password));
+        var result = await Api.DeleteAccountAsync(new DeleteAccountRequest(_password, _deleteSharedGroups));
 
         _deleting = false;
 

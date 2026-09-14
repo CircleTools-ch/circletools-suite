@@ -1,9 +1,12 @@
 @page "/groups/{GroupId:guid}/members"
 @using CircleTools.SecretSanta.Contracts
 @using CircleTools.SecretSanta.Core.Domain
+@using CircleTools.SecretSanta.LocalStore
 @using CircleTools.SecretSanta.LocalStore.Linking
+@using Microsoft.Extensions.DependencyInjection
 @inject ISender Sender
 @inject ILinkingApi Linking
+@inject IServiceProvider Services
 @inject IStringLocalizer<AppStrings> L
 @inject IDialogService Dialogs
 
@@ -25,10 +28,10 @@
         <MudCardContent>
             <MudStack Spacing="2">
                 <MudTextField @bind-Value="_newName" Immediate="true" OnKeyDown="OnNewNameKeyDown" Label="@L["NameLabel"]"
-                              Placeholder="@L["MemberNamePlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                              Placeholder="@L["MemberNamePlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense" id="new-member-name" />
                 <div>
                     <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddAsync"
-                               StartIcon="@Icons.Material.Filled.PersonAdd"
+                               StartIcon="@Icons.Material.Filled.PersonAdd" id="add-member-btn"
                                Disabled="@string.IsNullOrWhiteSpace(_newName)">@L["AddMember"]</MudButton>
                 </div>
             </MudStack>
@@ -113,9 +116,18 @@ else
                                                    OnClick="() => BeginLink(member.Id)">@L["MemberLink"]</MudButton>
                                     }
                                 </AuthorizeView>
+                                @if (_isSharedAdmin && _claimedMembers.Contains(member.Id))
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text"
+                                             Icon="@Icons.Material.Filled.HowToReg">@L["MemberClaimedBadge"]</MudChip>
+                                }
                                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
                                          AriaLabel="@L["MoreActions"]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                                     <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => BeginEdit(member)">@L["Edit"]</MudMenuItem>
+                                    @if (_isSharedAdmin && _claimedMembers.Contains(member.Id))
+                                    {
+                                        <MudMenuItem Icon="@Icons.Material.Filled.PersonOff" OnClick="() => ReleaseMemberAsync(member.Id, member.Name)">@L["ReleaseMember"]</MudMenuItem>
+                                    }
                                     <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="() => AskRemoveAsync(member.Id, member.Name)">@L["Remove"]</MudMenuItem>
                                 </MudMenu>
                             </div>
@@ -173,6 +185,8 @@ else
     private Task<AuthenticationState>? AuthState { get; set; }
 
     private IReadOnlyList<MemberDto>? _members;
+    private bool _isSharedAdmin;
+    private HashSet<Guid> _claimedMembers = [];
     private string _newName = string.Empty;
     private string? _error;
 
@@ -207,6 +221,28 @@ else
         _members = group?.Members ?? [];
         _hasCurrentDraw = group?.Events.Any(e => e.HasCurrentDraw) ?? false;
         _groupName = group?.Name ?? string.Empty;
+
+        // For a shared-by-link group this device administers, load which members are claimed so the
+        // admin can see who has joined and free a spot (ADR-0058, the sole recovery path). Resolved
+        // defensively: a host without the sync engine (or a component test) simply omits the feature.
+        var local = Services.GetService<ILocalSyncStore>();
+        var sharedSync = Services.GetService<SharedSyncService>();
+        if (local is not null && sharedSync is not null)
+        {
+            var record = (await local.LoadGroupsAsync()).FirstOrDefault(r => r.State.Id == GroupId);
+            _isSharedAdmin = record is { Mode: StorageMode.SharedByLink, Tokens.AdminToken: not null };
+            _claimedMembers = _isSharedAdmin ? [.. await sharedSync.GetClaimedMembersAsync(GroupId)] : [];
+        }
+    }
+
+    private async Task ReleaseMemberAsync(Guid memberId, string name)
+    {
+        if (Services.GetService<SharedSyncService>() is { } sharedSync
+            && await Dialogs.ShowConfirmSheetAsync(L["ReleaseMemberConfirm", name], L["ReleaseMemberConfirmYes"], L["Cancel"], Color.Primary))
+        {
+            await sharedSync.ReleasePersonAsync(GroupId, memberId);
+            await LoadAsync();
+        }
     }
 
     // The simple self-link: no address and no email confirmation. Establish it on the server (which takes

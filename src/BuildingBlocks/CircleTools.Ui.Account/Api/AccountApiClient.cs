@@ -160,6 +160,19 @@ public sealed class AccountApiClient(
         CancellationToken cancellationToken = default) =>
         PostAsync(authorized, $"{Route}/delete", request, cancellationToken);
 
+    /// <summary>
+    /// Counts the shared-by-link groups the caller owns, so the delete screen can offer a disposition
+    /// for them (FR-043, ADR-0058). Returns 0 on any failure — the screen simply omits the section.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>How many shared-by-link groups the account owns.</returns>
+    public async Task<int> GetOwnedSharedGroupCountAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await SendAsync<OwnedSharedGroups>(
+            authorized, new HttpRequestMessage(HttpMethod.Get, "api/v1/shared/owned"), cancellationToken);
+        return result is { IsSuccess: true, Value: not null } ? result.Value.Groups.Count : 0;
+    }
+
     /// <summary>Lists the caller's registered passkeys (FR-010).</summary>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The passkeys, or the failure.</returns>

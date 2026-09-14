@@ -104,6 +104,10 @@
   <data name="ExportDownload" xml:space="preserve"><value>Herunterladen</value></data>
   <data name="DeleteTitle" xml:space="preserve"><value>Konto löschen</value></data>
   <data name="DeleteLead" xml:space="preserve"><value>Damit werden dein Konto und alles, was auf unseren Servern dazu gespeichert ist, entfernt. Das geschieht sofort und kann nicht rückgängig gemacht werden. Daten auf deinen eigenen Geräten bleiben unberührt.</value></data>
+  <data name="DeleteSharedGroupsTitle" xml:space="preserve"><value>Gruppen, die du per Link teilst</value></data>
+  <data name="DeleteSharedGroupsLead" xml:space="preserve"><value>Du verwaltest {0} Gruppe(n), denen andere per Link beigetreten sind. Wähle, was damit geschehen soll.</value></data>
+  <data name="DeleteSharedGroupsHandOff" xml:space="preserve"><value>Online behalten, damit alle Beigetretenen weiterhin Zugriff haben (ein neuer Admin-Link wird erstellt)</value></data>
+  <data name="DeleteSharedGroupsRemove" xml:space="preserve"><value>Diese Online-Kopien ebenfalls löschen</value></data>
   <data name="DeletePasswordPrompt" xml:space="preserve"><value>Gib zur Bestätigung dein Passwort ein.</value></data>
   <data name="DeleteSubmit" xml:space="preserve"><value>Mein Konto löschen</value></data>
   <data name="DeleteDoneTitle" xml:space="preserve"><value>Dein Konto ist gelöscht</value></data>

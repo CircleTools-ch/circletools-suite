@@ -244,4 +244,64 @@
   <data name="HubShareReady" xml:space="preserve"><value>Bereit</value></data>
   <data name="SettingsTitle" xml:space="preserve"><value>Einstellungen</value></data>
   <data name="SettingsAbout" xml:space="preserve"><value>Über</value></data>
+  <data name="StorageModeLabel" xml:space="preserve"><value>Wo diese Gruppe gespeichert ist</value></data>
+  <data name="ModeLocalTitle" xml:space="preserve"><value>Auf diesem Gerät</value></data>
+  <data name="ModeLocalHint" xml:space="preserve"><value>Privat auf diesem Gerät. Teile pro Person einen Auflösungs-Link.</value></data>
+  <data name="ModeSharedTitle" xml:space="preserve"><value>Über Link geteilt</value></data>
+  <data name="ModeSharedHint" xml:space="preserve"><value>Online gespeichert, damit andere die ganze Gruppe per Link öffnen können. Ohne Konto.</value></data>
+  <data name="ModeAccountTitle" xml:space="preserve"><value>Mein Konto</value></data>
+  <data name="ModeAccountHint" xml:space="preserve"><value>Über alle Geräte synchronisiert, auf denen du angemeldet bist.</value></data>
+  <data name="ModeAccountSignInHint" xml:space="preserve"><value>Melde dich an, um diese Gruppe mit deinem Konto zu synchronisieren.</value></data>
+  <data name="ModeChipShared" xml:space="preserve"><value>Über Link geteilt</value></data>
+  <data name="ModeChipAccount" xml:space="preserve"><value>Konto</value></data>
+  <data name="SharingRow" xml:space="preserve"><value>Teilen &amp; Sync</value></data>
+  <data name="SharingSubtitleLocal" xml:space="preserve"><value>Auf diesem Gerät</value></data>
+  <data name="SharingSubtitleShared" xml:space="preserve"><value>Über Link geteilt</value></data>
+  <data name="SharingSubtitleAccount" xml:space="preserve"><value>Mit deinem Konto synchronisiert</value></data>
+  <data name="SharingTitle" xml:space="preserve"><value>Teilen &amp; Sync</value></data>
+  <data name="SharingLead" xml:space="preserve"><value>Lege fest, wo diese Gruppe gespeichert ist, und verwalte ihre Links.</value></data>
+  <data name="SharingSharedLead" xml:space="preserve"><value>Alle mit einem Link unten können diese Gruppe öffnen; nur der Admin-Link kann sie verwalten.</value></data>
+  <data name="AdminLink" xml:space="preserve"><value>Admin-Link</value></data>
+  <data name="AdminLinkHint" xml:space="preserve"><value>Alle mit diesem Link können die Gruppe verwalten und die Auslosung starten.</value></data>
+  <data name="JoinLink" xml:space="preserve"><value>Beitritts-Link</value></data>
+  <data name="JoinLinkHint" xml:space="preserve"><value>Lässt Personen beitreten, wählen, wer sie sind, und ihre eigene Zuteilung sehen.</value></data>
+  <data name="DisableRegenerate" xml:space="preserve"><value>Deaktivieren &amp; neu erstellen</value></data>
+  <data name="ShareByLinkConfirm" xml:space="preserve"><value>Diese Gruppe über Link teilen? Sie wird online gespeichert, damit Personen mit dem Link sie öffnen können. Du kannst jederzeit wieder auf „Nur auf diesem Gerät“ wechseln.</value></data>
+  <data name="ShareByLinkConfirmYes" xml:space="preserve"><value>Über Link teilen</value></data>
+  <data name="MakeLocalConfirm" xml:space="preserve"><value>Diese Gruppe nur auf diesem Gerät behalten? Die Online-Kopie wird entfernt und geteilte Links funktionieren nicht mehr. Deine Kopie bleibt auf diesem Gerät.</value></data>
+  <data name="MakeLocalConfirmYes" xml:space="preserve"><value>Lokal machen</value></data>
+  <data name="RotateAdminConfirm" xml:space="preserve"><value>Aktuellen Admin-Link deaktivieren und einen neuen erstellen? Der alte Link funktioniert dann nicht mehr.</value></data>
+  <data name="RotateAdminConfirmYes" xml:space="preserve"><value>Neuen Link erstellen</value></data>
+  <data name="ShareGroupQrHint" xml:space="preserve"><value>Lass diese Person den Code scannen, um die Gruppe zu öffnen.</value></data>
+  <data name="ShareGroupMessage" xml:space="preserve"><value>Tritt unserer Wichtel-Gruppe bei:</value></data>
+  <data name="JoinTitle" xml:space="preserve"><value>Der Gruppe beitreten</value></data>
+  <data name="JoinInvitedTo" xml:space="preserve"><value>Du bist eingeladen zu</value></data>
+  <data name="JoinWhoAreYou" xml:space="preserve"><value>Wer bist du in dieser Gruppe?</value></data>
+  <data name="JoinWhoAreYouHint" xml:space="preserve"><value>Wähle deinen Namen, damit wir dir deine eigene Zuteilung zeigen können.</value></data>
+  <data name="JoinAlreadyTaken" xml:space="preserve"><value>Bereits beigetreten</value></data>
+  <data name="JoinRememberTitle" xml:space="preserve"><value>Wie sollen wir dich merken?</value></data>
+  <data name="JoinRememberDevice" xml:space="preserve"><value>Nur dieses Gerät</value></data>
+  <data name="JoinRememberDeviceHint" xml:space="preserve"><value>Ohne Anmeldung. Nur dieses Gerät hat Zugriff.</value></data>
+  <data name="JoinRememberAccount" xml:space="preserve"><value>Mit meinem Konto behalten</value></data>
+  <data name="JoinRememberAccountHint" xml:space="preserve"><value>Behalte deinen Platz auf allen deinen Geräten.</value></data>
+  <data name="JoinRememberAccountSignInHint" xml:space="preserve"><value>Melde dich an, um deinen Platz geräteübergreifend zu behalten.</value></data>
+  <data name="JoinContinue" xml:space="preserve"><value>Weiter</value></data>
+  <data name="JoinNotFoundTitle" xml:space="preserve"><value>Dieser Link funktioniert nicht</value></data>
+  <data name="JoinNotFoundBody" xml:space="preserve"><value>Die Gruppe wurde möglicherweise entfernt oder der Link ist veraltet.</value></data>
+  <data name="JoinAlreadyClaimedError" xml:space="preserve"><value>Jemand ist bereits als diese Person beigetreten. Wähle einen anderen Namen.</value></data>
+  <data name="JoinFailedError" xml:space="preserve"><value>Beitritt momentan nicht möglich. Bitte versuche es erneut.</value></data>
+  <data name="YouAreMember" xml:space="preserve"><value>Du bist als {0} beigetreten.</value></data>
+  <data name="MemberClaimedBadge" xml:space="preserve"><value>Beigetreten</value></data>
+  <data name="ReleaseMember" xml:space="preserve"><value>Platz freigeben</value></data>
+  <data name="ReleaseMemberConfirm" xml:space="preserve"><value>{0}s Platz freigeben? Die Person verliert den Zugriff, bis sie über den Beitritts-Link erneut beitritt.</value></data>
+  <data name="ReleaseMemberConfirmYes" xml:space="preserve"><value>Platz freigeben</value></data>
+  <data name="Someone" xml:space="preserve"><value>Jemand</value></data>
+  <data name="ClaimAdminConfirm" xml:space="preserve"><value>Diese Gruppe mit deinem Konto übernehmen? Du wirst alleiniger Admin — der Admin-Link funktioniert nicht mehr. Der Beitritts-Link bleibt aktiv.</value></data>
+  <data name="ClaimAdminConfirmYes" xml:space="preserve"><value>Admin übernehmen</value></data>
+  <data name="ReleaseToLinkConfirm" xml:space="preserve"><value>Diese Gruppe wieder als geteilten Link freigeben? Ein neuer Admin-Link wird erstellt und du bist nicht mehr alleiniger Admin.</value></data>
+  <data name="ReleaseToLinkConfirmYes" xml:space="preserve"><value>Übergeben</value></data>
+  <data name="AccountOwnedNote" xml:space="preserve"><value>Diese Gruppe gehört dir. Sie ist mit deinem Konto synchronisiert.</value></data>
+  <data name="AdminRetiredTitle" xml:space="preserve"><value>Dieser Admin-Link funktioniert nicht mehr</value></data>
+  <data name="AdminRetiredBody" xml:space="preserve"><value>{0} hat die Admin-Rolle für diese Gruppe übernommen.</value></data>
+  <data name="AdminRetiredJoinHint" xml:space="preserve"><value>Du kannst weiterhin den Beitritts-Link öffnen, um als Teilnehmer beizutreten.</value></data>
 </root>

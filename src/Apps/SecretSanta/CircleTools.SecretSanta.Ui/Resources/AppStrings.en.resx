@@ -212,4 +212,64 @@
   <data name="HubShareReady" xml:space="preserve"><value>Ready</value></data>
   <data name="SettingsTitle" xml:space="preserve"><value>Settings</value></data>
   <data name="SettingsAbout" xml:space="preserve"><value>About</value></data>
+  <data name="StorageModeLabel" xml:space="preserve"><value>Where this group lives</value></data>
+  <data name="ModeLocalTitle" xml:space="preserve"><value>On this device</value></data>
+  <data name="ModeLocalHint" xml:space="preserve"><value>Private to this device. Share a reveal link per person.</value></data>
+  <data name="ModeSharedTitle" xml:space="preserve"><value>Shared by link</value></data>
+  <data name="ModeSharedHint" xml:space="preserve"><value>Stored online so others can open the whole group with a link. No sign-up.</value></data>
+  <data name="ModeAccountTitle" xml:space="preserve"><value>My account</value></data>
+  <data name="ModeAccountHint" xml:space="preserve"><value>Synced across the devices you're signed in on.</value></data>
+  <data name="ModeAccountSignInHint" xml:space="preserve"><value>Sign in to sync this group to your account.</value></data>
+  <data name="ModeChipShared" xml:space="preserve"><value>Shared by link</value></data>
+  <data name="ModeChipAccount" xml:space="preserve"><value>Account</value></data>
+  <data name="SharingRow" xml:space="preserve"><value>Sharing &amp; sync</value></data>
+  <data name="SharingSubtitleLocal" xml:space="preserve"><value>On this device</value></data>
+  <data name="SharingSubtitleShared" xml:space="preserve"><value>Shared by link</value></data>
+  <data name="SharingSubtitleAccount" xml:space="preserve"><value>Synced to your account</value></data>
+  <data name="SharingTitle" xml:space="preserve"><value>Sharing &amp; sync</value></data>
+  <data name="SharingLead" xml:space="preserve"><value>Choose where this group lives and manage its links.</value></data>
+  <data name="SharingSharedLead" xml:space="preserve"><value>Anyone with a link below can open this group; only the admin link can manage it.</value></data>
+  <data name="AdminLink" xml:space="preserve"><value>Admin link</value></data>
+  <data name="AdminLinkHint" xml:space="preserve"><value>Anyone with this link can manage the group and run the draw.</value></data>
+  <data name="JoinLink" xml:space="preserve"><value>Join link</value></data>
+  <data name="JoinLinkHint" xml:space="preserve"><value>Lets people join, pick who they are, and see their own assignment.</value></data>
+  <data name="DisableRegenerate" xml:space="preserve"><value>Disable &amp; create new</value></data>
+  <data name="ShareByLinkConfirm" xml:space="preserve"><value>Share this group by link? It will be stored online so people with the link can open it. You can switch back to on-this-device anytime.</value></data>
+  <data name="ShareByLinkConfirmYes" xml:space="preserve"><value>Share by link</value></data>
+  <data name="MakeLocalConfirm" xml:space="preserve"><value>Make this group on-this-device only? The online copy is removed and shared links stop working. Your copy stays on this device.</value></data>
+  <data name="MakeLocalConfirmYes" xml:space="preserve"><value>Make it local</value></data>
+  <data name="RotateAdminConfirm" xml:space="preserve"><value>Disable the current admin link and create a new one? The old link will stop working.</value></data>
+  <data name="RotateAdminConfirmYes" xml:space="preserve"><value>Create new link</value></data>
+  <data name="ShareGroupQrHint" xml:space="preserve"><value>Have this person scan the code to open the group.</value></data>
+  <data name="ShareGroupMessage" xml:space="preserve"><value>Join our Secret Santa group:</value></data>
+  <data name="JoinTitle" xml:space="preserve"><value>Join the group</value></data>
+  <data name="JoinInvitedTo" xml:space="preserve"><value>You're invited to</value></data>
+  <data name="JoinWhoAreYou" xml:space="preserve"><value>Who are you in this group?</value></data>
+  <data name="JoinWhoAreYouHint" xml:space="preserve"><value>Pick your name so we can show you your own gift assignment.</value></data>
+  <data name="JoinAlreadyTaken" xml:space="preserve"><value>Already joined</value></data>
+  <data name="JoinRememberTitle" xml:space="preserve"><value>How should we remember you?</value></data>
+  <data name="JoinRememberDevice" xml:space="preserve"><value>Just this device</value></data>
+  <data name="JoinRememberDeviceHint" xml:space="preserve"><value>No sign-up. Only this device will have access.</value></data>
+  <data name="JoinRememberAccount" xml:space="preserve"><value>Keep it on my account</value></data>
+  <data name="JoinRememberAccountHint" xml:space="preserve"><value>Keep your spot across all your devices.</value></data>
+  <data name="JoinRememberAccountSignInHint" xml:space="preserve"><value>Sign in to keep your spot across devices.</value></data>
+  <data name="JoinContinue" xml:space="preserve"><value>Continue</value></data>
+  <data name="JoinNotFoundTitle" xml:space="preserve"><value>This link doesn't work</value></data>
+  <data name="JoinNotFoundBody" xml:space="preserve"><value>The group may have been removed, or the link is out of date.</value></data>
+  <data name="JoinAlreadyClaimedError" xml:space="preserve"><value>Someone already joined as that person. Pick another name.</value></data>
+  <data name="JoinFailedError" xml:space="preserve"><value>Couldn't join right now. Please try again.</value></data>
+  <data name="YouAreMember" xml:space="preserve"><value>You joined as {0}.</value></data>
+  <data name="MemberClaimedBadge" xml:space="preserve"><value>Joined</value></data>
+  <data name="ReleaseMember" xml:space="preserve"><value>Free this spot</value></data>
+  <data name="ReleaseMemberConfirm" xml:space="preserve"><value>Free {0}'s spot? They'll lose access until they rejoin with the join link.</value></data>
+  <data name="ReleaseMemberConfirmYes" xml:space="preserve"><value>Free the spot</value></data>
+  <data name="Someone" xml:space="preserve"><value>Someone</value></data>
+  <data name="ClaimAdminConfirm" xml:space="preserve"><value>Take over this group with your account? You become the only admin — the admin link stops working. The join link keeps working.</value></data>
+  <data name="ClaimAdminConfirmYes" xml:space="preserve"><value>Claim admin</value></data>
+  <data name="ReleaseToLinkConfirm" xml:space="preserve"><value>Hand this group back to a shared link? A new admin link is created and you stop being the sole admin.</value></data>
+  <data name="ReleaseToLinkConfirmYes" xml:space="preserve"><value>Hand off</value></data>
+  <data name="AccountOwnedNote" xml:space="preserve"><value>You own this group. It's synced to your account.</value></data>
+  <data name="AdminRetiredTitle" xml:space="preserve"><value>This admin link no longer works</value></data>
+  <data name="AdminRetiredBody" xml:space="preserve"><value>{0} has claimed the admin role for this group.</value></data>
+  <data name="AdminRetiredJoinHint" xml:space="preserve"><value>You can still open the join link to join as a participant.</value></data>
 </root>

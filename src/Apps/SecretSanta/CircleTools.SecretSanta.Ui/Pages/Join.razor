@@ -1,0 +1,177 @@
+@page "/join"
+@using System.Text.Json
+@using CircleTools.Main.Contracts
+@using CircleTools.SecretSanta.Core.Persistence
+@using CircleTools.SecretSanta.LocalStore
+@using CircleTools.Ui.Account.Auth
+@using Microsoft.AspNetCore.Components.Authorization
+@inject ISharedGroupApi Api
+@inject SharedSyncService Shared
+@inject ILocalSyncStore Local
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider Auth
+@inject IStringLocalizer<AppStrings> L
+
+<PageTitle>@L["JoinTitle"]</PageTitle>
+
+@if (!_loaded)
+{
+    <MudText>@L["Loading"]</MudText>
+}
+else if (_group is null)
+{
+    <div class="d-flex flex-column align-center text-center gap-3 pa-6" id="join-notfound">
+        <MudIcon Icon="@Icons.Material.Filled.LinkOff" Color="Color.Error" Size="Size.Large" />
+        <MudText Typo="Typo.h6">@L["JoinNotFoundTitle"]</MudText>
+        <MudText Class="mud-text-secondary">@L["JoinNotFoundBody"]</MudText>
+    </div>
+}
+else
+{
+    <MudText Typo="Typo.overline">@L["JoinInvitedTo"]</MudText>
+    <MudText Typo="Typo.h4" GutterBottom="true">@_group.Name</MudText>
+
+    <MudPaper Outlined="true" Class="pa-4 mt-2" id="join-panel">
+        <MudText Typo="Typo.h6" GutterBottom="true">@L["JoinWhoAreYou"]</MudText>
+        <MudText Class="mud-text-secondary mb-3">@L["JoinWhoAreYouHint"]</MudText>
+
+        <MudRadioGroup T="Guid" @bind-Value="_selectedMemberId">
+            @foreach (var member in _group.Members)
+            {
+                var isClaimed = _claimed.Contains(member.Id);
+                <div class="d-flex align-center">
+                    <MudRadio T="Guid" Value="@member.Id" Color="Color.Primary" Dense="true" Disabled="@isClaimed">
+                        @member.Name
+                    </MudRadio>
+                    @if (isClaimed)
+                    {
+                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text">@L["JoinAlreadyTaken"]</MudChip>
+                    }
+                </div>
+            }
+        </MudRadioGroup>
+
+        <MudDivider Class="my-4" />
+
+        <MudText Typo="Typo.subtitle2" GutterBottom="true">@L["JoinRememberTitle"]</MudText>
+        <MudRadioGroup T="PersonClaimKind" @bind-Value="_kind">
+            <MudRadio T="PersonClaimKind" Value="@PersonClaimKind.Device" Color="Color.Primary" Dense="true">
+                <span class="ct-mode-title">@L["JoinRememberDevice"]</span>
+                <span class="ct-mode-hint">@L["JoinRememberDeviceHint"]</span>
+            </MudRadio>
+            <MudRadio T="PersonClaimKind" Value="@PersonClaimKind.Account" Color="Color.Primary" Dense="true" Disabled="@(!_signedIn)">
+                <span class="ct-mode-title">@L["JoinRememberAccount"]</span>
+                <span class="ct-mode-hint">@(_signedIn ? L["JoinRememberAccountHint"] : L["JoinRememberAccountSignInHint"])</span>
+            </MudRadio>
+        </MudRadioGroup>
+
+        @if (_error is not null)
+        {
+            <MudAlert Severity="Severity.Warning" Class="mt-3" Dense="true" role="alert" id="join-error">@_error</MudAlert>
+        }
+
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="mt-4" id="join-continue"
+                   OnClick="ContinueAsync" Disabled="@(_busy || _selectedMemberId == Guid.Empty)">
+            @L["JoinContinue"]
+        </MudButton>
+    </MudPaper>
+}
+
+@code {
+    private bool _loaded;
+    private bool _busy;
+    private bool _signedIn;
+    private string? _token;
+    private GroupState? _group;
+    private HashSet<Guid> _claimed = [];
+    private Guid _selectedMemberId;
+    private PersonClaimKind _kind = PersonClaimKind.Device;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await Auth.GetAuthenticationStateAsync();
+        _signedIn = state.User.UserId() != Guid.Empty;
+
+        _token = ReadToken();
+        if (!string.IsNullOrEmpty(_token))
+        {
+            var view = await Api.GetAsync(_token);
+            if (view.IsSuccess && view.Value is not null)
+            {
+                _group = view.Value.Body.Deserialize(SyncJsonContext.Default.GroupState);
+                var claims = await Api.GetClaimsAsync(_token);
+                if (claims.IsSuccess && claims.Value is not null)
+                {
+                    _claimed = [.. claims.Value.MemberIds];
+                }
+            }
+        }
+
+        _loaded = true;
+    }
+
+    // The token rides the link fragment ("the link is the secret"), so it never reaches the server as a
+    // query string: .../join#t=<token>.
+    private string? ReadToken()
+    {
+        var fragment = new Uri(Navigation.Uri).Fragment.TrimStart('#');
+        foreach (var pair in fragment.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var kv = pair.Split('=', 2);
+            if (kv.Length == 2 && kv[0] == "t")
+            {
+                return Uri.UnescapeDataString(kv[1]);
+            }
+        }
+
+        return null;
+    }
+
+    private async Task ContinueAsync()
+    {
+        if (_token is null || _selectedMemberId == Guid.Empty)
+        {
+            return;
+        }
+
+        _busy = true;
+        _error = null;
+        try
+        {
+            var deviceHandle = (await Local.LoadStateAsync()).DeviceId;
+            Guid? accountId = null;
+            if (_kind == PersonClaimKind.Account)
+            {
+                var state = await Auth.GetAuthenticationStateAsync();
+                var id = state.User.UserId();
+                accountId = id == Guid.Empty ? null : id;
+            }
+
+            var result = await Shared.JoinAsync(_token, _selectedMemberId, _kind, deviceHandle, accountId);
+            switch (result.Status)
+            {
+                case JoinStatus.Joined:
+                    Navigation.NavigateTo($"groups/{result.GroupId}");
+                    break;
+                case JoinStatus.AlreadyClaimed:
+                    _error = L["JoinAlreadyClaimedError"];
+                    // Refresh the claimed set so the taken member greys out.
+                    var claims = await Api.GetClaimsAsync(_token);
+                    if (claims.IsSuccess && claims.Value is not null)
+                    {
+                        _claimed = [.. claims.Value.MemberIds];
+                    }
+                    _selectedMemberId = Guid.Empty;
+                    break;
+                default:
+                    _error = L["JoinFailedError"];
+                    break;
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

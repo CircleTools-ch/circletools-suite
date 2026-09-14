@@ -105,13 +105,19 @@ public sealed record SharedGroupTokens(string? AdminToken, string? JoinToken);
 /// For a <see cref="StorageMode.SharedByLink"/> group, the share tokens this device holds; otherwise
 /// <see langword="null"/>. Additive since schema v3.
 /// </param>
+/// <param name="ClaimedMemberId">
+/// For a group this device <em>joined</em> via a join link (ADR-0058), the member this device claimed
+/// ("this is me"), so the app can show that person their own assignment. <see langword="null"/> for an
+/// organizer-owned or unjoined group. Additive since schema v3.
+/// </param>
 public sealed record SyncedGroupRecord(
     GroupState State,
     long Version,
     Guid? AccountScope,
     bool Dirty,
     StorageMode Mode = StorageMode.OnThisDevice,
-    SharedGroupTokens? Tokens = null);
+    SharedGroupTokens? Tokens = null,
+    Guid? ClaimedMemberId = null);
 
 /// <summary>
 /// The whole persisted group collection under the local-store key, carrying a schema version so an
