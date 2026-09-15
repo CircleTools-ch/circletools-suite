@@ -27,9 +27,18 @@ related: [UC-SS-023, FR-046, ADR-0060, ADR-0028, ADR-0053, ADR-0054, ADR-0031, A
 > Windows head — the plugin restores for net10-android); SecretSanta **Ui 72/72** (new `ReminderPlannerTests`,
 > `NotificationPreferencesTests`), **Architecture 28/28**. **Browser-verified** the web-visible part: Settings
 > shows the **Reminders** section with the *available in the installed app* note and **no switches** on web
-> (device-only, as designed), console clean. **Pending the Pixel** (device-only, per CLAUDE.md): the
-> `POST_NOTIFICATIONS` prompt on first enable, each kind firing at the right time, and cancel-on-draw /
-> cancel-on-wishlist-filled / cancel-on-delete.
+> (device-only, as designed), console clean. **On-device confirmed on the Pixel 9 Pro (2026-09-15):** the app
+> launched with no crash and Plugin.LocalNotification's `ScheduledAlarmReceiver` process registered; the
+> Settings **Reminders** section rendered the three real **switches** (all off by default); toggling *Draw not
+> done yet* on fired the Android **`POST_NOTIFICATIONS` permission prompt** (`GrantPermissionsActivity`), and
+> granting it left the switch **on** (`POST_NOTIFICATIONS granted=true`). **Device bug found &amp; fixed:** the
+> switch thumbs rendered low (dropped to the bottom of the track) on phone width — the FEAT-008 mobile-density
+> rule (`.mud-icon-button { min-height:48px }`) was inflating MudSwitch's internal thumb button; a scoped
+> `.mud-switch .mud-icon-button { min-width:0; min-height:0 }` exception in `circletools.css` restores the
+> native switch (real icon buttons keep their 48px target). Redeployed and re-confirmed on the Pixel — thumbs
+> centered. Residual device item (needs elapsed
+> time, per CLAUDE.md): observing each reminder actually **fire at its scheduled time** and the
+> cancel-on-draw / cancel-on-wishlist-filled / cancel-on-delete reschedules.
 >
 > **As-built refinements vs the design below:** the seam's cancellation is **`CancelAllAsync()` + reschedule
 > the full set** on each reconcile (rather than `cancel(id)` / `cancelForOccasion`), with **sequential ids
@@ -207,7 +216,8 @@ lets the coordinator and UI be tested without a device.
 - [x] Localized strings provided (DE/EN/FR + neutral)
 - [x] Web-visible part browser-verified (2026-09-15): Settings **Reminders** section shows the "needs the app"
       note with no switches on web, console clean
-- [ ] **Verified on the Pixel (pending, per CLAUDE.md):** each kind fires at the right time; running the draw
-      / filling the wishlist / deleting the occasion cancels the right reminder; `POST_NOTIFICATIONS` requested
-      on first enable; a body never shows an assignment
+- [x] **Pixel 9 Pro (2026-09-15):** app launches (no crash), plugin receiver registered, the three switches
+      render, and enabling one fires the `POST_NOTIFICATIONS` prompt → granting leaves it on
+- [ ] **Still pending on the Pixel (needs elapsed time):** each kind actually fires at its scheduled time, and
+      running the draw / filling the wishlist / deleting the occasion cancels the right reminder
 - [x] Traceability links closed
