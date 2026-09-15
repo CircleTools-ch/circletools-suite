@@ -54,6 +54,10 @@
   href: TP-013-account-free-link-shared-groups.md
 - name: FEAT-013 Implementation plan
   href: FEAT-013-implementation-plan.md
+- name: FEAT-014 Add an event to the calendar
+  href: FEAT-014-add-event-to-calendar.md
+- name: TP-014 Add an event to the calendar test plan
+  href: TP-014-add-event-to-calendar.md
 - name: Templates
   items:
     - name: Feature spec template

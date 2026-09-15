@@ -88,5 +88,7 @@
       href: secret-santa/UC-SS-019-join-a-shared-group.md
     - name: UC-SS-020 Release a claimed person
       href: secret-santa/UC-SS-020-release-a-claimed-person.md
+    - name: UC-SS-021 Add an occasion to my calendar
+      href: secret-santa/UC-SS-021-add-occasion-to-calendar.md
 - name: Template
   href: _template-use-case.md

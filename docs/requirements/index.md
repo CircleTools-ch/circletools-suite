@@ -65,6 +65,7 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-043](functional/FR-043-release-ownership-and-deletion-disposition.md) | Release a group to shared-by-link, and dispose of owned groups on account deletion | Functional | Must | Approved |
 | [NFR-009](non-functional/NFR-009-account-free-write-abuse-resistance.md) | Account-free backend writes are abuse-resistant | Non-functional | Must | Approved |
 | [NFR-010](non-functional/NFR-010-shared-group-retention-lifecycle.md) | Shared-by-link groups have a defined retention & deletion lifecycle | Non-functional | Must | Approved |
+| [FR-044](functional/FR-044-add-event-to-device-calendar.md) | Add an event to the device calendar (pre-filled, all-day, system-UI) | Functional | Could | Draft |
 
 _Add a row per requirement._
 
