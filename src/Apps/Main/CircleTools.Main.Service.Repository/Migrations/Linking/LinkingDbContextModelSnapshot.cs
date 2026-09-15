@@ -35,14 +35,16 @@ namespace CircleTools.Main.Service.Repository.Migrations.Linking
                         .HasColumnType("uuid");
 
                     b.Property<decimal?>("BudgetAmount")
-                        .HasColumnType("numeric");
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
 
                     b.Property<string>("BudgetCurrency")
                         .HasMaxLength(3)
                         .HasColumnType("character varying(3)");
 
                     b.Property<decimal?>("BudgetMinAmount")
-                        .HasColumnType("numeric");
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
 
                     b.Property<long>("DrawVersion")
                         .HasColumnType("bigint");
@@ -202,11 +204,13 @@ namespace CircleTools.Main.Service.Repository.Migrations.Linking
 
                     b.HasKey("Id");
 
+                    b.HasIndex("GroupId", "TargetAccountId")
+                        .IsUnique()
+                        .HasFilter("\"State\" = 'Linked' AND \"TargetAccountId\" IS NOT NULL");
+
                     b.HasIndex("OrganizerAccountId", "GroupId");
 
                     b.HasIndex("TargetAccountId", "State");
-
-                    b.HasIndex("GroupId", "TargetAccountId", "State");
 
                     b.ToTable("member_links", "linking");
                 });

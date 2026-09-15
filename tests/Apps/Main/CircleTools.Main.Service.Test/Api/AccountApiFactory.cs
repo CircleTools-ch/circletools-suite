@@ -56,6 +56,9 @@ public sealed class AccountApiFactory : WebApplicationFactory<Program>, IAsyncLi
         builder.UseSetting("Auth:Jwt:Issuer", "circletools");
         builder.UseSetting("Auth:Jwt:Audience", "circletools-api");
         builder.UseSetting("Auth:Jwt:SigningKey", "integration-test-signing-key-long-enough-for-hmac");
+        // Test-only at-rest keys (ADR-0061/0062); real values are host-provided secrets (ADR-0050).
+        builder.UseSetting("SharedGroups:Security:TokenEncryptionKey", "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=");
+        builder.UseSetting("Circles:Security:EmailHashKey", "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=");
         builder.UseSetting("Auth:TokenLifetimes:AccessTokenLifetime", "00:15:00");
         builder.UseSetting("Auth:TokenLifetimes:RefreshTokenLifetime", "30.00:00:00");
         builder.UseSetting("Auth:TokenLifetimes:RefreshReplayGraceWindow", "00:00:30");

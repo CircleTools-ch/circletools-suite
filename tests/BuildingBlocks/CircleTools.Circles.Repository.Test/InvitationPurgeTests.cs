@@ -87,7 +87,7 @@ public sealed class InvitationPurgeTests(CirclesPostgresFixture fixture)
     public async Task CountedInvitationAttempts_AreSweptOnceNoLimitCountsThem()
     {
         var inviter = Guid.CreateVersion7();
-        var hash = EmailAddress.HashOf("dora@example.test");
+        var hash = TestEmailHasher.Instance.Hash("dora@example.test");
 
         await using var provider = fixture.CreateProvider();
         var limiter = new EfInvitationRateLimiter(
