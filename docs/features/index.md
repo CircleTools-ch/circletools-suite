@@ -37,8 +37,12 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [FEAT-013](FEAT-013-account-free-link-shared-groups.md) | Account-free, link-shared groups (third storage tier) | SecretSanta | Done |
 | [TP-013](TP-013-account-free-link-shared-groups.md) | Test plan — Account-free, link-shared groups | SecretSanta | Approved |
 | [FEAT-013 Implementation Plan](FEAT-013-implementation-plan.md) | Build plan — Account-free, link-shared groups (phased) | SecretSanta | Complete |
-| [FEAT-014](FEAT-014-add-event-to-calendar.md) | Add an event to the device calendar (one-tap, pre-filled) | SecretSanta | Draft |
-| [TP-014](TP-014-add-event-to-calendar.md) | Test plan — Add an event to the device calendar | SecretSanta | Draft |
+| [FEAT-014](FEAT-014-add-event-to-calendar.md) | Add an event to the device calendar (one-tap, pre-filled) | SecretSanta | Done |
+| [TP-014](TP-014-add-event-to-calendar.md) | Test plan — Add an event to the device calendar | SecretSanta | Reviewed |
+| [FEAT-015](FEAT-015-guided-hand-out-of-reveal-links.md) | Guided hand-out of reveal links (one per recipient, tracks progress) | SecretSanta | Done |
+| [TP-015](TP-015-guided-hand-out-of-reveal-links.md) | Test plan — Guided hand-out of reveal links | SecretSanta | Reviewed |
+| [FEAT-016](FEAT-016-device-local-occasion-reminders.md) | Device-local occasion reminders (opt-in local notifications) | SecretSanta | Done |
+| [TP-016](TP-016-device-local-occasion-reminders.md) | Test plan — Device-local occasion reminders | SecretSanta | Reviewed |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and

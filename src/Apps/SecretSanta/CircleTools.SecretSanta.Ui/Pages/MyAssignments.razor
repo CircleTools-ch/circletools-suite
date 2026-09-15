@@ -2,11 +2,13 @@
 @using System.Globalization
 @using CircleTools.ApiClient
 @using CircleTools.SecretSanta.Contracts
+@using CircleTools.SecretSanta.Core.Reveal
 @using CircleTools.SecretSanta.LocalStore.Linking
 @inject ILinkingApi Linking
 @inject IStringLocalizer<AppStrings> L
 @inject TimeProvider Time
 @inject IHapticFeedback Haptics
+@inject RevealLinkOptions RevealOptions
 
 @*
     See my assignment while signed in (FR-029). The server returns only the caller's own pairing, one
@@ -68,6 +70,14 @@
                                 </MudText>
                             }
 
+                            @* Add this occasion to the phone calendar (MNF-6) — once it has a date. *@
+                            @if (BuildCalendarEvent(assignment) is { } calendarEvent)
+                            {
+                                <div class="mt-2">
+                                    <AddToCalendarButton CalendarEvent="calendarEvent" />
+                                </div>
+                            }
+
                             @if (_revealed.Contains((assignment.GroupId, assignment.EventId)))
                             {
                                 <MudAlert Severity="Severity.Success" Class="mt-2">
@@ -120,6 +130,13 @@
     private string? _error;
 
     private string EventLabel(string name) => string.IsNullOrWhiteSpace(name) ? L["DefaultEventName"] : name;
+
+    // This membership's calendar entry (MNF-6), or null when the occasion has no date. The reopen link is
+    // the app's own event route (the caller has this group synced to their account).
+    private CalendarEvent? BuildCalendarEvent(MyAssignmentResponse assignment) => CalendarEventFactory.ForOccasion(
+        assignment.GroupId, assignment.EventId, EventLabel(assignment.EventName),
+        assignment.Event?.Date, assignment.Event?.Location, assignment.Event?.Description,
+        assignment.Budget, L["RevealBudgetLabel"], RevealOptions.BaseUrl);
 
     // A small confirmation buzz as the giftee is shown (FEAT-008 W3), matching the reveal page; a no-op
     // on the web head.

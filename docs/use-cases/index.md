@@ -48,7 +48,9 @@ Use cases describe how actors achieve goals with the system. They are the bridge
 | [UC-SS-018](secret-santa/UC-SS-018-share-and-manage-as-admin.md) | Share and manage a shared-by-link group as an admin | Secret-Santa | Approved |
 | [UC-SS-019](secret-santa/UC-SS-019-join-a-shared-group.md) | Join a shared-by-link group via the join link | Secret-Santa | Approved |
 | [UC-SS-020](secret-santa/UC-SS-020-release-a-claimed-person.md) | Free (release) a claimed person so they can rejoin | Secret-Santa | Approved |
-| [UC-SS-021](secret-santa/UC-SS-021-add-occasion-to-calendar.md) | Add an occasion to my phone calendar | Secret-Santa | Draft |
+| [UC-SS-021](secret-santa/UC-SS-021-add-occasion-to-calendar.md) | Add an occasion to my phone calendar | Secret-Santa | Approved |
+| [UC-SS-022](secret-santa/UC-SS-022-hand-out-reveal-links.md) | Hand out reveal links without forgetting anyone | Secret-Santa | Approved |
+| [UC-SS-023](secret-santa/UC-SS-023-be-reminded-about-my-occasions.md) | Be reminded about my occasions (device-local notifications) | Secret-Santa | Approved |
 
 _Add a row per use case._
 

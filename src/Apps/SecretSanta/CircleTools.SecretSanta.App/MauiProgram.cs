@@ -12,6 +12,9 @@ using CircleTools.Ui.Account;
 using CircleTools.Ui.Account.Api;
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
+#if ANDROID || IOS
+using Plugin.LocalNotification;
+#endif
 
 namespace CircleTools.SecretSanta.App;
 
@@ -96,6 +99,10 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+#if ANDROID || IOS
+            // Device-local reminders (MNF-8, ADR-0060): registers the plugin's platform receivers.
+            .UseLocalNotification()
+#endif
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -120,6 +127,8 @@ public static class MauiProgram
         builder.Services.AddScoped<CircleTools.Ui.Abstractions.IConnectivity, MauiConnectivity>();
         builder.Services.AddScoped<IPasskeyCeremony, MauiPasskeyCeremony>();
         builder.Services.AddScoped<IShareService, MauiShareService>();
+        builder.Services.AddScoped<ICalendarService, MauiCalendarService>();
+        builder.Services.AddScoped<INotificationScheduler, MauiNotificationScheduler>();
         // Fully qualified: MAUI's global usings also expose Microsoft.Maui.Devices.IHapticFeedback,
         // so the bare name is ambiguous here (as with IConnectivity above).
         builder.Services.AddScoped<CircleTools.Ui.Abstractions.IHapticFeedback, MauiHapticFeedback>();

@@ -3,7 +3,7 @@ id: UC-SS-021
 title: Add an occasion to my phone calendar
 app: Secret-Santa
 actors: [Organizer, Participant]
-status: Draft
+status: Approved
 priority: Could
 related: [FR-044, FEAT-014, TP-014, ADR-0028, ADR-0053, UC-SS-006, UC-SS-011, UC-SS-013]
 ---

@@ -19,6 +19,16 @@ namespace CircleTools.SecretSanta.App;
     DataHost = "secretsanta.circletools.ch",
     DataPathPrefix = "/r",
     AutoVerify = true)]
+// Event deep link (MNF-6, FR-044): a calendar entry's "open in app" link is the event route
+// https://secretsanta.circletools.ch/groups/{gid}/events/{eid}. Forwarded generically (ForwardDeepLink)
+// and routed by DeepLinkService to the in-app EventHub — offline, exactly like the reveal link.
+[IntentFilter(
+    new[] { Intent.ActionView },
+    Categories = new[] { Intent.CategoryDefault, Intent.CategoryBrowsable },
+    DataScheme = "https",
+    DataHost = "secretsanta.circletools.ch",
+    DataPathPrefix = "/groups",
+    AutoVerify = true)]
 public class MainActivity : MauiAppCompatActivity
 {
     protected override void OnCreate(Bundle? savedInstanceState)

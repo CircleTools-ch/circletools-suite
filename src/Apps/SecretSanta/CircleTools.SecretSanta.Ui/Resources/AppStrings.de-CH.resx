@@ -304,4 +304,22 @@
   <data name="AdminRetiredTitle" xml:space="preserve"><value>Dieser Admin-Link funktioniert nicht mehr</value></data>
   <data name="AdminRetiredBody" xml:space="preserve"><value>{0} hat die Admin-Rolle für diese Gruppe übernommen.</value></data>
   <data name="AdminRetiredJoinHint" xml:space="preserve"><value>Du kannst weiterhin den Beitritts-Link öffnen, um als Teilnehmer beizutreten.</value></data>
+  <data name="AddToCalendar" xml:space="preserve"><value>Zum Kalender hinzufügen</value></data>
+  <data name="HandOutLinks" xml:space="preserve"><value>Links verteilen</value></data>
+  <data name="HandoutProgress" xml:space="preserve"><value>Verteilt: {0} / {1}</value></data>
+  <data name="MarkHandedOut" xml:space="preserve"><value>Als verteilt markieren</value></data>
+  <data name="HandoutAllDone" xml:space="preserve"><value>Alle haben ihren Link.</value></data>
+  <data name="HandedOut" xml:space="preserve"><value>Verteilt</value></data>
+  <data name="NotificationsTitle" xml:space="preserve"><value>Erinnerungen</value></data>
+  <data name="NotificationsHint" xml:space="preserve"><value>Wähle, welche Erinnerungen dieses Gerät zeigt. Standardmässig aus.</value></data>
+  <data name="NotificationsUnavailableWeb" xml:space="preserve"><value>Erinnerungen sind in der installierten App verfügbar.</value></data>
+  <data name="ReminderDrawLabel" xml:space="preserve"><value>Auslosung noch offen</value></data>
+  <data name="ReminderTomorrowLabel" xml:space="preserve"><value>Anlass ist morgen</value></data>
+  <data name="ReminderWishlistLabel" xml:space="preserve"><value>Meine Wunschliste ist leer</value></data>
+  <data name="ReminderDrawTitle" xml:space="preserve"><value>Zeit zum Auslosen</value></data>
+  <data name="ReminderDrawBody" xml:space="preserve"><value>Lose bald die Namen für {0} aus.</value></data>
+  <data name="ReminderTomorrowTitle" xml:space="preserve"><value>{0} ist morgen</value></data>
+  <data name="ReminderTomorrowBody" xml:space="preserve"><value>Euer Geschenkeaustausch ist morgen.</value></data>
+  <data name="ReminderWishlistTitle" xml:space="preserve"><value>Wunschliste ergänzen</value></data>
+  <data name="ReminderWishlistBody" xml:space="preserve"><value>Deine Wunschliste für {0} ist noch leer.</value></data>
 </root>

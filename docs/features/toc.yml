@@ -58,6 +58,14 @@
   href: FEAT-014-add-event-to-calendar.md
 - name: TP-014 Add an event to the calendar test plan
   href: TP-014-add-event-to-calendar.md
+- name: FEAT-015 Guided hand-out of reveal links
+  href: FEAT-015-guided-hand-out-of-reveal-links.md
+- name: TP-015 Guided hand-out of reveal links test plan
+  href: TP-015-guided-hand-out-of-reveal-links.md
+- name: FEAT-016 Device-local occasion reminders
+  href: FEAT-016-device-local-occasion-reminders.md
+- name: TP-016 Device-local occasion reminders test plan
+  href: TP-016-device-local-occasion-reminders.md
 - name: Templates
   items:
     - name: Feature spec template

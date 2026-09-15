@@ -101,6 +101,9 @@ public sealed class MyAssignmentsPageTests : IDisposable
 
         _ctx.Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassThroughStringLocalizer<AppStrings>());
         _ctx.Services.AddSingleton<IHapticFeedback>(new FakeHapticFeedback());
+        // MyAssignments now offers "Add to calendar" (MNF-6), which builds the reopen link from this.
+        _ctx.Services.AddSingleton(new CircleTools.SecretSanta.Core.Reveal.RevealLinkOptions("https://secretsanta.circletools.ch"));
+        _ctx.Services.AddSingleton<CircleTools.Ui.Abstractions.ICalendarService>(new TestSupport.FakeCalendarService());
         _ctx.AddTestAuthorization().SetAuthorized("member");
     }
 

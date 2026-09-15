@@ -1,11 +1,20 @@
 ---
 id: TP-014
 feature: FEAT-014
-status: Draft
+status: Reviewed
 related: [UC-SS-021, FR-044, ADR-0028, ADR-0053, NFR-001, NFR-002, NFR-003]
 ---
 
 # TP-014 — Test plan for FEAT-014 (Add an event to the device calendar)
+
+> **Executed 2026-09-15.** Automated: `IcsBuilderTests` (all-day `VEVENT` shape, DTSTART/DTEND, escaping +
+> 75-octet folding incl. multi-byte, notes+budget+deep-link in `DESCRIPTION`, `URL` property, no assignment),
+> `CalendarEventFactoryTests` (route + stable `UID` + budget compose; no date → null), `AddToCalendarButtonTests`
+> (renders only with an occasion; click hands it to `ICalendarService`) — part of **Ui 72/72**; Architecture
+> 28/28. Browser-verified the button on the event hub and reveal page (gated on a date; non-spoiling;
+> console-clean). **Pending the Pixel:** the Android `ACTION_INSERT` editor and App Link auto-open under a
+> real finger. (The reveal-page date was set through the `MudDatePicker` calendar popup, since a synthetic
+> value-set does not commit — a harness detail, not a product one.)
 
 ## Scope & objectives
 
