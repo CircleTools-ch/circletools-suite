@@ -1,7 +1,7 @@
 ---
 id: FEAT-013
 title: Account-free, link-shared groups (third storage tier)
-status: In progress
+status: Done
 owner: Adrian
 target-milestone: Post-v1 sync / M5 (tentative)
 bounded-context: SecretSanta
@@ -194,10 +194,20 @@ nothing server-side.
 
 ## Definition of Done
 
-- [ ] Meets acceptance criteria of all covered requirements
-- [ ] Builds clean under analyzers (warnings = errors)
-- [ ] Tests per the test plan pass; coverage target met
-- [ ] Architecture boundaries respected (arch tests green)
-- [ ] Docs, glossary, and API comments updated
-- [ ] Localized strings provided (DE/EN/FR)
-- [ ] Traceability links closed
+- [x] Meets acceptance criteria of all covered requirements — every UC/FR/NFR row above ✅
+- [x] Builds clean under analyzers (warnings = errors) — `dotnet build CircleTools.slnx` 0 warnings / 0 errors (2026-09-15)
+- [x] Tests per the test plan pass; coverage target met — full suite green (unit, bUnit, real-Postgres integration, Chromium E2E); the two-browser SBL-2 re-verify closed the last pending check (2026-09-15)
+- [x] Architecture boundaries respected (arch tests green) — `CircleTools.Architecture.Test` 28/28 (StorageMode/tokens on the record wrapper, not the domain memento — D1)
+- [x] Docs, glossary, and API comments updated
+- [x] Localized strings provided (DE/EN/FR) — all four resx; EN driven live in the two-browser pass, DE/FR covered by parity tests and prior E2E
+- [x] Traceability links closed
+
+> **Status — Done (2026-09-15).** Phases A–H built, tested and security-hardened (see the
+> [implementation plan](FEAT-013-implementation-plan.md)); the final open item — the two-browser,
+> live-Aspire-stack re-verification of the in-place sync refresh (SBL-2) — was completed on
+> 2026-09-15 (admin-link adoption, signed-out pull on load, and a remote roster change appearing on an
+> open page with no navigation or manual refresh; console clean). Known accepted limits carried, not
+> blockers: an idle open tab needs a trigger to pull (P3, parked with the continuous-sync decision,
+> [ADR-0016](../adr/0016-sync-and-conflict-resolution.md)); shared reconcile is last-write-wins per
+> aggregate ([ADR-0058](../adr/0058-account-free-link-shared-groups.md)); iOS deep links open the
+> browser until MNF-10.
