@@ -116,5 +116,7 @@
   href: 0057-app-store-naming-and-localization.md
 - name: 0058 Account-free link-shared groups (third storage tier)
   href: 0058-account-free-link-shared-groups.md
+- name: 0059 Brand marks — ring enclosing a central glyph
+  href: 0059-brand-mark-ring-and-central-glyph.md
 - name: Template
   href: _template-adr.md
