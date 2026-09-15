@@ -25,7 +25,7 @@ the live Aspire stack — the admin↔admin path the earlier pass missed (it onl
   B1 creates a shared group → B2 opens the admin link and adds Carol+Dan (server reaches v3) → **B1 pulls both on a
   pure refresh with no local edit** (was empty on every refresh before the fix); console clean.
 - **SBL-2 · Section pages didn't refresh in place when a background sync landed (bug, P2).** ✅ **Fixed,
-  unit-verified; two-browser re-verify pending (deferred under memory pressure).** Follow-on found by the maintainer editing the same group in two admin windows: after SBL-1 a
+  unit- and two-browser-verified (2026-09-15).** Follow-on found by the maintainer editing the same group in two admin windows: after SBL-1 a
   co-admin's edit *did* sync, but the open page only showed it on the *next* refresh — the refresh that triggered the
   pull rendered the pre-pull state, so it felt like "several refreshes" or "only a force-refresh (Ctrl+Shift+R) works."
   Confirmed it was **not** the HTTP cache (verified: a default-cache fetch and a `no-store` fetch both returned the
@@ -37,7 +37,13 @@ the live Aspire stack — the admin↔admin path the earlier pass missed (it onl
   live reload there would discard the editor's in-progress typing. A page depends only on the notification, so a
   component test supplies a trivial `FakeSyncSignals` instead of the whole sync graph. Covered by a new bUnit
   regression (`MembersPageSyncRefreshTests`: firing `SyncCompleted` swaps the roster in place); **37/37 Ui tests
-  green**. Still a known limit (P3, parked): an **idle** open tab with no trigger doesn't pull at all — a co-admin's
+  green**. **Two-browser re-verify done (2026-09-15, live Aspire stack, two isolated headless-Chrome devices over
+  CDP):** device 1 created a shared-by-link group (member *Anna*) and opened Members; device 2 opened the **admin
+  link** (group adopted with the *Shared by link* chip, *Anna* pulled) and added *Carol* → pushed. With device 1's
+  Members page **open and idle** (Anna, Carol; no *Erin*), device 2 added *Erin*; a background cycle then landed on
+  device 1 and **Erin appeared in place — no navigation, no manual refresh** (the `SyncCompleted` reload), the
+  add-member field left undisturbed. Console clean throughout. This also re-confirmed **SBL-1** (device 1's fresh
+  signed-out load pulled Carol without a hard refresh). Still a known limit (P3, parked): an **idle** open tab with no trigger doesn't pull at all — a co-admin's
   change needs a refresh (or reconnect / pull-to-refresh) to *start* a cycle; a focus/`visibilitychange` or periodic
   pull would make an idle tab live, but that nudges the deliberately-parked continuous-sync decision
   ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md)).

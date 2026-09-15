@@ -1,7 +1,7 @@
 ---
 title: FEAT-013 Implementation Plan — Account-free, link-shared groups
 feature: FEAT-013
-status: Draft
+status: Complete
 related: [FEAT-013, TP-013, ADR-0058, FR-038, FR-039, FR-040, FR-041, FR-042, FR-043, NFR-002, NFR-009, NFR-010]
 ---
 
@@ -12,6 +12,13 @@ Companion build plan for [FEAT-013](FEAT-013-account-free-link-shared-groups.md)
 ([ADR-0058](../adr/0058-account-free-link-shared-groups.md)) — not a design re-litigation.
 Repo: .NET 10 / Aspire / DDD, local-first Blazor WASM + MAUI.
 
+> **Feature closed — Done (2026-09-15).** The last open verification — the two-browser, live-Aspire-stack
+> re-check of the in-place sync refresh (backlog SBL-2) — passed: two isolated headless-Chrome devices over
+> CDP confirmed admin-link adoption, a signed-out pull on plain load (SBL-1), and a remote roster change
+> appearing on an **open** page with **no navigation and no manual refresh** (SBL-2, the `SyncCompleted`
+> reload), console clean throughout. Full suite green and `dotnet build` 0/0. See
+> [FEAT-013 Definition of Done](FEAT-013-account-free-link-shared-groups.md#definition-of-done).
+>
 > **Implementation status (2026-09-14):** Phases A–H are **built and tested**. Server token-keyed
 > store + endpoints + anti-abuse + retention + account-deletion hand-off; client sync engine + all
 > transitions (share / join / person-claim / release / claim-admin / release-admin / adopt); the full
