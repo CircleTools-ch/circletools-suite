@@ -3,6 +3,51 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Go-live — manual owner action (2026-09-15)
+
+Tracked-so-it-is-not-rediscovered work items from the
+[launch-readiness assessment](../deployment/launch-readiness.md): the suite is engineering-complete
+(0/0 build, 762 tests, 60 Accepted ADRs, full deploy scaffolding) but not yet live. Each item below
+**needs the project owner to act** — provisioning under a real account, publishing legal content, or a
+manual fingerprint/Mac step — so none can be closed by code alone. Decisions are already recorded; these
+are execution items against the milestone-8 [web-api-db](../deployment/web-api-db.md#checklist-milestone-8)
+checklist.
+
+- **GL-1 · Provision the Infomaniak VPS under a project-owned account (P1).** VPS Lite M, Geneva,
+  Ubuntu LTS; Docker + Compose; not a personal login. [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
+- **GL-2 · Generate secrets and load the two tiers (P1).** Generate into the vault, derive the VM
+  `/opt/circletools/.env` and the GitHub Actions secrets; setting `DEPLOY_HOST` self-activates the CD
+  job. [ADR-0050](../adr/0050-secrets-management.md).
+- **GL-3 · Cloudflare DNS + Brevo account + SPF/DKIM/DMARC (P1, highest leverage).** Undeliverable mail
+  silently breaks sign-up / verify / reset / invite — the whole onboarding path.
+  [ADR-0037](../adr/0037-transactional-email-provider.md).
+- **GL-4 · Bring up TLS handling the Cloudflare HTTP-01 caveat (P1).** Per the note at
+  `deploy/Caddyfile:5-8`. [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
+- **GL-5 · Nightly `pg_dump` → Swiss Backup + a tested restore script (P1, biggest data-loss risk).**
+  No script exists in `deploy/` yet; the VPS is a single point of failure, so the *restore* must be
+  exercised, not just written. [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
+- **GL-6 · Legal review of the legal pages (P1).** Privacy policy + imprint (about & legal) +
+  account-deletion page are **written and reachable** at `/privacy`, `/imprint`, `/delete-account` in
+  both web apps, DE/EN/FR, browser-verified, in a warm first-person voice. Operator/controller named as
+  Adrian Moll (circletools.ch), contact info@circletools.ch, no postal address (non-commercial choice).
+  Remaining: a **light legal review** of the wording before go-live; and if the project is ever monetised
+  or store-classified as a **trader**, add a postal address or a legal entity (e.g. a Swiss Verein).
+  [NFR-004](../requirements/non-functional/NFR-004-data-protection-and-retention.md),
+  [NFR-007](../requirements/non-functional/NFR-007-store-distributability.md).
+- **GL-7 · Pin the CSP on the live stack (P2).** The policy is statically verified and boot-smoke'd;
+  the final confirmation against the real cross-origin `connect-src` API fetch only happens live.
+  [ADR-0021](../adr/0021-web-auth-token-model.md), [ADR-0040](../adr/0040-ui-component-library-mudblazor.md).
+- **GL-8 · Live on-device sign-in / sync test (P2).** Drive account sign-in and sync from a real device
+  against the running Main service — still owed since the parity work.
+  [ADR-0039](../adr/0039-cross-app-single-sign-on.md).
+- **GL-9 · Replace the `assetlinks.json` Play App Signing SHA-256 (P2, mobile).** Swap the
+  `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` placeholder for the real fingerprint so reveal / calendar App
+  Links auto-open silently instead of via the chooser.
+  [ADR-0053](../adr/0053-backend-free-first-mobile-release.md).
+- **GL-10 · Build the iOS head + wire iOS deep links (P2, Mac-gated).** iOS is not built and deep links
+  are Android-only; needs an Apple-silicon Mac. [ADR-0031](../adr/0031-ios-build-host.md),
+  [ADR-0053](../adr/0053-backend-free-first-mobile-release.md).
+
 ## Shared-by-link sync — Secret-Santa (2026-09-14)
 
 Found while re-testing the account-free **link-shared groups** ([FEAT-013](../features/FEAT-013-account-free-link-shared-groups.md),

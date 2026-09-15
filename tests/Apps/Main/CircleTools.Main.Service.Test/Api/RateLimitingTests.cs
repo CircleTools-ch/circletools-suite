@@ -45,6 +45,9 @@ public sealed class RateLimitedApiFactory : WebApplicationFactory<Program>
         builder.UseEnvironment(Environments.Production);
         builder.UseSetting("ConnectionStrings:maindb", _database.GetConnectionString());
         builder.UseSetting("Auth:Jwt:SigningKey", "integration-test-signing-key-long-enough-for-hmac");
+        // Test-only at-rest keys (ADR-0061/0062); real values are host-provided secrets (ADR-0050).
+        builder.UseSetting("SharedGroups:Security:TokenEncryptionKey", "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=");
+        builder.UseSetting("Circles:Security:EmailHashKey", "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=");
         builder.UseSetting(
             "RateLimiting:SensitivePermitLimit",
             PermitLimit.ToString(System.Globalization.CultureInfo.InvariantCulture));

@@ -56,8 +56,14 @@ public sealed class LinkingDbContext(DbContextOptions<LinkingDbContext> options)
             // A recipient reads "the pending requests addressed to me"; the organizer reads "the links I own".
             entity.HasIndex(m => new { m.TargetAccountId, m.State });
             entity.HasIndex(m => new { m.OrganizerAccountId, m.GroupId });
-            // One user backs at most one member per group: enforced in the store, indexed here.
-            entity.HasIndex(m => new { m.GroupId, m.TargetAccountId, m.State });
+            // One account backs at most one member per group. The store checks this before it links, but a
+            // partial unique index is what makes it a database invariant rather than a check-then-act race:
+            // two concurrent accepts can both pass the pre-check, and only the constraint stops the second
+            // write. Scoped to live links (State = 'Linked'); a closed link may coexist with a later re-link,
+            // and a null target (an invite to an address with no account) is never a duplicate.
+            entity.HasIndex(m => new { m.GroupId, m.TargetAccountId })
+                .IsUnique()
+                .HasFilter("\"State\" = 'Linked' AND \"TargetAccountId\" IS NOT NULL");
         });
 
         modelBuilder.Entity<AssignmentRow>(entity =>
@@ -69,6 +75,10 @@ public sealed class LinkingDbContext(DbContextOptions<LinkingDbContext> options)
             entity.Property(a => a.EventName).IsRequired().HasMaxLength(200);
             entity.Property(a => a.RecipientName).IsRequired().HasMaxLength(200);
             entity.Property(a => a.RecipientWishlistSnapshot).IsRequired().HasColumnType("jsonb");
+            // Money is bounded numeric(10,2), not unbounded numeric: a gift budget has cents and a sane
+            // ceiling, and an unbounded scale would let a client persist arbitrary-precision values.
+            entity.Property(a => a.BudgetAmount).HasPrecision(10, 2);
+            entity.Property(a => a.BudgetMinAmount).HasPrecision(10, 2);
             entity.Property(a => a.BudgetCurrency).HasMaxLength(3);
             entity.Property(a => a.RecipientGiftNote).IsRequired().HasMaxLength(500);
             entity.Property(a => a.EventLocation).HasMaxLength(400);

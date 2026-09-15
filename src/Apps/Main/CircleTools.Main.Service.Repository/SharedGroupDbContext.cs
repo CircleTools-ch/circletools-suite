@@ -50,6 +50,9 @@ public sealed class SharedGroupDbContext(DbContextOptions<SharedGroupDbContext> 
 
             // The retention sweep (NFR-010) scans by last activity.
             entity.HasIndex(g => g.LastActivityAt);
+            // Owner queries and account-deletion cleanup ("groups this account owns") — an unindexed
+            // OwnerAccountId is a seq scan on every list and every deletion as the table grows.
+            entity.HasIndex(g => g.OwnerAccountId);
         });
 
         modelBuilder.Entity<SharedGroupToken>(entity =>
@@ -57,6 +60,7 @@ public sealed class SharedGroupDbContext(DbContextOptions<SharedGroupDbContext> 
             entity.ToTable("tokens");
             entity.HasKey(t => t.Token);
             entity.Property(t => t.Token).HasMaxLength(64);
+            entity.Property(t => t.TokenCipher).IsRequired().HasMaxLength(128);
             entity.Property(t => t.Capability).IsRequired().HasConversion<string>().HasMaxLength(16);
             entity.Property(t => t.Active).IsRequired();
             entity.Property(t => t.RetiredByClaim).IsRequired();
@@ -73,6 +77,10 @@ public sealed class SharedGroupDbContext(DbContextOptions<SharedGroupDbContext> 
             entity.Property(c => c.ClaimKind).IsRequired().HasConversion<string>().HasMaxLength(16);
             entity.Property(c => c.DeviceHandle).HasMaxLength(128);
             entity.Property(c => c.ClaimedAt).IsRequired();
+
+            // Account-deletion cleanup releases every claim an account holds; without this it is a
+            // seq scan of the whole claim table per deleted account.
+            entity.HasIndex(c => c.AccountId);
         });
     }
 }

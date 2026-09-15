@@ -40,11 +40,13 @@ public sealed record InviteToCircleCommand(Guid UserId, Guid CircleId, string Em
 /// the endpoint carries, and <c>InvitationTimingTests</c> is what keeps that honest.
 /// </para>
 /// </remarks>
+/// <param name="emailHasher">The keyed email hasher (ADR-0062).</param>
 public sealed class InviteToCircleCommandHandler(
     ICircleRepository repository,
     IAccountDirectory accounts,
     IInvitationMailer mailer,
     IInvitationRateLimiter rateLimiter,
+    IEmailHasher emailHasher,
     IOptions<CircleLimits> limits,
     TimeProvider timeProvider)
     : ICommandHandler<InviteToCircleCommand, CircleResult>
@@ -78,7 +80,7 @@ public sealed class InviteToCircleCommandHandler(
         }
 
         var options = limits.Value;
-        var emailHash = EmailAddress.HashOf(command.Email);
+        var emailHash = emailHasher.Hash(command.Email);
 
         var allowance = await rateLimiter.TryConsumeAsync(command.UserId, emailHash, options, cancellationToken);
         if (!allowance.IsAllowed)
@@ -92,6 +94,7 @@ public sealed class InviteToCircleCommandHandler(
         var dispatch = circle.Invite(
             command.UserId,
             command.Email,
+            emailHash,
             recipient?.UserId,
             command.ManagedMembershipId,
             handle,

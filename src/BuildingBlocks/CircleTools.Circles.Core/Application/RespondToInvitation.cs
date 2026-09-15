@@ -17,6 +17,7 @@ internal static class InvitationResponse
         Circle circle,
         Guid invitationId,
         CircleAccount account,
+        IEmailHasher emailHasher,
         CircleLimits limits,
         DateTimeOffset now,
         CancellationToken cancellationToken,
@@ -25,7 +26,7 @@ internal static class InvitationResponse
         var accepted = circle.Accept(
             invitationId,
             account.UserId,
-            account.Email,
+            emailHasher.Hash(account.Email),
             account.DisplayName,
             account.Language,
             limits,
@@ -120,9 +121,11 @@ public sealed record GetJoinRequestsQuery(Guid UserId) : IQuery<IReadOnlyList<Jo
 /// <param name="repository">The circle repository port.</param>
 /// <param name="accounts">The account directory port.</param>
 /// <param name="timeProvider">The clock.</param>
+/// <param name="emailHasher">The keyed email hasher (ADR-0062).</param>
 public sealed class GetJoinRequestsQueryHandler(
     ICircleRepository repository,
     IAccountDirectory accounts,
+    IEmailHasher emailHasher,
     TimeProvider timeProvider)
     : IQueryHandler<GetJoinRequestsQuery, IReadOnlyList<JoinRequestResponse>>
 {
@@ -140,7 +143,7 @@ public sealed class GetJoinRequestsQueryHandler(
         }
 
         var now = timeProvider.GetUtcNow();
-        var emailHash = EmailAddress.HashOf(account.Email);
+        var emailHash = emailHasher.Hash(account.Email);
         var circles = await repository.ListWithInvitationForAsync(emailHash, cancellationToken);
         var requests = new List<JoinRequestResponse>();
 
@@ -184,9 +187,11 @@ public sealed record AcceptInvitationCommand(Guid UserId, string Secret, Guid? C
 /// creates nothing and learns nothing — the invited address is compared against the caller's
 /// <em>verified</em> one, which is the whole of the forwarded-mail defence.
 /// </remarks>
+/// <param name="emailHasher">The keyed email hasher (ADR-0062).</param>
 public sealed class AcceptInvitationCommandHandler(
     ICircleRepository repository,
     IAccountDirectory accounts,
+    IEmailHasher emailHasher,
     IOptions<CircleLimits> limits,
     TimeProvider timeProvider)
     : ICommandHandler<AcceptInvitationCommand, CircleResult<CircleSummaryResponse>>
@@ -223,6 +228,7 @@ public sealed class AcceptInvitationCommandHandler(
             circle,
             invitation.Id,
             account,
+            emailHasher,
             limits.Value,
             timeProvider.GetUtcNow(),
             cancellationToken,
@@ -255,9 +261,11 @@ public sealed record AcceptJoinRequestCommand(
 /// the identifier grants nothing: the address check below is what admits anyone, and it is the same
 /// check the link path makes.
 /// </remarks>
+/// <param name="emailHasher">The keyed email hasher (ADR-0062).</param>
 public sealed class AcceptJoinRequestCommandHandler(
     ICircleRepository repository,
     IAccountDirectory accounts,
+    IEmailHasher emailHasher,
     IOptions<CircleLimits> limits,
     TimeProvider timeProvider)
     : ICommandHandler<AcceptJoinRequestCommand, CircleResult<CircleSummaryResponse>>
@@ -286,6 +294,7 @@ public sealed class AcceptJoinRequestCommandHandler(
             circle,
             command.InvitationId,
             account,
+            emailHasher,
             limits.Value,
             timeProvider.GetUtcNow(),
             cancellationToken,
@@ -352,9 +361,11 @@ public sealed record DeclineJoinRequestCommand(Guid UserId, Guid CircleId, Guid 
 /// Without that check an identifier — which is not a secret — would be enough for any signed-in user
 /// to decline someone else's invitation.
 /// </remarks>
+/// <param name="emailHasher">The keyed email hasher (ADR-0062).</param>
 public sealed class DeclineJoinRequestCommandHandler(
     ICircleRepository repository,
     IAccountDirectory accounts,
+    IEmailHasher emailHasher,
     TimeProvider timeProvider)
     : ICommandHandler<DeclineJoinRequestCommand, CircleResult>
 {
@@ -379,7 +390,7 @@ public sealed class DeclineJoinRequestCommandHandler(
             return CircleResult.Refused(CircleError.InvitationNotFound);
         }
 
-        if (!string.Equals(invitation.EmailHash, EmailAddress.HashOf(account.Email), StringComparison.Ordinal))
+        if (!string.Equals(invitation.EmailHash, emailHasher.Hash(account.Email), StringComparison.Ordinal))
         {
             return CircleResult.Refused(CircleError.InvitationNotFound);
         }
@@ -412,9 +423,11 @@ public sealed record GetInvitationTargetsBySecretQuery(Guid UserId, string Secre
 /// link resolves the same as an unknown one, so a link-holder who is not the invited address learns
 /// nothing — not the roster, and not whether the address has an account.
 /// </remarks>
+/// <param name="emailHasher">The keyed email hasher (ADR-0062).</param>
 public sealed class GetInvitationTargetsBySecretQueryHandler(
     ICircleRepository repository,
     IAccountDirectory accounts,
+    IEmailHasher emailHasher,
     TimeProvider timeProvider)
     : IQueryHandler<GetInvitationTargetsBySecretQuery, CircleResult<JoinTargetsResponse>>
 {
@@ -440,13 +453,13 @@ public sealed class GetInvitationTargetsBySecretQueryHandler(
         var circle = await repository.FindByInvitationHandleAsync(handle, cancellationToken);
         var invitation = circle?.FindInvitationByHandle(handle);
 
-        return Resolve(circle, invitation, account, timeProvider.GetUtcNow());
+        return Resolve(circle, invitation, emailHasher.Hash(account.Email), timeProvider.GetUtcNow());
     }
 
     internal static CircleResult<JoinTargetsResponse> Resolve(
         Circle? circle,
         Invitation? invitation,
-        CircleAccount account,
+        string accountEmailHash,
         DateTimeOffset now)
     {
         if (circle is null || invitation is null || invitation.IsExpiredAt(now))
@@ -456,7 +469,7 @@ public sealed class GetInvitationTargetsBySecretQueryHandler(
 
         // The whole of the forwarded-link defence: only the invited address is answered, and a
         // mismatch is told exactly what an unknown invitation is told.
-        if (!string.Equals(invitation.EmailHash, EmailAddress.HashOf(account.Email), StringComparison.Ordinal))
+        if (!string.Equals(invitation.EmailHash, accountEmailHash, StringComparison.Ordinal))
         {
             return CircleResults.Refused<JoinTargetsResponse>(CircleError.InvitationNotFound);
         }
@@ -479,9 +492,11 @@ public sealed record GetJoinRequestTargetsQuery(Guid UserId, Guid CircleId, Guid
 /// <param name="repository">The circle repository port.</param>
 /// <param name="accounts">The account directory port.</param>
 /// <param name="timeProvider">The clock.</param>
+/// <param name="emailHasher">The keyed email hasher (ADR-0062).</param>
 public sealed class GetJoinRequestTargetsQueryHandler(
     ICircleRepository repository,
     IAccountDirectory accounts,
+    IEmailHasher emailHasher,
     TimeProvider timeProvider)
     : IQueryHandler<GetJoinRequestTargetsQuery, CircleResult<JoinTargetsResponse>>
 {
@@ -502,6 +517,6 @@ public sealed class GetJoinRequestTargetsQueryHandler(
         var invitation = circle?.FindInvitation(query.InvitationId);
 
         return GetInvitationTargetsBySecretQueryHandler.Resolve(
-            circle, invitation, account, timeProvider.GetUtcNow());
+            circle, invitation, emailHasher.Hash(account.Email), timeProvider.GetUtcNow());
     }
 }

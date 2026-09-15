@@ -89,6 +89,9 @@ public sealed class MailApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         builder.UseSetting("Circles:Limits:CircleCreationsPerDay", "100000");
 
         builder.UseSetting("Auth:Jwt:SigningKey", "integration-test-signing-key-long-enough-for-hmac");
+        // Test-only at-rest keys (ADR-0061/0062); real values are host-provided secrets (ADR-0050).
+        builder.UseSetting("SharedGroups:Security:TokenEncryptionKey", "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=");
+        builder.UseSetting("Circles:Security:EmailHashKey", "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=");
         builder.UseSetting("Mail:Host", _mailpit.Hostname);
         builder.UseSetting("Mail:Port", _mailpit.GetMappedPublicPort(MailpitSmtpPort).ToString(System.Globalization.CultureInfo.InvariantCulture));
         builder.UseSetting("Mail:ClientBaseUrl", "https://app.example.test");
