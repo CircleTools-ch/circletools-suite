@@ -1,0 +1,26 @@
+@inject IStringLocalizer<SharedStrings> L
+
+@*
+    Shared account/data-deletion content. Rendered by each app's thin routable /delete-account wrapper.
+    Operator is Adrian Moll (circletools.ch), contact info@circletools.ch; this is a friendly draft still
+    worth a light legal review before launch.
+*@
+
+<MudStack Spacing="3" Style="max-width:44rem;">
+    <MudText Typo="Typo.h4" GutterBottom="true">@L["Legal_Delete_Title"]</MudText>
+    <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">@L["Legal_UpdatedLabel"]: 2026-09-15</MudText>
+
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Delete_Intro"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Delete_InAppHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Delete_InAppBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Delete_WhatHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Delete_WhatBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Delete_LocalHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Delete_LocalBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Delete_ContactHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Delete_ContactBody"]</MudText>
+</MudStack>

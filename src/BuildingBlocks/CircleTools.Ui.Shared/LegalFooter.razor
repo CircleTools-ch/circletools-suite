@@ -1,0 +1,13 @@
+@inject IStringLocalizer<SharedStrings> L
+
+@*
+    Shared legal footer: three localized links to the app-local legal pages. Both apps expose the same
+    routes (/privacy, /imprint, /delete-account) from their own routable wrappers, so the links resolve
+    within whichever app renders the footer.
+*@
+
+<MudStack Row="true" Justify="Justify.Center" Spacing="4" Class="py-4 mud-text-secondary">
+    <MudLink Href="/privacy" Typo="Typo.caption">@L["Legal_Footer_Privacy"]</MudLink>
+    <MudLink Href="/imprint" Typo="Typo.caption">@L["Legal_Footer_Imprint"]</MudLink>
+    <MudLink Href="/delete-account" Typo="Typo.caption">@L["Legal_Footer_DeleteAccount"]</MudLink>
+</MudStack>

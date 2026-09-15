@@ -13,6 +13,9 @@ artifacts/
 .vscode/
 *.rsuser
 
+# Browser-driver / MCP verification artifacts (screenshots, console logs, page snapshots)
+.playwright-mcp/
+
 # Rider / JetBrains
 .idea/
 

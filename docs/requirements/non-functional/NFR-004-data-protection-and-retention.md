@@ -43,8 +43,9 @@ complete without manual intervention.
 deleting the account both leave it intact ([ADR-0017](../../adr/0017-anonymous-to-account-claim.md)).
 
 **Data residency.** Personal data should be hosted in Switzerland or the EU/EEA. The concrete target
-is **open** — it depends on the cloud-provider decision in the
-[deployment ADR backlog](../../adr/index.md#open-decisions-backlog), which this requirement makes due.
+is now **decided**: personal data is hosted in **Switzerland** — the Infomaniak VPS in **Geneva**
+([ADR-0036](../../adr/0036-cloud-provider-and-hosting.md)) — and mail in transit goes through **Brevo
+(EU)** ([ADR-0037](../../adr/0037-transactional-email-provider.md)).
 
 ## Rationale
 
@@ -114,7 +115,8 @@ Then their local data is intact
   [ADR-0020](../../adr/0020-server-side-assignment-privacy.md),
   [ADR-0017](../../adr/0017-anonymous-to-account-claim.md)
 - Guideline: [security & privacy guidelines](../../guidelines/security-privacy-guidelines.md)
-- **Open:** data-residency target, pending the cloud-provider
-  [deployment ADR](../../adr/index.md#open-decisions-backlog).
+- **Data residency:** decided — Switzerland (Infomaniak Geneva,
+  [ADR-0036](../../adr/0036-cloud-provider-and-hosting.md)); mail in transit via Brevo EU
+  ([ADR-0037](../../adr/0037-transactional-email-provider.md)).
 - Glossary: [User](../../glossary/user.md), [Passkey](../../glossary/passkey.md),
   [Assignment](../../glossary/assignment.md)

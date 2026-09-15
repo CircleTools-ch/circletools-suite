@@ -42,6 +42,9 @@ public sealed class SharedGroupPostgresFixture : IAsyncLifetime
         var services = new ServiceCollection();
         services.AddSharedGroupsRepository(ConnectionString);
         services.Configure<SharedGroupLimits>(limits => configureLimits?.Invoke(limits));
+        // A fixed 32-byte AES-256 key for the at-rest token cipher (ADR-0061); test-only, never a real key.
+        services.Configure<SharedGroupSecurityOptions>(security =>
+            security.TokenEncryptionKey = Convert.ToBase64String(Enumerable.Range(0, 32).Select(i => (byte)i).ToArray()));
 
         return services.BuildServiceProvider();
     }

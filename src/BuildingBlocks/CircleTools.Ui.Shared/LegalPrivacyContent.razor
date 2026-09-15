@@ -1,0 +1,41 @@
+@inject IStringLocalizer<SharedStrings> L
+
+@*
+    Shared privacy-policy content. Rendered by each app's thin routable /privacy wrapper. Operator is
+    Adrian Moll (circletools.ch), contact info@circletools.ch; this is a friendly draft still worth a
+    light legal review before launch.
+*@
+
+<MudStack Spacing="3" Style="max-width:44rem;">
+    <MudText Typo="Typo.h4" GutterBottom="true">@L["Legal_Privacy_Title"]</MudText>
+    <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">@L["Legal_UpdatedLabel"]: 2026-09-15</MudText>
+
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Privacy_Intro"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Privacy_ControllerHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Privacy_ControllerBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Privacy_DataHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Privacy_DataBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Privacy_LocalFirstHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Privacy_LocalFirstBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Privacy_LegalBasisHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Privacy_LegalBasisBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Privacy_ProcessorsHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Privacy_ProcessorsBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Privacy_RetentionHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Privacy_RetentionBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Privacy_RightsHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Privacy_RightsBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Privacy_CookiesHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Privacy_CookiesBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Privacy_ChangesHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Privacy_ChangesBody"]</MudText>
+</MudStack>

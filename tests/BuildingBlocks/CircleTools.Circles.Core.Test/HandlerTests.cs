@@ -239,7 +239,8 @@ public sealed class HandlerTests
         CircleFactory.Invite(circle, _anna, "ben@example.com");
         CircleFactory.Invite(circle, _anna, "carla@example.com");
 
-        var requests = await new GetJoinRequestsQueryHandler(_repository, _accounts, _clock).HandleAsync(
+        var requests = await new GetJoinRequestsQueryHandler(
+            _repository, _accounts, TestEmailHasher.Instance, _clock).HandleAsync(
             new GetJoinRequestsQuery(_ben),
             CancellationToken.None);
 
@@ -270,7 +271,8 @@ public sealed class HandlerTests
         var circle = await CreateCircleAsync();
         var invitation = CircleFactory.Invite(circle, _anna, "ben@example.com");
 
-        var result = await new DeclineJoinRequestCommandHandler(_repository, _accounts, _clock).HandleAsync(
+        var result = await new DeclineJoinRequestCommandHandler(
+            _repository, _accounts, TestEmailHasher.Instance, _clock).HandleAsync(
             new DeclineJoinRequestCommand(_stranger, circle.Id, invitation.Id),
             CancellationToken.None);
 
@@ -359,6 +361,7 @@ public sealed class HandlerTests
         var dispatch = circle.Invite(
             _anna,
             email,
+            TestEmailHasher.Instance.Hash(email),
             resolvedUserId: null,
             managedMembershipId: null,
             handle,
@@ -372,8 +375,8 @@ public sealed class HandlerTests
         new(_repository, _accounts, Options.Create(_limits), _clock);
 
     private InviteToCircleCommandHandler InviteHandler(StubInvitationRateLimiter? limiter = null) =>
-        new(_repository, _accounts, _mailer, limiter ?? new StubInvitationRateLimiter(), Options.Create(_limits), _clock);
+        new(_repository, _accounts, _mailer, limiter ?? new StubInvitationRateLimiter(), TestEmailHasher.Instance, Options.Create(_limits), _clock);
 
     private AcceptInvitationCommandHandler AcceptHandler() =>
-        new(_repository, _accounts, Options.Create(_limits), _clock);
+        new(_repository, _accounts, TestEmailHasher.Instance, Options.Create(_limits), _clock);
 }

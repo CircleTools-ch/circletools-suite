@@ -47,6 +47,7 @@ public static class CirclesRepositoryServiceCollectionExtensions
             npgsql => npgsql.MigrationsHistoryTable(HistoryTableName, CirclesDbContext.Schema)));
 
         services.TryAddSingleton(TimeProvider.System);
+        services.TryAddSingleton<IEmailHasher, HmacEmailHasher>();
         services.AddScoped<ICircleRepository, EfCircleRepository>();
         services.AddScoped<IInvitationRateLimiter, EfInvitationRateLimiter>();
 

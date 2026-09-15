@@ -1,7 +1,3 @@
-using System.Buffers.Text;
-using System.Security.Cryptography;
-using System.Text;
-
 namespace CircleTools.Circles.Core.Domain;
 
 /// <summary>
@@ -11,7 +7,9 @@ namespace CircleTools.Circles.Core.Domain;
 /// <remarks>
 /// Hashing is what lets a declined address be remembered for the cooldown without the circle
 /// keeping an address it has no further business with (NFR-004), and it is what makes
-/// "is this the invited address?" answerable without comparing addresses in the clear.
+/// "is this the invited address?" answerable without comparing addresses in the clear. The hash
+/// itself is computed by <see cref="IEmailHasher"/> at the application boundary (ADR-0062): it needs
+/// a server key, which the pure domain does not hold, so the hash arrives here as a value.
 /// </remarks>
 public static class EmailAddress
 {
@@ -44,22 +42,11 @@ public static class EmailAddress
     /// <remarks>
     /// Casing is preserved because the local part of an address is case-sensitive by the standard,
     /// and because <c>Anna.Meier@…</c> is how the inviter typed it and how they will recognise it in
-    /// the pending list. Comparison uses <see cref="HashOf"/>, which is case-insensitive.
+    /// the pending list. Comparison uses the hash from <see cref="IEmailHasher"/>, which is case-insensitive.
     /// </remarks>
     public static string Normalize(string value)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(value);
         return value.Trim();
-    }
-
-    /// <summary>Computes the stored hash of an address.</summary>
-    /// <param name="value">The address, in any casing.</param>
-    /// <returns>The Base64Url-encoded SHA-256 of the upper-invariant, trimmed address.</returns>
-    public static string HashOf(string value)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(value);
-
-        var canonical = value.Trim().ToUpperInvariant();
-        return Base64Url.EncodeToString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
     }
 }

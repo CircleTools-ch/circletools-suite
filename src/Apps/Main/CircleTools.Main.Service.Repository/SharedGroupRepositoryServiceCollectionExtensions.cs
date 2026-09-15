@@ -29,6 +29,7 @@ public static class SharedGroupRepositoryServiceCollectionExtensions
 
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IShareTokenFactory, RandomShareTokenFactory>();
+        services.TryAddSingleton<IShareTokenCipher, AesGcmShareTokenCipher>();
         services.AddScoped<ISharedGroupStore, SharedGroupStore>();
 
         return services;

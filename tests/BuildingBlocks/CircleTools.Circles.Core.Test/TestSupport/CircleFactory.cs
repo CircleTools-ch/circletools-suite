@@ -58,7 +58,7 @@ internal static class CircleFactory
         var accepted = circle.Accept(
             invitation.Id,
             joinerUserId,
-            email,
+            TestEmailHasher.Instance.Hash(email),
             displayName,
             language,
             effectiveLimits,
@@ -82,6 +82,7 @@ internal static class CircleFactory
         var dispatch = circle.Invite(
             inviterUserId,
             email,
+            TestEmailHasher.Instance.Hash(email),
             resolvedUserId: null,
             managedMembershipId,
             InvitationSecret.Create().Handle,

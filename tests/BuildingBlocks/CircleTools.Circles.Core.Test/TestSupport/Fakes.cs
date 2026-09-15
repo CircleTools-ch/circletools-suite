@@ -78,10 +78,10 @@ internal sealed class StubAccountDirectory : IAccountDirectory
         string email,
         CancellationToken cancellationToken = default)
     {
-        var hash = EmailAddress.HashOf(email);
+        var hash = TestEmailHasher.Instance.Hash(email);
 
         return Task.FromResult(_accounts.FirstOrDefault(a =>
-            string.Equals(EmailAddress.HashOf(a.Email), hash, StringComparison.Ordinal)));
+            string.Equals(TestEmailHasher.Instance.Hash(a.Email), hash, StringComparison.Ordinal)));
     }
 
     public Task<CircleAccount?> FindAsync(Guid userId, CancellationToken cancellationToken = default) =>
