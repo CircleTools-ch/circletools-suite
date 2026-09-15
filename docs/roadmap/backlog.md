@@ -321,6 +321,26 @@ and consumes the [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-se
   and the code renders correctly on screen).
 - **MNF-6 · Add-to-calendar for an event (P2).** One tap from the event's date/location/description into
   the phone calendar.
+  **✅ Promoted through the process (2026-09-15):** [UC-SS-021](../use-cases/secret-santa/UC-SS-021-add-occasion-to-calendar.md)
+  → [FR-044](../requirements/functional/FR-044-add-event-to-device-calendar.md) →
+  [FEAT-014](../features/FEAT-014-add-event-to-calendar.md) / [TP-014](../features/TP-014-add-event-to-calendar.md),
+  with the calendar platform seam recorded as an
+  [ADR-0028 amendment](../adr/0028-browser-platform-adapters-block.md) (no new ADR). **Design calls
+  (locked, recorded in the FEAT):** a shared client-side **`.ics` VEVENT** backbone (works on the
+  account-free reveal page) delivered per head — **web** opens the `.ics`, **Android** uses
+  `Intent.ACTION_INSERT` (reliable; Android has no consistent `text/calendar` handler), **iOS** opens the
+  `.ics` (deferred with the iOS head, [ADR-0031](../adr/0031-ios-build-host.md)); an **all-day** entry
+  (the date is date-only), **gated on a date being set**; **system-UI only — no silent write, no calendar
+  permission** (so no manifest change, unlike haptics' `VIBRATE`); the entry carries name + location +
+  notes + **budget range** but **never an assignment** ([NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md));
+  offered to the **organizer** (event Details + hub) **and every recipient** (reveal / my-assignments).
+  The entry also carries a **deep link back into the app at the occasion** (in v1, all three storage modes):
+  the app's own event route built from the reveal base URL, in the `.ics` `URL` property **and** the
+  description, reusing the existing App Link / `DeepLinkService` machinery
+  ([ADR-0053](../adr/0053-backend-free-first-mobile-release.md)) — carries no secret (opaque GUIDs), and
+  behaves exactly like reveal links today re: build-time origin and the Android chooser-until-real-
+  `assetlinks.json`-fingerprint. **Status: In progress** (spec done; implementation next — Web + Android
+  now, iOS deep-link/`.ics` deferred).
 - **MNF-7 · Share all links for an event at once (P2).** Follow-on to the existing share seam.
 
 **Parked — need their own design/ADR before building:**

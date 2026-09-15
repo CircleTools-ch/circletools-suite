@@ -88,6 +88,8 @@
       href: functional/FR-042-release-a-claimed-person.md
     - name: FR-043 Release ownership & deletion disposition
       href: functional/FR-043-release-ownership-and-deletion-disposition.md
+    - name: FR-044 Add an event to the device calendar
+      href: functional/FR-044-add-event-to-device-calendar.md
 - name: Non-functional
   items:
     - name: NFR-001 Local-first & offline
