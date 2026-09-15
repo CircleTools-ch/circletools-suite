@@ -74,5 +74,25 @@
   items:
     - name: UC-SS-013 Manage multiple events in a group
       href: secret-santa/UC-SS-013-manage-events.md
+    - name: UC-SS-014 Carry forward a new occasion
+      href: secret-santa/UC-SS-014-carry-forward-new-occasion.md
+    - name: UC-SS-015 Budget minimum and maximum
+      href: secret-santa/UC-SS-015-budget-minimum-and-maximum.md
+    - name: UC-SS-016 Member gift note
+      href: secret-santa/UC-SS-016-member-gift-note.md
+    - name: UC-SS-017 Choose & switch storage mode
+      href: secret-santa/UC-SS-017-choose-and-switch-storage-mode.md
+    - name: UC-SS-018 Share & manage as admin
+      href: secret-santa/UC-SS-018-share-and-manage-as-admin.md
+    - name: UC-SS-019 Join a shared group
+      href: secret-santa/UC-SS-019-join-a-shared-group.md
+    - name: UC-SS-020 Release a claimed person
+      href: secret-santa/UC-SS-020-release-a-claimed-person.md
+    - name: UC-SS-021 Add an occasion to my calendar
+      href: secret-santa/UC-SS-021-add-occasion-to-calendar.md
+    - name: UC-SS-022 Hand out reveal links without forgetting anyone
+      href: secret-santa/UC-SS-022-hand-out-reveal-links.md
+    - name: UC-SS-023 Be reminded about my occasions
+      href: secret-santa/UC-SS-023-be-reminded-about-my-occasions.md
 - name: Template
   href: _template-use-case.md

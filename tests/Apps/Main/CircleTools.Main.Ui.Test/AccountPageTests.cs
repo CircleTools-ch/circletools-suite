@@ -20,6 +20,10 @@ public sealed class AccountPageTests
 {
     private const string Account = "api/v1/account";
 
+    // A minimal, serializable opaque body for the shared-group DTOs.
+    private static readonly System.Text.Json.JsonElement EmptyBody =
+        System.Text.Json.JsonDocument.Parse("{}").RootElement.Clone();
+
     // What the API actually sends for a password-policy failure: codes, not prose (ADR-0027).
     private static readonly string[] _tooShort = ["PasswordTooShort"];
     private static readonly string[] _breached = ["BreachedPassword"];
@@ -272,6 +276,38 @@ public sealed class AccountPageTests
         cut.Find(".circletools-danger form").Submit();
 
         cut.WaitForAssertion(() => Assert.Contains("DeleteDoneText", cut.Markup, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void DeleteAccount_WhenNoSharedGroupsAreOwned_OffersNoDisposition()
+    {
+        // The unmatched shared/owned route answers 404 → the client reports zero → the section stays away.
+        using var ctx = new AccountTestContext();
+        ctx.SignIn();
+
+        var cut = ctx.RenderPage<AccountData>();
+
+        cut.WaitForAssertion(() =>
+            Assert.DoesNotContain("DeleteSharedGroupsTitle", cut.Markup, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void DeleteAccount_WhenSharedGroupsAreOwned_OffersHandOffOrDelete()
+    {
+        // FR-043 / ADR-0058: an owner with shared-by-link groups is asked what becomes of them.
+        using var ctx = new AccountTestContext();
+        ctx.SignIn();
+        ctx.Api.RespondJson(
+            HttpMethod.Get,
+            "api/v1/shared/owned",
+            new OwnedSharedGroups([new OwnedSharedGroup(Guid.CreateVersion7(), 1, EmptyBody)]));
+
+        var cut = ctx.RenderPage<AccountData>();
+
+        cut.WaitForAssertion(() =>
+            Assert.Contains("DeleteSharedGroupsTitle", cut.Markup, StringComparison.Ordinal));
+        Assert.Contains("DeleteSharedGroupsHandOff", cut.Markup, StringComparison.Ordinal);
+        Assert.Contains("DeleteSharedGroupsRemove", cut.Markup, StringComparison.Ordinal);
     }
 
     [Fact]

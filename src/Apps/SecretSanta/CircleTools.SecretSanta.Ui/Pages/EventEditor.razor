@@ -24,12 +24,16 @@ else
                 <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["BudgetLabel"]</MudText>
                 <MudStack Row="true" Spacing="2" AlignItems="AlignItems.End" Wrap="Wrap.Wrap">
                     @* Explicit widths + hidden spinners so the budget row doesn't fragment on a narrow phone
-                       (the numeric spin buttons otherwise eat the little horizontal space there is). *@
-                    <MudNumericField @bind-Value="_budgetAmount" Label="@L["AmountLabel"]" Variant="Variant.Outlined"
-                                     Margin="Margin.Dense" Step="0.01M" Min="0" HideSpinButtons="true" Style="max-width:10rem;" />
+                       (the numeric spin buttons otherwise eat the little horizontal space there is). The
+                       optional minimum is a lower bound on the maximum (FR-036); leave it blank for a bare
+                       maximum, which is the prior behaviour. *@
+                    <MudNumericField @bind-Value="_budgetMinAmount" Label="@L["BudgetMinLabel"]" Variant="Variant.Outlined"
+                                     Margin="Margin.Dense" Step="0.01M" Min="0" HideSpinButtons="true" Style="max-width:9rem;" />
+                    <MudNumericField @bind-Value="_budgetAmount" Label="@L["BudgetMaxLabel"]" Variant="Variant.Outlined"
+                                     Margin="Margin.Dense" Step="0.01M" Min="0" HideSpinButtons="true" Style="max-width:9rem;" />
                     <MudTextField @bind-Value="_budgetCurrency" Label="@L["CurrencyLabel"]" Variant="Variant.Outlined"
                                   Margin="Margin.Dense" MaxLength="3" Immediate="true" Style="max-width:7rem;" />
-                    @* Clears the amount locally; the budget is removed when the form is saved with no amount. *@
+                    @* Clears both amounts locally; the budget is removed when the form is saved with no maximum. *@
                     <MudButton Variant="Variant.Outlined" OnClick="ClearBudget">@L["ClearBudget"]</MudButton>
                 </MudStack>
                 @if (_budgetError is not null)
@@ -92,6 +96,7 @@ else
     private bool _loaded;
     private string _name = string.Empty;
     private decimal? _budgetAmount;
+    private decimal? _budgetMinAmount;
     private string _budgetCurrency = "CHF";
     // The event date; null for no date. The browser binds this directly (MudDatePicker); the device head's
     // native <input type="date"> binds EventDateText, which adapts it to/from the invariant string format.
@@ -126,6 +131,7 @@ else
 
         _name = _event.Name;
         _budgetAmount = _event.Budget?.Amount;
+        _budgetMinAmount = _event.Budget?.MinAmount;
         _budgetCurrency = _event.Budget?.Currency ?? "CHF";
         _eventDate = _event.Details?.Date?.DateTime;
         _eventLocation = _event.Details?.Location ?? string.Empty;
@@ -138,6 +144,7 @@ else
     {
         _budgetError = null;
         _budgetAmount = null;
+        _budgetMinAmount = null;
     }
 
     // The screen's single Save: persists the name, budget and details together.
@@ -145,9 +152,12 @@ else
     {
         _budgetError = null;
 
-        // A budget is optional: no amount clears it. A set amount must be positive with a valid currency.
+        // A budget is optional: no maximum clears it. A set maximum must be positive with a valid currency.
+        // The minimum is an optional lower bound (FR-036): blank or non-positive means "no minimum", and a
+        // set minimum must not exceed the maximum.
         decimal? budgetAmount = null;
         string? budgetCurrency = null;
+        decimal? budgetMinAmount = null;
         if (_budgetAmount is { } amount)
         {
             if (amount <= 0)
@@ -164,6 +174,17 @@ else
                 return;
             }
 
+            if (_budgetMinAmount is { } min && min > 0)
+            {
+                if (min > amount)
+                {
+                    _budgetError = L["BudgetMinExceedsMax"];
+                    return;
+                }
+
+                budgetMinAmount = min;
+            }
+
             _budgetCurrency = currency;
             budgetAmount = amount;
             budgetCurrency = currency;
@@ -172,7 +193,7 @@ else
         DateTimeOffset? date = _eventDate is { } value ? new DateTimeOffset(value, TimeSpan.Zero) : null;
 
         await Sender.Send(new RenameEventCommand(GroupId, EventId, _name));
-        await Sender.Send(new SetBudgetCommand(GroupId, EventId, budgetAmount, budgetCurrency));
+        await Sender.Send(new SetBudgetCommand(GroupId, EventId, budgetAmount, budgetCurrency, budgetMinAmount));
         await Sender.Send(new SetEventDetailsCommand(GroupId, EventId, date, _eventLocation, _eventDescription));
         await Reload();
     }

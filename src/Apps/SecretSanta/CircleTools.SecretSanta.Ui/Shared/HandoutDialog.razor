@@ -1,0 +1,134 @@
+@using CircleTools.SecretSanta.Contracts
+@inject HandoutProgressService Handout
+@inject IShareService ShareService
+@inject IJSRuntime JS
+@inject IStringLocalizer<AppStrings> L
+
+@*
+    Guided hand-out (MNF-7, FR-045): step through the draw one participant at a time so the organizer hands
+    each their own reveal link without forgetting anyone. Strictly one link per recipient — never a combined
+    message (NFR-002). Progress is persisted per event and resumes across app restarts.
+*@
+
+<MudDialog>
+    <TitleContent>@L["HandOutLinks"]</TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
+            @L["HandoutProgress", _done.Count, Links.Count]
+        </MudText>
+
+        @if (Current is { } current)
+        {
+            <MudPaper Outlined="true" Class="pa-3 mb-3">
+                <MudText Typo="Typo.subtitle1" GutterBottom="true"><strong>@current.ForLabel</strong></MudText>
+                <div class="d-flex flex-wrap gap-2">
+                    @if (_canShare)
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Share"
+                                   OnClick="() => ShareAsync(current)">@L["Share"]</MudButton>
+                    }
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.ContentCopy"
+                               OnClick="() => CopyAsync(current)">@(_copiedUrl == current.Url ? L["Copied"] : L["Copy"])</MudButton>
+                </div>
+                <MudButton Variant="Variant.Text" Color="Color.Success" Class="mt-3"
+                           StartIcon="@Icons.Material.Filled.CheckCircle" OnClick="() => MarkDoneAsync(current)"
+                           id="mark-handed-out">@L["MarkHandedOut"]</MudButton>
+            </MudPaper>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Success" Class="mb-3">@L["HandoutAllDone"]</MudAlert>
+        }
+
+        @* The full checklist: ✓ for done, so nobody is forgotten and any person can be revisited. *@
+        <MudList T="string" Dense="true">
+            @foreach (var link in Links)
+            {
+                var done = _done.Contains(HandoutProgressService.MemberKey(link.Url));
+                <MudListItem T="string" Icon="@(done ? Icons.Material.Filled.CheckCircle : Icons.Material.Outlined.RadioButtonUnchecked)"
+                             IconColor="@(done ? Color.Success : Color.Default)"
+                             OnClick="() => ToggleAsync(link)">
+                    @link.ForLabel
+                </MudListItem>
+            }
+        </MudList>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Close">@L["Close"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    /// <summary>The dialog instance, for closing.</summary>
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>The owning group.</summary>
+    [Parameter]
+    public Guid GroupId { get; set; }
+
+    /// <summary>The occasion whose links are handed out.</summary>
+    [Parameter]
+    public Guid EventId { get; set; }
+
+    /// <summary>The reveal links for the current draw, one per participant.</summary>
+    [Parameter]
+    public IReadOnlyList<RevealLinkDto> Links { get; set; } = [];
+
+    private HashSet<string> _done = [];
+    private IReadOnlyList<string> _urls = [];
+    private bool _canShare;
+    private string? _copiedUrl;
+
+    // The next participant still to hand out to (the first not marked done), or null when everyone is done.
+    private RevealLinkDto? Current =>
+        Links.FirstOrDefault(l => !_done.Contains(HandoutProgressService.MemberKey(l.Url)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        _urls = Links.Select(l => l.Url).ToList();
+        _done = await Handout.GetDoneAsync(GroupId, EventId, _urls);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _canShare = await ShareService.IsSupportedAsync();
+            if (_canShare)
+            {
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task ShareAsync(RevealLinkDto link)
+    {
+        // The link goes in the body too, so a target that reads only text still receives it.
+        await ShareService.ShareAsync(L["AppName"], $"{L["ShareMessage"]}\n{link.Url}", link.Url);
+    }
+
+    private async Task CopyAsync(RevealLinkDto link)
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", link.Url);
+            _copiedUrl = link.Url;
+        }
+        catch (JSException)
+        {
+            _copiedUrl = null;
+        }
+    }
+
+    private async Task MarkDoneAsync(RevealLinkDto link) =>
+        _done = await Handout.SetDoneAsync(GroupId, EventId, _urls, HandoutProgressService.MemberKey(link.Url), done: true);
+
+    private async Task ToggleAsync(RevealLinkDto link)
+    {
+        var key = HandoutProgressService.MemberKey(link.Url);
+        _done = await Handout.SetDoneAsync(GroupId, EventId, _urls, key, done: !_done.Contains(key));
+    }
+
+    private void Close() => MudDialog.Close(DialogResult.Ok(true));
+}

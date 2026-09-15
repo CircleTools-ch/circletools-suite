@@ -32,6 +32,8 @@ public sealed class RevealPageTests : IDisposable
         _ctx.Services.AddSingleton(new RevealLinkCodec());
         _ctx.Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassThroughStringLocalizer<AppStrings>());
         _ctx.Services.AddSingleton<IHapticFeedback>(_haptics);
+        // The reveal page offers "Add to calendar" (MNF-6) when the occasion has a date.
+        _ctx.Services.AddSingleton<CircleTools.Ui.Abstractions.ICalendarService>(new TestSupport.FakeCalendarService());
     }
 
     private void NavigateToRevealLink(string fragment)
@@ -79,6 +81,51 @@ public sealed class RevealPageTests : IDisposable
 
         // Revealing the giftee produces exactly one confirmation buzz (FEAT-008 W3).
         Assert.Equal(1, _haptics.Taps);
+    }
+
+    [Fact]
+    public void RevealPage_ShowsBudgetRange_WhenAMinimumIsSet()
+    {
+        // FR-036: a budget with both bounds reads as a range (min–max), not a single figure.
+        var payload = new RevealPayload(
+            RevealPayload.CurrentVersion, RecipientName, ["Book"], 30m, "CHF", null, null, null, BudgetMin: 10m);
+        NavigateToRevealLink(BuildFragment(payload));
+
+        var cut = _ctx.RenderComponent<Reveal>();
+
+        // The budget is shown before the reveal (it is not spoiler-sensitive).
+        Assert.Contains("10–30 CHF", cut.Markup);
+    }
+
+    [Fact]
+    public void RevealPage_ShowsBareMaximum_WhenNoMinimumIsSet()
+    {
+        var payload = new RevealPayload(
+            RevealPayload.CurrentVersion, RecipientName, ["Book"], 30m, "CHF", null, null, null);
+        NavigateToRevealLink(BuildFragment(payload));
+
+        var cut = _ctx.RenderComponent<Reveal>();
+
+        Assert.Contains("30 CHF", cut.Markup);
+        Assert.DoesNotContain("–", cut.Markup); // no range dash for a max-only budget
+    }
+
+    [Fact]
+    public void RevealPage_ShowsRecipientGiftNote_OnlyAfterReveal()
+    {
+        // FR-037: the recipient's gift note is shown with the revealed giftee (it names the giftee's needs),
+        // so it must stay behind the spoiler gate like the wishlist.
+        const string note = "No nuts, please — severe allergy";
+        var payload = new RevealPayload(
+            RevealPayload.CurrentVersion, RecipientName, ["Book"], 30m, "CHF", null, null, null, GiftNote: note);
+        NavigateToRevealLink(BuildFragment(payload));
+
+        var cut = _ctx.RenderComponent<Reveal>();
+        Assert.DoesNotContain(note, cut.Markup); // hidden before reveal
+
+        cut.Find("button").Click();
+
+        Assert.Contains(note, cut.Markup); // shown after reveal
     }
 
     [Fact]

@@ -1,0 +1,59 @@
+@*
+    Renders a QR code for any string as a self-contained <img> data URI (MNF-5). QRCoder's
+    PngByteQRCode is pure managed code — no System.Drawing, no JS interop — so this renders the same
+    way in the WASM web head and the MAUI Blazor Hybrid webview, offline, with no platform seam.
+
+    The PNG is generated at a fixed pixels-per-module and scaled to the requested CSS size with
+    image-rendering: pixelated, so the code stays crisp at any display size. It draws black modules on
+    a white ground, so it remains scannable in dark theme.
+*@
+@using QRCoder
+
+@if (!string.IsNullOrEmpty(_dataUri))
+{
+    <img class="ct-qr" src="@_dataUri" alt="@Alt"
+         width="@Size" height="@Size"
+         style="width:@(Size)px;height:@(Size)px;image-rendering:pixelated;background:#fff;padding:8px;border-radius:4px;" />
+}
+
+@code {
+    /// <summary>The text to encode (here, a reveal-link URL).</summary>
+    [Parameter, EditorRequired]
+    public string Value { get; set; } = string.Empty;
+
+    /// <summary>Alt text for the image (the recipient's name).</summary>
+    [Parameter]
+    public string? Alt { get; set; }
+
+    /// <summary>The displayed edge length in CSS pixels.</summary>
+    [Parameter]
+    public int Size { get; set; } = 240;
+
+    // 1×1 white PNG placeholder until a value is encoded; keeps the src valid if Value is empty.
+    private string _dataUri = string.Empty;
+    private string? _encoded;
+
+    protected override void OnParametersSet()
+    {
+        // Re-encode only when the value actually changes — encoding a long link is not free.
+        if (Value == _encoded)
+        {
+            return;
+        }
+
+        _encoded = Value;
+
+        if (string.IsNullOrEmpty(Value))
+        {
+            _dataUri = string.Empty;
+            return;
+        }
+
+        // ECC level M balances scannability against capacity: a 2 KB reveal link (the recommended
+        // maximum) still fits, while shorter links stay easy to scan.
+        using var generator = new QRCodeGenerator();
+        var data = generator.CreateQrCode(Value, QRCodeGenerator.ECCLevel.M);
+        var png = new PngByteQRCode(data).GetGraphic(pixelsPerModule: 10);
+        _dataUri = $"data:image/png;base64,{Convert.ToBase64String(png)}";
+    }
+}

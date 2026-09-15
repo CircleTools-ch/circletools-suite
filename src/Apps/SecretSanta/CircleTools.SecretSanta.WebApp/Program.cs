@@ -40,6 +40,8 @@ builder.Services.AddScoped<IConnectivity, BrowserConnectivity>();
 builder.Services.AddScoped<BrowserPasskeyCeremony>();
 builder.Services.AddScoped<IPasskeyCeremony>(sp => sp.GetRequiredService<BrowserPasskeyCeremony>());
 builder.Services.AddScoped<IShareService, BrowserShareService>();
+builder.Services.AddScoped<ICalendarService, BrowserCalendarService>();
+builder.Services.AddScoped<INotificationScheduler, BrowserNotificationScheduler>();
 builder.Services.AddScoped<IHapticFeedback, BrowserHapticFeedback>();
 
 // Two clients over the same Main API, differing only in whether the authorizing handler is in the
@@ -74,6 +76,15 @@ builder.Services.AddSecretSantaSyncEngine();
 // a running sync cycle ever reach for it, and only once signed in.
 builder.Services.AddScoped<ISyncApi>(sp =>
     new HttpSyncApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized)));
+
+// The shared-by-link surface over the ANONYMOUS client (FEAT-013, ADR-0058): a shared group is
+// addressed by a share token, never a bearer, so it must work signed out and must not attach a token.
+builder.Services.AddScoped<ISharedGroupApi>(sp =>
+    new HttpSharedGroupApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Anonymous)));
+
+// Claim-admin / release-admin require identity, so they go over the AUTHORIZED client (FEAT-013).
+builder.Services.AddScoped<ISharedGroupAccountApi>(sp =>
+    new HttpSharedGroupAccountApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized)));
 
 // The M4 linking surface over the same authorized client (FEAT-005): member-links, the assignment
 // projection and self-owned wishlists. Inert for account-free users and unlinked members (NFR-001).

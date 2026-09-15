@@ -19,17 +19,20 @@ group; only the organizer holds it. Each [Reveal link](../../glossary/reveal-lin
 exactly one giver's payload; opening it must reveal only that giver's recipient, wishlist, budget,
 and event details.
 
-**How that guarantee is enforced depends on the mode**, and the two modes differ in what the server
-knows:
+**How that guarantee is enforced depends on the storage mode**
+([ADR-0058](../../adr/0058-account-free-link-shared-groups.md) introduced a third), and the modes
+differ in what the server knows:
 
-| | Account-free mode | Account mode |
-|---|---|---|
-| Where assignments live | organizer's local storage and the individual links only | additionally in the server database |
-| Enforced by | **absence** — there is no server to leak them | **authorization** — the API returns only the caller's own row |
-| Verified by | network capture | authorization tests |
+| | On this device *(default)* | Shared by link | Account |
+|---|---|---|---|
+| Where assignments live | organizer's local storage + the individual links only | the server, keyed by an **unguessable share token** (no account) | the server, owned by the signed-in account |
+| A person sees their own assignment via | their reveal link | **claiming their person** via the join link (then in-app), or a reveal link | in-app, on any signed-in device |
+| Enforced by | **absence** — no server to leak them | **capability + first-claim-lock** — a join-link holder claims one person; a claimed person **locks** and can't be re-claimed (only an admin can release it) | **authorization** — the API returns only the caller's own row |
+| Trust boundary | none (zero server knowledge) | the family/friend circle sharing the join link, plus the operator | the operator |
+| Verified by | network capture | claim-lock + authorization tests | authorization tests |
 
-Account-free mode is the default and is unchanged: **the link is the secret**. Signing in is optional
-and additive ([NFR-001](NFR-001-local-first-offline.md)), and choosing not to sign in preserves the
+On this device is the default and is unchanged: **the link is the secret**. Sharing by link or signing
+in is optional and additive ([NFR-001](NFR-001-local-first-offline.md)); doing neither preserves the
 original zero-server-knowledge property in full.
 
 ## Rationale
@@ -37,6 +40,17 @@ original zero-server-knowledge property in full.
 The surprise and fairness of a gift exchange depend on each giver seeing only their own recipient.
 In the account-free flow, keeping assignments off any server and scoping each link to a single giver
 preserves that secrecy without accounts or trusted infrastructure.
+
+**Shared-by-link mode** ([ADR-0058](../../adr/0058-account-free-link-shared-groups.md)) trades some of
+that secrecy for account-free collaboration: the group (including the draw) lives on the server keyed by
+a share token, and a participant who **claims their person** via the join link sees that person's
+assignment. Because the join link is a *single shared secret*, secrecy here is **trust-bounded, not
+cryptographic** — a holder could claim someone else first and see their assignment. It is accepted
+knowingly under the family/friend trust context (the same trust the reveal links assume), bounded by
+**first-claim-locks** (a claimed person cannot be re-claimed; only an admin can release them). Stronger
+**per-person cryptographic secrecy** (per-person keys ≈ server-backed per-member reveal links) is the
+recorded future-hardening step, since a single per-group key in the link cannot keep assignments
+per-person-secret when everyone shares the join link.
 
 Account mode buys a real capability — a signed-in member sees their assignment on any device, without
 needing their link — and pays for it by making the **operator a trusted party**. Stated plainly:
@@ -55,6 +69,11 @@ assumption stop being acceptable.
 > ADR-0020 **partly supersedes**
 > [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md) — only its
 > "never stored server-side" claim; the reveal-link design itself still stands.
+>
+> **Further amended** by [ADR-0058](../../adr/0058-account-free-link-shared-groups.md) (2026-09-13),
+> which adds the **shared-by-link** mode: assignments then reach account-free join-link participants,
+> so "zero assignments stored server-side" holds for **on-this-device** mode only, and secrecy in
+> shared-by-link mode is **trust-bounded** (first-claim-locks), not cryptographic.
 
 ## Acceptance criteria
 
@@ -80,6 +99,14 @@ Then the request is denied and no part of A's assignment is returned
 Given a synced group and a signed-in member who is not the organizer
 When that member fetches the group
 Then the response contains their own assignment only, never the full mapping
+
+Given a shared-by-link group and a person who has claimed member X via the join link
+When that person fetches the group
+Then the response contains X's own assignment only, never another member's recipient
+
+Given a shared-by-link group in which member X is already claimed
+When another join-link holder tries to claim member X
+Then the claim is refused until an admin releases X
 ```
 
 ## Quality attribute *(NFR only)*
@@ -87,7 +114,10 @@ Then the response contains their own assignment only, never the full mapping
 - **Attribute:** privacy / confidentiality.
 - **Metric & target:**
   - each reveal link decodes to exactly **one** giver's assignment (0 leakage of other assignments);
-  - **account-free mode:** **zero** assignments stored server-side;
+  - **on-this-device mode:** **zero** assignments stored server-side;
+  - **shared-by-link mode:** **zero** re-claims of a locked person, and a claimant's group response
+    carries **only** their claimed person's assignment (secrecy is trust-bounded, not cryptographic —
+    see Rationale);
   - **account mode:** **zero** successful cross-member assignment reads — every request for an
     assignment other than the caller's own is denied, and no non-organizer response ever contains
     more than one assignment.
@@ -101,10 +131,10 @@ Then the response contains their own assignment only, never the full mapping
 
 - Derived from: [UC-SS-004](../../use-cases/secret-santa/UC-SS-004-run-draw.md), [UC-SS-005](../../use-cases/secret-santa/UC-SS-005-share-reveal-links.md), [UC-SS-006](../../use-cases/secret-santa/UC-SS-006-open-reveal-link.md)
 - Related: [FR-004](../functional/FR-004-run-fair-draw.md), [FR-005](../functional/FR-005-generate-reveal-links.md), [FR-006](../functional/FR-006-reveal-page-decode.md), [NFR-001](NFR-001-local-first-offline.md)
-- Amended by: [ADR-0020](../../adr/0020-server-side-assignment-privacy.md), from [brainstorming — accounts, families & sync (v2)](../../brainstorming/2026-07-24-accounts-families-sync.md) decision D1
+- Amended by: [ADR-0020](../../adr/0020-server-side-assignment-privacy.md), from [brainstorming — accounts, families & sync (v2)](../../brainstorming/2026-07-24-accounts-families-sync.md) decision D1; and [ADR-0058](../../adr/0058-account-free-link-shared-groups.md) (shared-by-link mode), from [brainstorming — storage & sharing tiers](../../brainstorming/2026-09-13-storage-and-sharing-tiers.md)
 - **Where the amendment becomes visible:** [FR-025](../functional/FR-025-claim-local-groups.md)'s
   claim screen — the first moment a completed draw leaves the device is **M3**, not M4, so the screen
   must say what it uploads before it uploads it;
   [FR-026](../functional/FR-026-remove-group-from-account.md) is the way back off the server
-- Governing ADRs: [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md) (account-free mode), [ADR-0020](../../adr/0020-server-side-assignment-privacy.md) (account mode)
+- Governing ADRs: [ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md) (on-this-device mode), [ADR-0020](../../adr/0020-server-side-assignment-privacy.md) (account mode), [ADR-0058](../../adr/0058-account-free-link-shared-groups.md) (shared-by-link mode)
 - Glossary: [Assignment](../../glossary/assignment.md), [Reveal link](../../glossary/reveal-link.md), [Draw](../../glossary/draw.md), [User](../../glossary/user.md), [Sync](../../glossary/sync.md)

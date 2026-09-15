@@ -70,6 +70,7 @@ public sealed class LinkingDbContext(DbContextOptions<LinkingDbContext> options)
             entity.Property(a => a.RecipientName).IsRequired().HasMaxLength(200);
             entity.Property(a => a.RecipientWishlistSnapshot).IsRequired().HasColumnType("jsonb");
             entity.Property(a => a.BudgetCurrency).HasMaxLength(3);
+            entity.Property(a => a.RecipientGiftNote).IsRequired().HasMaxLength(500);
             entity.Property(a => a.EventLocation).HasMaxLength(400);
             entity.Property(a => a.EventDescription).HasMaxLength(2000);
             entity.Property(a => a.DrawVersion).IsRequired();

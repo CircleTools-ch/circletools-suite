@@ -1,0 +1,32 @@
+@using CircleTools.Ui.Abstractions
+@inject ICalendarService Calendar
+@inject IStringLocalizer<AppStrings> L
+
+@*
+    One-tap "Add to calendar" (MNF-6, FR-044): hands the occasion to the platform's own calendar UI,
+    pre-filled, for the person to review and save. Rendered only by callers that have a dated occasion
+    (no date → no button); the entry itself is built by the caller (CalendarEventFactory, or the reveal
+    page's own composition) so the title and reopen link are right for each surface.
+*@
+
+@if (CalendarEvent is not null)
+{
+    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+               StartIcon="@Icons.Material.Filled.EditCalendar" OnClick="AddAsync" id="add-to-calendar">
+        @L["AddToCalendar"]
+    </MudButton>
+}
+
+@code {
+    /// <summary>The occasion to add; when <see langword="null"/> the button is not shown (no date).</summary>
+    [Parameter]
+    public CalendarEvent? CalendarEvent { get; set; }
+
+    private async Task AddAsync()
+    {
+        if (CalendarEvent is not null)
+        {
+            await Calendar.AddToCalendarAsync(CalendarEvent);
+        }
+    }
+}

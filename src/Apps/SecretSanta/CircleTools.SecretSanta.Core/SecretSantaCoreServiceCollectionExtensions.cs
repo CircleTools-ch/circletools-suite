@@ -43,6 +43,7 @@ public static class SecretSantaCoreServiceCollectionExtensions
         services.AddScoped<ICommandHandler<SetEventDetailsCommand>, SetEventDetailsCommandHandler>();
         services.AddScoped<ICommandHandler<AddMemberCommand, Guid>, AddMemberCommandHandler>();
         services.AddScoped<ICommandHandler<EditMemberCommand>, EditMemberCommandHandler>();
+        services.AddScoped<ICommandHandler<SetMemberGiftNoteCommand>, SetMemberGiftNoteCommandHandler>();
         services.AddScoped<ICommandHandler<RemoveMemberCommand>, RemoveMemberCommandHandler>();
         services.AddScoped<ICommandHandler<AddExclusionCommand>, AddExclusionCommandHandler>();
         services.AddScoped<ICommandHandler<RemoveExclusionCommand>, RemoveExclusionCommandHandler>();

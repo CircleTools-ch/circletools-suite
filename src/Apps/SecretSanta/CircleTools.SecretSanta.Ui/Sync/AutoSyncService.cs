@@ -32,14 +32,16 @@ namespace CircleTools.SecretSanta.Ui;
 /// <param name="coordinator">The full account-sync coordinator (profile + links + groups + publish).</param>
 /// <param name="claimable">Reads which local groups are still account-free, for the auto-claim step.</param>
 /// <param name="sync">The sync engine, for claiming account-free groups into the signed-in account.</param>
+/// <param name="sharedSync">The shared-by-link engine, reconciling token-addressed groups signed in or out (FEAT-013).</param>
 /// <param name="auth">The current principal, read for the signed-in account id.</param>
 /// <param name="connectivity">The connectivity seam, subscribed for the reconnect trigger.</param>
 public sealed class AutoSyncService(
     SyncCoordinator coordinator,
     ClaimableGroupsService claimable,
     SyncService sync,
+    SharedSyncService sharedSync,
     AuthenticationStateProvider auth,
-    IConnectivity connectivity) : IDisposable
+    IConnectivity connectivity) : IDisposable, ISyncSignals
 {
     private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(750);
 
@@ -94,11 +96,12 @@ public sealed class AutoSyncService(
         connectivity.Changed += OnConnectivityChanged;
         await connectivity.InitializeAsync();
 
-        // App-start trigger: a restored session (ADR-0021) skips the sign-in dialog, so pull its data now.
-        if (await CurrentAccountAsync() != Guid.Empty)
-        {
-            RequestSync();
-        }
+        // App-start trigger: reconcile on every start, signed in OR out. The shared-by-link cycle
+        // (FEAT-013) is account-free and must run for a signed-out co-organizer/participant so a plain
+        // refresh pulls a co-admin's changes; without this only a local edit, a reconnect, or (touch-only)
+        // pull-to-refresh triggered it. The account cycle self-gates on sign-in, and the whole cycle is a
+        // cheap no-op when there are no shared or account groups to reconcile.
+        RequestSync();
     }
 
     /// <summary>
@@ -135,12 +138,6 @@ public sealed class AutoSyncService(
 
     private async Task SyncNowAsync()
     {
-        var accountId = await CurrentAccountAsync();
-        if (accountId == Guid.Empty || Reconciling)
-        {
-            return; // Signed out, or the reconciler owns the first cycle: nothing to do here.
-        }
-
         if (_syncing)
         {
             _resyncRequested = true; // Fold this request into a follow-up after the running cycle.
@@ -153,16 +150,33 @@ public sealed class AutoSyncService(
             do
             {
                 _resyncRequested = false;
+
+                // Shared-by-link groups reconcile signed in OR out — they are addressed by a share
+                // token, not scoped to an account (FEAT-013). Runs first, always.
                 try
                 {
-                    await RunCycleAsync(accountId);
+                    await RunSharedCycleAsync();
                 }
                 catch
                 {
                     // Swallowed by design: retried on the next trigger, nothing lost (NFR-008).
                 }
+
+                // The account cycle runs only while signed in and not mid-reconcile.
+                var accountId = await CurrentAccountAsync();
+                if (accountId != Guid.Empty && !Reconciling)
+                {
+                    try
+                    {
+                        await RunCycleAsync(accountId);
+                    }
+                    catch
+                    {
+                        // Swallowed by design: retried on the next trigger, nothing lost (NFR-008).
+                    }
+                }
             }
-            while (_resyncRequested && !Reconciling && await CurrentAccountAsync() != Guid.Empty);
+            while (_resyncRequested);
         }
         finally
         {
@@ -170,6 +184,23 @@ public sealed class AutoSyncService(
         }
 
         SyncCompleted?.Invoke();
+    }
+
+    // Reconcile every shared-by-link group this device holds — signed in or out. Each is a single
+    // aggregate addressed by its own token; the engine pulls a newer server copy or pushes a dirty
+    // local edit (FEAT-013). A group whose online copy is gone falls back to on-this-device inside the
+    // engine, so the set naturally shrinks.
+    private async Task RunSharedCycleAsync()
+    {
+        var shared = (await claimable.GetAllAsync())
+            .Where(g => g.Mode is StorageMode.SharedByLink or StorageMode.Account)
+            .Select(g => g.Id)
+            .ToList();
+
+        foreach (var id in shared)
+        {
+            await sharedSync.SyncGroupAsync(id);
+        }
     }
 
     // One cycle for a signed-in account: first adopt any still-account-free groups into the account
@@ -180,7 +211,17 @@ public sealed class AutoSyncService(
     // groups the user chose to discard are already gone and never claimed.
     private async Task RunCycleAsync(Guid accountId)
     {
-        var accountFree = (await claimable.GetAccountFreeAsync()).Select(g => g.Id).ToList();
+        // Discover any groups this account claimed admin of on another device (D2), so they appear and
+        // are manageable here too. Signed-in only (this cycle), so the bearer is present.
+        await sharedSync.MergeOwnedAsync();
+
+        // Auto-claim only on-this-device groups into the account (the M3 flow). Shared-by-link and
+        // account-owned-shared groups (FEAT-013) live in the token-keyed store, not the account sync
+        // store, so they must never be M3-claimed.
+        var accountFree = (await claimable.GetAccountFreeAsync())
+            .Where(g => g.Mode == StorageMode.OnThisDevice)
+            .Select(g => g.Id)
+            .ToList();
         if (accountFree.Count > 0)
         {
             await sync.ClaimAsync(accountId, accountFree);

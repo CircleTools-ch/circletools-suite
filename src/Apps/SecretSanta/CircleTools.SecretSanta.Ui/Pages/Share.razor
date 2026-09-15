@@ -3,7 +3,11 @@
 @inject ISender Sender
 @inject IJSRuntime JS
 @inject IShareService ShareService
+@inject IDialogService Dialogs
 @inject IStringLocalizer<AppStrings> L
+@inject ISyncSignals SyncSignals
+@inject HandoutProgressService Handout
+@implements IDisposable
 
 <PageTitle>@L["ShareTitle"]</PageTitle>
 
@@ -30,13 +34,27 @@ else if (_links.Count == 0)
 }
 else
 {
+    @* Guided hand-out (MNF-7): hand each participant their own link without forgetting anyone. *@
+    <MudPaper Outlined="true" Class="pa-3 mb-3 d-flex flex-wrap align-center justify-space-between gap-2">
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["HandoutProgress", _done.Count, _links.Count]</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Outbox"
+                   OnClick="OpenHandoutAsync" id="hand-out-links">@L["HandOutLinks"]</MudButton>
+    </MudPaper>
+
     <MudStack Spacing="2">
         @foreach (var link in _links)
         {
             <MudCard Elevation="1">
                 <MudCardContent class="pb-2">
                     <div class="d-flex flex-wrap justify-space-between align-center gap-2">
-                        <MudText><strong>@L["ForLabel"]:</strong> @link.ForLabel</MudText>
+                        <MudText>
+                            <strong>@L["ForLabel"]:</strong> @link.ForLabel
+                            @if (_done.Contains(HandoutProgressService.MemberKey(link.Url)))
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text"
+                                         Icon="@Icons.Material.Filled.CheckCircle" Class="ml-1">@L["HandedOut"]</MudChip>
+                            }
+                        </MudText>
                         @* Share is the primary action where the platform has a share sheet (the phone,
                            and mobile browsers): one tap into WhatsApp / Messages / e-mail. Copy stays
                            for every platform, and is the only action on a desktop browser. *@
@@ -51,6 +69,12 @@ else
                             <MudButton Variant="Variant.Outlined" Color="Color.Primary"
                                        StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="() => CopyAsync(link.Url)">
                                 @(_copiedUrl == link.Url ? L["Copied"] : L["Copy"])
+                            </MudButton>
+                            @* A QR code the recipient scans off the organizer's screen — no messaging app
+                               needed. Available on every platform (the code is generated client-side). *@
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.QrCode2" OnClick="() => ShowQrAsync(link)">
+                                @L["ShowQr"]
                             </MudButton>
                         </div>
                     </div>
@@ -80,16 +104,57 @@ else
     public Guid EventId { get; set; }
 
     private IReadOnlyList<RevealLinkDto>? _links;
+    private HashSet<string> _done = [];
     private string? _copiedUrl;
     private bool _drawInvalidated;
     private bool _canShare;
 
-    protected override async Task OnParametersSetAsync()
+    protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
+
+    protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
     {
         _links = await Sender.Send(new GetRevealLinksQuery(GroupId, EventId));
         var occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));
         _drawInvalidated = occasion?.DrawInvalidatedByMembershipChange ?? false;
+
+        // Which participants have already been handed their link (MNF-7); resets by itself on a re-draw.
+        var urls = _links.Select(l => l.Url).ToList();
+        _done = await Handout.GetDoneAsync(GroupId, EventId, urls);
     }
+
+    // The guided one-at-a-time hand-out; reload progress when it closes so the ✓ marks and count are current.
+    private async Task OpenHandoutAsync()
+    {
+        if (_links is null || _links.Count == 0)
+        {
+            return;
+        }
+
+        var parameters = new DialogParameters<HandoutDialog>
+        {
+            { x => x.GroupId, GroupId },
+            { x => x.EventId, EventId },
+            { x => x.Links, _links },
+        };
+
+        var dialog = await Dialogs.ShowAsync<HandoutDialog>(L["HandOutLinks"], parameters);
+        await dialog.Result;
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    // A background sync may have pulled a co-organizer's re-draw or roster change into the local store
+    // (shared-by-link, FEAT-013); reload so the reveal links and the stale-draw warning are current
+    // without a manual refresh.
+    private void OnSyncCompleted() => _ = InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => SyncSignals.SyncCompleted -= OnSyncCompleted;
 
     // Decide up front whether this platform can present a share sheet (and, on the browser, warm the
     // JS module so the later share() runs inside the click's user activation). Done after first render
@@ -113,6 +178,9 @@ else
         var text = $"{L["ShareMessage"]}\n{link.Url}";
         await ShareService.ShareAsync(L["AppName"], text, link.Url);
     }
+
+    private Task ShowQrAsync(RevealLinkDto link) =>
+        Dialogs.ShowQrDialogAsync(link.ForLabel, link.Url, L["QrHint"], L["Close"]);
 
     private async Task CopyAsync(string url)
     {

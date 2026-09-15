@@ -59,6 +59,15 @@
         "resolved": "3.7.115",
         "contentHash": "EpXamaAdRfG/BMxGgvZlTM0npRnkmXUjAj8OdNKd17t4oN+2nvjdv/KnFmzOOMDqvlwB49UCwtOHJrAQTfUBtQ=="
       },
+      "Plugin.LocalNotification": {
+        "type": "Direct",
+        "requested": "[12.0.0, )",
+        "resolved": "12.0.0",
+        "contentHash": "cJdUGrV8pEBT+T5SI8u3rakE8MHD4DVLphWQ1edpWoOGWnuhP5V8vUdusK/95mauBNmWS21dGVTsp/sRYr59TA==",
+        "dependencies": {
+          "Xamarin.GooglePlayServices.Location": "121.3.0.2"
+        }
+      },
       "GoogleGson": {
         "type": "Transitive",
         "resolved": "2.13.1.1",
@@ -321,6 +330,19 @@
         "type": "Transitive",
         "resolved": "10.0.20",
         "contentHash": "lqGi/HjtGPvmzqSR+Ii3ZHdvZj811+sBAxyN+T3jrvKBKd13wdVh9vZEfjmTUE5KA6+6W+6iRk5h62CY8pVogg=="
+      },
+      "Microsoft.Win32.SystemEvents": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "hqTM5628jSsQiv+HGpiq3WKBl2c8v1KZfby2J6Pr7pEPlK9waPdgEO6b8A/+/xn/yZ9ulv8HuqK71ONy2tg67A=="
+      },
+      "System.Drawing.Common": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "NfuoKUiP2nUWwKZN6twGqXioIe1zVD0RIj2t976A+czLHr2nY454RwwXs6JU9Htc6mwqL6Dn/nEL3dpVf2jOhg==",
+        "dependencies": {
+          "Microsoft.Win32.SystemEvents": "6.0.0"
+        }
       },
       "Xamarin.Android.Glide": {
         "type": "Transitive",
@@ -1238,6 +1260,11 @@
           "Xamarin.Kotlin.StdLib": "2.2.0.1"
         }
       },
+      "Xamarin.Build.Download": {
+        "type": "Transitive",
+        "resolved": "0.11.4",
+        "contentHash": "u2ROt0h6P7mfs0jbmgvmTrqU/YEpEZcf16xcHa78GSEp7fOZunNtJLCZxooeI1V5p+lrr9kYdg3Pa8FoTbgcXQ=="
+      },
       "Xamarin.Google.Android.Material": {
         "type": "Transitive",
         "resolved": "1.12.0.5",
@@ -1288,6 +1315,53 @@
         "type": "Transitive",
         "resolved": "1.0.0.29",
         "contentHash": "5w1ErO9PmpGR3ii2qJkzV1ntOJGSrd7NyOdop3Sw+q/DQ6oCdyoOq3jbJ3Stg0ACOUItN7XO6EqAvNQ8jQaV0g=="
+      },
+      "Xamarin.GooglePlayServices.Base": {
+        "type": "Transitive",
+        "resolved": "118.5.0.2",
+        "contentHash": "0AEDf+TKW7Q//HxyS/9RPuCk6fJfq0Js2iiLBkvumZfbe57gFNnkoJEQXNw8DTbJqjEEpHapjEAGzh3UoQGxeg==",
+        "dependencies": {
+          "Xamarin.AndroidX.Collection": "1.4.3.1",
+          "Xamarin.AndroidX.Core": "1.13.1.5",
+          "Xamarin.AndroidX.Fragment": "1.8.3.1",
+          "Xamarin.Build.Download": "0.11.4",
+          "Xamarin.GooglePlayServices.Basement": "118.4.0.2",
+          "Xamarin.GooglePlayServices.Tasks": "118.2.0.2"
+        }
+      },
+      "Xamarin.GooglePlayServices.Basement": {
+        "type": "Transitive",
+        "resolved": "118.4.0.2",
+        "contentHash": "UpwAhcBs2fdveLwMbazNJ+zrMwyeiE9KwKl+aaim81/FtUZLEuYgmli+7psP1DtyxUKlJvNEllRKdA9V3AF7iw==",
+        "dependencies": {
+          "Xamarin.AndroidX.Collection": "1.4.3.1",
+          "Xamarin.AndroidX.Core": "1.13.1.5",
+          "Xamarin.AndroidX.Fragment": "1.8.3.1",
+          "Xamarin.Build.Download": "0.11.4"
+        }
+      },
+      "Xamarin.GooglePlayServices.Location": {
+        "type": "Transitive",
+        "resolved": "121.3.0.2",
+        "contentHash": "pjunqm/xnGYGGVkZAK1BVwfCJxZDupoEGeJylr1rZaqsVI0Rs/HbiBFwRDF5yvAYQl5/kf4V75pjWVrtD/3MoQ==",
+        "dependencies": {
+          "Xamarin.Build.Download": "0.11.4",
+          "Xamarin.GooglePlayServices.Base": "118.5.0.2",
+          "Xamarin.GooglePlayServices.Basement": "118.4.0.2",
+          "Xamarin.GooglePlayServices.Tasks": "118.2.0.2",
+          "Xamarin.Kotlin.StdLib": "2.0.10.1",
+          "Xamarin.KotlinX.Coroutines.Android": "1.8.1.3",
+          "Xamarin.KotlinX.Coroutines.Core": "1.8.1.3"
+        }
+      },
+      "Xamarin.GooglePlayServices.Tasks": {
+        "type": "Transitive",
+        "resolved": "118.2.0.2",
+        "contentHash": "TeRLg7xe+F5t2T5xzIBYzQkfd4Xsj68kcTZj7W7BnZKkGzx9iS29hiDQCft4Qtsu2Zj1ElBRh68VZ6VcHoUtrA==",
+        "dependencies": {
+          "Xamarin.Build.Download": "0.11.4",
+          "Xamarin.GooglePlayServices.Basement": "118.4.0.2"
+        }
       },
       "Xamarin.Jetbrains.Annotations": {
         "type": "Transitive",
@@ -1410,7 +1484,8 @@
           "CircleTools.Ui.Shared": "[1.0.0, )",
           "Microsoft.AspNetCore.Components.Authorization": "[10.0.10, )",
           "Microsoft.AspNetCore.Components.Web": "[10.0.10, )",
-          "Microsoft.Extensions.Localization": "[10.0.10, )"
+          "Microsoft.Extensions.Localization": "[10.0.10, )",
+          "QRCoder": "[1.8.0, )"
         }
       },
       "circletools.sharedkernel": {
@@ -1553,11 +1628,62 @@
         "requested": "[10.0.10, )",
         "resolved": "10.0.10",
         "contentHash": "VivWvz1iFR3Ntf/e5/xci6o/MF2tcHiprNkhRlL+gMkBoDjQJCioiO+Gwp/DP8scuzqbp3b9C3wh+zuy4pD4AA=="
+      },
+      "QRCoder": {
+        "type": "CentralTransitive",
+        "requested": "[1.8.0, )",
+        "resolved": "1.8.0",
+        "contentHash": "RuvX3PEXU6pbY/I5ItAk800jm62r+YnoPLgyS2WTgwxkOnGkOfU9ORiipHUF0LkLyqM8rlroUCA319JjRYfRFQ==",
+        "dependencies": {
+          "System.Drawing.Common": "6.0.0"
+        }
       }
     },
-    "net10.0-android36.0/android-arm64": {},
-    "net10.0-android36.0/android-x64": {},
-    "net10.0-android36.0/win-x64": {},
+    "net10.0-android36.0/android-arm64": {
+      "Microsoft.Win32.SystemEvents": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "hqTM5628jSsQiv+HGpiq3WKBl2c8v1KZfby2J6Pr7pEPlK9waPdgEO6b8A/+/xn/yZ9ulv8HuqK71ONy2tg67A=="
+      },
+      "System.Drawing.Common": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "NfuoKUiP2nUWwKZN6twGqXioIe1zVD0RIj2t976A+czLHr2nY454RwwXs6JU9Htc6mwqL6Dn/nEL3dpVf2jOhg==",
+        "dependencies": {
+          "Microsoft.Win32.SystemEvents": "6.0.0"
+        }
+      }
+    },
+    "net10.0-android36.0/android-x64": {
+      "Microsoft.Win32.SystemEvents": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "hqTM5628jSsQiv+HGpiq3WKBl2c8v1KZfby2J6Pr7pEPlK9waPdgEO6b8A/+/xn/yZ9ulv8HuqK71ONy2tg67A=="
+      },
+      "System.Drawing.Common": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "NfuoKUiP2nUWwKZN6twGqXioIe1zVD0RIj2t976A+czLHr2nY454RwwXs6JU9Htc6mwqL6Dn/nEL3dpVf2jOhg==",
+        "dependencies": {
+          "Microsoft.Win32.SystemEvents": "6.0.0"
+        }
+      }
+    },
+    "net10.0-android36.0/win-x64": {
+      "Microsoft.Win32.SystemEvents": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "hqTM5628jSsQiv+HGpiq3WKBl2c8v1KZfby2J6Pr7pEPlK9waPdgEO6b8A/+/xn/yZ9ulv8HuqK71ONy2tg67A=="
+      },
+      "System.Drawing.Common": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "NfuoKUiP2nUWwKZN6twGqXioIe1zVD0RIj2t976A+czLHr2nY454RwwXs6JU9Htc6mwqL6Dn/nEL3dpVf2jOhg==",
+        "dependencies": {
+          "Microsoft.Win32.SystemEvents": "6.0.0"
+        }
+      }
+    },
     "net10.0-windows10.0.19041": {
       "Microsoft.AspNetCore.Components.WebView.Maui": {
         "type": "Direct",
@@ -1890,6 +2016,11 @@
         "resolved": "1.0.3179.45",
         "contentHash": "3pokSH5CnN0G6rGhGFo1y87inxYhNxBQ2Vdf0wlvBj99KHxQJormjDACmqRnFeUsmuNFIhWwfAL1ztq7wD5qRA=="
       },
+      "Microsoft.Win32.SystemEvents": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "hqTM5628jSsQiv+HGpiq3WKBl2c8v1KZfby2J6Pr7pEPlK9waPdgEO6b8A/+/xn/yZ9ulv8HuqK71ONy2tg67A=="
+      },
       "Microsoft.Windows.SDK.BuildTools": {
         "type": "Transitive",
         "resolved": "10.0.22621.756",
@@ -1902,6 +2033,14 @@
         "dependencies": {
           "Microsoft.Web.WebView2": "1.0.2903.40",
           "Microsoft.Windows.SDK.BuildTools": "10.0.22621.756"
+        }
+      },
+      "System.Drawing.Common": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "NfuoKUiP2nUWwKZN6twGqXioIe1zVD0RIj2t976A+czLHr2nY454RwwXs6JU9Htc6mwqL6Dn/nEL3dpVf2jOhg==",
+        "dependencies": {
+          "Microsoft.Win32.SystemEvents": "6.0.0"
         }
       },
       "circletools.apiclient": {
@@ -1965,7 +2104,8 @@
           "CircleTools.Ui.Shared": "[1.0.0, )",
           "Microsoft.AspNetCore.Components.Authorization": "[10.0.10, )",
           "Microsoft.AspNetCore.Components.Web": "[10.0.10, )",
-          "Microsoft.Extensions.Localization": "[10.0.10, )"
+          "Microsoft.Extensions.Localization": "[10.0.10, )",
+          "QRCoder": "[1.8.0, )"
         }
       },
       "circletools.sharedkernel": {
@@ -2108,6 +2248,15 @@
         "requested": "[10.0.10, )",
         "resolved": "10.0.10",
         "contentHash": "VivWvz1iFR3Ntf/e5/xci6o/MF2tcHiprNkhRlL+gMkBoDjQJCioiO+Gwp/DP8scuzqbp3b9C3wh+zuy4pD4AA=="
+      },
+      "QRCoder": {
+        "type": "CentralTransitive",
+        "requested": "[1.8.0, )",
+        "resolved": "1.8.0",
+        "contentHash": "RuvX3PEXU6pbY/I5ItAk800jm62r+YnoPLgyS2WTgwxkOnGkOfU9ORiipHUF0LkLyqM8rlroUCA319JjRYfRFQ==",
+        "dependencies": {
+          "System.Drawing.Common": "6.0.0"
+        }
       }
     },
     "net10.0-windows10.0.19041/android-arm64": {
@@ -2124,6 +2273,11 @@
         "resolved": "1.0.3179.45",
         "contentHash": "3pokSH5CnN0G6rGhGFo1y87inxYhNxBQ2Vdf0wlvBj99KHxQJormjDACmqRnFeUsmuNFIhWwfAL1ztq7wD5qRA=="
       },
+      "Microsoft.Win32.SystemEvents": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "hqTM5628jSsQiv+HGpiq3WKBl2c8v1KZfby2J6Pr7pEPlK9waPdgEO6b8A/+/xn/yZ9ulv8HuqK71ONy2tg67A=="
+      },
       "Microsoft.WindowsAppSDK": {
         "type": "Transitive",
         "resolved": "1.7.250909003",
@@ -2131,6 +2285,14 @@
         "dependencies": {
           "Microsoft.Web.WebView2": "1.0.2903.40",
           "Microsoft.Windows.SDK.BuildTools": "10.0.22621.756"
+        }
+      },
+      "System.Drawing.Common": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "NfuoKUiP2nUWwKZN6twGqXioIe1zVD0RIj2t976A+czLHr2nY454RwwXs6JU9Htc6mwqL6Dn/nEL3dpVf2jOhg==",
+        "dependencies": {
+          "Microsoft.Win32.SystemEvents": "6.0.0"
         }
       }
     },
@@ -2148,6 +2310,11 @@
         "resolved": "1.0.3179.45",
         "contentHash": "3pokSH5CnN0G6rGhGFo1y87inxYhNxBQ2Vdf0wlvBj99KHxQJormjDACmqRnFeUsmuNFIhWwfAL1ztq7wD5qRA=="
       },
+      "Microsoft.Win32.SystemEvents": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "hqTM5628jSsQiv+HGpiq3WKBl2c8v1KZfby2J6Pr7pEPlK9waPdgEO6b8A/+/xn/yZ9ulv8HuqK71ONy2tg67A=="
+      },
       "Microsoft.WindowsAppSDK": {
         "type": "Transitive",
         "resolved": "1.7.250909003",
@@ -2155,6 +2322,14 @@
         "dependencies": {
           "Microsoft.Web.WebView2": "1.0.2903.40",
           "Microsoft.Windows.SDK.BuildTools": "10.0.22621.756"
+        }
+      },
+      "System.Drawing.Common": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "NfuoKUiP2nUWwKZN6twGqXioIe1zVD0RIj2t976A+czLHr2nY454RwwXs6JU9Htc6mwqL6Dn/nEL3dpVf2jOhg==",
+        "dependencies": {
+          "Microsoft.Win32.SystemEvents": "6.0.0"
         }
       }
     },
@@ -2172,6 +2347,11 @@
         "resolved": "1.0.3179.45",
         "contentHash": "3pokSH5CnN0G6rGhGFo1y87inxYhNxBQ2Vdf0wlvBj99KHxQJormjDACmqRnFeUsmuNFIhWwfAL1ztq7wD5qRA=="
       },
+      "Microsoft.Win32.SystemEvents": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "hqTM5628jSsQiv+HGpiq3WKBl2c8v1KZfby2J6Pr7pEPlK9waPdgEO6b8A/+/xn/yZ9ulv8HuqK71ONy2tg67A=="
+      },
       "Microsoft.WindowsAppSDK": {
         "type": "Transitive",
         "resolved": "1.7.250909003",
@@ -2179,6 +2359,14 @@
         "dependencies": {
           "Microsoft.Web.WebView2": "1.0.2903.40",
           "Microsoft.Windows.SDK.BuildTools": "10.0.22621.756"
+        }
+      },
+      "System.Drawing.Common": {
+        "type": "Transitive",
+        "resolved": "6.0.0",
+        "contentHash": "NfuoKUiP2nUWwKZN6twGqXioIe1zVD0RIj2t976A+czLHr2nY454RwwXs6JU9Htc6mwqL6Dn/nEL3dpVf2jOhg==",
+        "dependencies": {
+          "Microsoft.Win32.SystemEvents": "6.0.0"
         }
       }
     }

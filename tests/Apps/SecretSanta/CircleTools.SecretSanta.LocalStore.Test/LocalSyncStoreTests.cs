@@ -52,6 +52,46 @@ public sealed class LocalSyncStoreTests
     }
 
     [Fact]
+    public async Task LoadGroups_FromSchemaV2Document_DefaultsStorageModeAndTokens()
+    {
+        var store = new InMemoryKeyValueStore();
+        // A schema-v2 document: records carry no mode/tokens fields, which postdate v2 (ADR-0058).
+        var stateJson = JsonSerializer.Serialize(SyncTestData.GroupWith("Family", "Alice"), SyncJsonContext.Default.GroupState);
+        var v2 = $$"""{"schemaVersion":2,"records":[{"state":{{stateJson}},"version":2,"accountScope":null,"dirty":true}]}""";
+        await store.SetAsync(StorageScope.Durable, LocalSyncStore.GroupsKey, v2, default);
+        var local = new LocalSyncStore(store);
+
+        var records = await local.LoadGroupsAsync(default);
+
+        var record = Assert.Single(records);
+        Assert.Equal("Family", record.State.Name);
+        Assert.Equal(2, record.Version);
+        Assert.True(record.Dirty);
+        Assert.Equal(StorageMode.OnThisDevice, record.Mode);
+        Assert.Null(record.Tokens);
+    }
+
+    [Fact]
+    public async Task SaveThenLoadGroups_RoundTripsStorageModeAndTokens()
+    {
+        var store = new InMemoryKeyValueStore();
+        var local = new LocalSyncStore(store);
+        var records = new List<SyncedGroupRecord>
+        {
+            new(SyncTestData.GroupWith("Shared", "x"), Version: 2, AccountScope: null, Dirty: false,
+                Mode: StorageMode.SharedByLink, Tokens: new SharedGroupTokens("admin-tok", "join-tok")),
+        };
+
+        await local.SaveGroupsAsync(records, default);
+        var loaded = await local.LoadGroupsAsync(default);
+
+        var record = Assert.Single(loaded);
+        Assert.Equal(StorageMode.SharedByLink, record.Mode);
+        Assert.Equal("admin-tok", record.Tokens?.AdminToken);
+        Assert.Equal("join-tok", record.Tokens?.JoinToken);
+    }
+
+    [Fact]
     public async Task LoadState_MintsAStableDeviceId_WhenNoneStored()
     {
         var local = new LocalSyncStore(new InMemoryKeyValueStore());

@@ -1,10 +1,16 @@
 @page "/groups/{GroupId:guid}/members"
 @using CircleTools.SecretSanta.Contracts
+@using CircleTools.SecretSanta.Core.Domain
+@using CircleTools.SecretSanta.LocalStore
 @using CircleTools.SecretSanta.LocalStore.Linking
+@using Microsoft.Extensions.DependencyInjection
 @inject ISender Sender
 @inject ILinkingApi Linking
+@inject IServiceProvider Services
 @inject IStringLocalizer<AppStrings> L
 @inject IDialogService Dialogs
+@inject ISyncSignals SyncSignals
+@implements IDisposable
 
 <PageTitle>@L["MembersTitle"]</PageTitle>
 
@@ -24,10 +30,10 @@
         <MudCardContent>
             <MudStack Spacing="2">
                 <MudTextField @bind-Value="_newName" Immediate="true" OnKeyDown="OnNewNameKeyDown" Label="@L["NameLabel"]"
-                              Placeholder="@L["MemberNamePlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                              Placeholder="@L["MemberNamePlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense" id="new-member-name" />
                 <div>
                     <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddAsync"
-                               StartIcon="@Icons.Material.Filled.PersonAdd"
+                               StartIcon="@Icons.Material.Filled.PersonAdd" id="add-member-btn"
                                Disabled="@string.IsNullOrWhiteSpace(_newName)">@L["AddMember"]</MudButton>
                 </div>
             </MudStack>
@@ -59,6 +65,12 @@ else
                     {
                         <MudStack Spacing="2">
                             <MudTextField @bind-Value="_editName" Immediate="true" Label="@L["NameLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            @* The gift note is a stable per-person hint the giver sees on the reveal (FR-037):
+                               allergies, dietary/lifestyle needs, things not to buy. Capped to protect the
+                               encoded reveal link (ADR-0014). *@
+                            <MudTextField @bind-Value="_editGiftNote" Label="@L["GiftNoteLabel"]" HelperText="@L["GiftNoteHint"]"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2"
+                                          MaxLength="Member.MaxGiftNoteLength" Counter="Member.MaxGiftNoteLength" />
                             <div class="d-flex gap-1">
                                 <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled"
                                            OnClick="SaveEditAsync" Disabled="@string.IsNullOrWhiteSpace(_editName)">@L["Save"]</MudButton>
@@ -71,6 +83,11 @@ else
                         <div class="d-flex justify-space-between align-start flex-wrap gap-2">
                             <div>
                                 <MudText Typo="Typo.subtitle1"><strong>@member.Name</strong></MudText>
+                                @if (!string.IsNullOrWhiteSpace(member.GiftNote))
+                                {
+                                    @* A stable per-person note the giver sees on the reveal (FR-037). *@
+                                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["GiftNoteLabel"]: @member.GiftNote</MudText>
+                                }
                             </div>
                             <div class="d-flex align-center flex-wrap gap-1">
                                 @* Linking is an account-only action (it calls the authorized server API), so
@@ -101,9 +118,18 @@ else
                                                    OnClick="() => BeginLink(member.Id)">@L["MemberLink"]</MudButton>
                                     }
                                 </AuthorizeView>
+                                @if (_isSharedAdmin && _claimedMembers.Contains(member.Id))
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text"
+                                             Icon="@Icons.Material.Filled.HowToReg">@L["MemberClaimedBadge"]</MudChip>
+                                }
                                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
                                          AriaLabel="@L["MoreActions"]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                                     <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => BeginEdit(member)">@L["Edit"]</MudMenuItem>
+                                    @if (_isSharedAdmin && _claimedMembers.Contains(member.Id))
+                                    {
+                                        <MudMenuItem Icon="@Icons.Material.Filled.PersonOff" OnClick="() => ReleaseMemberAsync(member.Id, member.Name)">@L["ReleaseMember"]</MudMenuItem>
+                                    }
                                     <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="() => AskRemoveAsync(member.Id, member.Name)">@L["Remove"]</MudMenuItem>
                                 </MudMenu>
                             </div>
@@ -161,11 +187,14 @@ else
     private Task<AuthenticationState>? AuthState { get; set; }
 
     private IReadOnlyList<MemberDto>? _members;
+    private bool _isSharedAdmin;
+    private HashSet<Guid> _claimedMembers = [];
     private string _newName = string.Empty;
     private string? _error;
 
     private Guid? _editingId;
     private string _editName = string.Empty;
+    private string _editGiftNote = string.Empty;
     private bool _hasCurrentDraw;
     private string _groupName = string.Empty;
 
@@ -181,7 +210,20 @@ else
     private bool _iAmLinkedInGroup =>
         _myUserId != Guid.Empty && (_members?.Any(m => m.UserId == _myUserId) ?? false);
 
+    protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
+
     protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    // A background sync (ADR-0044) may have pulled a co-organizer's roster edits into the local store
+    // (shared-by-link, FEAT-013); reload so they appear without a manual refresh. The add/edit fields are
+    // separate state, so an in-progress add or open edit form is not disturbed.
+    private void OnSyncCompleted() => _ = InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => SyncSignals.SyncCompleted -= OnSyncCompleted;
 
     private async Task LoadAsync()
     {
@@ -194,6 +236,28 @@ else
         _members = group?.Members ?? [];
         _hasCurrentDraw = group?.Events.Any(e => e.HasCurrentDraw) ?? false;
         _groupName = group?.Name ?? string.Empty;
+
+        // For a shared-by-link group this device administers, load which members are claimed so the
+        // admin can see who has joined and free a spot (ADR-0058, the sole recovery path). Resolved
+        // defensively: a host without the sync engine (or a component test) simply omits the feature.
+        var local = Services.GetService<ILocalSyncStore>();
+        var sharedSync = Services.GetService<SharedSyncService>();
+        if (local is not null && sharedSync is not null)
+        {
+            var record = (await local.LoadGroupsAsync()).FirstOrDefault(r => r.State.Id == GroupId);
+            _isSharedAdmin = record is { Mode: StorageMode.SharedByLink, Tokens.AdminToken: not null };
+            _claimedMembers = _isSharedAdmin ? [.. await sharedSync.GetClaimedMembersAsync(GroupId)] : [];
+        }
+    }
+
+    private async Task ReleaseMemberAsync(Guid memberId, string name)
+    {
+        if (Services.GetService<SharedSyncService>() is { } sharedSync
+            && await Dialogs.ShowConfirmSheetAsync(L["ReleaseMemberConfirm", name], L["ReleaseMemberConfirmYes"], L["Cancel"], Color.Primary))
+        {
+            await sharedSync.ReleasePersonAsync(GroupId, memberId);
+            await LoadAsync();
+        }
     }
 
     // The simple self-link: no address and no email confirmation. Establish it on the server (which takes
@@ -348,6 +412,7 @@ else
     {
         _editingId = member.Id;
         _editName = member.Name;
+        _editGiftNote = member.GiftNote;
         _error = null;
     }
 
@@ -364,6 +429,7 @@ else
         try
         {
             await Sender.Send(new EditMemberCommand(GroupId, id, _editName));
+            await Sender.Send(new SetMemberGiftNoteCommand(GroupId, id, _editGiftNote));
             _editingId = null;
             await LoadAsync();
         }

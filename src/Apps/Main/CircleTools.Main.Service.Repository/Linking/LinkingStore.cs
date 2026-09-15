@@ -359,8 +359,10 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
                 RecipientMemberId = row.RecipientMemberId,
                 RecipientName = row.RecipientName,
                 RecipientWishlistSnapshot = Serialize(row.RecipientWishlistSnapshot),
+                RecipientGiftNote = row.RecipientGiftNote,
                 BudgetAmount = budget?.Amount,
                 BudgetCurrency = budget?.Currency,
+                BudgetMinAmount = budget?.MinAmount,
                 EventDate = eventDetails?.Date,
                 EventLocation = eventDetails?.Location,
                 EventDescription = eventDetails?.Description,
@@ -533,9 +535,14 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
             .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
         // 1) The departing account is a linked member elsewhere: unlink every referencing member and
-        //    emit the resolution so each organizer's group degrades gracefully (FR-015).
+        //    emit the resolution so each organizer's group degrades gracefully (FR-015). Links the
+        //    departing account organized itself are excluded here — they are deleted wholesale in step 3,
+        //    and closing (tracking) one that a later bulk delete then removes makes SaveChanges below
+        //    fail with a concurrency error (the tracked UPDATE hits zero rows).
         var linkedElsewhere = await context.MemberLinks
-            .Where(m => m.TargetAccountId == userId && m.State == MemberLinkState.Linked)
+            .Where(m => m.TargetAccountId == userId
+                && m.State == MemberLinkState.Linked
+                && m.OrganizerAccountId != userId)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
 
         foreach (var link in linkedElsewhere)
@@ -603,13 +610,14 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
         }
 
         var budget = row.BudgetAmount is { } amount && row.BudgetCurrency is { } currency
-            ? new LinkingBudget(amount, currency)
+            ? new LinkingBudget(amount, currency, row.BudgetMinAmount)
             : null;
         var @event = row.EventLocation is not null || row.EventDescription is not null || row.EventDate is not null
             ? new LinkingEvent(row.EventDate, row.EventLocation ?? string.Empty, row.EventDescription ?? string.Empty)
             : null;
 
-        return new AssignmentView(row.GroupId, row.GroupName, row.EventId, row.EventName, row.RecipientName, wishlist, budget, @event);
+        return new AssignmentView(
+            row.GroupId, row.GroupName, row.EventId, row.EventName, row.RecipientName, wishlist, budget, @event, row.RecipientGiftNote);
     }
 
     private void AddResolution(Guid organizerAccountId, Guid groupId, Guid memberId, LinkResolutionKind kind, Guid? userId, DateTimeOffset now) =>

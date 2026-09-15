@@ -19,6 +19,9 @@
   <data name="Share" xml:space="preserve"><value>Teilen</value></data>
   <data name="MoreActions" xml:space="preserve"><value>Weitere Aktionen</value></data>
   <data name="ShareMessage" xml:space="preserve"><value>Hier ist dein Wichtel-Link 🎁</value></data>
+  <data name="ShowQr" xml:space="preserve"><value>QR-Code</value></data>
+  <data name="QrHint" xml:space="preserve"><value>Lass diese Person den Code scannen, um ihren Wichtel-Link zu öffnen.</value></data>
+  <data name="Close" xml:space="preserve"><value>Schliessen</value></data>
   <data name="NavGroups" xml:space="preserve"><value>Gruppen</value></data>
   <data name="NavMore" xml:space="preserve"><value>Mehr</value></data>
   <data name="NavMoreEllipsis" xml:space="preserve"><value>Mehr…</value></data>
@@ -40,7 +43,8 @@
   <data name="GroupEditorTitle" xml:space="preserve"><value>Gruppe</value></data>
   <data name="NameLabel" xml:space="preserve"><value>Name</value></data>
   <data name="BudgetLabel" xml:space="preserve"><value>Budget</value></data>
-  <data name="AmountLabel" xml:space="preserve"><value>Betrag</value></data>
+  <data name="BudgetMinLabel" xml:space="preserve"><value>Minimum</value></data>
+  <data name="BudgetMaxLabel" xml:space="preserve"><value>Maximum</value></data>
   <data name="CurrencyLabel" xml:space="preserve"><value>Währung</value></data>
   <data name="ClearBudget" xml:space="preserve"><value>Budget entfernen</value></data>
   <data name="EventLabel" xml:space="preserve"><value>Anlass</value></data>
@@ -68,6 +72,7 @@
   <data name="DrawSuccess" xml:space="preserve"><value>Auslosung abgeschlossen.</value></data>
   <data name="DrawAssignmentCount" xml:space="preserve"><value>{0} Zuordnungen wurden erstellt.</value></data>
   <data name="DrawFailedOverConstrained" xml:space="preserve"><value>Mit den aktuellen Ausschlüssen ist keine gültige Auslosung möglich. Entferne einige davon.</value></data>
+  <data name="DrawIgnoreBaseline" xml:space="preserve"><value>Trotzdem auslosen (kann sich wie letztes Mal wiederholen)</value></data>
   <data name="DrawFailedTwoMember" xml:space="preserve"><value>Eine Zweiergruppe lässt sich nicht auslosen, ohne dass sich beide gegenseitig beschenken. Füge weitere Mitglieder hinzu.</value></data>
   <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Füge mindestens zwei Mitglieder hinzu, um auszulosen.</value></data>
   <data name="DrawSpoilerNote" xml:space="preserve"><value>Die Zuordnungen werden hier nicht angezeigt, um nichts zu verraten. Teile stattdessen die Links.</value></data>
@@ -82,6 +87,10 @@
   <data name="MemberSaveFailed" xml:space="preserve"><value>Das Mitglied konnte nicht gespeichert werden.</value></data>
   <data name="BudgetAmountInvalid" xml:space="preserve"><value>Gib einen Budgetbetrag grösser als null ein.</value></data>
   <data name="CurrencyInvalid" xml:space="preserve"><value>Gib einen dreistelligen Währungscode ein (z. B. CHF).</value></data>
+  <data name="BudgetMinExceedsMax" xml:space="preserve"><value>Das Minimum darf nicht grösser als das Maximum sein.</value></data>
+  <data name="GiftNoteLabel" xml:space="preserve"><value>Geschenk-Notiz</value></data>
+  <data name="GiftNoteHint" xml:space="preserve"><value>Allergien, Ernährung oder Lebensstil, oder was du nicht geschenkt haben möchtest — für die schenkende Person sichtbar.</value></data>
+  <data name="RevealGiftNoteLabel" xml:space="preserve"><value>Gut zu wissen</value></data>
   <data name="ConfirmDeleteGroup" xml:space="preserve"><value>"{0}" mit allen Inhalten löschen? Das lässt sich nicht rückgängig machen.</value></data>
   <data name="ConfirmRemoveMember" xml:space="preserve"><value>"{0}" aus dieser Gruppe entfernen? Die Person bleibt in bereits ausgelosten Anlässen erhalten.</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Ja, löschen</value></data>
@@ -213,6 +222,9 @@
   <data name="EventNameLabel" xml:space="preserve"><value>Anlassname</value></data>
   <data name="EventNamePlaceholder" xml:space="preserve"><value>z. B. Weihnachten 2026</value></data>
   <data name="AddEvent" xml:space="preserve"><value>Anlass hinzufügen</value></data>
+  <data name="CarryForwardCheckbox" xml:space="preserve"><value>Von einem früheren Anlass übernehmen</value></data>
+  <data name="CarryForwardSourceLabel" xml:space="preserve"><value>Übernehmen von</value></data>
+  <data name="CarryForwardHint" xml:space="preserve"><value>Wunschlisten und Budget werden übernommen (du kannst sie anpassen), und die Auslosung vermeidet die Paarungen vom letzten Mal.</value></data>
   <data name="EventsColumn" xml:space="preserve"><value>Anlässe</value></data>
   <data name="EventDetailsTitle" xml:space="preserve"><value>Anlass</value></data>
   <data name="EventNotFound" xml:space="preserve"><value>Anlass nicht gefunden.</value></data>
@@ -232,4 +244,82 @@
   <data name="HubShareReady" xml:space="preserve"><value>Bereit</value></data>
   <data name="SettingsTitle" xml:space="preserve"><value>Einstellungen</value></data>
   <data name="SettingsAbout" xml:space="preserve"><value>Über</value></data>
+  <data name="StorageModeLabel" xml:space="preserve"><value>Wo diese Gruppe gespeichert ist</value></data>
+  <data name="ModeLocalTitle" xml:space="preserve"><value>Auf diesem Gerät</value></data>
+  <data name="ModeLocalHint" xml:space="preserve"><value>Privat auf diesem Gerät. Teile pro Person einen Auflösungs-Link.</value></data>
+  <data name="ModeSharedTitle" xml:space="preserve"><value>Über Link geteilt</value></data>
+  <data name="ModeSharedHint" xml:space="preserve"><value>Online gespeichert, damit andere die ganze Gruppe per Link öffnen können. Ohne Konto.</value></data>
+  <data name="ModeAccountTitle" xml:space="preserve"><value>Mein Konto</value></data>
+  <data name="ModeAccountHint" xml:space="preserve"><value>Über alle Geräte synchronisiert, auf denen du angemeldet bist.</value></data>
+  <data name="ModeAccountSignInHint" xml:space="preserve"><value>Melde dich an, um diese Gruppe mit deinem Konto zu synchronisieren.</value></data>
+  <data name="ModeChipShared" xml:space="preserve"><value>Über Link geteilt</value></data>
+  <data name="ModeChipAccount" xml:space="preserve"><value>Konto</value></data>
+  <data name="SharingRow" xml:space="preserve"><value>Teilen &amp; Sync</value></data>
+  <data name="SharingSubtitleLocal" xml:space="preserve"><value>Auf diesem Gerät</value></data>
+  <data name="SharingSubtitleShared" xml:space="preserve"><value>Über Link geteilt</value></data>
+  <data name="SharingSubtitleAccount" xml:space="preserve"><value>Mit deinem Konto synchronisiert</value></data>
+  <data name="SharingTitle" xml:space="preserve"><value>Teilen &amp; Sync</value></data>
+  <data name="SharingLead" xml:space="preserve"><value>Lege fest, wo diese Gruppe gespeichert ist, und verwalte ihre Links.</value></data>
+  <data name="SharingSharedLead" xml:space="preserve"><value>Alle mit einem Link unten können diese Gruppe öffnen; nur der Admin-Link kann sie verwalten.</value></data>
+  <data name="AdminLink" xml:space="preserve"><value>Admin-Link</value></data>
+  <data name="AdminLinkHint" xml:space="preserve"><value>Alle mit diesem Link können die Gruppe verwalten und die Auslosung starten.</value></data>
+  <data name="JoinLink" xml:space="preserve"><value>Beitritts-Link</value></data>
+  <data name="JoinLinkHint" xml:space="preserve"><value>Lässt Personen beitreten, wählen, wer sie sind, und ihre eigene Zuteilung sehen.</value></data>
+  <data name="DisableRegenerate" xml:space="preserve"><value>Deaktivieren &amp; neu erstellen</value></data>
+  <data name="ShareByLinkConfirm" xml:space="preserve"><value>Diese Gruppe über Link teilen? Sie wird online gespeichert, damit Personen mit dem Link sie öffnen können. Du kannst jederzeit wieder auf „Nur auf diesem Gerät“ wechseln.</value></data>
+  <data name="ShareByLinkConfirmYes" xml:space="preserve"><value>Über Link teilen</value></data>
+  <data name="MakeLocalConfirm" xml:space="preserve"><value>Diese Gruppe nur auf diesem Gerät behalten? Die Online-Kopie wird entfernt und geteilte Links funktionieren nicht mehr. Deine Kopie bleibt auf diesem Gerät.</value></data>
+  <data name="MakeLocalConfirmYes" xml:space="preserve"><value>Lokal machen</value></data>
+  <data name="RotateAdminConfirm" xml:space="preserve"><value>Aktuellen Admin-Link deaktivieren und einen neuen erstellen? Der alte Link funktioniert dann nicht mehr.</value></data>
+  <data name="RotateAdminConfirmYes" xml:space="preserve"><value>Neuen Link erstellen</value></data>
+  <data name="ShareGroupQrHint" xml:space="preserve"><value>Lass diese Person den Code scannen, um die Gruppe zu öffnen.</value></data>
+  <data name="ShareGroupMessage" xml:space="preserve"><value>Tritt unserer Wichtel-Gruppe bei:</value></data>
+  <data name="JoinTitle" xml:space="preserve"><value>Der Gruppe beitreten</value></data>
+  <data name="JoinInvitedTo" xml:space="preserve"><value>Du bist eingeladen zu</value></data>
+  <data name="JoinWhoAreYou" xml:space="preserve"><value>Wer bist du in dieser Gruppe?</value></data>
+  <data name="JoinWhoAreYouHint" xml:space="preserve"><value>Wähle deinen Namen, damit wir dir deine eigene Zuteilung zeigen können.</value></data>
+  <data name="JoinAlreadyTaken" xml:space="preserve"><value>Bereits beigetreten</value></data>
+  <data name="JoinRememberTitle" xml:space="preserve"><value>Wie sollen wir dich merken?</value></data>
+  <data name="JoinRememberDevice" xml:space="preserve"><value>Nur dieses Gerät</value></data>
+  <data name="JoinRememberDeviceHint" xml:space="preserve"><value>Ohne Anmeldung. Nur dieses Gerät hat Zugriff.</value></data>
+  <data name="JoinRememberAccount" xml:space="preserve"><value>Mit meinem Konto behalten</value></data>
+  <data name="JoinRememberAccountHint" xml:space="preserve"><value>Behalte deinen Platz auf allen deinen Geräten.</value></data>
+  <data name="JoinRememberAccountSignInHint" xml:space="preserve"><value>Melde dich an, um deinen Platz geräteübergreifend zu behalten.</value></data>
+  <data name="JoinContinue" xml:space="preserve"><value>Weiter</value></data>
+  <data name="JoinNotFoundTitle" xml:space="preserve"><value>Dieser Link funktioniert nicht</value></data>
+  <data name="JoinNotFoundBody" xml:space="preserve"><value>Die Gruppe wurde möglicherweise entfernt oder der Link ist veraltet.</value></data>
+  <data name="JoinAlreadyClaimedError" xml:space="preserve"><value>Jemand ist bereits als diese Person beigetreten. Wähle einen anderen Namen.</value></data>
+  <data name="JoinFailedError" xml:space="preserve"><value>Beitritt momentan nicht möglich. Bitte versuche es erneut.</value></data>
+  <data name="YouAreMember" xml:space="preserve"><value>Du bist als {0} beigetreten.</value></data>
+  <data name="MemberClaimedBadge" xml:space="preserve"><value>Beigetreten</value></data>
+  <data name="ReleaseMember" xml:space="preserve"><value>Platz freigeben</value></data>
+  <data name="ReleaseMemberConfirm" xml:space="preserve"><value>{0}s Platz freigeben? Die Person verliert den Zugriff, bis sie über den Beitritts-Link erneut beitritt.</value></data>
+  <data name="ReleaseMemberConfirmYes" xml:space="preserve"><value>Platz freigeben</value></data>
+  <data name="Someone" xml:space="preserve"><value>Jemand</value></data>
+  <data name="ClaimAdminConfirm" xml:space="preserve"><value>Diese Gruppe mit deinem Konto übernehmen? Du wirst alleiniger Admin — der Admin-Link funktioniert nicht mehr. Der Beitritts-Link bleibt aktiv.</value></data>
+  <data name="ClaimAdminConfirmYes" xml:space="preserve"><value>Admin übernehmen</value></data>
+  <data name="ReleaseToLinkConfirm" xml:space="preserve"><value>Diese Gruppe wieder als geteilten Link freigeben? Ein neuer Admin-Link wird erstellt und du bist nicht mehr alleiniger Admin.</value></data>
+  <data name="ReleaseToLinkConfirmYes" xml:space="preserve"><value>Übergeben</value></data>
+  <data name="AccountOwnedNote" xml:space="preserve"><value>Diese Gruppe gehört dir. Sie ist mit deinem Konto synchronisiert.</value></data>
+  <data name="AdminRetiredTitle" xml:space="preserve"><value>Dieser Admin-Link funktioniert nicht mehr</value></data>
+  <data name="AdminRetiredBody" xml:space="preserve"><value>{0} hat die Admin-Rolle für diese Gruppe übernommen.</value></data>
+  <data name="AdminRetiredJoinHint" xml:space="preserve"><value>Du kannst weiterhin den Beitritts-Link öffnen, um als Teilnehmer beizutreten.</value></data>
+  <data name="AddToCalendar" xml:space="preserve"><value>Zum Kalender hinzufügen</value></data>
+  <data name="HandOutLinks" xml:space="preserve"><value>Links verteilen</value></data>
+  <data name="HandoutProgress" xml:space="preserve"><value>Verteilt: {0} / {1}</value></data>
+  <data name="MarkHandedOut" xml:space="preserve"><value>Als verteilt markieren</value></data>
+  <data name="HandoutAllDone" xml:space="preserve"><value>Alle haben ihren Link.</value></data>
+  <data name="HandedOut" xml:space="preserve"><value>Verteilt</value></data>
+  <data name="NotificationsTitle" xml:space="preserve"><value>Erinnerungen</value></data>
+  <data name="NotificationsHint" xml:space="preserve"><value>Wähle, welche Erinnerungen dieses Gerät zeigt. Standardmässig aus.</value></data>
+  <data name="NotificationsUnavailableWeb" xml:space="preserve"><value>Erinnerungen sind in der installierten App verfügbar.</value></data>
+  <data name="ReminderDrawLabel" xml:space="preserve"><value>Auslosung noch offen</value></data>
+  <data name="ReminderTomorrowLabel" xml:space="preserve"><value>Anlass ist morgen</value></data>
+  <data name="ReminderWishlistLabel" xml:space="preserve"><value>Meine Wunschliste ist leer</value></data>
+  <data name="ReminderDrawTitle" xml:space="preserve"><value>Zeit zum Auslosen</value></data>
+  <data name="ReminderDrawBody" xml:space="preserve"><value>Lose bald die Namen für {0} aus.</value></data>
+  <data name="ReminderTomorrowTitle" xml:space="preserve"><value>{0} ist morgen</value></data>
+  <data name="ReminderTomorrowBody" xml:space="preserve"><value>Euer Geschenkeaustausch ist morgen.</value></data>
+  <data name="ReminderWishlistTitle" xml:space="preserve"><value>Wunschliste ergänzen</value></data>
+  <data name="ReminderWishlistBody" xml:space="preserve"><value>Deine Wunschliste für {0} ist noch leer.</value></data>
 </root>

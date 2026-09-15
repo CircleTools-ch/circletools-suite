@@ -4,6 +4,8 @@
 @inject IStringLocalizer<AppStrings> L
 @inject IHapticFeedback Haptics
 @inject IDialogService Dialogs
+@inject ISyncSignals SyncSignals
+@implements IDisposable
 
 <PageTitle>@L["DrawTitle"]</PageTitle>
 
@@ -43,6 +45,13 @@ else
         else
         {
             <MudAlert Severity="Severity.Error" Dense="true" role="alert">@FailureMessage(_result.FailureReason)</MudAlert>
+            @* Escape hatch (FR-035 5a): if the failure is because carrying forward left no room to avoid
+               last time's pairings, let the organizer draw anyway, ignoring that one constraint. *@
+            @if (_event.HasCarriedForwardBaseline)
+            {
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mt-2"
+                           OnClick="() => RunAsync(ignoreBaseline: true)" Disabled="@_busy">@L["DrawIgnoreBaseline"]</MudButton>
+            }
         }
     }
     else if (_event.HasCurrentDraw)
@@ -66,7 +75,20 @@ else
     private RunDrawResultDto? _result;
     private bool _busy;
 
+    protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
+
     protected override async Task OnParametersSetAsync() => await LoadAsync();
+
+    // A background sync may have pulled a co-organizer's edits (roster changes that stale the draw, or a
+    // draw they ran) into the local store (shared-by-link, FEAT-013); reload so the draw state is current
+    // without a manual refresh. A just-run local result is separate state and is not disturbed.
+    private void OnSyncCompleted() => _ = InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => SyncSignals.SyncCompleted -= OnSyncCompleted;
 
     private async Task LoadAsync()
     {
@@ -92,12 +114,12 @@ else
         await RunAsync();
     }
 
-    private async Task RunAsync()
+    private async Task RunAsync(bool ignoreBaseline = false)
     {
         _busy = true;
         try
         {
-            _result = await Sender.Send(new RunDrawCommand(GroupId, EventId));
+            _result = await Sender.Send(new RunDrawCommand(GroupId, EventId, ignoreBaseline));
             // A confirmation buzz when the draw actually lands (FEAT-008 W3); a no-op on the web head.
             if (_result.Success)
             {

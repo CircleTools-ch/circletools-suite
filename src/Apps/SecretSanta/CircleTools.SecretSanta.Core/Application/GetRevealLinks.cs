@@ -56,7 +56,9 @@ public sealed class GetRevealLinksQueryHandler(IGroupRepository repository, Reve
                 occasion.Budget?.Currency,
                 occasion.EventDetails?.Date?.ToString("O", CultureInfo.InvariantCulture),
                 occasion.EventDetails?.Location,
-                occasion.EventDetails?.Description);
+                occasion.EventDetails?.Description,
+                occasion.Budget?.MinAmount,
+                string.IsNullOrEmpty(recipient.GiftNote) ? null : recipient.GiftNote);
 
             links.Add(linkBuilder.Build(giver.Name, payload));
         }

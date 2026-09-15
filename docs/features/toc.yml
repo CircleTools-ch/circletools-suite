@@ -36,6 +36,36 @@
   href: FEAT-009-event-section-hub.md
 - name: TP-009 Event section hub test plan
   href: TP-009-event-section-hub.md
+- name: FEAT-010 Carry forward a new occasion
+  href: FEAT-010-carry-forward-new-occasion.md
+- name: TP-010 Carry forward a new occasion test plan
+  href: TP-010-carry-forward-new-occasion.md
+- name: FEAT-011 Budget minimum and maximum
+  href: FEAT-011-budget-minimum-and-maximum.md
+- name: TP-011 Budget minimum and maximum test plan
+  href: TP-011-budget-minimum-and-maximum.md
+- name: FEAT-012 Member gift note
+  href: FEAT-012-member-gift-note.md
+- name: TP-012 Member gift note test plan
+  href: TP-012-member-gift-note.md
+- name: FEAT-013 Account-free link-shared groups
+  href: FEAT-013-account-free-link-shared-groups.md
+- name: TP-013 Account-free link-shared groups test plan
+  href: TP-013-account-free-link-shared-groups.md
+- name: FEAT-013 Implementation plan
+  href: FEAT-013-implementation-plan.md
+- name: FEAT-014 Add an event to the calendar
+  href: FEAT-014-add-event-to-calendar.md
+- name: TP-014 Add an event to the calendar test plan
+  href: TP-014-add-event-to-calendar.md
+- name: FEAT-015 Guided hand-out of reveal links
+  href: FEAT-015-guided-hand-out-of-reveal-links.md
+- name: TP-015 Guided hand-out of reveal links test plan
+  href: TP-015-guided-hand-out-of-reveal-links.md
+- name: FEAT-016 Device-local occasion reminders
+  href: FEAT-016-device-local-occasion-reminders.md
+- name: TP-016 Device-local occasion reminders test plan
+  href: TP-016-device-local-occasion-reminders.md
 - name: Templates
   items:
     - name: Feature spec template

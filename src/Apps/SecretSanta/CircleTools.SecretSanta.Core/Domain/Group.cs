@@ -141,6 +141,17 @@ public sealed class Group : AggregateRoot
     }
 
     /// <summary>
+    /// Sets (or clears, when empty) a member's <see cref="Member.GiftNote"/> — the stable, per-person
+    /// note their giver sees on the reveal (FR-037). Independent of renaming so neither clobbers the other.
+    /// </summary>
+    /// <param name="memberId">The member whose gift note is set.</param>
+    /// <param name="giftNote">The gift note; empty or whitespace clears it.</param>
+    /// <exception cref="InvalidOperationException">Thrown when the member is unknown.</exception>
+    /// <exception cref="ArgumentException">Thrown when the gift note exceeds <see cref="Member.MaxGiftNoteLength"/>.</exception>
+    public void SetMemberGiftNote(Guid memberId, string? giftNote) =>
+        RequireMember(memberId).SetGiftNote(giftNote);
+
+    /// <summary>
     /// Removes a member from the active roster by <strong>archiving</strong> them (ADR-0052): the member
     /// is kept in the aggregate, so a past draw that includes them still resolves their name and a later
     /// rename still reaches them, but they take part in no future draw and are hidden from the roster.
@@ -197,6 +208,61 @@ public sealed class Group : AggregateRoot
         return occasion.Id;
     }
 
+    /// <summary>
+    /// Adds a new event (occasion) by <strong>carrying forward</strong> from an existing one (FR-035): a
+    /// <em>copy at creation</em>, not a live link (events stay independent, ADR-0042). Copies each
+    /// <strong>current</strong> roster member's wishlist and the budget from the source event, and records
+    /// the source event's current draw as the new event's rule-(c) baseline so its first draw does not
+    /// reproduce the source's pairings. The new event is created <strong>undrawn</strong>. Exclusions are
+    /// not copied — they are shared at the group level and already apply to every event.
+    /// </summary>
+    /// <param name="name">The new event name; surrounding whitespace is trimmed.</param>
+    /// <param name="sourceEventId">The event to carry forward from.</param>
+    /// <param name="now">The instant used to stamp the carried-forward draw baseline.</param>
+    /// <param name="copyWishlists">Whether to copy the source event's per-member wishlists (default <see langword="true"/>).</param>
+    /// <param name="copyBudget">Whether to copy the source event's budget (default <see langword="true"/>).</param>
+    /// <param name="carryDrawBaseline">Whether to carry the source draw as the no-repeat baseline (default <see langword="true"/>).</param>
+    /// <returns>The identity of the created event.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when <paramref name="sourceEventId"/> is not an event of this group.</exception>
+    public Guid AddEventFrom(
+        string name,
+        Guid sourceEventId,
+        DateTimeOffset now,
+        bool copyWishlists = true,
+        bool copyBudget = true,
+        bool carryDrawBaseline = true)
+    {
+        var source = RequireEvent(sourceEventId);
+        var occasion = Event.Create(GuidV7.New(), (name ?? string.Empty).Trim());
+
+        if (copyBudget && source.Budget is not null)
+        {
+            occasion.SetBudget(source.Budget);
+        }
+
+        if (copyWishlists)
+        {
+            // Only current roster members carry a wishlist into the new occasion: a member archived since
+            // the source occasion (ADR-0052) is history and does not take part in the new one.
+            var activeIds = _members.Where(m => !m.IsArchived).Select(m => m.Id).ToHashSet();
+            foreach (var (memberId, wishlist) in source.Wishlists)
+            {
+                if (activeIds.Contains(memberId))
+                {
+                    occasion.SetWishlist(memberId, wishlist);
+                }
+            }
+        }
+
+        if (carryDrawBaseline && source.CurrentDraw is { } prior)
+        {
+            occasion.SeedBaselineDraw(prior.Assignments, now);
+        }
+
+        _events.Add(occasion);
+        return occasion.Id;
+    }
+
     /// <summary>Renames an event.</summary>
     /// <param name="eventId">The event to rename.</param>
     /// <param name="name">The new name; may be empty.</param>
@@ -232,8 +298,13 @@ public sealed class Group : AggregateRoot
     /// <param name="generator">The draw generator domain service.</param>
     /// <param name="now">The current instant used to stamp the draw.</param>
     /// <returns>The <see cref="DrawResult"/> describing success or failure.</returns>
+    /// <param name="ignoreCarriedBaseline">
+    /// When <see langword="true"/>, ignore a draw baseline carried forward from a previous occasion
+    /// (FR-035) for the no-repeat rule — the escape hatch when carrying forward over-constrains a small
+    /// roster (UC-SS-014 5a). A real previous draw of this event is still honoured.
+    /// </param>
     /// <exception cref="InvalidOperationException">Thrown when the group has fewer than two members, or the event is unknown.</exception>
-    public DrawResult RunDraw(Guid eventId, DrawGenerator generator, DateTimeOffset now)
+    public DrawResult RunDraw(Guid eventId, DrawGenerator generator, DateTimeOffset now, bool ignoreCarriedBaseline = false)
     {
         ArgumentNullException.ThrowIfNull(generator);
 
@@ -244,10 +315,14 @@ public sealed class Group : AggregateRoot
             throw new InvalidOperationException("A draw needs at least two members.");
         }
 
+        var previous = ignoreCarriedBaseline
+            ? occasion.CurrentDraw?.ToMap()
+            : occasion.PreviousDrawForNoRepeat();
+
         var result = generator.Generate(
             active.Select(m => m.Id).ToList(),
             _exclusions,
-            occasion.CurrentDraw?.ToMap());
+            previous);
 
         if (result.IsSuccess)
         {
@@ -276,7 +351,7 @@ public sealed class Group : AggregateRoot
         // still be read and migrated (see FromState). New writes carry everything under Events.
         Budget: null,
         Event: null,
-        _members.Select(m => new MemberState(m.Id, m.Name, UserId: m.UserId, OriginCirclePersonId: m.OriginCirclePersonId, IsArchived: m.IsArchived)).ToList(),
+        _members.Select(m => new MemberState(m.Id, m.Name, UserId: m.UserId, OriginCirclePersonId: m.OriginCirclePersonId, IsArchived: m.IsArchived, GiftNote: m.GiftNote)).ToList(),
         _exclusions.Select(e => new ExclusionState(e.GiverMemberId, e.RecipientMemberId, e.Mutual)).ToList(),
         Draws: [],
         DrawInvalidatedByMembershipChange: false,
@@ -290,7 +365,7 @@ public sealed class Group : AggregateRoot
         ArgumentNullException.ThrowIfNull(state);
 
         var members = state.Members
-            .Select(m => Member.Restore(m.Id, m.Name, m.UserId, m.OriginCirclePersonId, m.IsArchived))
+            .Select(m => Member.Restore(m.Id, m.Name, m.GiftNote, m.UserId, m.OriginCirclePersonId, m.IsArchived))
             .ToList();
 
         var exclusions = state.Exclusions
@@ -321,7 +396,7 @@ public sealed class Group : AggregateRoot
             .Where(m => m.Wishlist is { Count: > 0 })
             .ToDictionary(m => m.Id, m => Wishlist.Create(m.Wishlist));
 
-        var budget = state.Budget is null ? null : Budget.Create(state.Budget.Amount, state.Budget.Currency);
+        var budget = state.Budget is null ? null : Budget.Create(state.Budget.Amount, state.Budget.Currency, state.Budget.MinAmount);
         var details = state.Event is null
             ? null
             : EventDetails.Create(state.Event.Date, state.Event.Location, state.Event.Description);
@@ -337,18 +412,22 @@ public sealed class Group : AggregateRoot
             .ToList();
 
         var wishlists = state.Wishlists.ToDictionary(w => w.MemberId, w => Wishlist.Create(w.Items));
-        var budget = state.Budget is null ? null : Budget.Create(state.Budget.Amount, state.Budget.Currency);
+        var budget = state.Budget is null ? null : Budget.Create(state.Budget.Amount, state.Budget.Currency, state.Budget.MinAmount);
         var details = state.EventDetails is null
             ? null
             : EventDetails.Create(state.EventDetails.Date, state.EventDetails.Location, state.EventDetails.Description);
 
-        return Event.Restore(state.Id, state.Name, budget, details, draws, wishlists, state.DrawInvalidatedByMembershipChange);
+        var baseline = state.CarriedForwardBaseline is { } b
+            ? Draw.Restore(b.Id, b.CreatedAt, b.Assignments.Select(a => Assignment.Create(a.GiverMemberId, a.RecipientMemberId)).ToList())
+            : null;
+
+        return Event.Restore(state.Id, state.Name, budget, details, draws, wishlists, state.DrawInvalidatedByMembershipChange, baseline);
     }
 
     private static EventState ToEventState(Event occasion) => new(
         occasion.Id,
         occasion.Name,
-        occasion.Budget is null ? null : new BudgetState(occasion.Budget.Amount, occasion.Budget.Currency),
+        occasion.Budget is null ? null : new BudgetState(occasion.Budget.Amount, occasion.Budget.Currency, occasion.Budget.MinAmount),
         occasion.EventDetails is null
             ? null
             : new EventDetailsState(occasion.EventDetails.Date, occasion.EventDetails.Location, occasion.EventDetails.Description),
@@ -357,7 +436,10 @@ public sealed class Group : AggregateRoot
             d.CreatedAt,
             d.Assignments.Select(a => new AssignmentState(a.GiverMemberId, a.RecipientMemberId)).ToList())).ToList(),
         occasion.DrawInvalidatedByMembershipChange,
-        occasion.Wishlists.Select(w => new EventWishlistState(w.Key, [.. w.Value.Items])).ToList());
+        occasion.Wishlists.Select(w => new EventWishlistState(w.Key, [.. w.Value.Items])).ToList(),
+        occasion.BaselineDraw is { } baseline
+            ? new DrawState(baseline.Id, baseline.CreatedAt, baseline.Assignments.Select(a => new AssignmentState(a.GiverMemberId, a.RecipientMemberId)).ToList())
+            : null);
 
     private void MarkRosterChangedOnAllEvents()
     {
