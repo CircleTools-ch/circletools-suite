@@ -343,8 +343,10 @@ and consumes the [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-se
   *Done*): the `ICalendarService`/`IcsBuilder` seam + per-head impls + the shared button on hub/reveal/
   my-assignments + the `/groups` App Link intent-filter. Solution builds clean (incl. the MAUI Android head
   0/0); Ui 72/72 + Architecture 28/28. Browser walk confirmed the button appears on the hub and reveal page
-  once a date is set (absent without one), non-spoiling, console clean. **Pending the Pixel:** the Android
-  pre-filled editor + App Link auto-open under a finger (device-only).
+  once a date is set (absent without one), non-spoiling, console clean. **✅ On-device confirmed on the Pixel 9
+  Pro 2026-09-15:** the button on a dated event hub → `ACTION_INSERT` → Google Calendar opened a **pre-filled
+  all-day event** (correct title + date, no off-by-one). Residual: App Link **auto-open** still needs the real
+  Play-signing `assetlinks.json` fingerprint (shared pre-go-live item with reveal links).
 - **MNF-7 · Share all links for an event at once (P2).** Follow-on to the existing share seam.
   **✅ Promoted through the process (2026-09-15):** [UC-SS-022](../use-cases/secret-santa/UC-SS-022-hand-out-reveal-links.md)
   → [FR-045](../requirements/functional/FR-045-guided-hand-out-of-reveal-links.md) →
@@ -363,7 +365,9 @@ and consumes the [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-se
   *Done*): a **Hand out links** button + guided `HandoutDialog` + `HandoutProgressService` (device-local,
   keyed by a reveal-link hash so a re-draw resets). Builds clean; Ui 72/72. Browser walk confirmed
   "Handed out: 0 / 3" → dialog (one-at-a-time Share/Copy/Mark) → "1 / 3" + chip **persist across a full
-  reload**, console clean. **Pending the Pixel:** the real OS share sheet under a finger.
+  reload**, console clean. **Pending the Pixel:** the guided hand-out under a finger — its OS share sheet reuses
+  the already-device-proven `IShareService` (reveal-link share confirmed on the Pixel earlier), so only the
+  hand-out flow itself is unverified on device (not re-driven this pass; needs a draw set up on the phone).
 
 **Parked — need their own design/ADR before building:**
 
@@ -392,8 +396,10 @@ and consumes the [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-se
   **Plugin.LocalNotification 12.0.0**, the Settings **Reminders** section, and `POST_NOTIFICATIONS` +
   `RECEIVE_BOOT_COMPLETED`. Solution builds clean incl. the MAUI Android head (0/0, the plugin restores for
   net10-android); Ui 72/72 + Architecture 28/28. Browser-verified the web-visible part (Settings shows the
-  "needs the app" note, no switches on web). **Pending the Pixel (device-only):** the permission prompt,
-  each kind firing, and cancel-on-draw/wishlist-filled/delete.
+  "needs the app" note, no switches on web). **✅ On-device confirmed on the Pixel 9 Pro 2026-09-15:** app
+  launches (no crash), the plugin's `ScheduledAlarmReceiver` registers, the three switches render, and enabling
+  one fired the Android **`POST_NOTIFICATIONS` prompt** → granting left it on (`granted=true`). Residual (needs
+  elapsed time): each kind actually firing at its time, and cancel-on-draw/wishlist-filled/delete.
 - **MNF-9 · Biometric app lock (P2, parked).** Face/fingerprint on open — assignments are the one secret
   the app keeps, and a phone left unlocked exposes who drew whom. Opt-in; warrants an
   [NFR-004](../requirements/non-functional/NFR-004-data-protection-and-retention.md) privacy review first.

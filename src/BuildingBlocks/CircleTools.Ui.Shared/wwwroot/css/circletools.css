@@ -70,6 +70,14 @@
         min-height: 0;
     }
 
+    /* A MudSwitch renders its thumb as a .mud-icon-button; the 48px minimum inflates that button and drops
+       the thumb to the bottom of the track (visible on phone-width only). Keep the switch thumb compact —
+       the whole switch is already a comfortable target via its label row. */
+    .mud-switch .mud-icon-button {
+        min-width: 0;
+        min-height: 0;
+    }
+
     .mud-menu-item {
         min-height: 48px;
     }

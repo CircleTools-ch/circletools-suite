@@ -27,8 +27,12 @@ related: [UC-SS-021, FR-044, ADR-0028, ADR-0053, ADR-0056, NFR-001, NFR-002, NFR
 > `AddToCalendarButtonTests`). **Browser-verified** (standalone WebApp, headless Chromium): the button
 > appears on the event hub **and** the reveal page once the occasion has a date (correctly **absent** with
 > no date — gating confirmed), shows before the reveal so it never spoils, and clicking it is console-clean;
-> the reveal shown *Budget: 10–30 CHF* and *Event: 24/12/2026, Bern*. **Pending the Pixel:** the Android
-> pre-filled editor and the App Link auto-open under a real finger (device-only, per CLAUDE.md).
+> the reveal shown *Budget: 10–30 CHF* and *Event: 24/12/2026, Bern*. **On-device confirmed on the Pixel 9 Pro
+> (2026-09-15):** the app deployed and launched with no crash; the **Add to calendar** button showed on a dated
+> event hub; tapping it fired `ACTION_INSERT` → the Android calendar chooser → Google Calendar opened a
+> **pre-filled all-day event** with the correct title and date (*Wed, 2 Sept 2026*, no off-by-one). Residual
+> device item: **App Link auto-open** of the event deep link still needs the real Play-signing `assetlinks.json`
+> fingerprint (the shared pre-go-live item reveal links already carry).
 
 ## Problem & goals
 
