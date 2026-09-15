@@ -2,6 +2,9 @@
 @inject IStringLocalizer<AppStrings> L
 @inject IStringLocalizer<SharedStrings> LS
 @inject ThemeState Theme
+@inject NotificationPreferences NotificationPrefs
+@inject INotificationScheduler Notifications
+@inject IReminderRescheduler Reminders
 @implements IDisposable
 
 @*
@@ -39,6 +42,27 @@
         </AuthorizeView>
     </div>
 
+    @* Device-local reminders (MNF-8): opt-in per kind, off by default; phone-only. *@
+    <div>
+        <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["NotificationsTitle"]</MudText>
+        @if (!_notificationsSupported)
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["NotificationsUnavailableWeb"]</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["NotificationsHint"]</MudText>
+            <MudStack Spacing="0">
+                <MudSwitch T="bool" Value="_enabled.Contains(ReminderKind.DrawNotDone)" Color="Color.Primary"
+                           ValueChanged="v => ToggleAsync(ReminderKind.DrawNotDone, v)" Label="@L["ReminderDrawLabel"]" />
+                <MudSwitch T="bool" Value="_enabled.Contains(ReminderKind.EventTomorrow)" Color="Color.Primary"
+                           ValueChanged="v => ToggleAsync(ReminderKind.EventTomorrow, v)" Label="@L["ReminderTomorrowLabel"]" />
+                <MudSwitch T="bool" Value="_enabled.Contains(ReminderKind.MyWishlistEmpty)" Color="Color.Primary"
+                           ValueChanged="v => ToggleAsync(ReminderKind.MyWishlistEmpty, v)" Label="@L["ReminderWishlistLabel"]" />
+            </MudStack>
+        }
+    </div>
+
     <div>
         <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["SettingsAbout"]</MudText>
         <AppVersion />
@@ -46,7 +70,30 @@
 </MudStack>
 
 @code {
+    private bool _notificationsSupported;
+    private HashSet<ReminderKind> _enabled = [];
+
     protected override void OnInitialized() => Theme.Changed += OnChanged;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _notificationsSupported = await Notifications.IsSupportedAsync();
+        _enabled = new HashSet<ReminderKind>(await NotificationPrefs.GetEnabledAsync());
+    }
+
+    // Turning a reminder on for the first time is where we ask the OS for notification permission; if it is
+    // refused, the switch stays off. Any change reschedules so the reminders match the new choice.
+    private async Task ToggleAsync(ReminderKind kind, bool enabled)
+    {
+        if (enabled && !await Notifications.RequestPermissionAsync())
+        {
+            return; // permission refused — leave the switch off
+        }
+
+        await NotificationPrefs.SetEnabledAsync(kind, enabled);
+        _enabled = new HashSet<ReminderKind>(await NotificationPrefs.GetEnabledAsync());
+        await Reminders.ReconcileAsync();
+    }
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
 

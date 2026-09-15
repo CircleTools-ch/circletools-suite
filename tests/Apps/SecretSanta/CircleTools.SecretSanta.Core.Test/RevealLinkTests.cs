@@ -14,7 +14,9 @@ public sealed class RevealLinkTests
         "CHF",
         "2026-12-24T18:00:00.0000000+00:00",
         "Grandma's house",
-        "Bring a dessert");
+        "Bring a dessert",
+        BudgetMin: 10m,
+        GiftNote: "No nuts, please — severe allergy");
 
     private static void AssertPayloadEqual(RevealPayload expected, RevealPayload actual)
     {
@@ -23,9 +25,11 @@ public sealed class RevealLinkTests
         Assert.Equal(expected.Wishlist, actual.Wishlist);
         Assert.Equal(expected.BudgetAmount, actual.BudgetAmount);
         Assert.Equal(expected.BudgetCurrency, actual.BudgetCurrency);
+        Assert.Equal(expected.BudgetMin, actual.BudgetMin);
         Assert.Equal(expected.EventDate, actual.EventDate);
         Assert.Equal(expected.EventLocation, actual.EventLocation);
         Assert.Equal(expected.EventNotes, actual.EventNotes);
+        Assert.Equal(expected.GiftNote, actual.GiftNote);
     }
 
     [Fact]
@@ -51,6 +55,32 @@ public sealed class RevealLinkTests
         Assert.DoesNotContain('+', blob);
         Assert.DoesNotContain('/', blob);
         Assert.DoesNotContain('=', blob);
+    }
+
+    [Fact]
+    public void Codec_OmitsBudgetMin_WhenAbsent_SoMaxOnlyLinksAreUnchanged()
+    {
+        // FR-036: the minimum is additive and optional. A max-only payload must not carry the "bm" key,
+        // so links written before the minimum existed (and every max-only link) stay byte-for-byte the same.
+        var codec = new RevealLinkCodec();
+        var maxOnly = SamplePayload() with { BudgetMin = null };
+
+        var decoded = codec.Decode(codec.Encode(maxOnly));
+
+        Assert.Null(decoded.BudgetMin);
+        Assert.Equal(30m, decoded.BudgetAmount);
+    }
+
+    [Fact]
+    public void Codec_OmitsGiftNote_WhenAbsent()
+    {
+        // FR-037: the gift note is additive and optional; a payload without one must not carry the "gn" key.
+        var codec = new RevealLinkCodec();
+        var noNote = SamplePayload() with { GiftNote = null };
+
+        var decoded = codec.Decode(codec.Encode(noNote));
+
+        Assert.Null(decoded.GiftNote);
     }
 
     [Fact]

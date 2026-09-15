@@ -41,6 +41,9 @@ namespace CircleTools.Main.Service.Repository.Migrations.Linking
                         .HasMaxLength(3)
                         .HasColumnType("character varying(3)");
 
+                    b.Property<decimal?>("BudgetMinAmount")
+                        .HasColumnType("numeric");
+
                     b.Property<long>("DrawVersion")
                         .HasColumnType("bigint");
 
@@ -67,6 +70,11 @@ namespace CircleTools.Main.Service.Repository.Migrations.Linking
 
                     b.Property<Guid>("OrganizerAccountId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("RecipientGiftNote")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<Guid>("RecipientMemberId")
                         .HasColumnType("uuid");

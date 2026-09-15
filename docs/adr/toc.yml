@@ -112,5 +112,13 @@
   href: 0055-event-navigation-mobile-section-hub.md
 - name: 0056 Decouple UI language from formatting region
   href: 0056-decouple-ui-language-from-formatting-region.md
+- name: 0057 App store naming & listing localization
+  href: 0057-app-store-naming-and-localization.md
+- name: 0058 Account-free link-shared groups (third storage tier)
+  href: 0058-account-free-link-shared-groups.md
+- name: 0059 Brand marks — ring enclosing a central glyph
+  href: 0059-brand-mark-ring-and-central-glyph.md
+- name: 0060 Device-local notification scheduling & permission
+  href: 0060-local-notification-scheduling-and-permission.md
 - name: Template
   href: _template-adr.md

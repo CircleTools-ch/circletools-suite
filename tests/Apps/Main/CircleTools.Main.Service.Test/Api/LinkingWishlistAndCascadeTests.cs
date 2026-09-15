@@ -80,6 +80,29 @@ public sealed class LinkingWishlistAndCascadeTests(MailApiFactory factory)
     }
 
     [Fact]
+    public async Task DeletingAnOrganizerWhoSelfLinkedIntoTheirOwnGroup_Succeeds()
+    {
+        // An organizer who creates a group is a member of it and self-links their own account (the
+        // /self endpoint). The account is then both organizer and target of that link. Deleting it must
+        // not throw: closing (tracking) the self-link while a later bulk delete removes the same row
+        // once raised a DbUpdateConcurrencyException that turned account deletion into a 500 for any
+        // real organizer.
+        var organizer = await CircleTestAccounts.SignUpAsync(factory, "Organizer");
+        var groupId = Guid.NewGuid();
+
+        var selfLink = await organizer.Client.PostAsJsonAsync(
+            "/api/v1/member-links/self",
+            new SelfLinkRequest(groupId, "December", Guid.NewGuid(), "Organizer"));
+        selfLink.EnsureSuccessStatusCode();
+
+        var delete = await organizer.Client.PostAsJsonAsync(
+            "/api/v1/account/delete",
+            new CircleTools.Main.Contracts.DeleteAccountRequest(CircleTestAccounts.Password));
+
+        Assert.Equal(HttpStatusCode.NoContent, delete.StatusCode);
+    }
+
+    [Fact]
     public async Task DeletingALinkedUsersAccount_UnlinksEveryReferencingMember_AndTheReadIsGone()
     {
         var organizer = await CircleTestAccounts.SignUpAsync(factory, "Organizer");

@@ -7,6 +7,13 @@ tags: [architecture, privacy, identity, legal, data-protection]
 
 # ADR-0022 — Account deletion & data export model
 
+> **Extended by [ADR-0058](0058-account-free-link-shared-groups.md) (2026-09-13).** That ADR adds a
+> third *shared-by-link* storage tier, so account deletion no longer just deletes the server copy of an
+> owned group. Deletion now routes **each account-owned Secret-Santa group** through a per-group
+> disposition — **hand off as shared by link** (default when others have joined, so they keep access) /
+> **keep on this device** / **delete the online copy** — and the confirmation screen enumerates it.
+> The rules below (immediate hard delete, local copy survives, draws stand) are unchanged.
+
 ## Context and problem statement
 
 v2 stores personal data server-side for the first time — display name, email, circle memberships and

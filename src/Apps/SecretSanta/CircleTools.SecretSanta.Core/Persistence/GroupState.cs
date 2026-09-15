@@ -1,9 +1,14 @@
 namespace CircleTools.SecretSanta.Core.Persistence;
 
 /// <summary>Serializable snapshot of a <c>Budget</c> value object.</summary>
-/// <param name="Amount">The budget amount.</param>
+/// <param name="Amount">The budget maximum (upper-limit) amount.</param>
 /// <param name="Currency">The currency code.</param>
-public sealed record BudgetState(decimal Amount, string Currency);
+/// <param name="MinAmount">
+/// The optional budget minimum (lower bound), or <see langword="null"/> for a bare maximum. Snapshots
+/// written before this field existed deserialize to <see langword="null"/>, so no existing budget changes
+/// meaning (FR-036).
+/// </param>
+public sealed record BudgetState(decimal Amount, string Currency, decimal? MinAmount = null);
 
 /// <summary>Serializable snapshot of an <c>EventDetails</c> value object.</summary>
 /// <param name="Date">The optional event date.</param>
@@ -33,13 +38,19 @@ public sealed record EventDetailsState(DateTimeOffset? Date, string Location, st
 /// (ADR-0052). Snapshots written before this field existed deserialize to <see langword="false"/>
 /// (active), so no existing member is lost or hidden by the schema bump.
 /// </param>
+/// <param name="GiftNote">
+/// The member's stable gift note — allergies, dietary/lifestyle needs, "please don't get me…" shown to
+/// their giver (FR-037), or <see langword="null"/> when unset. Snapshots written before this field
+/// existed deserialize to <see langword="null"/> (no note), so no existing member changes.
+/// </param>
 public sealed record MemberState(
     Guid Id,
     string Name,
     IReadOnlyList<string>? Wishlist = null,
     Guid? UserId = null,
     Guid? OriginCirclePersonId = null,
-    bool IsArchived = false);
+    bool IsArchived = false,
+    string? GiftNote = null);
 
 /// <summary>Serializable snapshot of an <c>Exclusion</c>.</summary>
 /// <param name="GiverMemberId">The giver member identity.</param>
@@ -78,6 +89,12 @@ public sealed record EventWishlistState(Guid MemberId, IReadOnlyList<string> Ite
 /// <param name="Draws">The event's ordered draw history.</param>
 /// <param name="DrawInvalidatedByMembershipChange">Whether this event's draw was voided by a roster change.</param>
 /// <param name="Wishlists">The per-member wishlists for this event.</param>
+/// <param name="CarriedForwardBaseline">
+/// The draw carried forward from a previous occasion (FR-035), kept only as the no-repeat baseline for
+/// this event's first draw — it is <strong>not</strong> part of <paramref name="Draws"/> and the event
+/// stays undrawn. <see langword="null"/> when nothing was carried forward or a real draw has since run;
+/// snapshots written before this field existed deserialize to <see langword="null"/>, so no group changes.
+/// </param>
 public sealed record EventState(
     Guid Id,
     string Name,
@@ -85,7 +102,8 @@ public sealed record EventState(
     EventDetailsState? EventDetails,
     IReadOnlyList<DrawState> Draws,
     bool DrawInvalidatedByMembershipChange,
-    IReadOnlyList<EventWishlistState> Wishlists);
+    IReadOnlyList<EventWishlistState> Wishlists,
+    DrawState? CarriedForwardBaseline = null);
 
 /// <summary>
 /// Serializable memento of the whole <c>Group</c> aggregate. Lets persistence adapters store and

@@ -428,13 +428,14 @@ public static class LinkingEndpoints
             return Results.Unauthorized();
         }
 
-        var budget = request.Budget is null ? null : new LinkingBudget(request.Budget.Amount, request.Budget.Currency);
+        var budget = request.Budget is null ? null : new LinkingBudget(request.Budget.Amount, request.Budget.Currency, request.Budget.MinAmount);
         var eventDetails = request.Event is null
             ? null
             : new LinkingEvent(request.Event.Date, request.Event.Location, request.Event.Description);
 
         var rows = request.Assignments
-            .Select(a => new AssignmentPublication(a.GiverUserId, a.RecipientMemberId, a.RecipientName, a.RecipientWishlistSnapshot))
+            .Select(a => new AssignmentPublication(
+                a.GiverUserId, a.RecipientMemberId, a.RecipientName, a.RecipientWishlistSnapshot, a.RecipientGiftNote))
             .ToList();
 
         await store.PublishAssignmentsAsync(
@@ -473,8 +474,9 @@ public static class LinkingEndpoints
             view.EventName,
             view.RecipientName,
             view.RecipientWishlist,
-            view.Budget is null ? null : new BudgetDto(view.Budget.Amount, view.Budget.Currency),
-            view.Event is null ? null : new EventDetailsDto(view.Event.Date, view.Event.Location, view.Event.Description));
+            view.Budget is null ? null : new BudgetDto(view.Budget.Amount, view.Budget.Currency, view.Budget.MinAmount),
+            view.Event is null ? null : new EventDetailsDto(view.Event.Date, view.Event.Location, view.Event.Description),
+            view.RecipientGiftNote);
 
     private static async Task QueueMemberLinkMailAsync(
         IOutbox outbox,

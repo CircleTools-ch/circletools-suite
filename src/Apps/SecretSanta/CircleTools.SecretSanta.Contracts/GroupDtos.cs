@@ -16,9 +16,10 @@ public sealed record GroupSummaryDto(
     bool AnyDrawInvalidated);
 
 /// <summary>Gift budget for an event.</summary>
-/// <param name="Amount">The monetary amount.</param>
+/// <param name="Amount">The maximum (upper-limit) monetary amount.</param>
 /// <param name="Currency">The ISO currency code (e.g. CHF).</param>
-public sealed record BudgetDto(decimal Amount, string Currency);
+/// <param name="MinAmount">The optional minimum (lower-bound) amount, or <see langword="null"/> for a bare maximum (FR-036).</param>
+public sealed record BudgetDto(decimal Amount, string Currency, decimal? MinAmount = null);
 
 /// <summary>Details describing a gift-exchange occasion.</summary>
 /// <param name="Date">The optional event date and time.</param>
@@ -33,7 +34,11 @@ public sealed record EventDetailsDto(DateTimeOffset? Date, string Location, stri
 /// The account this member is linked to, or <see langword="null"/> when unlinked. Lets list and
 /// editor screens show link state without a second lookup.
 /// </param>
-public sealed record MemberDto(Guid Id, string Name, Guid? UserId = null);
+/// <param name="GiftNote">
+/// The member's stable gift note — allergies, dietary/lifestyle needs, or things not to buy — shown to
+/// their giver on the reveal (FR-037). Empty when unset.
+/// </param>
+public sealed record MemberDto(Guid Id, string Name, Guid? UserId = null, string GiftNote = "");
 
 /// <summary>
 /// An exclusion between two members. When <paramref name="Mutual"/> is <see langword="false"/> it is
@@ -94,6 +99,11 @@ public sealed record MemberWishlistDto(Guid MemberId, string MemberName, IReadOn
 /// <param name="CurrentAssignments">The assignments of this event's current draw (empty when none).</param>
 /// <param name="DrawInvalidatedByMembershipChange">Whether this event's draw was voided by a roster change.</param>
 /// <param name="Wishlists">Each member's wishlist for this event (one row per member; items may be empty).</param>
+/// <param name="HasCarriedForwardBaseline">
+/// Whether this (still undrawn) event carries a draw baseline from a previous occasion (FR-035), so its
+/// first draw avoids last time's pairings. Lets the draw screen offer an "ignore last time" retry if that
+/// constraint over-constrains a small roster. <see langword="false"/> once a real draw has run.
+/// </param>
 public sealed record EventDto(
     Guid Id,
     Guid GroupId,
@@ -103,7 +113,8 @@ public sealed record EventDto(
     bool HasCurrentDraw,
     IReadOnlyList<AssignmentDto> CurrentAssignments,
     bool DrawInvalidatedByMembershipChange,
-    IReadOnlyList<MemberWishlistDto> Wishlists);
+    IReadOnlyList<MemberWishlistDto> Wishlists,
+    bool HasCarriedForwardBaseline = false);
 
 /// <summary>Outcome of a draw attempt.</summary>
 /// <param name="Success">Whether a valid draw was produced.</param>

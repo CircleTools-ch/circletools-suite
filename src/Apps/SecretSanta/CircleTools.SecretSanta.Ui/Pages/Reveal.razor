@@ -1,5 +1,7 @@
 @page "/r"
 @using System.Globalization
+@using System.Security.Cryptography
+@using System.Text
 @using CircleTools.SecretSanta.Core.Reveal
 @inject RevealLinkCodec Codec
 @inject NavigationManager Navigation
@@ -18,7 +20,7 @@ else if (_payload is not null)
 
     @if (_payload.BudgetAmount is { } amount)
     {
-        <MudText Class="mb-1"><strong>@L["RevealBudgetLabel"]:</strong> @amount.ToString("0.##", CultureInfo.CurrentCulture) @_payload.BudgetCurrency</MudText>
+        <MudText Class="mb-1"><strong>@L["RevealBudgetLabel"]:</strong> @BudgetDisplay.Format(_payload.BudgetMin, amount, _payload.BudgetCurrency)</MudText>
     }
 
     @if (HasEvent)
@@ -45,11 +47,25 @@ else if (_payload is not null)
         }
     }
 
+    @* Add this occasion to the phone calendar (MNF-6) — offered once it has a date. The reopen link is
+       the reveal link itself, since a raw-link holder need not have the group. *@
+    @if (_calendarEvent is not null)
+    {
+        <div class="my-3">
+            <AddToCalendarButton CalendarEvent="_calendarEvent" />
+        </div>
+    }
+
     @if (_revealed)
     {
         <MudAlert Severity="Severity.Success" Class="mt-3">
             <MudText Class="mb-1">@L["RevealRecipientLabel"]:</MudText>
             <MudText Typo="Typo.h5" Class="mb-3">@_payload.RecipientName</MudText>
+            @if (!string.IsNullOrWhiteSpace(_payload.GiftNote))
+            {
+                @* The recipient's stable gift note — allergies, dietary/lifestyle, do-not-gift (FR-037). *@
+                <MudText Class="mb-3"><strong>@L["RevealGiftNoteLabel"]:</strong> @_payload.GiftNote</MudText>
+            }
             <MudText Class="mb-1"><strong>@L["RevealWishlistLabel"]:</strong></MudText>
             @if (_payload.Wishlist.Count == 0)
             {
@@ -78,6 +94,7 @@ else if (_payload is not null)
     private RevealPayload? _payload;
     private string _label = string.Empty;
     private DateTimeOffset? _eventDate;
+    private CalendarEvent? _calendarEvent;
     private bool _revealed;
     private bool _error;
 
@@ -106,10 +123,42 @@ else if (_payload is not null)
             {
                 _eventDate = parsed;
             }
+
+            _calendarEvent = BuildCalendarEvent();
         }
         catch (FormatException)
         {
             _error = true;
         }
+    }
+
+    // The reveal page's calendar entry: a generic title (the payload has no event name), the date/location/
+    // notes/budget it carries, and the reveal link itself as the reopen URL (a raw-link holder need not
+    // have the group). Null when there is no date. Never includes the recipient — that is the secret.
+    private CalendarEvent? BuildCalendarEvent()
+    {
+        if (_eventDate is not { } date || _payload is null)
+        {
+            return null;
+        }
+
+        var budget = _payload.BudgetAmount is { } amount
+            ? new BudgetDto(amount, _payload.BudgetCurrency ?? string.Empty, _payload.BudgetMin)
+            : null;
+
+        return new CalendarEvent(
+            Uid: RevealUid(),
+            Title: L["AppName"],
+            Date: DateOnly.FromDateTime(date.Date),
+            Location: string.IsNullOrWhiteSpace(_payload.EventLocation) ? null : _payload.EventLocation,
+            Notes: CalendarEventFactory.ComposeNotes(_payload.EventNotes, budget, L["RevealBudgetLabel"]),
+            Url: Navigation.Uri);
+    }
+
+    // A stable id derived from the link, so re-adding the same reveal does not duplicate the entry.
+    private string RevealUid()
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(Navigation.Uri));
+        return $"secretsanta-reveal-{Convert.ToHexString(hash)[..16].ToLowerInvariant()}@circletools.ch";
     }
 }

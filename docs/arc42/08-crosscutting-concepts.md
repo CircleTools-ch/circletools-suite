@@ -24,9 +24,13 @@ behind a concrete trigger.
 ## 8.3 Synchronization
 
 **Local-first**: the device stays authoritative and usable offline; the server is a relay and backup,
-never a gatekeeper ([NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md)). Sync
-applies only to a signed-in [User](../glossary/user.md) — without an account there is no server and no
-sync.
+never a gatekeeper ([NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md)). Sync is
+**opt-in and per-group**: a group stored **on the device** (the default) never touches the server,
+while a group reaches the server either **synced to a signed-in [User](../glossary/user.md)** or
+**shared by link** — an account-free group the server holds keyed by an unguessable **share token** and
+reconciled with every device holding an admin or join link
+([ADR-0058](../adr/0058-account-free-link-shared-groups.md)). The earlier "without an account there is
+no server" holds only for on-this-device groups.
 
 The mechanism ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md)): the **aggregate is the sync
 unit** (never merged field-by-field, which would break its invariants); each carries a **version

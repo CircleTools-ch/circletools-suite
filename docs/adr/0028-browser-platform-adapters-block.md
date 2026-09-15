@@ -88,6 +88,50 @@ Sharing is a convenience, not a gate: the Share page keeps its always-available 
 browser implementation reports `IsSupportedAsync() == false` where the Web Share API is absent (most
 desktops), so the button simply does not appear there.
 
+## Amendment (2026-09-15) — the calendar seam
+
+Add-to-calendar (MNF-6, [FR-044](../requirements/functional/FR-044-add-event-to-device-calendar.md),
+[FEAT-014](../features/FEAT-014-add-event-to-calendar.md)) adds a sixth platform seam,
+**`ICalendarService`** — hand one occasion to the platform's own calendar UI, **pre-filled**, so the
+person reviews and saves it. It follows this ADR exactly:
+
+- The seam, `ICalendarService`, is declared in `Ui.Abstractions` (references nothing). It takes a small
+  head-agnostic `CalendarEvent` value (title, date, optional location, optional notes) — no assignment or
+  reveal secret ([NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)) — plus an
+  `IsSupportedAsync`, mirroring `IShareService`.
+- The **iCalendar (`.ics`) VEVENT is generated in shared, head-agnostic code** (an all-day event on the
+  date), so it exists once for every head and works on the account-free reveal page with no network. Only
+  *delivery* to the calendar is per-head.
+- The **browser** implementation, `BrowserCalendarService`, offers the `.ics` to the OS (a data/blob URL
+  the browser hands to the calendar app). It lives **host-local** in `SecretSanta.WebApp/Interop` — the
+  same place and reason as `BrowserShareService`: paired with a small JS asset and, for now, one web
+  consumer. It moves into `Ui.Web` with its asset when a second web host needs it.
+- The **device** implementation, `MauiCalendarService`, lives in the App head's `Platform/` folder beside
+  `MauiShareService`. It **does not** hand Android an `.ics` file: Android has no consistent default
+  handler for `text/calendar`, so it uses **`Intent.ACTION_INSERT` on `CalendarContract.Events`**, which
+  reliably opens the calendar's pre-filled *new-event editor*. iOS (when that head is built,
+  [ADR-0031](0031-ios-build-host.md)) writes the shared `.ics` to a temp file and opens it, so Calendar
+  shows its add-event preview.
+- Both composition roots register it inline (`AddScoped<ICalendarService, …>()`), keeping the swap point
+  one visible line — exactly as for the other seams.
+
+Two decisions this amendment pins down, consistent with the block's rules rather than deciding anything
+new:
+
+- **Hybrid delivery, not `.ics`-everywhere.** The `.ics` is the shared artifact and the right delivery on
+  iOS and the web; on Android the reliable path is the INSERT intent. The seam is "add this occasion to
+  the calendar," and each head does what actually lands the entry — the same "a host chooses the platform"
+  principle this ADR already amended ADR-0025 to.
+- **System-UI only, no silent write.** Both the `.ics` open and `ACTION_INSERT` show the platform's own
+  add/preview screen and need **no calendar permission** (unlike, e.g., the `VIBRATE` manifest entry the
+  haptics seam required) — so there is no manifest change, and the user always sees what is being added.
+  A truly silent programmatic write (EventKit / `CalendarContract` insert) was rejected: it needs a
+  permission prompt and a dependency, for less transparency.
+
+Add-to-calendar is a convenience, not a gate: the action only appears for an occasion that has a date, and
+where a platform cannot present a calendar at all the `.ics` is simply offered for download. Nothing
+depends on the calendar being present.
+
 ## Consequences
 
 - **Positive:** the browser storage implementation exists once for the whole suite; a third web app
@@ -130,4 +174,7 @@ desktops), so the button simply does not appear there.
 - arc42: [05 Building-block view](../arc42/05-building-block-view.md)
 - Guidelines: [architecture](../guidelines/architecture-guidelines.md) §4
 - Requirements: [NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md),
-  [NFR-003](../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)
+  [NFR-003](../requirements/non-functional/NFR-003-multilingual-de-en-fr.md),
+  [FR-044](../requirements/functional/FR-044-add-event-to-device-calendar.md) (the calendar seam)
+- Feature specs using seams from this ADR:
+  [FEAT-014](../features/FEAT-014-add-event-to-calendar.md) (add-to-calendar)

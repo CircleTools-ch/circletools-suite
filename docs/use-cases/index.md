@@ -41,6 +41,16 @@ Use cases describe how actors achieve goals with the system. They are the bridge
 | [UC-SS-012](secret-santa/UC-SS-012-edit-my-wishlist.md) | Edit my own wishlist | Secret-Santa | Approved |
 | [UC-SS-013](secret-santa/UC-SS-013-manage-events.md) | Manage multiple events (occasions) in a group | Secret-Santa | Approved |
 | [UC-MAIN-017](main/UC-MAIN-017-single-sign-on-across-apps.md) | Stay signed in when moving between suite apps | Main | Approved |
+| [UC-SS-014](secret-santa/UC-SS-014-carry-forward-new-occasion.md) | Create a new occasion carrying forward from a previous one | Secret-Santa | Draft |
+| [UC-SS-015](secret-santa/UC-SS-015-budget-minimum-and-maximum.md) | Set a minimum as well as a maximum gift budget | Secret-Santa | Reviewed |
+| [UC-SS-016](secret-santa/UC-SS-016-member-gift-note.md) | Give a member a gift note (allergies, dietary, do-not-gift) their giver sees | Secret-Santa | Reviewed |
+| [UC-SS-017](secret-santa/UC-SS-017-choose-and-switch-storage-mode.md) | Choose a group's storage mode at creation and switch it later | Secret-Santa | Approved |
+| [UC-SS-018](secret-santa/UC-SS-018-share-and-manage-as-admin.md) | Share and manage a shared-by-link group as an admin | Secret-Santa | Approved |
+| [UC-SS-019](secret-santa/UC-SS-019-join-a-shared-group.md) | Join a shared-by-link group via the join link | Secret-Santa | Approved |
+| [UC-SS-020](secret-santa/UC-SS-020-release-a-claimed-person.md) | Free (release) a claimed person so they can rejoin | Secret-Santa | Approved |
+| [UC-SS-021](secret-santa/UC-SS-021-add-occasion-to-calendar.md) | Add an occasion to my phone calendar | Secret-Santa | Approved |
+| [UC-SS-022](secret-santa/UC-SS-022-hand-out-reveal-links.md) | Hand out reveal links without forgetting anyone | Secret-Santa | Approved |
+| [UC-SS-023](secret-santa/UC-SS-023-be-reminded-about-my-occasions.md) | Be reminded about my occasions (device-local notifications) | Secret-Santa | Approved |
 
 _Add a row per use case._
 

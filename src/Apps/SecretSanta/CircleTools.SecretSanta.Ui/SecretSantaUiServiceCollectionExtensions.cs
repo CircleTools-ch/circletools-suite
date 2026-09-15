@@ -55,6 +55,9 @@ public static class SecretSantaUiServiceCollectionExtensions
         // for a background sync; queries never do. The host must register an IConnectivity seam for the
         // reconnect trigger.
         services.AddScoped<AutoSyncService>();
+        // Expose only the "a sync landed" signal to pages that refresh on it (FEAT-013 co-admin edits),
+        // resolved to the same instance — so a page depends on the notification, not the whole engine.
+        services.AddScoped<ISyncSignals>(sp => sp.GetRequiredService<AutoSyncService>());
         services.AddScoped<VisibleGroupsService>();
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AutoSyncBehavior<,>));
 
@@ -62,6 +65,10 @@ public static class SecretSantaUiServiceCollectionExtensions
         // as its own opaque kind. The service reads and toggles pins over the local store.
         services.AddScoped<BookmarkService>();
         services.AddScoped<RecentAccessService>();
+        services.AddScoped<HandoutProgressService>();
+        services.AddScoped<NotificationPreferences>();
+        services.AddScoped<ReminderScheduler>();
+        services.AddScoped<IReminderRescheduler>(sp => sp.GetRequiredService<ReminderScheduler>());
 
         // Per-app header identity (ADR-0040 amendment): the gifts-ring mark and the festive burgundy on
         // the app bar. Head-agnostic (web + MAUI); the logo is served same-origin from the shared

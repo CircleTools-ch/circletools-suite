@@ -18,6 +18,7 @@ public sealed class Event : Entity
 {
     private readonly List<Draw> _draws;
     private readonly Dictionary<Guid, Wishlist> _wishlists;
+    private Draw? _baselineDraw;
 
     private Event(
         Guid id,
@@ -26,7 +27,8 @@ public sealed class Event : Entity
         EventDetails? eventDetails,
         List<Draw> draws,
         Dictionary<Guid, Wishlist> wishlists,
-        bool drawInvalidatedByMembershipChange)
+        bool drawInvalidatedByMembershipChange,
+        Draw? baselineDraw)
     {
         Id = id;
         Name = name;
@@ -35,6 +37,7 @@ public sealed class Event : Entity
         _draws = draws;
         _wishlists = wishlists;
         DrawInvalidatedByMembershipChange = drawInvalidatedByMembershipChange;
+        _baselineDraw = baselineDraw;
     }
 
     /// <summary>
@@ -68,6 +71,16 @@ public sealed class Event : Entity
     public IReadOnlyCollection<Guid> WishlistMemberIds => _wishlists.Keys;
 
     /// <summary>
+    /// Gets the <em>baseline</em> draw carried forward from a previous occasion (FR-035), or
+    /// <see langword="null"/>. It is <strong>not</strong> part of <see cref="Draws"/> and never becomes
+    /// <see cref="CurrentDraw"/> — a carried-forward event reads as <em>undrawn</em> (no reveal links) —
+    /// but it is honoured as the "previous draw" for draw rule (c) so the event's <em>first</em> draw does
+    /// not reproduce last time's pairings. Once a real draw is appended it is cleared, since
+    /// <see cref="CurrentDraw"/> then supplies the rule-(c) baseline.
+    /// </summary>
+    internal Draw? BaselineDraw => _baselineDraw;
+
+    /// <summary>
     /// Creates a new, empty event with no budget, event details, wishlists or draws. The id is supplied
     /// by the <see cref="Group"/>: the group's first/default event takes the group's own id (a
     /// deterministic value the server-side migration can compute without coordination, ADR-0042), and a
@@ -77,7 +90,7 @@ public sealed class Event : Entity
     /// <param name="name">The event name; may be empty.</param>
     /// <returns>The created event.</returns>
     internal static Event Create(Guid id, string name) =>
-        new(id, (name ?? string.Empty).Trim(), budget: null, eventDetails: null, draws: [], wishlists: [], drawInvalidatedByMembershipChange: false);
+        new(id, (name ?? string.Empty).Trim(), budget: null, eventDetails: null, draws: [], wishlists: [], drawInvalidatedByMembershipChange: false, baselineDraw: null);
 
     /// <summary>Reconstructs an event from a previously captured memento.</summary>
     internal static Event Restore(
@@ -87,8 +100,9 @@ public sealed class Event : Entity
         EventDetails? eventDetails,
         List<Draw> draws,
         Dictionary<Guid, Wishlist> wishlists,
-        bool drawInvalidatedByMembershipChange) =>
-        new(id, (name ?? string.Empty).Trim(), budget, eventDetails, draws, wishlists, drawInvalidatedByMembershipChange);
+        bool drawInvalidatedByMembershipChange,
+        Draw? baselineDraw = null) =>
+        new(id, (name ?? string.Empty).Trim(), budget, eventDetails, draws, wishlists, drawInvalidatedByMembershipChange, baselineDraw);
 
     /// <summary>Gets the wishlist a member has for this event, or an empty one if they have set none.</summary>
     /// <param name="memberId">The member whose wishlist is wanted.</param>
@@ -121,7 +135,36 @@ public sealed class Event : Entity
     {
         _draws.Add(Draw.Create(assignments, now));
         DrawInvalidatedByMembershipChange = false;
+
+        // A real draw now supplies the rule-(c) baseline; the carried-forward one has served its purpose.
+        _baselineDraw = null;
     }
+
+    /// <summary>
+    /// Records a draw carried forward from a previous occasion as this event's rule-(c)
+    /// <see cref="BaselineDraw"/> (FR-035). A no-op once the event has any real draw of its own — the
+    /// event's own <see cref="CurrentDraw"/> is then the correct baseline. The carried assignments are not
+    /// added to <see cref="Draws"/>, so the event stays undrawn.
+    /// </summary>
+    /// <param name="assignments">The previous occasion's assignments to carry as the baseline.</param>
+    /// <param name="now">The instant used to stamp the baseline draw.</param>
+    internal void SeedBaselineDraw(IReadOnlyList<Assignment> assignments, DateTimeOffset now)
+    {
+        ArgumentNullException.ThrowIfNull(assignments);
+        if (_draws.Count > 0 || assignments.Count == 0)
+        {
+            return;
+        }
+
+        _baselineDraw = Draw.Create(assignments, now);
+    }
+
+    /// <summary>
+    /// Gets the giver→recipient map the next draw must not reproduce (rule (c)): the event's own
+    /// <see cref="CurrentDraw"/> once it has one, else the carried-forward <see cref="BaselineDraw"/>, else
+    /// <see langword="null"/>.
+    /// </summary>
+    internal IReadOnlyDictionary<Guid, Guid>? PreviousDrawForNoRepeat() => (CurrentDraw ?? _baselineDraw)?.ToMap();
 
     /// <summary>
     /// Flags this event's current draw as no longer matching the shared roster, because a member was

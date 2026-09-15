@@ -3,6 +3,132 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Shared-by-link sync — Secret-Santa (2026-09-14)
+
+Found while re-testing the account-free **link-shared groups** ([FEAT-013](../features/FEAT-013-account-free-link-shared-groups.md),
+[ADR-0058](../adr/0058-account-free-link-shared-groups.md)) end-to-end in **two independent real browsers** against
+the live Aspire stack — the admin↔admin path the earlier pass missed (it only drove the participant *join* link).
+
+- **SBL-1 · Shared-by-link changes never pull on a plain refresh while signed out (bug, P1).** ✅ **Fixed,
+  browser-verified.** A co-organizer who opened the **admin link** in a second browser and added members saw them
+  pushed to the server correctly, but the **creator's browser never showed them on refresh** — not even on repeated
+  refreshes. Same class as **DGH-6**: a sync path that only fires when signed in, applied to data that is
+  account-free. `AutoSyncService.RunSharedCycleAsync` is explicitly built to reconcile shared-by-link groups
+  **signed in or out**, but the **app-start trigger** in `InitializeAsync` only called `RequestSync()` when
+  `CurrentAccountAsync() != Guid.Empty` — so a signed-out shared-by-link holder's cycle only ran after a *local*
+  edit (which then clobbers the un-pulled change via last-write-wins), a reconnect, or (touch-only) pull-to-refresh.
+  A plain desktop refresh triggered nothing. **Fix:** `InitializeAsync` now calls `RequestSync()` unconditionally on
+  app start — the shared cycle runs first and always, the account cycle self-gates on sign-in, and the whole cycle is
+  a cheap no-op when there is nothing to reconcile. **Diagnosis proof:** before the fix, adding any member on the
+  creator's device (which *does* trigger `RequestSync`) immediately pulled the co-admin's members on the next refresh,
+  isolating the bug to the missing trigger rather than the reconcile. **Browser-verified (two browsers, live stack):**
+  B1 creates a shared group → B2 opens the admin link and adds Carol+Dan (server reaches v3) → **B1 pulls both on a
+  pure refresh with no local edit** (was empty on every refresh before the fix); console clean.
+- **SBL-2 · Section pages didn't refresh in place when a background sync landed (bug, P2).** ✅ **Fixed,
+  unit- and two-browser-verified (2026-09-15).** Follow-on found by the maintainer editing the same group in two admin windows: after SBL-1 a
+  co-admin's edit *did* sync, but the open page only showed it on the *next* refresh — the refresh that triggered the
+  pull rendered the pre-pull state, so it felt like "several refreshes" or "only a force-refresh (Ctrl+Shift+R) works."
+  Confirmed it was **not** the HTTP cache (verified: a default-cache fetch and a `no-store` fetch both returned the
+  fresh version; the API sends no cache headers but Chrome was not serving stale) — the page simply never re-read the
+  store after a background pull. **Fix:** a small `ISyncSignals` seam (just the `SyncCompleted` event, implemented by
+  `AutoSyncService`, resolved to the same instance) that the group/event **read** pages — Members, group hub
+  (`GroupEditor`), Exclusions, `EventHub`, Draw, Share — subscribe to and reload on, mirroring what the shell already
+  does for the drawer. The two **form** pages (`EventEditor` details, `EventWishlists`) were deliberately left out: a
+  live reload there would discard the editor's in-progress typing. A page depends only on the notification, so a
+  component test supplies a trivial `FakeSyncSignals` instead of the whole sync graph. Covered by a new bUnit
+  regression (`MembersPageSyncRefreshTests`: firing `SyncCompleted` swaps the roster in place); **37/37 Ui tests
+  green**. **Two-browser re-verify done (2026-09-15, live Aspire stack, two isolated headless-Chrome devices over
+  CDP):** device 1 created a shared-by-link group (member *Anna*) and opened Members; device 2 opened the **admin
+  link** (group adopted with the *Shared by link* chip, *Anna* pulled) and added *Carol* → pushed. With device 1's
+  Members page **open and idle** (Anna, Carol; no *Erin*), device 2 added *Erin*; a background cycle then landed on
+  device 1 and **Erin appeared in place — no navigation, no manual refresh** (the `SyncCompleted` reload), the
+  add-member field left undisturbed. Console clean throughout. This also re-confirmed **SBL-1** (device 1's fresh
+  signed-out load pulled Carol without a hard refresh). Still a known limit (P3, parked): an **idle** open tab with no trigger doesn't pull at all — a co-admin's
+  change needs a refresh (or reconnect / pull-to-refresh) to *start* a cycle; a focus/`visibilitychange` or periodic
+  pull would make an idle tab live, but that nudges the deliberately-parked continuous-sync decision
+  ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md)).
+  - **Also observed (expected, note only):** shared reconcile is last-write-wins per aggregate, so a local edit made
+    on one device *before* it has pulled a newer server version is silently superseded on the next cycle. Inherent to
+    the ADR-0058 whole-aggregate model; flagged so it is a known trade-off, not a surprise.
+
+## Competitor-research candidates — Secret-Santa (2026-09-02)
+
+Promoted from the [DE/EN/FR app-store competitor & review scan](../brainstorming/2026-09-02-secret-santa-competitor-research.md).
+The scan's headline is that our **no-account / offline / link-or-QR / non-spoiling-reveal / draw-that-never-repeats**
+spine is exactly what reviewers reward and incumbents get wrong — so these are the *on-strategy additions* it
+surfaced, not a pivot. Each is a stub; take through the [process](../process/ways-of-working.md) (use case →
+requirement → feature spec) if pursued. The QR work already in flight is **MNF-5** in the
+[distribution cluster](#mobile-native-feel-pass--secret-santa-2026-09-02); reminders are **MNF-8** below (this scan
+raises its motivation).
+
+- **CR-1 · Recurring event carries wish lists + exclusions forward (P1).** Highest-value new candidate. Reviewers
+  in all three markets complain that copying last year's event **loses the wish lists** (children's lists must be
+  re-typed) and sometimes the exclusions too (DrawNames, Giftster). When creating a new occasion from a group that
+  already has a past one, offer to **carry forward each member's wishlist and the exclusion set** (editable, not
+  forced). Fits the events-as-first-class model ([ADR-0042](../adr/0042-events-as-first-class-entities.md)) and the
+  member-archival/draw-history work ([ADR-0052](../adr/0052-member-archival-and-permanent-draw-history.md)). Design
+  q: carry-forward as a copy at creation vs. a live link to the prior occasion.
+  **✅ Promoted through the process (2026-09-02):** [UC-SS-014](../use-cases/secret-santa/UC-SS-014-carry-forward-new-occasion.md)
+  → [FR-035](../requirements/functional/FR-035-carry-forward-new-occasion.md) →
+  [FEAT-010](../features/FEAT-010-carry-forward-new-occasion.md) / [TP-010](../features/TP-010-carry-forward-new-occasion.md),
+  new glossary term [Carry-forward](../glossary/carry-forward.md). Scope **sharpened against the model**: exclusions
+  already carry (shared at group level, FR-034), so carry-forward copies **wishlists + budget** and seeds the new
+  event's **draw-history baseline** with the source draw so the next draw won't repeat last year's pairing — which
+  also answers the "same recipient every year" complaint. Copy-at-creation chosen (events stay independent, ADR-0042);
+  no new ADR. Distinct from the account-only linked-member self-copy (`CopyFrom`, FR-030). ✅ **Built & browser-verified
+  2026-09-02** ([FEAT-010](../features/FEAT-010-carry-forward-new-occasion.md) *Done*): `Group.AddEventFrom`
+  + an `Event` baseline draw (separate from the draw history, so a carried occasion reads as undrawn but its
+  first draw avoids last time's pairings), `CarryForwardEventDialog` on the group hub, and a "draw anyway"
+  escape on the Draw screen for the rare over-constrained roster. Solution builds clean; 198 tests green
+  (incl. 8 new); Playwright DE/EN/FR walkthrough clean-console, carried occasion draws.
+- **CR-2 · Budget minimum *and* maximum (P2, cheap).** Every surveyed app offers only a **max** price; a recurring
+  wish is a **minimum** too (so cheap-out gifts don't undercut the exchange). The event already has budget fields
+  ([per-event editor](../features/FEAT-007-events-per-group.md)); add an optional lower bound and show the range on
+  the reveal link. Small, closes a universal gap. Watch localization: CHF/EUR formatting per
+  [ADR-0056](../adr/0056-decouple-ui-language-from-formatting-region.md).
+  **✅ Promoted through the process (2026-09-03):** [UC-SS-015](../use-cases/secret-santa/UC-SS-015-budget-minimum-and-maximum.md)
+  → [FR-036](../requirements/functional/FR-036-budget-minimum-and-maximum.md) →
+  [FEAT-011](../features/FEAT-011-budget-minimum-and-maximum.md) / [TP-011](../features/TP-011-budget-minimum-and-maximum.md),
+  glossary [Budget](../glossary/budget.md) amended to define the range. Design calls (recorded in the FEAT, **no ADR**):
+  the existing single amount **is the maximum** and the new field is an optional floor (`0 ≤ min ≤ max`, one currency);
+  min-only budgets are not offered. The minimum rides the reveal payload as an **additive optional field** (`bm`)
+  **omitted when unset**, so max-only and pre-existing links are byte-for-byte unchanged and the payload version does
+  not bump. ✅ **Built & browser-verified 2026-09-03** ([FEAT-011](../features/FEAT-011-budget-minimum-and-maximum.md)
+  *Done*): `Budget.MinAmount` + invariant, a **Minimum** field on the event-details editor (old "Amount" relabelled
+  **Maximum**), and a shared `BudgetDisplay.Format` rendering "10–30 CHF" (range) or "30 CHF" (bare max) on the reveal +
+  my-assignments screens. Solution builds clean; **208 tests green** (incl. 10 new); Playwright DE/EN/FR walkthrough
+  clean-console — range shown, max-only unchanged, min-exceeds-max rejected inline.
+  **Gap found & closed (2026-09-03):** at ship time the range reached only the account-free **reveal link** — a linked
+  member's *my-assignments* rebuilds from a server projection that stored only budget amount+currency, so it showed the
+  bare max. **CR-3** carried the minimum through that projection (new `BudgetMinAmount` column + Linking migration,
+  needed there anyway for the gift note), so my-assignments now shows the range too. FEAT-011 corrected accordingly.
+- **CR-3 · "Do-not-gift" / dietary & lifestyle notes per member (P2).** Distinct from person-*exclusions* (who draws
+  whom): a free-text/tagged **"please don't get me…" / allergies / dietary / lifestyle** note the giver sees on the
+  reveal. Repeatedly wished-for across markets, done well by nobody. Rides on the existing wishlist plumbing and the
+  self-contained reveal payload ([ADR-0014](../adr/0014-reveal-link-encoding-and-privacy.md)) — mind the encoded-link
+  size budget. Glossary: may want a term (extends [wishlist](../glossary/wishlist.md)).
+  **✅ Promoted through the process (2026-09-03):** [UC-SS-016](../use-cases/secret-santa/UC-SS-016-member-gift-note.md)
+  → [FR-037](../requirements/functional/FR-037-member-gift-note.md) →
+  [FEAT-012](../features/FEAT-012-member-gift-note.md) / [TP-012](../features/TP-012-member-gift-note.md),
+  new glossary term [Gift note](../glossary/gift-note.md). **Design call (recorded, no ADR):** modelled **on the
+  `Member`** (a stable per-person attribute — an allergy is the same every occasion), *not* per-event like a wishlist,
+  so it is set once and shown on every draw; organizer-authored in v1 (linked-member self-authoring parked). Free text
+  capped at **500 chars** to protect the encoded link; carried as an **additive optional** reveal-payload field (`gn`)
+  omitted when unset (version unchanged). ✅ **Built & browser-verified 2026-09-03**
+  ([FEAT-012](../features/FEAT-012-member-gift-note.md) *Done*): `Member.GiftNote` + `Group.SetMemberGiftNote`
+  (independent of rename), a gift-note field on the members editor, and a **"Good to know"** line on the reveal +
+  my-assignments (after the giftee is revealed). The linked-member path required a **Linking Postgres migration**
+  (`AddAssignmentBudgetMinAndGiftNote`) adding `RecipientGiftNote` **and** `BudgetMinAmount` to the assignment
+  projection — which **also closed the CR-2 gap** (the budget range now reaches my-assignments, not only the reveal
+  link). Solution builds clean; **218 SecretSanta+arch tests green** (incl. 11 new) + a Docker-only Main projection
+  test; Playwright DE/EN/FR walkthrough clean-console.
+- **CR-4 · Schrottwichteln variant — each person draws 2 recipients (P3, DACH differentiator).** A culturally
+  distinct DACH format (each participant is Wichtel for **two** people) that **native apps largely ignore** — only
+  web tools (Wichtlify) model it. Sits naturally with the Swiss-first stance. Needs a draw-algorithm variant (the
+  fair-draw/no-reciprocal/no-repeat invariants must extend to a 2-recipient assignment) and a reveal that shows both
+  giftees. Bigger than CR-1..3; spec as its own feature if pursued. Ubiquitous-language check first — add a
+  **Schrottwichteln** glossary entry before naming it in code.
+
 ## Drawer & group-hub refinements — Secret-Santa (2026-09-02)
 
 Follow-ups from the maintainer's use, on top of the [chrome/navigation review](#mobile-chrome--navigation-review--secret-santa-2026-09-02).
@@ -171,18 +297,109 @@ and consumes the [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-se
 
 **Selected earlier, distribution cluster (from the [mobile brainstorm](../brainstorming/2026-09-01-secret-santa-mobile.md)) — build next:**
 
-- **MNF-5 · QR code per reveal link (P2).** Show a scannable code so the recipient joins in the room with
-  no messaging app. Small, high-fit; spec as its own feature/backlog item.
+- **MNF-5 · QR code per reveal link (P2).** ✅ **Built 2026-09-02, browser-verified (DE/EN/FR); device
+  pass pending.** Each reveal link on the Share page gained a **QR CODE** button beside Copy/Share that
+  opens a centered dialog (`SecretSanta.Ui/Shared/QrDialog.razor` via `IDialogService`) titled with the
+  recipient's name, showing a large scannable QR of *their* link plus a one-line hint — so the organizer
+  holds up their phone and the recipient scans it, no messaging app needed. The code is drawn by a new
+  reusable `QrImage.razor` component over **QRCoder 1.8.0** `PngByteQRCode`: pure managed, no
+  System.Drawing and no JS interop, so it renders the same PNG data-URI **offline** in the WASM web head
+  and the MAUI Blazor Hybrid webview with **no platform seam** (unlike `IShareService`). ECC level M keeps
+  a 2 KB link (the `MaxRecommendedUrlLength` budget) within capacity while short links stay easy to scan;
+  the PNG renders `image-rendering: pixelated` on a white ground so it is crisp and scannable in dark
+  theme too. **Decision, no ADR:** QRCoder is a small, single-purpose, reversible dependency scoped to
+  `SecretSanta.Ui` (kept out of the Main bundle); recorded here and in `Directory.Packages.props` rather
+  than as an architecture decision — promote to `Ui.Shared` if a second app needs QR. Three new strings
+  (`ShowQr`, `QrHint`, `Close`) in all four resx (de-CH "Schliessen"; FR "vous"); parity green; Ui suite
+  **33/33** (added `QrImageTests` + a Share-page QR-button test). **Browser-verified** (Playwright,
+  1280px + 390px, DE/EN/FR): create → event → 3 members → draw → Share shows three QR CODE buttons →
+  the dialog renders a valid `data:image/png` QR titled per recipient with the localized hint and Close,
+  console clean (only the pre-existing `<link rel=preload>` boot warnings). **Still to confirm on the
+  Pixel:** the QR under a real camera scan, and the three-button (Copy/QR/Share) row on a phone where the
+  Web Share API is present (the headless desktop context hides Share, so only the two-button row was
+  captured on narrow). Deferred: a QR-decode assertion (the link → `QrImage.Value` wiring is unit-tested
+  and the code renders correctly on screen).
 - **MNF-6 · Add-to-calendar for an event (P2).** One tap from the event's date/location/description into
   the phone calendar.
+  **✅ Promoted through the process (2026-09-15):** [UC-SS-021](../use-cases/secret-santa/UC-SS-021-add-occasion-to-calendar.md)
+  → [FR-044](../requirements/functional/FR-044-add-event-to-device-calendar.md) →
+  [FEAT-014](../features/FEAT-014-add-event-to-calendar.md) / [TP-014](../features/TP-014-add-event-to-calendar.md),
+  with the calendar platform seam recorded as an
+  [ADR-0028 amendment](../adr/0028-browser-platform-adapters-block.md) (no new ADR). **Design calls
+  (locked, recorded in the FEAT):** a shared client-side **`.ics` VEVENT** backbone (works on the
+  account-free reveal page) delivered per head — **web** opens the `.ics`, **Android** uses
+  `Intent.ACTION_INSERT` (reliable; Android has no consistent `text/calendar` handler), **iOS** opens the
+  `.ics` (deferred with the iOS head, [ADR-0031](../adr/0031-ios-build-host.md)); an **all-day** entry
+  (the date is date-only), **gated on a date being set**; **system-UI only — no silent write, no calendar
+  permission** (so no manifest change, unlike haptics' `VIBRATE`); the entry carries name + location +
+  notes + **budget range** but **never an assignment** ([NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md));
+  offered to the **organizer** (event Details + hub) **and every recipient** (reveal / my-assignments).
+  The entry also carries a **deep link back into the app at the occasion** (in v1, all three storage modes):
+  the app's own event route built from the reveal base URL, in the `.ics` `URL` property **and** the
+  description, reusing the existing App Link / `DeepLinkService` machinery
+  ([ADR-0053](../adr/0053-backend-free-first-mobile-release.md)) — carries no secret (opaque GUIDs), and
+  behaves exactly like reveal links today re: build-time origin and the Android chooser-until-real-
+  `assetlinks.json`-fingerprint. **✅ Built & browser-verified 2026-09-15** ([FEAT-014](../features/FEAT-014-add-event-to-calendar.md)
+  *Done*): the `ICalendarService`/`IcsBuilder` seam + per-head impls + the shared button on hub/reveal/
+  my-assignments + the `/groups` App Link intent-filter. Solution builds clean (incl. the MAUI Android head
+  0/0); Ui 72/72 + Architecture 28/28. Browser walk confirmed the button appears on the hub and reveal page
+  once a date is set (absent without one), non-spoiling, console clean. **✅ On-device confirmed on the Pixel 9
+  Pro 2026-09-15:** the button on a dated event hub → `ACTION_INSERT` → Google Calendar opened a **pre-filled
+  all-day event** (correct title + date, no off-by-one). Residual: App Link **auto-open** still needs the real
+  Play-signing `assetlinks.json` fingerprint (shared pre-go-live item with reveal links).
 - **MNF-7 · Share all links for an event at once (P2).** Follow-on to the existing share seam.
+  **✅ Promoted through the process (2026-09-15):** [UC-SS-022](../use-cases/secret-santa/UC-SS-022-hand-out-reveal-links.md)
+  → [FR-045](../requirements/functional/FR-045-guided-hand-out-of-reveal-links.md) →
+  [FEAT-015](../features/FEAT-015-guided-hand-out-of-reveal-links.md) /
+  [TP-015](../features/TP-015-guided-hand-out-of-reveal-links.md), reusing the `IShareService` seam
+  ([ADR-0028](../adr/0028-browser-platform-adapters-block.md), **no new ADR**). **Design calls (locked):**
+  "share all" is a **guided hand-out** — the app walks the whole draw, firing the share sheet (or Copy on
+  a desktop browser) for **one person's** link at a time and tracking who is done (**"X of Y done ·
+  Z left"**), so nobody is forgotten. It **never** composes a payload with more than one reveal link — the
+  naive "all links in one message" is a spoiler leak and is forbidden
+  ([NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)). Handed-out progress is
+  **device-local, per event, not synced** (via `IKeyValueStore`, like the recent-groups/culture prefs),
+  survives an app reopen, and **resets on a re-draw** (the links change). Per-person Share/Copy/QR stay for
+  one-offs; value is concentrated in the account-free / shared-by-link modes (linked members see their own
+  assignment in-app). **✅ Built & browser-verified 2026-09-15** ([FEAT-015](../features/FEAT-015-guided-hand-out-of-reveal-links.md)
+  *Done*): a **Hand out links** button + guided `HandoutDialog` + `HandoutProgressService` (device-local,
+  keyed by a reveal-link hash so a re-draw resets). Builds clean; Ui 72/72. Browser walk confirmed
+  "Handed out: 0 / 3" → dialog (one-at-a-time Share/Copy/Mark) → "1 / 3" + chip **persist across a full
+  reload**, console clean. **Pending the Pixel:** the guided hand-out under a finger — its OS share sheet reuses
+  the already-device-proven `IShareService` (reveal-link share confirmed on the Pixel earlier), so only the
+  hand-out flow itself is unverified on device (not re-driven this pass; needs a draw set up on the phone).
 
 **Parked — need their own design/ADR before building:**
 
-- **MNF-8 · Local notifications (P1 value, parked).** Draw-reminder before the event, "event is
+- **MNF-8 · Local notifications (P1 value).** Draw-reminder before the event, "event is
   tomorrow", empty-wishlist nudge — the strongest reason to *install* rather than bookmark. Needs a
-  scheduling + permission design (and, for "remind everyone", a reachable origin). Parked in the
-  brainstorm pending the reveal-origin/hosting decision; promote once designed.
+  scheduling + permission design (and, for "remind everyone", a reachable origin).
+  **Motivation reinforced (2026-09-02):** the [competitor scan](../brainstorming/2026-09-02-secret-santa-competitor-research.md)
+  found reviewers specifically asking to be **nudged to fill their wish list** — the empty-wishlist reminder is a
+  named, cross-market wish, not just an install hook.
+  **✅ Promoted through the process (2026-09-15):** [UC-SS-023](../use-cases/secret-santa/UC-SS-023-be-reminded-about-my-occasions.md)
+  → [FR-046](../requirements/functional/FR-046-device-local-occasion-reminders.md) →
+  [FEAT-016](../features/FEAT-016-device-local-occasion-reminders.md) /
+  [TP-016](../features/TP-016-device-local-occasion-reminders.md), governed by a new ADR
+  [ADR-0060](../adr/0060-local-notification-scheduling-and-permission.md). **Scope sharpened against the
+  origin gate:** v1 ships the **device-local** subset — the three reminders scheduled and fired on the
+  user's own device (offline, account-free), a new `INotificationScheduler` platform seam
+  ([ADR-0028](../adr/0028-browser-platform-adapters-block.md)) over Plugin.LocalNotification on the device
+  head with a **web no-op** (phone-first, like haptics), a **global per-kind opt-in** in Settings (off by
+  default), OS permission requested **on first enable**, and **no assignment ever in a reminder body**
+  ([NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)). **Cross-member push**
+  ("nudge another member" / "remind everyone") **stays parked** on the reveal-origin/hosting decision
+  ([ADR-0053](../adr/0053-backend-free-first-mobile-release.md)) — a future ADR once an origin exists.
+  **✅ Built 2026-09-15; on-device delivery pending the Pixel** ([FEAT-016](../features/FEAT-016-device-local-occasion-reminders.md)
+  *Done*): the `INotificationScheduler` seam, the pure `ReminderPlanner`, `NotificationPreferences`, the
+  `ReminderScheduler` coordinator, the web no-op (`BrowserNotificationScheduler`) and the MAUI impl over
+  **Plugin.LocalNotification 12.0.0**, the Settings **Reminders** section, and `POST_NOTIFICATIONS` +
+  `RECEIVE_BOOT_COMPLETED`. Solution builds clean incl. the MAUI Android head (0/0, the plugin restores for
+  net10-android); Ui 72/72 + Architecture 28/28. Browser-verified the web-visible part (Settings shows the
+  "needs the app" note, no switches on web). **✅ On-device confirmed on the Pixel 9 Pro 2026-09-15:** app
+  launches (no crash), the plugin's `ScheduledAlarmReceiver` registers, the three switches render, and enabling
+  one fired the Android **`POST_NOTIFICATIONS` prompt** → granting left it on (`granted=true`). Residual (needs
+  elapsed time): each kind actually firing at its time, and cancel-on-draw/wishlist-filled/delete.
 - **MNF-9 · Biometric app lock (P2, parked).** Face/fingerprint on open — assignments are the one secret
   the app keeps, and a phone left unlocked exposes who drew whom. Opt-in; warrants an
   [NFR-004](../requirements/non-functional/NFR-004-data-protection-and-retention.md) privacy review first.

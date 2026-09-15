@@ -16,6 +16,10 @@ kept below as the record.
 - **TLD:** `.ch`-first (Swiss audience); a matching `.com` is a nice-to-have.
 - **App domains:** apps are **subdomains** of the (future) suite domain — e.g.
   `secretsanta.<suite-domain>`. Per-app brand names are decided during each app's idea step.
+- **App store naming:** one universal, stable visible name per app (identical in DE/EN/FR and
+  on-device); discoverability is localized in the store **listing** (title/keywords), not the name; no
+  per-language or per-name domains — see [ADR-0057](../adr/0057-app-store-naming-and-localization.md)
+  and the dedicated section below.
 
 ### Durable identifier scheme (per [ADR-0046](../adr/0046-suite-packaging-and-app-composition.md))
 
@@ -36,26 +40,53 @@ Reserved but unused: **`ch.circletools.suite`** — a native suite launcher, onl
 demand to enter the suite on mobile before choosing an app (ADR-0046 keeps this open; nothing forces
 it).
 
+## App store naming & listing localization (per [ADR-0057](../adr/0057-app-store-naming-and-localization.md), 2026-09-02)
+
+Standing rule for **every** suite app, so each app's branding step inherits it instead of reopening it:
+
+- **One universal, stable visible name per app**, kept in English and **identical across all three
+  store locales (DE/EN/FR) and on-device** (`ApplicationTitle` / `CFBundleDisplayName`). It follows the
+  brand's English-reads-everywhere principle. The first app's name is **"Secret Santa"**.
+- **Per-market discoverability (ASO) lives in the localized listing, not in the name.** The listings
+  are DE/EN/FR anyway ([NFR-003](../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)):
+  put the local search terms in the localized **Play title** (e.g. `Secret Santa – Wichteln` (DE),
+  `Secret Santa – Père Noël secret` (FR)) and the **Apple keyword field** (`Wichteln`,
+  `Schrottwichteln`, `Père Noël secret`, `tirage au sort`, …). The visible name stays single.
+- **A store name is NOT derived from a domain.** A localized name needs **no** new domain — the single
+  per-app origin `<app>.circletools.ch` serves every locale. **No per-language or per-name domains** are
+  created. Vanity marketing redirects (e.g. `wichteln.ch`) are a separate, optional future decision,
+  decoupled from the app's identity, listing and deep links.
+
+This fixes *how* the one per-app brand name relates to the three locales and the domain; *which* name a
+given app gets is still chosen at that app's idea/branding step (below).
+
 ## Visual identity — brand mark (decided 2026-08-13)
 
 The circle primitive from the naming rationale (below) is now drawn. The system:
 
-- **CircleTools (suite) mark:** a **ring of five people** — the figures *form* the circle, with no
-  separate container outline. Five (not more) so it stays legible at a 16 px favicon. Colour: brand
-  **navy `#03173d`** (white on the navy app-icon tile).
-- **Per-app rule:** each app keeps the same ring of five and **swaps what forms it** plus its accent
-  colour. Secret-Santa is a **ring of five gifts** — a **white** wrapped present (box with a cross
-  ribbon and a bow, the ribbon cut out in the ground colour) — on the brand **burgundy `#7a1f2b`**
-  ground. This mirrors the suite mark's white-on-brand treatment (white people on navy → white gifts
-  on burgundy) and lets the icon blend into the burgundy app bar exactly as the Main mark does on navy.
-- **Accessibility / stores:** every mark reads in a single colour (monochrome-safe, per
-  [ADR-0024](../adr/0024-ui-styling-and-theming.md)); app icons are full-bleed opaque squares with the
+- **CircleTools (suite) mark:** a **thin ring enclosing an overlapping trio of people**. The ring is a
+  real circular border (it is *not* formed by the figures), drawn in **deep navy-blue `#0a2c6b`** so it
+  reads as a quiet tone-on-tone frame on the **navy `#03173d`** app-icon tile; the **white** trio in the
+  centre is what carries the mark. Redesigned **2026-09-15** (previously a *ring of five figures*, which
+  turned to mush at favicon size) — see the refinement note below and
+  [ADR-0059](../adr/0059-brand-mark-ring-and-central-glyph.md).
+- **Per-app rule:** each app keeps the **ring + a single central white glyph** and **swaps the glyph**
+  plus the **ring colour**. Secret-Santa is a **white wrapped present** (box with a cross ribbon and a
+  bow, the ribbon cut out in the ground colour) inside a **maroon `#4a0f18`** ring on the brand
+  **burgundy `#7a1f2b`** ground. The maroon ring mirrors CircleTools' deep-navy ring as a recessed,
+  tone-on-tone frame, and the white-on-brand glyph blends into the burgundy app bar exactly as the Main
+  mark does on navy.
+- **Accessibility / stores:** the **central white glyph carries the mark** and clears WCAG AA on every
+  ground (white 17.6:1 on navy, 10.2:1 on burgundy); the tone-on-tone ring (`#0a2c6b` / `#4a0f18`) is a
+  deliberately low-contrast decorative frame, so legibility never depends on it, and each mark still
+  reads when flattened to a single colour (monochrome-safe, per
+  [ADR-0024](../adr/0024-ui-styling-and-theming.md)). App icons are full-bleed opaque squares with the
   content inside the adaptive-icon safe zone (no alpha, no pre-rounded corners — the OS applies the
-  mask). Contrast clears WCAG AA on every ground (navy 17.6:1, white on burgundy 10.2:1).
+  mask).
 
 **Where the assets live** (source of truth):
 - Native (Secret-Santa MAUI): `…/CircleTools.SecretSanta.App/Resources/AppIcon/appicon.svg` (burgundy
-  background) + `appiconfg.svg` (white gift ring) + `Splash/splash.svg`, with `MauiIcon Color="#7a1f2b"`.
+  background) + `appiconfg.svg` (white gift inside a maroon ring) + `Splash/splash.svg`, with `MauiIcon Color="#7a1f2b"`.
   Resizetizer rasterises the store sizes at build.
 - Web PWAs: each app's `wwwroot/favicon.svg` (+ rasterised `favicon.png` / `icon-192.png` /
   `icon-512.png`) and its manifest `theme_color` / `background_color`.
@@ -77,6 +108,17 @@ here is unchanged; only where the saturated colour is applied changed.
 burgundy app bar. The gift glyph was also redrawn — the earlier box-plus-single-ribbon shape rendered
 as a little handled bag at icon size; the current glyph is a box with a full cross ribbon and a compact
 bow, legible as a wrapped present down to 24 px. Ring geometry (five nodes) is unchanged.
+
+**Redesign (2026-09-15, [ADR-0059](../adr/0059-brand-mark-ring-and-central-glyph.md)):** the whole mark
+system moved from a *ring formed of five glyphs* to a **single circular border enclosing one central
+glyph**. The five-glyph ring was busy and illegible at favicon size — the individual figures/gifts
+merged into a blob at 16–20 px. The new system keeps the "circle" idea as an explicit ring and lets a
+single bold glyph carry the mark: CircleTools = an overlapping **trio of white people** in a **deep
+navy-blue `#0a2c6b`** ring on navy; Secret-Santa = the **white wrapped present** (glyph unchanged from
+2026-08-14) in a **maroon `#4a0f18`** ring on burgundy. Both rings are recessed, tone-on-tone frames
+(darker than the ground), chosen over white/accent rings during the icon exploration for a calmer,
+premium look consistent across the two apps. Assets (SVG source + rasterised PNGs + MAUI foreground/
+splash) were regenerated at the paths below.
 
 ## Chosen brand
 

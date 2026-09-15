@@ -12,9 +12,14 @@ The reconciliation of data held locally on a device with the copy held on the se
 signed-in [User](user.md) sees the same data on every device. Sync is **local-first**: the device
 stays usable and authoritative offline, and the server is a relay and backup rather than a gatekeeper.
 
-Sync only ever applies to a signed-in user. Without an account there is no server, no sync, and the
-app behaves exactly as it does today
-([NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md)).
+Sync is **opt-in and per-group**. A group stored **on the device** (the default) is not synced at all:
+no server, no sync, exactly as the app behaves offline
+([NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md)). A group reaches the server
+in one of two ways — **synced to an account** (a signed-in user), or **shared by link**, an
+account-free group the server holds keyed by an unguessable **share token** and reachable by an admin or
+join link ([ADR-0058](../adr/0058-account-free-link-shared-groups.md)). The older "without an account
+there is no server" wording predates that third mode and no longer holds in the absolute: what is
+absolute is that **on-this-device groups never touch the server**.
 
 ## Mechanism
 
@@ -32,6 +37,10 @@ app behaves exactly as it does today
 
 - **Secret-Santa [Groups](group.md)** that have been [claimed](claim.md) into an account — the whole
   aggregate, including the [Draw](draw.md) and its [Assignments](assignment.md).
+- **Shared-by-link Groups** — the same aggregate, but keyed by a **share token** instead of a user id,
+  reconciled between the server and every device holding an admin or join link
+  ([ADR-0058](../adr/0058-account-free-link-shared-groups.md)). Conflict resolution is the same
+  last-write-wins per aggregate; the "writers" are the link-holders rather than one user's devices.
 - **Profile preferences** — display name and preferred language.
 - **Not [Circles](circle.md).** Circle data is server-authoritative and online-only: last-write-wins
   would discard *other people's* edits on data several admins share, and an offline circle write

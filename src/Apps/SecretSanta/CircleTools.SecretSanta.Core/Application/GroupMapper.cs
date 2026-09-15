@@ -18,7 +18,7 @@ internal static class GroupMapper
     public static GroupDto ToDto(Group group, DateTimeOffset now)
     {
         var members = group.Members
-            .Select(m => new MemberDto(m.Id, m.Name, m.UserId))
+            .Select(m => new MemberDto(m.Id, m.Name, m.UserId, m.GiftNote))
             .ToList();
 
         var exclusions = group.Exclusions
@@ -62,13 +62,14 @@ internal static class GroupMapper
             occasion.Id,
             group.Id,
             occasion.Name,
-            occasion.Budget is null ? null : new BudgetDto(occasion.Budget.Amount, occasion.Budget.Currency),
+            occasion.Budget is null ? null : new BudgetDto(occasion.Budget.Amount, occasion.Budget.Currency, occasion.Budget.MinAmount),
             occasion.EventDetails is null
                 ? null
                 : new EventDetailsDto(occasion.EventDetails.Date, occasion.EventDetails.Location, occasion.EventDetails.Description),
             occasion.CurrentDraw is not null,
             assignments,
             IsStaleAndActionable(occasion, now),
-            wishlists);
+            wishlists,
+            occasion.BaselineDraw is not null);
     }
 }

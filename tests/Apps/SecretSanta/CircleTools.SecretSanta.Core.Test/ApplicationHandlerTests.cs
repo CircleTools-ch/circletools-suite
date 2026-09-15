@@ -55,14 +55,15 @@ public sealed class ApplicationHandlerTests
     public async Task SetBudget_SetsThenClears()
     {
         var (repository, groupId) = await CreateGroupAsync();
-        var eventId = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
+        var eventId = await new AddEventCommandHandler(repository, TimeProvider.System).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var handler = new SetBudgetCommandHandler(repository);
         var getEvent = new GetEventQueryHandler(repository, TimeProvider.System);
 
-        await handler.HandleAsync(new SetBudgetCommand(groupId, eventId, 30m, "CHF"), default);
+        await handler.HandleAsync(new SetBudgetCommand(groupId, eventId, 30m, "CHF", 10m), default);
         var withBudget = await getEvent.HandleAsync(new GetEventQuery(groupId, eventId), default);
         Assert.NotNull(withBudget!.Budget);
         Assert.Equal(30m, withBudget.Budget!.Amount);
+        Assert.Equal(10m, withBudget.Budget.MinAmount);
         Assert.Equal("CHF", withBudget.Budget.Currency);
 
         await handler.HandleAsync(new SetBudgetCommand(groupId, eventId, null, null), default);
@@ -71,10 +72,22 @@ public sealed class ApplicationHandlerTests
     }
 
     [Fact]
+    public async Task SetBudget_RejectsMinimumGreaterThanMaximum()
+    {
+        var (repository, groupId) = await CreateGroupAsync();
+        var eventId = await new AddEventCommandHandler(repository, TimeProvider.System).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
+        var handler = new SetBudgetCommandHandler(repository);
+
+        // The UI guards this too (FR-036), but the domain invariant is the backstop.
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            handler.HandleAsync(new SetBudgetCommand(groupId, eventId, 20m, "CHF", 30m), default));
+    }
+
+    [Fact]
     public async Task SetEventDetails_SetsThenClears()
     {
         var (repository, groupId) = await CreateGroupAsync();
-        var eventId = await new AddEventCommandHandler(repository).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
+        var eventId = await new AddEventCommandHandler(repository, TimeProvider.System).HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var handler = new SetEventDetailsCommandHandler(repository);
         var getEvent = new GetEventQueryHandler(repository, TimeProvider.System);
         var date = new DateTimeOffset(2026, 12, 24, 18, 0, 0, TimeSpan.Zero);
@@ -109,7 +122,7 @@ public sealed class ApplicationHandlerTests
         var (repository, groupId) = await CreateGroupAsync();
         var memberId = await new AddMemberCommandHandler(repository)
             .HandleAsync(new AddMemberCommand(groupId, "Alice"), default);
-        var addEvent = new AddEventCommandHandler(repository);
+        var addEvent = new AddEventCommandHandler(repository, TimeProvider.System);
         var first = await addEvent.HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var second = await addEvent.HandleAsync(new AddEventCommand(groupId, "Birthday"), default);
 
@@ -149,6 +162,31 @@ public sealed class ApplicationHandlerTests
         var group = await new GetGroupQueryHandler(repository, TimeProvider.System).HandleAsync(new GetGroupQuery(groupId), default);
         var member = Assert.Single(group!.Members);
         Assert.Equal("Robert", member.Name);
+    }
+
+    [Fact]
+    public async Task SetMemberGiftNote_SetsThenClears_AndSurvivesRename()
+    {
+        var (repository, groupId) = await CreateGroupAsync();
+        var memberId = await new AddMemberCommandHandler(repository)
+            .HandleAsync(new AddMemberCommand(groupId, "Bob"), default);
+        var getGroup = new GetGroupQueryHandler(repository, TimeProvider.System);
+
+        await new SetMemberGiftNoteCommandHandler(repository)
+            .HandleAsync(new SetMemberGiftNoteCommand(groupId, memberId, "  No nuts — allergy  "), default);
+        var afterSet = await getGroup.HandleAsync(new GetGroupQuery(groupId), default);
+        Assert.Equal("No nuts — allergy", Assert.Single(afterSet!.Members).GiftNote);
+
+        // A rename must not wipe the note (they are independent operations, FR-037).
+        await new EditMemberCommandHandler(repository)
+            .HandleAsync(new EditMemberCommand(groupId, memberId, "Robert"), default);
+        var afterRename = await getGroup.HandleAsync(new GetGroupQuery(groupId), default);
+        Assert.Equal("No nuts — allergy", Assert.Single(afterRename!.Members).GiftNote);
+
+        await new SetMemberGiftNoteCommandHandler(repository)
+            .HandleAsync(new SetMemberGiftNoteCommand(groupId, memberId, "   "), default);
+        var afterClear = await getGroup.HandleAsync(new GetGroupQuery(groupId), default);
+        Assert.Equal(string.Empty, Assert.Single(afterClear!.Members).GiftNote);
     }
 
     [Fact]
@@ -231,7 +269,7 @@ public sealed class ApplicationHandlerTests
         var group = await getGroup.HandleAsync(new GetGroupQuery(groupId), default);
         Assert.Empty(group!.Events);
 
-        var addEvent = new AddEventCommandHandler(repository);
+        var addEvent = new AddEventCommandHandler(repository, TimeProvider.System);
         var first = await addEvent.HandleAsync(new AddEventCommand(groupId, "Christmas"), default);
         var second = await addEvent.HandleAsync(new AddEventCommand(groupId, "Birthday"), default);
         group = await getGroup.HandleAsync(new GetGroupQuery(groupId), default);

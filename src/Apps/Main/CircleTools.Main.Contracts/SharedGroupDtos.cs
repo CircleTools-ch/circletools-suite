@@ -1,0 +1,113 @@
+using System.Text.Json;
+
+namespace CircleTools.Main.Contracts;
+
+/// <summary>
+/// What a shared-by-link token grants its holder (ADR-0058, FEAT-013). The token <em>is</em> the
+/// credential — the capability is bound to the token, not to any account.
+/// </summary>
+public enum SharedCapability
+{
+    /// <summary>Full organizer control: manage the roster/exclusions/budget, run the draw, manage sharing.</summary>
+    Admin,
+
+    /// <summary>Participant access: join, claim which member you are, and see your own assignment.</summary>
+    Join,
+}
+
+/// <summary>
+/// The two links minted when a group is shared by link (ADR-0058). The tokens are the secrets that
+/// address the group on the server; the client builds the admin/join URLs around them.
+/// </summary>
+/// <param name="GroupId">The group's client-minted id (ADR-0008), the shared row's key.</param>
+/// <param name="AdminToken">The admin-capability token.</param>
+/// <param name="JoinToken">The join (participant) token.</param>
+public sealed record MintedLinks(Guid GroupId, string AdminToken, string JoinToken);
+
+/// <summary>
+/// The first upload of a group into shared-by-link storage (<c>POST /api/v1/shared</c>). The group id
+/// is client-minted; the body is the opaque Secret-Santa group document, stored without being
+/// deserialized (ADR-0016, ADR-0033) beyond the structural abuse checks NFR-009 requires.
+/// </summary>
+/// <param name="GroupId">The group's client-minted id (ADR-0008).</param>
+/// <param name="Version">The per-aggregate version the client holds for the group.</param>
+/// <param name="Body">The group's full body as opaque JSON.</param>
+/// <param name="CreatorKey">
+/// A high-entropy secret the sharing client mints once and keeps with the group, proving it is the
+/// creator (ADR-0058 security note). This route is anonymous and the group id is <em>not</em> secret —
+/// it is disclosed to every join-link holder — so the id alone must never hand back the admin token.
+/// The creator key is what a lost-response retry re-presents to recover its links; a caller who knows
+/// only the group id (a join-link participant) cannot, so they cannot escalate a join link to admin.
+/// </param>
+public sealed record CreateSharedGroupRequest(Guid GroupId, long Version, JsonElement Body, string CreatorKey);
+
+/// <summary>A push of a shared-by-link group's whole body (<c>PUT /api/v1/shared/{token}</c>, admin capability).</summary>
+/// <param name="Version">The per-aggregate version the client holds — the client's half of last-write-wins.</param>
+/// <param name="Body">The group's full body as opaque JSON.</param>
+public sealed record PushSharedGroupRequest(long Version, JsonElement Body);
+
+/// <summary>
+/// A shared-by-link group as the server returns it (<c>GET /api/v1/shared/{token}</c>). The capability
+/// is whatever the presented token grants.
+/// </summary>
+/// <param name="GroupId">The group's id.</param>
+/// <param name="Version">The stored per-aggregate version.</param>
+/// <param name="Body">The opaque group body.</param>
+/// <param name="Capability">What the presented token grants (admin or join).</param>
+/// <param name="AdminRetired">
+/// True when an admin token is presented for a group an account has since claimed admin of (ADR-0058):
+/// the token no longer manages the group. The join token is never retired.
+/// </param>
+/// <param name="AdminClaimedByName">The display name of the account that claimed admin, when known — for the retired-link message.</param>
+public sealed record SharedGroupView(
+    Guid GroupId,
+    long Version,
+    JsonElement Body,
+    SharedCapability Capability,
+    bool AdminRetired,
+    string? AdminClaimedByName);
+
+/// <summary>The result of pushing a shared group: the stored version and whether the push lost last-write-wins.</summary>
+/// <param name="Version">The version now stored.</param>
+/// <param name="Collision">Whether an older-by-server-clock body was discarded in full (ADR-0016).</param>
+public sealed record PushSharedGroupResult(long Version, bool Collision);
+
+/// <summary>The result of rotating (disabling + regenerating) a group's admin link (ADR-0058).</summary>
+/// <param name="AdminToken">The freshly-minted admin token; the previous one no longer resolves.</param>
+public sealed record RotatedAdminLink(string AdminToken);
+
+/// <summary>How a person-claim on a shared-by-link group is remembered (ADR-0058, FEAT-013).</summary>
+public enum PersonClaimKind
+{
+    /// <summary>The claim lives on one device only — no account behind it.</summary>
+    Device,
+
+    /// <summary>The claim is bound to a signed-in account, durable across that user's devices.</summary>
+    Account,
+}
+
+/// <summary>The set of members already claimed in a shared-by-link group (ADR-0058) — so the join UI can lock them.</summary>
+/// <param name="MemberIds">The claimed member ids.</param>
+public sealed record ClaimedMembers(IReadOnlyList<Guid> MemberIds);
+
+/// <summary>A person-claim through the join link (ADR-0058): "this is me".</summary>
+/// <param name="MemberId">The member the joiner is claiming.</param>
+/// <param name="Kind">Whether the claim is device-only or bound to an account.</param>
+/// <param name="DeviceHandle">The claiming device's stable handle, for a device claim.</param>
+/// <param name="AccountId">The claiming account, for an account claim (trust-based; the join path is anonymous).</param>
+public sealed record ClaimPersonRequest(Guid MemberId, PersonClaimKind Kind, string? DeviceHandle, Guid? AccountId);
+
+/// <summary>The outcome of a person-claim (ADR-0058): claimed, or already taken (first-claim-locks).</summary>
+/// <param name="Claimed">Whether this call claimed the member.</param>
+/// <param name="AlreadyClaimed">Whether the member was already claimed by someone else (the lock held).</param>
+public sealed record PersonClaimResponse(bool Claimed, bool AlreadyClaimed);
+
+/// <summary>One group the calling account owns in shared-by-link storage (ADR-0058, D2 discovery).</summary>
+/// <param name="GroupId">The group's id.</param>
+/// <param name="Version">The stored version.</param>
+/// <param name="Body">The opaque group body.</param>
+public sealed record OwnedSharedGroup(Guid GroupId, long Version, JsonElement Body);
+
+/// <summary>The groups the calling account owns, so a second device can discover and manage them (D2).</summary>
+/// <param name="Groups">The owned groups.</param>
+public sealed record OwnedSharedGroups(IReadOnlyList<OwnedSharedGroup> Groups);

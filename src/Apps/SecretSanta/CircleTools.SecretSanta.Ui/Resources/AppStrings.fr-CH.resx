@@ -19,6 +19,9 @@
   <data name="Share" xml:space="preserve"><value>Partager</value></data>
   <data name="MoreActions" xml:space="preserve"><value>Plus d'actions</value></data>
   <data name="ShareMessage" xml:space="preserve"><value>Voici votre lien Père Noël secret 🎁</value></data>
+  <data name="ShowQr" xml:space="preserve"><value>Code QR</value></data>
+  <data name="QrHint" xml:space="preserve"><value>Faites scanner le code à cette personne pour ouvrir son lien.</value></data>
+  <data name="Close" xml:space="preserve"><value>Fermer</value></data>
   <data name="NavGroups" xml:space="preserve"><value>Groupes</value></data>
   <data name="NavMore" xml:space="preserve"><value>Plus</value></data>
   <data name="NavMoreEllipsis" xml:space="preserve"><value>Plus…</value></data>
@@ -40,7 +43,8 @@
   <data name="GroupEditorTitle" xml:space="preserve"><value>Groupe</value></data>
   <data name="NameLabel" xml:space="preserve"><value>Nom</value></data>
   <data name="BudgetLabel" xml:space="preserve"><value>Budget</value></data>
-  <data name="AmountLabel" xml:space="preserve"><value>Montant</value></data>
+  <data name="BudgetMinLabel" xml:space="preserve"><value>Minimum</value></data>
+  <data name="BudgetMaxLabel" xml:space="preserve"><value>Maximum</value></data>
   <data name="CurrencyLabel" xml:space="preserve"><value>Devise</value></data>
   <data name="ClearBudget" xml:space="preserve"><value>Effacer le budget</value></data>
   <data name="EventLabel" xml:space="preserve"><value>Événement</value></data>
@@ -68,6 +72,7 @@
   <data name="DrawSuccess" xml:space="preserve"><value>Tirage terminé.</value></data>
   <data name="DrawAssignmentCount" xml:space="preserve"><value>{0} attributions ont été générées.</value></data>
   <data name="DrawFailedOverConstrained" xml:space="preserve"><value>Aucun tirage valide n'est possible avec les exclusions actuelles. Essayez d'en retirer.</value></data>
+  <data name="DrawIgnoreBaseline" xml:space="preserve"><value>Tirer quand même (peut répéter la dernière fois)</value></data>
   <data name="DrawFailedTwoMember" xml:space="preserve"><value>Un groupe de deux personnes ne peut pas être tiré sans que chacune offre à l'autre. Ajoutez d'autres membres.</value></data>
   <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Ajoutez au moins deux membres pour lancer le tirage.</value></data>
   <data name="DrawSpoilerNote" xml:space="preserve"><value>Les attributions sont masquées ici pour éviter les divulgations. Partagez plutôt les liens.</value></data>
@@ -82,6 +87,10 @@
   <data name="MemberSaveFailed" xml:space="preserve"><value>Le membre n'a pas pu être enregistré.</value></data>
   <data name="BudgetAmountInvalid" xml:space="preserve"><value>Saisis un montant de budget supérieur à zéro.</value></data>
   <data name="CurrencyInvalid" xml:space="preserve"><value>Saisis un code de devise à 3 lettres (p. ex. CHF).</value></data>
+  <data name="BudgetMinExceedsMax" xml:space="preserve"><value>Le minimum ne doit pas dépasser le maximum.</value></data>
+  <data name="GiftNoteLabel" xml:space="preserve"><value>Note pour le cadeau</value></data>
+  <data name="GiftNoteHint" xml:space="preserve"><value>Allergies, régime ou mode de vie, ou ce qu'il ne faut pas offrir — visible par la personne qui offre.</value></data>
+  <data name="RevealGiftNoteLabel" xml:space="preserve"><value>Bon à savoir</value></data>
   <data name="ConfirmDeleteGroup" xml:space="preserve"><value>Supprimer « {0} » et tout son contenu ? Cette action est irréversible.</value></data>
   <data name="ConfirmRemoveMember" xml:space="preserve"><value>Retirer « {0} » de ce groupe ? La personne reste dans les occasions déjà tirées.</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Oui, supprimer</value></data>
@@ -213,6 +222,9 @@
   <data name="EventNameLabel" xml:space="preserve"><value>Nom de l'événement</value></data>
   <data name="EventNamePlaceholder" xml:space="preserve"><value>p. ex. Noël 2026</value></data>
   <data name="AddEvent" xml:space="preserve"><value>Ajouter un événement</value></data>
+  <data name="CarryForwardCheckbox" xml:space="preserve"><value>Reprendre d'un événement précédent</value></data>
+  <data name="CarryForwardSourceLabel" xml:space="preserve"><value>Reprendre de</value></data>
+  <data name="CarryForwardHint" xml:space="preserve"><value>Les listes de souhaits et le budget sont repris (vous pouvez les modifier), et le tirage évitera les attributions de la dernière fois.</value></data>
   <data name="EventsColumn" xml:space="preserve"><value>Événements</value></data>
   <data name="EventDetailsTitle" xml:space="preserve"><value>Événement</value></data>
   <data name="EventNotFound" xml:space="preserve"><value>Événement introuvable.</value></data>
@@ -232,4 +244,82 @@
   <data name="HubShareReady" xml:space="preserve"><value>Prêt</value></data>
   <data name="SettingsTitle" xml:space="preserve"><value>Paramètres</value></data>
   <data name="SettingsAbout" xml:space="preserve"><value>À propos</value></data>
+  <data name="StorageModeLabel" xml:space="preserve"><value>Où ce groupe est stocké</value></data>
+  <data name="ModeLocalTitle" xml:space="preserve"><value>Sur cet appareil</value></data>
+  <data name="ModeLocalHint" xml:space="preserve"><value>Privé sur cet appareil. Partagez un lien de révélation par personne.</value></data>
+  <data name="ModeSharedTitle" xml:space="preserve"><value>Partagé par lien</value></data>
+  <data name="ModeSharedHint" xml:space="preserve"><value>Stocké en ligne pour que d'autres ouvrent tout le groupe avec un lien. Sans inscription.</value></data>
+  <data name="ModeAccountTitle" xml:space="preserve"><value>Mon compte</value></data>
+  <data name="ModeAccountHint" xml:space="preserve"><value>Synchronisé sur les appareils où vous êtes connecté.</value></data>
+  <data name="ModeAccountSignInHint" xml:space="preserve"><value>Connectez-vous pour synchroniser ce groupe avec votre compte.</value></data>
+  <data name="ModeChipShared" xml:space="preserve"><value>Partagé par lien</value></data>
+  <data name="ModeChipAccount" xml:space="preserve"><value>Compte</value></data>
+  <data name="SharingRow" xml:space="preserve"><value>Partage et sync</value></data>
+  <data name="SharingSubtitleLocal" xml:space="preserve"><value>Sur cet appareil</value></data>
+  <data name="SharingSubtitleShared" xml:space="preserve"><value>Partagé par lien</value></data>
+  <data name="SharingSubtitleAccount" xml:space="preserve"><value>Synchronisé avec votre compte</value></data>
+  <data name="SharingTitle" xml:space="preserve"><value>Partage et sync</value></data>
+  <data name="SharingLead" xml:space="preserve"><value>Choisissez où ce groupe est stocké et gérez ses liens.</value></data>
+  <data name="SharingSharedLead" xml:space="preserve"><value>Toute personne disposant d'un lien ci-dessous peut ouvrir ce groupe ; seul le lien admin permet de le gérer.</value></data>
+  <data name="AdminLink" xml:space="preserve"><value>Lien admin</value></data>
+  <data name="AdminLinkHint" xml:space="preserve"><value>Toute personne disposant de ce lien peut gérer le groupe et lancer le tirage.</value></data>
+  <data name="JoinLink" xml:space="preserve"><value>Lien pour rejoindre</value></data>
+  <data name="JoinLinkHint" xml:space="preserve"><value>Permet de rejoindre, de choisir qui l'on est et de voir sa propre attribution.</value></data>
+  <data name="DisableRegenerate" xml:space="preserve"><value>Désactiver et en créer un nouveau</value></data>
+  <data name="ShareByLinkConfirm" xml:space="preserve"><value>Partager ce groupe par lien ? Il sera stocké en ligne afin que les personnes disposant du lien puissent l'ouvrir. Vous pouvez revenir à « sur cet appareil » à tout moment.</value></data>
+  <data name="ShareByLinkConfirmYes" xml:space="preserve"><value>Partager par lien</value></data>
+  <data name="MakeLocalConfirm" xml:space="preserve"><value>Conserver ce groupe uniquement sur cet appareil ? La copie en ligne est supprimée et les liens partagés cessent de fonctionner. Votre copie reste sur cet appareil.</value></data>
+  <data name="MakeLocalConfirmYes" xml:space="preserve"><value>Rendre local</value></data>
+  <data name="RotateAdminConfirm" xml:space="preserve"><value>Désactiver le lien admin actuel et en créer un nouveau ? L'ancien lien cessera de fonctionner.</value></data>
+  <data name="RotateAdminConfirmYes" xml:space="preserve"><value>Créer un nouveau lien</value></data>
+  <data name="ShareGroupQrHint" xml:space="preserve"><value>Faites scanner le code à cette personne pour ouvrir le groupe.</value></data>
+  <data name="ShareGroupMessage" xml:space="preserve"><value>Rejoignez notre groupe Père Noël secret :</value></data>
+  <data name="JoinTitle" xml:space="preserve"><value>Rejoindre le groupe</value></data>
+  <data name="JoinInvitedTo" xml:space="preserve"><value>Vous êtes invité à</value></data>
+  <data name="JoinWhoAreYou" xml:space="preserve"><value>Qui êtes-vous dans ce groupe ?</value></data>
+  <data name="JoinWhoAreYouHint" xml:space="preserve"><value>Choisissez votre nom pour voir votre propre attribution.</value></data>
+  <data name="JoinAlreadyTaken" xml:space="preserve"><value>Déjà rejoint</value></data>
+  <data name="JoinRememberTitle" xml:space="preserve"><value>Comment vous mémoriser ?</value></data>
+  <data name="JoinRememberDevice" xml:space="preserve"><value>Cet appareil uniquement</value></data>
+  <data name="JoinRememberDeviceHint" xml:space="preserve"><value>Sans inscription. Seul cet appareil aura accès.</value></data>
+  <data name="JoinRememberAccount" xml:space="preserve"><value>Conserver sur mon compte</value></data>
+  <data name="JoinRememberAccountHint" xml:space="preserve"><value>Conservez votre place sur tous vos appareils.</value></data>
+  <data name="JoinRememberAccountSignInHint" xml:space="preserve"><value>Connectez-vous pour conserver votre place sur vos appareils.</value></data>
+  <data name="JoinContinue" xml:space="preserve"><value>Continuer</value></data>
+  <data name="JoinNotFoundTitle" xml:space="preserve"><value>Ce lien ne fonctionne pas</value></data>
+  <data name="JoinNotFoundBody" xml:space="preserve"><value>Le groupe a peut-être été supprimé ou le lien est périmé.</value></data>
+  <data name="JoinAlreadyClaimedError" xml:space="preserve"><value>Quelqu'un a déjà rejoint en tant que cette personne. Choisissez un autre nom.</value></data>
+  <data name="JoinFailedError" xml:space="preserve"><value>Impossible de rejoindre pour le moment. Veuillez réessayer.</value></data>
+  <data name="YouAreMember" xml:space="preserve"><value>Vous avez rejoint en tant que {0}.</value></data>
+  <data name="MemberClaimedBadge" xml:space="preserve"><value>A rejoint</value></data>
+  <data name="ReleaseMember" xml:space="preserve"><value>Libérer la place</value></data>
+  <data name="ReleaseMemberConfirm" xml:space="preserve"><value>Libérer la place de {0} ? La personne perdra l'accès jusqu'à ce qu'elle rejoigne via le lien.</value></data>
+  <data name="ReleaseMemberConfirmYes" xml:space="preserve"><value>Libérer la place</value></data>
+  <data name="Someone" xml:space="preserve"><value>Quelqu'un</value></data>
+  <data name="ClaimAdminConfirm" xml:space="preserve"><value>Reprendre ce groupe avec votre compte ? Vous devenez le seul administrateur — le lien admin cesse de fonctionner. Le lien pour rejoindre reste actif.</value></data>
+  <data name="ClaimAdminConfirmYes" xml:space="preserve"><value>Devenir admin</value></data>
+  <data name="ReleaseToLinkConfirm" xml:space="preserve"><value>Rendre ce groupe à un lien partagé ? Un nouveau lien admin est créé et vous n'êtes plus le seul administrateur.</value></data>
+  <data name="ReleaseToLinkConfirmYes" xml:space="preserve"><value>Transférer</value></data>
+  <data name="AccountOwnedNote" xml:space="preserve"><value>Ce groupe vous appartient. Il est synchronisé avec votre compte.</value></data>
+  <data name="AdminRetiredTitle" xml:space="preserve"><value>Ce lien admin ne fonctionne plus</value></data>
+  <data name="AdminRetiredBody" xml:space="preserve"><value>{0} a repris le rôle d'administrateur de ce groupe.</value></data>
+  <data name="AdminRetiredJoinHint" xml:space="preserve"><value>Vous pouvez toujours ouvrir le lien pour rejoindre en tant que participant.</value></data>
+  <data name="AddToCalendar" xml:space="preserve"><value>Ajouter au calendrier</value></data>
+  <data name="HandOutLinks" xml:space="preserve"><value>Distribuer les liens</value></data>
+  <data name="HandoutProgress" xml:space="preserve"><value>Distribués : {0} / {1}</value></data>
+  <data name="MarkHandedOut" xml:space="preserve"><value>Marquer comme distribué</value></data>
+  <data name="HandoutAllDone" xml:space="preserve"><value>Tout le monde a son lien.</value></data>
+  <data name="HandedOut" xml:space="preserve"><value>Distribué</value></data>
+  <data name="NotificationsTitle" xml:space="preserve"><value>Rappels</value></data>
+  <data name="NotificationsHint" xml:space="preserve"><value>Choisissez les rappels affichés sur cet appareil. Désactivés par défaut.</value></data>
+  <data name="NotificationsUnavailableWeb" xml:space="preserve"><value>Les rappels sont disponibles dans l'application installée.</value></data>
+  <data name="ReminderDrawLabel" xml:space="preserve"><value>Tirage pas encore fait</value></data>
+  <data name="ReminderTomorrowLabel" xml:space="preserve"><value>L'événement est demain</value></data>
+  <data name="ReminderWishlistLabel" xml:space="preserve"><value>Ma liste de souhaits est vide</value></data>
+  <data name="ReminderDrawTitle" xml:space="preserve"><value>C'est l'heure du tirage</value></data>
+  <data name="ReminderDrawBody" xml:space="preserve"><value>Tirez bientôt les noms pour {0}.</value></data>
+  <data name="ReminderTomorrowTitle" xml:space="preserve"><value>{0}, c'est demain</value></data>
+  <data name="ReminderTomorrowBody" xml:space="preserve"><value>Votre échange de cadeaux a lieu demain.</value></data>
+  <data name="ReminderWishlistTitle" xml:space="preserve"><value>Ajoutez votre liste</value></data>
+  <data name="ReminderWishlistBody" xml:space="preserve"><value>Votre liste de souhaits pour {0} est encore vide.</value></data>
 </root>

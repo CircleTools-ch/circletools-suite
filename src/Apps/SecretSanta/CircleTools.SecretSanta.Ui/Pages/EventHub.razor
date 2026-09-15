@@ -1,9 +1,13 @@
 @page "/groups/{GroupId:guid}/events/{EventId:guid}"
 @using System.Globalization
+@using CircleTools.SecretSanta.Core.Reveal
 @inject ISender Sender
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
 @inject RecentAccessService Recent
+@inject ISyncSignals SyncSignals
+@inject RevealLinkOptions RevealOptions
+@implements IDisposable
 
 @*
     Event hub (ADR-0055): the event landing screen. A vertical list of the event's sections — Details,
@@ -46,6 +50,14 @@ else
             </MudPaper>
         }
     </MudStack>
+
+    @* One-tap "Add to calendar" (MNF-6) — offered once the occasion has a date. *@
+    @if (BuildCalendarEvent() is { } calendarEvent)
+    {
+        <div class="mt-4">
+            <AddToCalendarButton CalendarEvent="calendarEvent" />
+        </div>
+    }
 }
 
 @code {
@@ -104,19 +116,43 @@ else
 
     private string EventLabel => string.IsNullOrWhiteSpace(_event?.Name) ? L["DefaultEventName"] : _event!.Name;
 
+    // The occasion's calendar entry (MNF-6), or null when it has no date. The reopen link is the app's
+    // own event route, built from the reveal base URL.
+    private CalendarEvent? BuildCalendarEvent() => _event is null ? null : CalendarEventFactory.ForOccasion(
+        GroupId, EventId, EventLabel, _event.Details?.Date, _event.Details?.Location,
+        _event.Details?.Description, _event.Budget, L["RevealBudgetLabel"], RevealOptions.BaseUrl);
+
+    protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
+
     protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+
+        // Opening the hub counts as opening the event and its group (nav quick access), like the old EventNav.
+        // Kept out of LoadAsync so a background-sync reload does not re-record recency.
+        await Recent.RecordEventAsync(EventId);
+        await Recent.RecordGroupAsync(GroupId);
+    }
+
+    private async Task LoadAsync()
     {
         _event = await Sender.Send(new GetEventQuery(GroupId, EventId));
         _loaded = true;
-
-        // Opening the hub counts as opening the event and its group (nav quick access), like the old EventNav.
-        await Recent.RecordEventAsync(EventId);
-        await Recent.RecordGroupAsync(GroupId);
 
         // The group name is a header nicety; a read failure just falls back to "All groups".
         var group = await Sender.Send(new GetGroupQuery(GroupId));
         _groupName = group?.Name;
     }
+
+    // A background sync may have pulled a co-organizer's edits into the local store (shared-by-link,
+    // FEAT-013); reload so the section statuses (draw/wishlists/date) are current without a manual refresh.
+    private void OnSyncCompleted() => _ = InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => SyncSignals.SyncCompleted -= OnSyncCompleted;
 
     private void Go(string href) => Navigation.NavigateTo(href);
 

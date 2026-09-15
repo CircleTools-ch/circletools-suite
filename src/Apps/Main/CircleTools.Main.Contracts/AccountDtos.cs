@@ -82,7 +82,12 @@ public sealed record ConfirmEmailChangeRequest(string UserId, string NewEmail, s
 /// The current password. Deletion is immediate and irreversible, so it re-authenticates rather
 /// than trusting a session that may have been left open.
 /// </param>
-public sealed record DeleteAccountRequest(string Password);
+/// <param name="DeleteSharedGroups">
+/// The owner's disposition for the shared-by-link groups they manage (FR-043, ADR-0058):
+/// <see langword="false"/> (default) hands them back to shared-by-link so the people who joined keep
+/// access; <see langword="true"/> deletes those online copies too.
+/// </param>
+public sealed record DeleteAccountRequest(string Password, bool DeleteSharedGroups = false);
 
 /// <summary>
 /// The exported copy of a user's data (FR-014). Mirrors what the user can already see in the app.
