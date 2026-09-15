@@ -6,6 +6,7 @@
 @inject IDialogService Dialogs
 @inject IStringLocalizer<AppStrings> L
 @inject ISyncSignals SyncSignals
+@inject HandoutProgressService Handout
 @implements IDisposable
 
 <PageTitle>@L["ShareTitle"]</PageTitle>
@@ -33,13 +34,27 @@ else if (_links.Count == 0)
 }
 else
 {
+    @* Guided hand-out (MNF-7): hand each participant their own link without forgetting anyone. *@
+    <MudPaper Outlined="true" Class="pa-3 mb-3 d-flex flex-wrap align-center justify-space-between gap-2">
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["HandoutProgress", _done.Count, _links.Count]</MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Outbox"
+                   OnClick="OpenHandoutAsync" id="hand-out-links">@L["HandOutLinks"]</MudButton>
+    </MudPaper>
+
     <MudStack Spacing="2">
         @foreach (var link in _links)
         {
             <MudCard Elevation="1">
                 <MudCardContent class="pb-2">
                     <div class="d-flex flex-wrap justify-space-between align-center gap-2">
-                        <MudText><strong>@L["ForLabel"]:</strong> @link.ForLabel</MudText>
+                        <MudText>
+                            <strong>@L["ForLabel"]:</strong> @link.ForLabel
+                            @if (_done.Contains(HandoutProgressService.MemberKey(link.Url)))
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text"
+                                         Icon="@Icons.Material.Filled.CheckCircle" Class="ml-1">@L["HandedOut"]</MudChip>
+                            }
+                        </MudText>
                         @* Share is the primary action where the platform has a share sheet (the phone,
                            and mobile browsers): one tap into WhatsApp / Messages / e-mail. Copy stays
                            for every platform, and is the only action on a desktop browser. *@
@@ -89,6 +104,7 @@ else
     public Guid EventId { get; set; }
 
     private IReadOnlyList<RevealLinkDto>? _links;
+    private HashSet<string> _done = [];
     private string? _copiedUrl;
     private bool _drawInvalidated;
     private bool _canShare;
@@ -102,6 +118,31 @@ else
         _links = await Sender.Send(new GetRevealLinksQuery(GroupId, EventId));
         var occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));
         _drawInvalidated = occasion?.DrawInvalidatedByMembershipChange ?? false;
+
+        // Which participants have already been handed their link (MNF-7); resets by itself on a re-draw.
+        var urls = _links.Select(l => l.Url).ToList();
+        _done = await Handout.GetDoneAsync(GroupId, EventId, urls);
+    }
+
+    // The guided one-at-a-time hand-out; reload progress when it closes so the ✓ marks and count are current.
+    private async Task OpenHandoutAsync()
+    {
+        if (_links is null || _links.Count == 0)
+        {
+            return;
+        }
+
+        var parameters = new DialogParameters<HandoutDialog>
+        {
+            { x => x.GroupId, GroupId },
+            { x => x.EventId, EventId },
+            { x => x.Links, _links },
+        };
+
+        var dialog = await Dialogs.ShowAsync<HandoutDialog>(L["HandOutLinks"], parameters);
+        await dialog.Result;
+        await LoadAsync();
+        StateHasChanged();
     }
 
     // A background sync may have pulled a co-organizer's re-draw or roster change into the local store

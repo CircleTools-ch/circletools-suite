@@ -40,6 +40,8 @@ builder.Services.AddScoped<IConnectivity, BrowserConnectivity>();
 builder.Services.AddScoped<BrowserPasskeyCeremony>();
 builder.Services.AddScoped<IPasskeyCeremony>(sp => sp.GetRequiredService<BrowserPasskeyCeremony>());
 builder.Services.AddScoped<IShareService, BrowserShareService>();
+builder.Services.AddScoped<ICalendarService, BrowserCalendarService>();
+builder.Services.AddScoped<INotificationScheduler, BrowserNotificationScheduler>();
 builder.Services.AddScoped<IHapticFeedback, BrowserHapticFeedback>();
 
 // Two clients over the same Main API, differing only in whether the authorizing handler is in the

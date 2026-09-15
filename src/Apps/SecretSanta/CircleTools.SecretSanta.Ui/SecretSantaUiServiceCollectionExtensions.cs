@@ -65,6 +65,10 @@ public static class SecretSantaUiServiceCollectionExtensions
         // as its own opaque kind. The service reads and toggles pins over the local store.
         services.AddScoped<BookmarkService>();
         services.AddScoped<RecentAccessService>();
+        services.AddScoped<HandoutProgressService>();
+        services.AddScoped<NotificationPreferences>();
+        services.AddScoped<ReminderScheduler>();
+        services.AddScoped<IReminderRescheduler>(sp => sp.GetRequiredService<ReminderScheduler>());
 
         // Per-app header identity (ADR-0040 amendment): the gifts-ring mark and the festive burgundy on
         // the app bar. Head-agnostic (web + MAUI); the logo is served same-origin from the shared

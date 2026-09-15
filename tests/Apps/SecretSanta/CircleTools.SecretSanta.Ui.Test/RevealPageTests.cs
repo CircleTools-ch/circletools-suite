@@ -32,6 +32,8 @@ public sealed class RevealPageTests : IDisposable
         _ctx.Services.AddSingleton(new RevealLinkCodec());
         _ctx.Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassThroughStringLocalizer<AppStrings>());
         _ctx.Services.AddSingleton<IHapticFeedback>(_haptics);
+        // The reveal page offers "Add to calendar" (MNF-6) when the occasion has a date.
+        _ctx.Services.AddSingleton<CircleTools.Ui.Abstractions.ICalendarService>(new TestSupport.FakeCalendarService());
     }
 
     private void NavigateToRevealLink(string fragment)

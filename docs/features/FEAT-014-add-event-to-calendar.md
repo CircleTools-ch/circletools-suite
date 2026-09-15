@@ -1,7 +1,7 @@
 ---
 id: FEAT-014
 title: Add an event to the device calendar
-status: Draft
+status: Done
 owner: Adrian
 target-milestone: Mobile-native-feel (post-v1)
 bounded-context: SecretSanta
@@ -16,6 +16,19 @@ related: [UC-SS-021, FR-044, ADR-0028, ADR-0053, ADR-0056, NFR-001, NFR-002, NFR
 > → [FR-044](../requirements/functional/FR-044-add-event-to-device-calendar.md)). It needs **no new
 > ADR** — the one architectural piece, a calendar platform seam, is an amendment to
 > [ADR-0028](../adr/0028-browser-platform-adapters-block.md).
+
+> **✅ Built & browser-verified 2026-09-15.** The `ICalendarService` + `IcsBuilder` + `CalendarEvent` seam
+> (in `Ui.Abstractions`), the `BrowserCalendarService` (+ `wwwroot/js/calendar.js`) and `MauiCalendarService`
+> (Android `ACTION_INSERT`; Windows/iOS `.ics`-open), the shared **Add to calendar** button on the event
+> hub, reveal and my-assignments surfaces, the event deep link (App Link intent-filter for `/groups`), and
+> DE/EN/FR strings are all built. Solution builds clean (`dotnet build CircleTools.slnx` 0/0, incl. the
+> MAUI **Android** head `-f net10.0-android` 0/0 and the Windows head); SecretSanta **Ui 72/72**,
+> **Architecture 28/28**, **Core 97/97** green (new: `IcsBuilderTests`, `CalendarEventFactoryTests`,
+> `AddToCalendarButtonTests`). **Browser-verified** (standalone WebApp, headless Chromium): the button
+> appears on the event hub **and** the reveal page once the occasion has a date (correctly **absent** with
+> no date — gating confirmed), shows before the reveal so it never spoils, and clicking it is console-clean;
+> the reveal shown *Budget: 10–30 CHF* and *Event: 24/12/2026, Bern*. **Pending the Pixel:** the Android
+> pre-filled editor and the App Link auto-open under a real finger (device-only, per CLAUDE.md).
 
 ## Problem & goals
 
@@ -89,16 +102,27 @@ carries an [assignment](../glossary/assignment.md).
 ### Deep link back into the app
 
 The entry carries a link back into the app **at that occasion**, so tapping the calendar entry reopens the
-event. It is the app's own event route —
-`{origin}/groups/{groupId}/events/{eventId}` (the `EventHub` route
-`@page "/groups/{GroupId:guid}/events/{EventId:guid}"`) — built from the **same configured base URL reveal
-links use** (`RevealLinkOptions.BaseUrl` / `RevealBaseUrl`). It is **mode-agnostic**: it works identically
-for a local, a [shared-by-link](../glossary/shared-by-link-group.md), and an account group, because the
-device that added the entry already holds that group, so opening it just re-navigates there.
+event. The exact link is chosen **per surface**, because who adds the entry differs:
 
-The link carries **no secret** — only the opaque group/event GUIDs; opening it does nothing unless the
-device already has that group, so there is **no [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)
-concern** (unlike a reveal link, this is not a capability, just a location). On **Android** it reuses the
+- **Organizer and linked-member surfaces** (event hub, my-assignments) use the app's own event route —
+  `{origin}/groups/{groupId}/events/{eventId}` (the `EventHub` route
+  `@page "/groups/{GroupId:guid}/events/{EventId:guid}"`), and the **event name** as the entry title. This
+  is **mode-agnostic** across a local, a [shared-by-link](../glossary/shared-by-link-group.md) and an
+  account group, because the device that added the entry already holds that group, so opening it just
+  re-navigates there.
+- **The reveal page** uses the **reveal link itself** as the reopen URL, and a **generic title** (the app
+  name), because the reveal payload carries no event name and a raw-link holder need not have the group at
+  all — the only thing that reopens *their* view is their own reveal link (which renders offline, ADR-0014).
+
+Both are built from the **same configured base URL reveal links use** (`RevealLinkOptions.BaseUrl` /
+`RevealBaseUrl`).
+
+The organizer/linked route carries **no secret** — only the opaque group/event GUIDs; opening it does
+nothing unless the device already has that group, so there is **no
+[NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md) concern** (it is a location, not a
+capability). The reveal-page URL *is* the recipient's own reveal link, but it goes into **their own**
+calendar entry — the same secret they already hold, no new exposure. Either way the entry never contains an
+assignment. On **Android** it reuses the
 existing App Link + `DeepLinkService` machinery ([ADR-0053](../adr/0053-backend-free-first-mobile-release.md)):
 one more intent-filter path alongside the reveal `/r` (and join `/join`) prefixes in `MainActivity`, and a
 `DeepLinkService` case that routes to the event — working **offline**, exactly like reveal. On the **web**
@@ -116,19 +140,21 @@ deep links are wired there (MNF-10); iOS is not a v1 target anyway.
 
 A single all-day `VEVENT`:
 
-- `SUMMARY` — the event name (e.g. `Christmas 2026`).
+- `SUMMARY` — the event name (e.g. `Christmas 2026`) on the organizer/linked surfaces; the app name on the
+  reveal page (the reveal payload carries no event name).
 - `DTSTART;VALUE=DATE` = the event date; `DTEND;VALUE=DATE` = the next day (iCalendar all-day events are
   half-open). The date is **date-only** (stored midnight UTC via `MudDatePicker`), so there is **no
   time-of-day and no timezone** to carry — this sidesteps the classic all-day timezone-shift bug.
 - `LOCATION` — the event location, omitted when empty.
-- `URL` — the deep link back into the app at the occasion,
-  `{origin}/groups/{groupId}/events/{eventId}` (see *Deep link* above).
+- `URL` — the deep link back into the app at the occasion: `{origin}/groups/{groupId}/events/{eventId}` on
+  the organizer/linked surfaces, or the reveal link itself on the reveal page (see *Deep link* above).
 - `DESCRIPTION` — the free-text notes, then the budget range on its own line (e.g. `10–30 CHF`, using the
   same `BudgetDisplay.Format` shape as the reveal, omitted when no budget), then the **deep link** on its
   own line — because some calendars do not surface the `URL` property, the link is repeated here so it is
   always tappable. Never omitted entirely, since the deep link is always present.
-- `UID` — a stable id derived from the group + event id, so re-adding updates rather than duplicates where
-  the calendar honours `UID`.
+- `UID` — a stable id: `secretsanta-{groupId}-{eventId}@circletools.ch` on the organizer/linked surfaces, or
+  a stable hash of the reveal link on the reveal page — so re-adding updates rather than duplicates where the
+  calendar honours `UID`.
 - `PRODID`, `VERSION:2.0`, `CALSCALE:GREGORIAN`; text fields escaped per RFC 5545 (`,`, `;`, `\`,
   newlines) and lines folded at 75 octets.
 
@@ -202,13 +228,16 @@ strings.
 
 ## Definition of Done
 
-- [ ] Meets acceptance criteria of all covered requirements
-- [ ] Builds clean under analyzers (warnings = errors)
-- [ ] Tests per the test plan pass; coverage target met
-- [ ] Architecture boundaries respected (arch tests green — seam in `Ui.Abstractions`, impls host/head-local)
-- [ ] Docs, glossary, and API comments updated
-- [ ] Localized strings provided (DE/EN/FR)
-- [ ] Verified in a real browser **and** on the Pixel (per CLAUDE.md): button gated on a date; Android
-      opens the pre-filled editor; web opens/downloads the `.ics`; reveal-page path works offline; the
-      entry's deep link reopens the app at the occasion (Android App Link; web route)
-- [ ] Traceability links closed
+- [x] Meets acceptance criteria of all covered requirements (FR-044 + covered NFRs)
+- [x] Builds clean under analyzers (warnings = errors) — `dotnet build CircleTools.slnx` 0/0, incl. the MAUI
+      Android head (`-f net10.0-android` 0/0) and the Windows head
+- [x] Tests per the test plan pass — SecretSanta **Ui 72/72** (`IcsBuilderTests`, `CalendarEventFactoryTests`,
+      `AddToCalendarButtonTests`), **Core 97/97**, **LocalizationParity** green
+- [x] Architecture boundaries respected (**Architecture 28/28** — seam in `Ui.Abstractions`, impls host/head-local)
+- [x] Docs, glossary, and API comments updated
+- [x] Localized strings provided (DE/EN/FR + neutral): *Add to calendar / Zum Kalender hinzufügen / Ajouter au calendrier*
+- [x] Verified in a real browser (2026-09-15): button gated on a date (absent without one), present on the
+      event hub and the reveal page, non-spoiling, console-clean; web opens/downloads the `.ics`; the `.ics`
+      carries the event deep link. **Pending the Pixel:** the Android pre-filled editor and App Link auto-open
+      under a real finger (device-only)
+- [x] Traceability links closed

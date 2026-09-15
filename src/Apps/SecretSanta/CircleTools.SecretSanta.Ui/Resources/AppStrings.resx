@@ -359,4 +359,22 @@
   <data name="AdminRetiredTitle" xml:space="preserve"><value>This admin link no longer works</value></data>
   <data name="AdminRetiredBody" xml:space="preserve"><value>{0} has claimed the admin role for this group.</value></data>
   <data name="AdminRetiredJoinHint" xml:space="preserve"><value>You can still open the join link to join as a participant.</value></data>
+  <data name="AddToCalendar" xml:space="preserve"><value>Add to calendar</value></data>
+  <data name="HandOutLinks" xml:space="preserve"><value>Hand out links</value></data>
+  <data name="HandoutProgress" xml:space="preserve"><value>Handed out: {0} / {1}</value></data>
+  <data name="MarkHandedOut" xml:space="preserve"><value>Mark as handed out</value></data>
+  <data name="HandoutAllDone" xml:space="preserve"><value>Everyone has their link.</value></data>
+  <data name="HandedOut" xml:space="preserve"><value>Handed out</value></data>
+  <data name="NotificationsTitle" xml:space="preserve"><value>Reminders</value></data>
+  <data name="NotificationsHint" xml:space="preserve"><value>Choose which reminders this device shows. Off by default.</value></data>
+  <data name="NotificationsUnavailableWeb" xml:space="preserve"><value>Reminders are available in the installed app.</value></data>
+  <data name="ReminderDrawLabel" xml:space="preserve"><value>Draw not done yet</value></data>
+  <data name="ReminderTomorrowLabel" xml:space="preserve"><value>Event is tomorrow</value></data>
+  <data name="ReminderWishlistLabel" xml:space="preserve"><value>My wishlist is empty</value></data>
+  <data name="ReminderDrawTitle" xml:space="preserve"><value>Time to draw</value></data>
+  <data name="ReminderDrawBody" xml:space="preserve"><value>Draw names for {0} soon.</value></data>
+  <data name="ReminderTomorrowTitle" xml:space="preserve"><value>{0} is tomorrow</value></data>
+  <data name="ReminderTomorrowBody" xml:space="preserve"><value>Your gift exchange is tomorrow.</value></data>
+  <data name="ReminderWishlistTitle" xml:space="preserve"><value>Add your wishlist</value></data>
+  <data name="ReminderWishlistBody" xml:space="preserve"><value>Your wishlist for {0} is still empty.</value></data>
 </root>

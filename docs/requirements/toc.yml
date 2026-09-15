@@ -90,6 +90,10 @@
       href: functional/FR-043-release-ownership-and-deletion-disposition.md
     - name: FR-044 Add an event to the device calendar
       href: functional/FR-044-add-event-to-device-calendar.md
+    - name: FR-045 Guided hand-out of reveal links
+      href: functional/FR-045-guided-hand-out-of-reveal-links.md
+    - name: FR-046 Device-local occasion reminders
+      href: functional/FR-046-device-local-occasion-reminders.md
 - name: Non-functional
   items:
     - name: NFR-001 Local-first & offline

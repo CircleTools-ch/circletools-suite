@@ -2,7 +2,7 @@
 id: FR-044
 title: Add an event to the device calendar
 type: functional
-status: Draft
+status: Implemented
 priority: Could
 source: UC-SS-021
 verification: test
@@ -23,22 +23,27 @@ my-assignments surfaces. The entry is built entirely on the device — no accoun
 The occasion is expressed as a standard **all-day** calendar entry on the event's date (the date is
 date-only, so there is no start/end time), with:
 
-- **Title** = the event name (e.g. *"Christmas 2026"*);
+- **Title** = the event name (e.g. *"Christmas 2026"*) on the organizer/my-assignments surfaces; on the
+  reveal page, a generic title (the app name), since the reveal payload carries no event name;
 - **Location** = the event location, if any;
 - **Notes** = the free-text notes, if any, followed by the [budget](../../glossary/budget.md) range
   (e.g. *"10–30 CHF"*, omitted when no budget is set), formatted for the active culture
   ([ADR-0056](../../adr/0056-decouple-ui-language-from-formatting-region.md)), followed by the deep link
   below;
-- **Deep link** = a link back into the app at the occasion,
-  `{origin}/groups/{groupId}/events/{eventId}` (the app's `EventHub` route), built from the **same
-  configured base URL reveal links use**. It is placed in the iCalendar `URL` property **and** repeated in
-  the notes, because some calendars do not surface `URL`. It works for **all three storage modes** (local,
-  shared-by-link, account) — the device that added the entry already holds that group, so tapping the entry
-  reopens the app there. On Android it reuses the existing App Link / deep-link machinery
+- **Deep link** = a link back into the app at the occasion, placed in the iCalendar `URL` property **and**
+  repeated in the notes (some calendars do not surface `URL`), built from the **same configured base URL
+  reveal links use**. The exact link is **per surface**: the organizer and my-assignments surfaces use the
+  app's own event route `{origin}/groups/{groupId}/events/{eventId}` (the `EventHub` route), which works for
+  **all three storage modes** (local, shared-by-link, account) because the device that added the entry
+  already holds that group; the **reveal page** uses the **reveal link itself**, because a raw-link holder
+  need not have the group and their own link is what reopens their view (offline, ADR-0014). On Android the
+  event route reuses the existing App Link / deep-link machinery
   ([ADR-0053](../../adr/0053-backend-free-first-mobile-release.md)) and works offline; on the web it opens
-  the app route in the browser; on iOS it falls back to the browser/PWA (MNF-10). The link carries **no
-  secret** — only opaque GUIDs, and opening it does nothing unless you already hold the group — so it is a
-  *location*, not a capability, and raises no
+  the app route in the browser; on iOS it falls back to the browser/PWA (MNF-10). The event-route link
+  carries **no secret** — only opaque GUIDs, and opening it does nothing unless you already hold the group,
+  so it is a *location*, not a capability; the reveal-page link is the recipient's **own** reveal link placed
+  in their **own** calendar entry — the secret they already hold, no new exposure. Either way the entry never
+  contains an assignment, so it raises no
   [NFR-002](../../requirements/non-functional/NFR-002-assignment-privacy.md) concern.
 
 The entry **never** contains an [assignment](../../glossary/assignment.md) — who drew whom is not an
@@ -75,9 +80,13 @@ And its title is "Christmas 2026", its location is the event location
 And its notes contain the free-text notes and the budget range "10–30 CHF"
 
 Given an event with group id "G" and event id "E"
-When I tap "Add to calendar"
+When I tap "Add to calendar" from the event hub or my-assignments
 Then the calendar entry's URL is "{origin}/groups/G/events/E" using the same base URL as reveal links
 And that link also appears in the entry's notes
+
+Given I am on the reveal page for my link
+When I tap "Add to calendar"
+Then the calendar entry's URL is my reveal link (which reopens my assignment offline)
 
 Given the installed Android app and a calendar entry carrying the app's event deep link
 When I tap that link in my calendar

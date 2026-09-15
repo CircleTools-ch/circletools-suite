@@ -118,5 +118,7 @@
   href: 0058-account-free-link-shared-groups.md
 - name: 0059 Brand marks — ring enclosing a central glyph
   href: 0059-brand-mark-ring-and-central-glyph.md
+- name: 0060 Device-local notification scheduling & permission
+  href: 0060-local-notification-scheduling-and-permission.md
 - name: Template
   href: _template-adr.md

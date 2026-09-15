@@ -90,5 +90,9 @@
       href: secret-santa/UC-SS-020-release-a-claimed-person.md
     - name: UC-SS-021 Add an occasion to my calendar
       href: secret-santa/UC-SS-021-add-occasion-to-calendar.md
+    - name: UC-SS-022 Hand out reveal links without forgetting anyone
+      href: secret-santa/UC-SS-022-hand-out-reveal-links.md
+    - name: UC-SS-023 Be reminded about my occasions
+      href: secret-santa/UC-SS-023-be-reminded-about-my-occasions.md
 - name: Template
   href: _template-use-case.md

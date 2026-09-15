@@ -339,19 +339,61 @@ and consumes the [mobile brainstorm (2026-09-01)](../brainstorming/2026-09-01-se
   description, reusing the existing App Link / `DeepLinkService` machinery
   ([ADR-0053](../adr/0053-backend-free-first-mobile-release.md)) — carries no secret (opaque GUIDs), and
   behaves exactly like reveal links today re: build-time origin and the Android chooser-until-real-
-  `assetlinks.json`-fingerprint. **Status: In progress** (spec done; implementation next — Web + Android
-  now, iOS deep-link/`.ics` deferred).
+  `assetlinks.json`-fingerprint. **✅ Built & browser-verified 2026-09-15** ([FEAT-014](../features/FEAT-014-add-event-to-calendar.md)
+  *Done*): the `ICalendarService`/`IcsBuilder` seam + per-head impls + the shared button on hub/reveal/
+  my-assignments + the `/groups` App Link intent-filter. Solution builds clean (incl. the MAUI Android head
+  0/0); Ui 72/72 + Architecture 28/28. Browser walk confirmed the button appears on the hub and reveal page
+  once a date is set (absent without one), non-spoiling, console clean. **Pending the Pixel:** the Android
+  pre-filled editor + App Link auto-open under a finger (device-only).
 - **MNF-7 · Share all links for an event at once (P2).** Follow-on to the existing share seam.
+  **✅ Promoted through the process (2026-09-15):** [UC-SS-022](../use-cases/secret-santa/UC-SS-022-hand-out-reveal-links.md)
+  → [FR-045](../requirements/functional/FR-045-guided-hand-out-of-reveal-links.md) →
+  [FEAT-015](../features/FEAT-015-guided-hand-out-of-reveal-links.md) /
+  [TP-015](../features/TP-015-guided-hand-out-of-reveal-links.md), reusing the `IShareService` seam
+  ([ADR-0028](../adr/0028-browser-platform-adapters-block.md), **no new ADR**). **Design calls (locked):**
+  "share all" is a **guided hand-out** — the app walks the whole draw, firing the share sheet (or Copy on
+  a desktop browser) for **one person's** link at a time and tracking who is done (**"X of Y done ·
+  Z left"**), so nobody is forgotten. It **never** composes a payload with more than one reveal link — the
+  naive "all links in one message" is a spoiler leak and is forbidden
+  ([NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)). Handed-out progress is
+  **device-local, per event, not synced** (via `IKeyValueStore`, like the recent-groups/culture prefs),
+  survives an app reopen, and **resets on a re-draw** (the links change). Per-person Share/Copy/QR stay for
+  one-offs; value is concentrated in the account-free / shared-by-link modes (linked members see their own
+  assignment in-app). **✅ Built & browser-verified 2026-09-15** ([FEAT-015](../features/FEAT-015-guided-hand-out-of-reveal-links.md)
+  *Done*): a **Hand out links** button + guided `HandoutDialog` + `HandoutProgressService` (device-local,
+  keyed by a reveal-link hash so a re-draw resets). Builds clean; Ui 72/72. Browser walk confirmed
+  "Handed out: 0 / 3" → dialog (one-at-a-time Share/Copy/Mark) → "1 / 3" + chip **persist across a full
+  reload**, console clean. **Pending the Pixel:** the real OS share sheet under a finger.
 
 **Parked — need their own design/ADR before building:**
 
-- **MNF-8 · Local notifications (P1 value, parked).** Draw-reminder before the event, "event is
+- **MNF-8 · Local notifications (P1 value).** Draw-reminder before the event, "event is
   tomorrow", empty-wishlist nudge — the strongest reason to *install* rather than bookmark. Needs a
-  scheduling + permission design (and, for "remind everyone", a reachable origin). Parked in the
-  brainstorm pending the reveal-origin/hosting decision; promote once designed.
+  scheduling + permission design (and, for "remind everyone", a reachable origin).
   **Motivation reinforced (2026-09-02):** the [competitor scan](../brainstorming/2026-09-02-secret-santa-competitor-research.md)
   found reviewers specifically asking to be **nudged to fill their wish list** — the empty-wishlist reminder is a
-  named, cross-market wish, not just an install hook. Still gated on the same scheduling/origin design.
+  named, cross-market wish, not just an install hook.
+  **✅ Promoted through the process (2026-09-15):** [UC-SS-023](../use-cases/secret-santa/UC-SS-023-be-reminded-about-my-occasions.md)
+  → [FR-046](../requirements/functional/FR-046-device-local-occasion-reminders.md) →
+  [FEAT-016](../features/FEAT-016-device-local-occasion-reminders.md) /
+  [TP-016](../features/TP-016-device-local-occasion-reminders.md), governed by a new ADR
+  [ADR-0060](../adr/0060-local-notification-scheduling-and-permission.md). **Scope sharpened against the
+  origin gate:** v1 ships the **device-local** subset — the three reminders scheduled and fired on the
+  user's own device (offline, account-free), a new `INotificationScheduler` platform seam
+  ([ADR-0028](../adr/0028-browser-platform-adapters-block.md)) over Plugin.LocalNotification on the device
+  head with a **web no-op** (phone-first, like haptics), a **global per-kind opt-in** in Settings (off by
+  default), OS permission requested **on first enable**, and **no assignment ever in a reminder body**
+  ([NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)). **Cross-member push**
+  ("nudge another member" / "remind everyone") **stays parked** on the reveal-origin/hosting decision
+  ([ADR-0053](../adr/0053-backend-free-first-mobile-release.md)) — a future ADR once an origin exists.
+  **✅ Built 2026-09-15; on-device delivery pending the Pixel** ([FEAT-016](../features/FEAT-016-device-local-occasion-reminders.md)
+  *Done*): the `INotificationScheduler` seam, the pure `ReminderPlanner`, `NotificationPreferences`, the
+  `ReminderScheduler` coordinator, the web no-op (`BrowserNotificationScheduler`) and the MAUI impl over
+  **Plugin.LocalNotification 12.0.0**, the Settings **Reminders** section, and `POST_NOTIFICATIONS` +
+  `RECEIVE_BOOT_COMPLETED`. Solution builds clean incl. the MAUI Android head (0/0, the plugin restores for
+  net10-android); Ui 72/72 + Architecture 28/28. Browser-verified the web-visible part (Settings shows the
+  "needs the app" note, no switches on web). **Pending the Pixel (device-only):** the permission prompt,
+  each kind firing, and cancel-on-draw/wishlist-filled/delete.
 - **MNF-9 · Biometric app lock (P2, parked).** Face/fingerprint on open — assignments are the one secret
   the app keeps, and a phone left unlocked exposes who drew whom. Opt-in; warrants an
   [NFR-004](../requirements/non-functional/NFR-004-data-protection-and-retention.md) privacy review first.

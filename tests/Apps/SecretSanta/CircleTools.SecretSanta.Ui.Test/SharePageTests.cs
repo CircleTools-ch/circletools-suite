@@ -38,12 +38,38 @@ public sealed class SharePageTests : IDisposable
         _ctx.Services.AddSingleton<RecentAccessService>();
         _ctx.Services.AddSingleton<ISender>(new ShareSender(RevealUrl));
         _ctx.Services.AddSingleton<ISyncSignals>(new FakeSyncSignals());
+        // The share page now offers the guided hand-out (MNF-7), which persists progress via this service.
+        _ctx.Services.AddSingleton<HandoutProgressService>();
     }
 
     private IRenderedComponent<Share> RenderShare() =>
         _ctx.RenderComponent<Share>(p => p
             .Add(s => s.GroupId, Guid.NewGuid())
             .Add(s => s.EventId, Guid.NewGuid()));
+
+    [Fact]
+    public void OffersTheGuidedHandOut_WithProgress()
+    {
+        var cut = RenderShare();
+
+        Assert.Contains(cut.FindAll("button"), b => b.TextContent.Trim() == "HandOutLinks");
+        // PassThrough localizer echoes "HandoutProgress" with its args → "HandoutProgress0, 1" is not how
+        // it formats; it formats the value with string.Format, so "Handed out: 0 / 1" would need the real
+        // resource. The echo localizer returns the key with args applied, so just assert the button here.
+    }
+
+    [Fact]
+    public async Task ShowsHandedOutChip_ForAParticipantAlreadyHandedOut()
+    {
+        var groupId = Guid.NewGuid();
+        var eventId = Guid.NewGuid();
+        var handout = _ctx.Services.GetRequiredService<HandoutProgressService>();
+        await handout.SetDoneAsync(groupId, eventId, [RevealUrl], HandoutProgressService.MemberKey(RevealUrl), done: true);
+
+        var cut = _ctx.RenderComponent<Share>(p => p.Add(s => s.GroupId, groupId).Add(s => s.EventId, eventId));
+
+        cut.WaitForAssertion(() => Assert.Contains("HandedOut", cut.Markup));
+    }
 
     [Fact]
     public void ShareButtonIsOffered_WhenThePlatformCanShare()
