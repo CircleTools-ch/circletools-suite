@@ -159,6 +159,11 @@ public sealed class Circle : AggregateRoot
     /// <summary>Invites an address to the circle (FR-017). Owner and admin.</summary>
     /// <param name="actorUserId">The inviter.</param>
     /// <param name="email">The address to invite.</param>
+    /// <param name="emailHash">
+    /// The stored hash of that address, computed outside the aggregate (ADR-0062): hashing needs a
+    /// server key the pure domain does not hold, so it arrives as a value — the same shape as
+    /// <paramref name="secretHandle"/>.
+    /// </param>
     /// <param name="resolvedUserId">
     /// The account behind that address if it has a verified one, otherwise <c>null</c>. Resolved
     /// outside the aggregate, because Identity is not the Circles context's to reach into.
@@ -179,6 +184,7 @@ public sealed class Circle : AggregateRoot
     public CircleResult<InvitationDispatch> Invite(
         Guid actorUserId,
         string email,
+        string emailHash,
         Guid? resolvedUserId,
         Guid? managedMembershipId,
         string secretHandle,
@@ -187,6 +193,7 @@ public sealed class Circle : AggregateRoot
     {
         ArgumentNullException.ThrowIfNull(limits);
         ArgumentException.ThrowIfNullOrWhiteSpace(secretHandle);
+        ArgumentException.ThrowIfNullOrWhiteSpace(emailHash);
 
         var permission = Authorize(actorUserId, CircleRole.Admin);
         if (!permission.IsSuccess)
@@ -210,7 +217,6 @@ public sealed class Circle : AggregateRoot
 
         PurgeExpiredInvitations(now);
 
-        var emailHash = EmailAddress.HashOf(email);
         var pending = _invitations.SingleOrDefault(i =>
             string.Equals(i.EmailHash, emailHash, StringComparison.Ordinal));
 
@@ -245,6 +251,7 @@ public sealed class Circle : AggregateRoot
 
         var invitation = Invitation.Issue(
             email,
+            emailHash,
             actorUserId,
             managedMembershipId,
             secretHandle,
@@ -319,7 +326,10 @@ public sealed class Circle : AggregateRoot
     /// </summary>
     /// <param name="invitationId">The invitation being accepted.</param>
     /// <param name="userId">The signed-in account accepting it.</param>
-    /// <param name="verifiedEmail">That account's verified address.</param>
+    /// <param name="verifiedEmailHash">
+    /// The stored hash of that account's verified address, computed outside the aggregate (ADR-0062).
+    /// The address itself never enters the domain here; only its hash is compared.
+    /// </param>
     /// <param name="displayName">That account's display name.</param>
     /// <param name="language">That account's preferred language.</param>
     /// <param name="limits">The configured caps.</param>
@@ -339,7 +349,7 @@ public sealed class Circle : AggregateRoot
     public CircleResult<CircleMembership> Accept(
         Guid invitationId,
         Guid userId,
-        string verifiedEmail,
+        string verifiedEmailHash,
         string displayName,
         string? language,
         CircleLimits limits,
@@ -347,7 +357,7 @@ public sealed class Circle : AggregateRoot
         Guid? chosenManagedMembershipId = null)
     {
         ArgumentNullException.ThrowIfNull(limits);
-        ArgumentException.ThrowIfNullOrWhiteSpace(verifiedEmail);
+        ArgumentException.ThrowIfNullOrWhiteSpace(verifiedEmailHash);
 
         var invitation = FindInvitation(invitationId);
         if (invitation is null)
@@ -361,7 +371,7 @@ public sealed class Circle : AggregateRoot
             return CircleResults.Refused<CircleMembership>(CircleError.InvitationExpired);
         }
 
-        if (!string.Equals(invitation.EmailHash, EmailAddress.HashOf(verifiedEmail), StringComparison.Ordinal))
+        if (!string.Equals(invitation.EmailHash, verifiedEmailHash, StringComparison.Ordinal))
         {
             return CircleResults.Refused<CircleMembership>(CircleError.InvitationAddressMismatch);
         }

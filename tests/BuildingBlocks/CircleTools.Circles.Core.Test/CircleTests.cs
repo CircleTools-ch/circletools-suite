@@ -119,6 +119,7 @@ public sealed class CircleTests
         var dispatch = circle.Invite(
             _member,
             "carla@example.com",
+            TestEmailHasher.Instance.Hash("carla@example.com"),
             resolvedUserId: null,
             managedMembershipId: null,
             InvitationSecret.Create().Handle,
@@ -271,6 +272,7 @@ public sealed class CircleTests
         var dispatch = circle.Invite(
             _owner,
             "carla@example.com",
+            TestEmailHasher.Instance.Hash("carla@example.com"),
             resolvedUserId: null,
             managedMembershipId: null,
             InvitationSecret.Create().Handle,
@@ -308,6 +310,7 @@ public sealed class CircleTests
         var dispatch = circle.Invite(
             _owner,
             "ben@example.com",
+            TestEmailHasher.Instance.Hash("ben@example.com"),
             resolvedUserId: _member,
             managedMembershipId: null,
             InvitationSecret.Create().Handle,
@@ -330,7 +333,7 @@ public sealed class CircleTests
         var accepted = circle.Accept(
             invitation.Id,
             _stranger,
-            "someone.else@example.com",
+            TestEmailHasher.Instance.Hash("someone.else@example.com"),
             "Someone Else",
             language: null,
             CircleFactory.Limits(),
@@ -351,7 +354,7 @@ public sealed class CircleTests
         var accepted = circle.Accept(
             invitation.Id,
             _member,
-            "carla@example.com",
+            TestEmailHasher.Instance.Hash("carla@example.com"),
             "Carla",
             language: null,
             limits,
@@ -372,7 +375,7 @@ public sealed class CircleTests
         var accepted = circle.Accept(
             second.Id,
             _member,
-            "ben.other@example.com",
+            TestEmailHasher.Instance.Hash("ben.other@example.com"),
             "Ben",
             language: null,
             CircleFactory.Limits(),
@@ -477,7 +480,7 @@ public sealed class CircleTests
         // Invited without a target; the recipient names the offline profile as they accept.
         var invitation = CircleFactory.Invite(circle, _owner, "mia@example.com");
         var accepted = circle.Accept(
-            invitation.Id, _member, "mia@example.com", "Mia Meier", null,
+            invitation.Id, _member, TestEmailHasher.Instance.Hash("mia@example.com"), "Mia Meier", null,
             CircleFactory.Limits(), CircleFactory.Now, chosenManagedMembershipId: managed.Id);
 
         Assert.Null(accepted.Error);
@@ -497,7 +500,7 @@ public sealed class CircleTests
         // The inviter aimed at Mia; the recipient's attempt to pick Tom instead is ignored.
         var invitation = CircleFactory.Invite(circle, _owner, "mia@example.com", managedMembershipId: aimedAt.Id);
         var accepted = circle.Accept(
-            invitation.Id, _member, "mia@example.com", "Mia Meier", null,
+            invitation.Id, _member, TestEmailHasher.Instance.Hash("mia@example.com"), "Mia Meier", null,
             CircleFactory.Limits(), CircleFactory.Now, chosenManagedMembershipId: other.Id);
 
         Assert.Equal(aimedAt.Id, accepted.Value!.Id);
@@ -513,7 +516,7 @@ public sealed class CircleTests
         // The owner's own membership is account-backed; a recipient must never seize it by picking it.
         var invitation = CircleFactory.Invite(circle, _owner, "eve@example.com");
         var accepted = circle.Accept(
-            invitation.Id, _member, "eve@example.com", "Eve", null,
+            invitation.Id, _member, TestEmailHasher.Instance.Hash("eve@example.com"), "Eve", null,
             CircleFactory.Limits(), CircleFactory.Now, chosenManagedMembershipId: circle.Owner.Id);
 
         Assert.Null(accepted.Error);
@@ -530,7 +533,7 @@ public sealed class CircleTests
 
         var invitation = CircleFactory.Invite(circle, _owner, "eve@example.com");
         var accepted = circle.Accept(
-            invitation.Id, _member, "eve@example.com", "Eve", null,
+            invitation.Id, _member, TestEmailHasher.Instance.Hash("eve@example.com"), "Eve", null,
             CircleFactory.Limits(), CircleFactory.Now, chosenManagedMembershipId: Guid.NewGuid());
 
         Assert.Null(accepted.Error);
@@ -704,7 +707,7 @@ public sealed class CircleTests
         Assert.True(circle.Decline(invitation.Id, CircleFactory.Now).IsSuccess);
 
         var record = Assert.Single(circle.Declines);
-        Assert.Equal(EmailAddress.HashOf("carla@example.com"), record.EmailHash);
+        Assert.Equal(TestEmailHasher.Instance.Hash("carla@example.com"), record.EmailHash);
         Assert.Empty(circle.Invitations);
 
         // Nothing on the record may still hold the address itself — the point of keeping a hash.
@@ -756,6 +759,7 @@ public sealed class CircleTests
         var dispatch = circle.Invite(
             _owner,
             "dora@example.com",
+            TestEmailHasher.Instance.Hash("dora@example.com"),
             resolvedUserId: null,
             managedMembershipId: null,
             InvitationSecret.Create().Handle,

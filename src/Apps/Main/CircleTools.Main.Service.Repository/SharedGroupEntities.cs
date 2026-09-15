@@ -24,10 +24,11 @@ public sealed class SharedGroupRow
     public DateTimeOffset ServerModifiedAt { get; set; }
 
     /// <summary>
-    /// The creator's secret (ADR-0058 security note): the high-entropy key the sharing client presented
-    /// on the first upload. Only a re-create that re-presents this exact key may recover the group's
-    /// admin/join links — the group id alone (which every join-link holder learns) must not. Null only
-    /// for rows created before the key existed.
+    /// The <em>hash</em> of the creator's secret (ADR-0058 security note, ADR-0061): the high-entropy key
+    /// the sharing client presented on the first upload, stored only as its SHA-256 so a database dump
+    /// never yields the key itself. Only a re-create that re-presents a key hashing to this value may
+    /// recover the group's admin/join links — the group id alone (which every join-link holder learns)
+    /// must not. Null only for rows created before the key existed.
     /// </summary>
     public string? CreatorKey { get; set; }
 
@@ -52,8 +53,18 @@ public sealed class SharedGroupRow
 /// </summary>
 public sealed class SharedGroupToken
 {
-    /// <summary>The token string — the row key and the secret carried in a link.</summary>
+    /// <summary>
+    /// The <em>hash</em> of the token — the row key (ADR-0061). The token carried in a link is looked up
+    /// by the SHA-256 of itself, so the stored row never holds the token in the clear and a database dump
+    /// yields no working links.
+    /// </summary>
     public string Token { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The token's plaintext, encrypted at rest (ADR-0061). Kept only so the resume-share path (ADR-0058)
+    /// can hand the original working link back to its creator; a dump without the key cannot read it.
+    /// </summary>
+    public string TokenCipher { get; set; } = string.Empty;
 
     /// <summary>The group this token addresses.</summary>
     public Guid GroupId { get; set; }

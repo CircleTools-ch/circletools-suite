@@ -7,6 +7,7 @@ using CircleTools.Identity.Tokens;
 using CircleTools.Main.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,18 @@ const string corsPolicyName = "CircleToolsCors";
 
 // Aspire service defaults (OpenTelemetry, health checks, resilience, service discovery).
 builder.AddServiceDefaults();
+
+// The API always runs plain HTTP behind a TLS-terminating reverse proxy (Caddy) and is never published
+// directly — only Caddy reaches it over the internal Docker network (ADR-0036). Honour the proxy's
+// X-Forwarded-Proto/-For so Request.Scheme is "https", Secure cookies are set, and the absolute links in
+// verification / reset / invitation mail carry the public https origin rather than the internal http one.
+// Trusting all proxies is safe precisely because nothing but the proxy can reach this listener.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // Application layer (CQRS dispatcher + behaviors) and the Main module.
 builder.Services.AddApplication();
@@ -50,6 +63,7 @@ builder.Services.AddLinkingRepository(mainConnectionString);
 // write path is anonymous, so it is rate-limited and size-capped (NFR-009/010).
 builder.Services.AddSharedGroupsRepository(mainConnectionString);
 builder.Services.Configure<SharedGroupLimits>(builder.Configuration.GetSection(SharedGroupLimits.SectionName));
+builder.Services.Configure<SharedGroupSecurityOptions>(builder.Configuration.GetSection(SharedGroupSecurityOptions.SectionName));
 builder.Services.AddHostedService<SharedGroupRetentionService>();
 
 // Circles (FEAT-003). Its own DbContext and its own schema inside the same database — a modular
@@ -58,6 +72,7 @@ builder.Services.AddCirclesCore();
 builder.Services.AddCirclesRepository(mainConnectionString);
 builder.Services.AddCirclesRetention(builder.Configuration);
 builder.Services.Configure<CircleLimits>(builder.Configuration.GetSection(CircleLimits.SectionName));
+builder.Services.Configure<CircleSecurityOptions>(builder.Configuration.GetSection(CircleSecurityOptions.SectionName));
 
 // The two Circles ports no other project can supply: one needs Identity, the other needs the
 // outbox, and the Circles context references neither. This host is the only place that has both.
@@ -244,6 +259,9 @@ static bool IsLoopbackOrigin(string origin) =>
     Uri.TryCreate(origin, UriKind.Absolute, out var uri) && uri.IsLoopback;
 
 var app = builder.Build();
+
+// Must run before anything that reads the request scheme (HTTPS redirect, auth cookies, absolute URLs).
+app.UseForwardedHeaders();
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();

@@ -1,0 +1,24 @@
+@inject IStringLocalizer<SharedStrings> L
+
+@*
+    Shared imprint content. Rendered by each app's thin routable /imprint wrapper. Operator is
+    Adrian Moll (circletools.ch), contact info@circletools.ch; this is a friendly draft still worth a
+    light legal review before launch.
+*@
+
+<MudStack Spacing="3" Style="max-width:44rem;">
+    <MudText Typo="Typo.h4" GutterBottom="true">@L["Legal_Imprint_Title"]</MudText>
+    <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">@L["Legal_UpdatedLabel"]: 2026-09-15</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Imprint_OperatorHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Imprint_OperatorBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Imprint_AboutHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Imprint_AboutBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Imprint_HostingHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Imprint_HostingBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Imprint_DisclaimerHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Imprint_DisclaimerBody"]</MudText>
+</MudStack>

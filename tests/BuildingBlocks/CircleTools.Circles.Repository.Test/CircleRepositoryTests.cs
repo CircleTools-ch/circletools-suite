@@ -61,12 +61,12 @@ public sealed class CircleRepositoryTests(CirclesPostgresFixture fixture)
         var reloadedInvitation = Assert.Single(reloaded.Invitations);
         Assert.Equal(pending.Id, reloadedInvitation.Id);
         Assert.Equal("chiara@example.test", reloadedInvitation.Email);
-        Assert.Equal(EmailAddress.HashOf("chiara@example.test"), reloadedInvitation.EmailHash);
+        Assert.Equal(TestEmailHasher.Instance.Hash("chiara@example.test"), reloadedInvitation.EmailHash);
         Assert.Equal(pending.SecretHandle, reloadedInvitation.SecretHandle);
         Assert.Equal(CircleFactory.Now.AddDays(14), reloadedInvitation.ExpiresAt);
 
         var reloadedDecline = Assert.Single(reloaded.Declines);
-        Assert.Equal(EmailAddress.HashOf("dora@example.test"), reloadedDecline.EmailHash);
+        Assert.Equal(TestEmailHasher.Instance.Hash("dora@example.test"), reloadedDecline.EmailHash);
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public sealed class CircleRepositoryTests(CirclesPostgresFixture fixture)
         // circles that the same address has declined.
         var stored = Assert.Single(await RowsFor<DeclineRecord>(context, circle.Id));
 
-        Assert.Equal(EmailAddress.HashOf("dora@example.test"), stored.EmailHash);
+        Assert.Equal(TestEmailHasher.Instance.Hash("dora@example.test"), stored.EmailHash);
         Assert.Equal(CircleFactory.Now, stored.DeclinedAt);
 
         // The invitation that carried the address is gone rather than flagged.
@@ -375,9 +375,9 @@ public sealed class CircleRepositoryTests(CirclesPostgresFixture fixture)
         Assert.Equal(circle.Id, byHandle?.Id);
         Assert.Null(await queries.FindByInvitationHandleAsync(InvitationSecret.Create().Handle));
 
-        var awaiting = await queries.ListWithInvitationForAsync(EmailAddress.HashOf("chiara@example.test"));
+        var awaiting = await queries.ListWithInvitationForAsync(TestEmailHasher.Instance.Hash("chiara@example.test"));
         Assert.Contains(circle.Id, awaiting.Select(c => c.Id));
-        Assert.Empty(await queries.ListWithInvitationForAsync(EmailAddress.HashOf("nobody@example.test")));
+        Assert.Empty(await queries.ListWithInvitationForAsync(TestEmailHasher.Instance.Hash("nobody@example.test")));
     }
 
     [Fact]

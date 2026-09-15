@@ -167,5 +167,5 @@ public sealed class InvitationRateLimiterTests(CirclesPostgresFixture fixture)
         new EfInvitationRateLimiter(provider.GetRequiredService<CirclesDbContext>(), clock);
 
     /// <summary>A hash of an address nothing else in the suite has used.</summary>
-    private static string Address() => EmailAddress.HashOf($"{Guid.CreateVersion7():N}@example.test");
+    private static string Address() => TestEmailHasher.Instance.Hash($"{Guid.CreateVersion7():N}@example.test");
 }

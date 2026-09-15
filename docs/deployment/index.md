@@ -16,5 +16,9 @@ Two tracks:
 And, before either of them, **[device testing](device-testing.md)** — which of our machines can
 build each head, which devices can run it, and what to type. Nothing there needs a store account.
 
+Across both tracks, the **[launch-readiness assessment](launch-readiness.md)** (2026-09-15) is the
+point-in-time verdict on whether the suite can go live — what is production-grade already and the
+operational, legal and pre-data items that still gate a first deploy.
+
 Both tracks are gated for *execution* on the [brand & domain](../process/naming.md); the current
 day-to-day focus is local development via .NET Aspire, see [arc42 ch. 7](../arc42/07-deployment-view.md).

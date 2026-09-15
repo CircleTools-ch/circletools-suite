@@ -72,6 +72,7 @@ public sealed class Invitation : Entity
 
     internal static Invitation Issue(
         string email,
+        string emailHash,
         Guid invitedByUserId,
         Guid? managedMembershipId,
         string secretHandle,
@@ -80,7 +81,7 @@ public sealed class Invitation : Entity
         new(
             GuidV7.New(),
             EmailAddress.Normalize(email),
-            EmailAddress.HashOf(email),
+            emailHash,
             invitedByUserId,
             managedMembershipId,
             secretHandle,

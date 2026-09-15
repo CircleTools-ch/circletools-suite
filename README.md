@@ -1,8 +1,8 @@
 # CircleTools — app suite for families & friends
 
-> **CircleTools** is a neutral **working name** — the brand is not finalized (branding may change).
-> A leading candidate is **Walf** (*We Are Like Family*; `walf.ch` available). See the naming
-> history and candidates in [`docs/process/naming.md`](docs/process/naming.md).
+> **CircleTools** is the **final** brand, at **`circletools.ch`** (registered at Infomaniak,
+> **2026-08-13**). It is also the solution / project / namespace prefix. See the naming history in
+> [`docs/process/naming.md`](docs/process/naming.md).
 
 A suite of small, delightful apps for **families and groups of friends** — one brand,
 one login, shared configuration, and a global dashboard over every app. The first app is
@@ -10,7 +10,8 @@ a **Secret-Santa** app.
 
 Every app works two ways:
 
-- **Standalone & offline** — no account, no backend; all data stored locally (SQLite).
+- **Standalone & offline** — no account, no backend; all data stored locally in a JSON key-value
+  store (web `localStorage`, MAUI file-per-key — not SQLite; see [ADR-0015](docs/adr/0015-mvp-client-offline-storage.md)).
 - **Connected** — create an account (email + password, optional passkeys) to **sync across
   devices** via a Postgres-backed API.
 
@@ -24,7 +25,7 @@ default). **Code & documentation:** English only.
 
 - **.NET 10**, **.NET Aspire** (orchestration)
 - **Domain-Driven Design** (strategic + tactical)
-- **PostgreSQL** (backend) · **SQLite** (on-device)
+- **PostgreSQL** (backend) · **JSON key-value store** (on-device, per [ADR-0015](docs/adr/0015-mvp-client-offline-storage.md))
 - **Blazor** (Web) + **MAUI Blazor Hybrid** (native), shared via Razor Class Libraries
 - **DocFX** for the documentation site
 
@@ -41,8 +42,8 @@ default). **Code & documentation:** English only.
 
 ## Status
 
-🟢 **Three slices built; M3 next.** See the [roadmap](docs/roadmap/roadmap.md) and
-[backlog](docs/roadmap/backlog.md).
+🟢 **M1–M5 built and closed; deployment (M8) is the only open milestone.** See the
+[roadmap](docs/roadmap/roadmap.md) and [backlog](docs/roadmap/backlog.md).
 
 - **Secret-Santa MVP — shipped** ([FEAT-001](docs/features/FEAT-001-secret-santa-mvp.md)). Create a
   group, add members and wishlists, define exclusions, run a fair draw, share self-contained reveal
@@ -57,15 +58,20 @@ default). **Code & documentation:** English only.
   or in the app, keep managed members for people who will never sign up, administer roles and
   ownership, leave, delete. Online-only for now — offline circles are M3's decision, not a patch.
   **537 tests green across 12 projects.**
-- **Not yet shippable.** Both slices run locally against real Postgres and a real SMTP sink, but
-  production needs two decisions that have not been made: a **transactional-email provider** and the
-  **hosting / suite domain** (which fixes the passkey RP-ID, the CSP origin, and the data-residency
-  target). M2 makes the first one urgent rather than merely pending: an invitation that does not
-  arrive is a person who never joins. The brand and domain are still deliberately open — see
-  [naming](docs/process/naming.md).
-- **Next:** **M3 — Sync**, App↔backend reconciliation and the anonymous→account claim. It has to
-  decide whether a circle syncs at all: a standing set of people that several devices edit is a poor
-  fit for last-write-wins over a whole aggregate.
+- **M3 — Sync & claim, M4 — Linking, M5 — Cross-app SSO, and Events per group — all built and
+  closed.** App↔backend reconciliation with the anonymous→account claim, member↔user linking with
+  consent, the redirect-based PKCE single-sign-on hand-off across suite origins, and one-or-more
+  events per group each with its own draw history — see the [roadmap](docs/roadmap/roadmap.md).
+- **Milestone 7 — Testing & CI — complete.** GitHub Actions runs build/test, link-checked docs and
+  the MAUI heads on every push/PR ([ADR-0038](docs/adr/0038-ci-cd-pipeline.md)), and the WebAuthn
+  ceremony and invitation sign-up journey are automated over a real-Chromium E2E host.
+- **Not yet deployed — but not blocked on undecided decisions.** Hosting
+  ([ADR-0036](docs/adr/0036-cloud-provider-and-hosting.md)) and transactional email
+  ([ADR-0037](docs/adr/0037-transactional-email-provider.md)) are both **Accepted (2026-08-13)**, and
+  the brand and `circletools.ch` domain are final. What remains for **M8 — Deployment** is
+  **operational provisioning** (VPS, secrets, DNS, backups) and the **legal pages** (privacy / imprint
+  / account-deletion, DE/EN/FR) — execution, not decisions. See the
+  [launch-readiness assessment](docs/deployment/launch-readiness.md).
 
 ## Quickstart
 

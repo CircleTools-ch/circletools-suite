@@ -60,6 +60,8 @@ namespace CircleTools.Main.Service.Repository.Migrations.Shared
 
                     b.HasIndex("LastActivityAt");
 
+                    b.HasIndex("OwnerAccountId");
+
                     b.ToTable("groups", "shared");
                 });
 
@@ -85,6 +87,11 @@ namespace CircleTools.Main.Service.Repository.Migrations.Shared
 
                     b.Property<bool>("RetiredByClaim")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("TokenCipher")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
 
                     b.HasKey("Token");
 
@@ -117,6 +124,8 @@ namespace CircleTools.Main.Service.Repository.Migrations.Shared
                         .HasColumnType("character varying(128)");
 
                     b.HasKey("GroupId", "MemberId");
+
+                    b.HasIndex("AccountId");
 
                     b.ToTable("member_claims", "shared");
                 });

@@ -15,11 +15,13 @@ namespace CircleTools.Main.Service.Repository;
 /// </summary>
 /// <param name="context">The shared-group database context.</param>
 /// <param name="tokens">The share-token factory (NFR-009 entropy).</param>
+/// <param name="cipher">The at-rest protection for tokens (ADR-0061).</param>
 /// <param name="timeProvider">The server clock — the only ordering authority.</param>
 /// <param name="limits">The abuse-resistance limits (NFR-009).</param>
 public sealed class SharedGroupStore(
     SharedGroupDbContext context,
     IShareTokenFactory tokens,
+    IShareTokenCipher cipher,
     TimeProvider timeProvider,
     IOptions<SharedGroupLimits> limits) : ISharedGroupStore
 {
@@ -70,7 +72,7 @@ public sealed class SharedGroupStore(
             GroupId = request.GroupId,
             Body = bodyText,
             Version = request.Version,
-            CreatorKey = request.CreatorKey,
+            CreatorKey = ShareSecretHash.Of(request.CreatorKey),
             ServerModifiedAt = now,
             OwnerAccountId = null,
             CreatedAt = now,
@@ -125,8 +127,10 @@ public sealed class SharedGroupStore(
             return Refused;
         }
 
+        // Compare the stored hash against the hash of the presented key (ADR-0061); both are equal-length
+        // Base64Url strings, so the fixed-time compare still holds.
         if (!CryptographicOperations.FixedTimeEquals(
-                Encoding.UTF8.GetBytes(existing.CreatorKey), Encoding.UTF8.GetBytes(presentedKey)))
+                Encoding.UTF8.GetBytes(existing.CreatorKey), Encoding.UTF8.GetBytes(ShareSecretHash.Of(presentedKey))))
         {
             return Refused;
         }
@@ -137,9 +141,11 @@ public sealed class SharedGroupStore(
         var admin = activeTokens.FirstOrDefault(t => t.Capability == SharedCapability.Admin);
         var join = activeTokens.FirstOrDefault(t => t.Capability == SharedCapability.Join);
 
+        // Decrypt the stored tokens so the resumed share returns the same working links (ADR-0058/0061).
         return admin is not null && join is not null
             ? new CreateSharedGroupResult(
-                CreateSharedGroupStatus.Created, new MintedLinks(existing.GroupId, admin.Token, join.Token))
+                CreateSharedGroupStatus.Created,
+                new MintedLinks(existing.GroupId, cipher.Decrypt(admin.TokenCipher), cipher.Decrypt(join.TokenCipher)))
             : Refused;
     }
 
@@ -151,8 +157,7 @@ public sealed class SharedGroupStore(
             return null;
         }
 
-        var tokenRow = await context.Tokens
-            .FindAsync([token], cancellationToken).ConfigureAwait(false);
+        var tokenRow = await FindTokenAsync(token, cancellationToken);
         if (tokenRow is null)
         {
             return null;
@@ -201,8 +206,7 @@ public sealed class SharedGroupStore(
             return new SharedWriteResult(SharedWriteStatus.TooLarge, 0);
         }
 
-        var tokenRow = await context.Tokens
-            .FindAsync([token], cancellationToken).ConfigureAwait(false);
+        var tokenRow = await FindTokenAsync(token, cancellationToken);
         if (tokenRow is null)
         {
             return new SharedWriteResult(SharedWriteStatus.NotFound, 0);
@@ -252,8 +256,7 @@ public sealed class SharedGroupStore(
         string adminToken,
         CancellationToken cancellationToken = default)
     {
-        var tokenRow = await context.Tokens
-            .FindAsync([adminToken], cancellationToken).ConfigureAwait(false);
+        var tokenRow = await FindTokenAsync(adminToken, cancellationToken);
         if (tokenRow is not { Active: true, Capability: SharedCapability.Admin })
         {
             return null;
@@ -297,8 +300,7 @@ public sealed class SharedGroupStore(
     /// <inheritdoc />
     public async Task<bool> DeleteAsync(string adminToken, CancellationToken cancellationToken = default)
     {
-        var tokenRow = await context.Tokens
-            .FindAsync([adminToken], cancellationToken).ConfigureAwait(false);
+        var tokenRow = await FindTokenAsync(adminToken, cancellationToken);
         if (tokenRow is not { Active: true, Capability: SharedCapability.Admin })
         {
             return false;
@@ -323,7 +325,7 @@ public sealed class SharedGroupStore(
     /// <inheritdoc />
     public async Task<IReadOnlyList<Guid>?> GetClaimedMembersAsync(string token, CancellationToken cancellationToken = default)
     {
-        var tokenRow = await context.Tokens.FindAsync([token], cancellationToken).ConfigureAwait(false);
+        var tokenRow = await FindTokenAsync(token, cancellationToken);
         if (tokenRow is not { Active: true })
         {
             return null;
@@ -350,7 +352,7 @@ public sealed class SharedGroupStore(
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        var tokenRow = await context.Tokens.FindAsync([token], cancellationToken).ConfigureAwait(false);
+        var tokenRow = await FindTokenAsync(token, cancellationToken);
         if (tokenRow is not { Active: true })
         {
             return new PersonClaimResult(PersonClaimStatus.NotFound);
@@ -407,7 +409,7 @@ public sealed class SharedGroupStore(
     /// <inheritdoc />
     public async Task<bool> ReleasePersonAsync(string adminToken, Guid memberId, CancellationToken cancellationToken = default)
     {
-        var tokenRow = await context.Tokens.FindAsync([adminToken], cancellationToken).ConfigureAwait(false);
+        var tokenRow = await FindTokenAsync(adminToken, cancellationToken);
         if (tokenRow is not { Active: true, Capability: SharedCapability.Admin })
         {
             return false;
@@ -423,7 +425,7 @@ public sealed class SharedGroupStore(
     /// <inheritdoc />
     public async Task<bool> ClaimAdminAsync(string adminToken, Guid accountId, string displayName, CancellationToken cancellationToken = default)
     {
-        var tokenRow = await context.Tokens.FindAsync([adminToken], cancellationToken).ConfigureAwait(false);
+        var tokenRow = await FindTokenAsync(adminToken, cancellationToken);
         if (tokenRow is not { Active: true, Capability: SharedCapability.Admin })
         {
             return false;
@@ -624,10 +626,18 @@ public sealed class SharedGroupStore(
         return owned.Count;
     }
 
-    private static SharedGroupToken NewToken(string token, Guid groupId, SharedCapability capability, DateTimeOffset now) =>
+    // Resolve a token row by the hash of the presented token (ADR-0061); a null/empty token never matches.
+    private async Task<SharedGroupToken?> FindTokenAsync(string token, CancellationToken cancellationToken) =>
+        string.IsNullOrEmpty(token)
+            ? null
+            : await context.Tokens.FindAsync([ShareSecretHash.Of(token)], cancellationToken).ConfigureAwait(false);
+
+    private SharedGroupToken NewToken(string token, Guid groupId, SharedCapability capability, DateTimeOffset now) =>
         new()
         {
-            Token = token,
+            // The row is keyed by the token's hash and keeps its plaintext only as ciphertext (ADR-0061).
+            Token = ShareSecretHash.Of(token),
+            TokenCipher = cipher.Encrypt(token),
             GroupId = groupId,
             Capability = capability,
             Active = true,
