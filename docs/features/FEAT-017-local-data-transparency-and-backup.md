@@ -1,7 +1,7 @@
 ---
 id: FEAT-017
 title: Local data transparency, durability & backup (web)
-status: In progress
+status: Done
 owner: adrian-moll
 target-milestone: Production launch
 bounded-context: SecretSanta
@@ -13,8 +13,7 @@ related: [NFR-001, ADR-0025, ADR-0026, ADR-0028, ADR-0048, ADR-0058, TP-017]
 ## Problem & goals
 
 - **Problem:** On the web head, a Secret-Santa group lives **only** in the browser's `localStorage`
-  ([`BrowserKeyValueStore`](../../src/BuildingBlocks/CircleTools.Ui.Web/BrowserKeyValueStore.cs) →
-  [`GroupRepository`](../../src/Apps/SecretSanta/CircleTools.SecretSanta.LocalStore/GroupRepository.cs)).
+  (`CircleTools.Ui.Web/BrowserKeyValueStore` → `CircleTools.SecretSanta.LocalStore/GroupRepository`).
   That storage has two honest weaknesses that confuse and can hurt users:
   1. **It is evictable.** Plain web storage is best-effort — the browser may clear it under storage
      pressure, and Safari/ITP evicts data for low-engagement sites after ~7 days. Users also wipe it
@@ -49,8 +48,8 @@ Three independent, web-only pieces, all gated on `OperatingSystem.IsBrowser()`:
 1. **Durability** — `wwwroot/js/app.js` gains `window.circletoolsStorage.requestPersistence()`, called
    once at startup right after the service-worker registration. It is best-effort and silent (Chromium
    grants by heuristics; Firefox may prompt) and never blocks the first paint.
-2. **Backup / restore** — a storage-agnostic
-   [`BackupService`](../../src/Apps/SecretSanta/CircleTools.SecretSanta.LocalStore/BackupService.cs)
+2. **Backup / restore** — a storage-agnostic `BackupService`
+   (`CircleTools.SecretSanta.LocalStore/BackupService.cs`)
    in the LocalStore project serializes every group to a self-describing JSON envelope
    (`BackupDocument`: `format`, `version`, `exportedAt`, `groups`) and restores it by **merging by id**
    (add new, overwrite same-id, delete nothing). It reuses the existing `GroupState` memento, so a
