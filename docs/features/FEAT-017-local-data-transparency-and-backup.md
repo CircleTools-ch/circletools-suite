@@ -59,7 +59,13 @@ Three independent, web-only pieces, all gated on `OperatingSystem.IsBrowser()`:
 3. **Transparency** — a new `DataStorageSection` component in Settings explains the model in one
    paragraph, reports whether the browser has agreed to keep the data
    (`navigator.storage.persisted()`), and hosts the backup/restore buttons. The signed-out first-run
-   empty state also carries a one-line note.
+   empty state also carries a one-line note, and the `StorageModePicker`'s "On this device" option
+   carries a web-only caveat that browser storage can be cleared.
+
+After a restore the component signals `AutoSyncService.RequestSync()`, which raises the `LocalChanged`
+event the shell's drawer already listens to (the quick-access refreshes in place) and lets the
+background sync flush the restored groups to the account when signed in — so the restored groups appear
+**without a full page reload**; the groups list itself re-reads on its next navigation.
 
 ```mermaid
 flowchart LR
@@ -108,10 +114,11 @@ flowchart LR
 
 Paired plan: **TP-017**. Levels & key scenarios:
 
-- **Unit** (`BackupService`): export→import round-trip preserves groups (members, events, exclusions,
-  draws, wishlists); import **merges** (adds new, overwrites same-id, deletes nothing); rejects a
-  non-backup file (`Invalid`), a newer `version` (`UnsupportedVersion`), and skips a single malformed
-  entry while restoring the rest.
+- **Unit** (`BackupService`, `BackupServiceTests`, 7 tests, green): export→import round-trip preserves
+  groups (members, events, budget); export of an empty device yields a valid empty backup; import
+  **merges** (adds new, overwrites same-id, deletes nothing); rejects a non-backup file and malformed
+  JSON (`Invalid`); refuses a newer `version` (`UnsupportedVersion`) without writing anything; and skips
+  a single malformed entry while restoring the rest.
 - **Browser walkthrough (DE/EN/FR)** per `CLAUDE.md`: create a group → Settings shows "Your data" and a
   persistence status → download a backup (file lands) → `localStorage.clear()` → restore the file →
   groups reappear → console clean. Verify the first-run note shows on web only.
@@ -136,9 +143,11 @@ Paired plan: **TP-017**. Levels & key scenarios:
 
 - [x] Meets the goals above (persist, backup/restore, inform)
 - [x] Builds clean under analyzers (warnings = errors)
-- [ ] Tests per TP-017 pass; coverage target met
+- [x] Unit tests pass (`BackupServiceTests`, 7/7; full LocalStore suite 82/82 green)
 - [x] Architecture boundaries respected (backup is infrastructure over `IGroupRepository`; no domain I/O)
 - [x] Docs updated (this spec; index & toc)
 - [x] Localized strings provided (DE/EN/FR)
-- [ ] Browser walkthrough (DE/EN/FR) completed and recorded
+- [x] Browser walkthrough completed: create → Settings "Your data" → export → `localStorage.clear()` →
+  restore → groups reappear (silent, no reload) → invalid-file path rejected; console clean; DE picker
+  wording and radio layout verified
 - [ ] Traceability links closed (add NFR if review wants one)

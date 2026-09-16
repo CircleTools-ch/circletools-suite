@@ -4,6 +4,7 @@
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
+@inject AutoSyncService AutoSync
 
 @*
     "Your data" (FEAT-017): a web-only section that makes the local-first storage legible and durable.
@@ -119,15 +120,16 @@
             switch (result.Outcome)
             {
                 case BackupImportOutcome.Restored:
-                    // Persisted groups only appear on the groups list after a reload (the list reloads on an
-                    // account change, not a silent local write), so we surface the counts here and offer an
-                    // explicit reload rather than leaving a stale-looking list.
+                    // Signal a local change so the shell's drawer quick-access refreshes at once, and let the
+                    // background sync flush the restored groups to the account if signed in (ADR-0044). The
+                    // groups list re-reads when it is navigated to, so no full page reload is needed.
                     _restoreMessage = L["DataImportSuccess", result.Added, result.Updated];
                     Snackbar.Add(_restoreMessage, Severity.Success);
                     if (result.Skipped > 0)
                     {
                         Snackbar.Add(L["DataImportSkipped", result.Skipped], Severity.Warning);
                     }
+                    AutoSync.RequestSync();
                     break;
                 case BackupImportOutcome.UnsupportedVersion:
                     Snackbar.Add(L["DataImportUnsupported"], Severity.Error);
@@ -148,6 +150,7 @@
         }
     }
 
-    // Force a full reload onto the groups list so the restored groups are read fresh everywhere.
-    private void ViewGroups() => Navigation.NavigateTo("/", forceLoad: true);
+    // Take the user to their groups. The list re-reads on this navigation and the drawer already refreshed
+    // via the local-change signal, so the restored groups appear without a full page reload.
+    private void ViewGroups() => Navigation.NavigateTo("/");
 }
