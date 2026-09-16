@@ -54,6 +54,9 @@ public static class SecretSantaLocalStoreServiceCollectionExtensions
         services.AddScoped<SyncService>();
         services.AddScoped<SharedSyncService>();
         services.AddScoped<ClaimableGroupsService>();
+        // Portable export/import of the locally held groups (FEAT-017). Storage-agnostic — it works over
+        // whichever repository the host wired — so it is registered here beside the repository it reads.
+        services.AddScoped<BackupService>();
         return services;
     }
 

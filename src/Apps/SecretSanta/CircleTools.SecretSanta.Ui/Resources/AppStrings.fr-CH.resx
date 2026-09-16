@@ -246,7 +246,8 @@
   <data name="SettingsAbout" xml:space="preserve"><value>À propos</value></data>
   <data name="StorageModeLabel" xml:space="preserve"><value>Où ce groupe est stocké</value></data>
   <data name="ModeLocalTitle" xml:space="preserve"><value>Sur cet appareil</value></data>
-  <data name="ModeLocalHint" xml:space="preserve"><value>Privé sur cet appareil. Partagez un lien de révélation par personne.</value></data>
+  <data name="ModeLocalHint" xml:space="preserve"><value>Privé – non partagé. Donnez à chaque personne son propre lien.</value></data>
+  <data name="ModeLocalWebWarning" xml:space="preserve"><value>Dans un navigateur, c'est conservé uniquement dans ce navigateur – effacer les données du navigateur le supprime. Vous pouvez le sauvegarder dans Réglages → Vos données.</value></data>
   <data name="ModeSharedTitle" xml:space="preserve"><value>Partagé par lien</value></data>
   <data name="ModeSharedHint" xml:space="preserve"><value>Stocké en ligne pour que d'autres ouvrent tout le groupe avec un lien. Sans inscription.</value></data>
   <data name="ModeAccountTitle" xml:space="preserve"><value>Mon compte</value></data>
@@ -322,4 +323,19 @@
   <data name="ReminderTomorrowBody" xml:space="preserve"><value>Votre échange de cadeaux a lieu demain.</value></data>
   <data name="ReminderWishlistTitle" xml:space="preserve"><value>Ajoutez votre liste</value></data>
   <data name="ReminderWishlistBody" xml:space="preserve"><value>Votre liste de souhaits pour {0} est encore vide.</value></data>
+  <data name="DataSectionTitle" xml:space="preserve"><value>Vos données</value></data>
+  <data name="DataStoredExplainer" xml:space="preserve"><value>Vos groupes sont enregistrés uniquement dans ce navigateur, sur cet appareil – il n'y a pas de compte et rien n'est envoyé à un serveur tant que vous ne vous connectez pas. Si vous effacez les données du navigateur ou ouvrez l'application dans une fenêtre privée, ils seront perdus.</value></data>
+  <data name="DataPersistedYes" xml:space="preserve"><value>Ce navigateur a accepté de conserver vos données et ne les effacera pas pour libérer de l'espace.</value></data>
+  <data name="DataPersistedNo" xml:space="preserve"><value>Ce navigateur peut effacer vos données s'il manque d'espace. Par sécurité, téléchargez une sauvegarde ou connectez-vous pour synchroniser.</value></data>
+  <data name="DataExportAction" xml:space="preserve"><value>Télécharger une sauvegarde</value></data>
+  <data name="DataExportHint" xml:space="preserve"><value>Enregistrez tous vos groupes dans un fichier que vous pouvez conserver ou transférer vers un autre navigateur ou appareil.</value></data>
+  <data name="DataExportDone" xml:space="preserve"><value>Sauvegarde téléchargée.</value></data>
+  <data name="DataImportAction" xml:space="preserve"><value>Restaurer depuis une sauvegarde</value></data>
+  <data name="DataImportHint" xml:space="preserve"><value>Chargez des groupes depuis un fichier de sauvegarde. Les groupes déjà présents sur cet appareil avec le même identifiant sont mis à jour ; rien n'est supprimé.</value></data>
+  <data name="DataImportSuccess" xml:space="preserve"><value>Restauration terminée : {0} ajouté(s), {1} mis à jour.</value></data>
+  <data name="DataImportSkipped" xml:space="preserve"><value>{0} entrées n'ont pas pu être lues et ont été ignorées.</value></data>
+  <data name="DataImportInvalid" xml:space="preserve"><value>Ce fichier n'est pas une sauvegarde Secret Santa valide.</value></data>
+  <data name="DataImportUnsupported" xml:space="preserve"><value>Cette sauvegarde a été créée avec une version plus récente de l'application. Mettez l'application à jour, puis réessayez.</value></data>
+  <data name="DataImportViewGroups" xml:space="preserve"><value>Voir mes groupes</value></data>
+  <data name="EmptyStateLocalDataNote" xml:space="preserve"><value>Vos groupes sont enregistrés dans ce navigateur, sur cet appareil. Gérez-les ou sauvegardez-les dans Réglages → Vos données.</value></data>
 </root>

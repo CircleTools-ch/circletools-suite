@@ -35,9 +35,9 @@ milestone-8 checklist in [web-api-db.md](web-api-db.md#checklist-milestone-8).
 |---|---|---|
 | VPS | Provision the Infomaniak VPS under a **project-owned account** (not a personal login) | [ADR-0036](../adr/0036-cloud-provider-and-hosting.md) |
 | Secrets | Generate every secret into the vault, then derive the VM `.env` and the GitHub Actions secrets; setting `DEPLOY_HOST` self-activates the CD job | [ADR-0050](../adr/0050-secrets-management.md) |
-| DNS + mail | Create the Cloudflare DNS records, a Brevo account, and **SPF / DKIM / DMARC** on the domain | [ADR-0037](../adr/0037-transactional-email-provider.md) |
-| TLS | Bring up TLS, handling the Cloudflare **HTTP-01 caveat** documented at `deploy/Caddyfile:5-8` | [ADR-0036](../adr/0036-cloud-provider-and-hosting.md) |
-| Backups | Script a **nightly `pg_dump` → Swiss Backup** and **test a restore** — no script exists in `deploy/` yet | [ADR-0036](../adr/0036-cloud-provider-and-hosting.md) |
+| DNS + mail | Point the **Infomaniak DNS** A records at the VPS, create a Brevo account, and add **SPF / DKIM / DMARC** on the domain ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md) — no Cloudflare) | [ADR-0037](../adr/0037-transactional-email-provider.md) |
+| TLS | Bring up TLS — Caddy's default **HTTP-01** challenge on the VPS (no proxy in front); just open ports 80/443 | [ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md) |
+| Backups | **Scripted** (`deploy/backup.sh` via restic + systemd timer; `restore.sh`) — owner provisions the Swiss Backup secrets and **runs the restore drill** | [ADR-0036](../adr/0036-cloud-provider-and-hosting.md) |
 | First deploy | Deploy and run a **full-flow smoke test** with a clean browser console | — |
 
 **Highest leverage: mail deliverability.** Undeliverable mail silently breaks sign-up, verification,
@@ -69,7 +69,7 @@ policy**, an **imprint / about-and-legal** page, and an **account-deletion** pag
 
 ### C. Runtime correctness to verify on the live stack
 
-- **ForwardedHeaders middleware** was absent from `Program.cs` (needed behind the Cloudflare / Caddy
+- **ForwardedHeaders middleware** was absent from `Program.cs` (needed behind the Caddy reverse
   proxy for correct scheme and client IP) — being fixed.
 - The **live-stack CSP pin** is still owed: the policy is statically verified and boot-smoke-tested
   ([web-api-db.md](web-api-db.md#checklist-milestone-8)), but the final confirmation against the real

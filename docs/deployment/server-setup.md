@@ -11,7 +11,7 @@ into a hardened Docker host that runs the CircleTools Compose stack. Companion t
 >   `root` login is blocked by a "login as ubuntu" trap in root's `authorized_keys` — do **not** copy
 >   that file anywhere; your real key lives in `/home/ubuntu/.ssh/authorized_keys`.)
 > - Commands are labelled **[server]** (run on the VPS), **[laptop]** (run on your machine), or
->   **[browser]** (Cloudflare / GitHub UI).
+>   **[browser]** (Infomaniak / GitHub UI).
 > - Replace every `<placeholder>` (e.g. `<server-ip>`, `<your-github-username>`).
 > - ⚠️ **Do not close your current root session** until Step 5 confirms you can log in as `deploy`.
 
@@ -206,20 +206,23 @@ chmod 600 /opt/circletools/.env
 
 ---
 
-## 9. DNS at Cloudflare — [browser]
+## 9. DNS at Infomaniak — [browser]
 
-Point these records at the VPS. Get the public IP with — [server]: `hostname -I` or `curl -4 -s https://ifconfig.co`.
+DNS is managed at Infomaniak ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md) —
+no Cloudflare). In the Infomaniak Manager, open the `circletools.ch` zone and point these records straight
+at the VPS. Get the public IP with — [server]: `hostname -I` or `curl -4 -s https://ifconfig.co`.
 
 | Type | Name | Value |
 |---|---|---|
-| A | `circletools.ch` | `<server-ip>` |
+| A | `circletools.ch` (`@`) | `<server-ip>` |
 | A | `secretsanta` | `<server-ip>` |
 | A | `api` | `<server-ip>` |
+| A | `grafana` | `<server-ip>` |
 
-> ⚠️ **ACME caveat:** with Cloudflare's orange-cloud proxy **ON**, Let's Encrypt HTTP-01 challenges
-> are intercepted and cert issuance fails. For the first bring-up, set these records to **DNS-only
-> (grey cloud)** so Caddy can issue certs, then flip the proxy back on. (Or switch Caddy to the
-> `caddy-dns/cloudflare` DNS-01 challenge — a milestone-8 follow-up.)
+> **TLS is automatic (HTTP-01).** Nothing proxies the VPS, so once the A records resolve, Caddy obtains
+> Let's Encrypt certs for all four names via the default HTTP-01 challenge on first boot — no token, no
+> plugin, no "DNS-only" dance. Just make sure ports **80 and 443** are open (firewall step above) and the
+> records have propagated before bringing the stack up.
 
 ---
 

@@ -1,0 +1,16 @@
+# CircleTools nightly Postgres backup -> Swiss Backup (ADR-0036, GL-5).
+# Install: see docs/deployment/backups.md. Adjust the paths if the deploy dir is not /opt/circletools.
+[Unit]
+Description=CircleTools nightly Postgres backup to Swiss Backup
+Documentation=https://github.com/CircleTools-ch/circletools-suite/blob/main/docs/deployment/backups.md
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/circletools
+# Invoked via bash (not ./backup.sh) so it runs even though the CD rsync from the CI checkout does not
+# carry an executable bit. The script reads deploy/.env itself, so no EnvironmentFile is needed here.
+ExecStart=/bin/bash /opt/circletools/backup.sh
+# Failures surface in `systemctl status circletools-backup` / the journal; add an OnFailure= alerting
+# unit here if/when notifications are wired.
