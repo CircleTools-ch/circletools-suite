@@ -66,6 +66,8 @@
   href: FEAT-016-device-local-occasion-reminders.md
 - name: TP-016 Device-local occasion reminders test plan
   href: TP-016-device-local-occasion-reminders.md
+- name: FEAT-017 Local data transparency & backup
+  href: FEAT-017-local-data-transparency-and-backup.md
 - name: Templates
   items:
     - name: Feature spec template

@@ -214,7 +214,8 @@
   <data name="SettingsAbout" xml:space="preserve"><value>About</value></data>
   <data name="StorageModeLabel" xml:space="preserve"><value>Where this group lives</value></data>
   <data name="ModeLocalTitle" xml:space="preserve"><value>On this device</value></data>
-  <data name="ModeLocalHint" xml:space="preserve"><value>Private to this device. Share a reveal link per person.</value></data>
+  <data name="ModeLocalHint" xml:space="preserve"><value>Private — not shared anywhere. Give each person their own reveal link.</value></data>
+  <data name="ModeLocalWebWarning" xml:space="preserve"><value>In a browser this is kept in this browser only — clearing your browser data removes it. You can back it up under Settings → Your data.</value></data>
   <data name="ModeSharedTitle" xml:space="preserve"><value>Shared by link</value></data>
   <data name="ModeSharedHint" xml:space="preserve"><value>Stored online so others can open the whole group with a link. No sign-up.</value></data>
   <data name="ModeAccountTitle" xml:space="preserve"><value>My account</value></data>
@@ -290,4 +291,19 @@
   <data name="ReminderTomorrowBody" xml:space="preserve"><value>Your gift exchange is tomorrow.</value></data>
   <data name="ReminderWishlistTitle" xml:space="preserve"><value>Add your wishlist</value></data>
   <data name="ReminderWishlistBody" xml:space="preserve"><value>Your wishlist for {0} is still empty.</value></data>
+  <data name="DataSectionTitle" xml:space="preserve"><value>Your data</value></data>
+  <data name="DataStoredExplainer" xml:space="preserve"><value>Your groups are saved only in this browser, on this device — there's no account, and nothing is sent to a server unless you sign in. Clearing your browser data, or opening the app in a private window, removes them.</value></data>
+  <data name="DataPersistedYes" xml:space="preserve"><value>This browser has agreed to keep your data and won't clear it to free up space.</value></data>
+  <data name="DataPersistedNo" xml:space="preserve"><value>This browser may clear your data if it runs low on space. Download a backup, or sign in to sync, to be safe.</value></data>
+  <data name="DataExportAction" xml:space="preserve"><value>Download a backup</value></data>
+  <data name="DataExportHint" xml:space="preserve"><value>Save all your groups to a file you can keep or move to another browser or device.</value></data>
+  <data name="DataExportDone" xml:space="preserve"><value>Backup downloaded.</value></data>
+  <data name="DataImportAction" xml:space="preserve"><value>Restore from a backup</value></data>
+  <data name="DataImportHint" xml:space="preserve"><value>Load groups from a backup file. Groups already on this device with the same id are updated; nothing is deleted.</value></data>
+  <data name="DataImportSuccess" xml:space="preserve"><value>Restore complete: {0} added, {1} updated.</value></data>
+  <data name="DataImportSkipped" xml:space="preserve"><value>{0} entries could not be read and were skipped.</value></data>
+  <data name="DataImportInvalid" xml:space="preserve"><value>That file isn't a valid Secret Santa backup.</value></data>
+  <data name="DataImportUnsupported" xml:space="preserve"><value>This backup was made by a newer version of the app. Update the app, then try again.</value></data>
+  <data name="DataImportViewGroups" xml:space="preserve"><value>View my groups</value></data>
+  <data name="EmptyStateLocalDataNote" xml:space="preserve"><value>Your groups are saved in this browser, on this device. Manage or back them up under Settings → Your data.</value></data>
 </root>

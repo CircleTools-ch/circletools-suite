@@ -12,6 +12,12 @@
         <div class="ct-mode-opt">
             <span class="ct-mode-title">@L["ModeLocalTitle"]</span>
             <span class="ct-mode-hint">@L["ModeLocalHint"]</span>
+            @* On the web head "this device" is browser storage, which can be cleared (FEAT-017). Say so
+               where the user chooses it; the installed app stores natively, so the caveat is web-only. *@
+            @if (OperatingSystem.IsBrowser())
+            {
+                <MudText Typo="Typo.caption" Color="Color.Warning" Class="d-block mt-1">@L["ModeLocalWebWarning"]</MudText>
+            }
         </div>
     </MudRadio>
     <MudRadio T="StorageMode" Value="@StorageMode.SharedByLink" Color="Color.Primary" Dense="true" id="mode-shared">

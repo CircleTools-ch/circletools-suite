@@ -76,6 +76,14 @@ else if (_groups.Count == 0)
                     <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="max-width:34rem;">@L["EmptyStateAccountSell"]</MudText>
                     <MudButton Href="/account/login" Variant="Variant.Outlined" Color="Color.Primary"
                                StartIcon="@Icons.Material.Filled.Login">@L["EmptyStateSignIn"]</MudButton>
+                    @* Set the expectation up front on the web head: groups live in this browser only (FEAT-017).
+                       Device heads store natively and durably, so the note would mislead there. *@
+                    @if (OperatingSystem.IsBrowser())
+                    {
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary" Style="max-width:34rem;">
+                            @L["EmptyStateLocalDataNote"]
+                        </MudText>
+                    }
                 </div>
             </MudPaper>
         </NotAuthorized>
