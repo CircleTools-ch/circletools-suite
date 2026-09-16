@@ -1,15 +1,13 @@
-# CircleTools reverse proxy / static host (ADR-0036, ADR-0046).
+# CircleTools reverse proxy / static host (ADR-0036, ADR-0063, ADR-0046).
 # Three origins on one Caddy: the Main hub, Secret-Santa, and the API. Caddy obtains and renews
-# Let's Encrypt certificates automatically for each site name.
+# Let's Encrypt certificates automatically for each site name via the default HTTP-01 challenge.
 #
-# ⚠️ Cloudflare caveat (ADR-0036): with the proxy (orange cloud) ON, Let's Encrypt HTTP-01 is
-#    intercepted. Either issue certs with the site in "DNS only" (grey cloud) first, or switch Caddy
-#    to the Cloudflare DNS-01 challenge (needs the caddy-dns/cloudflare build + a scoped API token).
-#    Documented as a milestone-8 follow-up in deploy/README.md.
+# DNS is authoritative at Infomaniak and no reverse proxy sits in front of the VPS (ADR-0063 dropped
+# Cloudflare), so HTTP-01 reaches Caddy on :80 directly — no interception, no DNS-01 plugin/token needed.
 
 {
 	# ACME account email; supplied via the environment (see deploy/.env.example). The default keeps
-	# the config valid when the var is unset (e.g. `caddy validate` in CI).
+	# the config valid when the var is unset (e.g. `caddy validate`).
 	email {$ACME_EMAIL:dev@circletools.ch}
 }
 

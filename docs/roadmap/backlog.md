@@ -18,11 +18,21 @@ checklist.
 - **GL-2 · Generate secrets and load the two tiers (P1).** Generate into the vault, derive the VM
   `/opt/circletools/.env` and the GitHub Actions secrets; setting `DEPLOY_HOST` self-activates the CD
   job. [ADR-0050](../adr/0050-secrets-management.md).
-- **GL-3 · Cloudflare DNS + Brevo account + SPF/DKIM/DMARC (P1, highest leverage).** Undeliverable mail
-  silently breaks sign-up / verify / reset / invite — the whole onboarding path.
+- **GL-3 · Infomaniak DNS + Brevo account + SPF/DKIM/DMARC (P1, highest leverage).** Point the
+  `circletools.ch` A records (`@`, `secretsanta`, `api`, `grafana`) at the VPS in the Infomaniak zone
+  ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md) — no Cloudflare), and add the
+  Brevo account + **SPF/DKIM/DMARC** records there too. Undeliverable mail silently breaks sign-up /
+  verify / reset / invite — the whole onboarding path.
   [ADR-0037](../adr/0037-transactional-email-provider.md).
-- **GL-4 · Bring up TLS handling the Cloudflare HTTP-01 caveat (P1).** Per the note at
-  `deploy/Caddyfile:5-8`. [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
+- **GL-4 · Bring up TLS (P1).** ✅ **Resolved by dropping Cloudflare
+  ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md), 2026-09-16).** The HTTP-01
+  caveat only existed because of Cloudflare's proxy; with DNS staying at Infomaniak and **no proxy in
+  front**, Caddy's default **HTTP-01** challenge reaches `:80` directly and issues Let's Encrypt certs for
+  all origins on first boot. Reverted the scaffold to stock `caddy:2-alpine` + HTTP-01 (removed the
+  `caddy-dns/cloudflare` build, the `acme_dns` directive, and `CLOUDFLARE_API_TOKEN` from `compose.yaml` /
+  `.env.example`); dropped Cloudflare from the public **privacy/imprint** strings (DE/EN/FR) and swept the
+  docs. **Owner action:** just open ports 80/443 and let the A records (GL-3) propagate before bringing the
+  stack up — nothing else. See [server setup §9](../deployment/server-setup.md).
 - **GL-5 · Nightly `pg_dump` → Swiss Backup + a tested restore (P1, biggest data-loss risk).**
   ✅ **Scripted (2026-09-16).** `deploy/backup.sh` streams a nightly `pg_dump` into an encrypted,
   deduplicated **restic** repo on Swiss Backup (S3), prunes (7 daily / 5 weekly / 6 monthly) and runs
