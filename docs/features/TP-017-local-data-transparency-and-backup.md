@@ -2,7 +2,7 @@
 id: TP-017
 feature: FEAT-017
 status: Reviewed
-related: [NFR-001, ADR-0025, ADR-0026, ADR-0028, ADR-0048, ADR-0058]
+related: [NFR-011, NFR-001, NFR-008, ADR-0025, ADR-0026, ADR-0028, ADR-0048, ADR-0058]
 ---
 
 > **Executed 2026-09-16.** Automated: `BackupServiceTests` (7 tests — export→import round-trip;
@@ -22,9 +22,11 @@ related: [NFR-001, ADR-0025, ADR-0026, ADR-0028, ADR-0048, ADR-0058]
 
 ## Scope & objectives
 
-Verify [FEAT-017](FEAT-017-local-data-transparency-and-backup.md): on the **web head**, the local-first
-data (a group in `localStorage`, [NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md))
-is made **durable**, **portable** and **legible** without changing the storage model:
+Verify [FEAT-017](FEAT-017-local-data-transparency-and-backup.md) and the requirement it realises,
+[NFR-011](../requirements/non-functional/NFR-011-local-data-durability-and-portability.md): on the **web
+head**, the local-first data (a group in `localStorage`,
+[NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md)) is made **durable**, **portable**
+and **legible** without changing the storage model:
 
 1. **Durability** — persistence is requested at startup (`navigator.storage.persist()`), and the current
    grant is reported to the user (`navigator.storage.persisted()`).

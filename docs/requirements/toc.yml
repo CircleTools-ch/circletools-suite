@@ -116,6 +116,8 @@
       href: non-functional/NFR-009-account-free-write-abuse-resistance.md
     - name: NFR-010 Shared-group retention & lifecycle
       href: non-functional/NFR-010-shared-group-retention-lifecycle.md
+    - name: NFR-011 Local data durability & portability
+      href: non-functional/NFR-011-local-data-durability-and-portability.md
 - name: Templates
   items:
     - name: Requirement template

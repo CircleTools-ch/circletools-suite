@@ -5,7 +5,7 @@ status: Done
 owner: adrian-moll
 target-milestone: Production launch
 bounded-context: SecretSanta
-related: [NFR-001, ADR-0025, ADR-0026, ADR-0028, ADR-0048, ADR-0058, TP-017]
+related: [NFR-011, NFR-001, NFR-008, ADR-0025, ADR-0026, ADR-0028, ADR-0048, ADR-0058, TP-017]
 ---
 
 # FEAT-017 — Local data transparency, durability & backup (web)
@@ -34,12 +34,10 @@ related: [NFR-001, ADR-0025, ADR-0026, ADR-0028, ADR-0048, ADR-0058, TP-017]
 
 | Item | Covered by this feature? | Notes |
 |------|--------------------------|-------|
-| NFR-001 (local-first, account-free) | ✅ (upheld) | Durability/transparency only; no server, no account introduced. |
+| [NFR-011](../requirements/non-functional/NFR-011-local-data-durability-and-portability.md) (local data durable & portable) | ✅ | The requirement this feature realises — persistence request + status, and backup/restore. |
+| [NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md) (local-first, account-free) | ✅ (upheld) | Durability/transparency only; no server, no account introduced. |
+| [NFR-008](../requirements/non-functional/NFR-008-sync-convergence-and-data-safety.md) (no silent data loss) | ✅ (extended) | A refused local write is surfaced, not swallowed — the same promise, off the sync path. |
 | ADR-0048 (new-version prompt) | ➖ | Reviewed as part of the same user concern; kept as-is (see Risks). |
-
-> No new FR/NFR was minted: this hardens an existing non-functional promise (local-first data the user
-> can trust) rather than adding product capability. If review prefers a tracked requirement, add
-> **NFR-0xx "local data durability & portability"** and link it back here.
 
 ## Design overview
 
@@ -149,4 +147,4 @@ Paired plan: **TP-017**. Levels & key scenarios:
 - [x] Browser walkthrough completed: create → Settings "Your data" → export → `localStorage.clear()` →
   restore → groups reappear (silent, no reload) → invalid-file path rejected; console clean; DE picker
   wording and radio layout verified
-- [ ] Traceability links closed (add NFR if review wants one)
+- [x] Traceability links closed (NFR-011 minted; FEAT/TP ↔ NFR back-links in place)
