@@ -124,8 +124,9 @@ reinforcing [ADR-0012](0012-observability-and-telemetry.md)'s privacy posture.
 - **Negative / accepted:** **no traces and no alerting yet**; **Postgres/Caddy logs are not in Loki**
   (only the API's OTLP logs are) — they remain in `docker logs`. All three are additive later.
 - **Follow-ups:**
-  - Provision the **`grafana.circletools.ch`** DNS record + Cloudflare (same HTTP-01 caveat as the other
-    origins, see [`deploy/README.md`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy)).
+  - Provision the **`grafana.circletools.ch`** DNS record at Infomaniak, pointing at the VPS (TLS via
+    Caddy HTTP-01 like the other origins — [ADR-0063](0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md)
+    dropped Cloudflare).
   - Generate `GRAFANA_ADMIN_PASSWORD` into the vault and derive `.env` from it
     ([ADR-0050](0050-secrets-management.md)); add its rotation line to the runbook.
   - **Back up** Grafana's dashboards/config (provisioning is in git; runtime-created dashboards are not).

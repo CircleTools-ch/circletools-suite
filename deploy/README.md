@@ -71,9 +71,12 @@ stays skipped until `DEPLOY_HOST` is set**, then self-activates — no edit need
   ratified by [ADR-0050](../docs/adr/0050-secrets-management.md) (Accepted 2026-08-25), with the
   authoritative copy of every value in a password manager for recovery/rotation and SOPS+age as the
   upgrade path. Nothing secret is committed.
-- **Cloudflare + ACME.** With Cloudflare's proxy ON, Let's Encrypt HTTP-01 is intercepted. Issue certs
-  with the record in **DNS-only** first, or switch Caddy to the **Cloudflare DNS-01** challenge
-  (`caddy-dns/cloudflare` build + a scoped token). See the note in `Caddyfile`.
+- **DNS & TLS (ADR-0063 — no Cloudflare).** DNS is authoritative at **Infomaniak**; the origins' A records
+  point straight at the VPS. Caddy obtains Let's Encrypt certs with the default **HTTP-01** challenge —
+  reachable because nothing proxies `:80`. No CDN/edge, no DNS-01 plugin, no API token.
+  [ADR-0063](../docs/adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md) dropped the Cloudflare edge
+  ADR-0036 originally chose (whole request path stays in Switzerland; edge CDN/DDoS/WAF given up as
+  proportionate for a free seasonal app).
 - **Content-Security-Policy.** The `Caddyfile` now ships the finalized CSP as a response header for
   both WASM PWAs (ADR-0021, ADR-0040): `script-src 'self' 'wasm-unsafe-eval'`,
   `connect-src 'self' https://api.circletools.ch`, `frame-ancestors 'none'`. It is the single source

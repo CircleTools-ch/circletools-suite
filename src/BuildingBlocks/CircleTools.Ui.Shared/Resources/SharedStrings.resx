@@ -32,7 +32,7 @@
   <data name="Legal_Privacy_LegalBasisHeading" xml:space="preserve"><value>Why I'm allowed to handle it</value></data>
   <data name="Legal_Privacy_LegalBasisBody" xml:space="preserve"><value>I use your account and content to give you the app you asked for. Extras like reminder emails happen only if you say yes, and you can change your mind at any time. Keeping the app secure and free of abuse is the one thing I do simply because I have to.</value></data>
   <data name="Legal_Privacy_ProcessorsHeading" xml:space="preserve"><value>Where it lives, and who helps run it</value></data>
-  <data name="Legal_Privacy_ProcessorsBody" xml:space="preserve"><value>Your account and synced data sit on servers at Infomaniak in Geneva, Switzerland. The few emails the app sends — confirming your address, resetting your password, invitations — go through Brevo, a provider in the EU. The site itself is delivered through Cloudflare, which handles the secure connection and may see technical connection data outside Switzerland and the EU. Your actual data stays in Switzerland, and these companies only ever act on my instructions.</value></data>
+  <data name="Legal_Privacy_ProcessorsBody" xml:space="preserve"><value>Your account and synced data sit on servers at Infomaniak in Geneva, Switzerland. The few emails the app sends — confirming your address, resetting your password, invitations — go through Brevo, a provider in the EU. Apart from those emails, your data stays in Switzerland, and these companies only ever act on my instructions.</value></data>
   <data name="Legal_Privacy_RetentionHeading" xml:space="preserve"><value>How long I keep it</value></data>
   <data name="Legal_Privacy_RetentionBody" xml:space="preserve"><value>An account you start but never confirm is cleaned up after 30 days. Sign-in tokens roll over on a 30-day window and are dropped when you reset your password or delete your account. An invitation disappears the moment it's accepted, declined or expires. And when you delete your account, it's gone right away — for good, with no hidden copy kept.</value></data>
   <data name="Legal_Privacy_RightsHeading" xml:space="preserve"><value>It's your data</value></data>
@@ -45,7 +45,7 @@
   <data name="Legal_Imprint_OperatorHeading" xml:space="preserve"><value>Who runs this</value></data>
   <data name="Legal_Imprint_OperatorBody" xml:space="preserve"><value>CircleTools is run by me, Adrian Moll (circletools.ch). The best way to reach me is info@circletools.ch.</value></data>
   <data name="Legal_Imprint_HostingHeading" xml:space="preserve"><value>Where it's hosted</value></data>
-  <data name="Legal_Imprint_HostingBody" xml:space="preserve"><value>The app runs on servers at Infomaniak in Geneva, Switzerland, and is delivered through Cloudflare.</value></data>
+  <data name="Legal_Imprint_HostingBody" xml:space="preserve"><value>The app runs on servers at Infomaniak in Geneva, Switzerland.</value></data>
   <data name="Legal_Imprint_DisclaimerHeading" xml:space="preserve"><value>The small print</value></data>
   <data name="Legal_Imprint_DisclaimerBody" xml:space="preserve"><value>I build this with care, but it's a free personal project — I can't promise it's always perfect or always available, and, as far as the law allows, I can't take on liability for problems that come from using it. Links to other sites are theirs, not mine, so their content is their responsibility.</value></data>
   <data name="Legal_Delete_Title" xml:space="preserve"><value>Deleting your account and data</value></data>

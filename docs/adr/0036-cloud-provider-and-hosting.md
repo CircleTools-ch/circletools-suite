@@ -7,6 +7,13 @@ tags: [deployment, hosting, infrastructure, swiss, privacy, cost]
 
 # ADR-0036 — Cloud provider & hosting topology
 
+> **Partly superseded by [ADR-0063](0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md) (2026-09-16):**
+> the **Cloudflare edge** was dropped. DNS stays authoritative at **Infomaniak** and Caddy terminates TLS
+> on the VPS via the default **HTTP-01** challenge (no proxy, no DNS-01, no CDN/DDoS/WAF). Read every
+> "Cloudflare" mention below — the topology diagram, the CDN/TLS/DDoS/WAF cost row, and the DNS-01 caveat —
+> as history. Everything else here (Infomaniak VPS, self-managed Postgres, Swiss Backup, Caddy reverse
+> proxy, single-VM recovery) remains in force.
+
 ## Context and problem statement
 
 The Secret-Santa MVP is local-first and needs no server, but **v2 changed that**: M1–M4 store personal

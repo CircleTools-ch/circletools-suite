@@ -23,17 +23,20 @@ deployment track — the native heads — is [mobile apps](mobile-apps.md).
 - Apps served as **subdomains**: `<app>.<suite-domain>`.
 - **Docs site** (DocFX `_site`) — static host / Pages.
 
-## Topology (ADR-0036)
+## Topology (ADR-0036, ADR-0063)
 
 ```
-Cloudflare (Free: DNS, TLS, CDN, DDoS, basic WAF)
+DNS at Infomaniak → A records point straight at the VPS   (ADR-0063: no Cloudflare edge)
         │
         ▼
 Infomaniak VPS (Swiss, ~2 vCPU / 4 GB / 60 GB NVMe)
-  ├── Caddy (or Traefik)  — reverse proxy, Let's Encrypt TLS, serves the static WASM PWA
+  ├── Caddy  — reverse proxy, Let's Encrypt TLS (HTTP-01), serves the static WASM PWA
   ├── api        (ASP.NET container)   ──►  postgres (container, NVMe volume)
-  └── nightly pg_dump  ──►  Infomaniak Swiss Backup (S3/Swift, offsite)
+  └── nightly pg_dump  ──►  Infomaniak Swiss Backup (S3, offsite)
 ```
+
+The whole request path stays in Switzerland ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md)):
+no CDN/edge proxy sits in front, so TLS is terminated by Caddy on the box.
 
 One small Infomaniak VPS runs the API, Postgres and a reverse proxy under **Docker Compose**. Aspire's
 `aspire publish` can emit a Compose manifest, so the deployed shape mirrors the local `AppHost`
@@ -63,7 +66,7 @@ high-traffic suite app going live → VPS Lite L (4 vCPU / 8 GB / 160 GB).
 | Domain `.ch` | Infomaniak | registration + renewal | ~CHF 11 / yr |
 | Compute | Infomaniak VPS Lite | 2 vCPU / 4 GB / 60 GB NVMe, unlimited traffic | ~CHF 8–9 / mo |
 | Offsite backup | Infomaniak Swiss Backup | 200 GB (1 TB = 4.18) | CHF 2.40 / mo |
-| CDN / TLS / DDoS / WAF | Cloudflare Free | edge proxy | CHF 0 |
+| TLS | Caddy + Let's Encrypt | on the VPS (HTTP-01, ADR-0063) | CHF 0 |
 | Transactional email | Brevo Free ([ADR-0037](../adr/0037-transactional-email-provider.md)) | ~9,000 mails/mo | CHF 0 |
 | Role mailbox `dev@<brand>` | Infomaniak Mail | 1 custom-domain mailbox | ~CHF 0–1.50 / mo |
 
@@ -167,7 +170,7 @@ must not lose the secrets. Because the authoritative copy is the vault and the d
    Swiss Backup snapshot into `maindb` (see [Backups & restore](backups.md)).
 5. **Roll forward** — `docker compose run --rm migrator` (applies any pending EF migrations), then
    `docker compose up -d`.
-6. **Re-point DNS / Cloudflare** at the new IP if it changed; re-issue TLS.
+6. **Re-point the Infomaniak DNS** A records at the new IP if it changed; Caddy re-issues TLS on boot.
 7. **Update CI** — if the host or its key changed, refresh `DEPLOY_HOST` / `DEPLOY_KNOWN_HOSTS`.
 
 No step needs anything that only existed on the lost box: values come from the vault, data from the
@@ -244,8 +247,9 @@ Scaffolded items (`[~]`) have their artifacts in [`deploy/`](https://github.com/
 - [x] Brand & domain final; domain registered at Infomaniak (`circletools.ch`, 2026-08-13)
 - [ ] Project-owned Infomaniak account (not a personal login) for host + backup
 - [ ] VPS provisioned (**VPS Lite M**, Geneva, Ubuntu 26.04 LTS — fall back to 24.04 if 26.04 unavailable); Docker + Compose
-- [~] Reverse proxy with Let's Encrypt TLS — `Caddyfile` (three origins; Cloudflare/ACME caveat noted)
-- [ ] Cloudflare in front (DNS, proxy, TLS); WAF baseline
+- [~] Reverse proxy with Let's Encrypt TLS — `Caddyfile` (three origins) via the default **HTTP-01
+  challenge** (stock `caddy:2-alpine`); no proxy in front, so `:80` reaches Caddy directly ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md))
+- [ ] DNS at Infomaniak: A records for the three origins (+ `grafana`) point at the VPS ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md) — no Cloudflare)
 - [x] Passkey RP-ID + API CORS baked to `circletools.ch` (`Main.Service/appsettings.Production.json`); PWA `ApiBaseUrl`/`SsoAuthorityUrl` baked (each `wwwroot/appsettings.Production.json`); Secret-Santa `RevealBaseUrl` = own origin
 - [~] CSP directive set — full policy shipped in `Caddyfile` (ADR-0021/0040/0048) and **statically verified against both WASM heads' assets** (2026-08-25): `script-src` inline-free (all three `<script>` same-origin; startup/SW/download moved out of inline blocks); MudBlazor CSS carries no external font/`url()` (system-ui theme, 2 data: URIs only); `connect-src` = `'self'` + `api.circletools.ch`, and every `fetch` (incl. the two SSO code-exchange calls) resolves there while the cross-origin SSO steps are top-level navigations, not fetches. Also **runtime boot-smoke'd** (2026-08-25): the published Main head served locally with the *exact* production CSP header and driven in real Chromium **booted and rendered clean** — MudBlazor styling, system-ui fonts, same-origin scripts/logos, **0 CSP violations, clean console, no page errors**. Full pin on the live stack is still the last word (it also exercises the real cross-origin `connect-src` API fetch), but the boot/render path — the ADR-0049 failure mode — is confirmed safe. Dev `dotnet run` serves no CSP by design, so the header only otherwise appears behind Caddy.
 - [~] Brevo behind the SMTP sender — `SmtpMailSender` now authenticates when credentials are set; Brevo host/port in prod config, login/key via env. Still: **account + SPF / DKIM / DMARC** on the domain

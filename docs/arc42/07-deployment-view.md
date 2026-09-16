@@ -30,9 +30,11 @@ flowchart LR
 
 ## 7.3 Cloud (decided — ADR-0036 / ADR-0037)
 
-- **Web + API:** a single **Infomaniak VPS** (Swiss) running **Docker Compose** — reverse proxy
-  (Caddy/Traefik, Let's Encrypt TLS) serving the static WASM PWA, plus the API container. **Cloudflare
-  Free** at the edge (DNS, TLS, CDN, DDoS/WAF).
+- **Web + API:** a single **Infomaniak VPS** (Swiss) running **Docker Compose** — **Caddy** reverse proxy
+  (Let's Encrypt TLS via HTTP-01) serving the static WASM PWA, plus the API container. **DNS is at
+  Infomaniak** with A records pointing straight at the VPS — no edge proxy
+  ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md) dropped the Cloudflare edge),
+  so the whole request path stays in Switzerland.
 - **Database:** **PostgreSQL as a container** on the same VPS (self-managed), with a **nightly `pg_dump`
   to Infomaniak Swiss Backup** offsite; managed Postgres is the documented upgrade path.
 - **Transactional email:** **Brevo** (EU) behind the invitation outbox port
