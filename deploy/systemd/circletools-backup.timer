@@ -1,0 +1,13 @@
+# Runs circletools-backup.service nightly. Install: see docs/deployment/backups.md.
+[Unit]
+Description=Run the CircleTools Postgres backup nightly
+
+[Timer]
+# 03:30 local time; Persistent catches a run missed while the box was off; the random delay avoids a
+# thundering herd against the backup endpoint.
+OnCalendar=*-*-* 03:30:00
+Persistent=true
+RandomizedDelaySec=15m
+
+[Install]
+WantedBy=timers.target

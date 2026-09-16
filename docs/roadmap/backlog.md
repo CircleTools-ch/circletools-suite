@@ -23,9 +23,16 @@ checklist.
   [ADR-0037](../adr/0037-transactional-email-provider.md).
 - **GL-4 · Bring up TLS handling the Cloudflare HTTP-01 caveat (P1).** Per the note at
   `deploy/Caddyfile:5-8`. [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
-- **GL-5 · Nightly `pg_dump` → Swiss Backup + a tested restore script (P1, biggest data-loss risk).**
-  No script exists in `deploy/` yet; the VPS is a single point of failure, so the *restore* must be
-  exercised, not just written. [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
+- **GL-5 · Nightly `pg_dump` → Swiss Backup + a tested restore (P1, biggest data-loss risk).**
+  ✅ **Scripted (2026-09-16).** `deploy/backup.sh` streams a nightly `pg_dump` into an encrypted,
+  deduplicated **restic** repo on Swiss Backup (S3), prunes (7 daily / 5 weekly / 6 monthly) and runs
+  `restic check`; `deploy/systemd/circletools-backup.timer` schedules it 03:30 nightly; `deploy/restore.sh`
+  does a **safe restore drill** into a scratch DB by default (`--target prod` for a real recovery). restic
+  chosen as the tool (encryption + dedup + retention + verify in one binary; recorded in the runbook, no
+  ADR — ADR-0036 fixes the policy). Runbook [Backups & restore](../deployment/backups.md); secrets templated
+  in `deploy/.env.example`. **Still owner action on the VM:** provision the Swiss Backup access/secrets,
+  install the timer, and **run the restore drill** so "restore tested" is genuinely exercised, not just
+  written. [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
 - **GL-6 · Legal review of the legal pages (P1).** Privacy policy + imprint (about & legal) +
   account-deletion page are **written and reachable** at `/privacy`, `/imprint`, `/delete-account` in
   both web apps, DE/EN/FR, browser-verified, in a warm first-person voice. Operator/controller named as
