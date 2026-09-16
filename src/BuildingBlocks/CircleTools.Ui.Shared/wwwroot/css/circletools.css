@@ -125,6 +125,12 @@
     color: var(--mud-palette-text-secondary);
 }
 
+/* With the title/hint stacked, each option is several lines tall; keep the radio button beside the
+   title line at the top rather than floating in the vertical middle of the block. */
+.ct-mode-picker .mud-radio {
+    align-items: flex-start;
+}
+
 /* Pull-to-refresh (FEAT-008 W3). A spinner that rides down from under the app bar as the user pulls the
    list at the top, and spins while the refresh is in flight. Position/opacity/rotation are driven by
    js/pullToRefresh.js; this only styles it. Hidden (opacity 0) until a pull begins. */
