@@ -190,10 +190,13 @@ jobs:
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > key
           mkdir -p ~/.ssh && echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
 
-          # Ship compose.yaml + config. NEVER sync .env (VM-only secrets); NO top-level --delete (it would
-          # wipe .env and other VM-only files). Caddyfile is baked into the web image, so it is not synced.
+          # Ship compose.yaml + config + the backup scripts/units. NEVER sync .env (VM-only secrets); NO
+          # top-level --delete (it would wipe .env and other VM-only files). Caddyfile is baked into the web
+          # image, so it is not synced. The scripts are invoked via `bash` (systemd unit + docs), so a
+          # missing exec bit after rsync does not matter.
           rsync -az -e "ssh -i key -o UserKnownHostsFile=$HOME/.ssh/known_hosts" \
             deploy/compose.yaml deploy/loki deploy/prometheus deploy/grafana \
+            deploy/backup.sh deploy/restore.sh deploy/systemd \
             "$DEPLOY_USER@$DEPLOY_HOST:/opt/circletools/"
 
           ssh -i key "$DEPLOY_USER@$DEPLOY_HOST" \

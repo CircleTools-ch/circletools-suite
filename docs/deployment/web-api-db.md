@@ -23,17 +23,20 @@ deployment track — the native heads — is [mobile apps](mobile-apps.md).
 - Apps served as **subdomains**: `<app>.<suite-domain>`.
 - **Docs site** (DocFX `_site`) — static host / Pages.
 
-## Topology (ADR-0036)
+## Topology (ADR-0036, ADR-0063)
 
 ```
-Cloudflare (Free: DNS, TLS, CDN, DDoS, basic WAF)
+DNS at Infomaniak → A records point straight at the VPS   (ADR-0063: no Cloudflare edge)
         │
         ▼
 Infomaniak VPS (Swiss, ~2 vCPU / 4 GB / 60 GB NVMe)
-  ├── Caddy (or Traefik)  — reverse proxy, Let's Encrypt TLS, serves the static WASM PWA
+  ├── Caddy  — reverse proxy, Let's Encrypt TLS (HTTP-01), serves the static WASM PWA
   ├── api        (ASP.NET container)   ──►  postgres (container, NVMe volume)
-  └── nightly pg_dump  ──►  Infomaniak Swiss Backup (S3/Swift, offsite)
+  └── nightly pg_dump  ──►  Infomaniak Swiss Backup (S3, offsite)
 ```
+
+The whole request path stays in Switzerland ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md)):
+no CDN/edge proxy sits in front, so TLS is terminated by Caddy on the box.
 
 One small Infomaniak VPS runs the API, Postgres and a reverse proxy under **Docker Compose**. Aspire's
 `aspire publish` can emit a Compose manifest, so the deployed shape mirrors the local `AppHost`
@@ -63,7 +66,7 @@ high-traffic suite app going live → VPS Lite L (4 vCPU / 8 GB / 160 GB).
 | Domain `.ch` | Infomaniak | registration + renewal | ~CHF 11 / yr |
 | Compute | Infomaniak VPS Lite | 2 vCPU / 4 GB / 60 GB NVMe, unlimited traffic | ~CHF 8–9 / mo |
 | Offsite backup | Infomaniak Swiss Backup | 200 GB (1 TB = 4.18) | CHF 2.40 / mo |
-| CDN / TLS / DDoS / WAF | Cloudflare Free | edge proxy | CHF 0 |
+| TLS | Caddy + Let's Encrypt | on the VPS (HTTP-01, ADR-0063) | CHF 0 |
 | Transactional email | Brevo Free ([ADR-0037](../adr/0037-transactional-email-provider.md)) | ~9,000 mails/mo | CHF 0 |
 | Role mailbox `dev@<brand>` | Infomaniak Mail | 1 custom-domain mailbox | ~CHF 0–1.50 / mo |
 
@@ -110,7 +113,7 @@ records *which* values exist, not the values.
 
 | Tier | Where it lives | Values | Consumer |
 |---|---|---|---|
-| **Runtime / host** | `/opt/circletools/.env` on the VM (`chmod 600`, owned by the deploy user; git-ignored) | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `ConnectionStrings__maindb` (password in lockstep), `Auth__Jwt__SigningKey` ([ADR-0021](../adr/0021-web-auth-token-model.md)), `Mail__Username`, `Mail__Password` ([ADR-0037](../adr/0037-transactional-email-provider.md)), `GRAFANA_ADMIN_PASSWORD` ([ADR-0051](../adr/0051-production-observability-backend.md)) | `compose.yaml` → `api` / `migrator` / `postgres` / `grafana` |
+| **Runtime / host** | `/opt/circletools/.env` on the VM (`chmod 600`, owned by the deploy user; git-ignored) | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `ConnectionStrings__maindb` (password in lockstep), `Auth__Jwt__SigningKey` ([ADR-0021](../adr/0021-web-auth-token-model.md)), `Mail__Username`, `Mail__Password` ([ADR-0037](../adr/0037-transactional-email-provider.md)), `GRAFANA_ADMIN_PASSWORD` ([ADR-0051](../adr/0051-production-observability-backend.md)), `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` ([backups](backups.md)) | `compose.yaml` → `api` / `migrator` / `postgres` / `grafana`; **`backup.sh`** (systemd timer) |
 | **CI / deploy** | GitHub → Settings → Secrets and variables → Actions (repository encrypted secrets) | `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`; `GITHUB_TOKEN` (built-in, GHCR push) | `.github/workflows/deploy.yml` (SSH rollout) |
 
 CI holds **only deploy access** — never a runtime secret. Postgres is not published off the internal
@@ -127,6 +130,7 @@ other way round.
    - `Auth__Jwt__SigningKey` — `openssl rand -base64 48` (≥ 32 bytes; a leaked key mints sessions for any account).
    - Brevo SMTP **login + key** — from the Brevo dashboard ([ADR-0037](../adr/0037-transactional-email-provider.md)).
    - Deploy SSH keypair — `ssh-keygen -t ed25519 -C circletools-deploy` (passphrase-protected); private key → vault.
+   - Backup ([backups](backups.md)): Swiss Backup S3 access (`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`) from the Infomaniak dashboard, and `RESTIC_PASSWORD` = `openssl rand -base64 32` — a **durable** secret (losing it strands every backup). These are **runtime/host**, not CI: the backup runs on the VM via a systemd timer, so they go in `.env`, never in GitHub Actions.
 2. **Derive the host tier:** on the VM, copy `deploy/.env.example` → `/opt/circletools/.env`, fill from the
    vault, keep the `ConnectionStrings__maindb` password **identical** to `POSTGRES_PASSWORD`, then
    `chmod 600 /opt/circletools/.env` and `chown` it to the deploy user.
@@ -148,6 +152,8 @@ redeploy.
 | **Brevo SMTP key** ([ADR-0037](../adr/0037-transactional-email-provider.md)) | Leak; Brevo reissue | Reissue in the Brevo dashboard → update vault → edit `Mail__Username` / `Mail__Password` → `up -d`. |
 | **Grafana admin password** ([ADR-0051](../adr/0051-production-observability-backend.md)) | Leak; scheduled hygiene | Change in vault → edit `GRAFANA_ADMIN_PASSWORD` → `docker compose up -d grafana` (or reset in the Grafana UI and update the vault to match). |
 | **Deploy SSH key** | Leak; maintainer offboard | `ssh-keygen` a new pair → update the `DEPLOY_SSH_KEY` GitHub secret and vault → swap the public key in the VM's `authorized_keys` → remove the old line. |
+| **Backup S3 keys** ([backups](backups.md)) | Leak; scheduled hygiene | Reissue the Swiss Backup S3 access in the Infomaniak dashboard → update vault → edit `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` in `.env`. No restart needed (read per run). |
+| **restic password** ([backups](backups.md)) | Never rotate casually | `RESTIC_PASSWORD` is **durable** — it decrypts every existing backup. Use `restic key add` to add a new key *without* invalidating old snapshots, update the vault + `.env`, then `restic key remove` the old one. Never just overwrite it. |
 | **Mobile store signing / API keys** (future) | When the upload legs are wired ([ADR-0030](../adr/0030-mobile-store-publisher-identity.md), [ADR-0047](../adr/0047-versioning-and-release-strategy.md)) | Join the **CI tier** as GitHub Actions secrets under this same policy — see the [mobile runbook](mobile-apps.md). |
 
 ### Single-VM recovery drill
@@ -160,10 +166,11 @@ must not lose the secrets. Because the authoritative copy is the vault and the d
    user, restore its `authorized_keys` public key.
 2. **Restore the code / compose stack** — clone the repo (or pull the pinned images from GHCR).
 3. **Recreate `/opt/circletools/.env`** from the vault (step 2 of provisioning above), `chmod 600`.
-4. **Restore the database** — start `postgres`, load the latest `pg_dump` from Swiss Backup into `maindb`.
+4. **Restore the database** — start `postgres`, then `bash ./restore.sh --target prod` loads the latest
+   Swiss Backup snapshot into `maindb` (see [Backups & restore](backups.md)).
 5. **Roll forward** — `docker compose run --rm migrator` (applies any pending EF migrations), then
    `docker compose up -d`.
-6. **Re-point DNS / Cloudflare** at the new IP if it changed; re-issue TLS.
+6. **Re-point the Infomaniak DNS** A records at the new IP if it changed; Caddy re-issues TLS on boot.
 7. **Update CI** — if the host or its key changed, refresh `DEPLOY_HOST` / `DEPLOY_KNOWN_HOSTS`.
 
 No step needs anything that only existed on the lost box: values come from the vault, data from the
@@ -221,8 +228,9 @@ are expendable (retention-bounded); back up **Grafana's** config/dashboards.
    (admin login), both datasources green, Prometheus scraping the API (`up{job="api"}` = 1), and the API
    shipping OTLP logs to Loki (the `service_name` label is present; query `{service_name=~".+"}`).
 
-> **Deploy mechanics (now handled by the pipeline).** `deploy.yml` **rsyncs** `compose.yaml` + the
-> observability config to the VM on every deploy (never `.env`) and **pins the deployed `IMAGE_TAG`** in
+> **Deploy mechanics (now handled by the pipeline).** `deploy.yml` **rsyncs** `compose.yaml`, the
+> observability config, and the [backup scripts/units](backups.md) to the VM on every deploy (never
+> `.env`) and **pins the deployed `IMAGE_TAG`** in
 > the VM's `.env`. This closes the two traps hit during first bring-up: config no longer has to be
 > hand-`scp`'d, and a manual `docker compose up` can't drift to a stale `:latest` (which had run
 > pre-observability code). Also fixed permanently: the API's OTLP log endpoint is the **full** signal path
@@ -239,12 +247,16 @@ Scaffolded items (`[~]`) have their artifacts in [`deploy/`](https://github.com/
 - [x] Brand & domain final; domain registered at Infomaniak (`circletools.ch`, 2026-08-13)
 - [ ] Project-owned Infomaniak account (not a personal login) for host + backup
 - [ ] VPS provisioned (**VPS Lite M**, Geneva, Ubuntu 26.04 LTS — fall back to 24.04 if 26.04 unavailable); Docker + Compose
-- [~] Reverse proxy with Let's Encrypt TLS — `Caddyfile` (three origins; Cloudflare/ACME caveat noted)
-- [ ] Cloudflare in front (DNS, proxy, TLS); WAF baseline
+- [~] Reverse proxy with Let's Encrypt TLS — `Caddyfile` (three origins) via the default **HTTP-01
+  challenge** (stock `caddy:2-alpine`); no proxy in front, so `:80` reaches Caddy directly ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md))
+- [ ] DNS at Infomaniak: A records for the three origins (+ `grafana`) point at the VPS ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md) — no Cloudflare)
 - [x] Passkey RP-ID + API CORS baked to `circletools.ch` (`Main.Service/appsettings.Production.json`); PWA `ApiBaseUrl`/`SsoAuthorityUrl` baked (each `wwwroot/appsettings.Production.json`); Secret-Santa `RevealBaseUrl` = own origin
 - [~] CSP directive set — full policy shipped in `Caddyfile` (ADR-0021/0040/0048) and **statically verified against both WASM heads' assets** (2026-08-25): `script-src` inline-free (all three `<script>` same-origin; startup/SW/download moved out of inline blocks); MudBlazor CSS carries no external font/`url()` (system-ui theme, 2 data: URIs only); `connect-src` = `'self'` + `api.circletools.ch`, and every `fetch` (incl. the two SSO code-exchange calls) resolves there while the cross-origin SSO steps are top-level navigations, not fetches. Also **runtime boot-smoke'd** (2026-08-25): the published Main head served locally with the *exact* production CSP header and driven in real Chromium **booted and rendered clean** — MudBlazor styling, system-ui fonts, same-origin scripts/logos, **0 CSP violations, clean console, no page errors**. Full pin on the live stack is still the last word (it also exercises the real cross-origin `connect-src` API fetch), but the boot/render path — the ADR-0049 failure mode — is confirmed safe. Dev `dotnet run` serves no CSP by design, so the header only otherwise appears behind Caddy.
 - [~] Brevo behind the SMTP sender — `SmtpMailSender` now authenticates when credentials are set; Brevo host/port in prod config, login/key via env. Still: **account + SPF / DKIM / DMARC** on the domain
-- [ ] Postgres container on an NVMe volume; **nightly `pg_dump` → Swiss Backup**; **restore tested**
+- [~] Postgres container on an NVMe volume; **nightly `pg_dump` → Swiss Backup** — scripted
+  (`deploy/backup.sh` via restic + `systemd/circletools-backup.timer`; [runbook](backups.md)). Owner
+  still provisions the Swiss Backup access/secrets and **runs the restore drill** (`deploy/restore.sh`)
+  so **restore tested** is genuinely `[x]`.
 - [~] EF Core migrations as an explicit release step — one-shot `migrator` service (`--migrate`)
 - [ ] Privacy policy + imprint + account-deletion URLs published, reachable, DE/EN/FR
 - [~] Secrets: `.env.example` template + git-ignored `.env`; durable host/CI store **decided in [ADR-0050](../adr/0050-secrets-management.md)** (provision the VM's `.env` from the vault — see the [drill](#secrets--recovery-adr-0050))

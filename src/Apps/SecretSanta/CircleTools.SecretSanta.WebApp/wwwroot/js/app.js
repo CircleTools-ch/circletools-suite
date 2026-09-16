@@ -91,8 +91,52 @@ window.circletoolsUpdate = {
     }
 };
 
+// Local data durability & backup (FEAT-017). This app keeps a group only in browser storage, which the
+// browser may evict under storage pressure. requestPersistence asks the browser to exempt this origin
+// from that eviction; isPersisted reports whether it did, so the UI can tell the user plainly whether
+// their data is kept permanently. download hands the user a backup file. Defined in this external file
+// because the Content-Security-Policy forbids inline scripts.
+window.circletoolsStorage = {
+    // Ask the browser to keep this origin's storage from being cleared under pressure. Granted silently by
+    // Chromium heuristics (installed PWA, engagement, notifications); Firefox may prompt. Best-effort.
+    requestPersistence: async function () {
+        try {
+            if (navigator.storage && navigator.storage.persist) {
+                return await navigator.storage.persist();
+            }
+        } catch (e) { /* storage API unavailable or blocked — treat as not persisted */ }
+        return false;
+    },
+
+    // Whether this origin's storage is currently exempt from eviction.
+    isPersisted: async function () {
+        try {
+            if (navigator.storage && navigator.storage.persisted) {
+                return await navigator.storage.persisted();
+            }
+        } catch (e) { /* ignore */ }
+        return false;
+    },
+
+    // Trigger a client-side download of a text file (the data backup) without a server round-trip.
+    download: function (filename, text) {
+        const blob = new Blob([text], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+};
+
 Blazor.start({
     configureRuntime: (builder) => builder.withConfig({ loadAllSatelliteResources: true }),
 }).then(() => {
     navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });
+    // Request persistent storage as early as the runtime is up, so the local-first data (FEAT-017) is
+    // protected from eviction from the first visit. Best-effort and silent — never blocks startup.
+    window.circletoolsStorage.requestPersistence();
 });

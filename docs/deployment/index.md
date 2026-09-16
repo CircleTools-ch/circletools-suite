@@ -7,9 +7,11 @@
 Two tracks:
 
 - **[Web / API / Database](web-api-db.md)** — Infomaniak VPS + Docker Compose (self-managed Postgres,
-  Swiss Backup, Cloudflare) under the suite domain; Brevo for transactional email.
+  Swiss Backup, Infomaniak DNS, Caddy TLS) under the suite domain; Brevo for transactional email.
   - **[Server setup](server-setup.md)** — first-time VPS provisioning runbook (hardening, Docker,
     stack bring-up), executed on the box.
+  - **[Backups & restore](backups.md)** — nightly `pg_dump` → Swiss Backup via restic, and the
+    (safe) restore drill that keeps GL-5's "restore tested" honest.
 - **[Mobile apps](mobile-apps.md)** — Android (Play) & iOS (App Store): costs, enrolment,
   submission and the recurring platform deadlines.
 

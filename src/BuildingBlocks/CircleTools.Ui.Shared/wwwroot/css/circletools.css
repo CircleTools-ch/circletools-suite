@@ -111,6 +111,26 @@
     padding-bottom: calc(env(safe-area-inset-bottom) + 12px);
 }
 
+/* Radio "mode" options — the storage-mode picker at group creation and the remember-me choice on Join.
+   The title is a line of its own, with the explanation (and any web-only caveat) stacked beneath it,
+   rather than running on inline after the title where the two read as one run-on sentence. */
+.ct-mode-title {
+    display: block;
+    font-weight: 600;
+}
+
+.ct-mode-hint {
+    display: block;
+    font-size: 0.8125rem;
+    color: var(--mud-palette-text-secondary);
+}
+
+/* With the title/hint stacked, each option is several lines tall; keep the radio button beside the
+   title line at the top rather than floating in the vertical middle of the block. */
+.ct-mode-picker .mud-radio {
+    align-items: flex-start;
+}
+
 /* Pull-to-refresh (FEAT-008 W3). A spinner that rides down from under the app bar as the user pulls the
    list at the top, and spins while the refresh is in flight. Position/opacity/rotation are driven by
    js/pullToRefresh.js; this only styles it. Hidden (opacity 0) until a pull begins. */

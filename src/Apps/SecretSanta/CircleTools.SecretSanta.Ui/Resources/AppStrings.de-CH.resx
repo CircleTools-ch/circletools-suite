@@ -246,7 +246,8 @@
   <data name="SettingsAbout" xml:space="preserve"><value>Über</value></data>
   <data name="StorageModeLabel" xml:space="preserve"><value>Wo diese Gruppe gespeichert ist</value></data>
   <data name="ModeLocalTitle" xml:space="preserve"><value>Auf diesem Gerät</value></data>
-  <data name="ModeLocalHint" xml:space="preserve"><value>Privat auf diesem Gerät. Teile pro Person einen Auflösungs-Link.</value></data>
+  <data name="ModeLocalHint" xml:space="preserve"><value>Privat – wird nirgends geteilt. Gib jeder Person ihren eigenen Wichtel-Link.</value></data>
+  <data name="ModeLocalWebWarning" xml:space="preserve"><value>Im Browser wird das nur in diesem Browser gespeichert – wenn du die Browserdaten löschst, ist es weg. Du kannst es unter Einstellungen → Deine Daten sichern.</value></data>
   <data name="ModeSharedTitle" xml:space="preserve"><value>Über Link geteilt</value></data>
   <data name="ModeSharedHint" xml:space="preserve"><value>Online gespeichert, damit andere die ganze Gruppe per Link öffnen können. Ohne Konto.</value></data>
   <data name="ModeAccountTitle" xml:space="preserve"><value>Mein Konto</value></data>
@@ -322,4 +323,19 @@
   <data name="ReminderTomorrowBody" xml:space="preserve"><value>Euer Geschenkeaustausch ist morgen.</value></data>
   <data name="ReminderWishlistTitle" xml:space="preserve"><value>Wunschliste ergänzen</value></data>
   <data name="ReminderWishlistBody" xml:space="preserve"><value>Deine Wunschliste für {0} ist noch leer.</value></data>
+  <data name="DataSectionTitle" xml:space="preserve"><value>Deine Daten</value></data>
+  <data name="DataStoredExplainer" xml:space="preserve"><value>Deine Gruppen werden nur in diesem Browser auf diesem Gerät gespeichert – es gibt kein Konto, und ohne Anmeldung wird nichts an einen Server gesendet. Wenn du die Browserdaten löschst oder die App in einem privaten Fenster öffnest, sind sie weg.</value></data>
+  <data name="DataPersistedYes" xml:space="preserve"><value>Dieser Browser hat zugesagt, deine Daten zu behalten und sie nicht zu löschen, um Speicher freizugeben.</value></data>
+  <data name="DataPersistedNo" xml:space="preserve"><value>Dieser Browser kann deine Daten löschen, wenn der Speicher knapp wird. Lade zur Sicherheit ein Backup herunter oder melde dich an, um zu synchronisieren.</value></data>
+  <data name="DataExportAction" xml:space="preserve"><value>Backup herunterladen</value></data>
+  <data name="DataExportHint" xml:space="preserve"><value>Speichere alle deine Gruppen in einer Datei, die du behalten oder auf einen anderen Browser oder ein anderes Gerät übertragen kannst.</value></data>
+  <data name="DataExportDone" xml:space="preserve"><value>Backup heruntergeladen.</value></data>
+  <data name="DataImportAction" xml:space="preserve"><value>Aus Backup wiederherstellen</value></data>
+  <data name="DataImportHint" xml:space="preserve"><value>Lade Gruppen aus einer Backup-Datei. Gruppen mit derselben ID, die schon auf diesem Gerät sind, werden aktualisiert; nichts wird gelöscht.</value></data>
+  <data name="DataImportSuccess" xml:space="preserve"><value>Wiederherstellung abgeschlossen: {0} hinzugefügt, {1} aktualisiert.</value></data>
+  <data name="DataImportSkipped" xml:space="preserve"><value>{0} Einträge konnten nicht gelesen werden und wurden übersprungen.</value></data>
+  <data name="DataImportInvalid" xml:space="preserve"><value>Diese Datei ist kein gültiges Secret-Santa-Backup.</value></data>
+  <data name="DataImportUnsupported" xml:space="preserve"><value>Dieses Backup wurde mit einer neueren Version der App erstellt. Aktualisiere die App und versuche es dann erneut.</value></data>
+  <data name="DataImportViewGroups" xml:space="preserve"><value>Meine Gruppen ansehen</value></data>
+  <data name="EmptyStateLocalDataNote" xml:space="preserve"><value>Deine Gruppen werden in diesem Browser auf diesem Gerät gespeichert. Verwalte oder sichere sie unter Einstellungen → Deine Daten.</value></data>
 </root>

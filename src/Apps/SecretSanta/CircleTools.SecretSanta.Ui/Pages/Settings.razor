@@ -63,6 +63,14 @@
         }
     </div>
 
+    @* "Your data" (FEAT-017): only the web head keeps groups in evictable, invisible browser storage, so
+       the transparency + backup controls are shown there only. Gating here (not inside the component)
+       keeps its services from resolving on the device heads. *@
+    @if (OperatingSystem.IsBrowser())
+    {
+        <DataStorageSection />
+    }
+
     <div>
         <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["SettingsAbout"]</MudText>
         <AppVersion />

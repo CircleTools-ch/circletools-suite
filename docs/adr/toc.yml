@@ -124,5 +124,7 @@
   href: 0061-share-token-and-creator-key-at-rest-protection.md
 - name: 0062 Email address hashing with a keyed HMAC
   href: 0062-email-address-hashing-keyed-hmac.md
+- name: 0063 Drop Cloudflare — Infomaniak DNS + Caddy TLS
+  href: 0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md
 - name: Template
   href: _template-adr.md
