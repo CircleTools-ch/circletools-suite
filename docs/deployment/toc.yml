@@ -4,6 +4,8 @@
   href: web-api-db.md
 - name: Server setup (VPS provisioning)
   href: server-setup.md
+- name: Backups & restore
+  href: backups.md
 - name: Mobile apps (Android / iOS)
   href: mobile-apps.md
 - name: Device testing
