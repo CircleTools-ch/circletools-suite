@@ -43,6 +43,7 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-015](TP-015-guided-hand-out-of-reveal-links.md) | Test plan — Guided hand-out of reveal links | SecretSanta | Reviewed |
 | [FEAT-016](FEAT-016-device-local-occasion-reminders.md) | Device-local occasion reminders (opt-in local notifications) | SecretSanta | Done |
 | [TP-016](TP-016-device-local-occasion-reminders.md) | Test plan — Device-local occasion reminders | SecretSanta | Reviewed |
+| [FEAT-017](FEAT-017-local-data-transparency-and-backup.md) | Local data transparency, durability & backup (web) | SecretSanta | In progress |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and

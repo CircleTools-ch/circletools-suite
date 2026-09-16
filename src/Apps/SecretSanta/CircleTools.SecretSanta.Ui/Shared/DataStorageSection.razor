@@ -1,0 +1,153 @@
+@using Microsoft.AspNetCore.Components.Forms
+@inject IStringLocalizer<AppStrings> L
+@inject BackupService Backup
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+@*
+    "Your data" (FEAT-017): a web-only section that makes the local-first storage legible and durable.
+    It tells the user in plain language that their groups live only in this browser, reports whether the
+    browser has agreed to keep them (navigator.storage.persisted), and offers a downloadable backup and a
+    restore. Rendered only on the web head (the whole eviction/opacity problem is a browser-storage one);
+    the parent gates it with OperatingSystem.IsBrowser(), so its services never resolve on MAUI.
+*@
+
+<div>
+    <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["DataSectionTitle"]</MudText>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["DataStoredExplainer"]</MudText>
+
+    @if (_statusKnown)
+    {
+        <MudAlert Severity="@(_persisted ? Severity.Success : Severity.Warning)" Dense="true"
+                  Variant="Variant.Text" Class="mb-3">
+            @(_persisted ? L["DataPersistedYes"] : L["DataPersistedNo"])
+        </MudAlert>
+    }
+
+    <div class="d-flex flex-column gap-3">
+        <div>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Download"
+                       OnClick="ExportAsync" Disabled="_busy">@L["DataExportAction"]</MudButton>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1 d-block">@L["DataExportHint"]</MudText>
+        </div>
+
+        <div>
+            @* The label opens the hidden file input; the input reads the file into .NET (CSP-safe). *@
+            <MudButton HtmlTag="label" Variant="Variant.Outlined" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Restore" for="ss-backup-import" Disabled="_busy">
+                @L["DataImportAction"]
+            </MudButton>
+            <InputFile id="ss-backup-import" OnChange="OnImportFileAsync" accept=".json,application/json" hidden />
+            <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1 d-block">@L["DataImportHint"]</MudText>
+        </div>
+
+        @if (_restoreMessage is not null)
+        {
+            <MudAlert Severity="Severity.Success" Dense="true" Variant="Variant.Text">
+                @_restoreMessage
+                <MudButton Variant="Variant.Text" Color="Color.Inherit" Size="Size.Small" Class="ml-2"
+                           OnClick="ViewGroups">@L["DataImportViewGroups"]</MudButton>
+            </MudAlert>
+        }
+    </div>
+</div>
+
+@code {
+    // A backup is small; cap the read so a wrong file can't stream unbounded into the browser tab.
+    private const long MaxImportBytes = 32L * 1024 * 1024;
+
+    private bool _statusKnown;
+    private bool _persisted;
+    private bool _busy;
+    private string? _restoreMessage;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            _persisted = await JS.InvokeAsync<bool>("circletoolsStorage.isPersisted");
+            _statusKnown = true;
+            StateHasChanged();
+        }
+        catch (JSException)
+        {
+            // No storage bridge (should not happen on the web head) — just omit the status line.
+        }
+    }
+
+    private async Task ExportAsync()
+    {
+        _busy = true;
+        try
+        {
+            var json = await Backup.ExportAsync(CancellationToken.None);
+            var fileName = $"secret-santa-backup-{DateTime.Now:yyyy-MM-dd}.json";
+            await JS.InvokeVoidAsync("circletoolsStorage.download", fileName, json);
+            Snackbar.Add(L["DataExportDone"], Severity.Success);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task OnImportFileAsync(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file is null)
+        {
+            return;
+        }
+
+        _busy = true;
+        _restoreMessage = null;
+        try
+        {
+            string json;
+            using (var reader = new StreamReader(file.OpenReadStream(MaxImportBytes)))
+            {
+                json = await reader.ReadToEndAsync();
+            }
+
+            var result = await Backup.ImportAsync(json, CancellationToken.None);
+            switch (result.Outcome)
+            {
+                case BackupImportOutcome.Restored:
+                    // Persisted groups only appear on the groups list after a reload (the list reloads on an
+                    // account change, not a silent local write), so we surface the counts here and offer an
+                    // explicit reload rather than leaving a stale-looking list.
+                    _restoreMessage = L["DataImportSuccess", result.Added, result.Updated];
+                    Snackbar.Add(_restoreMessage, Severity.Success);
+                    if (result.Skipped > 0)
+                    {
+                        Snackbar.Add(L["DataImportSkipped", result.Skipped], Severity.Warning);
+                    }
+                    break;
+                case BackupImportOutcome.UnsupportedVersion:
+                    Snackbar.Add(L["DataImportUnsupported"], Severity.Error);
+                    break;
+                default:
+                    Snackbar.Add(L["DataImportInvalid"], Severity.Error);
+                    break;
+            }
+        }
+        catch (Exception)
+        {
+            // A read failure or an over-size file reads to the user as an unusable file, same as invalid JSON.
+            Snackbar.Add(L["DataImportInvalid"], Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    // Force a full reload onto the groups list so the restored groups are read fresh everywhere.
+    private void ViewGroups() => Navigation.NavigateTo("/", forceLoad: true);
+}
