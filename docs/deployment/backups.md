@@ -130,5 +130,15 @@ A failed run exits non-zero and shows in `systemctl status circletools-backup` a
 ## Status
 
 - ✅ Scripted and committed (`deploy/backup.sh`, `deploy/restore.sh`, `deploy/systemd/`).
-- 🔲 **Owner action on the VM:** provision the Swiss Backup access + secrets, install the timer, and
-  **run the restore drill** so GL-5's "restore tested" is genuinely exercised, not just written.
+- ✅ **Exercised on the VM (2026-09-17).** Swiss Backup S3 access + secrets are in
+  `/opt/circletools/.env`; the encrypted restic repo was initialised at
+  `s3.swiss-backup02.infomaniak.com/circletools-backup/circletools`; a manual `backup.sh` ran green
+  (snapshot saved; `restic check` → *no errors were found*); and the `restore.sh` drill **PASSED** — 33
+  tables restored across all five schemas (circles 6 / linking 6 / public 12 / shared 4 / sync 5) into a
+  scratch DB and dropped, without touching live data. First dump ≈ 56 KiB (9 KiB stored), so the 200 GB
+  quota is effectively unbounded here and bounded retention keeps repo size flat.
+- ✅ **Automated.** `circletools-backup.timer` installed under `/etc/systemd/system/` and enabled;
+  `systemctl list-timers` confirms the next run at ~03:30 (the VM runs UTC), with the ≤15 min randomized
+  delay and `Persistent=true`.
+- 🔲 **Follow-up (non-blocking, GL-11):** no failure alerting yet — a failed nightly run only surfaces in
+  `systemctl status circletools-backup` / the journal. Wire an `OnFailure=` unit (see [Monitoring](#monitoring)).

@@ -29,7 +29,50 @@ public sealed class MailOptions
     public string FromName { get; set; } = "CircleTools";
 
     /// <summary>
-    /// Gets or sets the base URL links in mail point at — the web client's origin.
+    /// Gets or sets the base URL links in mail point at — the web client's origin. Used as the
+    /// fallback when no per-app origin is configured for the message's source app (ADR-0064).
     /// </summary>
     public string ClientBaseUrl { get; set; } = "https://localhost:7080";
+
+    /// <summary>
+    /// Gets or sets the app whose branding is used when a mail's source app is unknown or unset
+    /// (ADR-0064). Also the identity for any future app that has not defined its own branding yet.
+    /// </summary>
+    public string DefaultApp { get; set; } = "circletools";
+
+    /// <summary>
+    /// Gets the per-app mail identity (name, origin, brand colour, sender name), keyed by source-app
+    /// id (ADR-0064). Populated from configuration; empty falls back to <see cref="ClientBaseUrl"/>
+    /// and CircleTools branding, which keeps development and tests working without this block.
+    /// </summary>
+    public Dictionary<string, MailApp> Apps { get; } = new(StringComparer.OrdinalIgnoreCase);
+}
+
+/// <summary>Per-app mail identity — how one app's transactional mail is branded (ADR-0064).</summary>
+public sealed class MailApp
+{
+    /// <summary>Gets or sets the app's display name in the header (e.g. "Secret Santa").</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the origin links in this app's mail point at (e.g. <c>https://secretsanta.circletools.ch</c>).
+    /// Empty falls back to <see cref="MailOptions.ClientBaseUrl"/>.
+    /// </summary>
+    public string BaseUrl { get; set; } = string.Empty;
+
+    /// <summary>Gets or sets the brand colour for the header band, CTA button and heading (hex).</summary>
+    public string BrandColor { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the sender display name shown in the inbox (e.g. "Secret Santa · CircleTools").
+    /// Empty falls back to <see cref="MailOptions.FromName"/>.
+    /// </summary>
+    public string SenderName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets an absolute URL for a header logo image. Optional: email clients do not reliably
+    /// render inline SVG, so this is a hosted PNG; when empty the header shows the brand-colour band
+    /// with the white wordmark only (ADR-0064 follow-up).
+    /// </summary>
+    public string LogoUrl { get; set; } = string.Empty;
 }
