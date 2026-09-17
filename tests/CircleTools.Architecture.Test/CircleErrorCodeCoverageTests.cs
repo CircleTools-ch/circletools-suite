@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using CircleTools.Main.Ui.Api;
+using CircleTools.Ui.Account.Api;
 
 namespace CircleTools.Architecture.Test;
 

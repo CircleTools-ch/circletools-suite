@@ -3,6 +3,65 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Play Store submission prep — Secret-Santa (2026-09-17)
+
+Found while preparing the Google Play Console submission (individual enrolment,
+[ADR-0030](../adr/0030-mobile-store-publisher-identity.md)) and testing the signed-in app.
+
+- **PSP-1 · Signed-in users have no in-app account-deletion path in the Secret-Santa app (bug, P1 — Play
+  blocker).** Found 2026-09-17 by the maintainer testing the live signed-in app: groups can be deleted, but
+  there is **no in-app way to delete the account**, despite the `/delete-account` legal page describing an
+  "in-app" method. **Root cause (code-confirmed):** the working delete/export UI is `AccountData.razor`
+  (route `/account/data`) and lives **only in `CircleTools.Main.Ui`** — the **Secret-Santa app has no
+  account-data page at all** (no `Pages/Account/*` under SecretSanta). It is linked **only** from the Main
+  app's drawer (`MainShell.razor` → "NavData"); the **shared `AccountMenu`** (top-right avatar, used by both
+  apps, [ADR-0034](../adr/0034-shared-account-session-ui-block.md)) links to Profile + Security + Sign out
+  only, **never to deletion**. The shared `LegalAccountDeletionContent` still renders an
+  `Legal_Delete_InAppHeading/Body` section, so the Secret-Santa `/delete-account` page **promises an in-app
+  path that does not exist there**. **Why it blocks submission:** Google Play's account-deletion policy
+  requires an app that allows account creation to let users **request deletion from within the app**; the
+  Secret-Santa head supports opt-in account/sync ([ADR-0053](../adr/0053-backend-free-first-mobile-release.md)),
+  so it needs this. Deletion functioning only on the Main origin (a different app a Secret-Santa user may
+  never open) does not satisfy it. **Recommended fix (architectural, closes it for both apps at once):**
+  move the delete/export page from `Main.Ui` into the shared **`CircleTools.Ui.Account`** building block
+  (where `Profile`/`AccountMenu` already live) and add a **"Delete account / My data" entry to the shared
+  `AccountMenu`** — then the legal page's "In-app" promise becomes true everywhere. Mind the app-specific
+  dependencies the page currently pulls (`AppStrings`, `CircleErrorText`, `AccountApiClient`, `IFileSaver`,
+  `ProblemAlert`) when relocating. Backend deletion itself is complete and tested
+  ([ADR-0022](../adr/0022-account-deletion-and-data-export.md); `AccountDeletionDispositionTests` drives it
+  against the Main origin) — this is a **UI-surface/routing gap in the Secret-Santa head**, not a
+  missing feature. Relates to GL-6 (the `/delete-account` content) and
+  [NFR-007](../requirements/non-functional/NFR-007-store-distributability.md).
+  ✅ **Implemented, tested & browser-verified — done (2026-09-17).** Moved
+  `AccountData.razor` (route `/account/data`) and `CircleErrorText` from `Main.Ui` into the shared
+  **`CircleTools.Ui.Account`** block (page → `Pages/`, class → `Api/`, `namespace
+  CircleTools.Ui.Account.Api`); migrated its strings into `AccountStrings` (DE/EN/FR + neutral, incl. a new
+  app-neutral `DeleteDoneHome` replacing the Main-only "Dashboard" link and an `AccountMenuData` label);
+  added a **"Data & account" entry to the shared `AccountMenu`** (top-right avatar) so both apps expose the
+  delete/export path the legal page describes. Registered `IFileSaver` in both Secret-Santa heads so Export
+  works there too (the privacy page promises it): `BrowserFileSaver` + `wwwroot/js/download.js` (WASM) and a
+  new `MauiFileSaver` over the device share sheet
+  ([ADR-0028](../adr/0028-browser-platform-adapters-block.md)). Both Secret-Santa heads (WASM + MAUI Android)
+  build 0/0; Main.Ui.Test 75/75 and Architecture.Test 28/28 green (the delete/export component + circle-error
+  coverage survived the move). **Clean full-solution build 0/0**; full test suite green once run without
+  Docker saturation (Main.Service.Test 245/245, SecretSanta.E2E 5/5, SecretSanta.Ui 72/72, all others).
+  **DE/EN/FR real-browser walkthrough passed** (fresh Aspire stack, `secretsanta-web`): registered → signed
+  in → the **account menu now shows "Data & account"** (was absent) → the page renders in all three locales →
+  **Export downloaded** `circletools-export-*.json` (the new `IFileSaver`/`BrowserFileSaver` wiring) →
+  password enabled the delete button → deletion succeeded and showed "account is gone" with the new
+  **"Back to the app"** link (`DeleteDoneHome`); console clean throughout. Not yet on-device (MAUI Android
+  head builds 0/0 but the share-sheet export + menu entry are unverified under a finger — fold into the next
+  Pixel pass).
+- **PSP-2 · Privacy-policy accuracy: two claims to verify before launch (P2, legal).** Found during the
+  PSP-1 text audit (2026-09-17); belongs with the **GL-6** legal review. (a) `Legal_Privacy_RetentionBody`
+  says *"An account you start but never confirm is cleaned up after 30 days"* — no background job
+  implementing that was found in `Main.Service`/`Identity` (only post-deletion cascade cleanups exist);
+  either implement the sweep or soften the claim. (b) `Legal_Privacy_RetentionBody` / `Legal_Delete_InAppBody`
+  say deletion leaves *"no hidden copy kept"*, but the nightly **restic backups** (GL-5) retain snapshots for
+  up to ~6 months, so deleted data survives in encrypted off-site backups — reword to acknowledge backups (as
+  most policies do). Confirmed-true in the same audit: the "30-day sign-in-token window" (matches
+  `RefreshTokenLifetime`), Infomaniak-Geneva hosting, Brevo/EU mail, and HMAC-scrambled invitation emails.
+
 ## Go-live — manual owner action (2026-09-15)
 
 Tracked-so-it-is-not-rediscovered work items from the
@@ -88,6 +147,26 @@ checklist.
   `ALERT_*` channel in `.env`. A `restic snapshots` freshness "backup is fresh" signal into Grafana
   ([ADR-0051](../adr/0051-production-observability-backend.md)) remains a nice-to-have.
   [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
+- **GL-12 · Confirm the live web apps actually boot in a real browser (verification, P2).** Raised
+  2026-09-17. An initial `WebFetch` of `https://circletools.ch` *appeared* to show the Blazor *"An unhandled
+  error has occurred."* bar — but that was a **false positive**: that banner is `display:none` boilerplate
+  present in every Blazor WASM `index.html` (identical in the served shell and in-repo), and `WebFetch`
+  cannot execute JavaScript, so it never booted the app and just rendered the hidden div's text.
+  **Server-side checks are all healthy** (2026-09-17): both `circletools.ch` (Main) and
+  `secretsanta.circletools.ch` return 200 with the correct shell + loading spinner, the strict CSP header is
+  served by Caddy per [ADR-0021](../adr/0021-web-auth-token-model.md) (incl. `wasm-unsafe-eval`), HSTS +
+  security headers present, and the API responds (structured ASP.NET `problem+json`; `/health` path is 404
+  only). **What's still unverified:** that the WASM runtime *boots to a rendered UI* — curl proves the shell
+  and assets are served, not a clean boot. **Do:** open both apps in a real browser (JS on), confirm they
+  render and the console is clean — the CLAUDE.md "verify in a real browser" rule, and owed before store
+  submission since the listing needs live `/privacy` `/imprint` `/delete-account` (GL-6,
+  [NFR-007](../requirements/non-functional/NFR-007-store-distributability.md)). Not a Play *signup* blocker.
+  ✅ **Verified & closed (2026-09-17).** The maintainer opened both `circletools.ch` (Main) and
+  `secretsanta.circletools.ch` in a real browser: each shows the normal short WASM loading indicator (the
+  `loading-progress` spinner while the .NET runtime + assemblies download) and then renders the app. No error
+  bar, no defect — the original signal was purely the `WebFetch` false positive described above. Standing
+  reminder unchanged: the substantive pre-submission need is that `/privacy` `/imprint` `/delete-account`
+  render correctly in DE/EN/FR (GL-6), which is a separate content check, not a boot problem.
 
 ## Transactional email — branded HTML & per-app identity (2026-09-17)
 

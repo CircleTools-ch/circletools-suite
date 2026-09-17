@@ -1,0 +1,27 @@
+# Prometheus scrape config for the LOCAL Aspire dev stack (ADR-0051) — the dev-only counterpart of
+# prometheus.yml. The difference is purely topology: in production every service is a container on the
+# compose network, so Prometheus scrapes `api:8080`. In dev the API runs as a .NET process on the host
+# (so it stays debuggable), while Prometheus runs in a container — so it reaches the API through
+# `host.docker.internal` on the API's fixed, unproxied dev port (pinned in AppHost.cs). Grafana and the
+# dashboards are byte-identical to production; only this file diverges. Not used on the VM.
+global:
+  scrape_interval: 15s
+  scrape_timeout: 10s
+  external_labels:
+    environment: development
+
+scrape_configs:
+  # Prometheus scraping itself (self-monitoring), same as production.
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # The CircleTools Web API — same /metrics endpoint and the same `service` label as production
+  # (prometheus.yml), so every dashboard query that groups by service resolves identically. Only the
+  # target host differs: the API is on the Docker host, not in the container network.
+  - job_name: api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:5180"]
+        labels:
+          service: circletools-api

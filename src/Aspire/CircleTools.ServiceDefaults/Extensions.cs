@@ -106,7 +106,17 @@ public static class Extensions
     {
         var useOtlpExporter = !string.IsNullOrWhiteSpace(builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]);
 
-        if (useOtlpExporter)
+        // OpenTelemetry forbids mixing the signal-specific AddOtlpExporter (used above to ship logs to
+        // Loki when Observability:LokiOtlpEndpoint is set) with the cross-cutting UseOtlpExporter on the
+        // same service collection — it throws NotSupportedException. So when a Loki endpoint is
+        // configured, the Loki log exporter wins and we skip UseOtlpExporter. This never affects
+        // production (OTEL_EXPORTER_OTLP_ENDPOINT is unset there, so useOtlpExporter is already false);
+        // it only matters in the dev observability profile, where Aspire injects that endpoint to feed
+        // its own dashboard. There, logs go to Loki instead of the Aspire dashboard — which is the point
+        // of that profile (metrics still reach Prometheus via /metrics scraping).
+        var shipsLogsToLoki = !string.IsNullOrWhiteSpace(builder.Configuration["Observability:LokiOtlpEndpoint"]);
+
+        if (useOtlpExporter && !shipsLogsToLoki)
         {
             builder.Services.AddOpenTelemetry().UseOtlpExporter();
         }

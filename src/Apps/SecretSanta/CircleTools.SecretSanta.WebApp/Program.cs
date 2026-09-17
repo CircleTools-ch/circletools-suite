@@ -43,6 +43,8 @@ builder.Services.AddScoped<IShareService, BrowserShareService>();
 builder.Services.AddScoped<ICalendarService, BrowserCalendarService>();
 builder.Services.AddScoped<INotificationScheduler, BrowserNotificationScheduler>();
 builder.Services.AddScoped<IHapticFeedback, BrowserHapticFeedback>();
+// The shared account-data screen (delete / export) exports a copy of the account as a download (FR-014).
+builder.Services.AddScoped<IFileSaver, BrowserFileSaver>();
 
 // Two clients over the same Main API, differing only in whether the authorizing handler is in the
 // chain. See AccountApiClients for why they are separate; the short version is that refreshing a
