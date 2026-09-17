@@ -341,4 +341,18 @@ public sealed class MailTemplateRendererTests
         Assert.NotNull(mail.HtmlBody);
         Assert.DoesNotContain("<img", mail.HtmlBody, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Html_IsFluidWidth_SoItFitsAPhoneWithoutSidewaysScroll()
+    {
+        var mail = Renderer().Render(MailTemplateRenderer.VerificationType, VerificationPayload("en"));
+
+        Assert.NotNull(mail);
+        Assert.NotNull(mail.HtmlBody);
+        // The card shrinks to fit rather than forcing a fixed 600px.
+        Assert.Contains("width:100%;max-width:600px", mail.HtmlBody, StringComparison.Ordinal);
+        Assert.Contains("width=device-width", mail.HtmlBody, StringComparison.Ordinal);
+        // Phone media query tightens the gutters.
+        Assert.Contains("max-width:480px", mail.HtmlBody, StringComparison.Ordinal);
+    }
 }
