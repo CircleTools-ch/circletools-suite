@@ -35,5 +35,11 @@
     <string>UIStatusBarStyleLightContent</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
+    <!-- Export/encryption compliance: the app uses only exempt encryption (HTTPS/URLSession and the
+         OS passkey/keystore APIs), no proprietary cryptography. Declaring NO here avoids the
+         per-upload encryption questionnaire in App Store Connect. Re-evaluate if custom crypto is ever
+         added (Apple export-compliance guidance). -->
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
 </dict>
 </plist>

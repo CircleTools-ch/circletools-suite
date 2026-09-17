@@ -159,17 +159,101 @@ Re-check both at every release and at every .NET/MAUI upgrade.
 - Secrets that must never reach the repository: the Android upload keystore and its passwords, Apple
   certificates and provisioning profiles, and the App Store Connect API key.
 
+## App preparation — in-repo readiness (2026-09-17)
+
+A store-requirements pass (Apple + Google 2026 rules, tablet/iPad priority) was run against the MAUI
+head. What it changed in code, what it confirmed, and what still needs a device or a portal.
+
+**Done in code (`CircleTools.SecretSanta.App`):**
+
+- **App icon & splash are branded** — the burgundy gift-ring `MauiIcon`/`MauiSplashScreen`, not the
+  .NET template. The `MauiIcon` background colour makes the generated iOS store icon opaque (Apple
+  rejects alpha in the 1024 icon).
+- **iOS Universal Links now open the app.** `Platforms/iOS/AppDelegate.cs` handles
+  `ContinueUserActivity` (and `OpenUrl`) and forwards the URL to `DeepLinkService` — the counterpart to
+  Android's `MainActivity` App Link filters, which previously had no iOS equivalent (reveal/event links
+  would have opened the browser). `Platforms/iOS/Entitlements.plist` declares
+  `applinks:secretsanta.circletools.ch` and the csproj wires it via `<CodesignEntitlements>` (iOS only).
+- **iOS export compliance** — `ITSAppUsesNonExemptEncryption=false` in `Info.plist` (only exempt
+  HTTPS/OS crypto), so no per-upload encryption questionnaire.
+- **iOS privacy manifest** — `PrivacyInfo.xcprivacy` carries the required-reason APIs incl.
+  `UserDefaults`/`CA92.1`, and `NSPrivacyTracking=false` (the app does not track).
+- **iPad is a first-class target** — device family 1+2, all four iPad orientations, and
+  `UIRequiresFullScreen` deliberately **absent** (so the app is resizable / multitasking-capable, which
+  Apple's iOS-26 windowing and the TN3192 deprecation require).
+- **Android target API 36 confirmed** in the merged manifest (`targetSdkVersion=36`, `minSdkVersion=24`);
+  `MainActivity` is `exported="true"`; permissions are scoped and use **inexact** alarms (no exact-alarm
+  Play declaration). Release job builds an **AAB** (`release-mobile.yml`).
+- **Tablet layout verified in a browser** at 13" iPad portrait and landscape (the shared
+  `SecretSantaShell`): persistent nav drawer, centered readable content, options reflow in landscape,
+  no letterboxing or horizontal scroll — an adaptive layout, not an iPhone-scaled one. Satisfies
+  Google's adaptive/large-screen quality tier and Apple's "not iPhone-scaled" expectation.
+
+**Must verify on a real device / first TestFlight build (cannot be checked on Windows):**
+
+- **iPad on iPadOS 26.** Confirm the built `.ipa` behaves in Split View / Stage Manager and all four
+  orientations, and that MAUI net10 doesn't need a `UIApplicationSceneManifest` for iPadOS 26 (adding
+  one would move deep-link handling to a scene delegate — do not add it blind). Highest-consequence
+  open item for the iPad priority.
+- **16 KB page size** (Play, enforced **1 Feb 2027**): the app ships native `.so` libs, so it is in
+  scope. Confirm the .NET 10 release AAB emits 16 KB-aligned libraries (APK Analyzer / `check_elf_alignment`).
+- **Passkey affordance on mobile.** Passkeys are stubbed on device (RP-ID deferred); password sign-in
+  works and the passkey button shows "not available here" (FR-011). Graceful, but a strict reviewer
+  could flag a visible feature that only errors — either hide it on the MAUI heads or cover it in the
+  App Review notes.
+
+**Open decision:** `android:allowBackup` is currently `true` (template default). For a local-first app
+holding personal data (member names, assignments), `false` (or a `dataExtractionRules`) is more
+consistent with the privacy posture (NFR-004) — but it disables Google auto-backup, so a user changing
+device relies on the app's own export/sync. Decide before first release.
+
+### `.well-known` association files (host on `secretsanta.circletools.ch`)
+
+Both deep-link mechanisms auto-verify only once these are served over HTTPS (valid cert, no redirects)
+from the reveal origin. Neither can be finalised yet: the values need the **Play App Signing** SHA-256
+(available after the app is created in Play Console) and the **Apple Team ID** (after enrolment). Serve:
+
+- `/.well-known/assetlinks.json` (Android App Links):
+
+  ```json
+  [{ "relation": ["delegate_permission/common.handle_all_urls"],
+     "target": { "namespace": "android_app", "package_name": "ch.circletools.secretsanta",
+                 "sha256_cert_fingerprints": ["<PLAY_APP_SIGNING_SHA256>"] } }]
+  ```
+
+- `/.well-known/apple-app-site-association` (iOS Universal Links; JSON, no extension, `Content-Type:
+  application/json`; use the current `components` form):
+
+  ```json
+  { "applinks": { "details": [
+      { "appIDs": ["<TEAMID>.ch.circletools.secretsanta"],
+        "components": [ { "/": "/r*" }, { "/": "/groups/*" } ] } ] } }
+  ```
+
+  Also enable the **Associated Domains** capability on the App ID and regenerate the provisioning
+  profile, or the entitlement won't be honoured.
+
+### App Review demo notes (paste into App Store Connect / Play review)
+
+Pre-empts the WebView (Apple 4.2) and completeness (2.1) probes: state that the app is **fully
+functional offline with no account**, the WebView renders **locally-bundled** UI (not a website), and
+account/sync is optional — tell the reviewer no login is required, and how to exercise sync (or supply a
+test account).
+
 ## Submission checklist
 
-- [ ] Brand and domain final; `ApplicationId` / bundle id derived from it and set
-- [ ] App icon and splash replaced (still the .NET template art today)
-- [ ] `RevealBaseUrl` in the MAUI head pointed at the deployed origin, not `localhost`
-- [ ] Privacy policy + imprint published, reachable, DE/EN/FR
-- [ ] Account-deletion URL published and reachable
-- [ ] Store listings and screenshots in DE/EN/FR, per device class
-- [ ] Data safety (Play) / privacy labels (Apple) match actual data collection
-- [ ] DSA trader status declared
-- [ ] Android targets the current required API level; iOS built with the current required SDK
+- [ ] Brand and domain final; `ApplicationId` / bundle id derived from it and set — **done** (`ch.circletools.secretsanta`)
+- [x] App icon and splash are branded art (not the .NET template)
+- [ ] `RevealBaseUrl` in the MAUI head pointed at the deployed origin, not `localhost` — Release defaults to production; verify at build
+- [ ] Privacy policy + imprint published, reachable, DE/EN/FR *(blocked on hosting)*
+- [ ] Account-deletion URL published and reachable *(blocked on hosting; in-app deletion exists)*
+- [ ] `.well-known/assetlinks.json` + `apple-app-site-association` served with the real Play SHA-256 / Apple Team ID
+- [ ] Apple: Associated Domains capability enabled on the App ID + profile regenerated
+- [ ] Store listings and screenshots in DE/EN/FR, per device class **incl. iPad 13"** (mandatory)
+- [ ] Data safety (Play) / privacy labels (Apple) match actual data collection (email + user content when synced; "not collected" on-device-only)
+- [ ] DSA trader status declared (Apple; likely **trader** for a Swiss individual shipping to the EU — confirm in the questionnaire)
+- [ ] Android targets the current required API level (**36 confirmed**); iOS built with the current required SDK (Xcode 26 / iOS 26 on CI)
+- [ ] iPad build tested on iPadOS 26 (Split View / all orientations); 16 KB-aligned native libs verified
 - [ ] Upload keystore and signing assets backed up offline
 - [ ] Staged rollout plan and a way to watch crashes after release
 

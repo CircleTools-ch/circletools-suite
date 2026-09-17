@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Universal Links (ADR-0053 reveal links, ADR-0065 follow-up #3). A tap on
+         https://secretsanta.circletools.ch/r… or /groups/…/events/… opens the app instead of the
+         browser, and AppDelegate forwards it to DeepLinkService (offline render, no server) — the iOS
+         counterpart to Android's App Link intent filters in MainActivity.
+
+         Value format is host only: "applinks:<subdomain>.<tld>", no scheme, no path, no trailing slash.
+         Requires two external steps that cannot be done from Windows:
+           1. Enable the "Associated Domains" capability on the App ID (Apple Developer portal) and
+              regenerate the provisioning profile (ADR-0030 signing material).
+           2. Serve https://secretsanta.circletools.ch/.well-known/apple-app-site-association (JSON, no
+              redirects, valid cert) listing appID "<TEAMID>.ch.circletools.secretsanta" with paths
+              ["/r/*","/groups/*"]. See the mobile-apps runbook. -->
+    <key>com.apple.developer.associated-domains</key>
+    <array>
+        <string>applinks:secretsanta.circletools.ch</string>
+    </array>
+</dict>
+</plist>
