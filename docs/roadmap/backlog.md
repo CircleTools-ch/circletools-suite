@@ -52,15 +52,26 @@ Found while preparing the Google Play Console submission (individual enrolment,
   **"Back to the app"** link (`DeleteDoneHome`); console clean throughout. Not yet on-device (MAUI Android
   head builds 0/0 but the share-sheet export + menu entry are unverified under a finger — fold into the next
   Pixel pass).
-- **PSP-2 · Privacy-policy accuracy: two claims to verify before launch (P2, legal).** Found during the
-  PSP-1 text audit (2026-09-17); belongs with the **GL-6** legal review. (a) `Legal_Privacy_RetentionBody`
-  says *"An account you start but never confirm is cleaned up after 30 days"* — no background job
-  implementing that was found in `Main.Service`/`Identity` (only post-deletion cascade cleanups exist);
-  either implement the sweep or soften the claim. (b) `Legal_Privacy_RetentionBody` / `Legal_Delete_InAppBody`
-  say deletion leaves *"no hidden copy kept"*, but the nightly **restic backups** (GL-5) retain snapshots for
-  up to ~6 months, so deleted data survives in encrypted off-site backups — reword to acknowledge backups (as
-  most policies do). Confirmed-true in the same audit: the "30-day sign-in-token window" (matches
-  `RefreshTokenLifetime`), Infomaniak-Geneva hosting, Brevo/EU mail, and HMAC-scrambled invitation emails.
+- **PSP-2 · Privacy-policy accuracy (2026-09-17).** Two claims examined during the PSP-1 text audit.
+  - **(a) "unconfirmed accounts cleaned up after 30 days" — ✅ already true (audit finding was a false
+    negative).** The purge is implemented, tested, and running: `PendingAccountPurge.PurgeAsync` deletes
+    `!EmailConfirmed && CreatedAt < now − RetentionOptions.PendingAccountLifetime` (30 days) in
+    `Main.Service.Repository/PendingAccountRetention.cs`, `PendingAccountRetentionService` runs it hourly, and
+    `AddCircleToolsRetention(...)` wires both at `Main.Service/Program.cs:120`. Covered by
+    `PendingAccountPurgeTests` (4 tests, green in Repository.Test 58/58). The original "no job found" note was
+    a too-narrow grep (searched `Main.Service`/`Identity`, but the job lives in `Main.Service.Repository` and
+    is registered via a named extension). *Design note (not a defect):* the purge is a direct
+    `context.Users.RemoveRange`, not the `IAccountDeletionCleanup` cascade — deliberate and safe because an
+    unconfirmed account is gated out of circle ownership; if unconfirmed-but-signed-in accounts can ever
+    accrue cross-schema (sync/linking) rows, revisit whether the FK cascade covers them.
+  - **(b) "no hidden copy kept" vs backups — ✅ fixed (2026-09-17).** The nightly **restic backups** (GL-5)
+    retain snapshots up to ~6 months, so deleted data survives in encrypted off-site backups. Reworded
+    `Legal_Privacy_RetentionBody` (DE/EN/FR + neutral) to say the account is gone from the *live service* right
+    away, with the only lingering trace in the encrypted disaster-recovery backups, which a deleted account
+    drops out of within a few months as they roll over. `Legal_Delete_InAppBody`'s "no way back" left as-is
+    (it speaks to user-side irreversibility, not backup absence). Ui.Shared builds 0/0. Still worth a glance in
+    the **GL-6** legal review. Confirmed-true in the same audit: the "30-day sign-in-token window" (matches
+    `RefreshTokenLifetime`), Infomaniak-Geneva hosting, Brevo/EU mail, and HMAC-scrambled invitation emails.
 
 ## Go-live — manual owner action (2026-09-15)
 
