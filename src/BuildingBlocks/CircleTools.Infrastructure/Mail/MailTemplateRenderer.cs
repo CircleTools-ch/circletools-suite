@@ -1,24 +1,32 @@
-using System.Globalization;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 
 namespace CircleTools.Infrastructure.Mail;
 
 /// <summary>
-/// Renders the suite's transactional mails in DE / EN / FR (NFR-003).
+/// Renders the suite's transactional mails in DE / EN / FR (NFR-003) as branded HTML with a plaintext
+/// fallback, in the identity of the source app that queued them (ADR-0064).
 /// </summary>
-/// <param name="options">Mail settings, for the link base URL.</param>
+/// <param name="options">Mail settings: per-app branding, link origins and sender identity.</param>
 /// <remarks>
 /// <para>
-/// Mail always renders in the <em>account's</em> preferred language, taken from the queued
-/// payload — never the requesting browser's. The person who asked for a password reset may not be
-/// the account owner (UC-MAIN-007).
+/// Mail always renders in the <em>account's</em> preferred language, taken from the queued payload —
+/// never the requesting browser's. The person who asked for a password reset may not be the account
+/// owner (UC-MAIN-007).
 /// </para>
 /// <para>
-/// <strong>Open point:</strong> [ADR-0011] chose RESX for product strings. These templates are
-/// multi-line bodies with placeholders, which RESX handles awkwardly, so they live here for now
-/// behind <see cref="IMailTemplateRenderer"/>. Whether email templates follow ADR-0011 or get their
-/// own mechanism is a decision still to be made — the seam keeps either option open.
+/// Each message also carries a <c>sourceApp</c> in its payload (ADR-0064): the app the user was in when
+/// the mail was triggered. It selects the header colour, logo, sender name and — because the account
+/// pages are mounted into every app — the origin the links return to, so a Secret-Santa sign-up gets a
+/// Secret-Santa email and a Secret-Santa-looking page. Unknown or missing falls back to
+/// <see cref="MailOptions.DefaultApp"/>.
+/// </para>
+/// <para>
+/// The copy lives here (not RESX): multi-line bodies with placeholders sit awkwardly in RESX and mail
+/// copy has rules UI copy does not (never re-translate user data — FR-016; no link in the enumeration
+/// notices — NFR-005). This is the mechanism ADR-0064 settles. The HTML layout and plaintext are both
+/// produced by <see cref="MailLayout"/> from one structured <see cref="MailModel"/>, so they cannot
+/// drift.
 /// </para>
 /// </remarks>
 public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailTemplateRenderer
@@ -54,6 +62,13 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
     /// </remarks>
     public const string MemberLinkType = "mail.member-link";
 
+    /// <summary>Outbox type for the account-deletion confirmation ("farewell") mail (FR-047, ADR-0064).</summary>
+    /// <remarks>
+    /// A one-time confirmation sent after an account is deleted. It carries no link and no assignment —
+    /// there is nothing to act on; it only confirms the deletion happened and thanks the person.
+    /// </remarks>
+    public const string AccountDeletedType = "mail.account-deleted";
+
     private static readonly string[] SupportedLanguages = ["de", "fr", "en"];
 
     /// <inheritdoc />
@@ -75,12 +90,13 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
         return type switch
         {
             VerificationType => RenderVerification(root, email, language),
-            SignUpAttemptType => RenderSignUpAttempt(email, language),
+            SignUpAttemptType => RenderSignUpAttempt(root, email, language),
             PasswordResetType => RenderPasswordReset(root, email, language),
             EmailChangeType => RenderEmailChange(root, email, language),
-            EmailChangeNoticeType => RenderEmailChangeNotice(email, language),
+            EmailChangeNoticeType => RenderEmailChangeNotice(root, email, language),
             InvitationType => RenderInvitation(root, email, language),
             MemberLinkType => RenderMemberLink(root, email, language),
+            AccountDeletedType => RenderAccountDeleted(root, email, language),
             _ => null,
         };
     }
@@ -101,139 +117,157 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
 
     private OutboundMail RenderVerification(JsonElement root, string email, string language)
     {
-        var userId = root.GetProperty("userId").GetString();
-        var token = root.GetProperty("token").GetString();
-        var link = string.Create(
-            CultureInfo.InvariantCulture,
-            $"{options.Value.ClientBaseUrl.TrimEnd('/')}/verify-email?userId={userId}&token={token}");
+        var brand = ResolveBranding(SourceApp(root));
+        var link = $"{brand.BaseUrl}/verify-email?userId={root.GetProperty("userId").GetString()}&token={root.GetProperty("token").GetString()}";
 
-        var (subject, body) = language switch
+        var model = language switch
         {
-            "de" => (
+            "de" => new MailModel(
                 "Bestätige deine E-Mail-Adresse",
-                $"Willkommen bei CircleTools.\n\nBitte bestätige deine E-Mail-Adresse:\n{link}\n\n" +
-                "Wenn du kein Konto erstellt hast, kannst du diese E-Mail ignorieren."),
-            "fr" => (
+                "Bestätige deine E-Mail-Adresse",
+                ["Willkommen bei CircleTools! Bitte bestätige, dass dies deine Adresse ist, damit wir dein Konto fertig einrichten können."],
+                "E-Mail bestätigen",
+                link,
+                "Du erhältst diese E-Mail, weil mit dieser Adresse ein CircleTools-Konto erstellt wurde. Warst du das nicht? Ignoriere diese E-Mail einfach."),
+            "fr" => new MailModel(
                 "Confirmez votre adresse e-mail",
-                $"Bienvenue chez CircleTools.\n\nVeuillez confirmer votre adresse e-mail :\n{link}\n\n" +
-                "Si vous n'avez pas créé de compte, vous pouvez ignorer cet e-mail."),
-            _ => (
+                "Confirmez votre adresse e-mail",
+                ["Bienvenue chez CircleTools ! Confirmez qu'il s'agit bien de votre adresse pour finaliser la création de votre compte."],
+                "Confirmer l'e-mail",
+                link,
+                "Vous recevez ceci car cette adresse a servi à créer un compte CircleTools. Ce n'était pas vous ? Ignorez cet e-mail."),
+            _ => new MailModel(
                 "Confirm your email address",
-                $"Welcome to CircleTools.\n\nPlease confirm your email address:\n{link}\n\n" +
-                "If you did not create an account, you can ignore this email."),
+                "Confirm your email address",
+                ["Welcome to CircleTools! Please confirm this is your address so we can finish setting up your account."],
+                "Confirm email",
+                link,
+                "You're receiving this because someone used this address to create a CircleTools account. Didn't sign up? Just ignore this email."),
         };
 
-        return new OutboundMail(email, subject, body);
+        return Compose(email, brand, language, model);
     }
 
     private OutboundMail RenderPasswordReset(JsonElement root, string email, string language)
     {
-        var userId = root.GetProperty("userId").GetString();
-        var token = root.GetProperty("token").GetString();
-        var link = string.Create(
-            CultureInfo.InvariantCulture,
-            $"{options.Value.ClientBaseUrl.TrimEnd('/')}/reset-password?userId={userId}&token={token}");
+        var brand = ResolveBranding(SourceApp(root));
+        var link = $"{brand.BaseUrl}/reset-password?userId={root.GetProperty("userId").GetString()}&token={root.GetProperty("token").GetString()}";
 
-        var (subject, body) = language switch
+        var model = language switch
         {
-            "de" => (
+            "de" => new MailModel(
                 "Passwort zurücksetzen",
-                $"Du hast angefordert, dein CircleTools-Passwort zurückzusetzen.\n\n{link}\n\n" +
-                "Der Link ist nur einmal und nur kurze Zeit gültig. Dein aktuelles Passwort bleibt " +
-                "gültig, bis du ein neues setzt. Falls du das nicht angefordert hast, ist " +
-                "nichts passiert."),
-            "fr" => (
+                "Setze dein Passwort zurück",
+                ["Du hast angefordert, dein CircleTools-Passwort zurückzusetzen. Wähle mit der Schaltfläche unten ein neues – der Link ist nur einmal und nur kurze Zeit gültig. Dein aktuelles Passwort bleibt gültig, bis du ein neues setzt."],
+                "Passwort zurücksetzen",
+                link,
+                "Wenn du das nicht angefordert hast, kannst du diese E-Mail ignorieren – dein Passwort bleibt unverändert."),
+            "fr" => new MailModel(
                 "Réinitialiser votre mot de passe",
-                $"Vous avez demandé la réinitialisation de votre mot de passe CircleTools.\n\n{link}\n\n" +
-                "Ce lien est à usage unique et expire rapidement. Votre mot de passe actuel reste " +
-                "valide jusqu'à ce que vous en définissiez un nouveau. Si vous n'êtes pas à " +
-                "l'origine de cette demande, rien ne s'est passé."),
-            _ => (
+                "Réinitialisez votre mot de passe",
+                ["Vous avez demandé la réinitialisation de votre mot de passe CircleTools. Choisissez-en un nouveau avec le bouton ci-dessous — le lien est à usage unique et expire rapidement. Votre mot de passe actuel reste valide jusqu'à ce que vous en définissiez un nouveau."],
+                "Réinitialiser le mot de passe",
+                link,
+                "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail : votre mot de passe ne changera pas."),
+            _ => new MailModel(
                 "Reset your password",
-                $"You asked to reset your CircleTools password.\n\n{link}\n\n" +
-                "The link is single-use and expires shortly. Your current password keeps working " +
-                "until you set a new one. If you didn't ask for this, nothing has happened."),
+                "Reset your password",
+                ["You asked to reset your CircleTools password. Choose a new one with the button below — the link is single-use and expires shortly. Your current password keeps working until you set a new one."],
+                "Reset password",
+                link,
+                "If you didn't ask for this, you can safely ignore it — your password won't change."),
         };
 
-        return new OutboundMail(email, subject, body);
+        return Compose(email, brand, language, model);
     }
 
     private OutboundMail RenderEmailChange(JsonElement root, string email, string language)
     {
-        var userId = root.GetProperty("userId").GetString();
-        var token = root.GetProperty("token").GetString();
-        var link = string.Create(
-            CultureInfo.InvariantCulture,
-            $"{options.Value.ClientBaseUrl.TrimEnd('/')}/confirm-email-change?userId={userId}" +
-            $"&newEmail={Uri.EscapeDataString(email)}&token={token}");
+        var brand = ResolveBranding(SourceApp(root));
+        var link = $"{brand.BaseUrl}/confirm-email-change?userId={root.GetProperty("userId").GetString()}" +
+            $"&newEmail={Uri.EscapeDataString(email)}&token={root.GetProperty("token").GetString()}";
 
-        var (subject, body) = language switch
+        var model = language switch
         {
-            "de" => (
+            "de" => new MailModel(
                 "Neue E-Mail-Adresse bestätigen",
-                $"Bestätige diese Adresse, um sie für dein CircleTools-Konto zu verwenden:\n{link}\n\n" +
-                "Bis zur Bestätigung bleibt deine bisherige Adresse aktiv."),
-            "fr" => (
+                "Bestätige deine neue E-Mail-Adresse",
+                ["Bestätige diese Adresse, um sie für dein CircleTools-Konto zu verwenden. Deine bisherige Adresse bleibt aktiv, bis die neue bestätigt ist."],
+                "Adresse bestätigen",
+                link,
+                "Du änderst die Adresse deines CircleTools-Kontos. Wenn du das nicht warst, ignoriere diese E-Mail und ändere dein Passwort."),
+            "fr" => new MailModel(
                 "Confirmez votre nouvelle adresse e-mail",
-                $"Confirmez cette adresse pour l'utiliser avec votre compte CircleTools :\n{link}\n\n" +
-                "Votre adresse actuelle reste active jusqu'à la confirmation."),
-            _ => (
+                "Confirmez votre nouvelle adresse e-mail",
+                ["Confirmez cette adresse pour l'utiliser avec votre compte CircleTools. Votre adresse actuelle reste active jusqu'à la confirmation."],
+                "Confirmer l'adresse",
+                link,
+                "Vous changez l'adresse de votre compte CircleTools. Si ce n'était pas vous, ignorez cet e-mail et changez votre mot de passe."),
+            _ => new MailModel(
                 "Confirm your new email address",
-                $"Confirm this address to use it for your CircleTools account:\n{link}\n\n" +
-                "Your current address stays active until you confirm."),
+                "Confirm your new email address",
+                ["Confirm this address to use it for your CircleTools account. Your current address stays active until you confirm."],
+                "Confirm address",
+                link,
+                "You're changing the address on your CircleTools account. If this wasn't you, ignore this email and change your password."),
         };
 
-        return new OutboundMail(email, subject, body);
+        return Compose(email, brand, language, model);
     }
 
     private OutboundMail RenderInvitation(JsonElement root, string email, string language)
     {
-        // The label is the word this circle calls itself, chosen by a user and stored as user data.
-        // It is rendered exactly as it was written and is never looked up or re-translated, whatever
-        // language the mail is in (FR-016).
+        // The label is the word this circle calls itself, chosen by a user and stored as user data. It
+        // is rendered exactly as written and never looked up or re-translated, whatever language the
+        // mail is in (FR-016). MailLayout HTML-encodes it, which preserves the text.
         var circleName = root.GetProperty("circleName").GetString();
         var circleLabel = root.GetProperty("circleLabel").GetString();
         var inviter = root.GetProperty("inviterDisplayName").GetString();
         var hasAccount = root.GetProperty("hasAccount").GetBoolean();
-        var baseUrl = options.Value.ClientBaseUrl.TrimEnd('/');
+        var brand = ResolveBranding(SourceApp(root));
 
-        // Two mails, and which one is sent is decided server-side and never surfaced through the API.
-        // The recipient who already has an account is pointed at the app and carries no secret at
-        // all: their join request is matched by their *verified* address, which is why that path
-        // needs no token (UC-MAIN-010). The recipient without an account gets the link, and it lets
-        // them read the invitation and decline it — never join.
+        // The recipient who already has an account is pointed at the app and carries no secret at all:
+        // their join request is matched by their verified address (UC-MAIN-010). The recipient without
+        // an account gets the link, which lets them read the invitation and decline it — never join.
         var link = hasAccount
-            ? string.Create(CultureInfo.InvariantCulture, $"{baseUrl}/invitations")
-            : string.Create(
-                CultureInfo.InvariantCulture,
-                $"{baseUrl}/invitation/{Uri.EscapeDataString(root.GetProperty("secret").GetString()!)}");
+            ? $"{brand.BaseUrl}/invitations"
+            : $"{brand.BaseUrl}/invitation/{Uri.EscapeDataString(root.GetProperty("secret").GetString()!)}";
 
-        var (subject, intro, action, closing) = language switch
+        var model = language switch
         {
-            "de" => (
+            "de" => new MailModel(
                 $"{inviter} lädt dich zu «{circleName}» ein",
-                $"{inviter} lädt dich zu «{circleName}» ({circleLabel}) bei CircleTools ein.",
-                hasAccount
-                    ? $"Die Einladung wartet in der App auf dich:\n{link}"
-                    : $"Hier kannst du zusagen oder absagen:\n{link}",
-                "Wenn du nichts unternimmst, passiert nichts — die Einladung läuft von selbst ab."),
-            "fr" => (
+                "Du wurdest zu einem Kreis eingeladen",
+                [
+                    $"{inviter} lädt dich zu «{circleName}» ({circleLabel}) bei CircleTools ein.",
+                    hasAccount ? "Die Einladung wartet in der App auf dich." : "Hier kannst du sie ansehen und zu- oder absagen.",
+                ],
+                "Einladung ansehen",
+                link,
+                $"Du erhältst diese E-Mail, weil {inviter} deine Adresse für eine Einladung eingegeben hat. Sie verfällt, sobald sie angenommen, abgelehnt wird oder abläuft."),
+            "fr" => new MailModel(
                 $"{inviter} vous invite à «{circleName}»",
-                $"{inviter} vous invite à rejoindre «{circleName}» ({circleLabel}) sur CircleTools.",
-                hasAccount
-                    ? $"L'invitation vous attend dans l'application :\n{link}"
-                    : $"Vous pouvez accepter ou refuser ici :\n{link}",
-                "Si vous ne faites rien, rien ne se passe — l'invitation expire d'elle-même."),
-            _ => (
+                "Vous êtes invité dans un cercle",
+                [
+                    $"{inviter} vous invite à rejoindre «{circleName}» ({circleLabel}) sur CircleTools.",
+                    hasAccount ? "L'invitation vous attend dans l'application." : "Vous pouvez la consulter et accepter ou refuser.",
+                ],
+                "Voir l'invitation",
+                link,
+                $"Vous recevez ceci car {inviter} a saisi votre adresse pour vous inviter. Elle expire une fois acceptée, refusée ou échue."),
+            _ => new MailModel(
                 $"{inviter} invites you to “{circleName}”",
-                $"{inviter} invites you to “{circleName}” ({circleLabel}) on CircleTools.",
-                hasAccount
-                    ? $"The invitation is waiting for you in the app:\n{link}"
-                    : $"You can accept or decline here:\n{link}",
-                "If you do nothing, nothing happens — the invitation expires on its own."),
+                "You've been invited to a circle",
+                [
+                    $"{inviter} invites you to “{circleName}” ({circleLabel}) on CircleTools.",
+                    hasAccount ? "The invitation is waiting for you in the app." : "You can read it and accept or decline.",
+                ],
+                "View invitation",
+                link,
+                $"You received this because {inviter} entered your address to invite you. It expires once it's accepted, declined or times out."),
         };
 
-        return new OutboundMail(email, subject, $"{intro}\n\n{action}\n\n{closing}");
+        return Compose(email, brand, language, model);
     }
 
     private OutboundMail RenderMemberLink(JsonElement root, string email, string language)
@@ -243,85 +277,182 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
         var groupName = root.GetProperty("groupName").GetString();
         var memberDisplayName = root.GetProperty("memberDisplayName").GetString();
         var inviter = root.GetProperty("inviterDisplayName").GetString();
-        var link = string.Create(CultureInfo.InvariantCulture, $"{options.Value.ClientBaseUrl.TrimEnd('/')}/my-links");
+        var brand = ResolveBranding(SourceApp(root));
+        var link = $"{brand.BaseUrl}/my-links";
 
-        var (subject, intro, action, closing) = language switch
+        var model = language switch
         {
-            "de" => (
+            "de" => new MailModel(
                 $"{inviter} möchte dich mit «{groupName}» verbinden",
-                $"{inviter} möchte dich als «{memberDisplayName}» mit dem Wichtel-Anlass «{groupName}» " +
-                "verbinden. So besitzt du deine eigene Wunschliste und siehst nur deine eigene Zuteilung.",
-                $"Die Anfrage wartet in der App auf dich:\n{link}",
-                "Wenn du nichts unternimmst, passiert nichts — die Anfrage läuft von selbst ab."),
-            "fr" => (
+                "Du wirst mit einer Wichtel-Gruppe verbunden",
+                [
+                    $"{inviter} möchte dich als «{memberDisplayName}» mit dem Wichtel-Anlass «{groupName}» verbinden. So besitzt du deine eigene Wunschliste und siehst nur deine eigene Zuteilung.",
+                    "Die Anfrage wartet in der App auf dich.",
+                ],
+                "Anfrage öffnen",
+                link,
+                "Du erhältst diese E-Mail, weil ein Organisator diese Adresse mit einer Gruppe verbunden hat. Die Anfrage läuft von selbst ab, wenn du nichts tust."),
+            "fr" => new MailModel(
                 $"{inviter} souhaite vous associer à «{groupName}»",
-                $"{inviter} souhaite vous associer en tant que «{memberDisplayName}» à l'événement " +
-                $"«{groupName}». Vous posséderez ainsi votre propre liste de souhaits et ne verrez que " +
-                "votre propre attribution.",
-                $"La demande vous attend dans l'application :\n{link}",
-                "Si vous ne faites rien, rien ne se passe — la demande expire d'elle-même."),
-            _ => (
+                "Vous êtes relié à un groupe Père Noël secret",
+                [
+                    $"{inviter} souhaite vous associer en tant que «{memberDisplayName}» à l'événement «{groupName}». Vous posséderez ainsi votre propre liste de souhaits et ne verrez que votre propre attribution.",
+                    "La demande vous attend dans l'application.",
+                ],
+                "Ouvrir la demande",
+                link,
+                "Vous recevez ceci car un organisateur a relié cette adresse à un groupe. La demande expire d'elle-même si vous ne faites rien."),
+            _ => new MailModel(
                 $"{inviter} wants to link you to “{groupName}”",
-                $"{inviter} wants to link you as “{memberDisplayName}” to the Secret-Santa event " +
-                $"“{groupName}”. You'll then own your own wishlist and see only your own assignment.",
-                $"The request is waiting for you in the app:\n{link}",
-                "If you do nothing, nothing happens — the request expires on its own."),
+                "You're being linked to a Secret Santa group",
+                [
+                    $"{inviter} wants to link you as “{memberDisplayName}” to the Secret-Santa event “{groupName}”. You'll then own your own wishlist and see only your own assignment.",
+                    "The request is waiting for you in the app.",
+                ],
+                "Open request",
+                link,
+                "You received this because an organiser linked this address to a group. The request expires on its own if you do nothing."),
         };
 
-        return new OutboundMail(email, subject, $"{intro}\n\n{action}\n\n{closing}");
+        return Compose(email, brand, language, model);
     }
 
-    private static OutboundMail RenderEmailChangeNotice(string email, string language)
+    private OutboundMail RenderEmailChangeNotice(JsonElement root, string email, string language)
     {
-        // Goes to the address being replaced, so the real owner hears about a change while they
-        // still control the account (FR-013).
-        var (subject, body) = language switch
+        // Goes to the address being replaced, so the real owner hears about a change while they still
+        // control the account (FR-013). No link, by design (NFR-005).
+        var brand = ResolveBranding(SourceApp(root));
+
+        var model = language switch
         {
-            "de" => (
+            "de" => new MailModel(
                 "Änderung deiner E-Mail-Adresse angefordert",
-                "Für dein CircleTools-Konto wurde eine neue E-Mail-Adresse angefordert.\n\n" +
-                "Deine bisherige Adresse bleibt aktiv, bis die neue bestätigt wird. Falls du das " +
-                "nicht warst, ändere bitte umgehend dein Passwort."),
-            "fr" => (
+                "Deine E-Mail-Adresse wird geändert",
+                ["Für dein CircleTools-Konto wurde eine neue E-Mail-Adresse angefordert. Deine bisherige Adresse bleibt aktiv, bis die neue bestätigt wird. Falls du das nicht warst, ändere bitte umgehend dein Passwort."],
+                null,
+                null,
+                "Aus Sicherheitsgründen enthält dieser Hinweis nie einen Aktionslink. Er wird an deine bisherige Adresse gesendet."),
+            "fr" => new MailModel(
                 "Changement d'adresse e-mail demandé",
-                "Une nouvelle adresse e-mail a été demandée pour votre compte CircleTools.\n\n" +
-                "Votre adresse actuelle reste active jusqu'à la confirmation de la nouvelle. Si " +
-                "vous n'êtes pas à l'origine de cette demande, changez votre mot de passe " +
-                "immédiatement."),
-            _ => (
+                "Votre adresse e-mail est en cours de modification",
+                ["Une nouvelle adresse e-mail a été demandée pour votre compte CircleTools. Votre adresse actuelle reste active jusqu'à la confirmation de la nouvelle. Si vous n'êtes pas à l'origine de cette demande, changez votre mot de passe immédiatement."],
+                null,
+                null,
+                "Par sécurité, cet avis ne contient jamais de lien d'action. Il est envoyé à votre ancienne adresse."),
+            _ => new MailModel(
                 "Email address change requested",
-                "A new email address was requested for your CircleTools account.\n\n" +
-                "Your current address stays active until the new one is confirmed. If this " +
-                "wasn't you, change your password immediately."),
+                "Your email address is being changed",
+                ["A new email address was requested for your CircleTools account. Your current address stays active until the new one is confirmed. If this wasn't you, change your password immediately."],
+                null,
+                null,
+                "For your security this notice never carries an action link. It's sent to your previous address."),
         };
 
-        return new OutboundMail(email, subject, body);
+        return Compose(email, brand, language, model);
     }
 
-    private static OutboundMail RenderSignUpAttempt(string email, string language)
+    private OutboundMail RenderSignUpAttempt(JsonElement root, string email, string language)
     {
-        // Sent to the *existing* account holder when someone tries to register their address. It
-        // must never appear in the response to the person who tried (NFR-005), and it must not
-        // confirm anything about the attempt beyond "it happened".
-        var (subject, body) = language switch
+        // Sent to the existing account holder when someone tries to register their address. It must
+        // never appear in the response to the person who tried (NFR-005), and it must not confirm
+        // anything about the attempt beyond "it happened". No link, by design.
+        var brand = ResolveBranding(SourceApp(root));
+
+        var model = language switch
         {
-            "de" => (
+            "de" => new MailModel(
                 "Anmeldeversuch mit deiner E-Mail-Adresse",
-                "Jemand hat versucht, ein CircleTools-Konto mit deiner E-Mail-Adresse zu erstellen.\n\n" +
-                "Du hast bereits ein Konto — melde dich stattdessen an. Falls du das nicht " +
-                "warst, ist nichts passiert und du musst nichts unternehmen."),
-            "fr" => (
+                "Anmeldeversuch mit deiner E-Mail-Adresse",
+                ["Jemand hat versucht, ein CircleTools-Konto mit deiner E-Mail-Adresse zu erstellen. Du hast bereits ein Konto – melde dich stattdessen an. Falls du das nicht warst, ist nichts passiert und du musst nichts unternehmen."],
+                null,
+                null,
+                "Aus Sicherheitsgründen enthält dieser Hinweis nie einen Link. Du hast bereits ein Konto – melde dich einfach an."),
+            "fr" => new MailModel(
                 "Tentative d'inscription avec votre adresse e-mail",
-                "Quelqu'un a tenté de créer un compte CircleTools avec votre adresse e-mail.\n\n" +
-                "Vous avez déjà un compte — connectez-vous plutôt. Si ce n'était pas vous, rien " +
-                "ne s'est passé et vous n'avez rien à faire."),
-            _ => (
+                "Tentative d'inscription avec votre adresse e-mail",
+                ["Quelqu'un a tenté de créer un compte CircleTools avec votre adresse e-mail. Vous avez déjà un compte — connectez-vous plutôt. Si ce n'était pas vous, rien ne s'est passé et vous n'avez rien à faire."],
+                null,
+                null,
+                "Par sécurité, cet avis ne contient jamais de lien. Vous avez déjà un compte : connectez-vous simplement."),
+            _ => new MailModel(
                 "Sign-up attempt with your email address",
-                "Someone tried to create an CircleTools account with your email address.\n\n" +
-                "You already have an account — sign in instead. If this wasn't you, nothing " +
-                "happened and there is nothing you need to do."),
+                "Sign-up attempt with your email address",
+                ["Someone tried to create a CircleTools account with your email address. You already have an account — sign in instead. If this wasn't you, nothing happened and there's nothing you need to do."],
+                null,
+                null,
+                "For your security this notice never carries a link. You already have an account — just sign in."),
         };
 
-        return new OutboundMail(email, subject, body);
+        return Compose(email, brand, language, model);
     }
+
+    private OutboundMail RenderAccountDeleted(JsonElement root, string email, string language)
+    {
+        // A one-time farewell confirmation after deletion (FR-047, ADR-0064). No link, no assignment —
+        // there is nothing to act on.
+        var brand = ResolveBranding(SourceApp(root));
+
+        var model = language switch
+        {
+            "de" => new MailModel(
+                "Dein CircleTools-Konto wurde gelöscht",
+                "Dein Konto wurde gelöscht",
+                ["Dein CircleTools-Konto und alles, was damit verbunden war, wurden entfernt – genau wie von dir gewünscht, ohne versteckte Kopie. Danke, dass du Teil von CircleTools warst. Du bist jederzeit wieder willkommen."],
+                null,
+                null,
+                "Dies ist eine einmalige Bestätigung. Du hörst nichts mehr von uns, es sei denn, du erstellst ein neues Konto."),
+            "fr" => new MailModel(
+                "Votre compte CircleTools a été supprimé",
+                "Votre compte a été supprimé",
+                ["Votre compte CircleTools et tout ce qui y était rattaché ont été supprimés, comme vous l'avez demandé — sans copie cachée. Merci d'avoir fait partie de CircleTools. Vous êtes le bienvenu à tout moment."],
+                null,
+                null,
+                "Ceci est une confirmation unique. Vous n'aurez plus de nouvelles, sauf si vous créez un nouveau compte."),
+            _ => new MailModel(
+                "Your CircleTools account has been deleted",
+                "Your account has been deleted",
+                ["Your CircleTools account and everything tied to it have been removed, just as you asked — no hidden copy kept. Thank you for having been part of CircleTools. You're always welcome back."],
+                null,
+                null,
+                "This is a one-time confirmation. You won't hear from us again unless you create a new account."),
+        };
+
+        return Compose(email, brand, language, model);
+    }
+
+    private static OutboundMail Compose(string email, MailBranding brand, string language, MailModel model)
+    {
+        var (html, text) = MailLayout.Render(brand, language, model);
+        return new OutboundMail(email, model.Subject, text, html, brand.SenderName);
+    }
+
+    private static string? SourceApp(JsonElement root) =>
+        root.TryGetProperty("sourceApp", out var s) ? s.GetString() : null;
+
+    /// <summary>Resolves the source app's branding, falling back to the default app then CircleTools.</summary>
+    private MailBranding ResolveBranding(string? sourceApp)
+    {
+        var opts = options.Value;
+
+        MailApp? app = null;
+        if (!string.IsNullOrWhiteSpace(sourceApp) && opts.Apps.TryGetValue(sourceApp, out var byName))
+        {
+            app = byName;
+        }
+        else if (!string.IsNullOrWhiteSpace(opts.DefaultApp) && opts.Apps.TryGetValue(opts.DefaultApp, out var byDefault))
+        {
+            app = byDefault;
+        }
+
+        var name = Coalesce(app?.Name, opts.FromName);
+        var baseUrl = Coalesce(app?.BaseUrl, opts.ClientBaseUrl).TrimEnd('/');
+        var color = Coalesce(app?.BrandColor, "#03173d");
+        var sender = Coalesce(app?.SenderName, opts.FromName);
+        var logo = string.IsNullOrWhiteSpace(app?.LogoUrl) ? null : app!.LogoUrl;
+
+        return new MailBranding(name, baseUrl, color, logo, sender);
+    }
+
+    private static string Coalesce(string? value, string fallback) =>
+        string.IsNullOrWhiteSpace(value) ? fallback : value;
 }

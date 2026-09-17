@@ -32,7 +32,7 @@ public static class MainUiServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
 
-        services.AddAccountUi(RefreshTokenStorageKey);
+        services.AddAccountUi(RefreshTokenStorageKey, "circletools");
         services.AddScoped<CirclesApiClient>();
 
         // Per-app header identity (ADR-0040 amendment): the suite ring mark and the brand navy on the

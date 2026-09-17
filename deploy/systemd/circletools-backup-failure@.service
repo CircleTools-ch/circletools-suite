@@ -1,0 +1,12 @@
+# OnFailure alert unit for the nightly backup (backlog GL-11). Templated: the instance (%i) is the
+# failed unit's name, passed by `OnFailure=circletools-backup-failure@%n.service` on the backup unit.
+# Install: see docs/deployment/backups.md. Adjust the path if the deploy dir is not /opt/circletools.
+[Unit]
+Description=Alert that %i failed (CircleTools backup)
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/circletools
+# Invoked via bash (not ./notify-failure.sh) so it runs even without an executable bit after the CD
+# rsync. The script reads deploy/.env itself and always exits 0, so this alert can never itself fail.
+ExecStart=/bin/bash /opt/circletools/notify-failure.sh %i

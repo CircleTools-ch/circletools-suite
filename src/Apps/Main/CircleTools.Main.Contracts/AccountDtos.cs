@@ -5,7 +5,11 @@ namespace CircleTools.Main.Contracts;
 /// <param name="Email">The account's address and recovery channel.</param>
 /// <param name="Password">Minimum 12 characters; no composition rules.</param>
 /// <param name="Language">Preferred language (<c>de-CH</c>, <c>en</c>, <c>fr-CH</c>).</param>
-public sealed record RegisterRequest(string DisplayName, string Email, string Password, string? Language);
+/// <param name="SourceApp">
+/// The app the sign-up came from (ADR-0064), so the verification mail is branded — and links back — to
+/// that app. Stamped by the client; <see langword="null"/> falls back to the default branding.
+/// </param>
+public sealed record RegisterRequest(string DisplayName, string Email, string Password, string? Language, string? SourceApp = null);
 
 /// <summary>Sign-in request (FR-008).</summary>
 /// <param name="Email">The account's address.</param>
@@ -50,11 +54,13 @@ public sealed record ConnectTokenRequest(string Code, string CodeVerifier);
 
 /// <summary>Request for a password-reset link (FR-009).</summary>
 /// <param name="Email">The address to send the link to, if it has an account.</param>
-public sealed record ForgotPasswordRequest(string Email);
+/// <param name="SourceApp">The app the request came from, for mail branding + link origin (ADR-0064).</param>
+public sealed record ForgotPasswordRequest(string Email, string? SourceApp = null);
 
 /// <summary>Request for a replacement verification link (FR-007).</summary>
 /// <param name="Email">The address to re-send to, if it has an unverified account.</param>
-public sealed record ResendVerificationRequest(string Email);
+/// <param name="SourceApp">The app the request came from, for mail branding + link origin (ADR-0064).</param>
+public sealed record ResendVerificationRequest(string Email, string? SourceApp = null);
 
 /// <summary>Completion of a password reset (FR-009).</summary>
 /// <param name="UserId">The account being reset.</param>
@@ -69,7 +75,8 @@ public sealed record UpdateProfileRequest(string DisplayName, string Language);
 
 /// <summary>Request to move the account to a new address (FR-013).</summary>
 /// <param name="NewEmail">The address to move to, once verified.</param>
-public sealed record ChangeEmailRequest(string NewEmail);
+/// <param name="SourceApp">The app the request came from, for mail branding + link origin (ADR-0064).</param>
+public sealed record ChangeEmailRequest(string NewEmail, string? SourceApp = null);
 
 /// <summary>Completion of an email change (FR-013).</summary>
 /// <param name="UserId">The account changing address.</param>
@@ -87,7 +94,8 @@ public sealed record ConfirmEmailChangeRequest(string UserId, string NewEmail, s
 /// <see langword="false"/> (default) hands them back to shared-by-link so the people who joined keep
 /// access; <see langword="true"/> deletes those online copies too.
 /// </param>
-public sealed record DeleteAccountRequest(string Password, bool DeleteSharedGroups = false);
+/// <param name="SourceApp">The app the request came from, for the farewell mail's branding (ADR-0064, FR-047).</param>
+public sealed record DeleteAccountRequest(string Password, bool DeleteSharedGroups = false, string? SourceApp = null);
 
 /// <summary>
 /// The exported copy of a user's data (FR-014). Mirrors what the user can already see in the app.

@@ -493,6 +493,10 @@ public static class LinkingEndpoints
             groupName = request.GroupName,
             memberDisplayName = request.MemberDisplayName,
             inviterDisplayName,
+
+            // Member-linking is a Secret-Santa feature, so its mail is always Secret-Santa branded and
+            // its link returns to the Secret-Santa app (ADR-0064).
+            sourceApp = "secretsanta",
         });
 
         await outbox.EnqueueAsync(
