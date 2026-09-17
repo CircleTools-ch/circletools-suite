@@ -94,6 +94,8 @@
       href: functional/FR-045-guided-hand-out-of-reveal-links.md
     - name: FR-046 Device-local occasion reminders
       href: functional/FR-046-device-local-occasion-reminders.md
+    - name: FR-047 Account-deletion farewell email
+      href: functional/FR-047-account-deletion-farewell-email.md
 - name: Non-functional
   items:
     - name: NFR-001 Local-first & offline

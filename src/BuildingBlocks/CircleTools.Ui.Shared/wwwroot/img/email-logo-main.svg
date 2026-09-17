@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <!-- CircleTools email header mark: white circle-of-people glyph on a transparent ground, so it sits
+       on the navy header band. Ring in a soft accent; figure separators in the brand navy (they read as
+       the header colour). See ADR-0064 / TEM-1. -->
+  <circle cx="50" cy="50" r="36.3" fill="none" stroke="#41609e" stroke-width="4.3"/>
+  <g transform="scale(0.1953)">
+    <circle cx="172" cy="208.24" r="30.24" fill="#ffffff"/>
+    <path d="M123.04 298.96C123.04 251.44 144.64 238.48 172 238.48C199.36 238.48 220.96 251.44 220.96 298.96Z" fill="#ffffff"/>
+    <circle cx="340" cy="208.24" r="30.24" fill="#ffffff"/>
+    <path d="M291.04 298.96C291.04 251.44 312.64 238.48 340 238.48C367.36 238.48 388.96 251.44 388.96 298.96Z" fill="#ffffff"/>
+    <circle cx="256" cy="239.6" r="33.6" fill="#ffffff" stroke="#03173d" stroke-width="16" stroke-linejoin="round" paint-order="stroke"/>
+    <path d="M201.6 340.4C201.6 287.6 225.6 273.2 256 273.2C286.4 273.2 310.4 287.6 310.4 340.4Z" fill="#ffffff" stroke="#03173d" stroke-width="16" stroke-linejoin="round" paint-order="stroke"/>
+  </g>
+</svg>

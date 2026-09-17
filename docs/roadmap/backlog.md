@@ -24,6 +24,13 @@ checklist.
   Brevo account + **SPF/DKIM/DMARC** records there too. Undeliverable mail silently breaks sign-up /
   verify / reset / invite — the whole onboarding path.
   [ADR-0037](../adr/0037-transactional-email-provider.md).
+  ✅ **Verified (2026-09-17).** All four A records (`@`, `secretsanta`, `api`, `grafana`) resolve to the
+  VPS (`<server IP>`); Brevo DKIM is delegated (`brevo1/brevo2._domainkey` → `b1/b2.circletools-ch.dkim.brevo.com`);
+  DMARC is published (`v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com`); SPF is
+  `v=spf1 include:spf.infomaniak.ch -all`. End-to-end confirmed by a real account-creation whose
+  verification mail was sent successfully — DMARC aligns via **DKIM** (Brevo's model), so the SPF record
+  not including Brevo is fine. **Optional later hardening (non-blocking):** add `include:spf.brevo.com`
+  for SPF alignment too, and tighten DMARC to `p=quarantine`→`p=reject` after reviewing `rua` reports.
 - **GL-4 · Bring up TLS (P1).** ✅ **Resolved by dropping Cloudflare
   ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md), 2026-09-16).** The HTTP-01
   caveat only existed because of Cloudflare's proxy; with DNS staying at Infomaniak and **no proxy in
@@ -40,9 +47,16 @@ checklist.
   does a **safe restore drill** into a scratch DB by default (`--target prod` for a real recovery). restic
   chosen as the tool (encryption + dedup + retention + verify in one binary; recorded in the runbook, no
   ADR — ADR-0036 fixes the policy). Runbook [Backups & restore](../deployment/backups.md); secrets templated
-  in `deploy/.env.example`. **Still owner action on the VM:** provision the Swiss Backup access/secrets,
-  install the timer, and **run the restore drill** so "restore tested" is genuinely exercised, not just
-  written. [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
+  in `deploy/.env.example`. ✅ **Closed on the VM (2026-09-17).** Swiss Backup S3 access + secrets
+  provisioned in `/opt/circletools/.env`; the restic repo was initialised at
+  `s3.swiss-backup02.infomaniak.com/circletools-backup/circletools`; a manual `backup.sh` ran green
+  (snapshot saved, `restic check` reported *no errors*); the `restore.sh` drill **PASSED** — 33 tables
+  restored across all five schemas (circles/linking/public/shared/sync) into a scratch DB and dropped,
+  without touching live data; and `circletools-backup.timer` is installed + enabled (nightly ~03:30 UTC,
+  confirmed via `systemctl list-timers`). The first dump was ~56 KiB (9 KiB stored after
+  compression/dedup), so the 200 GB Swiss Backup quota is effectively unbounded for this workload.
+  **Residual (non-blocking, tracked as GL-11):** no backup-failure alerting yet.
+  [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
 - **GL-6 · Legal review of the legal pages (P1).** Privacy policy + imprint (about & legal) +
   account-deletion page are **written and reachable** at `/privacy`, `/imprint`, `/delete-account` in
   both web apps, DE/EN/FR, browser-verified, in a warm first-person voice. Operator/controller named as
@@ -64,6 +78,39 @@ checklist.
 - **GL-10 · Build the iOS head + wire iOS deep links (P2, Mac-gated).** iOS is not built and deep links
   are Android-only; needs an Apple-silicon Mac. [ADR-0031](../adr/0031-ios-build-host.md),
   [ADR-0053](../adr/0053-backend-free-first-mobile-release.md).
+- **GL-11 · Alert on backup failure (P2, non-blocking).** ✅ **Implemented (2026-09-17).**
+  `circletools-backup.service` now carries `OnFailure=circletools-backup-failure@%n.service`, a templated unit
+  that runs `deploy/notify-failure.sh` — it composes a message (host, time, last 20 journal lines) and sends it
+  via **email** (reuses the Brevo SMTP login, `ALERT_EMAIL_TO`) and/or a **webhook** (`ALERT_WEBHOOK_URL` —
+  ntfy/healthchecks/chat), always logging to the journal as a fallback; best-effort, always exits 0. See the
+  backups runbook [Monitoring & failure alerting](../deployment/backups.md#monitoring--failure-alerting-gl-11).
+  **Still owner action on the VM:** install `circletools-backup-failure@.service` (step 4) and set at least one
+  `ALERT_*` channel in `.env`. A `restic snapshots` freshness "backup is fresh" signal into Grafana
+  ([ADR-0051](../adr/0051-production-observability-backend.md)) remains a nice-to-have.
+  [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
+
+## Transactional email — branded HTML & per-app identity (2026-09-17)
+
+Follow-ups from [FEAT-018](../features/FEAT-018-branded-transactional-emails.md) /
+[ADR-0064](../adr/0064-transactional-email-html-and-per-app-branding.md) — branded HTML mail with per-app
+co-branding and source-app link origins is built and unit-tested; these are the deferred bits:
+
+- **TEM-1 · White-on-transparent PNG email logo per app (P2).** ✅ **Done (2026-09-17).** White-glyph
+  source SVGs + rendered 200×200 transparent PNGs (`email-logo-main.png`, `email-logo-secretsanta.png`) live
+  in `CircleTools.Ui.Shared/wwwroot/img/`, served by every host at `_content/CircleTools.Ui.Shared/img/`;
+  `Mail:Apps:<app>:LogoUrl` is set in `appsettings.Production.json` to each app's own origin, so the header
+  `<img>` now renders (white circle-of-people on navy / white gift on maroon), verified by
+  `MailTemplateRendererTests`. Dev keeps the wordmark-only header (no absolute origin).
+- **TEM-2 · Explain the reusable CircleTools login when app #2 ships (P3).** With only Secret-Santa live, an
+  SSO explainer in mail would confuse more than help; the footer carries only a subtle "CircleTools account"
+  seed for now. Add the real "one login across CircleTools apps" explainer when a second app exists — which
+  is also when the per-app link origins start earning their keep.
+- **TEM-3 · Real-client visual pass + farewell integration test (P2).** ✅ **Mailpit pipeline pass done
+  (2026-09-17):** all 12 representative variants were delivered through the real renderer + SMTP into Mailpit
+  and verified (per-app colour/sender/origin, CTA + localized fallback, plaintext alternative, DE/EN/FR,
+  farewell, HTML-encoding). **Still owed:** a human visual eyeball in the Mailpit UI and one **real external
+  client** (Gmail / Outlook / Apple Mail) across DE/EN/FR and both apps, per the CLAUDE.md "verify in a real
+  client" rule; and an integration assertion that a farewell mail follows a successful deletion.
 
 ## Shared-by-link sync — Secret-Santa (2026-09-14)
 
