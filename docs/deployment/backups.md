@@ -77,11 +77,14 @@ openssl rand -base64 32     # -> RESTIC_PASSWORD
 # 3. First backup by hand — this also initialises the encrypted repo.
 cd /opt/circletools && bash ./backup.sh
 
-# 4. Install the nightly timer.
-sudo cp /opt/circletools/systemd/circletools-backup.service /etc/systemd/system/
-sudo cp /opt/circletools/systemd/circletools-backup.timer   /etc/systemd/system/
+# 4. Install the nightly timer and the failure-alert unit (GL-11).
+sudo cp /opt/circletools/systemd/circletools-backup.service          /etc/systemd/system/
+sudo cp /opt/circletools/systemd/circletools-backup.timer            /etc/systemd/system/
+sudo cp /opt/circletools/systemd/circletools-backup-failure@.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now circletools-backup.timer
+# Configure at least one alert channel in /opt/circletools/.env (ALERT_EMAIL_TO reuses the Brevo login,
+# or ALERT_WEBHOOK_URL); optionally test it: sudo systemctl start circletools-backup-failure@test.service
 
 # 5. Confirm it is scheduled.
 systemctl list-timers circletools-backup.timer
@@ -120,12 +123,27 @@ docker compose -f compose.yaml --env-file .env run --rm migrator   # roll forwar
 docker compose -f compose.yaml --env-file .env up -d
 ```
 
-## Monitoring
+## Monitoring & failure alerting (GL-11)
 
 A failed run exits non-zero and shows in `systemctl status circletools-backup` and the journal
-(`journalctl -u circletools-backup`). To be alerted, add an `OnFailure=` unit to
-`circletools-backup.service`. The restic repository is not scraped by Prometheus today; a future
-`restic snapshots` freshness check could feed the Grafana stack ([ADR-0051](../adr/0051-production-observability-backend.md)).
+(`journalctl -u circletools-backup`). On top of that, `circletools-backup.service` carries an
+**`OnFailure=circletools-backup-failure@%n.service`** hook: when the backup fails, that templated unit
+runs [`deploy/notify-failure.sh`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy),
+which composes a message (host, time, last 20 journal lines) and sends it through **whatever channel is
+configured in `.env`**:
+
+| Channel | Config | Notes |
+|---|---|---|
+| **Email** | `ALERT_EMAIL_TO` (+ `ALERT_EMAIL_FROM`, `ALERT_SMTP_URL`) | Reuses the Brevo SMTP login (`Mail__Username` / `Mail__Password`); sent via `curl --ssl-reqd`. |
+| **Webhook** | `ALERT_WEBHOOK_URL` | A plain-text POST — fits an **ntfy.sh** topic, **healthchecks.io**, or a chat webhook. |
+| **Journal** | always | The alert is logged via `logger -t circletools-backup` even if no channel is set. |
+
+The handler is **best-effort and always exits 0**, so an alert hiccup can never itself become a failed
+unit. Test it without breaking a backup: `sudo systemctl start circletools-backup-failure@test.service`.
+
+The restic repository is not scraped by Prometheus today; a future `restic snapshots` freshness check
+could feed the Grafana stack ([ADR-0051](../adr/0051-production-observability-backend.md)) as a
+positive "backup is fresh" signal to complement this failure alert.
 
 ## Status
 
@@ -140,5 +158,7 @@ A failed run exits non-zero and shows in `systemctl status circletools-backup` a
 - ✅ **Automated.** `circletools-backup.timer` installed under `/etc/systemd/system/` and enabled;
   `systemctl list-timers` confirms the next run at ~03:30 (the VM runs UTC), with the ≤15 min randomized
   delay and `Persistent=true`.
-- 🔲 **Follow-up (non-blocking, GL-11):** no failure alerting yet — a failed nightly run only surfaces in
-  `systemctl status circletools-backup` / the journal. Wire an `OnFailure=` unit (see [Monitoring](#monitoring)).
+- ✅ **Failure alerting wired (2026-09-17, GL-11):** `circletools-backup.service` has an `OnFailure=` hook
+  that emails and/or webhooks a notice via `notify-failure.sh` (see
+  [Monitoring & failure alerting](#monitoring--failure-alerting-gl-11)). **Owner action on the VM:** install
+  `circletools-backup-failure@.service` (setup step 4) and set an `ALERT_*` channel in `.env`.

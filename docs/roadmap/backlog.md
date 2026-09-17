@@ -78,13 +78,16 @@ checklist.
 - **GL-10 · Build the iOS head + wire iOS deep links (P2, Mac-gated).** iOS is not built and deep links
   are Android-only; needs an Apple-silicon Mac. [ADR-0031](../adr/0031-ios-build-host.md),
   [ADR-0053](../adr/0053-backend-free-first-mobile-release.md).
-- **GL-11 · Alert on backup failure (P2, non-blocking).** The nightly backup ([GL-5](#go-live--manual-owner-action-2026-09-15),
-  now closed) has no failure notification: a failed run only surfaces in `systemctl status circletools-backup`
-  / the journal, and the restic repo is not scraped by the Grafana stack
-  ([ADR-0051](../adr/0051-production-observability-backend.md)). Add an `OnFailure=` unit to
-  `circletools-backup.service` (email/push on failure) and/or a `restic snapshots` freshness check feeding
-  Prometheus/Grafana, so a silent nightly failure is caught. See the backups runbook
-  [Monitoring](../deployment/backups.md#monitoring) note. [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
+- **GL-11 · Alert on backup failure (P2, non-blocking).** ✅ **Implemented (2026-09-17).**
+  `circletools-backup.service` now carries `OnFailure=circletools-backup-failure@%n.service`, a templated unit
+  that runs `deploy/notify-failure.sh` — it composes a message (host, time, last 20 journal lines) and sends it
+  via **email** (reuses the Brevo SMTP login, `ALERT_EMAIL_TO`) and/or a **webhook** (`ALERT_WEBHOOK_URL` —
+  ntfy/healthchecks/chat), always logging to the journal as a fallback; best-effort, always exits 0. See the
+  backups runbook [Monitoring & failure alerting](../deployment/backups.md#monitoring--failure-alerting-gl-11).
+  **Still owner action on the VM:** install `circletools-backup-failure@.service` (step 4) and set at least one
+  `ALERT_*` channel in `.env`. A `restic snapshots` freshness "backup is fresh" signal into Grafana
+  ([ADR-0051](../adr/0051-production-observability-backend.md)) remains a nice-to-have.
+  [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
 
 ## Transactional email — branded HTML & per-app identity (2026-09-17)
 
@@ -92,11 +95,12 @@ Follow-ups from [FEAT-018](../features/FEAT-018-branded-transactional-emails.md)
 [ADR-0064](../adr/0064-transactional-email-html-and-per-app-branding.md) — branded HTML mail with per-app
 co-branding and source-app link origins is built and unit-tested; these are the deferred bits:
 
-- **TEM-1 · White-on-transparent PNG email logo per app (P2).** Email clients don't reliably render inline
-  SVG, and the app-icon PNGs are the same colour as the header band, so the header currently shows the
-  brand-colour band + white wordmark only. Add a white-glyph PNG per app, host it at each origin, and set
-  `Mail:Apps:<app>:LogoUrl` — the header `<img>` then appears with no code change (the seam is already in
-  `MailApp.LogoUrl`).
+- **TEM-1 · White-on-transparent PNG email logo per app (P2).** ✅ **Done (2026-09-17).** White-glyph
+  source SVGs + rendered 200×200 transparent PNGs (`email-logo-main.png`, `email-logo-secretsanta.png`) live
+  in `CircleTools.Ui.Shared/wwwroot/img/`, served by every host at `_content/CircleTools.Ui.Shared/img/`;
+  `Mail:Apps:<app>:LogoUrl` is set in `appsettings.Production.json` to each app's own origin, so the header
+  `<img>` now renders (white circle-of-people on navy / white gift on maroon), verified by
+  `MailTemplateRendererTests`. Dev keeps the wordmark-only header (no absolute origin).
 - **TEM-2 · Explain the reusable CircleTools login when app #2 ships (P3).** With only Secret-Santa live, an
   SSO explainer in mail would confuse more than help; the footer carries only a subtle "CircleTools account"
   seed for now. Add the real "one login across CircleTools apps" explainer when a second app exists — which
