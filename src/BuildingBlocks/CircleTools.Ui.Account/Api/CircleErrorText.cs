@@ -1,8 +1,7 @@
 using CircleTools.ApiClient;
-using CircleTools.Ui.Account.Api;
 using Microsoft.Extensions.Localization;
 
-namespace CircleTools.Main.Ui.Api;
+namespace CircleTools.Ui.Account.Api;
 
 /// <summary>
 /// Turns a circle refusal into a sentence in the user's language (FEAT-003, NFR-003).
@@ -14,6 +13,12 @@ namespace CircleTools.Main.Ui.Api;
 /// "there was a conflict" is useless when what the user needs to hear is "hand ownership to somebody
 /// else first". So this maps the stable <c>code</c> the API sends (ADR-0011) to a resource key, and
 /// falls back to the status-based text when a refusal carries no code.
+/// </para>
+/// <para>
+/// It lives in the shared account building block, not in an app, because the account-data screen
+/// (delete / export) is shared across every app that has accounts and needs the same
+/// <c>circles_still_owned</c> sentence on the sole-owner refusal (FR-015). The Main app's circle
+/// screens use it from here too.
 /// </para>
 /// <para>
 /// <strong>Unknown codes fall back rather than being shown.</strong> A code that arrives without a

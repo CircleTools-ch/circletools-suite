@@ -18,6 +18,10 @@ Two tracks:
 And, before either of them, **[device testing](device-testing.md)** — which of our machines can
 build each head, which devices can run it, and what to type. Nothing there needs a store account.
 
+For the observability the VM will run, **[local observability](dev-observability.md)** brings up the
+same Loki + Prometheus + Grafana stack under Aspire — with the production dashboards and datasources —
+so you can validate what you'll see on the box **before** deploying it.
+
 Across both tracks, the **[launch-readiness assessment](launch-readiness.md)** (2026-09-15) is the
 point-in-time verdict on whether the suite can go live — what is production-grade already and the
 operational, legal and pre-data items that still gate a first deploy.

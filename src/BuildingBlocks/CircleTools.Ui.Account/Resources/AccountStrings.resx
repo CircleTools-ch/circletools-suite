@@ -153,4 +153,23 @@
   <data name="ConnectFailedTitle" xml:space="preserve"><value>Couldn't sign you in</value></data>
   <data name="ConnectFailedText" xml:space="preserve"><value>We couldn't reach your CircleTools account. You can sign in here instead.</value></data>
   <data name="ConnectContinue" xml:space="preserve"><value>Continue with your CircleTools account</value></data>
+  <data name="AccountMenuData" xml:space="preserve"><value>Data &amp; account</value></data>
+  <data name="DataTitle" xml:space="preserve"><value>Data &amp; account</value></data>
+  <data name="DataLead" xml:space="preserve"><value>Take a copy of your data with you, or close your account for good.</value></data>
+  <data name="ExportTitle" xml:space="preserve"><value>Export your data</value></data>
+  <data name="ExportLead" xml:space="preserve"><value>A JSON file with everything your account holds on our servers.</value></data>
+  <data name="ExportDownload" xml:space="preserve"><value>Download</value></data>
+  <data name="DeleteTitle" xml:space="preserve"><value>Delete your account</value></data>
+  <data name="DeleteLead" xml:space="preserve"><value>This removes your account and everything stored with it on our servers. It happens immediately and cannot be undone. Data on your own devices is left alone.</value></data>
+  <data name="DeleteSharedGroupsTitle" xml:space="preserve"><value>Groups you share by link</value></data>
+  <data name="DeleteSharedGroupsLead" xml:space="preserve"><value>You manage {0} group(s) that others joined by link. Choose what happens to them.</value></data>
+  <data name="DeleteSharedGroupsHandOff" xml:space="preserve"><value>Keep them online so everyone who joined keeps access (a fresh admin link is created)</value></data>
+  <data name="DeleteSharedGroupsRemove" xml:space="preserve"><value>Delete these online copies too</value></data>
+  <data name="DeletePasswordPrompt" xml:space="preserve"><value>Enter your password to confirm.</value></data>
+  <data name="DeleteSubmit" xml:space="preserve"><value>Delete my account</value></data>
+  <data name="DeleteDoneTitle" xml:space="preserve"><value>Your account is gone</value></data>
+  <data name="DeleteDoneText" xml:space="preserve"><value>Nothing of it remains on our servers. You are welcome back any time.</value></data>
+  <data name="DeleteDoneHome" xml:space="preserve"><value>Back to the app</value></data>
+  <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Hand over or delete the circles you own before deleting your account.</value></data>
+  <data name="CircleErrorRefused" xml:space="preserve"><value>That is not allowed.</value></data>
 </root>
