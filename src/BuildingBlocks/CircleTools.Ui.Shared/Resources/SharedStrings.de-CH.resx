@@ -56,4 +56,7 @@
   <data name="Legal_Delete_ContactBody" xml:space="preserve"><value>Wenn Sie nicht in Ihr Konto kommen, um es zu löschen, schreiben Sie mir an info@circletools.ch, und ich helfe Ihnen weiter.</value></data>
   <data name="Legal_Imprint_AboutHeading" xml:space="preserve"><value>Warum es das gibt</value></data>
   <data name="Legal_Imprint_AboutBody" xml:space="preserve"><value>Ich bin Softwareentwickler und habe CircleTools in meiner Freizeit gebaut. Es begann als Wichtel-App für meine eigene Familie – ich fand keine, die tat, was wir brauchten – und wurde nach und nach zu einer kleinen Sammlung von Werkzeugen für Familien und Freundeskreise. Ich stelle sie gratis zur Verfügung und hoffe, sie macht Ihre Zusammenkünfte ein wenig einfacher.</value></data>
+  <data name="GetTheApp_Heading" xml:space="preserve"><value>Hol dir die App</value></data>
+  <data name="GetTheApp_Ios" xml:space="preserve"><value>Im App Store laden</value></data>
+  <data name="GetTheApp_Android" xml:space="preserve"><value>Bei Google Play</value></data>
 </root>

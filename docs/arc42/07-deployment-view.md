@@ -55,10 +55,15 @@ The native heads deploy through a second, quite different channel: two store rev
 than infrastructure we control. Two properties of it shape the architecture rather than just the
 release process.
 
-**The build host is a hardware constraint, not a tooling choice.** iOS artifacts can only be produced
-on macOS with Apple's toolchain, and the required Xcode version implies a required macOS version,
-which implies required hardware — so the toolchain floor propagates all the way down to which Mac
-must exist. Settled in [ADR-0031](../adr/0031-ios-build-host.md).
+**The build host is a CI concern, not owned hardware.** iOS artifacts can only be produced on macOS
+with Apple's toolchain (the required Xcode version implies a required macOS version), but that macOS is
+a **GitHub-hosted runner**: the iOS release leg runs on a `macos-*` runner in `release-mobile.yml`, on
+the same `v*` tag as Android — signed `.ipa` → TestFlight when the signing secrets exist
+([ADR-0065](../adr/0065-hosted-macos-ios-builds.md)). This **supersedes [ADR-0031](../adr/0031-ios-build-host.md)**,
+which had required buying an Apple-silicon Mac; that hardware option survives only as a documented
+upgrade trigger (build frequency, a hosted-image SDK lag, or interactive-debug needs). The toolchain
+floor still applies to the runner's Xcode, so a hosted-image lag at an Apple SDK deadline is the
+residual exposure (risk R6, [ch. 11](11-risks-and-technical-debt.md)).
 
 **Some identifiers are permanent.** The bundle identifier / `ApplicationId` cannot change after the
 first release, and passkey relying-party IDs do not migrate
