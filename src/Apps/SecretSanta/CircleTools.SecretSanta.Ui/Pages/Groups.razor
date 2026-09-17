@@ -149,6 +149,11 @@ else
     </MudStack>
 }
 
+@* "Get the app" links on the web landing page (ADR-0065). Web-only and self-hiding: it renders nothing
+   on the MAUI heads (no links registered) and nothing on the web until the store listings are configured,
+   so it is safe to mount unconditionally here. *@
+<AppStoreLinks />
+
 @* Create a group via a FAB on phones (like adding members); the inline field owns it on wide.
    The spacer reserves scroll room so the FAB never traps the last group card's controls. *@
 <MudHidden Breakpoint="Breakpoint.MdAndUp">

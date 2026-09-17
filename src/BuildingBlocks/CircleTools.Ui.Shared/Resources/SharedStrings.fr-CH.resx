@@ -56,4 +56,7 @@
   <data name="Legal_Delete_ContactBody" xml:space="preserve"><value>Si vous ne parvenez pas à accéder à votre compte pour le supprimer, écrivez-moi à info@circletools.ch et je vous dépannerai.</value></data>
   <data name="Legal_Imprint_AboutHeading" xml:space="preserve"><value>Pourquoi ça existe</value></data>
   <data name="Legal_Imprint_AboutBody" xml:space="preserve"><value>Je suis ingénieur logiciel, et j'ai créé CircleTools sur mon temps libre. Ça a commencé comme une application de Père Noël secret pour ma propre famille – je n'en trouvais aucune qui fasse ce dont nous avions besoin – et c'est peu à peu devenu un petit ensemble d'outils pour les familles et les groupes d'amis. Je le partage gratuitement, et j'espère qu'il rendra vos retrouvailles un peu plus faciles.</value></data>
+  <data name="GetTheApp_Heading" xml:space="preserve"><value>Obtenir l'application</value></data>
+  <data name="GetTheApp_Ios" xml:space="preserve"><value>Télécharger dans l'App Store</value></data>
+  <data name="GetTheApp_Android" xml:space="preserve"><value>Disponible sur Google Play</value></data>
 </root>

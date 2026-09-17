@@ -1,11 +1,18 @@
 ---
-status: Accepted
+status: Superseded by ADR-0065
 date: 2026-07-29
 deciders: [Adrian]
 tags: [deployment, mobile, ios, maui, tooling, build]
 ---
 
 # ADR-0031 — iOS build host
+
+> **Superseded by [ADR-0065](0065-hosted-macos-ios-builds.md) (2026-09-17).** The project now builds
+> iOS on **GitHub-hosted macOS runners** rather than buying an Apple-silicon Mac, because iOS moved onto
+> the launch critical path and hosted builds cost ~CHF 0 at this release cadence with no hardware outlay.
+> The cost/durability analysis below is **preserved as the documented upgrade trigger**: buy the Mac if
+> build frequency, a hosted-image SDK lag, or interactive-debugging needs make it the cheaper/safer
+> choice — see ADR-0065 → "Upgrade trigger".
 
 ## Context and problem statement
 

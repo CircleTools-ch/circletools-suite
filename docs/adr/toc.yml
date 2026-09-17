@@ -128,5 +128,7 @@
   href: 0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md
 - name: 0064 Branded HTML email & per-app identity
   href: 0064-transactional-email-html-and-per-app-branding.md
+- name: 0065 iOS builds on GitHub-hosted macOS runners
+  href: 0065-hosted-macos-ios-builds.md
 - name: Template
   href: _template-adr.md

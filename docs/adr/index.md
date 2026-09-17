@@ -39,7 +39,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0028](0028-browser-platform-adapters-block.md) | Browser platform adapters as a shared block (`Ui.Web`) | Accepted | 2026-07-28 |
 | [0029](0029-storage-write-failure-contract.md) | What an `IKeyValueStore` write does when storage refuses it | Accepted | 2026-07-28 |
 | [0030](0030-mobile-store-publisher-identity.md) | Store publisher identity and account ownership (individual, project-owned accounts) | Accepted | 2026-07-29 |
-| [0031](0031-ios-build-host.md) | iOS build host (own Apple-silicon Mac) | Accepted | 2026-07-29 |
+| [0031](0031-ios-build-host.md) | iOS build host (own Apple-silicon Mac) | Superseded by [0065](0065-hosted-macos-ios-builds.md) | 2026-07-29 |
 | [0032](0032-ui-tone-of-voice-and-gender-neutral-terms.md) | UI tone of voice & gender-neutral role terms | Accepted | 2026-07-30 |
 | [0033](0033-which-aggregates-sync.md) | Which aggregates sync (narrows ADR-0016 — Group + profile; Circle excluded) | Accepted | 2026-08-03 |
 | [0034](0034-shared-account-session-ui-block.md) | Shared account/session UI building block (`Ui.Account`) | Accepted | 2026-08-11 |
@@ -73,6 +73,24 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0061](0061-share-token-and-creator-key-at-rest-protection.md) | Share-token & creator-key **at-rest protection** (ADR-0058 stored share tokens as the plaintext PK and the creator key in clear, so a DB dump yielded working links + the recovery key): store **`SHA-256(token)`** as the deterministic lookup PK **plus** an **`AES-256-GCM(token)`** copy so the **resume-share** path can still return the original link (a plain hash can't); **hash the creator key** (only ever compared); **fail-closed** on a missing key; new secret `SharedGroups:Security:TokenEncryptionKey` under ADR-0050; DeviceHandle left as-is (not a verified credential); pre-data one-way-door fix | Accepted | 2026-09-15 |
 | [0062](0062-email-address-hashing-keyed-hmac.md) | Email address hashing → **keyed HMAC-SHA256** (unsalted SHA-256 was dictionary-reversible over the small address space): a new **`IEmailHasher`** port computes `HMAC(key, TRIM+UPPER(email))` at the **application boundary** and passes the hash **into the pure domain** as a value (like the invitation secret handle); deterministic equality preserved (invitation match, decline cooldown, rate-limit key); **no schema change**; **fail-closed** on a missing key; new secret `Circles:Security:EmailHashKey` under ADR-0050; pending-invitation plaintext address unchanged (needed to send); pre-data one-way-door fix | Accepted | 2026-09-15 |
 | [0064](0064-transactional-email-html-and-per-app-branding.md) | **Branded HTML transactional email with per-app identity** (plaintext + `multipart/alternative` HTML with a CTA button and a fallback link; each mail is **co-branded to its source app** — name, brand colour, sender, and **links that return to the source app's origin** so the page renders in that app's shell; a `sourceApp` rides the outbox payload; resolves the open RESX-vs-own-mechanism question with a shared `MailLayout` in Infrastructure; adds a link-less **account-deleted farewell** mail (FR-047); user text HTML-encoded; SSO explainer + per-app PNG logo deferred) | Accepted | 2026-09-17 |
+| [0065](0065-hosted-macos-ios-builds.md) | **iOS builds on GitHub-hosted macOS runners** (**supersedes [ADR-0031](0031-ios-build-host.md)** — no Mac bought): iOS moved onto the launch critical path (TestFlight is how the family's iPhones test, the fastest route to Play's 20-tester threshold), so the iOS release leg runs on a `macos-*` runner in `release-mobile.yml` on the same `v*` tag as Android — Xcode select → MAUI workload → signed `.ipa` + TestFlight upload when secrets exist, compile-check otherwise; **~CHF 0** at this release cadence (built only on tags/dispatch, kept out of the per-push gate) vs a CHF 650–800 Mac; signing keys in GitHub secrets ([ADR-0050](0050-secrets-management.md)); **amends** [ADR-0038](0038-ci-cd-pipeline.md) (iOS leg no longer a self-hosted Mac) and [ADR-0053](0053-backend-free-first-mobile-release.md) (iOS no longer deferred to v2+); ADR-0031's cost/durability case **preserved as the upgrade trigger** for buying a Mac later; follow-up: iOS Universal Links (AASA) for in-app reveal links) | Accepted | 2026-09-17 |
+
+### Recently closed (iOS build path reversed — 2026-09-17)
+
+Raised when iOS moved onto the **launch** critical path: most of the family uses iPhones, TestFlight is
+the fastest way to onboard them (and to reach Google Play's ~20-tester threshold), but the project owns
+no Mac and buying one just to unblock a family test is a real cash outlay for a free app.
+
+- ✅ **iOS build path** → [ADR-0065](0065-hosted-macos-ios-builds.md) (**supersedes
+  [ADR-0031](0031-ios-build-host.md)**). Build, sign and upload iOS on **GitHub-hosted macOS runners** in
+  `release-mobile.yml`, on the same `v*` tag as Android — ~CHF 0 at this release cadence (tags/dispatch
+  only, kept out of the per-push gate) instead of a CHF 650–800 Mac. **Amends**
+  [ADR-0038](0038-ci-cd-pipeline.md) (the iOS leg is no longer a self-hosted Mac runner) and
+  [ADR-0053](0053-backend-free-first-mobile-release.md) (iOS is no longer deferred to v2+). ADR-0031's
+  cost/durability reasoning is **kept as the upgrade trigger** for owning a Mac later. **Follow-ups:**
+  define the iOS signing secrets ([ADR-0050](0050-secrets-management.md)); add iOS **Universal Links**
+  (an `apple-app-site-association` file + Associated Domains) so installed iPhones open reveal links in
+  the app, as ADR-0053 already does for Android.
 
 ## Open decisions backlog
 
@@ -142,7 +160,9 @@ path.
   [naming](../process/naming.md) lands.
 - ✅ **iOS build host** → [ADR-0031](0031-ios-build-host.md) (an own Apple-silicon Mac; the Intel
   MacBook Pro is at best a one-release bridge). Feeds the still-open **CI/CD** item below by making a
-  self-hosted macOS runner possible.
+  self-hosted macOS runner possible. **Superseded 2026-09-17 by [ADR-0065](0065-hosted-macos-ios-builds.md)**
+  — iOS now builds on GitHub-hosted macOS runners (see the 2026-09-17 entry below); ADR-0031's analysis
+  survives as the upgrade trigger for buying a Mac later.
 
 Both are governed by [NFR-007](../requirements/non-functional/NFR-007-store-distributability.md),
 which states the recurring platform obligations that outlive any single release.

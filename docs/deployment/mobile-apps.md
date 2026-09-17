@@ -6,16 +6,26 @@ which order, and how long each part actually takes. Built from the
 
 For *testing* on the devices we own — before any of this — see [device testing](device-testing.md).
 
-> **Status:** nothing below has been executed yet. This is the runbook to follow at
-> [milestone 8](../roadmap/roadmap.md), written up front because two of its steps have long lead
-> times and one of them is irreversible.
+> **Status — enrolment in progress (2026-09-17).** Both store enrolments have started; nothing has
+> been submitted or published yet. The rest of each track below is **not** executed yet.
+>
+> - **Google Play Console — registered.** ✅ USD 25 paid; account active on `circletools.ch@gmail.com`.
+>   The console shows no pending checks and a **Create app** button. Next: Track A step 4 (create the
+>   app record).
+> - **Apple Developer Program — enrolment pending.** ⏳ Individual enrolment submitted on the
+>   `info@circletools.ch` Apple ID; awaiting Apple approval (typically 24–48 h). Next after approval:
+>   Track B step 3 (DSA trader status).
+>
+> Both accounts are project-dedicated per [ADR-0030](../adr/0030-mobile-store-publisher-identity.md).
+> This runbook is followed at [milestone 8](../roadmap/roadmap.md); it was written up front because two
+> of its steps have long lead times and one of them is irreversible.
 
 ## Targets
 
 - **Android** → Google Play, signed **AAB**, phone + tablet.
 - **iOS** → Apple App Store, signed **IPA**, iPhone + iPad.
 
-## Before anything else: two blockers
+## Before anything else: two prerequisites
 
 **1. Brand and domain — settled.** ✅ The brand is `CircleTools` at `circletools.ch`, and the
 `ApplicationId` / bundle identifier is **set** to `ch.circletools.secretsanta` (2026-08-13) — permanent
@@ -24,9 +34,12 @@ which likewise cannot migrate ([ADR-0023](../adr/0023-local-dev-infrastructure-i
 the privacy-policy and account-deletion URLs the stores require are applied at deployment. See
 [naming](../process/naming.md) and [NFR-007](../requirements/non-functional/NFR-007-store-distributability.md).
 
-**2. iOS needs a Mac.** Not "is easier with" — iOS artifacts cannot be produced on Windows at all.
-See [ADR-0031](../adr/0031-ios-build-host.md) for which Mac, and why the Intel MacBook Pro is at best
-a one-release bridge.
+**2. iOS build host — no Mac needed.** ✅ iOS artifacts are built, signed and uploaded on
+**GitHub-hosted macOS runners**, not on an owned Mac
+([ADR-0065](../adr/0065-hosted-macos-ios-builds.md), which supersedes
+[ADR-0031](../adr/0031-ios-build-host.md)). iOS is on the launch critical path — TestFlight is how the
+iPhone-owning family tests. The trade-off is **no local iOS build or simulator**: signing is debugged
+through CI runs. Buying an Apple-silicon Mac is retained only as a documented upgrade trigger.
 
 Publisher identity and account ownership are decided in
 [ADR-0030](../adr/0030-mobile-store-publisher-identity.md): enrol as a **private individual**, on
@@ -38,13 +51,13 @@ Publisher identity and account ownership are decided in
 |---|---|---|
 | Apple Developer Program | **USD 99 / year** | recurring; lapses stop distribution |
 | Google Play Console | **USD 25 once** | one-time registration fee, no renewal |
-| Apple-silicon Mac mini | ~**CHF 650–800** once | the durable iOS build host ([ADR-0031](../adr/0031-ios-build-host.md)) |
-| Hosted macOS CI (alternative) | ~**USD 0.062 / minute** | note macOS minutes drain included CI allowances at a **10× multiplier** |
+| Hosted macOS CI (chosen) | ~**CHF 0 / month** at this cadence | iOS builds only on `v*` tags & manual dispatch; macOS minutes bill at a **10× multiplier** (~USD 0.062/min), but a few short builds/month stay within included minutes ([ADR-0065](../adr/0065-hosted-macos-ios-builds.md)) |
+| Apple-silicon Mac mini (not bought) | ~**CHF 650–800** once | upgrade path only, if build frequency or a hosted-image SDK lag ever justifies it ([ADR-0065](../adr/0065-hosted-macos-ios-builds.md) upgrade trigger) |
 | Suite domain (`.ch`) | ~**CHF 10–20 / year** | required before first submission, see above |
 | Cloud hosting for Web/API/DB | open | pending the [cloud-provider ADR](../adr/index.md#open-decisions-backlog) |
 
-Year one, excluding hosting: roughly **CHF 800–950** if the Mac is bought, or **CHF 130–150** if an
-existing Mac carries the first release.
+Year one, excluding hosting: roughly **CHF 130–150** — Apple USD 99/year, Google USD 25 once, and the
+domain — with iOS built on hosted CI at ~CHF 0 and no Mac purchase.
 
 ## Track A — Google Play
 
@@ -52,11 +65,13 @@ Start this track **first**. Its critical path is measured in weeks and none of i
 waiting.
 
 1. **Create the project Google account** (not the personal one) with 2FA and offline recovery codes.
-2. **Register in the Play Console** — USD 25, one-time.
+   ✅ Done — `circletools.ch@gmail.com`.
+2. **Register in the Play Console** — USD 25, one-time. ✅ Done — account active, no pending checks.
 3. **Identity verification** — legal name, address, government ID, phone. Hours to a few days.
-   A personal account's contact address becomes **publicly visible** on the listing.
+   A personal account's contact address becomes **publicly visible** on the listing. ✅ Cleared — the
+   console shows no pending verification.
 4. **Create the app**, choose free/paid (free; this cannot be changed to paid later), and declare the
-   app category and target audience.
+   app category and target audience. ⏳ **Next** — the console shows the **Create app** button.
 5. **Set up Play App Signing** and generate the **upload key**.
    > Back the upload keystore up to a password manager *and* an offline copy. Play App Signing means
    > a lost upload key can be reset by Google, but losing both the key and the account is terminal.
@@ -84,17 +99,22 @@ waiting.
 
 ## Track B — Apple App Store
 
-1. **Create the project Apple ID** with 2FA and offline recovery codes.
+1. **Create the project Apple ID** with 2FA and offline recovery codes. ✅ Done — `info@circletools.ch`.
 2. **Enrol in the Apple Developer Program** as an **Individual** — USD 99/year, identity
    verification. Typically approved in **24–48 hours**, occasionally up to a week. No D-U-N-S number
-   is needed for individual enrolment.
+   is needed for individual enrolment. ⏳ **Pending** — submitted 2026-09-17, awaiting Apple approval.
    > The App Store publishes the individual's **legal name** as the seller. Accepted in
    > [ADR-0030](../adr/0030-mobile-store-publisher-identity.md).
 3. **Declare DSA trader status** in App Store Connect. Mandatory for every developer; apps without a
    verified declaration are **removed from the EU App Store**.
 4. **Register the App ID / bundle identifier** — permanent, see the blockers above.
-5. **Signing** — certificates, provisioning profiles, and the app's capabilities. Xcode-managed
-   signing is sufficient at this scale.
+5. **Signing (no Mac).** Produce a distribution certificate (`.p12`), an App Store provisioning
+   profile, and an App Store Connect API key, then store them as GitHub Actions secrets for the CI
+   build ([ADR-0065](../adr/0065-hosted-macos-ios-builds.md),
+   [ADR-0050](../adr/0050-secrets-management.md)): `IOS_DIST_CERT_P12_BASE64`,
+   `IOS_DIST_CERT_PASSWORD`, `IOS_PROVISIONING_PROFILE_BASE64`, `APPSTORE_ISSUER_ID`,
+   `APPSTORE_KEY_ID`, `APPSTORE_API_PRIVATE_KEY`. The certificate and its CSR can be generated on
+   Windows with `openssl` — no Mac is involved.
 6. **Create the App Store Connect record** and fill the listing in **DE / EN / FR**: name, subtitle,
    description, keywords, support URL, privacy-policy URL.
 7. **Screenshots** — required per device class, PNG or JPEG, RGB, **no alpha channel**, exact pixel
@@ -109,12 +129,13 @@ waiting.
    submission. 1–10 per class, per language.
 8. **Declarations:** privacy labels (must match what the app actually collects), age rating, export
    compliance (encryption).
-9. **Upload the build** from the Mac → **TestFlight**. Internal testers get it almost immediately;
-   external testers require a beta app review (~24 h).
+9. **Upload the build** from the hosted macOS CI runner (the `ios` job in `release-mobile.yml`,
+   [ADR-0065](../adr/0065-hosted-macos-ios-builds.md)) → **TestFlight**. Internal testers get it almost
+   immediately; external testers require a beta app review (~24 h).
 10. **Submit for review** — typically **1–3 days**, longer around major OS releases and holidays.
 11. **Release**, manually or automatically on approval.
 
-**Elapsed time from zero: roughly 1–2 weeks — once a Mac exists.**
+**Elapsed time from zero: roughly 1–2 weeks** — no Mac needed; the CI signing job is the gating setup.
 
 ## Recurring platform deadlines
 
@@ -157,6 +178,7 @@ Re-check both at every release and at every .NET/MAUI upgrade.
 - [Device testing](device-testing.md) — what can be built and tested on which machine
 - [Web / API / database](web-api-db.md) — the other deployment track
 - [ADR-0030](../adr/0030-mobile-store-publisher-identity.md) — publisher identity
-- [ADR-0031](../adr/0031-ios-build-host.md) — iOS build host
+- [ADR-0065](../adr/0065-hosted-macos-ios-builds.md) — iOS builds on hosted macOS runners (supersedes ADR-0031)
+- [ADR-0031](../adr/0031-ios-build-host.md) — iOS build host (superseded)
 - [NFR-007](../requirements/non-functional/NFR-007-store-distributability.md) — platform compliance
 - [arc42 ch. 7](../arc42/07-deployment-view.md) — deployment view

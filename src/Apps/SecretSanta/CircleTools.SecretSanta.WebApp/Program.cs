@@ -131,6 +131,24 @@ foreach (var entry in builder.Configuration.GetSection("SuiteApps").GetChildren(
         IsCurrent: string.Equals(entry["Key"], "secretsanta-web", StringComparison.Ordinal)));
 }
 
+// "Get the app" links for the web landing page (ADR-0065), from wwwroot/appsettings.json. Web-only: the
+// MAUI heads register none, so the section self-hides on device — and it stays empty (nothing renders)
+// until the TestFlight/Play listings exist. An entry with no Url is skipped so a half-filled config line
+// never shows a dead button.
+foreach (var entry in builder.Configuration.GetSection("AppStoreLinks").GetChildren())
+{
+    var storeUrl = entry["Url"];
+    if (string.IsNullOrWhiteSpace(storeUrl))
+    {
+        continue;
+    }
+
+    builder.Services.AddSingleton(new CircleTools.Ui.Shared.AppStoreLink(
+        Platform: entry["Platform"] ?? string.Empty,
+        Url: storeUrl,
+        Label: entry["Label"]));
+}
+
 var host = builder.Build();
 
 // Both of these must happen before the first render, and both need services that only exist once the
