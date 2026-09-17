@@ -53,17 +53,24 @@ internal static class MailLayout
         sb.Append("<!doctype html><html lang=\"").Append(Enc(chrome.Lang)).Append("\"><head>")
           .Append("<meta charset=\"utf-8\">")
           .Append("<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">")
-          .Append("<title>").Append(Enc(model.Subject)).Append("</title></head>")
+          .Append("<title>").Append(Enc(model.Subject)).Append("</title>")
+          // Fluid by default (below); this only tightens the gutters on a phone, where clients that
+          // support media queries honour it and the rest keep the inline padding.
+          .Append("<style>@media only screen and (max-width:480px){")
+          .Append(".ct-shell{padding:12px 8px !important}")
+          .Append(".ct-pad{padding-left:20px !important;padding-right:20px !important}")
+          .Append("}</style></head>")
           .Append("<body style=\"margin:0;padding:0;background:#eef0f3;\">");
 
         sb.Append("<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background:#eef0f3;\">")
-          .Append("<tr><td align=\"center\" style=\"padding:24px 12px;\">")
-          .Append("<table role=\"presentation\" width=\"600\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" ")
-          .Append("style=\"width:600px;max-width:600px;background:#ffffff;border-radius:14px;overflow:hidden;")
+          .Append("<tr><td align=\"center\" class=\"ct-shell\" style=\"padding:24px 12px;\">")
+          // Fluid width capped at 600px, so the card shrinks to fit a phone instead of forcing sideways scroll.
+          .Append("<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" ")
+          .Append("style=\"width:100%;max-width:600px;background:#ffffff;border-radius:14px;overflow:hidden;")
           .Append("font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;\">");
 
         // Header band — brand colour, optional logo image, white wordmark.
-        sb.Append("<tr><td style=\"background:").Append(color).Append(";padding:24px 32px;\">");
+        sb.Append("<tr><td class=\"ct-pad\" style=\"background:").Append(color).Append(";padding:24px 32px;\">");
         if (!string.IsNullOrEmpty(brand.LogoUrl))
         {
             sb.Append("<img src=\"").Append(Enc(brand.LogoUrl)).Append("\" width=\"40\" height=\"40\" alt=\"")
@@ -74,7 +81,7 @@ internal static class MailLayout
           .Append(Enc(brand.Name)).Append("</span></td></tr>");
 
         // Body — heading, paragraphs, CTA button + fallback link.
-        sb.Append("<tr><td style=\"padding:32px;\">")
+        sb.Append("<tr><td class=\"ct-pad\" style=\"padding:32px;\">")
           .Append("<h1 style=\"margin:0 0 16px;font-size:22px;line-height:1.3;color:").Append(color).Append(";\">")
           .Append(Enc(model.Heading)).Append("</h1>");
 
@@ -102,7 +109,7 @@ internal static class MailLayout
         sb.Append("</td></tr>");
 
         // Footer — why-line, legal links, account/org line.
-        sb.Append("<tr><td style=\"background:#f6f7f9;padding:20px 32px 24px;border-top:1px solid #eceef2;\">")
+        sb.Append("<tr><td class=\"ct-pad\" style=\"background:#f6f7f9;padding:20px 32px 24px;border-top:1px solid #eceef2;\">")
           .Append("<p style=\"margin:0 0 12px;font-size:13px;line-height:1.5;color:#8b90a0;\">")
           .Append(Enc(model.FooterNote)).Append("</p>")
           .Append("<p style=\"margin:0 0 10px;font-size:13px;\">")
