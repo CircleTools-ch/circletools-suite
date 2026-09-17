@@ -305,4 +305,40 @@ public sealed class MailTemplateRendererTests
         Assert.DoesNotContain("<script>", mail.HtmlBody, StringComparison.Ordinal);
         Assert.Contains("&lt;script&gt;", mail.HtmlBody, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void Header_RendersTheLogoImage_WhenLogoUrlIsConfigured()
+    {
+        var options = new MailOptions { ClientBaseUrl = "https://x.test/", DefaultApp = "ss" };
+        options.Apps["ss"] = new MailApp
+        {
+            Name = "Secret Santa",
+            BaseUrl = "https://secretsanta.test",
+            BrandColor = "#7a1f2b",
+            SenderName = "Secret Santa · CircleTools",
+            LogoUrl = "https://secretsanta.test/_content/CircleTools.Ui.Shared/img/email-logo-secretsanta.png",
+        };
+        var renderer = new MailTemplateRenderer(Options.Create(options));
+
+        var mail = renderer.Render(MailTemplateRenderer.VerificationType, VerificationPayload("en", "ss"));
+
+        Assert.NotNull(mail);
+        Assert.NotNull(mail.HtmlBody);
+        Assert.Contains(
+            "<img src=\"https://secretsanta.test/_content/CircleTools.Ui.Shared/img/email-logo-secretsanta.png\"",
+            mail.HtmlBody,
+            StringComparison.Ordinal);
+        Assert.Contains("alt=\"Secret Santa\"", mail.HtmlBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Header_OmitsTheLogoImage_WhenNoLogoUrlIsConfigured()
+    {
+        // BrandedRenderer's apps set no LogoUrl → wordmark-only header, no broken image.
+        var mail = BrandedRenderer().Render(MailTemplateRenderer.VerificationType, VerificationPayload("en", "secretsanta"));
+
+        Assert.NotNull(mail);
+        Assert.NotNull(mail.HtmlBody);
+        Assert.DoesNotContain("<img", mail.HtmlBody, StringComparison.Ordinal);
+    }
 }

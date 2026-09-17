@@ -5,6 +5,9 @@ Description=CircleTools nightly Postgres backup to Swiss Backup
 Documentation=https://github.com/CircleTools-ch/circletools-suite/blob/main/docs/deployment/backups.md
 After=docker.service
 Requires=docker.service
+# Alert on failure (GL-11): runs notify-failure.sh with this unit's name. Requires the templated
+# circletools-backup-failure@.service to be installed (see docs/deployment/backups.md).
+OnFailure=circletools-backup-failure@%n.service
 
 [Service]
 Type=oneshot
