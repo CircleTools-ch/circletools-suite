@@ -2,7 +2,6 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
 using MimeKit;
-using MimeKit.Text;
 
 namespace CircleTools.Infrastructure.Mail;
 
@@ -23,13 +22,25 @@ public sealed class SmtpMailSender(IOptions<MailOptions> options) : IMailSender
         ArgumentNullException.ThrowIfNull(mail);
 
         var settings = options.Value;
+
+        // multipart/alternative when an HTML body is present, plaintext-only otherwise: text clients
+        // and spam filters still get a clean plaintext part, HTML clients get the branded one (ADR-0064).
+        var builder = new BodyBuilder { TextBody = mail.Body };
+
+        if (!string.IsNullOrEmpty(mail.HtmlBody))
+        {
+            builder.HtmlBody = mail.HtmlBody;
+        }
+
         var message = new MimeMessage
         {
             Subject = mail.Subject,
-            Body = new TextPart(TextFormat.Plain) { Text = mail.Body },
+            Body = builder.ToMessageBody(),
         };
 
-        message.From.Add(new MailboxAddress(settings.FromName, settings.FromAddress));
+        // The sender display name is co-branded per source app (e.g. "Secret Santa · CircleTools");
+        // the from address stays the single configured mailbox so SPF/DKIM alignment is unaffected.
+        message.From.Add(new MailboxAddress(mail.FromName ?? settings.FromName, settings.FromAddress));
         message.To.Add(MailboxAddress.Parse(mail.To));
 
         using var client = new SmtpClient();

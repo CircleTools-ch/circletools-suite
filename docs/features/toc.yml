@@ -70,6 +70,10 @@
   href: FEAT-017-local-data-transparency-and-backup.md
 - name: TP-017 Local data transparency & backup test plan
   href: TP-017-local-data-transparency-and-backup.md
+- name: FEAT-018 Branded transactional emails
+  href: FEAT-018-branded-transactional-emails.md
+- name: TP-018 Branded transactional emails test plan
+  href: TP-018-branded-transactional-emails.md
 - name: Templates
   items:
     - name: Feature spec template

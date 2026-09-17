@@ -126,5 +126,7 @@
   href: 0062-email-address-hashing-keyed-hmac.md
 - name: 0063 Drop Cloudflare — Infomaniak DNS + Caddy TLS
   href: 0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md
+- name: 0064 Branded HTML email & per-app identity
+  href: 0064-transactional-email-html-and-per-app-branding.md
 - name: Template
   href: _template-adr.md

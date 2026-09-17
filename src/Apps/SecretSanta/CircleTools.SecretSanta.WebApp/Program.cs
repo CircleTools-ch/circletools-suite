@@ -98,7 +98,7 @@ builder.Services.AddScoped<ICircleDirectoryApi>(sp =>
 
 // The shared account/session UI (ADR-0034), under this app's own refresh-token key so a device that
 // hosts more than one app never crosses their sessions (ADR-0026).
-builder.Services.AddAccountUi("secretsanta.refreshToken");
+builder.Services.AddAccountUi("secretsanta.refreshToken", "secretsanta");
 
 // Cross-app SSO (FR-031, ADR-0039). As a requesting app, this redirects a signed-out visitor to the
 // authority (the Main shell) to continue with an existing session. The authority origin is configured

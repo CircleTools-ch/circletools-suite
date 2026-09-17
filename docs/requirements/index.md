@@ -68,6 +68,7 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-044](functional/FR-044-add-event-to-device-calendar.md) | Add an event to the device calendar (pre-filled, all-day, system-UI) | Functional | Could | Implemented |
 | [FR-045](functional/FR-045-guided-hand-out-of-reveal-links.md) | Guided hand-out of reveal links (one per recipient, tracks who's done) | Functional | Could | Implemented |
 | [FR-046](functional/FR-046-device-local-occasion-reminders.md) | Device-local occasion reminders (draw due / tomorrow / empty wishlist; opt-in, off by default) | Functional | Could | Implemented |
+| [FR-047](functional/FR-047-account-deletion-farewell-email.md) | Account-deletion farewell email (one link-less confirmation after successful deletion, DE/EN/FR, source-app branded) | Functional | Should | Implemented |
 | [NFR-011](non-functional/NFR-011-local-data-durability-and-portability.md) | Local data is durable and portable on the web (persistence request + backup/restore) | Non-functional | Should | Implemented |
 
 _Add a row per requirement._

@@ -17,18 +17,25 @@ namespace CircleTools.Ui.Account.Api;
 /// </remarks>
 /// <param name="authorized">The client that carries the bearer token.</param>
 /// <param name="anonymous">The client used before there is a session.</param>
+/// <param name="appContext">
+/// This host's source-app identity (ADR-0064), stamped onto the requests that trigger mail so it is
+/// branded and linked back to the app the user used. Optional: absent leaves the source app unset.
+/// </param>
 public sealed class AccountApiClient(
     [FromKeyedServices(AccountApiClients.Authorized)] HttpClient authorized,
-    [FromKeyedServices(AccountApiClients.Anonymous)] HttpClient anonymous)
+    [FromKeyedServices(AccountApiClients.Anonymous)] HttpClient anonymous,
+    AccountAppContext? appContext = null)
 {
     private const string Route = AccountApiClients.AccountRoute;
+
+    private string? AppId => appContext?.AppId;
 
     /// <summary>Signs up and triggers the verification mail (FR-007).</summary>
     /// <param name="request">The sign-up details.</param>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The outcome; success carries no body worth showing.</returns>
     public Task<ApiResult> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default) =>
-        PostAsync(anonymous, $"{Route}/register", request, cancellationToken);
+        PostAsync(anonymous, $"{Route}/register", request with { SourceApp = AppId }, cancellationToken);
 
     /// <summary>Confirms an address from a mail link (FR-007).</summary>
     /// <param name="request">The user id and token from the link.</param>
@@ -44,7 +51,7 @@ public sealed class AccountApiClient(
     public Task<ApiResult> ResendVerificationAsync(
         ResendVerificationRequest request,
         CancellationToken cancellationToken = default) =>
-        PostAsync(anonymous, $"{Route}/resend-verification", request, cancellationToken);
+        PostAsync(anonymous, $"{Route}/resend-verification", request with { SourceApp = AppId }, cancellationToken);
 
     /// <summary>Requests a password-reset link (FR-009).</summary>
     /// <param name="request">The address to send to.</param>
@@ -53,7 +60,7 @@ public sealed class AccountApiClient(
     public Task<ApiResult> ForgotPasswordAsync(
         ForgotPasswordRequest request,
         CancellationToken cancellationToken = default) =>
-        PostAsync(anonymous, $"{Route}/forgot-password", request, cancellationToken);
+        PostAsync(anonymous, $"{Route}/forgot-password", request with { SourceApp = AppId }, cancellationToken);
 
     /// <summary>Completes a password reset (FR-009).</summary>
     /// <param name="request">The user id, token and new password.</param>
@@ -134,7 +141,7 @@ public sealed class AccountApiClient(
     public Task<ApiResult> ChangeEmailAsync(
         ChangeEmailRequest request,
         CancellationToken cancellationToken = default) =>
-        PostAsync(authorized, $"{Route}/change-email", request, cancellationToken);
+        PostAsync(authorized, $"{Route}/change-email", request with { SourceApp = AppId }, cancellationToken);
 
     /// <summary>Completes an address change from the mail link (FR-013).</summary>
     /// <param name="request">The user id, new address and token from the link.</param>
@@ -158,7 +165,7 @@ public sealed class AccountApiClient(
     public Task<ApiResult> DeleteAccountAsync(
         DeleteAccountRequest request,
         CancellationToken cancellationToken = default) =>
-        PostAsync(authorized, $"{Route}/delete", request, cancellationToken);
+        PostAsync(authorized, $"{Route}/delete", request with { SourceApp = AppId }, cancellationToken);
 
     /// <summary>
     /// Counts the shared-by-link groups the caller owns, so the delete screen can offer a disposition

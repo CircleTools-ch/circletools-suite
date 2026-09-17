@@ -26,13 +26,23 @@ public static class AccountUiServiceCollectionExtensions
     /// The per-app key the refresh token is remembered under (ADR-0026). Each app passes its own so a
     /// device that hosts more than one never crosses their sessions.
     /// </param>
+    /// <param name="appId">
+    /// This host's stable source-app id (ADR-0064), e.g. <c>secretsanta</c> or <c>circletools</c>. It is
+    /// stamped onto the requests that trigger mail so it is branded — and links back — to the app the
+    /// user used. Empty falls back to <c>circletools</c> (the default branding).
+    /// </param>
     /// <returns>The same service collection, for chaining.</returns>
-    public static IServiceCollection AddAccountUi(this IServiceCollection services, string refreshTokenStorageKey)
+    public static IServiceCollection AddAccountUi(
+        this IServiceCollection services,
+        string refreshTokenStorageKey,
+        string? appId = null)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(refreshTokenStorageKey);
 
         services.AddAuthorizationCore();
+
+        services.AddSingleton(new AccountAppContext(string.IsNullOrWhiteSpace(appId) ? "circletools" : appId));
 
         services.AddScoped<IAccessTokenStore>(_ => new InMemoryAccessTokenStore(TimeProvider.System));
         services.AddSingleton(new RefreshTokenStoreOptions(refreshTokenStorageKey));

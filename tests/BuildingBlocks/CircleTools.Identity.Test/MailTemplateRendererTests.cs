@@ -178,4 +178,131 @@ public sealed class MailTemplateRendererTests
     [InlineData("", "de")]
     public void Normalize_ReducesCultureNamesToASupportedLanguage(string? input, string expected) =>
         Assert.Equal(expected, MailTemplateRenderer.Normalize(input));
+
+    // --- ADR-0064: branded HTML, per-app identity, source-app link origin, farewell mail ---
+
+    private static MailTemplateRenderer BrandedRenderer()
+    {
+        var options = new MailOptions { ClientBaseUrl = "https://circletools.test/", DefaultApp = "circletools" };
+        options.Apps["circletools"] = new MailApp
+        {
+            Name = "CircleTools",
+            BaseUrl = "https://circletools.test",
+            BrandColor = "#03173d",
+            SenderName = "CircleTools",
+        };
+        options.Apps["secretsanta"] = new MailApp
+        {
+            Name = "Secret Santa",
+            BaseUrl = "https://secretsanta.test",
+            BrandColor = "#7a1f2b",
+            SenderName = "Secret Santa · CircleTools",
+        };
+        return new MailTemplateRenderer(Options.Create(options));
+    }
+
+    private static string VerificationPayload(string language, string? sourceApp) =>
+        JsonSerializer.Serialize(new
+        {
+            userId = "0198a1f0-0000-7000-8000-000000000001",
+            email = "anna@example.test",
+            language,
+            token = "abc123",
+            sourceApp,
+        });
+
+    [Fact]
+    public void Verification_ProducesBrandedHtml_WithCtaButtonAndFallbackLink()
+    {
+        var mail = Renderer().Render(MailTemplateRenderer.VerificationType, VerificationPayload("en"));
+
+        Assert.NotNull(mail);
+        Assert.NotNull(mail.HtmlBody);
+
+        // The CTA button's href is the exact link (with the ampersand HTML-encoded in the attribute).
+        Assert.Contains(
+            "href=\"https://app.example.test/verify-email?userId=0198a1f0-0000-7000-8000-000000000001&amp;token=abc123\"",
+            mail.HtmlBody,
+            StringComparison.Ordinal);
+        Assert.Contains("Confirm email", mail.HtmlBody, StringComparison.Ordinal);
+        // The full link is still shown as a fallback for when the button doesn't work.
+        Assert.Contains("Button not working?", mail.HtmlBody, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Verification_FromSecretSanta_UsesSecretSantaBrandingSenderAndOrigin()
+    {
+        var mail = BrandedRenderer().Render(MailTemplateRenderer.VerificationType, VerificationPayload("en", "secretsanta"));
+
+        Assert.NotNull(mail);
+        Assert.NotNull(mail.HtmlBody);
+        Assert.Contains("#7a1f2b", mail.HtmlBody, StringComparison.Ordinal); // festive-red brand colour
+        Assert.Contains("Secret Santa", mail.HtmlBody, StringComparison.Ordinal); // wordmark
+        Assert.Equal("Secret Santa · CircleTools", mail.FromName); // co-branded inbox sender
+        // The link returns to the Secret-Santa origin, so the page renders in that app's shell.
+        Assert.Contains("https://secretsanta.test/verify-email", mail.Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Verification_FromCircleTools_UsesNavyAndCircleToolsOrigin()
+    {
+        var mail = BrandedRenderer().Render(MailTemplateRenderer.VerificationType, VerificationPayload("en", "circletools"));
+
+        Assert.NotNull(mail);
+        Assert.NotNull(mail.HtmlBody);
+        Assert.Contains("#03173d", mail.HtmlBody, StringComparison.Ordinal);
+        Assert.Equal("CircleTools", mail.FromName);
+        Assert.Contains("https://circletools.test/verify-email", mail.Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void UnknownSourceApp_FallsBackToTheDefaultBranding()
+    {
+        var mail = BrandedRenderer().Render(MailTemplateRenderer.VerificationType, VerificationPayload("en", "does-not-exist"));
+
+        Assert.NotNull(mail);
+        Assert.Equal("CircleTools", mail.FromName);
+        Assert.Contains("https://circletools.test/verify-email", mail.Body, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("de-CH", "gelöscht")]
+    [InlineData("fr-CH", "supprimé")]
+    [InlineData("en", "deleted")]
+    public void AccountDeleted_RendersFarewell_InTheAccountsLanguage_WithNoLink(string language, string expected)
+    {
+        var payload = JsonSerializer.Serialize(new { email = "anna@example.test", language, sourceApp = (string?)null });
+
+        var mail = BrandedRenderer().Render(MailTemplateRenderer.AccountDeletedType, payload);
+
+        Assert.NotNull(mail);
+        Assert.Equal("anna@example.test", mail.To);
+        Assert.Contains(expected, mail.Subject, StringComparison.Ordinal);
+        Assert.NotNull(mail.HtmlBody);
+        // A confirmation has nothing to act on: no action link in either body.
+        Assert.DoesNotContain("http://", mail.Body, StringComparison.Ordinal);
+        Assert.DoesNotContain("https://", mail.Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Html_EncodesUserSuppliedText_SoNamesCannotInjectMarkup()
+    {
+        var payload = JsonSerializer.Serialize(new
+        {
+            email = "bea@example.test",
+            language = "en",
+            circleName = "<script>evil()</script>",
+            circleLabel = "Family",
+            inviterDisplayName = "Anna",
+            secret = "s3cr3t-link-value",
+            hasAccount = false,
+        });
+
+        var mail = Renderer().Render(MailTemplateRenderer.InvitationType, payload);
+
+        Assert.NotNull(mail);
+        Assert.NotNull(mail.HtmlBody);
+        Assert.DoesNotContain("<script>", mail.HtmlBody, StringComparison.Ordinal);
+        Assert.Contains("&lt;script&gt;", mail.HtmlBody, StringComparison.Ordinal);
+    }
 }

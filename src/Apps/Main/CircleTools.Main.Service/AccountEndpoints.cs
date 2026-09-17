@@ -34,6 +34,9 @@ public static class AccountEndpoints
     /// <summary>Outbox message type for the notice sent to the address being replaced.</summary>
     public const string EmailChangeNoticeMailType = "mail.email-change-notice";
 
+    /// <summary>Outbox message type for the farewell confirmation sent after deletion (FR-047, ADR-0064).</summary>
+    public const string AccountDeletedMailType = "mail.account-deleted";
+
     /// <summary>
     /// Rate-limit policy applied to every endpoint that accepts an email address (NFR-005).
     /// </summary>
@@ -127,7 +130,7 @@ public static class AccountEndpoints
             await outbox.EnqueueAsync(
                 OutboxMessage.Create(
                     SignUpAttemptMailType,
-                    JsonSerializer.Serialize(new { email = request.Email, language = existing.PreferredLanguage }),
+                    JsonSerializer.Serialize(new { email = request.Email, language = existing.PreferredLanguage, sourceApp = request.SourceApp }),
                     now),
                 cancellationToken).ConfigureAwait(false);
 
@@ -165,6 +168,7 @@ public static class AccountEndpoints
                     email = user.Email,
                     language = user.PreferredLanguage,
                     token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token)),
+                    sourceApp = request.SourceApp,
                 }),
                 now),
             cancellationToken).ConfigureAwait(false);
@@ -247,6 +251,7 @@ public static class AccountEndpoints
                         email = user.Email,
                         language = user.PreferredLanguage,
                         token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token)),
+                        sourceApp = request.SourceApp,
                     }),
                     clock.GetUtcNow()),
                 cancellationToken).ConfigureAwait(false);
@@ -294,6 +299,7 @@ public static class AccountEndpoints
                         email = user.Email,
                         language = user.PreferredLanguage,
                         token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token)),
+                        sourceApp = request.SourceApp,
                     }),
                     clock.GetUtcNow()),
                 cancellationToken).ConfigureAwait(false);
@@ -650,6 +656,7 @@ public static class AccountEndpoints
                         email = request.NewEmail,
                         language = user.PreferredLanguage,
                         token = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token)),
+                        sourceApp = request.SourceApp,
                     }),
                     now),
                 cancellationToken).ConfigureAwait(false);
@@ -657,7 +664,7 @@ public static class AccountEndpoints
             await outbox.EnqueueAsync(
                 OutboxMessage.Create(
                     EmailChangeNoticeMailType,
-                    JsonSerializer.Serialize(new { email = user.Email, language = user.PreferredLanguage }),
+                    JsonSerializer.Serialize(new { email = user.Email, language = user.PreferredLanguage, sourceApp = request.SourceApp }),
                     now),
                 cancellationToken).ConfigureAwait(false);
         }
@@ -790,6 +797,8 @@ public static class AccountEndpoints
         IEnumerable<IAccountDeletionGuard> guards,
         IEnumerable<IAccountDeletionCleanup> cleanups,
         ISharedGroupStore sharedGroups,
+        IOutbox outbox,
+        TimeProvider clock,
         CancellationToken cancellationToken)
     {
         if (!TryGetUserId(principal, out var userId))
@@ -808,6 +817,10 @@ public static class AccountEndpoints
         {
             return InvalidCredentials();
         }
+
+        // Captured before the row goes, so the farewell mail can be queued once deletion has succeeded.
+        var farewellEmail = user.Email;
+        var farewellLanguage = user.PreferredLanguage;
 
         foreach (var guard in guards)
         {
@@ -846,9 +859,22 @@ public static class AccountEndpoints
 
         var deleted = await users.DeleteAsync(user).ConfigureAwait(false);
 
-        return deleted.Succeeded
-            ? Results.NoContent()
-            : Results.Problem(statusCode: StatusCodes.Status500InternalServerError, title: "Deletion failed.");
+        if (!deleted.Succeeded)
+        {
+            return Results.Problem(statusCode: StatusCodes.Status500InternalServerError, title: "Deletion failed.");
+        }
+
+        // Farewell confirmation (FR-047, ADR-0064): queued only after the account is really gone, so it
+        // confirms what happened rather than pre-announcing it. The payload is self-contained, so the
+        // deleted row is irrelevant to rendering it; it carries no link and no assignment.
+        await outbox.EnqueueAsync(
+            OutboxMessage.Create(
+                AccountDeletedMailType,
+                JsonSerializer.Serialize(new { email = farewellEmail, language = farewellLanguage, sourceApp = request.SourceApp }),
+                clock.GetUtcNow()),
+            cancellationToken).ConfigureAwait(false);
+
+        return Results.NoContent();
     }
 
     private static SessionResponse ToResponse(SessionTokens tokens, bool emailVerified) =>
