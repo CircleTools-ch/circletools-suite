@@ -279,10 +279,13 @@ head. What it changed in code, what it confirmed, and what still needs a device 
   could flag a visible feature that only errors — either hide it on the MAUI heads or cover it in the
   App Review notes.
 
-**Open decision:** `android:allowBackup` is currently `true` (template default). For a local-first app
-holding personal data (member names, assignments), `false` (or a `dataExtractionRules`) is more
-consistent with the privacy posture (NFR-004) — but it disables Google auto-backup, so a user changing
-device relies on the app's own export/sync. Decide before first release.
+**Backup posture — decided ✅ ([ADR-0067](../adr/0067-android-backup-posture.md)):**
+`android:allowBackup` is set to **`false`**. Android Auto Backup would silently copy on-device personal
+data (member names, assignments) to the user's Google Drive by default, against the local-first,
+data-minimised posture (NFR-004); the app's own **export + opt-in sync** are the user-chosen backup path
+instead — consistent across Android and iOS. Trade-off accepted: no automatic Google restore on
+reinstall / new device (the user migrates via export/sync). The iOS iCloud counterpart is left as a
+separate open call (see the ADR).
 
 ### `.well-known` association files (host on `secretsanta.circletools.ch`)
 
