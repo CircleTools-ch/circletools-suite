@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8a2531"/>
+      <stop offset="1" stop-color="#5f141d"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="500" fill="url(#bg)"/>
+  <circle cx="930" cy="250" r="300" fill="none" stroke="#4a0f18" stroke-width="30" opacity="0.35"/>
+  <!-- Brand mark floating on the gradient (no tile): ring + white present -->
+  <g transform="translate(80 110) scale(2.8)">
+    <circle cx="50" cy="50" r="36.3" fill="none" stroke="#4a0f18" stroke-width="4.3"/>
+    <g transform="scale(0.1953)">
+      <rect x="181" y="236.08" width="150" height="108" rx="12" fill="#ffffff"/>
+      <rect x="169" y="197.08" width="174" height="34" rx="8" fill="#ffffff"/>
+      <rect x="243" y="197.08" width="26" height="147" fill="#7a1f2b"/>
+      <path d="M 256 193.08 C 246 153.08, 204 157.08, 204 185.08 C 204 201.08, 238 197.08, 256 193.08 Z" fill="#ffffff"/>
+      <path d="M 256 193.08 C 266 153.08, 308 157.08, 308 185.08 C 308 201.08, 274 197.08, 256 193.08 Z" fill="#ffffff"/>
+      <rect x="243" y="177.08" width="26" height="22" rx="6" fill="#ffffff"/>
+    </g>
+  </g>
+  <text x="462" y="232" font-family="Arial, 'Segoe UI', sans-serif" font-size="70" font-weight="700" fill="#ffffff">Wichteln</text>
+  <text x="464" y="286" font-family="Arial, 'Segoe UI', sans-serif" font-size="22" fill="#ffffff" opacity="0.92">Namen auslosen &#183; Links teilen &#183; Offline &amp; gratis</text>
+</svg>

@@ -95,8 +95,10 @@ is [ADR-0066](../adr/0066-mobile-native-passkeys.md).
   need real identifiers. Reveal-link **applinks** on `secretsanta.circletools.ch` (`assetlinks.json` +
   `apple-app-site-association`); passkey **`get_login_creds`/`webcredentials`** on the apex
   `circletools.ch` (Main WebApp `wwwroot/.well-known/*`) because the WebAuthn RP-ID is the apex
-  (`Auth:Passkey:ServerDomain`). Placeholders: `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` (Android, shared with
-  GL-9) and `REPLACE_WITH_APPLE_TEAM_ID` (iOS). **Owner/CI:** fill the ids; ensure Caddy serves the
+  (`Auth:Passkey:ServerDomain`). Placeholders: `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` — ✅ **filled
+  2026-09-18** (Android SHA-256 from Play App Signing, in both `assetlinks.json`, shared with GL-9) —
+  and `REPLACE_WITH_APPLE_TEAM_ID` (iOS, still open). **Owner/CI:** fill the remaining id; **redeploy**
+  so the updated files serve; ensure Caddy serves the
   extensionless `apple-app-site-association` as `application/json` (no redirect); enable Associated Domains
   on the App ID + regenerate the profile. Relates to GL-9, GL-10, [ADR-0066](../adr/0066-mobile-native-passkeys.md).
 - **MSR-4 · Externally-blocked store gates (tracking only).** Not code: privacy-policy + account-deletion
@@ -242,9 +244,10 @@ checklist.
 - **GL-8 · Live on-device sign-in / sync test (P2).** Drive account sign-in and sync from a real device
   against the running Main service — still owed since the parity work.
   [ADR-0039](../adr/0039-cross-app-single-sign-on.md).
-- **GL-9 · Replace the `assetlinks.json` Play App Signing SHA-256 (P2, mobile).** Swap the
-  `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` placeholder for the real fingerprint so reveal / calendar App
-  Links auto-open silently instead of via the chooser.
+- **GL-9 · Replace the `assetlinks.json` Play App Signing SHA-256 (P2, mobile).** ✅ **Done 2026-09-18** —
+  the real fingerprint (`BB:EF:78:…:F1:EC`) from Play App Signing is in both `assetlinks.json` files, so
+  reveal / calendar App Links auto-open silently instead of via the chooser. Residual: **redeploy** the
+  web front so the updated `.well-known/assetlinks.json` serves.
   [ADR-0053](../adr/0053-backend-free-first-mobile-release.md).
 - **GL-10 · Build the iOS head + wire iOS deep links (P2).** ~~Mac-gated~~ **No longer Mac-gated**
   ([ADR-0065](../adr/0065-hosted-macos-ios-builds.md): iOS builds on hosted macOS CI). ✅ **iOS deep

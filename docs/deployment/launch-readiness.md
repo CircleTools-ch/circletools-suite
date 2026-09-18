@@ -105,10 +105,11 @@ live deploy post-dates them. If so, this door is closed.
 Not blocking a **web** launch, but required before the mobile heads ship and needing manual owner
 action:
 
-- Replace the placeholder **Play App Signing SHA-256** in `assetlinks.json` (currently
-  `REPLACE_WITH_PLAY_APP_SIGNING_SHA256`) and the **Apple Team ID** in `apple-app-site-association`
-  (`REPLACE_WITH_APPLE_TEAM_ID`) with the real values so reveal / calendar deep links auto-open silently
-  instead of via the chooser / browser.
+- ✅ **Play App Signing SHA-256 filled** (2026-09-18) in both `assetlinks.json` files (SecretSanta +
+  Main WebApp), from Play Console → *Protected with Play → App signing*. Still open: the **Apple Team
+  ID** in `apple-app-site-association` (`REPLACE_WITH_APPLE_TEAM_ID`), and **redeploy the web front** so
+  the updated `.well-known/` files actually serve — then reveal / calendar deep links auto-open in the
+  app instead of via the chooser / browser.
 - The **iOS head builds on hosted macOS CI** ([ADR-0065](../adr/0065-hosted-macos-ios-builds.md),
   superseding [ADR-0031](../adr/0031-ios-build-host.md)) — no Mac needed. The residual is operational:
   set the iOS signing secrets and trigger the first `release-mobile.yml` build to TestFlight.
