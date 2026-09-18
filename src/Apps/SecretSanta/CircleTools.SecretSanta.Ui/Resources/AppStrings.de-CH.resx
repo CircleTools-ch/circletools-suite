@@ -77,7 +77,12 @@
   <data name="DrawFailedTwoMember" xml:space="preserve"><value>Eine Zweiergruppe lässt sich nicht auslosen, ohne dass sich beide gegenseitig beschenken. Füge weitere Mitglieder hinzu.</value></data>
   <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Füge mindestens zwei Mitglieder hinzu, um auszulosen.</value></data>
   <data name="GoToMembers" xml:space="preserve"><value>Mitglieder hinzufügen</value></data>
-  <data name="HubFirstRunHint" xml:space="preserve"><value>Füge zuerst Mitglieder hinzu und dann einen Anlass, um Namen auszulosen.</value></data>
+  <data name="SetupTitle" xml:space="preserve"><value>Erste Schritte</value></data>
+  <data name="SetupStepsLeft" xml:space="preserve"><value>{0} offen</value></data>
+  <data name="SetupStepName" xml:space="preserve"><value>Gruppe benennen</value></data>
+  <data name="SetupStepOccasion" xml:space="preserve"><value>Anlass hinzufügen</value></data>
+  <data name="SetupStepDraw" xml:space="preserve"><value>Namen auslosen</value></data>
+  <data name="SetupSkip" xml:space="preserve"><value>Überspringen</value></data>
   <data name="DrawSpoilerNote" xml:space="preserve"><value>Die Zuordnungen werden hier nicht angezeigt, um nichts zu verraten. Teile stattdessen die Links.</value></data>
   <data name="ShareTitle" xml:space="preserve"><value>Links teilen</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Sende jeder Person ihren eigenen Link. Nur die empfangende Person sieht, wen sie beschenkt.</value></data>
@@ -114,6 +119,7 @@
   <data name="RevealWishlistLabel" xml:space="preserve"><value>Wunschliste</value></data>
   <data name="RevealNoWishlist" xml:space="preserve"><value>Keine Wunschliste angegeben.</value></data>
   <data name="RevealMalformed" xml:space="preserve"><value>Dieser Link ist ungültig oder unvollständig.</value></data>
+  <data name="RevealPrimer" xml:space="preserve"><value>Das ist dein privater Wichtel-Link – nur du siehst, wen du beschenkst.</value></data>
   <data name="RevealSpoilerNote" xml:space="preserve"><value>Tippe auf die Schaltfläche, wenn du bereit bist - nicht schummeln!</value></data>
   <data name="SignIn" xml:space="preserve"><value>Anmelden</value></data>
   <data name="SignOut" xml:space="preserve"><value>Abmelden</value></data>

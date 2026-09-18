@@ -94,5 +94,7 @@
       href: secret-santa/UC-SS-022-hand-out-reveal-links.md
     - name: UC-SS-023 Be reminded about my occasions
       href: secret-santa/UC-SS-023-be-reminded-about-my-occasions.md
+    - name: UC-SS-024 Set up my first group with guidance
+      href: secret-santa/UC-SS-024-guided-first-group-setup.md
 - name: Template
   href: _template-use-case.md
