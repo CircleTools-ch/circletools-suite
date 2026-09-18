@@ -100,8 +100,9 @@ is **not** subject to the 12-testers/14-day rule — that rule (Track A step 9) 
    account, accept, and install **from the Play Store**. Later builds arrive by bumping
    `ApplicationVersion` and uploading a new AAB.
 
-Then grab the **app signing key SHA-256** from Play Console → *App signing* and put it in
-`assetlinks.json` (replacing `REPLACE_WITH_PLAY_APP_SIGNING_SHA256`) so App Links verify.
+The **app signing key SHA-256** (Play Console → *Protected with Play → App signing*) is now filled in
+`assetlinks.json` (both WebApps) — **done 2026-09-18** — so App Links verify. It takes effect once the
+web front is **redeployed** to serve the updated `.well-known/assetlinks.json`.
 
 ### iOS → iPad Air (TestFlight internal testing)
 
@@ -153,7 +154,9 @@ waiting.
    > a lost upload key can be reset by Google, but losing both the key and the account is terminal.
 6. **Build the AAB**, targeting **API 36** — mandatory for new apps and updates from **31 Aug 2026**.
 7. **Fill the listing:** DE / EN / FR title, short and full description, feature graphic,
-   screenshots per device class (phone + tablet), icon.
+   screenshots per device class (phone + tablet), icon. **The ready-made listing package** — EN/DE/FR
+   copy, the 512 icon, the 1024×500 feature graphic, and phone screenshots in all three languages —
+   lives in the repo at `store/google-play/` (see its `README.md`); paste from there.
 8. **Complete the declarations:** data safety form, privacy-policy URL, content rating
    questionnaire, ads declaration, government-app and financial-features questions.
 9. **Closed testing — the long pole.** A personal developer account created after 13 Nov 2023 must

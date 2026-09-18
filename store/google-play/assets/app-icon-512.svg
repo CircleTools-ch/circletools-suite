@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 100 100">
+  <!-- Full-bleed square (no rounded corners): Google applies its own icon mask. Opaque, no alpha. -->
+  <rect x="0" y="0" width="100" height="100" fill="#7a1f2b"/>
+  <!-- Composited app mark: maroon ring enclosing the white wrapped present (matches appicon + appiconfg). -->
+  <g transform="translate(50 50) scale(0.82) translate(-50 -50)">
+    <circle cx="50" cy="50" r="36.3" fill="none" stroke="#4a0f18" stroke-width="4.3"/>
+    <g transform="scale(0.1953)">
+      <rect x="181" y="236.08" width="150" height="108" rx="12" fill="#ffffff"/>
+      <rect x="169" y="197.08" width="174" height="34" rx="8" fill="#ffffff"/>
+      <rect x="243" y="197.08" width="26" height="147" fill="#7a1f2b"/>
+      <path d="M 256 193.08 C 246 153.08, 204 157.08, 204 185.08 C 204 201.08, 238 197.08, 256 193.08 Z" fill="#ffffff"/>
+      <path d="M 256 193.08 C 266 153.08, 308 157.08, 308 185.08 C 308 201.08, 274 197.08, 256 193.08 Z" fill="#ffffff"/>
+      <rect x="243" y="177.08" width="26" height="22" rx="6" fill="#ffffff"/>
+    </g>
+  </g>
+</svg>
