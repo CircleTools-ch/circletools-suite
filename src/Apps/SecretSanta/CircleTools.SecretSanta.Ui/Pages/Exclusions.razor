@@ -17,7 +17,12 @@
 }
 else if (_group.Members.Count < 2)
 {
-    <MudText>@L["NeedTwoMembersForExclusion"]</MudText>
+    @* Same recovery as the Draw page (OB-4): offer the way to add members instead of a dead-end line. *@
+    <MudStack Spacing="3" AlignItems="AlignItems.Start">
+        <MudText>@L["NeedTwoMembersForExclusion"]</MudText>
+        <MudButton Href="@($"groups/{GroupId}/members")" Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.PersonAdd">@L["GoToMembers"]</MudButton>
+    </MudStack>
 }
 else
 {

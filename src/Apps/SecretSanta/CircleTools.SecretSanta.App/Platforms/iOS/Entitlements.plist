@@ -16,7 +16,11 @@
               ["/r/*","/groups/*"]. See the mobile-apps runbook. -->
     <key>com.apple.developer.associated-domains</key>
     <array>
+        <!-- Reveal/event Universal Links open the app (served from the Secret-Santa origin). -->
         <string>applinks:secretsanta.circletools.ch</string>
+        <!-- Passkeys (ADR-0066): the WebAuthn RP-ID is the apex circletools.ch, so webcredentials points
+             at the apex (served from the Main origin's apple-app-site-association), not the subdomain. -->
+        <string>webcredentials:circletools.ch</string>
     </array>
 </dict>
 </plist>

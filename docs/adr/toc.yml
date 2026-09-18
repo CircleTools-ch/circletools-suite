@@ -130,5 +130,7 @@
   href: 0064-transactional-email-html-and-per-app-branding.md
 - name: 0065 iOS builds on GitHub-hosted macOS runners
   href: 0065-hosted-macos-ios-builds.md
+- name: 0066 Native passkeys on the mobile heads
+  href: 0066-mobile-native-passkeys.md
 - name: Template
   href: _template-adr.md

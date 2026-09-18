@@ -59,6 +59,14 @@ else
         </MudAlert>
     }
 
+    @* First-run helper (UX-council #6): a brand-new group has neither members nor occasions, and this hub
+       leads with occasions — so name the members→occasion→draw order once. Self-hides as soon as either
+       exists. *@
+    @if (_group.Members.Count == 0 && _group.Events.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mb-4" role="note">@L["HubFirstRunHint"]</MudAlert>
+    }
+
     @* Events (occasions): the roster and exclusions are shared, but each event has its own draw,
        wishlists, budget and date (ADR-0042). *@
     <MudText Typo="Typo.h5" GutterBottom="true">@L["NavEvents"]</MudText>
@@ -76,7 +84,9 @@ else
         </div>
     </MudHidden>
 
-    @if (_group.Events.Count == 0)
+    @* Shown once there are members but still no occasion (the brand-new 0/0 case is covered by the
+       first-run hint above, so this doesn't double up). The labelled "Add occasion" FAB is the action. *@
+    @if (_group.Events.Count == 0 && _group.Members.Count > 0)
     {
         <MudAlert Severity="Severity.Normal" Class="mb-2" role="note">@L["NoEventsYet"]</MudAlert>
     }
@@ -193,7 +203,8 @@ else
     <MudHidden Breakpoint="Breakpoint.MdAndUp">
         <div class="ct-fab-spacer"></div>
         <div class="ct-fab">
-            <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+            @* Extended FAB (icon + label) so "+" names what it adds here — an occasion (UX-council #3). *@
+            <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Label="@L["AddEvent"]"
                     aria-label="@L["AddEvent"]" OnClick="AddEventViaFabAsync" />
         </div>
     </MudHidden>
