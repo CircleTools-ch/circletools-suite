@@ -97,4 +97,23 @@
   <data name="ConnectFailedTitle" xml:space="preserve"><value>Anmeldung nicht möglich</value></data>
   <data name="ConnectFailedText" xml:space="preserve"><value>Dein CircleTools-Konto war nicht erreichbar. Du kannst dich stattdessen hier anmelden.</value></data>
   <data name="ConnectContinue" xml:space="preserve"><value>Mit deinem CircleTools-Konto fortfahren</value></data>
+  <data name="AccountMenuData" xml:space="preserve"><value>Daten &amp; Konto</value></data>
+  <data name="DataTitle" xml:space="preserve"><value>Daten &amp; Konto</value></data>
+  <data name="DataLead" xml:space="preserve"><value>Nimm eine Kopie deiner Daten mit oder schliesse dein Konto endgültig.</value></data>
+  <data name="ExportTitle" xml:space="preserve"><value>Daten exportieren</value></data>
+  <data name="ExportLead" xml:space="preserve"><value>Eine JSON-Datei mit allem, was dein Konto auf unseren Servern enthält.</value></data>
+  <data name="ExportDownload" xml:space="preserve"><value>Herunterladen</value></data>
+  <data name="DeleteTitle" xml:space="preserve"><value>Konto löschen</value></data>
+  <data name="DeleteLead" xml:space="preserve"><value>Damit werden dein Konto und alles, was auf unseren Servern dazu gespeichert ist, entfernt. Das geschieht sofort und kann nicht rückgängig gemacht werden. Daten auf deinen eigenen Geräten bleiben unberührt.</value></data>
+  <data name="DeleteSharedGroupsTitle" xml:space="preserve"><value>Gruppen, die du per Link teilst</value></data>
+  <data name="DeleteSharedGroupsLead" xml:space="preserve"><value>Du verwaltest {0} Gruppe(n), denen andere per Link beigetreten sind. Wähle, was damit geschehen soll.</value></data>
+  <data name="DeleteSharedGroupsHandOff" xml:space="preserve"><value>Online behalten, damit alle Beigetretenen weiterhin Zugriff haben (ein neuer Admin-Link wird erstellt)</value></data>
+  <data name="DeleteSharedGroupsRemove" xml:space="preserve"><value>Diese Online-Kopien ebenfalls löschen</value></data>
+  <data name="DeletePasswordPrompt" xml:space="preserve"><value>Gib zur Bestätigung dein Passwort ein.</value></data>
+  <data name="DeleteSubmit" xml:space="preserve"><value>Mein Konto löschen</value></data>
+  <data name="DeleteDoneTitle" xml:space="preserve"><value>Dein Konto ist gelöscht</value></data>
+  <data name="DeleteDoneText" xml:space="preserve"><value>Davon ist auf unseren Servern nichts mehr vorhanden. Du bist jederzeit wieder willkommen.</value></data>
+  <data name="DeleteDoneHome" xml:space="preserve"><value>Zurück zur App</value></data>
+  <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Übergib oder lösche die Kreise, die dir gehören, bevor du dein Konto löschst.</value></data>
+  <data name="CircleErrorRefused" xml:space="preserve"><value>Das ist nicht erlaubt.</value></data>
 </root>

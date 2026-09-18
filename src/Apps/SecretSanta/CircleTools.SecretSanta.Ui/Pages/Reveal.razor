@@ -84,7 +84,10 @@ else if (_payload is not null)
     }
     else
     {
-        <MudText Class="mud-text-secondary my-3">@L["RevealSpoilerNote"]</MudText>
+        @* Recipient-side primer (OB-10): a family member may open this link with no context (it arrived by
+           message), so say plainly what it is and that it is private before the reveal. *@
+        <MudText Class="mud-text-secondary mt-3">@L["RevealPrimer"]</MudText>
+        <MudText Class="mud-text-secondary mb-3">@L["RevealSpoilerNote"]</MudText>
         <MudButton Size="Size.Large" Color="Color.Primary" Variant="Variant.Filled"
                    StartIcon="@Icons.Material.Filled.CardGiftcard" OnClick="RevealAsync">@L["RevealButton"]</MudButton>
     }

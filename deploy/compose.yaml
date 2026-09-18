@@ -66,6 +66,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "8080"
+      # Names this service in telemetry. Without it the OTel SDK falls back to "unknown_service:dotnet"
+      # (in dev, Aspire's AppHost injects this per service; the production container has no AppHost, so
+      # it must be set here). Loki surfaces it as the `service_name` label used to filter logs.
+      OTEL_SERVICE_NAME: circletools-main-api
       # Observability (ADR-0051): ship structured logs to Loki over OTLP; metrics are scraped from
       # /metrics by Prometheus (pull), so no metrics endpoint is configured here. Not a secret.
       # The FULL signal path (/otlp/v1/logs) is required: the .NET OTLP/HTTP exporter uses the endpoint

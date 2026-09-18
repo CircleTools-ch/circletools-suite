@@ -136,6 +136,9 @@ reinforcing [ADR-0012](0012-observability-and-telemetry.md)'s privacy posture.
     both internal-only, scraped by Prometheus). Still open: **alert rules**.
   - ✅ **Done:** the CD pipeline (`deploy.yml`) now **rsyncs `deploy/` config to the VM** and **pins
     `IMAGE_TAG`**, closing the config-drift + stale-`:latest` gaps found at first bring-up.
+  - ✅ **Done:** this stack can be brought up **locally under Aspire** to validate the dashboards,
+    datasources and Loki log view before deploying — reusing the same `deploy/grafana` + `deploy/loki`
+    config. See the [local observability runbook](../deployment/dev-observability.md).
   - Optional: a **log shipper** (Grafana Alloy / Promtail) to also land Postgres/Caddy container logs in
     Loki; and **Tempo** for distributed traces — both when they earn their weight.
   - Deliver [ADR-0012](0012-observability-and-telemetry.md)'s other open follow-up — **log-scrubbing

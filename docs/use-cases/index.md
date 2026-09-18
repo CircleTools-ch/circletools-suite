@@ -51,6 +51,7 @@ Use cases describe how actors achieve goals with the system. They are the bridge
 | [UC-SS-021](secret-santa/UC-SS-021-add-occasion-to-calendar.md) | Add an occasion to my phone calendar | Secret-Santa | Approved |
 | [UC-SS-022](secret-santa/UC-SS-022-hand-out-reveal-links.md) | Hand out reveal links without forgetting anyone | Secret-Santa | Approved |
 | [UC-SS-023](secret-santa/UC-SS-023-be-reminded-about-my-occasions.md) | Be reminded about my occasions (device-local notifications) | Secret-Santa | Approved |
+| [UC-SS-024](secret-santa/UC-SS-024-guided-first-group-setup.md) | Set up my first group with guidance (getting-started checklist) | Secret-Santa | Approved |
 
 _Add a row per use case._
 

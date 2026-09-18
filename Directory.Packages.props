@@ -135,6 +135,14 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.10" />
     <!-- Device-local notifications (MNF-8, ADR-0060). Android/iOS only; the Windows head no-ops. -->
     <PackageVersion Include="Plugin.LocalNotification" Version="12.0.0" />
+    <!-- Native passkeys on the mobile heads (ADR-0066). Android Credential Manager binding, aligned with
+         the MAUI-managed AndroidX graph. The PlayServicesAuth companion (the Google provider for API
+         28–33) is deliberately NOT referenced: its 1.5.x line pins an older AndroidX graph that collides
+         with MAUI's newer one (NU1608). Consequence: passkeys use the system provider (Android 14+/API
+         34+); on API 28–33 the ceremony falls back to the FR-011 "not available" path (password still
+         works). Revisit if a version-aligned PlayServicesAuth ships. Android head only — iOS uses the
+         in-SDK AuthenticationServices (no package). -->
+    <PackageVersion Include="Xamarin.AndroidX.Credentials" Version="1.6.0.1" />
   </ItemGroup>
 
   <!-- Aspire orchestration (AppHost). -->

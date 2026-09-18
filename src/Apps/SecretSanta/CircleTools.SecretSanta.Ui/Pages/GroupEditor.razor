@@ -59,6 +59,11 @@ else
         </MudAlert>
     }
 
+    @* Getting-started checklist (FEAT-019, OB-8): guides the empty→drawn sequence — add members → add an
+       event → draw names — and supersedes the one-line first-run hint. The component self-hides once the
+       group is set up or the organizer skips it. *@
+    <GettingStartedChecklist Group="_group" OnAddEvent="AddEventViaFabAsync" />
+
     @* Events (occasions): the roster and exclusions are shared, but each event has its own draw,
        wishlists, budget and date (ADR-0042). *@
     <MudText Typo="Typo.h5" GutterBottom="true">@L["NavEvents"]</MudText>
@@ -76,7 +81,9 @@ else
         </div>
     </MudHidden>
 
-    @if (_group.Events.Count == 0)
+    @* Shown once there are members but still no event (the brand-new 0/0 case is covered by the
+       getting-started checklist above, so this doesn't double up). The labelled "Add event" FAB is the action. *@
+    @if (_group.Events.Count == 0 && _group.Members.Count > 0)
     {
         <MudAlert Severity="Severity.Normal" Class="mb-2" role="note">@L["NoEventsYet"]</MudAlert>
     }
@@ -193,7 +200,8 @@ else
     <MudHidden Breakpoint="Breakpoint.MdAndUp">
         <div class="ct-fab-spacer"></div>
         <div class="ct-fab">
-            <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+            @* Extended FAB (icon + label) so "+" names what it adds here — an event (UX-council #3). *@
+            <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Label="@L["AddEvent"]"
                     aria-label="@L["AddEvent"]" OnClick="AddEventViaFabAsync" />
         </div>
     </MudHidden>

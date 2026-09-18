@@ -43,6 +43,8 @@ builder.Services.AddScoped<IShareService, BrowserShareService>();
 builder.Services.AddScoped<ICalendarService, BrowserCalendarService>();
 builder.Services.AddScoped<INotificationScheduler, BrowserNotificationScheduler>();
 builder.Services.AddScoped<IHapticFeedback, BrowserHapticFeedback>();
+// The shared account-data screen (delete / export) exports a copy of the account as a download (FR-014).
+builder.Services.AddScoped<IFileSaver, BrowserFileSaver>();
 
 // Two clients over the same Main API, differing only in whether the authorizing handler is in the
 // chain. See AccountApiClients for why they are separate; the short version is that refreshing a
@@ -127,6 +129,24 @@ foreach (var entry in builder.Configuration.GetSection("SuiteApps").GetChildren(
         Url: entry["Url"] ?? string.Empty,
         LogoUrl: entry["LogoUrl"] ?? string.Empty,
         IsCurrent: string.Equals(entry["Key"], "secretsanta-web", StringComparison.Ordinal)));
+}
+
+// "Get the app" links for the web landing page (ADR-0065), from wwwroot/appsettings.json. Web-only: the
+// MAUI heads register none, so the section self-hides on device — and it stays empty (nothing renders)
+// until the TestFlight/Play listings exist. An entry with no Url is skipped so a half-filled config line
+// never shows a dead button.
+foreach (var entry in builder.Configuration.GetSection("AppStoreLinks").GetChildren())
+{
+    var storeUrl = entry["Url"];
+    if (string.IsNullOrWhiteSpace(storeUrl))
+    {
+        continue;
+    }
+
+    builder.Services.AddSingleton(new CircleTools.Ui.Shared.AppStoreLink(
+        Platform: entry["Platform"] ?? string.Empty,
+        Url: storeUrl,
+        Label: entry["Label"]));
 }
 
 var host = builder.Build();

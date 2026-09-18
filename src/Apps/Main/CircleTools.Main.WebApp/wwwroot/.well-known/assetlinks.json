@@ -1,0 +1,13 @@
+[
+  {
+    "comment": "Passkeys (ADR-0066): the WebAuthn RP-ID is the apex circletools.ch (Auth:Passkey:ServerDomain), so Android Credential Manager fetches THIS file to authorize the app's passkeys. get_login_creds is the relation passkeys require; the Secret-Santa Android app authenticates against this RP. Add more apps' packages here as they ship.",
+    "relation": ["delegate_permission/common.get_login_creds"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ch.circletools.secretsanta",
+      "sha256_cert_fingerprints": [
+        "REPLACE_WITH_PLAY_APP_SIGNING_SHA256"
+      ]
+    }
+  }
+]

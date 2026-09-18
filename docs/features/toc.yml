@@ -74,6 +74,8 @@
   href: FEAT-018-branded-transactional-emails.md
 - name: TP-018 Branded transactional emails test plan
   href: TP-018-branded-transactional-emails.md
+- name: FEAT-019 Getting-started checklist
+  href: FEAT-019-getting-started-checklist.md
 - name: Templates
   items:
     - name: Feature spec template
