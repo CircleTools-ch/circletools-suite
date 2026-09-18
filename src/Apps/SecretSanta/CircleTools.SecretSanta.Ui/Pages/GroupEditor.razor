@@ -59,13 +59,10 @@ else
         </MudAlert>
     }
 
-    @* First-run helper (UX-council #6): a brand-new group has neither members nor occasions, and this hub
-       leads with occasions — so name the members→occasion→draw order once. Self-hides as soon as either
-       exists. *@
-    @if (_group.Members.Count == 0 && _group.Events.Count == 0)
-    {
-        <MudAlert Severity="Severity.Info" Variant="Variant.Text" Dense="true" Class="mb-4" role="note">@L["HubFirstRunHint"]</MudAlert>
-    }
+    @* Getting-started checklist (FEAT-019, OB-8): guides the empty→drawn sequence — add members → add an
+       occasion → draw names — and supersedes the one-line first-run hint. The component self-hides once the
+       group is set up or the organizer skips it. *@
+    <GettingStartedChecklist Group="_group" OnAddOccasion="AddEventViaFabAsync" />
 
     @* Events (occasions): the roster and exclusions are shared, but each event has its own draw,
        wishlists, budget and date (ADR-0042). *@

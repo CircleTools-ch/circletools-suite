@@ -77,7 +77,12 @@
   <data name="DrawFailedTwoMember" xml:space="preserve"><value>Un groupe de deux personnes ne peut pas être tiré sans que chacune offre à l'autre. Ajoutez d'autres membres.</value></data>
   <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Ajoutez au moins deux membres pour lancer le tirage.</value></data>
   <data name="GoToMembers" xml:space="preserve"><value>Ajouter des membres</value></data>
-  <data name="HubFirstRunHint" xml:space="preserve"><value>Commencez par ajouter des membres, puis une occasion pour tirer les noms.</value></data>
+  <data name="SetupTitle" xml:space="preserve"><value>Pour commencer</value></data>
+  <data name="SetupStepsLeft" xml:space="preserve"><value>{0} à faire</value></data>
+  <data name="SetupStepName" xml:space="preserve"><value>Nommer le groupe</value></data>
+  <data name="SetupStepOccasion" xml:space="preserve"><value>Ajouter une occasion</value></data>
+  <data name="SetupStepDraw" xml:space="preserve"><value>Tirer les noms</value></data>
+  <data name="SetupSkip" xml:space="preserve"><value>Passer</value></data>
   <data name="DrawSpoilerNote" xml:space="preserve"><value>Les attributions sont masquées ici pour éviter les divulgations. Partagez plutôt les liens.</value></data>
   <data name="ShareTitle" xml:space="preserve"><value>Partager les liens</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Envoyez à chaque personne son propre lien. Seul le destinataire voit à qui il offre.</value></data>
@@ -114,6 +119,7 @@
   <data name="RevealWishlistLabel" xml:space="preserve"><value>Sa liste de souhaits</value></data>
   <data name="RevealNoWishlist" xml:space="preserve"><value>Aucune liste de souhaits fournie.</value></data>
   <data name="RevealMalformed" xml:space="preserve"><value>Ce lien est invalide ou incomplet.</value></data>
+  <data name="RevealPrimer" xml:space="preserve"><value>Ceci est votre lien privé de Père Noël secret — vous seul voyez qui vous avez tiré.</value></data>
   <data name="RevealSpoilerNote" xml:space="preserve"><value>Appuyez sur le bouton quand vous êtes prêt - pas de triche !</value></data>
   <data name="SignIn" xml:space="preserve"><value>Se connecter</value></data>
   <data name="SignOut" xml:space="preserve"><value>Se déconnecter</value></data>

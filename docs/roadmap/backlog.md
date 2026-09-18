@@ -41,22 +41,26 @@ phones. The account upsell was the loudest thing on the screen the app promises 
   What shows in dev/repeat visits is the update mechanism working as designed. Left untouched (changing
   it risks ADR-0048); the on-screen crowding is a separate cosmetic snackbar-position question, parked.
 
-**BIG — recorded for review together (need their own design/decision, not shipped blind):**
+**BIG — reviewed with the maintainer (2026-09-18) and implemented:**
 
-- **OB-8 · Guided "first group" setup (L).** A first-run-only guided path (name group → add members →
-  add an occasion → draw) replacing today's hunt across three screens each with a differently-meaning
-  "+". The empty-app-to-drawn journey currently depends on a first-timer guessing an (now labelled) FAB
-  three times and inferring members-before-draw. Touches IA and the **ADR-0055** events-first hub
-  decision, so it needs its own ADR. The SMALL items above (esp. OB-1/3/4/6) remove ~80% of the
-  confusion cheaply; this is the deliberate next step if first-run still tests poorly.
-- **OB-9 · Per-screen FAB semantics (M).** The "+" FAB creates group / occasion / member by screen,
-  distinguished (before OB-3) only by `aria-label`. Decide a consistent, visible convention (extended
-  labels everywhere — the OB-3 direction — vs. distinct icons vs. a one-time coach-mark) for cross-screen
-  affordance consistency.
-- **OB-10 · "Reveal link" concept primer (M).** The private, non-spoiling reveal link is the app's core
-  novel idea; a one-line primer at the **Share** step (where the QR + guided hand-out already live) would
-  reduce first-time organizers' "did I just send them the answer?" hesitation. Small in code, but it's a
-  content/comms decision worth making deliberately (and translating with care).
+- **OB-8 · Guided "first group" setup.** ✅ **Built & browser-verified (2026-09-18)** as a **progressive
+  getting-started checklist** (the reviewed choice over a modal wizard) — [FEAT-019](../features/FEAT-019-getting-started-checklist.md)
+  / [UC-SS-024](../use-cases/secret-santa/UC-SS-024-guided-first-group-setup.md). A non-modal card on the
+  group hub sequences *name → add members → add an occasion → draw names*, ticks each off, disables "Draw"
+  until an occasion exists, disappears once set up, and is **skippable** (device-local per group). Additive
+  over [ADR-0055](../adr/0055-event-navigation-mobile-section-hub.md) (no ADR); supersedes the OB-6 hint.
+  **Threshold finding:** "Add members" completes at **three** (not two — a two-person draw is forbidden by
+  the no-reciprocal rule), so the checklist never reads done while the draw still fails. New `SecretSanta.Ui/Shared/GettingStartedChecklist.razor`;
+  bUnit `GettingStartedChecklistTests` (5) — **Ui.Test 77/77**; full lifecycle verified in a real browser
+  at 390px in EN + DE (empty → 3 members → occasion → draw → gone; skip + reload; draw locked until an
+  occasion), console clean.
+- **OB-9 · Per-screen FAB semantics.** ✅ **Codified (2026-09-18).** OB-3 already gave the FABs visible
+  labels; the convention (extended labelled FABs; no dead ends; localize every string) is now written into
+  [coding-guidelines §16](../guidelines/coding-guidelines.md) so new screens follow it. No further UI change.
+- **OB-10 · "Reveal link" concept primer.** ✅ **Built & browser-verified (2026-09-18).** The Share page
+  already reassures the *organizer* ("only the recipient can see who they drew"); added a **recipient-side**
+  primer on the reveal page before the reveal tap — "This is your private Secret Santa link — only you can
+  see who you got." (`RevealPrimer`, DE/EN/FR + neutral). Verified on the reveal page; RevealPageTests green.
 
 ## Mobile store-readiness & native passkeys — Secret-Santa (2026-09-17)
 

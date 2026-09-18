@@ -77,7 +77,12 @@
   <data name="DrawFailedTwoMember" xml:space="preserve"><value>A two-person group cannot be drawn without both giving to each other. Add more members.</value></data>
   <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Add at least two members to run a draw.</value></data>
   <data name="GoToMembers" xml:space="preserve"><value>Add members</value></data>
-  <data name="HubFirstRunHint" xml:space="preserve"><value>Start by adding members, then add an occasion to draw names.</value></data>
+  <data name="SetupTitle" xml:space="preserve"><value>Getting started</value></data>
+  <data name="SetupStepsLeft" xml:space="preserve"><value>{0} left</value></data>
+  <data name="SetupStepName" xml:space="preserve"><value>Name your group</value></data>
+  <data name="SetupStepOccasion" xml:space="preserve"><value>Add an occasion</value></data>
+  <data name="SetupStepDraw" xml:space="preserve"><value>Draw names</value></data>
+  <data name="SetupSkip" xml:space="preserve"><value>Skip setup</value></data>
   <data name="DrawSpoilerNote" xml:space="preserve"><value>Assignments are hidden here to avoid spoilers. Share the reveal links instead.</value></data>
   <data name="ShareTitle" xml:space="preserve"><value>Share links</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Send each person their own link. Only the recipient can see who they drew.</value></data>
@@ -114,6 +119,7 @@
   <data name="RevealWishlistLabel" xml:space="preserve"><value>Their wishlist</value></data>
   <data name="RevealNoWishlist" xml:space="preserve"><value>No wishlist provided.</value></data>
   <data name="RevealMalformed" xml:space="preserve"><value>This reveal link is invalid or incomplete.</value></data>
+  <data name="RevealPrimer" xml:space="preserve"><value>This is your private Secret Santa link — only you can see who you got.</value></data>
   <data name="RevealSpoilerNote" xml:space="preserve"><value>Tap the button when you are ready - no peeking!</value></data>
   <!-- M4 — Linking (FEAT-005) -->
   <data name="FromCircleTitle" xml:space="preserve"><value>Create a group from a circle</value></data>
