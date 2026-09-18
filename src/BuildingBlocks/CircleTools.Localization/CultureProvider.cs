@@ -23,6 +23,9 @@ public sealed class CultureProvider(IKeyValueStore store, CultureOptions options
     public CultureInfo CurrentCulture => _current;
 
     /// <inheritdoc />
+    public CultureInfo FormattingCulture => _formatting;
+
+    /// <inheritdoc />
     public event EventHandler? CultureChanged;
 
     /// <inheritdoc />
