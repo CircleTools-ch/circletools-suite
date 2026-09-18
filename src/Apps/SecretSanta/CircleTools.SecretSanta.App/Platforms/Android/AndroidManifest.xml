@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <application android:allowBackup="true" android:icon="@mipmap/appicon" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true"></application>
+    <!-- allowBackup=false: OS Auto Backup would silently copy on-device personal data (member names,
+         assignments) to the user's Google Drive. That conflicts with the local-first, data-minimised
+         posture (NFR-004); the app's own export + opt-in account sync are the user-chosen backup path
+         instead. See ADR-0067. -->
+    <application android:allowBackup="false" android:icon="@mipmap/appicon" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true"></application>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Confirmation haptics on meaningful actions (FEAT-008 W3, MauiHapticFeedback). -->

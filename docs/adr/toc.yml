@@ -132,5 +132,7 @@
   href: 0065-hosted-macos-ios-builds.md
 - name: 0066 Native passkeys on the mobile heads
   href: 0066-mobile-native-passkeys.md
+- name: 0067 Android backup posture — disable OS auto-backup
+  href: 0067-android-backup-posture.md
 - name: Template
   href: _template-adr.md
