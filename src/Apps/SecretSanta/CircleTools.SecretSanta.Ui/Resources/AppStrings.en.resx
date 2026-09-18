@@ -33,9 +33,10 @@
   <data name="NewGroupPlaceholder" xml:space="preserve"><value>New group name</value></data>
   <data name="CreateGroup" xml:space="preserve"><value>Create group</value></data>
   <data name="EmptyStateHeadline" xml:space="preserve"><value>Run a Secret Santa with your group</value></data>
-  <data name="EmptyStateExplainer" xml:space="preserve"><value>Add everyone, mark who shouldn't draw whom, and draw names fairly. Each person gets a private link that reveals only who they got and their wishlist — it works offline, with no account. Name a group above to start.</value></data>
+  <data name="EmptyStateExplainer" xml:space="preserve"><value>Add everyone, mark who shouldn't draw whom, and draw names fairly. Each person gets a private link that reveals only who they got and their wishlist — it works offline, with no account. Create your first group to get started.</value></data>
   <data name="EmptyStateAccountSell" xml:space="preserve"><value>Sign in to sync your groups across devices, see your own assignment, and keep your own wishlist.</value></data>
   <data name="EmptyStateSignIn" xml:space="preserve"><value>Sign in</value></data>
+  <data name="EmptyStateCreateGroup" xml:space="preserve"><value>Create a group</value></data>
   <data name="EmptyStateSignedInHint" xml:space="preserve"><value>No groups yet. Create one above, or start from one of your circles.</value></data>
   <data name="MembersColumn" xml:space="preserve"><value>Members</value></data>
   <data name="DrawCompleteBadge" xml:space="preserve"><value>Drawn</value></data>
@@ -75,6 +76,13 @@
   <data name="DrawIgnoreBaseline" xml:space="preserve"><value>Draw anyway (may repeat last time)</value></data>
   <data name="DrawFailedTwoMember" xml:space="preserve"><value>A two-person group cannot be drawn without both giving to each other. Add more members.</value></data>
   <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Add at least two members to run a draw.</value></data>
+  <data name="GoToMembers" xml:space="preserve"><value>Add members</value></data>
+  <data name="SetupTitle" xml:space="preserve"><value>Getting started</value></data>
+  <data name="SetupStepsLeft" xml:space="preserve"><value>{0} left</value></data>
+  <data name="SetupStepName" xml:space="preserve"><value>Name your group</value></data>
+  <data name="SetupStepEvent" xml:space="preserve"><value>Add an event</value></data>
+  <data name="SetupStepDraw" xml:space="preserve"><value>Draw names</value></data>
+  <data name="SetupSkip" xml:space="preserve"><value>Skip setup</value></data>
   <data name="DrawSpoilerNote" xml:space="preserve"><value>Assignments are hidden here to avoid spoilers. Share the reveal links instead.</value></data>
   <data name="ShareTitle" xml:space="preserve"><value>Share links</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Send each person their own link. Only the recipient can see who they drew.</value></data>
@@ -82,7 +90,7 @@
   <data name="DrawInvalidatedNotice" xml:space="preserve"><value>The members changed since this draw, so it no longer covers everyone. Run the draw again to update it — the previous result stays visible until you do.</value></data>
   <data name="RedrawWarning" xml:space="preserve"><value>This event has already been drawn. Drawing again replaces every assignment - links you have already sent will show the wrong person.</value></data>
   <data name="RedrawConfirm" xml:space="preserve"><value>Draw again anyway</value></data>
-  <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>This group has already been drawn. Adding or removing a member means you'll need to draw again to include everyone. Occasions you've already drawn keep the people who were in them.</value></data>
+  <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>This group has already been drawn. Adding or removing a member means you'll need to draw again to include everyone. Events you've already drawn keep the people who were in them.</value></data>
   <data name="DuplicateMemberError" xml:space="preserve"><value>A member named '{0}' already exists in this group.</value></data>
   <data name="MemberSaveFailed" xml:space="preserve"><value>The member could not be saved.</value></data>
   <data name="BudgetAmountInvalid" xml:space="preserve"><value>Enter a budget amount greater than zero.</value></data>
@@ -92,7 +100,7 @@
   <data name="GiftNoteHint" xml:space="preserve"><value>Allergies, dietary or lifestyle needs, or things not to buy — shown to their giver.</value></data>
   <data name="RevealGiftNoteLabel" xml:space="preserve"><value>Good to know</value></data>
   <data name="ConfirmDeleteGroup" xml:space="preserve"><value>Delete "{0}" and everything in it? This cannot be undone.</value></data>
-  <data name="ConfirmRemoveMember" xml:space="preserve"><value>Remove "{0}" from this group? They stay in occasions you've already drawn.</value></data>
+  <data name="ConfirmRemoveMember" xml:space="preserve"><value>Remove "{0}" from this group? They stay in events you've already drawn.</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Yes, delete</value></data>
   <data name="ConfirmRemove" xml:space="preserve"><value>Yes, remove</value></data>
   <data name="ExclusionSelfNotAllowed" xml:space="preserve"><value>A person cannot be excluded from giving to themselves - they are never assigned to themselves anyway.</value></data>
@@ -111,6 +119,7 @@
   <data name="RevealWishlistLabel" xml:space="preserve"><value>Their wishlist</value></data>
   <data name="RevealNoWishlist" xml:space="preserve"><value>No wishlist provided.</value></data>
   <data name="RevealMalformed" xml:space="preserve"><value>This reveal link is invalid or incomplete.</value></data>
+  <data name="RevealPrimer" xml:space="preserve"><value>This is your private Secret Santa link — only you can see who you got.</value></data>
   <data name="RevealSpoilerNote" xml:space="preserve"><value>Tap the button when you are ready - no peeking!</value></data>
   <!-- M4 — Linking (FEAT-005) -->
   <data name="FromCircleTitle" xml:space="preserve"><value>Create a group from a circle</value></data>
@@ -186,11 +195,11 @@
   <data name="NavWishlists" xml:space="preserve"><value>Wishlists</value></data>
   <data name="DefaultEventName" xml:space="preserve"><value>Event</value></data>
   <data name="DefaultEventNameFormat" xml:space="preserve"><value>Christmas {0}</value></data>
-  <data name="NoEventsYet" xml:space="preserve"><value>No occasions yet. Add your first one above to draw names, share links and collect wishlists.</value></data>
+  <data name="NoEventsYet" xml:space="preserve"><value>No events yet. Add your first one to draw names, share links and collect wishlists.</value></data>
   <data name="EventNameLabel" xml:space="preserve"><value>Event name</value></data>
   <data name="EventNamePlaceholder" xml:space="preserve"><value>e.g. Christmas 2026</value></data>
   <data name="AddEvent" xml:space="preserve"><value>Add event</value></data>
-  <data name="CarryForwardCheckbox" xml:space="preserve"><value>Carry forward from a previous occasion</value></data>
+  <data name="CarryForwardCheckbox" xml:space="preserve"><value>Carry forward from a previous event</value></data>
   <data name="CarryForwardSourceLabel" xml:space="preserve"><value>Carry forward from</value></data>
   <data name="CarryForwardHint" xml:space="preserve"><value>Wishlists and the budget are copied (you can edit them), and the draw will avoid last time's pairings.</value></data>
   <data name="EventsColumn" xml:space="preserve"><value>Events</value></data>

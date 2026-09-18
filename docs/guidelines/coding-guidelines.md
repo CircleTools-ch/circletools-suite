@@ -63,3 +63,16 @@ mismatch — they must agree.
 ## 15. Anti-patterns (avoid)
 - Anemic domain leaking logic into services; primitive obsession; leaking infrastructure into the
   domain; packages added outside CPM.
+- A bare, unlabelled action **FAB whose meaning changes per screen** (see §16).
+
+## 16. UI component conventions (MudBlazor)
+UI is one neutral Material design across the web and device heads, with native feel earned through
+motion/touch/OS integration rather than per-platform chrome ([ADR-0054](../adr/0054-mobile-native-feel-strategy.md),
+[ADR-0040](../adr/0040-ui-component-library-mudblazor.md)). Conventions:
+- **Extended, labelled FABs.** A create/add FAB carries a visible text `Label` (e.g. *Create group* /
+  *Add occasion* / *Add member*), not a bare `+`. The plain icon reads identically on every screen while
+  the action differs per screen; the label names it and gives sighted non-screen-reader users the
+  affordance an `aria-label` alone does not. Keep `Color.Primary` and the action icon.
+- **No dead ends.** A blocked state (e.g. "needs two members to draw") offers the control that unblocks
+  it (a button to the relevant screen), never a bare sentence.
+- **Localize every user-facing string** in DE/EN/FR (+ the neutral resx); no hard-coded UI text.

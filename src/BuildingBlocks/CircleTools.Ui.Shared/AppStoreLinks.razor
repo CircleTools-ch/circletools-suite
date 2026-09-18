@@ -1,0 +1,52 @@
+@inject IEnumerable<AppStoreLink> Links
+@inject IStringLocalizer<SharedStrings> L
+
+@*
+    "Get the app" section for a web landing page (ADR-0065). Renders a localized heading and one button
+    per configured native-store / TestFlight link. Web-only by construction: the links come from the web
+    host's AppStoreLinks configuration, and the MAUI heads register none, so this resolves an empty set
+    and renders nothing on device — and likewise on the web until the store listings exist. Mirrors
+    AppSwitcher's inject-an-enumerable, self-hide-when-empty shape.
+*@
+@if (_links.Count > 0)
+{
+    <div class="d-flex flex-column align-center gap-2 py-4">
+        <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">@L["GetTheApp_Heading"]</MudText>
+        <div class="d-flex flex-wrap justify-center gap-2">
+            @foreach (var link in _links)
+            {
+                @* External destinations, so open in a new tab and drop the opener reference. *@
+                <MudButton Href="@link.Url" Target="_blank" rel="noopener noreferrer"
+                           Variant="Variant.Outlined" Color="Color.Primary"
+                           StartIcon="@IconFor(link.Platform)">
+                    @LabelFor(link)
+                </MudButton>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private IReadOnlyList<AppStoreLink> _links = [];
+
+    // Materialise once (the injected enumerable would otherwise re-run per render) and drop any entry
+    // with no URL, so a half-filled config line never renders a dead button.
+    protected override void OnInitialized() =>
+        _links = Links.Where(l => !string.IsNullOrWhiteSpace(l.Url)).ToList();
+
+    private static bool IsApple(string platform) =>
+        platform.Equals("ios", StringComparison.OrdinalIgnoreCase)
+        || platform.Equals("apple", StringComparison.OrdinalIgnoreCase)
+        || platform.Equals("appstore", StringComparison.OrdinalIgnoreCase)
+        || platform.Equals("testflight", StringComparison.OrdinalIgnoreCase);
+
+    // Neutral Material glyphs that certainly ship (Material Icons has no Apple logo, and Apple's brand
+    // rules restrict its use anyway): an iPhone outline for Apple, the Android robot for Android.
+    private static string IconFor(string platform) =>
+        IsApple(platform) ? Icons.Material.Filled.PhoneIphone : Icons.Material.Filled.Android;
+
+    private string LabelFor(AppStoreLink link) =>
+        !string.IsNullOrWhiteSpace(link.Label)
+            ? link.Label!
+            : (IsApple(link.Platform) ? L["GetTheApp_Ios"] : L["GetTheApp_Android"]);
+}

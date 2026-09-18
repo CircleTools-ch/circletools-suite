@@ -3,6 +3,177 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## First-run onboarding pass — Secret-Santa (2026-09-17)
+
+A mobile-first review of the **first session** (empty app → names drawn → links shared), run as a
+BA / UX-expert / designer council against the real 390px screens. Root cause it found: the primary
+actions are present but **invisible or mislabelled on the first screens** — on a phone the empty-state
+card's only visible button was **Sign in** (the optional account), while creating a group was a bare,
+unlabelled "+" FAB; and the explainer said "…above" pointing at an inline field that is hidden on
+phones. The account upsell was the loudest thing on the screen the app promises works "with no account".
+
+**Done — SMALL items, built & browser-verified at 390px in DE/EN/FR (console clean):**
+
+- **OB-1 · Primary "Create a group" button in the first-run empty card; Sign-in demoted to a text link.**
+  `Groups.razor` empty state. New `EmptyStateCreateGroup` string (DE *Gruppe erstellen* / FR *Créer un
+  groupe*). Shown only on narrow (the wide inline field already leads there, so no duplicate CTA on
+  desktop). The very first tap now does the job, not account signup.
+- **OB-2 · Fixed the empty-state explainer copy.** The **English** `EmptyStateExplainer` still said
+  "Name a group above to start." (DGH-5's directional-copy fix had missed EN; neutral/DE/FR were already
+  width-neutral). All four now read "…Create your first group to get started." (+ DE/FR equivalents).
+- **OB-3 · Extended (labelled) FABs.** Groups → *Create group*, group hub → *Add occasion*, Members →
+  *Add member*. The bare "+" read identically on every screen (it creates a group / an occasion / a
+  member depending where you are); the label now says which, and doubles as the affordance a sighted
+  non-screen-reader user was missing.
+- **OB-4 · Draw is no longer a dead end.** `Draw.razor` under-two-members state was a bare sentence with
+  no way forward; it now carries an **"Add members"** button linking to the Members page (new `GoToMembers`
+  string). Verified: the draw page for a 0-member group shows the recovery button.
+- **OB-5 · Occasion empty state copy + gating.** `NoEventsYet` dropped the "above"/"oben"/"ci-dessus"
+  (same misdirection as OB-2) and now shows only once a group *has* members (the brand-new 0/0 case is
+  covered by OB-6 instead of doubling up).
+- **OB-6 · First-run hub hint.** On a brand-new group (0 members, 0 occasions) the hub — which leads
+  with occasions (ADR-0055) — now shows a one-line **"Start by adding members, then add an occasion to
+  draw names."** (new `HubFirstRunHint`), self-hiding as soon as either exists. Bridges the events-first
+  IA for a first-timer with copy instead of restructuring.
+- **OB-7 · "New version available" snackbar — not a real first-run defect (no change).** The council
+  flagged it crowding the first paint; on inspection `UpdatePrompt` (ADR-0048) only fires from the
+  service-worker *update* lifecycle, which does **not** trigger on a genuine first install (no prior SW).
+  What shows in dev/repeat visits is the update mechanism working as designed. Left untouched (changing
+  it risks ADR-0048); the on-screen crowding is a separate cosmetic snackbar-position question, parked.
+
+**BIG — reviewed with the maintainer (2026-09-18) and implemented:**
+
+- **OB-8 · Guided "first group" setup.** ✅ **Built & browser-verified (2026-09-18)** as a **progressive
+  getting-started checklist** (the reviewed choice over a modal wizard) — [FEAT-019](../features/FEAT-019-getting-started-checklist.md)
+  / [UC-SS-024](../use-cases/secret-santa/UC-SS-024-guided-first-group-setup.md). A non-modal card on the
+  group hub sequences *name → add members → add an occasion → draw names*, ticks each off, disables "Draw"
+  until an occasion exists, disappears once set up, and is **skippable** (device-local per group). Additive
+  over [ADR-0055](../adr/0055-event-navigation-mobile-section-hub.md) (no ADR); supersedes the OB-6 hint.
+  **Threshold finding:** "Add members" completes at **three** (not two — a two-person draw is forbidden by
+  the no-reciprocal rule), so the checklist never reads done while the draw still fails. New `SecretSanta.Ui/Shared/GettingStartedChecklist.razor`;
+  bUnit `GettingStartedChecklistTests` (5) — **Ui.Test 77/77**; full lifecycle verified in a real browser
+  at 390px in EN + DE (empty → 3 members → occasion → draw → gone; skip + reload; draw locked until an
+  occasion), console clean.
+- **OB-9 · Per-screen FAB semantics.** ✅ **Codified (2026-09-18).** OB-3 already gave the FABs visible
+  labels; the convention (extended labelled FABs; no dead ends; localize every string) is now written into
+  [coding-guidelines §16](../guidelines/coding-guidelines.md) so new screens follow it. No further UI change.
+- **OB-10 · "Reveal link" concept primer.** ✅ **Built & browser-verified (2026-09-18).** The Share page
+  already reassures the *organizer* ("only the recipient can see who they drew"); added a **recipient-side**
+  primer on the reveal page before the reveal tap — "This is your private Secret Santa link — only you can
+  see who you got." (`RevealPrimer`, DE/EN/FR + neutral). Verified on the reveal page; RevealPageTests green.
+
+## Mobile store-readiness & native passkeys — Secret-Santa (2026-09-17)
+
+A store-requirements pass (Apple + Google 2026 rules, tablet/iPad priority) plus lifting the
+mobile-passkey deferral now that the RP-ID `circletools.ch` is settled. Store-prep details also live in
+the [mobile-apps runbook](../deployment/mobile-apps.md) "App preparation" section; the passkey decision
+is [ADR-0066](../adr/0066-mobile-native-passkeys.md).
+
+- **MSR-1 · iOS store-config parity (P1).** ✅ **Implemented 2026-09-17.** iOS `AppDelegate` now handles
+  `ContinueUserActivity`/`OpenUrl` → `DeepLinkService` (reveal/event Universal Links open the app — was
+  Android-only); new `Platforms/iOS/Entitlements.plist` (Associated Domains) wired via csproj
+  `<CodesignEntitlements>`; `ITSAppUsesNonExemptEncryption=false`; privacy manifest gained
+  `UserDefaults`/`CA92.1` + `NSPrivacyTracking=false`. iOS code doc-reviewed (can't compile on Windows,
+  [ADR-0065](../adr/0065-hosted-macos-ios-builds.md)); device-verify on first TestFlight build. Android
+  confirmed `targetSdkVersion=36` / `exported=true` in the merged manifest; tablet layout browser-verified
+  at 13" iPad portrait+landscape (adaptive, no letterboxing). See GL-10.
+- **MSR-2 · Native passkeys on the mobile heads (P1, [ADR-0066](../adr/0066-mobile-native-passkeys.md)).**
+  ✅ **Android implemented & compiling; iOS implemented & doc-reviewed (2026-09-17).** `MauiPasskeyCeremony`
+  is no longer a stub: **Android** via Credential Manager (`Xamarin.AndroidX.Credentials` 1.6.0.1, passes
+  the server's WebAuthn JSON verbatim and returns the standard response JSON) — **builds 0 errors** (27
+  NU1608 AndroidX-skew warnings, scoped to a warning via `WarningsNotAsErrors` in the App csproj; the
+  PlayServicesAuth companion was dropped for pinning an incompatible older AndroidX graph, so pre-Android-14
+  API 28–33 falls back to the FR-011 message — see the csproj note). **iOS** via AuthenticationServices
+  (`ASAuthorizationPlatformPublicKeyCredentialProvider`, base64url↔`NSData`, iOS-16 gate) in
+  `Platforms/iOS/MauiPasskeyCeremonyIos.cs`, reviewed against the Microsoft.iOS docs (fixed the generic
+  `GetCredential<T>()` + `[SupportedOSPlatform("ios16.0")]` blockers) — **device-verify on TestFlight**.
+  Seam (`IPasskeyCeremony`) and server unchanged. **Gated until go-live:** the passkey affordance keeps the
+  FR-011 "not available here" fallback until the association files carry real ids (MSR-3) and the RP domain
+  is live — password sign-in (FR-008) works throughout. Traceability: supersedes the FEAT-002 mobile-passkey
+  deferral.
+- **MSR-3 · Association files for deep links + passkeys (P2, go-live).** ✅ **Scaffolded 2026-09-17;**
+  need real identifiers. Reveal-link **applinks** on `secretsanta.circletools.ch` (`assetlinks.json` +
+  `apple-app-site-association`); passkey **`get_login_creds`/`webcredentials`** on the apex
+  `circletools.ch` (Main WebApp `wwwroot/.well-known/*`) because the WebAuthn RP-ID is the apex
+  (`Auth:Passkey:ServerDomain`). Placeholders: `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` (Android, shared with
+  GL-9) and `REPLACE_WITH_APPLE_TEAM_ID` (iOS). **Owner/CI:** fill the ids; ensure Caddy serves the
+  extensionless `apple-app-site-association` as `application/json` (no redirect); enable Associated Domains
+  on the App ID + regenerate the profile. Relates to GL-9, GL-10, [ADR-0066](../adr/0066-mobile-native-passkeys.md).
+- **MSR-4 · Externally-blocked store gates (tracking only).** Not code: privacy-policy + account-deletion
+  URLs (GL-6, hosting), DSA trader declaration (likely *trader* for a Swiss individual → EU), iPad-13"
+  screenshots, App Privacy label / Data-safety form (must match the sync data), 16 KB-page-size verify on
+  the release AAB (Play, 1 Feb 2027), Play closed-testing 12×14 days. Enumerated in the runbook checklist.
+
+## Play Store submission prep — Secret-Santa (2026-09-17)
+
+Found while preparing the Google Play Console submission (individual enrolment,
+[ADR-0030](../adr/0030-mobile-store-publisher-identity.md)) and testing the signed-in app.
+
+- **PSP-1 · Signed-in users have no in-app account-deletion path in the Secret-Santa app (bug, P1 — Play
+  blocker).** Found 2026-09-17 by the maintainer testing the live signed-in app: groups can be deleted, but
+  there is **no in-app way to delete the account**, despite the `/delete-account` legal page describing an
+  "in-app" method. **Root cause (code-confirmed):** the working delete/export UI is `AccountData.razor`
+  (route `/account/data`) and lives **only in `CircleTools.Main.Ui`** — the **Secret-Santa app has no
+  account-data page at all** (no `Pages/Account/*` under SecretSanta). It is linked **only** from the Main
+  app's drawer (`MainShell.razor` → "NavData"); the **shared `AccountMenu`** (top-right avatar, used by both
+  apps, [ADR-0034](../adr/0034-shared-account-session-ui-block.md)) links to Profile + Security + Sign out
+  only, **never to deletion**. The shared `LegalAccountDeletionContent` still renders an
+  `Legal_Delete_InAppHeading/Body` section, so the Secret-Santa `/delete-account` page **promises an in-app
+  path that does not exist there**. **Why it blocks submission:** Google Play's account-deletion policy
+  requires an app that allows account creation to let users **request deletion from within the app**; the
+  Secret-Santa head supports opt-in account/sync ([ADR-0053](../adr/0053-backend-free-first-mobile-release.md)),
+  so it needs this. Deletion functioning only on the Main origin (a different app a Secret-Santa user may
+  never open) does not satisfy it. **Recommended fix (architectural, closes it for both apps at once):**
+  move the delete/export page from `Main.Ui` into the shared **`CircleTools.Ui.Account`** building block
+  (where `Profile`/`AccountMenu` already live) and add a **"Delete account / My data" entry to the shared
+  `AccountMenu`** — then the legal page's "In-app" promise becomes true everywhere. Mind the app-specific
+  dependencies the page currently pulls (`AppStrings`, `CircleErrorText`, `AccountApiClient`, `IFileSaver`,
+  `ProblemAlert`) when relocating. Backend deletion itself is complete and tested
+  ([ADR-0022](../adr/0022-account-deletion-and-data-export.md); `AccountDeletionDispositionTests` drives it
+  against the Main origin) — this is a **UI-surface/routing gap in the Secret-Santa head**, not a
+  missing feature. Relates to GL-6 (the `/delete-account` content) and
+  [NFR-007](../requirements/non-functional/NFR-007-store-distributability.md).
+  ✅ **Implemented, tested & browser-verified — done (2026-09-17).** Moved
+  `AccountData.razor` (route `/account/data`) and `CircleErrorText` from `Main.Ui` into the shared
+  **`CircleTools.Ui.Account`** block (page → `Pages/`, class → `Api/`, `namespace
+  CircleTools.Ui.Account.Api`); migrated its strings into `AccountStrings` (DE/EN/FR + neutral, incl. a new
+  app-neutral `DeleteDoneHome` replacing the Main-only "Dashboard" link and an `AccountMenuData` label);
+  added a **"Data & account" entry to the shared `AccountMenu`** (top-right avatar) so both apps expose the
+  delete/export path the legal page describes. Registered `IFileSaver` in both Secret-Santa heads so Export
+  works there too (the privacy page promises it): `BrowserFileSaver` + `wwwroot/js/download.js` (WASM) and a
+  new `MauiFileSaver` over the device share sheet
+  ([ADR-0028](../adr/0028-browser-platform-adapters-block.md)). Both Secret-Santa heads (WASM + MAUI Android)
+  build 0/0; Main.Ui.Test 75/75 and Architecture.Test 28/28 green (the delete/export component + circle-error
+  coverage survived the move). **Clean full-solution build 0/0**; full test suite green once run without
+  Docker saturation (Main.Service.Test 245/245, SecretSanta.E2E 5/5, SecretSanta.Ui 72/72, all others).
+  **DE/EN/FR real-browser walkthrough passed** (fresh Aspire stack, `secretsanta-web`): registered → signed
+  in → the **account menu now shows "Data & account"** (was absent) → the page renders in all three locales →
+  **Export downloaded** `circletools-export-*.json` (the new `IFileSaver`/`BrowserFileSaver` wiring) →
+  password enabled the delete button → deletion succeeded and showed "account is gone" with the new
+  **"Back to the app"** link (`DeleteDoneHome`); console clean throughout. Not yet on-device (MAUI Android
+  head builds 0/0 but the share-sheet export + menu entry are unverified under a finger — fold into the next
+  Pixel pass).
+- **PSP-2 · Privacy-policy accuracy (2026-09-17).** Two claims examined during the PSP-1 text audit.
+  - **(a) "unconfirmed accounts cleaned up after 30 days" — ✅ already true (audit finding was a false
+    negative).** The purge is implemented, tested, and running: `PendingAccountPurge.PurgeAsync` deletes
+    `!EmailConfirmed && CreatedAt < now − RetentionOptions.PendingAccountLifetime` (30 days) in
+    `Main.Service.Repository/PendingAccountRetention.cs`, `PendingAccountRetentionService` runs it hourly, and
+    `AddCircleToolsRetention(...)` wires both at `Main.Service/Program.cs:120`. Covered by
+    `PendingAccountPurgeTests` (4 tests, green in Repository.Test 58/58). The original "no job found" note was
+    a too-narrow grep (searched `Main.Service`/`Identity`, but the job lives in `Main.Service.Repository` and
+    is registered via a named extension). *Design note (not a defect):* the purge is a direct
+    `context.Users.RemoveRange`, not the `IAccountDeletionCleanup` cascade — deliberate and safe because an
+    unconfirmed account is gated out of circle ownership; if unconfirmed-but-signed-in accounts can ever
+    accrue cross-schema (sync/linking) rows, revisit whether the FK cascade covers them.
+  - **(b) "no hidden copy kept" vs backups — ✅ fixed (2026-09-17).** The nightly **restic backups** (GL-5)
+    retain snapshots up to ~6 months, so deleted data survives in encrypted off-site backups. Reworded
+    `Legal_Privacy_RetentionBody` (DE/EN/FR + neutral) to say the account is gone from the *live service* right
+    away, with the only lingering trace in the encrypted disaster-recovery backups, which a deleted account
+    drops out of within a few months as they roll over. `Legal_Delete_InAppBody`'s "no way back" left as-is
+    (it speaks to user-side irreversibility, not backup absence). Ui.Shared builds 0/0. Still worth a glance in
+    the **GL-6** legal review. Confirmed-true in the same audit: the "30-day sign-in-token window" (matches
+    `RefreshTokenLifetime`), Infomaniak-Geneva hosting, Brevo/EU mail, and HMAC-scrambled invitation emails.
+
 ## Go-live — manual owner action (2026-09-15)
 
 Tracked-so-it-is-not-rediscovered work items from the
@@ -75,8 +246,16 @@ checklist.
   `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` placeholder for the real fingerprint so reveal / calendar App
   Links auto-open silently instead of via the chooser.
   [ADR-0053](../adr/0053-backend-free-first-mobile-release.md).
-- **GL-10 · Build the iOS head + wire iOS deep links (P2, Mac-gated).** iOS is not built and deep links
-  are Android-only; needs an Apple-silicon Mac. [ADR-0031](../adr/0031-ios-build-host.md),
+- **GL-10 · Build the iOS head + wire iOS deep links (P2).** ~~Mac-gated~~ **No longer Mac-gated**
+  ([ADR-0065](../adr/0065-hosted-macos-ios-builds.md): iOS builds on hosted macOS CI). ✅ **iOS deep
+  links wired in code (2026-09-17):** `Platforms/iOS/AppDelegate.cs` now handles `ContinueUserActivity`
+  (Universal Links) + `OpenUrl` and forwards to `DeepLinkService` (parity with Android's `MainActivity`);
+  `Platforms/iOS/Entitlements.plist` declares `applinks:secretsanta.circletools.ch` (+
+  `webcredentials:circletools.ch` for passkeys, [ADR-0066](../adr/0066-mobile-native-passkeys.md)), wired
+  via csproj `<CodesignEntitlements>`; the `apple-app-site-association` files are scaffolded on both
+  origins (see GL-9). **Still owner/CI:** the iOS head has not been built/run on a device yet (no local
+  Mac — first TestFlight build verifies deep links + passkeys on iPadOS/iOS), and the Associated Domains
+  capability must be enabled on the App ID + provisioning profile regenerated.
   [ADR-0053](../adr/0053-backend-free-first-mobile-release.md).
 - **GL-11 · Alert on backup failure (P2, non-blocking).** ✅ **Implemented (2026-09-17).**
   `circletools-backup.service` now carries `OnFailure=circletools-backup-failure@%n.service`, a templated unit
@@ -88,6 +267,26 @@ checklist.
   `ALERT_*` channel in `.env`. A `restic snapshots` freshness "backup is fresh" signal into Grafana
   ([ADR-0051](../adr/0051-production-observability-backend.md)) remains a nice-to-have.
   [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
+- **GL-12 · Confirm the live web apps actually boot in a real browser (verification, P2).** Raised
+  2026-09-17. An initial `WebFetch` of `https://circletools.ch` *appeared* to show the Blazor *"An unhandled
+  error has occurred."* bar — but that was a **false positive**: that banner is `display:none` boilerplate
+  present in every Blazor WASM `index.html` (identical in the served shell and in-repo), and `WebFetch`
+  cannot execute JavaScript, so it never booted the app and just rendered the hidden div's text.
+  **Server-side checks are all healthy** (2026-09-17): both `circletools.ch` (Main) and
+  `secretsanta.circletools.ch` return 200 with the correct shell + loading spinner, the strict CSP header is
+  served by Caddy per [ADR-0021](../adr/0021-web-auth-token-model.md) (incl. `wasm-unsafe-eval`), HSTS +
+  security headers present, and the API responds (structured ASP.NET `problem+json`; `/health` path is 404
+  only). **What's still unverified:** that the WASM runtime *boots to a rendered UI* — curl proves the shell
+  and assets are served, not a clean boot. **Do:** open both apps in a real browser (JS on), confirm they
+  render and the console is clean — the CLAUDE.md "verify in a real browser" rule, and owed before store
+  submission since the listing needs live `/privacy` `/imprint` `/delete-account` (GL-6,
+  [NFR-007](../requirements/non-functional/NFR-007-store-distributability.md)). Not a Play *signup* blocker.
+  ✅ **Verified & closed (2026-09-17).** The maintainer opened both `circletools.ch` (Main) and
+  `secretsanta.circletools.ch` in a real browser: each shows the normal short WASM loading indicator (the
+  `loading-progress` spinner while the .NET runtime + assemblies download) and then renders the app. No error
+  bar, no defect — the original signal was purely the `WebFetch` false positive described above. Standing
+  reminder unchanged: the substantive pre-submission need is that `/privacy` `/imprint` `/delete-account`
+  render correctly in DE/EN/FR (GL-6), which is a separate content check, not a boot problem.
 
 ## Transactional email — branded HTML & per-app identity (2026-09-17)
 

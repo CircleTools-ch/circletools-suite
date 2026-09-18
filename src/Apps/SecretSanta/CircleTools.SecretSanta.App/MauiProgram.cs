@@ -132,6 +132,8 @@ public static class MauiProgram
         // Fully qualified: MAUI's global usings also expose Microsoft.Maui.Devices.IHapticFeedback,
         // so the bare name is ambiguous here (as with IConnectivity above).
         builder.Services.AddScoped<CircleTools.Ui.Abstractions.IHapticFeedback, MauiHapticFeedback>();
+        // The shared account-data screen (delete / export) hands the export to the device share sheet (FR-014).
+        builder.Services.AddScoped<IFileSaver, MauiFileSaver>();
 
         // Carries an incoming reveal App Link (ADR-0053) from the platform activation into the Blazor
         // app; a singleton so a link that arrives on a cold start survives until the UI can consume it.

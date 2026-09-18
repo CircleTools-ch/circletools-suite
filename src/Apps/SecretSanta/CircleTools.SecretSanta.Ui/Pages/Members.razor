@@ -171,7 +171,8 @@ else
 <MudHidden Breakpoint="Breakpoint.MdAndUp">
     <div class="ct-fab-spacer"></div>
     <div class="ct-fab">
-        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
+        @* Extended FAB (icon + label) so the action names itself — add a member (UX-council #3). *@
+        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" Label="@L["AddMember"]"
                 aria-label="@L["AddMember"]" OnClick="AddViaFabAsync" />
     </div>
 </MudHidden>

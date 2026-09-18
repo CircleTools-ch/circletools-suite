@@ -10,6 +10,16 @@ More information: https://aka.ms/maui-privacy-manifest
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <!-- The app does no tracking (no ads/analytics/third-party SDKs, no cross-app/website linking of
+         user or device data), so NSPrivacyTracking is false and there is no NSPrivacyTrackingDomains
+         array. This must stay consistent with the App Store Connect App Privacy label. -->
+    <key>NSPrivacyTracking</key>
+    <false/>
+    <!-- NSPrivacyCollectedDataTypes is intentionally omitted here and declared in the App Store Connect
+         App Privacy label at submission instead (they must match): on-device-only data is "not
+         collected", but the OPTIONAL account + cloud sync collects an email address (account) and user
+         content (group/member data synced to api.circletools.ch), linked to identity, not used for
+         tracking. Populate the label accordingly; see the mobile-apps runbook. -->
     <key>NSPrivacyAccessedAPITypes</key>
     <array>
         <dict>
@@ -36,8 +46,10 @@ More information: https://aka.ms/maui-privacy-manifest
                 <string>E174.1</string>
             </array>
         </dict>
-        <!--
-            The entry below is only needed when you're using the Preferences API in your app.
+        <!-- User defaults (CA92.1 — "access user defaults in just your app"). The MAUI runtime and
+             Plugin.LocalNotification (ADR-0060) read/write NSUserDefaults on iOS even though our own
+             code stores state via FileKeyValueStore; declared so a required-reason use never trips
+             App Review. -->
         <dict>
             <key>NSPrivacyAccessedAPIType</key>
             <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
@@ -45,7 +57,7 @@ More information: https://aka.ms/maui-privacy-manifest
             <array>
                 <string>CA92.1</string>
             </array>
-        </dict> -->
+        </dict>
     </array>
 </dict>
 </plist>

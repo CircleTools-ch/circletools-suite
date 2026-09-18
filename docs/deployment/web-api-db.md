@@ -5,14 +5,16 @@ provider and topology are decided in [ADR-0036](../adr/0036-cloud-provider-and-h
 transactional email sender in [ADR-0037](../adr/0037-transactional-email-provider.md). The other
 deployment track — the native heads — is [mobile apps](mobile-apps.md).
 
-> **Status:** decided; **Compose stack scaffolded** (2026-08-19), not yet live on a VPS. The
-> deployment artifacts live in [`deploy/`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy)
-> (`compose.yaml`, `api.Dockerfile`, `web.Dockerfile`, `Caddyfile`, `.env.example`, `README.md`) with
-> the CD workflow in `.github/workflows/deploy.yml` (manual-trigger until the VPS and secrets exist).
-> The brand & domain gate is now **closed** — `circletools.ch` is registered, so the production origins
-> are baked: the API's passkey RP-ID / CORS in `Main.Service/appsettings.Production.json`, and each
-> PWA's `ApiBaseUrl` / `SsoAuthorityUrl` in its `wwwroot/appsettings.Production.json`. What remains is
-> provisioning the VPS, the secrets store, the CSP, and backups (below).
+> **Status — live (owner-confirmed 2026-09-18).** The stack is **deployed and serving** on the
+> Infomaniak VPS: the two WASM PWAs and the API run behind Caddy/TLS (origins reachable over HTTPS),
+> **account sign-in and sync work end-to-end**, **transactional email is delivering** (Brevo), and
+> **nightly backups are running**. Deployment artifacts live in
+> [`deploy/`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy) (`compose.yaml`,
+> `api.Dockerfile`, `web.Dockerfile`, `Caddyfile`, `.env.example`, `README.md`) with CD in
+> `.github/workflows/deploy.yml`. The milestone-8 checklist below is updated to match. The **restore
+> drill has PASSED** (2026-09-17, see [backups](backups.md)). Still owed to fully button up the launch: confirm the
+> **DB one-way-door migrations** have run in production (they are applied in code — see
+> [launch-readiness §D](launch-readiness.md)) and a **light legal review** of the published legal pages.
 
 ## Targets
 
@@ -70,9 +72,10 @@ high-traffic suite app going live → VPS Lite L (4 vCPU / 8 GB / 160 GB).
 | Transactional email | Brevo Free ([ADR-0037](../adr/0037-transactional-email-provider.md)) | ~9,000 mails/mo | CHF 0 |
 | Role mailbox `dev@<brand>` | Infomaniak Mail | 1 custom-domain mailbox | ~CHF 0–1.50 / mo |
 
-**Recurring web/cloud ≈ CHF 12–14 / mo (~CHF 150 / yr).** The store fees and the iOS build Mac are in
-the [mobile runbook](mobile-apps.md); the Mac ([ADR-0031](../adr/0031-ios-build-host.md)) is the single
-largest cost of the whole shipping story.
+**Recurring web/cloud ≈ CHF 12–14 / mo (~CHF 150 / yr).** The store fees are in the
+[mobile runbook](mobile-apps.md); iOS now builds on **hosted macOS CI** at ~CHF 0
+([ADR-0065](../adr/0065-hosted-macos-ios-builds.md), superseding [ADR-0031](../adr/0031-ios-build-host.md)),
+so no Mac purchase is on the shipping critical path.
 
 **Alternatives considered** (ADR-0036): Infomaniak Jelastic PaaS (dearer for steady tiny load),
 Public Cloud + managed Postgres (+~CHF 20–30/mo), managed Kubernetes and hyperscalers (both
@@ -242,26 +245,29 @@ move to **Grafana Cloud** if the on-box footprint ever hurts.
 
 ## Checklist (milestone 8)
 
-Scaffolded items (`[~]`) have their artifacts in [`deploy/`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy); they still need a live VPS + secrets to be `[x]`.
+The stack is **live** (owner-confirmed 2026-09-18), so the operational items below are `[x]`; two
+verifications are still hedged inline (the restore *drill* and the legal review).
 
 - [x] Brand & domain final; domain registered at Infomaniak (`circletools.ch`, 2026-08-13)
-- [ ] Project-owned Infomaniak account (not a personal login) for host + backup
-- [ ] VPS provisioned (**VPS Lite M**, Geneva, Ubuntu 26.04 LTS — fall back to 24.04 if 26.04 unavailable); Docker + Compose
-- [~] Reverse proxy with Let's Encrypt TLS — `Caddyfile` (three origins) via the default **HTTP-01
-  challenge** (stock `caddy:2-alpine`); no proxy in front, so `:80` reaches Caddy directly ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md))
-- [ ] DNS at Infomaniak: A records for the three origins (+ `grafana`) point at the VPS ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md) — no Cloudflare)
+- [x] Project-owned Infomaniak account (not a personal login) for host + backup
+- [x] VPS provisioned (**VPS Lite M**, Geneva, Ubuntu LTS); Docker + Compose
+- [x] Reverse proxy with Let's Encrypt TLS — `Caddyfile` (three origins) via the default **HTTP-01
+  challenge** (stock `caddy:2-alpine`); no proxy in front, so `:80` reaches Caddy directly ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md)); origins served over HTTPS
+- [x] DNS at Infomaniak: A records for the three origins (+ `grafana`) point at the VPS ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md) — no Cloudflare)
 - [x] Passkey RP-ID + API CORS baked to `circletools.ch` (`Main.Service/appsettings.Production.json`); PWA `ApiBaseUrl`/`SsoAuthorityUrl` baked (each `wwwroot/appsettings.Production.json`); Secret-Santa `RevealBaseUrl` = own origin
-- [~] CSP directive set — full policy shipped in `Caddyfile` (ADR-0021/0040/0048) and **statically verified against both WASM heads' assets** (2026-08-25): `script-src` inline-free (all three `<script>` same-origin; startup/SW/download moved out of inline blocks); MudBlazor CSS carries no external font/`url()` (system-ui theme, 2 data: URIs only); `connect-src` = `'self'` + `api.circletools.ch`, and every `fetch` (incl. the two SSO code-exchange calls) resolves there while the cross-origin SSO steps are top-level navigations, not fetches. Also **runtime boot-smoke'd** (2026-08-25): the published Main head served locally with the *exact* production CSP header and driven in real Chromium **booted and rendered clean** — MudBlazor styling, system-ui fonts, same-origin scripts/logos, **0 CSP violations, clean console, no page errors**. Full pin on the live stack is still the last word (it also exercises the real cross-origin `connect-src` API fetch), but the boot/render path — the ADR-0049 failure mode — is confirmed safe. Dev `dotnet run` serves no CSP by design, so the header only otherwise appears behind Caddy.
-- [~] Brevo behind the SMTP sender — `SmtpMailSender` now authenticates when credentials are set; Brevo host/port in prod config, login/key via env. Still: **account + SPF / DKIM / DMARC** on the domain
-- [~] Postgres container on an NVMe volume; **nightly `pg_dump` → Swiss Backup** — scripted
-  (`deploy/backup.sh` via restic + `systemd/circletools-backup.timer`; [runbook](backups.md)). Owner
-  still provisions the Swiss Backup access/secrets and **runs the restore drill** (`deploy/restore.sh`)
-  so **restore tested** is genuinely `[x]`.
-- [~] EF Core migrations as an explicit release step — one-shot `migrator` service (`--migrate`)
-- [ ] Privacy policy + imprint + account-deletion URLs published, reachable, DE/EN/FR
-- [~] Secrets: `.env.example` template + git-ignored `.env`; durable host/CI store **decided in [ADR-0050](../adr/0050-secrets-management.md)** (provision the VM's `.env` from the vault — see the [drill](#secrets--recovery-adr-0050))
+- [x] CSP directive set — full policy shipped in `Caddyfile` (ADR-0021/0040/0048), **statically verified against both WASM heads' assets** and **boot-smoke'd in real Chromium** (2026-08-25, 0 CSP violations), and now **running in production**: sign-in/sync exercise the real cross-origin `connect-src` fetch to `api.circletools.ch` (the last-word live pin). Dev `dotnet run` serves no CSP by design.
+- [x] Brevo behind the SMTP sender — **transactional email delivering in production**; account + SPF / DKIM / DMARC on the domain
+- [x] Postgres container on an NVMe volume; **nightly `pg_dump` → Swiss Backup** running
+  (`deploy/backup.sh` via restic + `systemd/circletools-backup.timer`; [runbook](backups.md)); the
+  **`deploy/restore.sh` restore drill has PASSED end-to-end** (2026-09-17, [backups](backups.md)) — restore is proven.
+- [x] EF Core migrations as an explicit release step — one-shot `migrator` service (`--migrate`), applied in production
+- [x] Privacy policy + imprint + account-deletion URLs published, reachable, DE/EN/FR — live at `secretsanta.circletools.ch/{privacy,imprint,delete-account}`. *WASM-rendered (see the client-side caveat in the [mobile runbook](mobile-apps.md)); a **light legal review** of the wording is still owed.*
+- [x] Secrets: `.env.example` template + git-ignored `.env`; host/CI store per [ADR-0050](../adr/0050-secrets-management.md), provisioned from the vault (see the [drill](#secrets--recovery-adr-0050))
 - [x] Observability backend **live ([ADR-0051](../adr/0051-production-observability-backend.md))** — self-hosted Loki + Prometheus + Grafana on the VPS; Grafana at `grafana.circletools.ch` (admin login), Prometheus scraping the API (`up`=1), the API shipping OTLP logs to Loki; **verified end-to-end 2026-08-25** (see [Observability](#observability-adr-0051))
-- [ ] Deploy & smoke-test; single-VM recovery (rebuild + restore) documented — [drill](#secrets--recovery-adr-0050)
+- [x] Deploy & smoke-test done — sign-in / sync / email verified in production; single-VM recovery (rebuild + restore) documented — [drill](#secrets--recovery-adr-0050) — and the **restore drill has PASSED** (2026-09-17, [backups](backups.md))
+
+Not on this list, still open: the **DB one-way-door schema fixes** — tracked in
+[launch-readiness §D](launch-readiness.md).
 
 ## Related
 

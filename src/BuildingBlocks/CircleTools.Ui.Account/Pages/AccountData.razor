@@ -1,5 +1,5 @@
 @page "/account/data"
-@inject IStringLocalizer<AppStrings> L
+@inject IStringLocalizer<AccountStrings> L
 @inject AccountApiClient Api
 @inject AccountSession Session
 @inject IFileSaver Files
@@ -15,7 +15,7 @@
             <MudText>@L["DeleteDoneText"]</MudText>
         </ChildContent>
         <Footer>
-            <MudLink Href="">@L["NavDashboard"]</MudLink>
+            <MudLink Href="">@L["DeleteDoneHome"]</MudLink>
         </Footer>
     </AuthCard>
 }

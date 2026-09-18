@@ -33,9 +33,10 @@
   <data name="NewGroupPlaceholder" xml:space="preserve"><value>Name der neuen Gruppe</value></data>
   <data name="CreateGroup" xml:space="preserve"><value>Gruppe erstellen</value></data>
   <data name="EmptyStateHeadline" xml:space="preserve"><value>Verlose ein Wichteln mit deiner Gruppe</value></data>
-  <data name="EmptyStateExplainer" xml:space="preserve"><value>Füge alle hinzu, lege fest, wer wen nicht ziehen soll, und lose fair aus. Jede Person erhält einen privaten Link, der nur die gezogene Person und deren Wunschliste zeigt – ganz offline und ohne Konto. Erstelle eine Gruppe, um zu starten.</value></data>
+  <data name="EmptyStateExplainer" xml:space="preserve"><value>Füge alle hinzu, lege fest, wer wen nicht ziehen soll, und lose fair aus. Jede Person erhält einen privaten Link, der nur die gezogene Person und deren Wunschliste zeigt – ganz offline und ohne Konto. Erstelle deine erste Gruppe, um zu starten.</value></data>
   <data name="EmptyStateAccountSell" xml:space="preserve"><value>Melde dich an, um deine Gruppen geräteübergreifend zu synchronisieren, deine eigene Zuteilung zu sehen und deine eigene Wunschliste zu führen.</value></data>
   <data name="EmptyStateSignIn" xml:space="preserve"><value>Anmelden</value></data>
+  <data name="EmptyStateCreateGroup" xml:space="preserve"><value>Gruppe erstellen</value></data>
   <data name="EmptyStateSignedInHint" xml:space="preserve"><value>Noch keine Gruppen. Erstelle eine – oder starte von einem deiner Kreise.</value></data>
   <data name="MembersColumn" xml:space="preserve"><value>Mitglieder</value></data>
   <data name="DrawCompleteBadge" xml:space="preserve"><value>Ausgelost</value></data>
@@ -75,6 +76,13 @@
   <data name="DrawIgnoreBaseline" xml:space="preserve"><value>Trotzdem auslosen (kann sich wie letztes Mal wiederholen)</value></data>
   <data name="DrawFailedTwoMember" xml:space="preserve"><value>Eine Zweiergruppe lässt sich nicht auslosen, ohne dass sich beide gegenseitig beschenken. Füge weitere Mitglieder hinzu.</value></data>
   <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Füge mindestens zwei Mitglieder hinzu, um auszulosen.</value></data>
+  <data name="GoToMembers" xml:space="preserve"><value>Mitglieder hinzufügen</value></data>
+  <data name="SetupTitle" xml:space="preserve"><value>Erste Schritte</value></data>
+  <data name="SetupStepsLeft" xml:space="preserve"><value>{0} offen</value></data>
+  <data name="SetupStepName" xml:space="preserve"><value>Gruppe benennen</value></data>
+  <data name="SetupStepEvent" xml:space="preserve"><value>Anlass hinzufügen</value></data>
+  <data name="SetupStepDraw" xml:space="preserve"><value>Namen auslosen</value></data>
+  <data name="SetupSkip" xml:space="preserve"><value>Überspringen</value></data>
   <data name="DrawSpoilerNote" xml:space="preserve"><value>Die Zuordnungen werden hier nicht angezeigt, um nichts zu verraten. Teile stattdessen die Links.</value></data>
   <data name="ShareTitle" xml:space="preserve"><value>Links teilen</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Sende jeder Person ihren eigenen Link. Nur die empfangende Person sieht, wen sie beschenkt.</value></data>
@@ -111,6 +119,7 @@
   <data name="RevealWishlistLabel" xml:space="preserve"><value>Wunschliste</value></data>
   <data name="RevealNoWishlist" xml:space="preserve"><value>Keine Wunschliste angegeben.</value></data>
   <data name="RevealMalformed" xml:space="preserve"><value>Dieser Link ist ungültig oder unvollständig.</value></data>
+  <data name="RevealPrimer" xml:space="preserve"><value>Das ist dein privater Wichtel-Link – nur du siehst, wen du beschenkst.</value></data>
   <data name="RevealSpoilerNote" xml:space="preserve"><value>Tippe auf die Schaltfläche, wenn du bereit bist - nicht schummeln!</value></data>
   <data name="SignIn" xml:space="preserve"><value>Anmelden</value></data>
   <data name="SignOut" xml:space="preserve"><value>Abmelden</value></data>
@@ -218,7 +227,7 @@
   <data name="NavWishlists" xml:space="preserve"><value>Wunschlisten</value></data>
   <data name="DefaultEventName" xml:space="preserve"><value>Anlass</value></data>
   <data name="DefaultEventNameFormat" xml:space="preserve"><value>Weihnachten {0}</value></data>
-  <data name="NoEventsYet" xml:space="preserve"><value>Noch keine Anlässe. Füge oben deinen ersten hinzu, um auszulosen, Links zu teilen und Wunschlisten zu sammeln.</value></data>
+  <data name="NoEventsYet" xml:space="preserve"><value>Noch keine Anlässe. Füge deinen ersten hinzu, um auszulosen, Links zu teilen und Wunschlisten zu sammeln.</value></data>
   <data name="EventNameLabel" xml:space="preserve"><value>Anlassname</value></data>
   <data name="EventNamePlaceholder" xml:space="preserve"><value>z. B. Weihnachten 2026</value></data>
   <data name="AddEvent" xml:space="preserve"><value>Anlass hinzufügen</value></data>

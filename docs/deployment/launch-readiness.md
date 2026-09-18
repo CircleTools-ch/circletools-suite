@@ -1,6 +1,6 @@
 # Deployment — Launch-readiness assessment
 
-A point-in-time assessment (**2026-09-15**) of whether CircleTools can go live, taken across both
+A point-in-time assessment (**2026-09-15**, **updated 2026-09-18** after the stack went live) of whether CircleTools can go live, taken across both
 solutions, the full test and architecture suite, the ADR log and the deployment scaffolding. It exists
 to answer one question — *can we deploy today?* — and to name exactly what stands between the code and a
 first production launch, so the remaining work is tracked rather than rediscovered.
@@ -11,42 +11,48 @@ owner-action items are captured in the [backlog](../roadmap/backlog.md).
 
 ## Verdict
 
-**Not deployable today — but the gap is operational provisioning, legal pages and a few pre-data schema
-fixes, not engineering.** The code and architecture are production-grade:
+**Deployed and live (2026-09-18).** The stack is **serving in production** (owner-confirmed): the two
+WASM PWAs and the API run on the Infomaniak VPS behind Caddy/TLS, **account sign-in and sync work
+end-to-end**, **transactional email is delivering** (Brevo), and **nightly backups are running**. The
+code and architecture were already production-grade at the 2026-09-15 assessment:
 
 - both solutions build with **0 warnings / 0 errors**;
 - **762 tests** green, plus **28 enforced architecture fitness tests**;
-- **60 ADRs**, all **Accepted**;
-- full deployment scaffolding is built — Docker Compose, Dockerfiles, Caddy reverse proxy, CI **and**
-  CD workflows, and a live self-hosted Grafana / Loki / Prometheus observability stack
+- **60+ ADRs**, all **Accepted**;
+- a live self-hosted Grafana / Loki / Prometheus observability stack
   ([ADR-0051](../adr/0051-production-observability-backend.md)).
 
-What remains is bringing up the box, publishing the legal content, and closing a small set of
-one-way-door database decisions before any real data is written.
+The original blockers are cleared: the box is up (§A), the legal pages are reachable (§B), the
+one-way-door schema fixes are **applied and committed** (§D), the runtime-correctness items are
+**resolved** (§C), and the **restore drill has been run successfully** (2026-09-17, §A). What is left
+is **verification and polish, not blockers**: confirm production has run the 2026-09-15 one-way-door
+migrations, and get a **light legal review** of the published legal pages. The mobile heads still have
+their own residuals (§E).
 
 ## Blockers before deploy
 
-### A. Operational provisioning (all decided, none executed)
+### A. Operational provisioning (decided and now executed ✅)
 
-Every decision here is already recorded in an ADR; what is missing is execution. These map to the
-milestone-8 checklist in [web-api-db.md](web-api-db.md#checklist-milestone-8).
+Every step here was decided in an ADR and is **done as of 2026-09-18**; they map to the milestone-8
+checklist in [web-api-db.md](web-api-db.md#checklist-milestone-8), now all `[x]`.
 
-| Step | What | Reference |
+| Step | What | Status |
 |---|---|---|
-| VPS | Provision the Infomaniak VPS under a **project-owned account** (not a personal login) | [ADR-0036](../adr/0036-cloud-provider-and-hosting.md) |
-| Secrets | Generate every secret into the vault, then derive the VM `.env` and the GitHub Actions secrets; setting `DEPLOY_HOST` self-activates the CD job | [ADR-0050](../adr/0050-secrets-management.md) |
-| DNS + mail | Point the **Infomaniak DNS** A records at the VPS, create a Brevo account, and add **SPF / DKIM / DMARC** on the domain ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md) — no Cloudflare) | [ADR-0037](../adr/0037-transactional-email-provider.md) |
-| TLS | Bring up TLS — Caddy's default **HTTP-01** challenge on the VPS (no proxy in front); just open ports 80/443 | [ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md) |
-| Backups | **Scripted** (`deploy/backup.sh` via restic + systemd timer; `restore.sh`) — owner provisions the Swiss Backup secrets and **runs the restore drill** | [ADR-0036](../adr/0036-cloud-provider-and-hosting.md) |
-| First deploy | Deploy and run a **full-flow smoke test** with a clean browser console | — |
+| VPS | Infomaniak VPS under a **project-owned account** ([ADR-0036](../adr/0036-cloud-provider-and-hosting.md)) | ✅ live |
+| Secrets | vault → VM `.env` + GitHub Actions secrets; `DEPLOY_HOST` activates CD ([ADR-0050](../adr/0050-secrets-management.md)) | ✅ provisioned |
+| DNS + mail | Infomaniak DNS A records at the VPS; Brevo + **SPF / DKIM / DMARC** ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md), [ADR-0037](../adr/0037-transactional-email-provider.md)) | ✅ mail delivering |
+| TLS | Caddy **HTTP-01** on the VPS, ports 80/443 ([ADR-0063](../adr/0063-drop-cloudflare-infomaniak-dns-and-caddy-tls.md)) | ✅ HTTPS live |
+| Backups | `deploy/backup.sh` (restic + systemd timer); `restore.sh` ([ADR-0036](../adr/0036-cloud-provider-and-hosting.md)) | ✅ running; **restore drill PASSED** (2026-09-17, [backups](backups.md)) |
+| First deploy | deploy + **full-flow smoke test** | ✅ sign-in / sync / email verified |
 
-**Highest leverage: mail deliverability.** Undeliverable mail silently breaks sign-up, verification,
-password reset and invitations — the entire onboarding path — so the Brevo account plus SPF / DKIM /
-DMARC records are the single most valuable provisioning step.
+**Mail deliverability — the highest-leverage step — is working:** sign-up, verification, password
+reset and invitations send via Brevo with SPF / DKIM / DMARC in place, so the onboarding path is not
+silently broken.
 
-**Biggest data-loss risk: backups.** On a single VPS, the box is a single point of failure and **no
-backup script exists in `deploy/` today**. The nightly dump and, crucially, a *tested* restore must be
-in place before real data lands.
+**Backups run and the restore is proven.** On a single VPS the box is a single point of failure. The
+nightly dump (restic → Swiss Backup) is running, and `deploy/restore.sh` has been **exercised
+end-to-end** — the drill **PASSED** (2026-09-17, 33 tables restored across all five schemas; see
+[backups](backups.md)) — so recovery is tested, not just written.
 
 ### B. Legal content (written and reachable — pending a light legal review)
 
@@ -67,26 +73,32 @@ policy**, an **imprint / about-and-legal** page, and an **account-deletion** pag
   it is ever monetised or store-classified as a trader, a postal address (or a legal entity such as a
   Swiss Verein) would likely be required.
 
-### C. Runtime correctness to verify on the live stack
+### C. Runtime correctness on the live stack (resolved ✅)
 
-- **ForwardedHeaders middleware** was absent from `Program.cs` (needed behind the Caddy reverse
-  proxy for correct scheme and client IP) — being fixed.
-- The **live-stack CSP pin** is still owed: the policy is statically verified and boot-smoke-tested
-  ([web-api-db.md](web-api-db.md#checklist-milestone-8)), but the final confirmation against the real
-  cross-origin `connect-src` API fetch only happens on the live stack.
+- **ForwardedHeaders middleware** is in place — configured and `app.UseForwardedHeaders()` runs before
+  any scheme-reading middleware (`Main.Service/Program.cs:36-38, 264`), so scheme and client IP are
+  correct behind Caddy.
+- The **live-stack CSP pin** is confirmed: statically verified and boot-smoke-tested (2026-08-25), and
+  now exercised in production — **sign-in and sync make the real cross-origin `connect-src` fetch to
+  `api.circletools.ch`** and work, which was the last open confirmation.
 
-### D. Database one-way doors (fix before production data)
+### D. Database one-way doors (applied ✅)
 
-These are changes that are cheap now and expensive or impossible once real data is written, so they are
-being applied before first deploy:
+These changes are cheap before real data and expensive or impossible after. All five are **applied and
+committed** — in commit `76264f5` (2026-09-15), with EF configuration, migrations and model snapshots
+in sync:
 
-| Change | From | To |
-|---|---|---|
-| Money precision | unbounded `numeric` | `numeric(10,2)` |
-| Share tokens + creator keys | stored in plaintext | hashed (ADR pending) |
-| Email hashes | unsalted SHA-256 | keyed **HMAC** (ADR pending) |
-| `member_links` uniqueness | not DB-enforced | partial unique index |
-| Missing indexes | — | on `shared.groups.OwnerAccountId` and `shared.member_claims.AccountId` |
+| Change | From | To | Status |
+|---|---|---|---|
+| Money precision | unbounded `numeric` | `numeric(10,2)` | ✅ `LinkingDbContext` + migration `…BudgetPrecisionAndMemberLinkUniqueIndex` |
+| Share tokens + creator keys | stored in plaintext | hashed ([ADR-0061](../adr/0061-share-token-and-creator-key-at-rest-protection.md)) | ✅ `ShareSecretHash` in `SharedGroupStore` |
+| Email hashes | unsalted SHA-256 | keyed **HMAC** ([ADR-0062](../adr/0062-email-address-hashing-keyed-hmac.md)) | ✅ `HmacEmailHasher` (`IEmailHasher`) |
+| `member_links` uniqueness | not DB-enforced | partial unique index | ✅ filtered unique index in `LinkingDbContext` + migration |
+| Missing indexes | — | on `shared.groups.OwnerAccountId` and `shared.member_claims.AccountId` | ✅ migration `…ProtectShareTokensAtRestAndAccountIndexes` |
+
+**One verification remains:** confirm production has actually **run** the two 2026-09-15 migrations
+(`…BudgetPrecisionAndMemberLinkUniqueIndex`, `…ProtectShareTokensAtRestAndAccountIndexes`) — i.e. the
+live deploy post-dates them. If so, this door is closed.
 
 ### E. Mobile-only residuals (not needed for a web launch)
 
@@ -94,9 +106,17 @@ Not blocking a **web** launch, but required before the mobile heads ship and nee
 action:
 
 - Replace the placeholder **Play App Signing SHA-256** in `assetlinks.json` (currently
-  `REPLACE_WITH_PLAY_APP_SIGNING_SHA256`) with the real fingerprint so reveal / calendar App Links
-  auto-open silently instead of via the chooser.
-- The **iOS head is not built** ([ADR-0031](../adr/0031-ios-build-host.md)) — it needs a Mac.
+  `REPLACE_WITH_PLAY_APP_SIGNING_SHA256`) and the **Apple Team ID** in `apple-app-site-association`
+  (`REPLACE_WITH_APPLE_TEAM_ID`) with the real values so reveal / calendar deep links auto-open silently
+  instead of via the chooser / browser.
+- The **iOS head builds on hosted macOS CI** ([ADR-0065](../adr/0065-hosted-macos-ios-builds.md),
+  superseding [ADR-0031](../adr/0031-ios-build-host.md)) — no Mac needed. The residual is operational:
+  set the iOS signing secrets and trigger the first `release-mobile.yml` build to TestFlight.
+
+> **Update (2026-09-18):** both project developer accounts (Google Play, Apple Developer) are now
+> **enabled**. The immediate mobile step is internal-testing installs on our own devices — no public
+> review — per the *First milestone* section of the [mobile runbook](mobile-apps.md). The residuals
+> above still stand.
 
 ## Strengths (project review)
 

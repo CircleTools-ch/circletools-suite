@@ -46,6 +46,7 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [FEAT-017](FEAT-017-local-data-transparency-and-backup.md) | Local data transparency, durability & backup (web) | SecretSanta | Done |
 | [TP-017](TP-017-local-data-transparency-and-backup.md) | Test plan — Local data transparency & backup | SecretSanta | Reviewed |
 | [FEAT-018](FEAT-018-branded-transactional-emails.md) | Branded HTML transactional emails (per-app co-branding, source-app link origin, farewell mail) | Main | In progress |
+| [FEAT-019](FEAT-019-getting-started-checklist.md) | Getting-started checklist (first-group onboarding: guided empty→drawn sequence on the hub, self-dismissing, skippable) | SecretSanta | Done |
 | [TP-018](TP-018-branded-transactional-emails.md) | Test plan — Branded transactional emails | Main | Draft |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is

@@ -1,0 +1,109 @@
+@using CircleTools.SecretSanta.Contracts
+@inject IStringLocalizer<AppStrings> L
+@inject NavigationManager Navigation
+@inject IKeyValueStore Store
+
+@*
+    Getting-started checklist (FEAT-019, OB-8). On a group that is not yet set up, the hub shows the
+    ordered path from empty to a shared draw — name → add members → add an event → draw names — checking
+    each step off as it is done. It disappears once the group is set up (all steps done) or the organizer
+    skips it (a device-local, per-group choice via IKeyValueStore). Additive over the events-first hub
+    (ADR-0055): it sequences the first-run steps without changing the hub's structure, and supersedes the
+    one-line first-run hint (OB-6). Steps navigate to the relevant screen; "Draw names" unlocks only once an
+    event exists.
+*@
+
+@if (_ready && !_dismissed && !AllDone)
+{
+    <MudPaper Elevation="0" Outlined="true" Class="pa-3 mb-4">
+        <div class="d-flex align-center mb-1">
+            <MudText Typo="Typo.subtitle1"><strong>@L["SetupTitle"]</strong></MudText>
+            <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" Class="ml-2">@L["SetupStepsLeft", StepsLeft]</MudChip>
+            <MudSpacer />
+            <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Default" OnClick="DismissAsync">@L["SetupSkip"]</MudButton>
+        </div>
+        <MudList T="string" Dense="true" Class="pa-0">
+            @foreach (var step in Steps)
+            {
+                <MudListItem T="string" Disabled="@(!step.Enabled)"
+                             OnClick="@(async () => await step.OnClick())"
+                             Icon="@(step.Done ? Icons.Material.Filled.CheckCircle : Icons.Material.Outlined.RadioButtonUnchecked)"
+                             IconColor="@(step.Done ? Color.Success : Color.Primary)">
+                    <span class="@(step.Done ? "mud-text-secondary" : null)"
+                          style="@(step.Done ? "text-decoration:line-through;" : null)">@step.Label</span>
+                </MudListItem>
+            }
+        </MudList>
+    </MudPaper>
+}
+
+@code {
+    /// <summary>The group whose setup progress is shown.</summary>
+    [Parameter] public GroupDto Group { get; set; } = default!;
+
+    /// <summary>Invoked when the "Add an event" step is tapped (opens the add-event sheet on the hub).</summary>
+    [Parameter] public EventCallback OnAddEvent { get; set; }
+
+    private bool _ready;
+    private bool _dismissed;
+
+    // A gift exchange needs at least THREE members: with two, the only draw pairs them with each other,
+    // which the no-reciprocal rule forbids ("cannot be drawn without both giving to each other"). So the
+    // step completes at three, not two — otherwise the checklist would tick "Add members" done while the
+    // draw still fails and asks for more people.
+    private const int MinMembersForDraw = 3;
+    private bool MembersDone => Group.Members.Count >= MinMembersForDraw;
+    private bool EventDone => Group.Events.Count > 0;
+    private bool DrawDone => Group.Events.Any(e => e.HasCurrentDraw);
+    private bool AllDone => MembersDone && EventDone && DrawDone;
+    private int StepsLeft => (MembersDone ? 0 : 1) + (EventDone ? 0 : 1) + (DrawDone ? 0 : 1);
+
+    private string DismissKey => $"secretsanta.setup.dismissed.{Group.Id}";
+
+    private sealed record SetupStep(string Label, bool Done, bool Enabled, Func<Task> OnClick);
+
+    private IReadOnlyList<SetupStep> Steps =>
+    [
+        // The group already has a name (it exists) — shown done, for progress, not actionable.
+        new(L["SetupStepName"], Done: true, Enabled: false, OnClick: () => Task.CompletedTask),
+        new(L["GoToMembers"], Done: MembersDone, Enabled: true, OnClick: GoToMembersAsync),
+        new(L["SetupStepEvent"], Done: EventDone, Enabled: true, OnClick: AddEventAsync),
+        // Drawing needs an event to draw within, so it unlocks only once one exists.
+        new(L["SetupStepDraw"], Done: DrawDone, Enabled: EventDone, OnClick: GoToDrawAsync),
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _dismissed = await Store.GetAsync(StorageScope.Durable, DismissKey) is not null;
+        _ready = true;
+    }
+
+    private Task GoToMembersAsync()
+    {
+        Navigation.NavigateTo($"groups/{Group.Id}/members");
+        return Task.CompletedTask;
+    }
+
+    private Task AddEventAsync() => OnAddEvent.InvokeAsync();
+
+    private Task GoToDrawAsync()
+    {
+        // Send them to the first event that still needs a draw (else the first one), so the tap always
+        // lands somewhere useful.
+        var target = Group.Events.FirstOrDefault(e => !e.HasCurrentDraw) ?? Group.Events.FirstOrDefault();
+        if (target is not null)
+        {
+            Navigation.NavigateTo($"groups/{Group.Id}/events/{target.Id}/draw");
+        }
+
+        return Task.CompletedTask;
+    }
+
+    // Skipping is a device-local, per-group choice (like the recent-groups / handout-progress prefs); a
+    // write failure just means it may reappear, which is harmless.
+    private async Task DismissAsync()
+    {
+        _dismissed = true;
+        await Store.SetAsync(StorageScope.Durable, DismissKey, "1");
+    }
+}
