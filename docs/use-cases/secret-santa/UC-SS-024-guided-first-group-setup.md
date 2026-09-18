@@ -29,7 +29,7 @@ of the way once the group is set up.
 
 ## Postconditions
 
-- **Success:** the group has enough members, an occasion, and a completed draw; the checklist has removed
+- **Success:** the group has enough members, an event, and a completed draw; the checklist has removed
   itself, leaving the normal hub.
 - **Failure:** the organizer leaves setup incomplete; the checklist remains on the hub next time (or is
   gone if they chose to skip it).
@@ -41,11 +41,11 @@ The organizer opens the hub of a group that is not yet fully set up.
 ## Main success scenario
 
 1. On the group hub, the app shows a **"Getting started"** card listing the ordered steps: *name your
-   group* (already done), *add members*, *add an occasion*, *draw names* — with a count of steps left.
+   group* (already done), *add members*, *add an event*, *draw names* — with a count of steps left.
 2. The organizer taps **Add members** and is taken to the Members screen; they add the participants.
-3. Back on the hub, "Add members" is ticked; they tap **Add an occasion** and name the occasion.
-4. "Draw names" unlocks (an occasion now exists); they tap it, run the draw, and it succeeds.
-5. With members, an occasion, and a draw all present, the checklist **disappears**; the organizer shares
+3. Back on the hub, "Add members" is ticked; they tap **Add an event** and name the event.
+4. "Draw names" unlocks (an event now exists); they tap it, run the draw, and it succeeds.
+5. With members, an event, and a draw all present, the checklist **disappears**; the organizer shares
    the reveal links (UC-SS-022).
 
 ## Extensions / alternate flows
@@ -55,7 +55,7 @@ The organizer opens the hub of a group that is not yet fully set up.
 - **2a. Only two members are added** → "Add members" stays open: two people cannot be drawn without giving
   to each other (the no-reciprocal rule), so the step completes only at **three** members, matching what a
   successful draw needs.
-- **4a. "Draw names" is tapped before an occasion exists** → the step is disabled until an occasion is
+- **4a. "Draw names" is tapped before an event exists** → the step is disabled until an event is
   added, so the tap never lands on a draw with nothing to draw.
 
 ## Exceptions
@@ -83,5 +83,5 @@ The organizer opens the hub of a group that is not yet fully set up.
   [FR-004](../../requirements/functional/FR-004-run-fair-draw.md),
   [FR-034](../../requirements/functional/FR-034-multiple-events-per-group.md)
 - Feature spec: [FEAT-019](../../features/FEAT-019-getting-started-checklist.md)
-- Related: [ADR-0055](../../adr/0055-event-navigation-mobile-section-hub.md) (the occasions-first hub this
+- Related: [ADR-0055](../../adr/0055-event-navigation-mobile-section-hub.md) (the events-first hub this
   guides within), [UC-SS-022](UC-SS-022-hand-out-reveal-links.md) (the share step that follows)

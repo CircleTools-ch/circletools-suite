@@ -80,7 +80,7 @@
   <data name="SetupTitle" xml:space="preserve"><value>Erste Schritte</value></data>
   <data name="SetupStepsLeft" xml:space="preserve"><value>{0} offen</value></data>
   <data name="SetupStepName" xml:space="preserve"><value>Gruppe benennen</value></data>
-  <data name="SetupStepOccasion" xml:space="preserve"><value>Anlass hinzufügen</value></data>
+  <data name="SetupStepEvent" xml:space="preserve"><value>Anlass hinzufügen</value></data>
   <data name="SetupStepDraw" xml:space="preserve"><value>Namen auslosen</value></data>
   <data name="SetupSkip" xml:space="preserve"><value>Überspringen</value></data>
   <data name="DrawSpoilerNote" xml:space="preserve"><value>Die Zuordnungen werden hier nicht angezeigt, um nichts zu verraten. Teile stattdessen die Links.</value></data>
