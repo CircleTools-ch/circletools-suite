@@ -72,9 +72,19 @@ else if (_groups.Count == 0)
                     <MudIcon Icon="@Icons.Material.Filled.Redeem" Color="Color.Primary" Size="Size.Large" />
                     <MudText Typo="Typo.h6">@L["EmptyStateHeadline"]</MudText>
                     <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="max-width:34rem;">@L["EmptyStateExplainer"]</MudText>
+                    @* The primary first-run action is creating a group — a real, labelled button, so it is
+                       not left to the bare "+" FAB (UX-council #1). Opens the same name sheet the FAB does.
+                       Shown only on narrow, where the inline create field above is hidden; wide screens
+                       already lead with that field, so a second create button there would be redundant. *@
+                    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+                        <MudButton OnClick="CreateViaFabAsync" Variant="Variant.Filled" Color="Color.Primary"
+                                   Size="Size.Large" StartIcon="@Icons.Material.Filled.Add">@L["EmptyStateCreateGroup"]</MudButton>
+                    </MudHidden>
                     <MudDivider Class="my-2" Style="width:100%;" />
                     <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="max-width:34rem;">@L["EmptyStateAccountSell"]</MudText>
-                    <MudButton Href="/account/login" Variant="Variant.Outlined" Color="Color.Primary"
+                    @* Sign-in is the optional upsell, so it reads as secondary (a text link), not the
+                       card's visual anchor — it no longer competes with the primary create action. *@
+                    <MudButton Href="/account/login" Variant="Variant.Text" Color="Color.Primary"
                                StartIcon="@Icons.Material.Filled.Login">@L["EmptyStateSignIn"]</MudButton>
                     @* Set the expectation up front on the web head: groups live in this browser only (FEAT-017).
                        Device heads store natively and durably, so the note would mislead there. *@
@@ -159,7 +169,9 @@ else
 <MudHidden Breakpoint="Breakpoint.MdAndUp">
     <div class="ct-fab-spacer"></div>
     <div class="ct-fab">
-        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+        @* Extended FAB (icon + label): the "+" alone reads the same on every screen, so the label says
+           what it creates here — a group (UX-council #3). *@
+        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Label="@L["CreateGroup"]"
                 aria-label="@L["CreateGroup"]" OnClick="CreateViaFabAsync" />
     </div>
 </MudHidden>

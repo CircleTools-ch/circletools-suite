@@ -33,9 +33,10 @@
   <data name="NewGroupPlaceholder" xml:space="preserve"><value>New group name</value></data>
   <data name="CreateGroup" xml:space="preserve"><value>Create group</value></data>
   <data name="EmptyStateHeadline" xml:space="preserve"><value>Run a Secret Santa with your group</value></data>
-  <data name="EmptyStateExplainer" xml:space="preserve"><value>Add everyone, mark who shouldn't draw whom, and draw names fairly. Each person gets a private link that reveals only who they got and their wishlist — it works offline, with no account. Name a group above to start.</value></data>
+  <data name="EmptyStateExplainer" xml:space="preserve"><value>Add everyone, mark who shouldn't draw whom, and draw names fairly. Each person gets a private link that reveals only who they got and their wishlist — it works offline, with no account. Create your first group to get started.</value></data>
   <data name="EmptyStateAccountSell" xml:space="preserve"><value>Sign in to sync your groups across devices, see your own assignment, and keep your own wishlist.</value></data>
   <data name="EmptyStateSignIn" xml:space="preserve"><value>Sign in</value></data>
+  <data name="EmptyStateCreateGroup" xml:space="preserve"><value>Create a group</value></data>
   <data name="EmptyStateSignedInHint" xml:space="preserve"><value>No groups yet. Create one above, or start from one of your circles.</value></data>
   <data name="MembersColumn" xml:space="preserve"><value>Members</value></data>
   <data name="DrawCompleteBadge" xml:space="preserve"><value>Drawn</value></data>
@@ -75,6 +76,8 @@
   <data name="DrawIgnoreBaseline" xml:space="preserve"><value>Draw anyway (may repeat last time)</value></data>
   <data name="DrawFailedTwoMember" xml:space="preserve"><value>A two-person group cannot be drawn without both giving to each other. Add more members.</value></data>
   <data name="NeedTwoMembersToDraw" xml:space="preserve"><value>Add at least two members to run a draw.</value></data>
+  <data name="GoToMembers" xml:space="preserve"><value>Add members</value></data>
+  <data name="HubFirstRunHint" xml:space="preserve"><value>Start by adding members, then add an occasion to draw names.</value></data>
   <data name="DrawSpoilerNote" xml:space="preserve"><value>Assignments are hidden here to avoid spoilers. Share the reveal links instead.</value></data>
   <data name="ShareTitle" xml:space="preserve"><value>Share links</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Send each person their own link. Only the recipient can see who they drew.</value></data>
@@ -186,7 +189,7 @@
   <data name="NavWishlists" xml:space="preserve"><value>Wishlists</value></data>
   <data name="DefaultEventName" xml:space="preserve"><value>Event</value></data>
   <data name="DefaultEventNameFormat" xml:space="preserve"><value>Christmas {0}</value></data>
-  <data name="NoEventsYet" xml:space="preserve"><value>No occasions yet. Add your first one above to draw names, share links and collect wishlists.</value></data>
+  <data name="NoEventsYet" xml:space="preserve"><value>No occasions yet. Add your first one to draw names, share links and collect wishlists.</value></data>
   <data name="EventNameLabel" xml:space="preserve"><value>Event name</value></data>
   <data name="EventNamePlaceholder" xml:space="preserve"><value>e.g. Christmas 2026</value></data>
   <data name="AddEvent" xml:space="preserve"><value>Add event</value></data>

@@ -3,6 +3,103 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## First-run onboarding pass — Secret-Santa (2026-09-17)
+
+A mobile-first review of the **first session** (empty app → names drawn → links shared), run as a
+BA / UX-expert / designer council against the real 390px screens. Root cause it found: the primary
+actions are present but **invisible or mislabelled on the first screens** — on a phone the empty-state
+card's only visible button was **Sign in** (the optional account), while creating a group was a bare,
+unlabelled "+" FAB; and the explainer said "…above" pointing at an inline field that is hidden on
+phones. The account upsell was the loudest thing on the screen the app promises works "with no account".
+
+**Done — SMALL items, built & browser-verified at 390px in DE/EN/FR (console clean):**
+
+- **OB-1 · Primary "Create a group" button in the first-run empty card; Sign-in demoted to a text link.**
+  `Groups.razor` empty state. New `EmptyStateCreateGroup` string (DE *Gruppe erstellen* / FR *Créer un
+  groupe*). Shown only on narrow (the wide inline field already leads there, so no duplicate CTA on
+  desktop). The very first tap now does the job, not account signup.
+- **OB-2 · Fixed the empty-state explainer copy.** The **English** `EmptyStateExplainer` still said
+  "Name a group above to start." (DGH-5's directional-copy fix had missed EN; neutral/DE/FR were already
+  width-neutral). All four now read "…Create your first group to get started." (+ DE/FR equivalents).
+- **OB-3 · Extended (labelled) FABs.** Groups → *Create group*, group hub → *Add occasion*, Members →
+  *Add member*. The bare "+" read identically on every screen (it creates a group / an occasion / a
+  member depending where you are); the label now says which, and doubles as the affordance a sighted
+  non-screen-reader user was missing.
+- **OB-4 · Draw is no longer a dead end.** `Draw.razor` under-two-members state was a bare sentence with
+  no way forward; it now carries an **"Add members"** button linking to the Members page (new `GoToMembers`
+  string). Verified: the draw page for a 0-member group shows the recovery button.
+- **OB-5 · Occasion empty state copy + gating.** `NoEventsYet` dropped the "above"/"oben"/"ci-dessus"
+  (same misdirection as OB-2) and now shows only once a group *has* members (the brand-new 0/0 case is
+  covered by OB-6 instead of doubling up).
+- **OB-6 · First-run hub hint.** On a brand-new group (0 members, 0 occasions) the hub — which leads
+  with occasions (ADR-0055) — now shows a one-line **"Start by adding members, then add an occasion to
+  draw names."** (new `HubFirstRunHint`), self-hiding as soon as either exists. Bridges the events-first
+  IA for a first-timer with copy instead of restructuring.
+- **OB-7 · "New version available" snackbar — not a real first-run defect (no change).** The council
+  flagged it crowding the first paint; on inspection `UpdatePrompt` (ADR-0048) only fires from the
+  service-worker *update* lifecycle, which does **not** trigger on a genuine first install (no prior SW).
+  What shows in dev/repeat visits is the update mechanism working as designed. Left untouched (changing
+  it risks ADR-0048); the on-screen crowding is a separate cosmetic snackbar-position question, parked.
+
+**BIG — recorded for review together (need their own design/decision, not shipped blind):**
+
+- **OB-8 · Guided "first group" setup (L).** A first-run-only guided path (name group → add members →
+  add an occasion → draw) replacing today's hunt across three screens each with a differently-meaning
+  "+". The empty-app-to-drawn journey currently depends on a first-timer guessing an (now labelled) FAB
+  three times and inferring members-before-draw. Touches IA and the **ADR-0055** events-first hub
+  decision, so it needs its own ADR. The SMALL items above (esp. OB-1/3/4/6) remove ~80% of the
+  confusion cheaply; this is the deliberate next step if first-run still tests poorly.
+- **OB-9 · Per-screen FAB semantics (M).** The "+" FAB creates group / occasion / member by screen,
+  distinguished (before OB-3) only by `aria-label`. Decide a consistent, visible convention (extended
+  labels everywhere — the OB-3 direction — vs. distinct icons vs. a one-time coach-mark) for cross-screen
+  affordance consistency.
+- **OB-10 · "Reveal link" concept primer (M).** The private, non-spoiling reveal link is the app's core
+  novel idea; a one-line primer at the **Share** step (where the QR + guided hand-out already live) would
+  reduce first-time organizers' "did I just send them the answer?" hesitation. Small in code, but it's a
+  content/comms decision worth making deliberately (and translating with care).
+
+## Mobile store-readiness & native passkeys — Secret-Santa (2026-09-17)
+
+A store-requirements pass (Apple + Google 2026 rules, tablet/iPad priority) plus lifting the
+mobile-passkey deferral now that the RP-ID `circletools.ch` is settled. Store-prep details also live in
+the [mobile-apps runbook](../deployment/mobile-apps.md) "App preparation" section; the passkey decision
+is [ADR-0066](../adr/0066-mobile-native-passkeys.md).
+
+- **MSR-1 · iOS store-config parity (P1).** ✅ **Implemented 2026-09-17.** iOS `AppDelegate` now handles
+  `ContinueUserActivity`/`OpenUrl` → `DeepLinkService` (reveal/event Universal Links open the app — was
+  Android-only); new `Platforms/iOS/Entitlements.plist` (Associated Domains) wired via csproj
+  `<CodesignEntitlements>`; `ITSAppUsesNonExemptEncryption=false`; privacy manifest gained
+  `UserDefaults`/`CA92.1` + `NSPrivacyTracking=false`. iOS code doc-reviewed (can't compile on Windows,
+  [ADR-0065](../adr/0065-hosted-macos-ios-builds.md)); device-verify on first TestFlight build. Android
+  confirmed `targetSdkVersion=36` / `exported=true` in the merged manifest; tablet layout browser-verified
+  at 13" iPad portrait+landscape (adaptive, no letterboxing). See GL-10.
+- **MSR-2 · Native passkeys on the mobile heads (P1, [ADR-0066](../adr/0066-mobile-native-passkeys.md)).**
+  ✅ **Android implemented & compiling; iOS implemented & doc-reviewed (2026-09-17).** `MauiPasskeyCeremony`
+  is no longer a stub: **Android** via Credential Manager (`Xamarin.AndroidX.Credentials` 1.6.0.1, passes
+  the server's WebAuthn JSON verbatim and returns the standard response JSON) — **builds 0 errors** (27
+  NU1608 AndroidX-skew warnings, scoped to a warning via `WarningsNotAsErrors` in the App csproj; the
+  PlayServicesAuth companion was dropped for pinning an incompatible older AndroidX graph, so pre-Android-14
+  API 28–33 falls back to the FR-011 message — see the csproj note). **iOS** via AuthenticationServices
+  (`ASAuthorizationPlatformPublicKeyCredentialProvider`, base64url↔`NSData`, iOS-16 gate) in
+  `Platforms/iOS/MauiPasskeyCeremonyIos.cs`, reviewed against the Microsoft.iOS docs (fixed the generic
+  `GetCredential<T>()` + `[SupportedOSPlatform("ios16.0")]` blockers) — **device-verify on TestFlight**.
+  Seam (`IPasskeyCeremony`) and server unchanged. **Gated until go-live:** the passkey affordance keeps the
+  FR-011 "not available here" fallback until the association files carry real ids (MSR-3) and the RP domain
+  is live — password sign-in (FR-008) works throughout. Traceability: supersedes the FEAT-002 mobile-passkey
+  deferral.
+- **MSR-3 · Association files for deep links + passkeys (P2, go-live).** ✅ **Scaffolded 2026-09-17;**
+  need real identifiers. Reveal-link **applinks** on `secretsanta.circletools.ch` (`assetlinks.json` +
+  `apple-app-site-association`); passkey **`get_login_creds`/`webcredentials`** on the apex
+  `circletools.ch` (Main WebApp `wwwroot/.well-known/*`) because the WebAuthn RP-ID is the apex
+  (`Auth:Passkey:ServerDomain`). Placeholders: `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` (Android, shared with
+  GL-9) and `REPLACE_WITH_APPLE_TEAM_ID` (iOS). **Owner/CI:** fill the ids; ensure Caddy serves the
+  extensionless `apple-app-site-association` as `application/json` (no redirect); enable Associated Domains
+  on the App ID + regenerate the profile. Relates to GL-9, GL-10, [ADR-0066](../adr/0066-mobile-native-passkeys.md).
+- **MSR-4 · Externally-blocked store gates (tracking only).** Not code: privacy-policy + account-deletion
+  URLs (GL-6, hosting), DSA trader declaration (likely *trader* for a Swiss individual → EU), iPad-13"
+  screenshots, App Privacy label / Data-safety form (must match the sync data), 16 KB-page-size verify on
+  the release AAB (Play, 1 Feb 2027), Play closed-testing 12×14 days. Enumerated in the runbook checklist.
+
 ## Play Store submission prep — Secret-Santa (2026-09-17)
 
 Found while preparing the Google Play Console submission (individual enrolment,
@@ -145,8 +242,16 @@ checklist.
   `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` placeholder for the real fingerprint so reveal / calendar App
   Links auto-open silently instead of via the chooser.
   [ADR-0053](../adr/0053-backend-free-first-mobile-release.md).
-- **GL-10 · Build the iOS head + wire iOS deep links (P2, Mac-gated).** iOS is not built and deep links
-  are Android-only; needs an Apple-silicon Mac. [ADR-0031](../adr/0031-ios-build-host.md),
+- **GL-10 · Build the iOS head + wire iOS deep links (P2).** ~~Mac-gated~~ **No longer Mac-gated**
+  ([ADR-0065](../adr/0065-hosted-macos-ios-builds.md): iOS builds on hosted macOS CI). ✅ **iOS deep
+  links wired in code (2026-09-17):** `Platforms/iOS/AppDelegate.cs` now handles `ContinueUserActivity`
+  (Universal Links) + `OpenUrl` and forwards to `DeepLinkService` (parity with Android's `MainActivity`);
+  `Platforms/iOS/Entitlements.plist` declares `applinks:secretsanta.circletools.ch` (+
+  `webcredentials:circletools.ch` for passkeys, [ADR-0066](../adr/0066-mobile-native-passkeys.md)), wired
+  via csproj `<CodesignEntitlements>`; the `apple-app-site-association` files are scaffolded on both
+  origins (see GL-9). **Still owner/CI:** the iOS head has not been built/run on a device yet (no local
+  Mac — first TestFlight build verifies deep links + passkeys on iPadOS/iOS), and the Associated Domains
+  capability must be enabled on the App ID + provisioning profile regenerated.
   [ADR-0053](../adr/0053-backend-free-first-mobile-release.md).
 - **GL-11 · Alert on backup failure (P2, non-blocking).** ✅ **Implemented (2026-09-17).**
   `circletools-backup.service` now carries `OnFailure=circletools-backup-failure@%n.service`, a templated unit

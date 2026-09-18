@@ -19,7 +19,13 @@
 }
 else if (_memberCount < 2)
 {
-    <MudText>@L["NeedTwoMembersToDraw"]</MudText>
+    @* Not a dead end (UX-council #4): the draw needs members, so offer the one-tap way to add them
+       instead of a bare sentence with no way forward. *@
+    <MudStack Spacing="3" AlignItems="AlignItems.Start">
+        <MudText>@L["NeedTwoMembersToDraw"]</MudText>
+        <MudButton Href="@($"groups/{GroupId}/members")" Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.PersonAdd">@L["GoToMembers"]</MudButton>
+    </MudStack>
 }
 else
 {
