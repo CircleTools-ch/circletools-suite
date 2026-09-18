@@ -1,5 +1,6 @@
 @implements IDisposable
 @inject ICultureProvider Culture
+@using System.Globalization
 
 @*
     Rebuilds everything below it whenever the language changes.
@@ -16,6 +17,17 @@
     reads the new culture on its first render.
 *@
 
+@{
+    // MAUI Blazor Hybrid runs render batches on a pool of threads, so the batch that rebuilds this
+    // subtree after a language change can execute on a different thread than the one CultureProvider.Apply
+    // set the thread-static CurrentUICulture on — which would leave the rebuilt tree resolving
+    // IStringLocalizer strings under the STALE culture (the "switching language does nothing on Android"
+    // bug). Re-assert both thread cultures here: the keyed subtree instantiates and first-renders in this
+    // same synchronous render batch, so it reads what is set now. Harmless no-op on single-threaded WASM,
+    // and still no page reload (UC-MAIN-005). Formatting stays on the device region (ADR-0056).
+    CultureInfo.CurrentUICulture = Culture.CurrentCulture;
+    CultureInfo.CurrentCulture = Culture.FormattingCulture;
+}
 @ChildContent(Culture.CurrentCulture.Name)
 
 @code {

@@ -19,6 +19,13 @@ public interface ICultureProvider
     /// <summary>The culture currently in effect.</summary>
     CultureInfo CurrentCulture { get; }
 
+    /// <summary>
+    /// The culture used for date/number/currency formatting — the device/OS region, kept independent of
+    /// the UI language (ADR-0056). Exposed so a render boundary can re-assert both thread cultures before
+    /// it renders, which is required on MAUI Blazor Hybrid where render batches run on a thread pool.
+    /// </summary>
+    CultureInfo FormattingCulture { get; }
+
     /// <summary>Raised after <see cref="SetCultureAsync"/> has applied and persisted a new culture.</summary>
     event EventHandler? CultureChanged;
 

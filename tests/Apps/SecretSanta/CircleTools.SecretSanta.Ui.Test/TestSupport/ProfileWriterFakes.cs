@@ -81,6 +81,9 @@ public sealed class RecordingCultureProvider(string initial = "de-CH") : ICultur
     /// <inheritdoc />
     public CultureInfo CurrentCulture { get; private set; } = CultureInfo.GetCultureInfo(initial);
 
+    /// <inheritdoc />
+    public CultureInfo FormattingCulture { get; } = CultureInfo.CurrentCulture;
+
     /// <summary>The last name passed to <see cref="SetCultureAsync"/>, or <see langword="null"/>.</summary>
     public string? LastSet { get; private set; }
 

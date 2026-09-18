@@ -295,7 +295,15 @@ if (app.Environment.IsDevelopment()
     }
 }
 
-app.UseHttpsRedirection();
+// In every deployed environment the Caddy reverse proxy terminates TLS and performs the HTTP→HTTPS
+// redirect at the edge (ADR-0063); the API listens on plain HTTP internally, so applying HttpsRedirection
+// here is redundant and only logs "Failed to determine the https port for redirect" on the internal HTTP
+// health checks (/alive). Keep it for local, non-proxied dev only.
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors(corsPolicyName);
 app.UseRateLimiter();
 app.UseAuthentication();

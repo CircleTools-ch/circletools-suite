@@ -80,6 +80,11 @@ services:
       Auth__Jwt__SigningKey: ${Auth__Jwt__SigningKey}
       Mail__Username: ${Mail__Username}
       Mail__Password: ${Mail__Password}
+      # Fail-closed at-rest crypto keys (ADR-0061 share tokens, ADR-0062 email HMAC). The endpoints that
+      # use them throw "not configured" if these are absent — so they MUST be passed through here, not
+      # just present in .env.
+      SharedGroups__Security__TokenEncryptionKey: ${SharedGroups__Security__TokenEncryptionKey}
+      Circles__Security__EmailHashKey: ${Circles__Security__EmailHashKey}
     depends_on:
       postgres:
         condition: service_healthy
