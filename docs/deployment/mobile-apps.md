@@ -6,15 +6,15 @@ which order, and how long each part actually takes. Built from the
 
 For *testing* on the devices we own — before any of this — see [device testing](device-testing.md).
 
-> **Status — enrolment in progress (2026-09-17).** Both store enrolments have started; nothing has
-> been submitted or published yet. The rest of each track below is **not** executed yet.
+> **Status — both accounts live; nothing published (2026-09-18).** Both project developer accounts are
+> **enabled**. Nothing has been submitted to public review. The immediate goal is to install the app on
+> our own devices through each store's **internal testing** channel — which does **not** go through App
+> Review — before running the full production tracks. See **First milestone** below.
 >
-> - **Google Play Console — registered.** ✅ USD 25 paid; account active on `circletools.ch@gmail.com`.
->   The console shows no pending checks and a **Create app** button. Next: Track A step 4 (create the
->   app record).
-> - **Apple Developer Program — enrolment pending.** ⏳ Individual enrolment submitted on the
->   `info@circletools.ch` Apple ID; awaiting Apple approval (typically 24–48 h). Next after approval:
->   Track B step 3 (DSA trader status).
+> - **Google Play Console — registered & active.** ✅ USD 25 paid; `circletools.ch@gmail.com`; identity
+>   verification cleared. Next: create the app record (Track A step 4).
+> - **Apple Developer Program — enrolled.** ✅ Individual enrolment approved on the `info@circletools.ch`
+>   Apple ID. Next: DSA trader status and register the App ID (Track B steps 3–4).
 >
 > Both accounts are project-dedicated per [ADR-0030](../adr/0030-mobile-store-publisher-identity.md).
 > This runbook is followed at [milestone 8](../roadmap/roadmap.md); it was written up front because two
@@ -58,6 +58,82 @@ Publisher identity and account ownership are decided in
 
 Year one, excluding hosting: roughly **CHF 130–150** — Apple USD 99/year, Google USD 25 once, and the
 domain — with iOS built on hosted CI at ~CHF 0 and no Mac purchase.
+
+## First milestone — our own devices, via the stores, no public review
+
+The goal here is the first honest test: the **real store-delivered artifact** running on our own
+Pixel 9 Pro and iPad Air. Both stores have an **internal testing** channel that does exactly this
+**without going through public App Review**, and puts the build on the device within (roughly) an hour
+of upload. Reach this before the full production tracks below.
+
+Why internal testing and not sideloading or a 7-day dev profile: it installs the **same signed build a
+public user will get** — Play App Signing on Android, an App Store distribution build on iOS — so it
+exercises release signing, the store install/update flow, and (once the `.well-known` files are
+finalised) real deep-link verification. Sideloading and free-provisioning builds skip all of that.
+
+> There is exactly one native mobile head today — **Secret Santa** (`ch.circletools.secretsanta`),
+> shipped to Android **and** iOS. "Both apps" is this one app on two platforms; the Main app has no
+> MAUI head yet.
+
+### Android → Pixel 9 Pro (Google Play internal testing)
+
+Internal testing allows **up to 100 testers**, releases go live in **minutes with no review**, and it
+is **not** subject to the 12-testers/14-day rule — that rule (Track A step 9) gates only the later
+*production* application. So it is available as soon as the app record exists.
+
+1. **Create the app** in Play Console (Track A step 4) and **set up Play App Signing + the upload key**
+   (step 5). Back the upload key up offline before anything else.
+2. **Give CI the signing secrets** — `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+   `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` — so `release-mobile.yml` emits a **signed AAB**; or build
+   the signed AAB locally. The unsigned scaffold build cannot be uploaded.
+3. In Play Console → **Testing → Internal testing**, create a release and **upload the AAB**. Add
+   yourself and any family testers to the tester list by Google-account e-mail.
+4. **Complete the declarations Play blocks the release on** — app content: privacy policy, data safety,
+   content rating, target audience, ads (the same forms as Track A step 8; internal testing needs them
+   too). The data-safety form needs the **privacy-policy URL** — now **live** at
+   `https://secretsanta.circletools.ch/privacy` (with `/imprint` and `/delete-account`), so this no
+   longer blocks. Caveat: the page renders **client-side** (WASM); a no-JavaScript fetch returns the app
+   shell showing an error, so if a store validator or reviewer inspects the URL without running JS they
+   may not see the policy text. Verify it passes, and consider a prerendered/static fallback for the
+   legal routes if it trips.
+5. **Copy the internal-testing opt-in link**, open it on the Pixel signed in with a tester Google
+   account, accept, and install **from the Play Store**. Later builds arrive by bumping
+   `ApplicationVersion` and uploading a new AAB.
+
+Then grab the **app signing key SHA-256** from Play Console → *App signing* and put it in
+`assetlinks.json` (replacing `REPLACE_WITH_PLAY_APP_SIGNING_SHA256`) so App Links verify.
+
+### iOS → iPad Air (TestFlight internal testing)
+
+Internal testers (**up to 100**, members of the App Store Connect team) get builds with **no Beta App
+Review** — the only wait is build **processing** (a few minutes to ~an hour). External testers would
+need the one-time beta review; we don't need them to reach our own iPad.
+
+1. **Register the App ID** for `ch.circletools.secretsanta` with the **Associated Domains** capability
+   (Track B step 4 — needed for Universal Links and passkeys), and **create the App Store Connect app
+   record** (step 6).
+2. **Produce the signing assets and set the 6 iOS secrets** (Track B step 5): a distribution `.p12`, an
+   App Store provisioning profile, and an App Store Connect API key →
+   `IOS_DIST_CERT_P12_BASE64`, `IOS_DIST_CERT_PASSWORD`, `IOS_PROVISIONING_PROFILE_BASE64`,
+   `APPSTORE_ISSUER_ID`, `APPSTORE_KEY_ID`, `APPSTORE_API_PRIVATE_KEY`. All generatable on Windows with
+   `openssl` — no Mac.
+3. **Trigger the iOS build**: push a `v*` tag, or run `release-mobile.yml` via *Run workflow*
+   (workflow_dispatch). The hosted `macos-15` job builds, signs and **uploads the `.ipa` to TestFlight**.
+4. **Wait for processing** in App Store Connect → **TestFlight**. Export compliance is already answered
+   in the build (`ITSAppUsesNonExemptEncryption=false`), so there is no per-build questionnaire.
+5. **Add yourself as an internal tester** (App Store Connect → Users and Access, then an Internal group
+   in TestFlight), install the **TestFlight** app from the App Store on the iPad Air, and install the
+   build from it. New builds then appear automatically once they finish processing.
+
+Then grab the **Team ID** (Apple Developer → Membership) and put it in both
+`apple-app-site-association` files (replacing `REPLACE_WITH_APPLE_TEAM_ID`) so Universal Links verify.
+
+> **The production origins are live.** The web front is deployed, so the **privacy / imprint /
+> account-deletion URLs are reachable** (`https://secretsanta.circletools.ch/privacy`) and **reveal /
+> deep links** resolve at their production origin (`secretsanta.circletools.ch`, ADR-0053) — those
+> pages are static WASM and need no backend. The app still installs and runs **offline, with no
+> account**, regardless. The one thing to confirm before relying on it in a test is that the **API**
+> (`api.circletools.ch`) is serving in production, which is what **account sign-in / sync** needs.
 
 ## Track A — Google Play
 
@@ -131,7 +207,8 @@ waiting.
    compliance (encryption).
 9. **Upload the build** from the hosted macOS CI runner (the `ios` job in `release-mobile.yml`,
    [ADR-0065](../adr/0065-hosted-macos-ios-builds.md)) → **TestFlight**. Internal testers get it almost
-   immediately; external testers require a beta app review (~24 h).
+   immediately; external testers require a beta app review (~24 h). For the step-by-step to reach our
+   own iPad this way, see **First milestone** above.
 10. **Submit for review** — typically **1–3 days**, longer around major OS releases and holidays.
 11. **Release**, manually or automatically on approval.
 
@@ -245,8 +322,8 @@ test account).
 - [ ] Brand and domain final; `ApplicationId` / bundle id derived from it and set — **done** (`ch.circletools.secretsanta`)
 - [x] App icon and splash are branded art (not the .NET template)
 - [ ] `RevealBaseUrl` in the MAUI head pointed at the deployed origin, not `localhost` — Release defaults to production; verify at build
-- [ ] Privacy policy + imprint published, reachable, DE/EN/FR *(blocked on hosting)*
-- [ ] Account-deletion URL published and reachable *(blocked on hosting; in-app deletion exists)*
+- [x] Privacy policy + imprint published, reachable, DE/EN/FR *(live at `secretsanta.circletools.ch/privacy`, `/imprint`; WASM-rendered — see the client-side caveat above; light legal review still owed)*
+- [x] Account-deletion URL published and reachable *(live at `secretsanta.circletools.ch/delete-account`; in-app deletion exists)*
 - [ ] `.well-known/assetlinks.json` + `apple-app-site-association` served with the real Play SHA-256 / Apple Team ID
 - [ ] Apple: Associated Domains capability enabled on the App ID + profile regenerated
 - [ ] Store listings and screenshots in DE/EN/FR, per device class **incl. iPad 13"** (mandatory)
