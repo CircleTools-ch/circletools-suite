@@ -47,6 +47,14 @@
   - Rebuild the tree, don't just re-render it: wrap the router in `CultureBoundary` and put an
     `@key` on the `Router` bound to the culture name. A `StateHasChanged` above the router does not
     reliably reach the layout.
+- **On MAUI Blazor Hybrid, re-assert the thread cultures inside `CultureBoundary` on every render.**
+  Its render batches run on a **pool of threads**, so the rebuild after a switch can execute on a
+  different thread than the one that set the thread-static `CurrentUICulture` in the provider — leaving
+  the new tree to resolve strings under the *stale* culture (the picker appears to "do nothing" on
+  Android). `CultureBoundary` sets `CurrentUICulture` (language) and `CurrentCulture` (device region,
+  ADR-0056) at the top of its render, so the keyed subtree — which first-renders in that same
+  synchronous batch — reads the right one. It is a no-op on single-threaded WASM. The WASM recipe above
+  assumed a single render thread; that assumption is what breaks on MAUI.
 - **A keyed rebuild discards page state.** Any page that both changes the language and needs to show
   something afterwards (a "saved" confirmation) must keep it somewhere that survives — the query
   string, or a scoped service.
