@@ -59,6 +59,42 @@ public sealed class HandoutProgressService(IKeyValueStore store)
         }
     }
 
+    /// <summary>
+    /// Whether links were handed out for a <em>different</em> set of reveal links than the current ones —
+    /// i.e. an edit (a wishlist change, an event-detail edit, a re-draw) has changed the links since the
+    /// organizer handed some out, so the copies already sent are now stale and should be re-shared
+    /// (FR-045). The stored progress is keyed by the draw signature; when a non-empty record's signature
+    /// no longer matches the current links, the difference is exactly this "handed out, then changed" case.
+    /// </summary>
+    /// <param name="groupId">The owning group.</param>
+    /// <param name="eventId">The occasion.</param>
+    /// <param name="urls">The current reveal links, in order.</param>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    /// <returns><see langword="true"/> when the current links differ from the ones already handed out.</returns>
+    public async ValueTask<bool> LinksChangedSinceHandoutAsync(
+        Guid groupId, Guid eventId, IReadOnlyList<string> urls, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var raw = await store.GetAsync(StorageScope.Durable, Key(groupId, eventId), cancellationToken);
+            if (raw is null)
+            {
+                return false;
+            }
+
+            var lines = raw.Split('\n');
+            // A record with a non-matching signature AND at least one handed-out key means links were
+            // handed out and have since changed. A matching signature (still current) or an empty record
+            // (nothing handed out yet) is not a stale-link situation.
+            var hasHandouts = lines.Skip(1).Any(line => line.Length > 0);
+            return hasHandouts && lines.Length > 0 && lines[0] != Signature(urls);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     /// <summary>Marks (or unmarks) one participant as handed out for the current draw.</summary>
     /// <param name="groupId">The owning group.</param>
     /// <param name="eventId">The occasion.</param>

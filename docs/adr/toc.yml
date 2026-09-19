@@ -134,5 +134,7 @@
   href: 0066-mobile-native-passkeys.md
 - name: 0067 Android backup posture — disable OS auto-backup
   href: 0067-android-backup-posture.md
+- name: 0068 Live reveal links for backend-backed groups
+  href: 0068-live-reveal-links-for-backend-backed-groups.md
 - name: Template
   href: _template-adr.md

@@ -88,6 +88,7 @@
   <data name="ShareHint" xml:space="preserve"><value>Envoyez à chaque personne son propre lien. Seul le destinataire voit à qui il offre.</value></data>
   <data name="NoDrawYet" xml:space="preserve"><value>Lancez d'abord un tirage pour générer les liens.</value></data>
   <data name="DrawInvalidatedNotice" xml:space="preserve"><value>Les membres ont changé depuis ce tirage, il ne couvre donc plus tout le monde. Relancez le tirage pour le mettre à jour — le résultat précédent reste visible jusque-là.</value></data>
+  <data name="LinksChangedNotice" xml:space="preserve"><value>Ces liens ont changé depuis que vous en avez distribué certains (une liste de souhaits ou un détail de l'événement a été mis à jour). Partagez à nouveau les liens mis à jour pour que tout le monde ait la dernière version.</value></data>
   <data name="RedrawWarning" xml:space="preserve"><value>Cet événement a déjà été tiré au sort. Relancer le tirage remplace toutes les attributions - les liens déjà envoyés indiqueront la mauvaise personne.</value></data>
   <data name="RedrawConfirm" xml:space="preserve"><value>Relancer quand même le tirage</value></data>
   <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>Ce groupe a déjà été tiré au sort. Ajouter ou retirer un membre implique de relancer le tirage pour inclure tout le monde. Les événements déjà tirés conservent les personnes qui en faisaient partie.</value></data>
@@ -108,7 +109,6 @@
   <data name="NotFoundTitle" xml:space="preserve"><value>Introuvable</value></data>
   <data name="NotFoundBody" xml:space="preserve"><value>Désolé, ce contenu n'existe pas.</value></data>
   <data name="ShareLinkTooLong" xml:space="preserve"><value>Ce lien est long et pourrait être raccourci ou tronqué par certaines applications de messagerie. Raccourcissez si besoin les éléments de la liste de souhaits.</value></data>
-  <data name="ShowLink" xml:space="preserve"><value>Afficher le lien</value></data>
   <data name="ForLabel" xml:space="preserve"><value>Pour</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Votre Père Noël secret</value></data>
   <data name="RevealGreeting" xml:space="preserve"><value>Bonjour {0} !</value></data>
@@ -311,6 +311,9 @@
   <data name="ReleaseToLinkConfirm" xml:space="preserve"><value>Rendre ce groupe à un lien partagé ? Un nouveau lien admin est créé et vous n'êtes plus le seul administrateur.</value></data>
   <data name="ReleaseToLinkConfirmYes" xml:space="preserve"><value>Transférer</value></data>
   <data name="AccountOwnedNote" xml:space="preserve"><value>Ce groupe vous appartient. Il est synchronisé avec votre compte.</value></data>
+  <data name="StorageModeChanging" xml:space="preserve"><value>Enregistrement en cours…</value></data>
+  <data name="StorageModeChanged" xml:space="preserve"><value>Enregistré.</value></data>
+  <data name="StorageModeChangeFailed" xml:space="preserve"><value>Impossible de modifier l'emplacement de stockage de ce groupe. Vérifiez votre connexion et réessayez.</value></data>
   <data name="AdminRetiredTitle" xml:space="preserve"><value>Ce lien admin ne fonctionne plus</value></data>
   <data name="AdminRetiredBody" xml:space="preserve"><value>{0} a repris le rôle d'administrateur de ce groupe.</value></data>
   <data name="AdminRetiredJoinHint" xml:space="preserve"><value>Vous pouvez toujours ouvrir le lien pour rejoindre en tant que participant.</value></data>

@@ -311,6 +311,8 @@ public sealed class SharedGroupStore(
         await using var transaction = await context.Database
             .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
+        await context.RevealSlices.Where(s => s.GroupId == groupId)
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         await context.MemberClaims.Where(c => c.GroupId == groupId)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         await context.Tokens.Where(t => t.GroupId == groupId)
@@ -505,6 +507,7 @@ public sealed class SharedGroupStore(
 
         foreach (var groupId in expired)
         {
+            await context.RevealSlices.Where(s => s.GroupId == groupId).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
             await context.MemberClaims.Where(c => c.GroupId == groupId).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
             await context.Tokens.Where(t => t.GroupId == groupId).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
             await context.Groups.Where(g => g.GroupId == groupId).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
@@ -618,12 +621,106 @@ public sealed class SharedGroupStore(
         await using var transaction = await context.Database
             .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
+        await context.RevealSlices.Where(s => owned.Contains(s.GroupId)).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         await context.MemberClaims.Where(c => owned.Contains(c.GroupId)).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         await context.Tokens.Where(t => owned.Contains(t.GroupId)).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         await context.Groups.Where(g => owned.Contains(g.GroupId)).ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
 
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
         return owned.Count;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> SetRevealSlicesAsync(
+        string adminToken,
+        IReadOnlyList<RevealSlice> slices,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(slices);
+
+        var tokenRow = await FindTokenAsync(adminToken, cancellationToken);
+        if (tokenRow is not { Active: true, Capability: SharedCapability.Admin })
+        {
+            return false;
+        }
+
+        return await ReplaceRevealSlicesAsync(tokenRow.GroupId, slices, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> SetRevealSlicesAsOwnerAsync(
+        Guid accountId,
+        Guid groupId,
+        IReadOnlyList<RevealSlice> slices,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(slices);
+
+        var owns = await context.Groups
+            .AnyAsync(g => g.GroupId == groupId && g.OwnerAccountId == accountId, cancellationToken)
+            .ConfigureAwait(false);
+        return owns && await ReplaceRevealSlicesAsync(groupId, slices, cancellationToken).ConfigureAwait(false);
+    }
+
+    // Replace a group's whole reveal-slice set (ADR-0068): the published set is authoritative, so any
+    // slice not in it — a stale reveal token from a previous draw — stops resolving. Bodies are opaque
+    // and abuse-capped like the group body (NFR-009).
+    private async Task<bool> ReplaceRevealSlicesAsync(
+        Guid groupId,
+        IReadOnlyList<RevealSlice> slices,
+        CancellationToken cancellationToken)
+    {
+        if (slices.Count > _limits.MaxMembers || slices.Any(s => !WithinLimits(s.Body)))
+        {
+            return false;
+        }
+
+        var now = timeProvider.GetUtcNow();
+
+        await using var transaction = await context.Database
+            .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        await context.RevealSlices.Where(s => s.GroupId == groupId)
+            .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+
+        foreach (var slice in slices)
+        {
+            context.RevealSlices.Add(new SharedRevealSlice
+            {
+                // Keyed by the reveal token's hash; the plaintext is kept only as ciphertext (ADR-0061).
+                Token = ShareSecretHash.Of(slice.RevealToken),
+                TokenCipher = cipher.Encrypt(slice.RevealToken),
+                GroupId = groupId,
+                Body = slice.Body.GetRawText(),
+                LastActivityAt = now,
+            });
+        }
+
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    /// <inheritdoc />
+    public async Task<RevealSliceView?> GetRevealSliceAsync(string revealToken, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(revealToken))
+        {
+            return null;
+        }
+
+        var slice = await context.RevealSlices
+            .FindAsync([ShareSecretHash.Of(revealToken)], cancellationToken).ConfigureAwait(false);
+        if (slice is null)
+        {
+            return null;
+        }
+
+        // Any access keeps the slice alive for retention (NFR-010), alongside its group.
+        slice.LastActivityAt = timeProvider.GetUtcNow();
+        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return new RevealSliceView(ParseBody(slice.Body));
     }
 
     // Resolve a token row by the hash of the presented token (ADR-0061); a null/empty token never matches.
