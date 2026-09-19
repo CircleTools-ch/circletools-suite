@@ -1,5 +1,6 @@
 @page "/groups/{GroupId:guid}/events/{EventId:guid}/share"
 @using CircleTools.SecretSanta.Core.Reveal
+@using CircleTools.SecretSanta.LocalStore
 @inject ISender Sender
 @inject IJSRuntime JS
 @inject IShareService ShareService
@@ -7,6 +8,8 @@
 @inject IStringLocalizer<AppStrings> L
 @inject ISyncSignals SyncSignals
 @inject HandoutProgressService Handout
+@inject ILocalSyncStore Local
+@inject RevealSlicePublisher RevealPublisher
 @implements IDisposable
 
 <PageTitle>@L["ShareTitle"]</PageTitle>
@@ -120,7 +123,23 @@ else
 
     private async Task LoadAsync()
     {
-        _links = await Sender.Send(new GetRevealLinksQuery(GroupId, EventId));
+        // Ensure this backend-backed group's reveal slices are published and its per-giver reveal tokens
+        // exist, so each link can carry rt= (ADR-0068). Best-effort and a no-op for a local-only or
+        // join-only group.
+        await RevealPublisher.PublishAsync(GroupId);
+
+        var revealTokens = (await Local.LoadGroupsAsync())
+            .FirstOrDefault(r => r.State.Id == GroupId)?.Tokens?.RevealTokens?
+            .Where(t => t.EventId == EventId)
+            .ToDictionary(t => t.MemberId, t => t.Token) ?? [];
+
+        // For a backend-backed group, append the giver's reveal token so the link fetches the live slice
+        // (the d= snapshot stays as the offline fallback). Local-only links are unchanged.
+        var baseLinks = await Sender.Send(new GetRevealLinksQuery(GroupId, EventId));
+        _links = [.. baseLinks.Select(l => revealTokens.TryGetValue(l.GiverMemberId, out var rt)
+            ? l with { Url = $"{l.Url}&rt={Uri.EscapeDataString(rt)}" }
+            : l)];
+
         var occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));
         _drawInvalidated = occasion?.DrawInvalidatedByMembershipChange ?? false;
 

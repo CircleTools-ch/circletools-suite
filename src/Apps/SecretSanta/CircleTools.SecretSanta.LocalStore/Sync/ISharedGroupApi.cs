@@ -34,4 +34,14 @@ public interface ISharedGroupApi
 
     /// <summary>Releases a claimed member (admin only), so it can be claimed again.</summary>
     Task<ApiResult> ReleasePersonAsync(string adminToken, Guid memberId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Publishes the full current set of per-giver reveal slices for the group an admin token addresses
+    /// (ADR-0068, FEAT-020), so its backend-backed reveal links show the current wishlist/event. The set
+    /// is authoritative — stale reveal tokens from a previous draw stop resolving.
+    /// </summary>
+    Task<ApiResult> PublishRevealSlicesAsync(string adminToken, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>Reads one giver's live reveal slice by its reveal token (ADR-0068) — what the reveal page fetches when online.</summary>
+    Task<ApiResult<RevealSliceView>> GetRevealSliceAsync(string revealToken, CancellationToken cancellationToken = default);
 }

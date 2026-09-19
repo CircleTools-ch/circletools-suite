@@ -166,6 +166,8 @@
   <data name="ForLabel" xml:space="preserve"><value>For</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Your Secret Santa</value></data>
   <data name="RevealGreeting" xml:space="preserve"><value>Hi {0}!</value></data>
+  <data name="RevealLiveHint" xml:space="preserve"><value>Showing the latest details.</value></data>
+  <data name="RevealSnapshotHint" xml:space="preserve"><value>Showing your saved copy — you may be offline.</value></data>
   <data name="RevealBudgetLabel" xml:space="preserve"><value>Budget</value></data>
   <data name="RevealEventLabel" xml:space="preserve"><value>Event</value></data>
   <data name="RevealButton" xml:space="preserve"><value>Reveal who you got</value></data>
