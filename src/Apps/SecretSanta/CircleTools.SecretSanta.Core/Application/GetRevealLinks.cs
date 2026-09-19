@@ -1,4 +1,3 @@
-using System.Globalization;
 using CircleTools.Application;
 using CircleTools.SecretSanta.Contracts;
 using CircleTools.SecretSanta.Core.Domain;
@@ -24,7 +23,7 @@ public sealed class GetRevealLinksQueryHandler(IGroupRepository repository, Reve
 
         var group = await repository.GetAsync(query.GroupId, cancellationToken);
         var occasion = group?.FindEvent(query.EventId);
-        if (group is null || occasion?.CurrentDraw is null)
+        if (group is null || occasion is null)
         {
             return [];
         }
@@ -32,37 +31,14 @@ public sealed class GetRevealLinksQueryHandler(IGroupRepository repository, Reve
         // A stale draw (roster changed since it ran, ADR-0052) still yields links: an archived member's
         // name resolves through FindMember, so a past occasion's links stay reachable — that is the whole
         // point of keeping the draw. The UI warns that the draw no longer matches the roster; it is not
-        // blocked here. The null guard below still protects a genuinely broken (legacy) draw.
-
-        var links = new List<RevealLinkDto>(occasion.CurrentDraw.Assignments.Count);
-        foreach (var assignment in occasion.CurrentDraw.Assignments)
+        // blocked here. RevealPayloadFactory returns null for no-draw or a genuinely broken (legacy)
+        // draw, which maps to an empty set.
+        var built = RevealPayloadFactory.Build(group, occasion);
+        if (built is null)
         {
-            var giver = group.FindMember(assignment.GiverMemberId);
-            var recipient = group.FindMember(assignment.RecipientMemberId);
-            if (giver is null || recipient is null)
-            {
-                // The draw no longer matches the member set. Skipping the broken pairs would hand
-                // the organizer a plausible-looking but incomplete set of links, silently dropping
-                // whoever is missing from the exchange. Membership changes void every event's draw
-                // (Group.RemoveMember), so this is a guard rather than an expected path.
-                return [];
-            }
-
-            var payload = new RevealPayload(
-                RevealPayload.CurrentVersion,
-                recipient.Name,
-                occasion.WishlistFor(recipient.Id).Items,
-                occasion.Budget?.Amount,
-                occasion.Budget?.Currency,
-                occasion.EventDetails?.Date?.ToString("O", CultureInfo.InvariantCulture),
-                occasion.EventDetails?.Location,
-                occasion.EventDetails?.Description,
-                occasion.Budget?.MinAmount,
-                string.IsNullOrEmpty(recipient.GiftNote) ? null : recipient.GiftNote);
-
-            links.Add(linkBuilder.Build(giver.Name, payload));
+            return [];
         }
 
-        return links;
+        return [.. built.Select(b => linkBuilder.Build(b.GiverName, b.GiverMemberId, b.Payload))];
     }
 }

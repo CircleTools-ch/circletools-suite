@@ -55,6 +55,9 @@ public static class SecretSantaUiServiceCollectionExtensions
         // for a background sync; queries never do. The host must register an IConnectivity seam for the
         // reconnect trigger.
         services.AddScoped<AutoSyncService>();
+        // Live reveal links for backend-backed groups (ADR-0068, FEAT-020): publishes the per-giver
+        // reveal slices, run from the shared reconcile cycle and when the share screen opens.
+        services.AddScoped<RevealSlicePublisher>();
         // Expose only the "a sync landed" signal to pages that refresh on it (FEAT-013 co-admin edits),
         // resolved to the same instance — so a page depends on the notification, not the whole engine.
         services.AddScoped<ISyncSignals>(sp => sp.GetRequiredService<AutoSyncService>());

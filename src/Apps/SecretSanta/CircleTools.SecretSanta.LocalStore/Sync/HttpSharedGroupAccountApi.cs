@@ -81,6 +81,25 @@ public sealed class HttpSharedGroupAccountApi(HttpClient client) : ISharedGroupA
         return await SendForAsync(message, SyncJsonContext.Default.OwnedSharedGroups, cancellationToken);
     }
 
+    /// <inheritdoc />
+    public async Task<ApiResult> PublishOwnedRevealSlicesAsync(Guid groupId, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var content = JsonContent.Create(request, SyncJsonContext.Default.PublishRevealSlicesRequest);
+        using var message = new HttpRequestMessage(HttpMethod.Put, $"{Route}/{groupId}/owned/reveal-slices") { Content = content };
+        try
+        {
+            using var response = await client.SendAsync(message, cancellationToken);
+            return response.IsSuccessStatusCode
+                ? ApiResult.Ok()
+                : ApiResult.Failed(await ApiResponseReader.ReadErrorAsync(response, cancellationToken));
+        }
+        catch (HttpRequestException)
+        {
+            return ApiResult.Failed(new ApiError(ApiFailure.Unreachable));
+        }
+    }
+
     private async Task<ApiResult<T>> SendForAsync<T>(
         HttpRequestMessage message,
         System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> typeInfo,

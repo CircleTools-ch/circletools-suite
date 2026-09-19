@@ -18,7 +18,7 @@ public sealed class RevealLinkLengthTests
     [Fact]
     public void ModestWishlist_ProducesLinkWithinRecommendedLength()
     {
-        var link = CreateBuilder().Build("Alice", PayloadWithWishlist(["Scarf", "Book", "Tea"]));
+        var link = CreateBuilder().Build("Alice", Guid.NewGuid(), PayloadWithWishlist(["Scarf", "Book", "Tea"]));
 
         Assert.False(RevealLinkBuilder.ExceedsRecommendedLength(link.Url));
         Assert.True(link.Url.Length <= RevealLinkBuilder.MaxRecommendedUrlLength);
@@ -32,7 +32,7 @@ public sealed class RevealLinkLengthTests
             .Select(_ => Guid.NewGuid().ToString("N"))
             .ToList();
 
-        var link = CreateBuilder().Build("Alice", PayloadWithWishlist(wishlist));
+        var link = CreateBuilder().Build("Alice", Guid.NewGuid(), PayloadWithWishlist(wishlist));
 
         Assert.True(RevealLinkBuilder.ExceedsRecommendedLength(link.Url));
         Assert.True(link.Url.Length > RevealLinkBuilder.MaxRecommendedUrlLength);
