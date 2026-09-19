@@ -28,6 +28,9 @@ public sealed class SharedGroupDbContext(DbContextOptions<SharedGroupDbContext> 
     /// <summary>Gets the per-member person-claims that lock which participant is whom.</summary>
     public DbSet<SharedMemberClaim> MemberClaims => Set<SharedMemberClaim>();
 
+    /// <summary>Gets the per-giver reveal slices that back live reveal links (ADR-0068, FEAT-020).</summary>
+    public DbSet<SharedRevealSlice> RevealSlices => Set<SharedRevealSlice>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -68,6 +71,19 @@ public sealed class SharedGroupDbContext(DbContextOptions<SharedGroupDbContext> 
 
             // Resolve every token for a group (rotate, delete, claim-admin).
             entity.HasIndex(t => t.GroupId);
+        });
+
+        modelBuilder.Entity<SharedRevealSlice>(entity =>
+        {
+            entity.ToTable("reveal_slices");
+            entity.HasKey(s => s.Token);
+            entity.Property(s => s.Token).HasMaxLength(64);
+            entity.Property(s => s.TokenCipher).IsRequired().HasMaxLength(128);
+            entity.Property(s => s.Body).IsRequired().HasColumnType("jsonb");
+            entity.Property(s => s.LastActivityAt).IsRequired();
+
+            // Replace or delete every slice for a group on re-publish / delete.
+            entity.HasIndex(s => s.GroupId);
         });
 
         modelBuilder.Entity<SharedMemberClaim>(entity =>

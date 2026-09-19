@@ -56,7 +56,7 @@
   <data name="LoginOr" xml:space="preserve"><value>or</value></data>
   <data name="LoginForgot" xml:space="preserve"><value>Forgot your password?</value></data>
   <data name="LoginNoAccount" xml:space="preserve"><value>No account yet?</value></data>
-  <data name="LoginPasskeyUnsupported" xml:space="preserve"><value>This browser cannot use passkeys.</value></data>
+  <data name="LoginPasskeyUnsupported" xml:space="preserve"><value>Couldn't sign in with a passkey here. You can still use your password.</value></data>
   <data name="ForgotTitle" xml:space="preserve"><value>Reset your password</value></data>
   <data name="ForgotLead" xml:space="preserve"><value>Enter your address and we will send you a link to choose a new password.</value></data>
   <data name="ForgotSubmit" xml:space="preserve"><value>Send the link</value></data>
@@ -80,7 +80,7 @@
   <data name="PasskeyRemove" xml:space="preserve"><value>Remove</value></data>
   <data name="PasskeyRemoved" xml:space="preserve"><value>Passkey removed.</value></data>
   <data name="PasskeyAddedOn" xml:space="preserve"><value>Added on {0}</value></data>
-  <data name="PasskeyUnsupported" xml:space="preserve"><value>This browser cannot create passkeys.</value></data>
+  <data name="PasskeyUnsupported" xml:space="preserve"><value>Couldn't create a passkey here. You can still sign in with your password.</value></data>
   <data name="ChangeEmailTitle" xml:space="preserve"><value>Email address</value></data>
   <data name="ChangeEmailLead" xml:space="preserve"><value>Your account keeps its current address until you confirm the new one.</value></data>
   <data name="ChangeEmailCurrent" xml:space="preserve"><value>Current address: {0}</value></data>

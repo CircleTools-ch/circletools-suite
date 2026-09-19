@@ -76,6 +76,8 @@
   href: TP-018-branded-transactional-emails.md
 - name: FEAT-019 Getting-started checklist
   href: FEAT-019-getting-started-checklist.md
+- name: FEAT-020 Live reveal links for backend-backed groups
+  href: FEAT-020-live-reveal-links-for-backend-backed-groups.md
 - name: Templates
   items:
     - name: Feature spec template

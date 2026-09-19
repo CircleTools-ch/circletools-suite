@@ -24,6 +24,13 @@
     <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true" role="alert">@L["DrawInvalidatedNotice"]</MudAlert>
 }
 
+@* The reveal links carry the wishlist and event details as a snapshot (ADR-0014). If they changed after
+   the organizer handed some out, the copies already sent are stale — so prompt a re-share (FR-045). *@
+@if (_linksChanged)
+{
+    <MudAlert Severity="Severity.Info" Class="mb-3" Dense="true" role="alert" id="links-changed-notice">@L["LinksChangedNotice"]</MudAlert>
+}
+
 @if (_links is null)
 {
     <MudText>@L["Loading"]</MudText>
@@ -78,12 +85,9 @@ else
                             </MudButton>
                         </div>
                     </div>
-                    @* Copy is the primary action; the raw encoded URL is long and alarming, so keep it
-                       collapsed but available for anyone who wants to inspect or paste it manually. *@
-                    <details class="mt-1">
-                        <summary class="mud-text-secondary" style="cursor:pointer;font-size:0.85rem;">@L["ShowLink"]</summary>
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1" Style="word-break:break-all;">@link.Url</MudText>
-                    </details>
+                    @* The raw encoded URL is intentionally not shown — Share, Copy and QR cover every way
+                       to hand it out, and displaying the long opaque link only alarms (it is not meant to be
+                       read or typed). *@
                     @if (RevealLinkBuilder.ExceedsRecommendedLength(link.Url))
                     {
                         <MudText Typo="Typo.caption" Color="Color.Warning" Class="mt-1 d-block" role="alert">@L["ShareLinkTooLong"]</MudText>
@@ -107,6 +111,7 @@ else
     private HashSet<string> _done = [];
     private string? _copiedUrl;
     private bool _drawInvalidated;
+    private bool _linksChanged;
     private bool _canShare;
 
     protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
@@ -122,6 +127,10 @@ else
         // Which participants have already been handed their link (MNF-7); resets by itself on a re-draw.
         var urls = _links.Select(l => l.Url).ToList();
         _done = await Handout.GetDoneAsync(GroupId, EventId, urls);
+
+        // If links were handed out and have since changed (wishlist/event edit or re-draw), the sent
+        // copies are stale — prompt the organizer to re-share the updated links (#1, FR-045).
+        _linksChanged = await Handout.LinksChangedSinceHandoutAsync(GroupId, EventId, urls);
     }
 
     // The guided one-at-a-time hand-out; reload progress when it closes so the ✓ marks and count are current.

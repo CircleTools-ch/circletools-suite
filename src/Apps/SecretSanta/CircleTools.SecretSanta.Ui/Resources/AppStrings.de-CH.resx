@@ -88,6 +88,7 @@
   <data name="ShareHint" xml:space="preserve"><value>Sende jeder Person ihren eigenen Link. Nur die empfangende Person sieht, wen sie beschenkt.</value></data>
   <data name="NoDrawYet" xml:space="preserve"><value>Lose zuerst aus, um Links zu erzeugen.</value></data>
   <data name="DrawInvalidatedNotice" xml:space="preserve"><value>Die Mitglieder haben sich seit dieser Auslosung geändert, daher deckt sie nicht mehr alle ab. Lose erneut aus, um sie zu aktualisieren – das bisherige Ergebnis bleibt bis dahin sichtbar.</value></data>
+  <data name="LinksChangedNotice" xml:space="preserve"><value>Diese Links haben sich geändert, seit du einige verteilt hast (eine Wunschliste oder ein Anlass-Detail wurde aktualisiert). Teile die aktualisierten Links erneut, damit alle den neuesten Stand haben.</value></data>
   <data name="RedrawWarning" xml:space="preserve"><value>Dieser Anlass wurde bereits ausgelost. Ein erneutes Auslosen ersetzt alle Zuordnungen - bereits verschickte Links zeigen dann die falsche Person.</value></data>
   <data name="RedrawConfirm" xml:space="preserve"><value>Trotzdem erneut auslosen</value></data>
   <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>Diese Gruppe wurde bereits ausgelost. Wer Mitglieder hinzufügt oder entfernt, muss neu auslosen, damit alle dabei sind. Bereits ausgeloste Anlässe behalten die Personen, die darin waren.</value></data>
@@ -108,7 +109,6 @@
   <data name="NotFoundTitle" xml:space="preserve"><value>Nicht gefunden</value></data>
   <data name="NotFoundBody" xml:space="preserve"><value>Diesen Inhalt gibt es leider nicht.</value></data>
   <data name="ShareLinkTooLong" xml:space="preserve"><value>Dieser Link ist lang und könnte von manchen Chat-Apps gekürzt oder abgeschnitten werden. Kürze ggf. die Wunschlisteneinträge.</value></data>
-  <data name="ShowLink" xml:space="preserve"><value>Link anzeigen</value></data>
   <data name="ForLabel" xml:space="preserve"><value>Für</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Dein Wichtel</value></data>
   <data name="RevealGreeting" xml:space="preserve"><value>Hallo {0}!</value></data>
@@ -311,6 +311,9 @@
   <data name="ReleaseToLinkConfirm" xml:space="preserve"><value>Diese Gruppe wieder als geteilten Link freigeben? Ein neuer Admin-Link wird erstellt und du bist nicht mehr alleiniger Admin.</value></data>
   <data name="ReleaseToLinkConfirmYes" xml:space="preserve"><value>Übergeben</value></data>
   <data name="AccountOwnedNote" xml:space="preserve"><value>Diese Gruppe gehört dir. Sie ist mit deinem Konto synchronisiert.</value></data>
+  <data name="StorageModeChanging" xml:space="preserve"><value>Änderung wird gespeichert…</value></data>
+  <data name="StorageModeChanged" xml:space="preserve"><value>Gespeichert.</value></data>
+  <data name="StorageModeChangeFailed" xml:space="preserve"><value>Der Speicherort dieser Gruppe konnte nicht geändert werden. Prüfe deine Verbindung und versuche es erneut.</value></data>
   <data name="AdminRetiredTitle" xml:space="preserve"><value>Dieser Admin-Link funktioniert nicht mehr</value></data>
   <data name="AdminRetiredBody" xml:space="preserve"><value>{0} hat die Admin-Rolle für diese Gruppe übernommen.</value></data>
   <data name="AdminRetiredJoinHint" xml:space="preserve"><value>Du kannst weiterhin den Beitritts-Link öffnen, um als Teilnehmer beizutreten.</value></data>

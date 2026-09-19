@@ -142,6 +142,7 @@
   <data name="ShareHint" xml:space="preserve"><value>Send each person their own link. Only the recipient can see who they drew.</value></data>
   <data name="NoDrawYet" xml:space="preserve"><value>Run a draw first to generate links.</value></data>
   <data name="DrawInvalidatedNotice" xml:space="preserve"><value>The members changed since this draw, so it no longer covers everyone. Run the draw again to update it — the previous result stays visible until you do.</value></data>
+  <data name="LinksChangedNotice" xml:space="preserve"><value>These links changed since you handed some out (a wishlist or event detail was updated). Share the updated links again so everyone has the latest.</value></data>
   <data name="RedrawWarning" xml:space="preserve"><value>This event has already been drawn. Drawing again replaces every assignment - links you have already sent will show the wrong person.</value></data>
   <data name="RedrawConfirm" xml:space="preserve"><value>Draw again anyway</value></data>
   <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>This group has already been drawn. Adding or removing a member means you'll need to draw again to include everyone. Events you've already drawn keep the people who were in them.</value></data>
@@ -162,7 +163,6 @@
   <data name="NotFoundTitle" xml:space="preserve"><value>Not found</value></data>
   <data name="NotFoundBody" xml:space="preserve"><value>Sorry, the content you are looking for does not exist.</value></data>
   <data name="ShareLinkTooLong" xml:space="preserve"><value>This link is long and may be shortened or broken by some chat apps. Consider shortening the wishlist entries.</value></data>
-  <data name="ShowLink" xml:space="preserve"><value>Show link</value></data>
   <data name="ForLabel" xml:space="preserve"><value>For</value></data>
   <data name="RevealTitle" xml:space="preserve"><value>Your Secret Santa</value></data>
   <data name="RevealGreeting" xml:space="preserve"><value>Hi {0}!</value></data>
@@ -366,6 +366,9 @@
   <data name="ReleaseToLinkConfirm" xml:space="preserve"><value>Hand this group back to a shared link? A new admin link is created and you stop being the sole admin.</value></data>
   <data name="ReleaseToLinkConfirmYes" xml:space="preserve"><value>Hand off</value></data>
   <data name="AccountOwnedNote" xml:space="preserve"><value>You own this group. It's synced to your account.</value></data>
+  <data name="StorageModeChanging" xml:space="preserve"><value>Saving your change…</value></data>
+  <data name="StorageModeChanged" xml:space="preserve"><value>Saved.</value></data>
+  <data name="StorageModeChangeFailed" xml:space="preserve"><value>Couldn't change where this group is stored. Check your connection and try again.</value></data>
   <data name="AdminRetiredTitle" xml:space="preserve"><value>This admin link no longer works</value></data>
   <data name="AdminRetiredBody" xml:space="preserve"><value>{0} has claimed the admin role for this group.</value></data>
   <data name="AdminRetiredJoinHint" xml:space="preserve"><value>You can still open the join link to join as a participant.</value></data>
