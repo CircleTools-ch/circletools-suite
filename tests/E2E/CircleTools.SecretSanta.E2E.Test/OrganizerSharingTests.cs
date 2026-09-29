@@ -28,6 +28,7 @@ public sealed class OrganizerSharingTests : IAsyncLifetime
             ViewportSize = new ViewportSize { Width = 1280, Height = 950 }, // wide: the inline create + picker
         });
         await _context.AddInitScriptAsync("try { localStorage.setItem('secretsanta.culture','en'); } catch (e) {}");
+        await _context.AddInitScriptAsync(SharingLinks.CaptureCopyScript);
 
         _page = await _context.NewPageAsync();
         _page.Console += (_, m) => { if (m.Type == "error" && IsRealFault(m.Text)) { _consoleIssues.Add($"[error] {m.Text}"); } };
@@ -61,10 +62,11 @@ public sealed class OrganizerSharingTests : IAsyncLifetime
         await _page.Locator("#admin-link-card").WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
         await _page.Locator("#join-link-card").WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
 
-        var adminText = await _page.Locator("#admin-link-card").InnerTextAsync();
-        var joinText = await _page.Locator("#join-link-card").InnerTextAsync();
-        Assert.Contains("/admin#t=", adminText, StringComparison.Ordinal);
-        Assert.Contains("/join#t=", joinText, StringComparison.Ordinal);
+        // The raw URL is no longer shown as text (ADR-0068 / FEAT-020); Copy is the way to get it.
+        var adminUrl = await SharingLinks.CopyLinkAsync(_page, "#admin-link-card");
+        var joinUrl = await SharingLinks.CopyLinkAsync(_page, "#join-link-card");
+        Assert.Contains("/admin#t=", adminUrl, StringComparison.Ordinal);
+        Assert.Contains("/join#t=", joinUrl, StringComparison.Ordinal);
 
         // A QR affordance is present on each card (the code is generated client-side, every platform).
         Assert.True(await _page.Locator("#admin-link-card button:has(svg)").CountAsync() >= 1);
