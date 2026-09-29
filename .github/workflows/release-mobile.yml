@@ -56,12 +56,12 @@ jobs:
       HAS_SIGNING: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
       HAS_PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # full history: nbgv version + the git-count versionCode (ADR-0047).
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
 
@@ -115,7 +115,7 @@ jobs:
             -p:AndroidPackageFormat=aab
 
       - name: Upload bundle artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: secretsanta-android-${{ steps.nbgv.outputs.SimpleVersion }}-${{ steps.code.outputs.value }}
           path: "src/Apps/SecretSanta/CircleTools.SecretSanta.App/bin/Release/net10.0-android/**/*.aab"
@@ -140,7 +140,7 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: ch.circletools.secretsanta
           releaseFiles: ${{ steps.aab.outputs.path }}
-          track: internal
+          tracks: internal
           status: completed
 
   ios:
@@ -163,7 +163,7 @@ jobs:
       HAS_SIGNING: ${{ secrets.IOS_DIST_CERT_P12_BASE64 != '' }}
       HAS_TESTFLIGHT: ${{ secrets.APPSTORE_ISSUER_ID != '' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # full history: nbgv version + the git-count build number (ADR-0047).
 
@@ -176,7 +176,7 @@ jobs:
           xcode-version: '27.0'
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
 
@@ -248,7 +248,7 @@ jobs:
 
       - name: Upload .ipa artifact
         if: ${{ env.HAS_SIGNING == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: secretsanta-ios-${{ steps.nbgv.outputs.SimpleVersion }}-${{ steps.code.outputs.value }}
           path: "src/Apps/SecretSanta/CircleTools.SecretSanta.App/bin/Release/net10.0-ios/ios-arm64/publish/*.ipa"
