@@ -76,13 +76,13 @@ jobs:
     outputs:
       image_tag: ${{ steps.nbgv.outputs.SimpleVersion }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.guard.outputs.ref }}
           fetch-depth: 0 # full history: nbgv computes the version from git height (ADR-0047).
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
 
@@ -161,7 +161,7 @@ jobs:
     steps:
       # The runner needs the deploy/ tree so it can rsync compose.yaml + observability config to the VM.
       - name: Check out deploy config
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ needs.guard.outputs.ref }}
 

@@ -26,6 +26,27 @@
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
+    <!-- UIScene lifecycle adoption (required when building against the iOS/iPadOS 26+ SDK, ADR-0065).
+         UIKit traps at launch — EXC_BREAKPOINT, _UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption
+         — if a multitasking-capable app does not adopt scenes. MAUI provides the runtime; this manifest
+         opts in and points at the SceneDelegate (dotnet/maui#38601). Single scene only. -->
+    <key>UIApplicationSceneManifest</key>
+    <dict>
+        <key>UIApplicationSupportsMultipleScenes</key>
+        <false/>
+        <key>UISceneConfigurations</key>
+        <dict>
+            <key>UIWindowSceneSessionRoleApplication</key>
+            <array>
+                <dict>
+                    <key>UISceneConfigurationName</key>
+                    <string>__MAUI_DEFAULT_SCENE_CONFIGURATION__</string>
+                    <key>UISceneDelegateClassName</key>
+                    <string>SceneDelegate</string>
+                </dict>
+            </array>
+        </dict>
+    </dict>
     <key>XSAppIconAssets</key>
     <string>Assets.xcassets/appicon.appiconset</string>
     <!-- The app's top strip is the neutral accent safe-area (wwwroot/app.css .status-bar-safe-area,
@@ -41,5 +62,15 @@
          added (Apple export-compliance guidance). -->
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
+    <!-- Location purpose strings (Apple ITMS-90683). The app itself uses NO location APIs, but the MAUI
+         Essentials framework links CoreLocation (its Geolocation binding) into every iOS binary, and
+         Apple's static scanner requires a purpose string for the referenced API even when it is never
+         invoked. The API is never called, so iOS never prompts and no location is collected (keep the
+         App Privacy label free of location). Remove these if the CoreLocation reference is ever trimmed
+         out. -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Secret Santa does not use your location. This entry is required because a system framework references location APIs.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Secret Santa does not use your location. This entry is required because a system framework references location APIs.</string>
 </dict>
 </plist>
