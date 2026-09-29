@@ -23,14 +23,14 @@ jobs:
     name: build-test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         # Full history: Nerdbank.GitVersioning (ADR-0047) computes the version from git height, which a
         # shallow clone cannot satisfy — every build in the graph now references nbgv.
         with:
           fetch-depth: 0
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
           cache: true
@@ -53,14 +53,14 @@ jobs:
     name: docs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         # Full history: Nerdbank.GitVersioning (ADR-0047) computes the version from git height, which a
         # shallow clone cannot satisfy — every build in the graph now references nbgv.
         with:
           fetch-depth: 0
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
           cache: true
@@ -86,14 +86,14 @@ jobs:
     # project is in CircleTools.slnx but NOT CircleTools.NoMaui.slnx, so the core suite never runs
     # it — it is its own gate here. ubuntu-latest provides the Docker runtime the stack needs.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         # Full history: Nerdbank.GitVersioning (ADR-0047) computes the version from git height, which a
         # shallow clone cannot satisfy — every build in the graph now references nbgv.
         with:
           fetch-depth: 0
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
           cache: true
@@ -123,14 +123,14 @@ jobs:
     name: build-maui
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         # Full history: Nerdbank.GitVersioning (ADR-0047) computes the version from git height, which a
         # shallow clone cannot satisfy — every build in the graph now references nbgv.
         with:
           fetch-depth: 0
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
 
