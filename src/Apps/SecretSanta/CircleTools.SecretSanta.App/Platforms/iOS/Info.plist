@@ -26,6 +26,27 @@
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
+    <!-- UIScene lifecycle adoption (required when building against the iOS/iPadOS 26+ SDK, ADR-0065).
+         UIKit traps at launch — EXC_BREAKPOINT, _UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption
+         — if a multitasking-capable app does not adopt scenes. MAUI provides the runtime; this manifest
+         opts in and points at the SceneDelegate (dotnet/maui#38601). Single scene only. -->
+    <key>UIApplicationSceneManifest</key>
+    <dict>
+        <key>UIApplicationSupportsMultipleScenes</key>
+        <false/>
+        <key>UISceneConfigurations</key>
+        <dict>
+            <key>UIWindowSceneSessionRoleApplication</key>
+            <array>
+                <dict>
+                    <key>UISceneConfigurationName</key>
+                    <string>__MAUI_DEFAULT_SCENE_CONFIGURATION__</string>
+                    <key>UISceneDelegateClassName</key>
+                    <string>SceneDelegate</string>
+                </dict>
+            </array>
+        </dict>
+    </dict>
     <key>XSAppIconAssets</key>
     <string>Assets.xcassets/appicon.appiconset</string>
     <!-- The app's top strip is the neutral accent safe-area (wwwroot/app.css .status-bar-safe-area,
