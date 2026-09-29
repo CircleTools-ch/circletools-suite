@@ -33,16 +33,17 @@ public sealed class RevealLinkBuilder(RevealLinkOptions options, RevealLinkCodec
 
     /// <summary>Builds a reveal link for one giver.</summary>
     /// <param name="forLabel">The readable owner label (the giver's name).</param>
+    /// <param name="giverMemberId">The giver's member id, carried on the DTO so a caller can attach the reveal token (ADR-0068).</param>
     /// <param name="payload">The payload to encode into the fragment.</param>
-    /// <returns>A <see cref="RevealLinkDto"/> with the label and full URL.</returns>
-    public RevealLinkDto Build(string forLabel, RevealPayload payload)
+    /// <returns>A <see cref="RevealLinkDto"/> with the label, giver id and full URL.</returns>
+    public RevealLinkDto Build(string forLabel, Guid giverMemberId, RevealPayload payload)
     {
         ArgumentNullException.ThrowIfNull(payload);
 
         var blob = codec.Encode(payload);
         var baseUrl = (options.BaseUrl ?? string.Empty).TrimEnd('/');
         var url = $"{baseUrl}{RevealRoute}#for={Uri.EscapeDataString(forLabel)}&v={payload.Version}&d={blob}";
-        return new RevealLinkDto(forLabel, url);
+        return new RevealLinkDto(forLabel, giverMemberId, url);
     }
 
     /// <summary>Parses a reveal-link fragment into its readable label and opaque blob.</summary>
@@ -89,5 +90,31 @@ public sealed class RevealLinkBuilder(RevealLinkOptions options, RevealLinkCodec
         }
 
         return (label ?? string.Empty, blob);
+    }
+
+    /// <summary>
+    /// Extracts the optional reveal token (<c>rt=</c>) from a reveal-link fragment (ADR-0068), or
+    /// <see langword="null"/> when it is absent — a local-only link carries only the <c>d=</c> snapshot.
+    /// </summary>
+    /// <param name="fragment">The fragment string (with or without a leading <c>#</c>).</param>
+    /// <returns>The reveal token, or <see langword="null"/>.</returns>
+    public static string? ParseRevealToken(string fragment)
+    {
+        if (string.IsNullOrWhiteSpace(fragment))
+        {
+            return null;
+        }
+
+        var trimmed = fragment.StartsWith('#') ? fragment[1..] : fragment;
+        foreach (var part in trimmed.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separator = part.IndexOf('=', StringComparison.Ordinal);
+            if (separator > 0 && part[..separator] == "rt")
+            {
+                return Uri.UnescapeDataString(part[(separator + 1)..]);
+            }
+        }
+
+        return null;
     }
 }

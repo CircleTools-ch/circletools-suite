@@ -54,6 +54,7 @@ jobs:
       APP: src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj
       # secrets are not readable in a step-level `if`; surface presence as a job env instead.
       HAS_SIGNING: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+      HAS_PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -120,8 +121,27 @@ jobs:
           path: "src/Apps/SecretSanta/CircleTools.SecretSanta.App/bin/Release/net10.0-android/**/*.aab"
           if-no-files-found: error
 
-      # TODO(ADR-0030 store accounts): upload to the Play internal track once PLAY_SERVICE_ACCOUNT_JSON
-      # and signing exist — e.g. r0adkll/upload-google-play with packageName ch.circletools.secretsanta.
+      # --- Play internal-track upload (activates once the signing + Play API secrets exist) ---
+      # Requires the app's FIRST release to have been uploaded manually in Play Console once: the Play
+      # Developer API cannot create an app's first release, only subsequent ones (ADR-0030 follow-up).
+      - name: Locate signed AAB
+        if: ${{ env.HAS_SIGNING == 'true' && env.HAS_PLAY == 'true' }}
+        id: aab
+        run: |
+          set -euo pipefail
+          AAB="$(find src/Apps/SecretSanta/CircleTools.SecretSanta.App/bin/Release/net10.0-android -name '*.aab' | head -1)"
+          echo "Found AAB: $AAB"
+          echo "path=$AAB" >> "$GITHUB_OUTPUT"
+
+      - name: Upload to Play internal track
+        if: ${{ env.HAS_SIGNING == 'true' && env.HAS_PLAY == 'true' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ch.circletools.secretsanta
+          releaseFiles: ${{ steps.aab.outputs.path }}
+          track: internal
+          status: completed
 
   ios:
     name: iOS (Secret-Santa)

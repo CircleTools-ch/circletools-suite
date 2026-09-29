@@ -1,5 +1,6 @@
 @page "/groups/{GroupId:guid}/events/{EventId:guid}/share"
 @using CircleTools.SecretSanta.Core.Reveal
+@using CircleTools.SecretSanta.LocalStore
 @inject ISender Sender
 @inject IJSRuntime JS
 @inject IShareService ShareService
@@ -7,6 +8,8 @@
 @inject IStringLocalizer<AppStrings> L
 @inject ISyncSignals SyncSignals
 @inject HandoutProgressService Handout
+@inject ILocalSyncStore Local
+@inject RevealSlicePublisher RevealPublisher
 @implements IDisposable
 
 <PageTitle>@L["ShareTitle"]</PageTitle>
@@ -22,6 +25,13 @@
 @if (_drawInvalidated)
 {
     <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true" role="alert">@L["DrawInvalidatedNotice"]</MudAlert>
+}
+
+@* The reveal links carry the wishlist and event details as a snapshot (ADR-0014). If they changed after
+   the organizer handed some out, the copies already sent are stale — so prompt a re-share (FR-045). *@
+@if (_linksChanged)
+{
+    <MudAlert Severity="Severity.Info" Class="mb-3" Dense="true" role="alert" id="links-changed-notice">@L["LinksChangedNotice"]</MudAlert>
 }
 
 @if (_links is null)
@@ -78,12 +88,9 @@ else
                             </MudButton>
                         </div>
                     </div>
-                    @* Copy is the primary action; the raw encoded URL is long and alarming, so keep it
-                       collapsed but available for anyone who wants to inspect or paste it manually. *@
-                    <details class="mt-1">
-                        <summary class="mud-text-secondary" style="cursor:pointer;font-size:0.85rem;">@L["ShowLink"]</summary>
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1" Style="word-break:break-all;">@link.Url</MudText>
-                    </details>
+                    @* The raw encoded URL is intentionally not shown — Share, Copy and QR cover every way
+                       to hand it out, and displaying the long opaque link only alarms (it is not meant to be
+                       read or typed). *@
                     @if (RevealLinkBuilder.ExceedsRecommendedLength(link.Url))
                     {
                         <MudText Typo="Typo.caption" Color="Color.Warning" Class="mt-1 d-block" role="alert">@L["ShareLinkTooLong"]</MudText>
@@ -107,6 +114,7 @@ else
     private HashSet<string> _done = [];
     private string? _copiedUrl;
     private bool _drawInvalidated;
+    private bool _linksChanged;
     private bool _canShare;
 
     protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
@@ -115,13 +123,33 @@ else
 
     private async Task LoadAsync()
     {
-        _links = await Sender.Send(new GetRevealLinksQuery(GroupId, EventId));
+        // Ensure this backend-backed group's reveal slices are published and its per-giver reveal tokens
+        // exist, so each link can carry rt= (ADR-0068). Best-effort and a no-op for a local-only or
+        // join-only group.
+        await RevealPublisher.PublishAsync(GroupId);
+
+        var revealTokens = (await Local.LoadGroupsAsync())
+            .FirstOrDefault(r => r.State.Id == GroupId)?.Tokens?.RevealTokens?
+            .Where(t => t.EventId == EventId)
+            .ToDictionary(t => t.MemberId, t => t.Token) ?? [];
+
+        // For a backend-backed group, append the giver's reveal token so the link fetches the live slice
+        // (the d= snapshot stays as the offline fallback). Local-only links are unchanged.
+        var baseLinks = await Sender.Send(new GetRevealLinksQuery(GroupId, EventId));
+        _links = [.. baseLinks.Select(l => revealTokens.TryGetValue(l.GiverMemberId, out var rt)
+            ? l with { Url = $"{l.Url}&rt={Uri.EscapeDataString(rt)}" }
+            : l)];
+
         var occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));
         _drawInvalidated = occasion?.DrawInvalidatedByMembershipChange ?? false;
 
         // Which participants have already been handed their link (MNF-7); resets by itself on a re-draw.
         var urls = _links.Select(l => l.Url).ToList();
         _done = await Handout.GetDoneAsync(GroupId, EventId, urls);
+
+        // If links were handed out and have since changed (wishlist/event edit or re-draw), the sent
+        // copies are stale — prompt the organizer to re-share the updated links (#1, FR-045).
+        _linksChanged = await Handout.LinksChangedSinceHandoutAsync(GroupId, EventId, urls);
     }
 
     // The guided one-at-a-time hand-out; reload progress when it closes so the ✓ marks and count are current.

@@ -21,6 +21,7 @@ public sealed class RevealPageTests : IDisposable
 
     private readonly Bunit.TestContext _ctx = new();
     private readonly FakeHapticFeedback _haptics = new();
+    private readonly NoOpSharedGroupApi _revealApi = new();
 
     public RevealPageTests()
     {
@@ -34,6 +35,9 @@ public sealed class RevealPageTests : IDisposable
         _ctx.Services.AddSingleton<IHapticFeedback>(_haptics);
         // The reveal page offers "Add to calendar" (MNF-6) when the occasion has a date.
         _ctx.Services.AddSingleton<CircleTools.Ui.Abstractions.ICalendarService>(new TestSupport.FakeCalendarService());
+        // Live reveal (ADR-0068): the page resolves the shared-group port to try a live slice for a
+        // backend-backed (rt=) link. These local-only links carry no rt=, so it is never called.
+        _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.ISharedGroupApi>(_revealApi);
     }
 
     private void NavigateToRevealLink(string fragment)
@@ -45,7 +49,7 @@ public sealed class RevealPageTests : IDisposable
     private static string BuildFragment(RevealPayload payload, string forLabel = "Giver-Al")
     {
         var builder = new RevealLinkBuilder(new RevealLinkOptions("https://secretsanta.example"), new RevealLinkCodec());
-        var url = builder.Build(forLabel, payload).Url;
+        var url = builder.Build(forLabel, Guid.NewGuid(), payload).Url;
         return url[url.IndexOf('#')..];
     }
 
@@ -65,6 +69,56 @@ public sealed class RevealPageTests : IDisposable
 
         // After clicking "Reveal", the giftee is shown.
         Assert.Contains(RecipientName, cut.Markup);
+    }
+
+    [Fact]
+    public void RevealPage_BackendBackedLink_ShowsLiveSlice_OverTheSnapshot()
+    {
+        // ADR-0068/FEAT-020: an rt= link fetches the live slice, so the giftee/wishlist shown are the
+        // current ones — not the (older) snapshot baked into d=.
+        var snapshot = new RevealPayload(RevealPayload.CurrentVersion, "Snapshot-Zoe", ["Old scarf"], null, null, null, null, null);
+        var live = new RevealPayload(RevealPayload.CurrentVersion, "Live-Max", ["New headphones"], null, null, null, null, null);
+        _revealApi.SeedRevealSlice("rt-token", System.Text.Json.JsonSerializer.Serialize(live, RevealJsonContext.Default.RevealPayload));
+        NavigateToRevealLink(BuildFragment(snapshot) + "&rt=rt-token");
+
+        var cut = _ctx.RenderComponent<Reveal>();
+        // The freshness indicator says the details are current (PassThrough localizer echoes the key).
+        Assert.Contains("RevealLiveHint", cut.Markup);
+
+        cut.Find("button").Click();
+
+        Assert.Contains("Live-Max", cut.Markup);
+        Assert.Contains("New headphones", cut.Markup);
+        Assert.DoesNotContain("Snapshot-Zoe", cut.Markup);
+    }
+
+    [Fact]
+    public void RevealPage_BackendBackedLink_FallsBackToSnapshot_WhenOffline()
+    {
+        // Offline (or a revoked token): the reveal still works from the embedded snapshot, and the
+        // indicator warns it is a saved copy (NFR-001).
+        _revealApi.RevealSlicesUnreachable = true;
+        var snapshot = new RevealPayload(RevealPayload.CurrentVersion, "Snapshot-Zoe", ["Old scarf"], null, null, null, null, null);
+        NavigateToRevealLink(BuildFragment(snapshot) + "&rt=rt-token");
+
+        var cut = _ctx.RenderComponent<Reveal>();
+        Assert.Contains("RevealSnapshotHint", cut.Markup);
+
+        cut.Find("button").Click();
+        Assert.Contains("Snapshot-Zoe", cut.Markup);
+    }
+
+    [Fact]
+    public void RevealPage_LocalOnlyLink_ShowsNoFreshnessIndicator()
+    {
+        // A local-only link carries no rt=, so there is no live source and no indicator either way.
+        var payload = new RevealPayload(RevealPayload.CurrentVersion, RecipientName, ["Book"], null, null, null, null, null);
+        NavigateToRevealLink(BuildFragment(payload));
+
+        var cut = _ctx.RenderComponent<Reveal>();
+
+        Assert.DoesNotContain("RevealLiveHint", cut.Markup);
+        Assert.DoesNotContain("RevealSnapshotHint", cut.Markup);
     }
 
     [Fact]

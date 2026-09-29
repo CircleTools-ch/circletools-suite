@@ -129,6 +129,34 @@ namespace CircleTools.Main.Service.Repository.Migrations.Shared
 
                     b.ToTable("member_claims", "shared");
                 });
+
+            modelBuilder.Entity("CircleTools.Main.Service.Repository.SharedRevealSlice", b =>
+                {
+                    b.Property<string>("Token")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("LastActivityAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenCipher")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.HasKey("Token");
+
+                    b.HasIndex("GroupId");
+
+                    b.ToTable("reveal_slices", "shared");
+                });
 #pragma warning restore 612, 618
         }
     }

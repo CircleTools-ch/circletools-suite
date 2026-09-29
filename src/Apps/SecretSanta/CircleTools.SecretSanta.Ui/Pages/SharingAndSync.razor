@@ -12,6 +12,7 @@
 @inject IShareService ShareService
 @inject IJSRuntime JS
 @inject AuthenticationStateProvider Auth
+@inject ISnackbar Snackbar
 @inject IStringLocalizer<AppStrings> L
 
 <PageTitle>@L["SharingTitle"]</PageTitle>
@@ -33,12 +34,15 @@ else
     <MudText Class="mud-text-secondary mb-4">@L["SharingLead"]</MudText>
 
     <div class="mb-2"><MudText Typo="Typo.overline">@L["StorageModeLabel"]</MudText></div>
-    <MudPaper Elevation="0" Outlined="true" Class="pa-3 mb-2">
+    <MudPaper Elevation="0" Outlined="true" Class="pa-3 mb-2" Style="@(_busy ? "opacity:0.6;pointer-events:none" : null)">
         <StorageModePicker Value="_mode" ValueChanged="OnModeChosenAsync" AccountEnabled="_signedIn" />
     </MudPaper>
     @if (_busy)
     {
-        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-2" />
+        <div class="d-flex align-center gap-2 mb-2" id="mode-busy">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Small" />
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["StorageModeChanging"]</MudText>
+        </div>
     }
 
     @if (_mode == StorageMode.Account)
@@ -134,7 +138,7 @@ else
         {
             if (await Dialogs.ShowConfirmSheetAsync(L["ShareByLinkConfirm"], L["ShareByLinkConfirmYes"], L["Cancel"], Color.Primary))
             {
-                await RunAsync(() => Shared.ShareByLinkAsync(GroupId));
+                await RunAsync(async () => await Shared.ShareByLinkAsync(GroupId) is not null);
             }
 
             return;
@@ -145,7 +149,11 @@ else
         {
             if (await Dialogs.ShowConfirmSheetAsync(L["MakeLocalConfirm"], L["MakeLocalConfirmYes"], L["Cancel"]))
             {
-                await RunAsync(() => Shared.MakeLocalAsync(GroupId));
+                await RunAsync(async () =>
+                {
+                    await Shared.MakeLocalAsync(GroupId);
+                    return true;
+                });
             }
 
             return;
@@ -176,28 +184,41 @@ else
     {
         if (await Dialogs.ShowConfirmSheetAsync(L["RotateAdminConfirm"], L["RotateAdminConfirmYes"], L["Cancel"], Color.Primary))
         {
-            await RunAsync(() => Shared.RotateAdminAsync(GroupId));
+            await RunAsync(async () => await Shared.RotateAdminAsync(GroupId) is not null);
         }
     }
 
-    private async Task RunAsync(Func<Task> action)
+    // Runs a storage-mode transition with a visible busy state and a success/failure snackbar. The
+    // shared-sync engine turns an unreachable or erroring server into a false/null result rather than
+    // an exception (see SharedSyncService), so a silent revert used to look like "nothing happened":
+    // here we surface it. Whatever the outcome, we reload so the picker reflects what actually persisted.
+    private async Task RunAsync(Func<Task<bool>> action)
     {
         _busy = true;
+        StateHasChanged();
+
+        var succeeded = false;
         try
         {
-            await action();
+            succeeded = await action();
+        }
+        catch (Exception)
+        {
+            succeeded = false;
         }
         finally
         {
             _busy = false;
+            await LoadAsync();
+            StateHasChanged();
         }
 
-        await LoadAsync();
-        StateHasChanged();
+        Snackbar.Add(
+            succeeded ? L["StorageModeChanged"] : L["StorageModeChangeFailed"],
+            succeeded ? Severity.Success : Severity.Error);
     }
 
     private RenderFragment LinkActions(string url, string label) =>@<div>
-        <div class="ct-linkbox mb-2">@url</div>
         <div class="d-flex flex-wrap gap-2">
             @if (_canShare)
             {

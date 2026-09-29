@@ -149,6 +149,35 @@ public interface ISharedGroupStore
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>The number of groups deleted.</returns>
     Task<int> DeleteAllOwnedAsync(Guid accountId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Publishes the full current set of per-giver reveal slices for the group an admin token addresses
+    /// (ADR-0068, FEAT-020). The set is authoritative: the store replaces the group's slices with it, so a
+    /// re-draw's stale reveal tokens stop resolving. Each slice body is opaque and abuse-capped like the
+    /// group body (NFR-009).
+    /// </summary>
+    /// <param name="adminToken">The current admin token for the group.</param>
+    /// <param name="slices">The complete set of per-giver slices for the current draw.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns><see langword="true"/> when the slices were stored; <see langword="false"/> when the token does not grant admin, or a slice is too large.</returns>
+    Task<bool> SetRevealSlicesAsync(string adminToken, IReadOnlyList<RevealSlice> slices, CancellationToken cancellationToken = default);
+
+    /// <summary>Publishes reveal slices for a group the caller owns (account mode, ADR-0068): the owner authorizes by group id + bearer.</summary>
+    /// <param name="accountId">The owning account.</param>
+    /// <param name="groupId">The group.</param>
+    /// <param name="slices">The complete set of per-giver slices for the current draw.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns><see langword="true"/> when the slices were stored; <see langword="false"/> when the caller is not the owner, or a slice is too large.</returns>
+    Task<bool> SetRevealSlicesAsOwnerAsync(Guid accountId, Guid groupId, IReadOnlyList<RevealSlice> slices, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads one giver's reveal slice by its reveal token (ADR-0068) — the public reveal page's only call.
+    /// The token grants exactly this one giver's opaque slice, never the draw (NFR-002).
+    /// </summary>
+    /// <param name="revealToken">The per-giver reveal token from a link's <c>rt=</c>.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns>The giver's slice, or <see langword="null"/> when the token does not resolve (unknown or revoked).</returns>
+    Task<RevealSliceView?> GetRevealSliceAsync(string revealToken, CancellationToken cancellationToken = default);
 }
 
 /// <summary>How a share-by-link create ended (ADR-0058).</summary>

@@ -371,6 +371,65 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
 
     // Shares a group and returns its links, asserting the create succeeded. The creator key defaults to a
     // fixed value; pass an explicit one to exercise the resume/refuse paths.
+    [Fact]
+    public async Task RevealSlices_PublishedByAdmin_AreReadableByRevealToken()
+    {
+        await using var provider = fixture.CreateProvider();
+        var links = await Share(provider, Guid.NewGuid(), """{ "name": "Family" }""");
+
+        var stored = await Store(provider).SetRevealSlicesAsync(
+            links.AdminToken, [new RevealSlice("rt-1", Body("""{ "v": 1, "n": "Zoe", "w": ["Book"] }"""))]);
+        Assert.True(stored);
+
+        var view = await Store(provider).GetRevealSliceAsync("rt-1");
+        Assert.NotNull(view);
+        // The slice body survives as an opaque document — the store never reads the reveal schema.
+        Assert.Equal("Zoe", view!.Body.GetProperty("n").GetString());
+    }
+
+    [Fact]
+    public async Task RevealSlices_Republish_RevokesTokensNotInTheNewSet()
+    {
+        await using var provider = fixture.CreateProvider();
+        var links = await Share(provider, Guid.NewGuid(), """{ "name": "Family" }""");
+
+        await Store(provider).SetRevealSlicesAsync(links.AdminToken,
+            [new RevealSlice("rt-a", Body("""{ "v": 1, "n": "A", "w": [] }""")), new RevealSlice("rt-b", Body("""{ "v": 1, "n": "B", "w": [] }"""))]);
+
+        // A re-draw publishes a set that no longer contains rt-b: it must stop resolving, rt-a stays.
+        await Store(provider).SetRevealSlicesAsync(links.AdminToken,
+            [new RevealSlice("rt-a", Body("""{ "v": 1, "n": "A2", "w": [] }"""))]);
+
+        Assert.Null(await Store(provider).GetRevealSliceAsync("rt-b"));
+        var a = await Store(provider).GetRevealSliceAsync("rt-a");
+        Assert.Equal("A2", a!.Body.GetProperty("n").GetString());
+    }
+
+    [Fact]
+    public async Task RevealSlices_ByANonAdminToken_AreRejected()
+    {
+        await using var provider = fixture.CreateProvider();
+        var links = await Share(provider, Guid.NewGuid(), """{ "name": "Family" }""");
+
+        var stored = await Store(provider).SetRevealSlicesAsync(
+            links.JoinToken, [new RevealSlice("rt-x", Body("""{ "v": 1, "n": "Z", "w": [] }"""))]);
+
+        Assert.False(stored);
+        Assert.Null(await Store(provider).GetRevealSliceAsync("rt-x"));
+    }
+
+    [Fact]
+    public async Task DeletingTheGroup_RemovesItsRevealSlices()
+    {
+        await using var provider = fixture.CreateProvider();
+        var links = await Share(provider, Guid.NewGuid(), """{ "name": "Family" }""");
+        await Store(provider).SetRevealSlicesAsync(links.AdminToken, [new RevealSlice("rt-del", Body("""{ "v": 1, "n": "Z", "w": [] }"""))]);
+
+        await Store(provider).DeleteAsync(links.AdminToken);
+
+        Assert.Null(await Store(provider).GetRevealSliceAsync("rt-del"));
+    }
+
     private static async Task<MintedLinks> Share(
         ServiceProvider provider, Guid groupId, string json, long version = 1, string creatorKey = "creator-key-1")
     {

@@ -111,3 +111,31 @@ public sealed record OwnedSharedGroup(Guid GroupId, long Version, JsonElement Bo
 /// <summary>The groups the calling account owns, so a second device can discover and manage them (D2).</summary>
 /// <param name="Groups">The owned groups.</param>
 public sealed record OwnedSharedGroups(IReadOnlyList<OwnedSharedGroup> Groups);
+
+/// <summary>
+/// One giver's reveal slice (ADR-0068, FEAT-020): the per-giver reveal payload a draw-capable client
+/// publishes so a backend-backed group's reveal link can show the current wishlist and event details.
+/// The <see cref="Body"/> is opaque to the server (like the group body) and addressed by its own
+/// unguessable reveal token — one token grants exactly this one giver's slice, never the draw (NFR-002).
+/// </summary>
+/// <param name="RevealToken">The per-giver reveal token this slice is addressed by (the link's <c>rt=</c>).</param>
+/// <param name="Body">The encoded reveal payload as opaque JSON (the same shape the offline snapshot carries).</param>
+public sealed record RevealSlice(string RevealToken, JsonElement Body);
+
+/// <summary>
+/// Publishes the full current set of reveal slices for a group (ADR-0068, FEAT-020):
+/// <c>PUT /api/v1/shared/{adminToken}/reveal-slices</c> (admin token) or
+/// <c>PUT /api/v1/shared/{groupId}/owned/reveal-slices</c> (owner bearer). The set is authoritative —
+/// the server upserts these and removes any of the group's slices not present, so a re-draw's stale
+/// reveal tokens stop resolving.
+/// </summary>
+/// <param name="Slices">The complete set of per-giver slices for the group's current draw.</param>
+public sealed record PublishRevealSlicesRequest(IReadOnlyList<RevealSlice> Slices);
+
+/// <summary>
+/// A reveal slice as the server returns it to the public reveal page (ADR-0068, FEAT-020):
+/// <c>GET /api/v1/shared/reveal/{revealToken}</c>. Body only — the token holder learns their own slice
+/// and nothing else about the group.
+/// </summary>
+/// <param name="Body">The opaque reveal payload for this giver.</param>
+public sealed record RevealSliceView(JsonElement Body);

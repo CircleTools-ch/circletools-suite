@@ -80,10 +80,8 @@ public sealed class JoinFlowTests : IAsyncLifetime
         await page.WaitForTimeoutAsync(3_000);
 
         await page.GotoAsync($"{SecretSantaStackFixture.WebOrigin}/groups/{groupId}/sharing", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
-        await page.Locator("#join-link-card").WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
-        var cardText = await page.Locator("#join-link-card").InnerTextAsync();
-        var url = new Regex(@"https?://localhost:7081/join#t=\S+").Match(cardText).Value;
-        Assert.False(string.IsNullOrEmpty(url), "Could not read the join link from the Sharing & sync card.");
+        var url = await SharingLinks.CopyLinkAsync(page, "#join-link-card");
+        Assert.Matches(@"https?://localhost:7081/join#t=\S+", url);
         return url;
     }
 
@@ -103,6 +101,7 @@ public sealed class JoinFlowTests : IAsyncLifetime
         });
         // Force English so text-based selectors are stable (the app defaults to de-CH).
         await context.AddInitScriptAsync("try { localStorage.setItem('secretsanta.culture','en'); } catch (e) {}");
+        await context.AddInitScriptAsync(SharingLinks.CaptureCopyScript);
         return context;
     }
 

@@ -78,7 +78,28 @@ public enum StorageMode
 /// persisted before the first create call so a retry reuses it; kept on the record thereafter. Present
 /// only for the device that created the share.
 /// </param>
-public sealed record SharedGroupTokens(string? AdminToken, string? JoinToken, string? CreatorKey = null);
+/// <param name="RevealTokens">
+/// The per-giver reveal tokens this device minted for the group's live reveal links (ADR-0068, FEAT-020),
+/// keyed by (event, giver). Present only for a device that can publish reveal slices (a
+/// <see cref="StorageMode.SharedByLink"/> admin-link holder or a <see cref="StorageMode.Account"/>
+/// owner). Additive and optional: a record written before this field decodes it as <see langword="null"/>.
+/// </param>
+public sealed record SharedGroupTokens(
+    string? AdminToken,
+    string? JoinToken,
+    string? CreatorKey = null,
+    IReadOnlyList<RevealTokenRef>? RevealTokens = null);
+
+/// <summary>
+/// A stable per-giver reveal token (ADR-0068, FEAT-020): the token addressing one giver's live reveal
+/// slice on the server, carried on a backend-backed reveal link as <c>rt=</c>. Reveal links are per event,
+/// so the token is keyed by both the event and the giving member; it stays stable across re-draws (the
+/// slice content changes, the link does not).
+/// </summary>
+/// <param name="EventId">The event whose draw this reveal token belongs to.</param>
+/// <param name="MemberId">The giving member the reveal link is for.</param>
+/// <param name="Token">The unguessable reveal token.</param>
+public sealed record RevealTokenRef(Guid EventId, Guid MemberId, string Token);
 
 /// <summary>
 /// A persisted group together with the sync metadata the client needs to reconcile it (FEAT-004).

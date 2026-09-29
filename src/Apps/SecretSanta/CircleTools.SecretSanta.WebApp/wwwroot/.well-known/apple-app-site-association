@@ -2,7 +2,7 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["REPLACE_WITH_APPLE_TEAM_ID.ch.circletools.secretsanta"],
+        "appIDs": ["U893QVXCU7.ch.circletools.secretsanta"],
         "components": [
           { "/": "/r*", "comment": "Reveal links (ADR-0053) open in the app." },
           { "/": "/groups/*", "comment": "Event deep links open in the app." }

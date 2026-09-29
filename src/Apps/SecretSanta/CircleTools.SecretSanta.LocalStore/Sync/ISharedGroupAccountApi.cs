@@ -24,4 +24,11 @@ public interface ISharedGroupAccountApi
 
     /// <summary>Lists the groups the caller owns, so this device can discover claimed groups (D2 discovery).</summary>
     Task<ApiResult<OwnedSharedGroups>> ListOwnedAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Publishes the per-giver reveal slices for a group the caller owns (account mode, ADR-0068, FEAT-020):
+    /// the owner authorizes by group id + bearer, having no admin token. Same set-replace semantics as the
+    /// admin-token publish.
+    /// </summary>
+    Task<ApiResult> PublishOwnedRevealSlicesAsync(Guid groupId, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default);
 }
