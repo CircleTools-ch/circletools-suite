@@ -148,7 +148,12 @@ jobs:
     # GitHub-HOSTED macOS runner (ADR-0065, supersedes ADR-0031). iOS/MacCatalyst can only build on
     # macOS — the csproj scopes net10.0-ios behind IsOSPlatform('osx'), so it is available here and
     # nowhere else in the pipeline.
-    runs-on: macos-15
+    # .NET 10's current servicing band ships the iOS 27.0 workload, which REQUIRES Xcode 27 (Apple's
+    # autumn-2026 SDK bump, foreseen by ADR-0031/0065). Xcode 27 is not on macos-15 (max 26.3) or
+    # macos-26 (max 26.6); it lives on the dedicated `xcode-27` image (macOS 27, arm64, public preview
+    # as of 2026-09). Re-check at each .NET/Xcode bump; move to a `macos-NN` label once Xcode 27 is GA
+    # there (ADR-0065 hosted-image-lag risk / runner-swap note).
+    runs-on: xcode-27
     defaults:
       run:
         shell: bash
@@ -162,13 +167,12 @@ jobs:
         with:
           fetch-depth: 0 # full history: nbgv version + the git-count build number (ADR-0047).
 
-      # .NET 10's iOS workload requires Xcode 26.x (ADR-0031's version chain, preserved by ADR-0065).
-      # Pin to a stable Xcode that satisfies that floor; if the hosted image's default is older the
-      # release is blocked until the image updates — the accepted hosted-image-lag risk in ADR-0065.
+      # The iOS 27.0 workload requires Xcode 27; select it explicitly on the xcode-27 image. If a hosted
+      # image ever lags a freshly-mandated Xcode, this is where the release blocks (ADR-0065 risk).
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: latest-stable
+          xcode-version: '27'
 
       - name: Setup .NET (from global.json)
         uses: actions/setup-dotnet@v4
