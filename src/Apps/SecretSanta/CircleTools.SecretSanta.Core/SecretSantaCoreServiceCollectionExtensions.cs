@@ -60,6 +60,7 @@ public static class SecretSantaCoreServiceCollectionExtensions
         services.AddScoped<IQueryHandler<GetGroupQuery, GroupDto?>, GetGroupQueryHandler>();
         services.AddScoped<IQueryHandler<GetEventQuery, EventDto?>, GetEventQueryHandler>();
         services.AddScoped<IQueryHandler<GetRevealLinksQuery, IReadOnlyList<RevealLinkDto>>, GetRevealLinksQueryHandler>();
+        services.AddScoped<IQueryHandler<GetRevealSlicesQuery, IReadOnlyList<RevealSliceData>>, GetRevealSlicesQueryHandler>();
 
         return services;
     }

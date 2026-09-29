@@ -47,8 +47,7 @@ public sealed class AdminReleaseTests : IAsyncLifetime
         await page.WaitForTimeoutAsync(3_000); // let the roster push to the server
 
         await page.GotoAsync($"{SecretSantaStackFixture.WebOrigin}/groups/{groupId}/sharing", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
-        await page.Locator("#join-link-card").WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
-        var joinUrl = new Regex(@"https?://localhost:7081/join#t=\S+").Match(await page.Locator("#join-link-card").InnerTextAsync()).Value;
+        var joinUrl = await SharingLinks.CopyLinkAsync(page, "#join-link-card");
 
         // First participant joins as Anna — the spot is now locked.
         await JoinAsAsync(joinUrl, "Anna");
@@ -89,6 +88,7 @@ public sealed class AdminReleaseTests : IAsyncLifetime
             ViewportSize = new ViewportSize { Width = 1280, Height = 950 },
         });
         await context.AddInitScriptAsync("try { localStorage.setItem('secretsanta.culture','en'); } catch (e) {}");
+        await context.AddInitScriptAsync(SharingLinks.CaptureCopyScript);
         return context;
     }
 }
