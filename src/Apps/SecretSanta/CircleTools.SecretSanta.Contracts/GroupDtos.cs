@@ -124,5 +124,15 @@ public sealed record RunDrawResultDto(bool Success, string? FailureReason, int A
 
 /// <summary>A reveal link for one member, with a human-readable owner label.</summary>
 /// <param name="ForLabel">The readable "for" label identifying the giver the link belongs to.</param>
+/// <param name="GiverMemberId">The giver's member id, so a caller can correlate the link with its reveal token (ADR-0068).</param>
 /// <param name="Url">The full reveal URL, with the payload carried in the fragment.</param>
-public sealed record RevealLinkDto(string ForLabel, string Url);
+public sealed record RevealLinkDto(string ForLabel, Guid GiverMemberId, string Url);
+
+/// <summary>
+/// One giver's reveal slice data (ADR-0068, FEAT-020): the giver's member id plus the reveal payload the
+/// backend-backed live reveal publishes. Distinct from <see cref="RevealLinkDto"/>, which is the URL a
+/// giver receives; this is the decoded payload a draw-capable client uploads for that giver.
+/// </summary>
+/// <param name="GiverMemberId">The giver whose slice this is.</param>
+/// <param name="Payload">The reveal payload (recipient, wishlist, gift note, budget, event details).</param>
+public sealed record RevealSliceData(Guid GiverMemberId, RevealPayload Payload);

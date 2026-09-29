@@ -112,6 +112,37 @@ public sealed class HttpSharedGroupApi(HttpClient client) : ISharedGroupApi
         }
     }
 
+    /// <inheritdoc />
+    public async Task<ApiResult> PublishRevealSlicesAsync(
+        string adminToken,
+        PublishRevealSlicesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var content = JsonContent.Create(request, SyncJsonContext.Default.PublishRevealSlicesRequest);
+        using var message = new HttpRequestMessage(
+            HttpMethod.Put, $"{Route}/{Uri.EscapeDataString(adminToken)}/reveal-slices") { Content = content };
+        try
+        {
+            using var response = await client.SendAsync(message, cancellationToken);
+            return response.IsSuccessStatusCode
+                ? ApiResult.Ok()
+                : ApiResult.Failed(await ApiResponseReader.ReadErrorAsync(response, cancellationToken));
+        }
+        catch (HttpRequestException)
+        {
+            return ApiResult.Failed(new ApiError(ApiFailure.Unreachable));
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult<RevealSliceView>> GetRevealSliceAsync(string revealToken, CancellationToken cancellationToken = default)
+    {
+        return await SendForAsync(
+            new HttpRequestMessage(HttpMethod.Get, $"{Route}/reveal/{Uri.EscapeDataString(revealToken)}"),
+            SyncJsonContext.Default.RevealSliceView, cancellationToken);
+    }
+
     private async Task<ApiResult<T>> SendForAsync<T>(
         HttpRequestMessage message,
         JsonTypeInfo<T> typeInfo,

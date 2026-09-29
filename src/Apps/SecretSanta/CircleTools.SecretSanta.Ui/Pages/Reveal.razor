@@ -2,8 +2,12 @@
 @using System.Globalization
 @using System.Security.Cryptography
 @using System.Text
+@using System.Text.Json
+@using CircleTools.SecretSanta.Contracts
 @using CircleTools.SecretSanta.Core.Reveal
+@using CircleTools.SecretSanta.LocalStore
 @inject RevealLinkCodec Codec
+@inject ISharedGroupApi RevealApi
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
 @inject IHapticFeedback Haptics
@@ -17,6 +21,21 @@
 else if (_payload is not null)
 {
     <MudText Typo="Typo.h4" GutterBottom="true">@L["RevealGreeting", _label]</MudText>
+
+    @* Freshness indicator (ADR-0068, FEAT-020): a backend-backed link shows whether the details are the
+       latest (fetched live) or a saved copy (offline fallback). A local-only link has no live source, so
+       it shows no indicator — its snapshot is all there is. *@
+    @if (_backendBacked)
+    {
+        @if (_live)
+        {
+            <MudText Typo="Typo.caption" Color="Color.Success" Class="d-block mb-2" id="reveal-live">@L["RevealLiveHint"]</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.caption" Color="Color.Warning" Class="d-block mb-2" id="reveal-snapshot">@L["RevealSnapshotHint"]</MudText>
+        }
+    }
 
     @if (_payload.BudgetAmount is { } amount)
     {
@@ -100,6 +119,8 @@ else if (_payload is not null)
     private CalendarEvent? _calendarEvent;
     private bool _revealed;
     private bool _error;
+    private bool _backendBacked;
+    private bool _live;
 
     // A small confirmation buzz as the giftee is shown (FEAT-008 W3); a no-op on the web head.
     private async Task RevealAsync()
@@ -113,14 +134,27 @@ else if (_payload is not null)
         !string.IsNullOrWhiteSpace(_payload?.EventLocation) ||
         !string.IsNullOrWhiteSpace(_payload?.EventNotes);
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         try
         {
             var fragment = new Uri(Navigation.Uri).Fragment;
             var (label, blob) = RevealLinkBuilder.ParseFragment(fragment);
             _label = label;
+
+            // The embedded snapshot always decodes — it is what makes the reveal work offline (ADR-0014).
             _payload = Codec.Decode(blob);
+
+            // A backend-backed link (ADR-0068) carries a reveal token: try to load the live slice so the
+            // wishlist and event details are current. A fetch failure (offline, revoked) keeps the
+            // snapshot; a local-only link has no token and stays on the snapshot with no indicator.
+            var revealToken = RevealLinkBuilder.ParseRevealToken(fragment);
+            _backendBacked = revealToken is not null;
+            if (revealToken is not null)
+            {
+                _live = await TryLoadLiveAsync(revealToken);
+            }
+
             if (DateTimeOffset.TryParse(
                     _payload.EventDate, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed))
             {
@@ -133,6 +167,28 @@ else if (_payload is not null)
         {
             _error = true;
         }
+    }
+
+    // Fetch the live per-giver slice and swap it in for the snapshot when it loads. Returns false on any
+    // failure (offline, revoked token, malformed slice) so the caller keeps showing the embedded snapshot.
+    private async Task<bool> TryLoadLiveAsync(string revealToken)
+    {
+        try
+        {
+            var result = await RevealApi.GetRevealSliceAsync(revealToken);
+            if (result is { IsSuccess: true, Value: { } view }
+                && view.Body.Deserialize(RevealJsonContext.Default.RevealPayload) is { } fresh)
+            {
+                _payload = fresh;
+                return true;
+            }
+        }
+        catch (JsonException)
+        {
+            // A malformed live slice is no better than none — fall back to the snapshot.
+        }
+
+        return false;
     }
 
     // The reveal page's calendar entry: a generic title (the payload has no event name), the date/location/

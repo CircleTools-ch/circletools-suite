@@ -33,6 +33,7 @@ namespace CircleTools.SecretSanta.Ui;
 /// <param name="claimable">Reads which local groups are still account-free, for the auto-claim step.</param>
 /// <param name="sync">The sync engine, for claiming account-free groups into the signed-in account.</param>
 /// <param name="sharedSync">The shared-by-link engine, reconciling token-addressed groups signed in or out (FEAT-013).</param>
+/// <param name="revealSlices">Publishes backend-backed groups' live reveal slices after each reconcile (ADR-0068, FEAT-020).</param>
 /// <param name="auth">The current principal, read for the signed-in account id.</param>
 /// <param name="connectivity">The connectivity seam, subscribed for the reconnect trigger.</param>
 public sealed class AutoSyncService(
@@ -40,6 +41,7 @@ public sealed class AutoSyncService(
     ClaimableGroupsService claimable,
     SyncService sync,
     SharedSyncService sharedSync,
+    RevealSlicePublisher revealSlices,
     AuthenticationStateProvider auth,
     IConnectivity connectivity) : IDisposable, ISyncSignals
 {
@@ -200,6 +202,10 @@ public sealed class AutoSyncService(
         foreach (var id in shared)
         {
             await sharedSync.SyncGroupAsync(id);
+            // After reconciling, re-publish the group's reveal slices so an already-sent reveal link
+            // reflects the latest wishlist/event (ADR-0068). Best-effort and a no-op for a group this
+            // device cannot publish (join-only), so it is safe to call for every shared group.
+            await revealSlices.PublishAsync(id);
         }
     }
 

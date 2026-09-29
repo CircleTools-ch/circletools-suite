@@ -98,7 +98,7 @@ public sealed class RevealLinkTests
         var builder = new RevealLinkBuilder(new RevealLinkOptions("https://example.org"), codec);
         var payload = SamplePayload();
 
-        var link = builder.Build("Bob & Carol", payload);
+        var link = builder.Build("Bob & Carol", Guid.NewGuid(), payload);
 
         Assert.Equal("Bob & Carol", link.ForLabel);
         Assert.StartsWith("https://example.org/r#for=", link.Url);

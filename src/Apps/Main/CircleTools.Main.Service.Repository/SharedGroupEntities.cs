@@ -86,6 +86,34 @@ public sealed class SharedGroupToken
 }
 
 /// <summary>
+/// One giver's reveal slice for a backend-backed group (ADR-0068, FEAT-020): the per-giver reveal
+/// payload a draw-capable client published, stored opaquely and addressed by an unguessable reveal
+/// token — exactly as opaque to the server as <see cref="SharedGroupRow.Body"/>. The public reveal page
+/// GETs one of these by token to show the current wishlist/event; possession of the token grants this
+/// one giver's slice and nothing else (NFR-002).
+/// </summary>
+public sealed class SharedRevealSlice
+{
+    /// <summary>
+    /// The <em>hash</em> of the reveal token — the row key (ADR-0061). The token from a link is looked up
+    /// by the SHA-256 of itself, so a database dump holds no working reveal tokens.
+    /// </summary>
+    public string Token { get; set; } = string.Empty;
+
+    /// <summary>The reveal token's plaintext, encrypted at rest (ADR-0061), so the sharing client can hand back its stable link.</summary>
+    public string TokenCipher { get; set; } = string.Empty;
+
+    /// <summary>The group this slice belongs to — used to replace a group's whole slice set on re-publish.</summary>
+    public Guid GroupId { get; set; }
+
+    /// <summary>The giver's opaque reveal payload as JSON (stored as <c>jsonb</c>, never deserialized by the server).</summary>
+    public string Body { get; set; } = string.Empty;
+
+    /// <summary>When the slice was last published — drives the retention sweep alongside the group (NFR-010).</summary>
+    public DateTimeOffset LastActivityAt { get; set; }
+}
+
+/// <summary>
 /// A person-claim on a shared-by-link group (ADR-0058, FEAT-013): the record that a member has been
 /// claimed by a device or an account, locking that member so no one else can claim it. Only an admin
 /// can release it (delete the row).

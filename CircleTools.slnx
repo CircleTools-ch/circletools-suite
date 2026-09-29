@@ -1,17 +1,8 @@
 <Solution>
-  <!--
-    CircleTools app-suite solution (new .slnx format).
-    Projects are added phase by phase, each gated by an ADR.
-    See docs/process/ways-of-working.md.
-
-    "CircleTools" is a neutral working name — the namespace/project prefix and the
-    placeholder in prose, not a brand. The brand is deliberately deferred.
-    See CLAUDE.md > "Placeholder & naming convention".
-  -->
-  <Folder Name="/docs/">
-    <File Path="README.md" />
-    <File Path="CONTRIBUTING.md" />
+  <Folder Name="/Its/">
     <File Path="CLAUDE.md" />
+    <File Path="CONTRIBUTING.md" />
+    <File Path="README.md" />
   </Folder>
   <Folder Name="/src/" />
   <Folder Name="/src/Apps/" />
@@ -29,7 +20,9 @@
     <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.LocalStore/CircleTools.SecretSanta.LocalStore.csproj" />
     <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.Ui/CircleTools.SecretSanta.Ui.csproj" />
     <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.WebApp/CircleTools.SecretSanta.WebApp.csproj" />
-    <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj" />
+    <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj">
+      <Deploy Solution="Debug|*" />
+    </Project>
   </Folder>
   <Folder Name="/src/Aspire/">
     <Project Path="src/Aspire/CircleTools.AppHost/CircleTools.AppHost.csproj" />

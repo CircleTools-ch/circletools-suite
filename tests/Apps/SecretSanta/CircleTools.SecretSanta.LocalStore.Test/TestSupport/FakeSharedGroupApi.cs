@@ -314,6 +314,72 @@ public sealed class FakeSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
         return Task.FromResult(ApiResult.Ok(new OwnedSharedGroups(owned)));
     }
 
+    private readonly Dictionary<string, (Guid GroupId, string Body)> _revealSlices = [];
+
+    /// <summary>The reveal tokens the client has published a slice for, mapped to their group (for test assertions).</summary>
+    public IReadOnlyDictionary<string, Guid> RevealSliceTokens => _revealSlices.ToDictionary(k => k.Key, v => v.Value.GroupId);
+
+    /// <inheritdoc />
+    public Task<ApiResult> PublishRevealSlicesAsync(string adminToken, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default)
+    {
+        if (Unreachable)
+        {
+            return Task.FromResult(ApiResult.Failed(new ApiError(ApiFailure.Unreachable)));
+        }
+
+        if (!_tokens.TryGetValue(adminToken, out var t) || t is not { Active: true, Capability: SharedCapability.Admin })
+        {
+            return Task.FromResult(ApiResult.Failed(new ApiError(ApiFailure.Forbidden)));
+        }
+
+        ReplaceSlices(t.GroupId, request);
+        return Task.FromResult(ApiResult.Ok());
+    }
+
+    /// <inheritdoc />
+    public Task<ApiResult> PublishOwnedRevealSlicesAsync(Guid groupId, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default)
+    {
+        if (Unreachable)
+        {
+            return Task.FromResult(ApiResult.Failed(new ApiError(ApiFailure.Unreachable)));
+        }
+
+        // The fake treats a claimed (admin-retired) group as owned; it has no bearer context.
+        if (!_groups.TryGetValue(groupId, out var g) || !g.AdminRetired)
+        {
+            return Task.FromResult(ApiResult.Failed(new ApiError(ApiFailure.Forbidden)));
+        }
+
+        ReplaceSlices(groupId, request);
+        return Task.FromResult(ApiResult.Ok());
+    }
+
+    /// <inheritdoc />
+    public Task<ApiResult<RevealSliceView>> GetRevealSliceAsync(string revealToken, CancellationToken cancellationToken = default)
+    {
+        if (Unreachable)
+        {
+            return Fail<RevealSliceView>(ApiFailure.Unreachable);
+        }
+
+        return _revealSlices.TryGetValue(revealToken, out var slice)
+            ? Task.FromResult(ApiResult.Ok(new RevealSliceView(Parse(slice.Body))))
+            : Fail<RevealSliceView>(ApiFailure.NotFound);
+    }
+
+    private void ReplaceSlices(Guid groupId, PublishRevealSlicesRequest request)
+    {
+        foreach (var key in _revealSlices.Where(x => x.Value.GroupId == groupId).Select(x => x.Key).ToList())
+        {
+            _revealSlices.Remove(key);
+        }
+
+        foreach (var slice in request.Slices)
+        {
+            _revealSlices[slice.RevealToken] = (groupId, slice.Body.GetRawText());
+        }
+    }
+
     private string Mint(Guid groupId, SharedCapability capability)
     {
         var token = $"{capability}-{groupId:N}-{++_counter}";

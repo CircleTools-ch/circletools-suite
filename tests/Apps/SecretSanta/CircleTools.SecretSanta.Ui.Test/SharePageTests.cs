@@ -1,6 +1,7 @@
 using CircleTools.Application;
 using CircleTools.SecretSanta.Contracts;
 using CircleTools.SecretSanta.Core.Application;
+using CircleTools.SecretSanta.LocalStore;
 using CircleTools.SecretSanta.Ui;
 using CircleTools.SecretSanta.Ui.Pages;
 using CircleTools.SecretSanta.Ui.Test.TestSupport;
@@ -40,6 +41,13 @@ public sealed class SharePageTests : IDisposable
         _ctx.Services.AddSingleton<ISyncSignals>(new FakeSyncSignals());
         // The share page now offers the guided hand-out (MNF-7), which persists progress via this service.
         _ctx.Services.AddSingleton<HandoutProgressService>();
+        // Live reveal links (ADR-0068): the page reads reveal tokens from the local store and publishes
+        // slices. With an empty store and an unreachable API it exercises only the local-only path.
+        _ctx.Services.AddSingleton<ILocalSyncStore>(new EmptyLocalSyncStore());
+        _ctx.Services.AddSingleton<NoOpSharedGroupApi>();
+        _ctx.Services.AddSingleton<ISharedGroupApi>(sp => sp.GetRequiredService<NoOpSharedGroupApi>());
+        _ctx.Services.AddSingleton<ISharedGroupAccountApi>(sp => sp.GetRequiredService<NoOpSharedGroupApi>());
+        _ctx.Services.AddSingleton<RevealSlicePublisher>();
     }
 
     private IRenderedComponent<Share> RenderShare() =>
@@ -156,7 +164,7 @@ file sealed class ShareSender(string revealUrl) : ISender
     {
         object result = query switch
         {
-            GetRevealLinksQuery => (IReadOnlyList<RevealLinkDto>)[new RevealLinkDto("Al", revealUrl)],
+            GetRevealLinksQuery => (IReadOnlyList<RevealLinkDto>)[new RevealLinkDto("Al", Guid.Empty, revealUrl)],
             GetEventQuery q => new EventDto(q.EventId, q.GroupId, "Christmas", null, null, true, [], false, []),
             GetGroupQuery q => new GroupDto(q.GroupId, "Family", [], [], []),
             _ => throw new NotSupportedException($"Unexpected query {query.GetType().Name}"),

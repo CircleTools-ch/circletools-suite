@@ -129,7 +129,13 @@ public sealed partial class MauiPasskeyCeremony : IPasskeyCeremony
             return;
         }
 
-        tcs.TrySetException(new PasskeyCeremonyException(error?.ToString() ?? "The passkey ceremony failed."));
+        // The account pages surface only a generic "couldn't use a passkey here" message (they cannot tell
+        // an unsupported platform from a broken ceremony). Log the real Credential Manager error — a
+        // provider/config problem, or a signing-cert vs. Digital-Asset-Links mismatch on a build whose
+        // signature is not registered for the RP (ADR-0066) — so a failure is diagnosable from logcat.
+        var detail = error?.ToString() ?? "The passkey ceremony failed.";
+        Android.Util.Log.Error("Passkey", detail);
+        tcs.TrySetException(new PasskeyCeremonyException(detail));
     }
 #elif IOS
     /// <inheritdoc />

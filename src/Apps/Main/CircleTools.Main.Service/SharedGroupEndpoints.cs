@@ -75,6 +75,16 @@ public static class SharedGroupEndpoints
         group.MapGet("/{groupId:guid}/owned", GetOwnedAsync).WithName("GetOwnedSharedGroup").RequireAuthorization();
         group.MapPut("/{groupId:guid}/owned", PushOwnedAsync).WithName("PushOwnedSharedGroup").RequireAuthorization();
 
+        // Live reveal links (ADR-0068, FEAT-020). Publish the per-giver reveal slices for a group: by
+        // admin token (shared-by-link) or by owner bearer (account mode). Read one giver's slice by its
+        // reveal token — the public reveal page's only call, anonymous. All account-free (NFR-009).
+        group.MapPut("/{token}/reveal-slices", PublishRevealSlicesAsync).WithName("PublishSharedGroupRevealSlices")
+            .RequireRateLimiting(AccountFreeRateLimitPolicy);
+        group.MapPut("/{groupId:guid}/owned/reveal-slices", PublishOwnedRevealSlicesAsync).WithName("PublishOwnedSharedGroupRevealSlices").RequireAuthorization();
+        // A resolve stamps LastActivityAt (a DB write), so rate-limit it like the token read (NFR-009).
+        group.MapGet("/reveal/{revealToken}", GetRevealSliceAsync).WithName("GetSharedGroupRevealSlice")
+            .RequireRateLimiting(AccountFreeRateLimitPolicy);
+
         return group;
     }
 
@@ -250,5 +260,42 @@ public static class SharedGroupEndpoints
             SharedWriteStatus.TooLarge => Results.StatusCode(StatusCodes.Status413PayloadTooLarge),
             _ => Results.Ok(new PushSharedGroupResult(result.Version, result.Status == SharedWriteStatus.Collision)),
         };
+    }
+
+    private static async Task<IResult> PublishRevealSlicesAsync(
+        string token,
+        PublishRevealSlicesRequest request,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var stored = await store.SetRevealSlicesAsync(token, request.Slices, cancellationToken);
+        return stored ? Results.NoContent() : Results.Forbid();
+    }
+
+    private static async Task<IResult> PublishOwnedRevealSlicesAsync(
+        Guid groupId,
+        PublishRevealSlicesRequest request,
+        ClaimsPrincipal principal,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (!principal.TryGetUserId(out var accountId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var stored = await store.SetRevealSlicesAsOwnerAsync(accountId, groupId, request.Slices, cancellationToken);
+        return stored ? Results.NoContent() : Results.Forbid();
+    }
+
+    private static async Task<IResult> GetRevealSliceAsync(
+        string revealToken,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        var view = await store.GetRevealSliceAsync(revealToken, cancellationToken);
+        return view is null ? Results.NotFound() : Results.Ok(view);
     }
 }
