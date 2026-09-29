@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Foundation;
 using Microsoft.Extensions.DependencyInjection;
 using UIKit;
@@ -5,6 +6,7 @@ using UIKit;
 namespace CircleTools.SecretSanta.App;
 
 [Register("AppDelegate")]
+[SuppressMessage("Naming", "CA1711:Identifiers should not have incorrect suffix", Justification = "AppDelegate is the Apple/MAUI-mandated type name for the iOS application delegate; it cannot be renamed.")]
 public class AppDelegate : MauiUIApplicationDelegate
 {
 	protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
@@ -16,9 +18,10 @@ public class AppDelegate : MauiUIApplicationDelegate
 	// DeepLinkService, which strips it to the in-app route and renders it offline — no server involved.
 	public override bool ContinueUserActivity(UIApplication application, NSUserActivity userActivity, UIApplicationRestorationHandler completionHandler)
 	{
-		if (userActivity.ActivityType == NSUserActivityType.BrowsingWeb && userActivity.WebPageUrl is { } url)
+		if (userActivity.ActivityType == NSUserActivityType.BrowsingWeb
+			&& userActivity.WebPageUrl?.AbsoluteString is { Length: > 0 } url)
 		{
-			ForwardDeepLink(url.AbsoluteString);
+			ForwardDeepLink(url);
 			return true;
 		}
 
