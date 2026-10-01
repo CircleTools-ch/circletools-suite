@@ -76,7 +76,12 @@ Concretely, the decision commits the mobile work to these levers, in the priorit
    [R2-6 touch pass](../roadmap/backlog.md)); dense/small sizing is a desktop affordance, not a phone one.
 2. **Navigation clean-up** — one menu entry point on narrow viewports (drop the redundant app-bar
    hamburger where the bottom bar's "More" already opens the drawer), and no degenerate one-item bottom
-   bar in the signed-out state.
+   bar in the signed-out state. **(Amended by
+   [ADR-0070](0070-always-on-bottom-navigation-on-phones.md):** in the native app the bottom bar is now
+   shown on narrow viewports (phone, iPad portrait) signed in or out, with a balanced two-tab minimum
+   (Groups + "More") — the no-degenerate-one-item-bar concern is kept, but the signed-out state gets the
+   bar rather than the hamburger. It stays off on the web, where a fixed bar collides with the browser's
+   own bottom chrome, and on wide native viewports (iPad landscape), which keep the drawer.)
 3. **Motion** — a **haptics** seam (a light buzz on draw, reveal, pin/delete) and **pull-to-refresh** on
    the list screens (triggering the existing `AutoSyncService`).
 4. **Native interaction patterns within the Material vocabulary** — **bottom/action sheets** for

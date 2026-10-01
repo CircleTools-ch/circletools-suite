@@ -70,6 +70,9 @@ public static class SecretSantaUiServiceCollectionExtensions
         services.AddScoped<RecentAccessService>();
         services.AddScoped<HandoutProgressService>();
         services.AddScoped<NotificationPreferences>();
+        // Device-local default storage mode for new groups + the one-time onboarding flag (FR-048,
+        // ADR-0071). Per-device, never synced — a signed-out user needs a default too.
+        services.AddScoped<StorageModePreferences>();
         services.AddScoped<ReminderScheduler>();
         services.AddScoped<IReminderRescheduler>(sp => sp.GetRequiredService<ReminderScheduler>());
 

@@ -13,6 +13,8 @@
 @inject SharedSyncService SharedSync
 @inject IHapticFeedback Haptics
 @inject IDialogService Dialogs
+@inject StorageModePreferences StoragePrefs
+@inject ClaimableGroupsService Claimable
 @implements IDisposable
 
 <PageTitle>@L["GroupsTitle"]</PageTitle>
@@ -120,6 +122,16 @@ else
                             <MudText Typo="Typo.body2" Class="mud-text-secondary">
                                 @L["EventsColumn"]: @group.EventCount
                             </MudText>
+                            @* Per-group storage indicator (FR-048): where this group lives, at a glance —
+                               device / link / cloud. Mode is read from the sync record (ClaimableGroups),
+                               not the domain summary. *@
+                            @if (_modeByGroup.TryGetValue(group.Id, out var mode))
+                            {
+                                <MudTooltip Text="@ModeLabel(mode)">
+                                    <MudIcon Icon="@ModeIcon(mode)" Size="Size.Small" Class="mud-text-secondary"
+                                             aria-label="@ModeLabel(mode)" />
+                                </MudTooltip>
+                            }
                             @if (group.AnyDrawInvalidated)
                             {
                                 <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
@@ -181,11 +193,14 @@ else
     private Task<AuthenticationState>? AuthStateTask { get; set; }
 
     private IReadOnlyList<GroupSummaryDto>? _groups;
+    private IReadOnlyDictionary<Guid, StorageMode> _modeByGroup = new Dictionary<Guid, StorageMode>();
     private HashSet<Guid> _pinned = [];
     private Guid _accountId;
     private bool _accountKnown;
     private string _displayName = string.Empty;
     private string _newName = string.Empty;
+    // The create picker / phone FAB seed from the user's device-local default (FR-048), re-seeded when the
+    // account changes and clamped for the current sign-in state.
     private StorageMode _createMode = StorageMode.OnThisDevice;
     private bool _busy;
 
@@ -212,8 +227,47 @@ else
 
         if (changed)
         {
+            // Seed the create picker / phone FAB from the user's default storage mode (FR-048), re-seeded
+            // when the account changes (e.g. after signing in from the onboarding) so the chosen default
+            // takes effect. Clamp "My account" to "On this device" while signed out — no account to attach
+            // to yet; the group auto-claims into the account on the next sync after sign-in (ADR-0017).
+            _createMode = ClampForAccount(await StoragePrefs.GetDefaultAsync());
             await LoadAsync();
         }
+    }
+
+    // "My account" needs a live session; without one, fall back to "On this device" (auto-claims later).
+    private StorageMode ClampForAccount(StorageMode mode) =>
+        mode == StorageMode.Account && _accountId == Guid.Empty ? StorageMode.OnThisDevice : mode;
+
+    // Show the one-time storage onboarding on first render if it has not been shown (FR-048, ADR-0071).
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || await StoragePrefs.IsOnboardedAsync())
+        {
+            return;
+        }
+
+        var chosen = await Dialogs.ShowStorageOnboardingAsync(_createMode, _accountId != Guid.Empty);
+        await StoragePrefs.MarkOnboardedAsync();
+        if (chosen is not { } mode)
+        {
+            return;
+        }
+
+        await StoragePrefs.SetDefaultAsync(mode);
+
+        // Choosing "My account" while signed out: take the user to sign in / register (FR-048). The
+        // default is already saved, so on return (the login page lands back on this home screen) the
+        // account change re-seeds the create mode to "My account".
+        if (mode == StorageMode.Account && _accountId == Guid.Empty)
+        {
+            Navigation.NavigateTo("account/login");
+            return;
+        }
+
+        _createMode = ClampForAccount(mode);
+        StateHasChanged();
     }
 
     // A background sync may have pulled or claimed groups; refresh the list so they appear on their own.
@@ -230,6 +284,17 @@ else
         // Signed in: every group (all synced). Signed out: only account-free groups — account data is
         // hidden from the offline view but kept on the device (ADR-0044).
         _groups = await VisibleGroups.GetVisibleAsync();
+
+        // Each group's storage mode for the per-group list icon (FR-048), read from the sync record. A
+        // storage failure just drops the icons; the list still renders.
+        try
+        {
+            _modeByGroup = (await Claimable.GetAllAsync()).ToDictionary(g => g.Id, g => g.Mode);
+        }
+        catch (StorageUnavailableException)
+        {
+            _modeByGroup = new Dictionary<Guid, StorageMode>();
+        }
 
         // Pinned groups are a per-account preference (FR-033); empty when signed out. A storage failure
         // just leaves the pins off.
@@ -300,10 +365,12 @@ else
                 await AddSelfAsync(id, name, _displayName.Trim());
             }
 
-            // If the organizer chose "Shared by link" at creation, upload it and mint its links now
-            // (ADR-0058). "My account" needs no action here — a signed-in device auto-claims it on the
-            // next background cycle; "On this device" is the default and stays local.
-            if (_createMode == StorageMode.SharedByLink)
+            // Apply the chosen storage mode (FR-048): the picker value on wide screens, or the seeded
+            // default on the phone FAB. "Shared by link" uploads and mints its links now (ADR-0058); "My
+            // account" needs no action — a signed-in device auto-claims it on the next background cycle;
+            // "On this device" stays local. Account while signed out is clamped to local (auto-claims later).
+            var mode = ClampForAccount(_createMode);
+            if (mode == StorageMode.SharedByLink)
             {
                 await SharedSync.ShareByLinkAsync(id);
             }
@@ -354,6 +421,22 @@ else
         await Haptics.TapAsync();
         await LoadAsync();
     }
+
+    // Per-group storage indicator (FR-048): device / link / cloud icon, matching the Sharing & sync
+    // vocabulary (GroupEditor's mode chip uses the link / cloud-done icons).
+    private static string ModeIcon(StorageMode mode) => mode switch
+    {
+        StorageMode.SharedByLink => Icons.Material.Filled.Link,
+        StorageMode.Account => Icons.Material.Filled.CloudDone,
+        _ => Icons.Material.Filled.Smartphone,
+    };
+
+    private string ModeLabel(StorageMode mode) => mode switch
+    {
+        StorageMode.SharedByLink => L["ModeSharedTitle"],
+        StorageMode.Account => L["ModeAccountTitle"],
+        _ => L["ModeLocalTitle"],
+    };
 
     private void Open(Guid id) => Navigation.NavigateTo($"groups/{id}");
 

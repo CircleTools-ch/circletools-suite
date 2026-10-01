@@ -5,7 +5,10 @@
         "appIDs": ["U893QVXCU7.ch.circletools.secretsanta"],
         "components": [
           { "/": "/r*", "comment": "Reveal links (ADR-0053) open in the app." },
-          { "/": "/groups/*", "comment": "Event deep links open in the app." }
+          { "/": "/groups/*", "comment": "Event deep links open in the app." },
+          { "/": "/verify-email*", "comment": "Email confirmation (FR-007) opens in the app." },
+          { "/": "/reset-password*", "comment": "Password reset (FR-009) opens in the app." },
+          { "/": "/confirm-email-change*", "comment": "Email-change confirmation opens in the app." }
         ]
       }
     ]

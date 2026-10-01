@@ -277,10 +277,20 @@ head. What it changed in code, what it confirmed, and what still needs a device 
   open item for the iPad priority.
 - **16 KB page size** (Play, enforced **1 Feb 2027**): the app ships native `.so` libs, so it is in
   scope. Confirm the .NET 10 release AAB emits 16 KB-aligned libraries (APK Analyzer / `check_elf_alignment`).
-- **Passkey affordance on mobile.** Passkeys are stubbed on device (RP-ID deferred); password sign-in
-  works and the passkey button shows "not available here" (FR-011). Graceful, but a strict reviewer
-  could flag a visible feature that only errors — either hide it on the MAUI heads or cover it in the
-  App Review notes.
+- **Passkey affordance on mobile.** Native passkeys are implemented on both heads
+  ([ADR-0066](../adr/0066-mobile-native-passkeys.md)) and the server now carries the origin allow-list
+  they need ([ADR-0069](../adr/0069-passkey-origin-allow-list-for-native-heads.md)). Three runtime
+  prerequisites gate them working on device:
+  1. **Deploy the Main API** with `Auth:Passkey:Origins` set (in `appsettings.Production.json`): the web
+     origins + `https://circletools.ch` (iOS) + the Android `android:apk-key-hash:<…>` derived from the
+     `assetlinks.json` signing-cert SHA-256. Without this, iOS fails with *"invalid origin
+     'https://circletools.ch'"*.
+  2. **Android:** `circletools.ch/.well-known/assetlinks.json` live over HTTPS with the
+     `get_login_creds` relation and a SHA-256 matching the **installed build's** Play App Signing cert —
+     a mismatch is the generic *"Passkey could not be created here"* (client-side, before the server).
+  3. **iOS:** `apple-app-site-association` `webcredentials` live + Associated Domains capability on the
+     App ID/profile (iOS already produced a `circletools.ch` origin on TestFlight, so this appears set —
+     confirm at go-live).
 
 **Backup posture — decided ✅ ([ADR-0067](../adr/0067-android-backup-posture.md)):**
 `android:allowBackup` is set to **`false`**. Android Auto Backup would silently copy on-device personal
@@ -310,8 +320,18 @@ from the reveal origin. Neither can be finalised yet: the values need the **Play
   ```json
   { "applinks": { "details": [
       { "appIDs": ["<TEAMID>.ch.circletools.secretsanta"],
-        "components": [ { "/": "/r*" }, { "/": "/groups/*" } ] } ] } }
+        "components": [ { "/": "/r*" }, { "/": "/groups/*" },
+                        { "/": "/verify-email*" }, { "/": "/reset-password*" },
+                        { "/": "/confirm-email-change*" } ] } ] } }
   ```
+
+> **Deep-linked paths.** The app claims these paths on `secretsanta.circletools.ch` so they open in the
+> app, not a detached browser tab: `/r*` (reveal links), `/groups/*` (event links), and the account email
+> links `/verify-email*`, `/reset-password*`, `/confirm-email-change*` (FR-007/FR-009). Android declares
+> them as `MainActivity` intent filters, iOS as the AASA `components` above; both are handled generically
+> by `DeepLinkService`. They share the autoVerify prerequisite: until `assetlinks.json` is live and its
+> SHA-256 matches the installed build's Play App Signing cert, Android opens them in the browser/chooser
+> instead of the app (the exact symptom of an email-confirmation link opening in the browser).
 
   Also enable the **Associated Domains** capability on the App ID and regenerate the provisioning
   profile, or the entitlement won't be honoured.
@@ -332,6 +352,8 @@ test account).
 - [x] Account-deletion URL published and reachable *(live at `secretsanta.circletools.ch/delete-account`; in-app deletion exists)*
 - [ ] `.well-known/assetlinks.json` + `apple-app-site-association` served with the real Play SHA-256 / Apple Team ID
 - [ ] Apple: Associated Domains capability enabled on the App ID + profile regenerated
+- [ ] Main API deployed with `Auth:Passkey:Origins` set (web + iOS `https://circletools.ch` + Android `apk-key-hash`) — passkey origin allow-list ([ADR-0069](../adr/0069-passkey-origin-allow-list-for-native-heads.md))
+- [ ] Native passkey create + sign-in device-verified on iOS and Android against the deployed API
 - [ ] Store listings and screenshots in DE/EN/FR, per device class **incl. iPad 13"** (mandatory)
 - [ ] Data safety (Play) / privacy labels (Apple) match actual data collection (email + user content when synced; "not collected" on-device-only)
 - [ ] DSA trader status declared (Apple; likely **trader** for a Swiss individual shipping to the EU — confirm in the questionnaire)

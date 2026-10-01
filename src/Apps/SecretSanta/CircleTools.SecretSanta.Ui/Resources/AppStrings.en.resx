@@ -320,4 +320,12 @@
   <data name="DataImportUnsupported" xml:space="preserve"><value>This backup was made by a newer version of the app. Update the app, then try again.</value></data>
   <data name="DataImportViewGroups" xml:space="preserve"><value>View my groups</value></data>
   <data name="EmptyStateLocalDataNote" xml:space="preserve"><value>Your groups are saved in this browser, on this device. Manage or back them up under Settings → Your data.</value></data>
+  <data name="OnboardingStorageTitle" xml:space="preserve"><value>Where should your groups be stored?</value></data>
+  <data name="OnboardingStorageIntro" xml:space="preserve"><value>Choose where new groups are kept by default. On this device keeps them private and offline; Shared by link stores them online so others can open them with a link — no account; My account syncs them across your devices.</value></data>
+  <data name="OnboardingStoragePerGroupNote" xml:space="preserve"><value>You can change this for each group later, in its sharing &amp; sync settings.</value></data>
+  <data name="OnboardingStorageAccountNote" xml:space="preserve"><value>If you pick My account, you'll be asked to sign in or create an account next.</value></data>
+  <data name="OnboardingStorageSave" xml:space="preserve"><value>Save</value></data>
+  <data name="OnboardingStorageSkip" xml:space="preserve"><value>Not now</value></data>
+  <data name="SettingsDefaultStorageTitle" xml:space="preserve"><value>Default storage for new groups</value></data>
+  <data name="SettingsDefaultStorageHint" xml:space="preserve"><value>New groups start with this storage. You can still change it for each group.</value></data>
 </root>
