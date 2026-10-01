@@ -352,4 +352,12 @@
   <data name="DataImportUnsupported" xml:space="preserve"><value>Cette sauvegarde a été créée avec une version plus récente de l'application. Mettez l'application à jour, puis réessayez.</value></data>
   <data name="DataImportViewGroups" xml:space="preserve"><value>Voir mes groupes</value></data>
   <data name="EmptyStateLocalDataNote" xml:space="preserve"><value>Vos groupes sont enregistrés dans ce navigateur, sur cet appareil. Gérez-les ou sauvegardez-les dans Réglages → Vos données.</value></data>
+  <data name="OnboardingStorageTitle" xml:space="preserve"><value>Où vos groupes doivent-ils être stockés ?</value></data>
+  <data name="OnboardingStorageIntro" xml:space="preserve"><value>Choisissez où les nouveaux groupes sont stockés par défaut. Sur cet appareil les garde privés et hors ligne ; Partagé par lien les stocke en ligne pour que d'autres les ouvrent avec un lien – sans compte ; Mon compte les synchronise sur vos appareils.</value></data>
+  <data name="OnboardingStoragePerGroupNote" xml:space="preserve"><value>Vous pourrez le modifier pour chaque groupe plus tard, dans ses réglages de partage et synchronisation.</value></data>
+  <data name="OnboardingStorageAccountNote" xml:space="preserve"><value>Si vous choisissez « Mon compte », il vous sera ensuite demandé de vous connecter ou de créer un compte.</value></data>
+  <data name="OnboardingStorageSave" xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="OnboardingStorageSkip" xml:space="preserve"><value>Plus tard</value></data>
+  <data name="SettingsDefaultStorageTitle" xml:space="preserve"><value>Stockage par défaut des nouveaux groupes</value></data>
+  <data name="SettingsDefaultStorageHint" xml:space="preserve"><value>Les nouveaux groupes démarrent avec ce stockage. Vous pouvez toujours le changer pour chaque groupe.</value></data>
 </root>

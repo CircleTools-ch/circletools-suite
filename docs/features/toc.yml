@@ -78,6 +78,8 @@
   href: FEAT-019-getting-started-checklist.md
 - name: FEAT-020 Live reveal links for backend-backed groups
   href: FEAT-020-live-reveal-links-for-backend-backed-groups.md
+- name: FEAT-021 Storage default, onboarding & list indicator
+  href: FEAT-021-storage-default-onboarding-and-list-indicator.md
 - name: Templates
   items:
     - name: Feature spec template
