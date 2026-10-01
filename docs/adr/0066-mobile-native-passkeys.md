@@ -63,7 +63,11 @@ verified later** (first TestFlight build on a real iPad/iPhone), because there i
   works in binary `NSData`, so the ceremony does the base64url↔binary translation to and from the WebAuthn
   JSON. Written now, reviewed against the API docs (no local compile), verified on device later.
 - **No server or seam change.** The RP-ID stays `circletools.ch`; the Main service issues options and
-  verifies results exactly as it does for the web heads.
+  verifies results exactly as it does for the web heads. **(Corrected by
+  [ADR-0069](0069-passkey-origin-allow-list-for-native-heads.md):** this assumption was wrong — Identity's
+  default origin check requires an `Origin` HTTP header that the native heads do not send, so a server
+  origin allow-list was in fact needed. The RP-ID and the seam are unchanged; only the server's origin
+  validation was added.)
 - **Association files** carry the passkey relations: `assetlinks.json` gains
   `delegate_permission/common.get_login_creds`; a new `apple-app-site-association` carries the
   `webcredentials` section (and `applinks` for the Universal Links from ADR-0065). Both need real
@@ -115,6 +119,8 @@ button that fails.
 
 ## Links
 
+- Corrected by [ADR-0069](0069-passkey-origin-allow-list-for-native-heads.md) (the "no server change"
+  assumption — a passkey origin allow-list was needed for the native heads)
 - Supersedes the mobile-passkey deferral in [FEAT-002](../features/FEAT-002-m1-identity.md) /
   [FR-010](../requirements/functional/FR-010-manage-passkeys.md),
   [FR-011](../requirements/functional/FR-011-sign-in-with-passkey.md)

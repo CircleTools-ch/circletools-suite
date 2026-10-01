@@ -1,8 +1,10 @@
 @page "/settings"
+@using CircleTools.SecretSanta.LocalStore
 @inject IStringLocalizer<AppStrings> L
 @inject IStringLocalizer<SharedStrings> LS
 @inject ThemeState Theme
 @inject NotificationPreferences NotificationPrefs
+@inject StorageModePreferences StoragePrefs
 @inject INotificationScheduler Notifications
 @inject IReminderRescheduler Reminders
 @implements IDisposable
@@ -42,6 +44,15 @@
         </AuthorizeView>
     </div>
 
+    @* Default storage for new groups (FR-048, ADR-0071): a device-local preference that seeds the create
+       picker and the phone "+" FAB. Changeable per group later in Sharing & sync. "My account" is
+       disabled while signed out. *@
+    <div>
+        <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["SettingsDefaultStorageTitle"]</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["SettingsDefaultStorageHint"]</MudText>
+        <StorageModePicker Value="_defaultMode" ValueChanged="OnDefaultModeChangedAsync" AccountEnabled="_signedIn" />
+    </div>
+
     @* Device-local reminders (MNF-8): opt-in per kind, off by default; phone-only. *@
     <div>
         <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["NotificationsTitle"]</MudText>
@@ -78,8 +89,13 @@
 </MudStack>
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; }
+
     private bool _notificationsSupported;
     private HashSet<ReminderKind> _enabled = [];
+    private StorageMode _defaultMode = StorageMode.OnThisDevice;
+    private bool _signedIn;
 
     protected override void OnInitialized() => Theme.Changed += OnChanged;
 
@@ -87,6 +103,15 @@
     {
         _notificationsSupported = await Notifications.IsSupportedAsync();
         _enabled = new HashSet<ReminderKind>(await NotificationPrefs.GetEnabledAsync());
+        _defaultMode = await StoragePrefs.GetDefaultAsync();
+        _signedIn = AuthState is not null && (await AuthState).User.UserId() != Guid.Empty;
+    }
+
+    // Remember the chosen default storage mode for new groups (FR-048). Device-local, best-effort.
+    private async Task OnDefaultModeChangedAsync(StorageMode mode)
+    {
+        _defaultMode = mode;
+        await StoragePrefs.SetDefaultAsync(mode);
     }
 
     // Turning a reminder on for the first time is where we ask the OS for notification permission; if it is

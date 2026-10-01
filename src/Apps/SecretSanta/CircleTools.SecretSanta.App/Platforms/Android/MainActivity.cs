@@ -29,6 +29,34 @@ namespace CircleTools.SecretSanta.App;
     DataHost = "secretsanta.circletools.ch",
     DataPathPrefix = "/groups",
     AutoVerify = true)]
+// Account email links (FR-007/FR-009, ADR-0053): the transactional links the Main service mails live on
+// this app's own origin (secretsanta.circletools.ch, per the "secretsanta" source app). Claim them so a
+// user who registered or changed their email IN the app confirms it IN the app (the matching in-app
+// Blazor route: /verify-email, /reset-password, /confirm-email-change) instead of a detached browser tab.
+// Forwarded generically by DeepLinkService like the reveal/event links. Like those, AutoVerify only opens
+// the app silently once /.well-known/assetlinks.json is served with the installed build's Play App Signing
+// fingerprint (ADR-0030) — otherwise the link falls back to the browser/chooser.
+[IntentFilter(
+    new[] { Intent.ActionView },
+    Categories = new[] { Intent.CategoryDefault, Intent.CategoryBrowsable },
+    DataScheme = "https",
+    DataHost = "secretsanta.circletools.ch",
+    DataPathPrefix = "/verify-email",
+    AutoVerify = true)]
+[IntentFilter(
+    new[] { Intent.ActionView },
+    Categories = new[] { Intent.CategoryDefault, Intent.CategoryBrowsable },
+    DataScheme = "https",
+    DataHost = "secretsanta.circletools.ch",
+    DataPathPrefix = "/reset-password",
+    AutoVerify = true)]
+[IntentFilter(
+    new[] { Intent.ActionView },
+    Categories = new[] { Intent.CategoryDefault, Intent.CategoryBrowsable },
+    DataScheme = "https",
+    DataHost = "secretsanta.circletools.ch",
+    DataPathPrefix = "/confirm-email-change",
+    AutoVerify = true)]
 public class MainActivity : MauiAppCompatActivity
 {
     protected override void OnCreate(Bundle? savedInstanceState)

@@ -96,6 +96,8 @@
       href: functional/FR-046-device-local-occasion-reminders.md
     - name: FR-047 Account-deletion farewell email
       href: functional/FR-047-account-deletion-farewell-email.md
+    - name: FR-048 Default storage mode for new groups
+      href: functional/FR-048-default-storage-mode-for-new-groups.md
 - name: Non-functional
   items:
     - name: NFR-001 Local-first & offline
