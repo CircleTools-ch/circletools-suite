@@ -49,6 +49,8 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [FEAT-019](FEAT-019-getting-started-checklist.md) | Getting-started checklist (first-group onboarding: guided empty→drawn sequence on the hub, self-dismissing, skippable) | SecretSanta | Done |
 | [FEAT-020](FEAT-020-live-reveal-links-for-backend-backed-groups.md) | Live reveal links for backend-backed groups (client-published opaque per-giver slice served by reveal token; reveal page shows the current wishlist/event online, falls back to the embedded snapshot offline; local-only unchanged; eventual organizer-published freshness — ADR-0068) | SecretSanta | Draft |
 | [TP-018](TP-018-branded-transactional-emails.md) | Test plan — Branded transactional emails | Main | Draft |
+| [FEAT-021](FEAT-021-storage-default-onboarding-and-list-indicator.md) | Storage default, first-run onboarding & group-list storage indicator (device-local default seeds every create path incl. the phone FAB; one-time skippable onboarding; per-group storage icon — ADR-0071, FR-048) | SecretSanta | In progress |
+| [TP-021](TP-021-storage-default-onboarding-and-list-indicator.md) | Test plan — Storage default, onboarding & list indicator | SecretSanta | Draft |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and

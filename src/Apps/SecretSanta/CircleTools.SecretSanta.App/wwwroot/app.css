@@ -58,37 +58,23 @@ h1:focus {
         content: "An error has occurred."
     }
 
-/* iOS status-bar safe area, coloured to blend with the MudBlazor app bar (the neutral accent). */
-.status-bar-safe-area {
-    display: none;
+/* Top safe-area inset for the fixed app bar. On edge-to-edge / notched devices (iOS with
+   viewport-fit=cover, Android 15+) the WebView draws under the status bar, so the fixed MudBlazor app
+   bar would render beneath the clock/battery (clock overlapping the title, hamburger and account icon).
+   Grow the fixed app bar up into the top safe area — its own app-bar background fills that strip — and
+   push the main content down by the same amount with a transparent top border (this stacks on
+   MudBlazor's responsive padding-top instead of replacing it).
+
+   Applied on every platform, WebKit included. The earlier design insetted Android via this rule but
+   left iOS to a sticky .status-bar-safe-area spacer div; a spacer in normal flow cannot inset a
+   position:fixed bar, so on iOS the toolbar still rendered under the status bar. env(safe-area-inset-top)
+   is 0 on desktop browsers and the Windows MAUI head, so this is a no-op there. */
+.mud-appbar.mud-appbar-fixed-top {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top);
+    height: calc(var(--mud-appbar-height) + env(safe-area-inset-top));
 }
 
-@supports (-webkit-touch-callout: none) {
-    .status-bar-safe-area {
-        display: flex;
-        position: sticky;
-        top: 0;
-        height: env(safe-area-inset-top);
-        background-color: #5b7cc4;
-        width: 100%;
-        z-index: 1;
-    }
-}
-
-/* Android 15+ draws the WebView edge-to-edge, so the fixed MudBlazor app bar renders under the status
-   bar (clock/battery overlapping the toolbar). Inset by the top safe area: grow the fixed app bar down
-   so its toolbar clears the status bar, and push the main content by the same amount with a transparent
-   top border (stacks on MudBlazor's responsive padding-top instead of replacing it). Scoped to
-   non-WebKit so it never stacks with the iOS .status-bar-safe-area above; env(safe-area-inset-top) is 0
-   on the Windows MAUI head and desktop browsers, so this is a no-op there. */
-@supports not (-webkit-touch-callout: none) {
-    .mud-appbar.mud-appbar-fixed-top {
-        box-sizing: border-box;
-        padding-top: env(safe-area-inset-top);
-        height: calc(var(--mud-appbar-height) + env(safe-area-inset-top));
-    }
-
-    .mud-main-content {
-        border-top: env(safe-area-inset-top) solid transparent;
-    }
+.mud-main-content {
+    border-top: env(safe-area-inset-top) solid transparent;
 }

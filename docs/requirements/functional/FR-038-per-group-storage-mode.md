@@ -6,7 +6,7 @@ status: Approved
 priority: Must
 source: UC-SS-017
 verification: test
-related: [UC-SS-017, FR-039, FR-040, FR-041, FR-043, NFR-001, ADR-0058, ADR-0015, ADR-0017]
+related: [UC-SS-017, FR-039, FR-040, FR-041, FR-043, FR-048, NFR-001, ADR-0058, ADR-0015, ADR-0017, ADR-0071]
 ---
 
 # FR-038 — A group has one of three storage modes, chosen at creation and switchable
@@ -27,8 +27,12 @@ first-class, per-group choice ([ADR-0058](../../adr/0058-account-free-link-share
 
 Rules:
 
-- **The choice is offered at group creation, with *On this device* pre-selected.** Anyone who simply
-  creates a group stays local, so [NFR-001](../non-functional/NFR-001-local-first-offline.md) holds for
+- **The choice is offered at group creation, with the user's default storage mode pre-selected.** That
+  default starts as *On this device* and is refined by
+  [FR-048](FR-048-default-storage-mode-for-new-groups.md) /
+  [ADR-0071](../../adr/0071-default-storage-mode-and-first-run-onboarding.md) (a set-once, device-local
+  default that also seeds the phone quick-create). Anyone who simply creates a group — and never changes
+  the default — stays local, so [NFR-001](../non-functional/NFR-001-local-first-offline.md) holds for
   anyone who does nothing; a user who already wants an account or a shared link can pick it up front.
 - **The mode is changeable anytime** from the group's **Sharing & sync** settings.
 - **Every switch is preceded by a short, plain-language consequence** — a one-line before → after, never

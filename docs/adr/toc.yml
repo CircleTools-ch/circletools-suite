@@ -136,5 +136,11 @@
   href: 0067-android-backup-posture.md
 - name: 0068 Live reveal links for backend-backed groups
   href: 0068-live-reveal-links-for-backend-backed-groups.md
+- name: 0069 Passkey origin allow-list for the native heads
+  href: 0069-passkey-origin-allow-list-for-native-heads.md
+- name: 0070 Bottom navigation in the native app
+  href: 0070-always-on-bottom-navigation-on-phones.md
+- name: 0071 Default storage mode & first-run onboarding
+  href: 0071-default-storage-mode-and-first-run-onboarding.md
 - name: Template
   href: _template-adr.md

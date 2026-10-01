@@ -114,6 +114,30 @@ builder.Services.Configure<IdentityPasskeyOptions>(options =>
     {
         options.ServerDomain = serverDomain;
     }
+
+    // Explicit allowed-origins list for the attestation/assertion ceremony (FR-010, ADR-0069).
+    // Identity's default origin check (PasskeyHandler.ValidateOriginAsync) only accepts a ceremony
+    // whose clientDataJSON.origin equals the request's Origin HTTP header. Browsers always send that
+    // header, so the web heads pass; but the native MAUI heads run the ceremony through the OS passkey
+    // APIs (AuthenticationServices / Credential Manager) and POST the result with a plain HttpClient
+    // that sends NO Origin header, so the default rejects every native attestation with
+    // "invalid origin 'https://circletools.ch'" even though the authenticator-stamped origin is
+    // legitimate. Override ValidateOrigin to validate clientDataJSON.origin directly against a
+    // configured allow-list, independent of the request header. The list holds the web origins (the
+    // apex and each app subdomain) and the native authenticator origins: iOS reports
+    // https://circletools.ch (its webcredentials association on the apex RP), Android reports
+    // android:apk-key-hash:<base64url-SHA256-of-the-signing-cert>. Add a new app's web origin and its
+    // Android signing-cert hash here as each app head ships. When no origins are configured (dev/test)
+    // the override is left off, so the framework default (request-Origin-header match on localhost)
+    // keeps the browser E2E ceremony working unchanged.
+    var allowedOrigins = builder.Configuration.GetSection("Auth:Passkey:Origins").Get<string[]>() ?? [];
+
+    if (allowedOrigins.Length > 0)
+    {
+        var origins = new HashSet<string>(allowedOrigins, StringComparer.Ordinal);
+        options.ValidateOrigin = context =>
+            ValueTask.FromResult(!string.IsNullOrEmpty(context.Origin) && origins.Contains(context.Origin));
+    }
 });
 builder.Services.AddCircleToolsSessions(builder.Configuration);
 builder.Services.AddCircleToolsMail(builder.Configuration);

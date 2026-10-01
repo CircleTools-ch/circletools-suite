@@ -352,4 +352,12 @@
   <data name="DataImportUnsupported" xml:space="preserve"><value>Dieses Backup wurde mit einer neueren Version der App erstellt. Aktualisiere die App und versuche es dann erneut.</value></data>
   <data name="DataImportViewGroups" xml:space="preserve"><value>Meine Gruppen ansehen</value></data>
   <data name="EmptyStateLocalDataNote" xml:space="preserve"><value>Deine Gruppen werden in diesem Browser auf diesem Gerät gespeichert. Verwalte oder sichere sie unter Einstellungen → Deine Daten.</value></data>
+  <data name="OnboardingStorageTitle" xml:space="preserve"><value>Wo sollen deine Gruppen gespeichert werden?</value></data>
+  <data name="OnboardingStorageIntro" xml:space="preserve"><value>Wähle, wo neue Gruppen standardmässig gespeichert werden. Auf diesem Gerät bleibt alles privat und offline; Über Link geteilt speichert online, damit andere die Gruppe per Link öffnen können – ohne Konto; Mein Konto synchronisiert über deine Geräte.</value></data>
+  <data name="OnboardingStoragePerGroupNote" xml:space="preserve"><value>Du kannst das später für jede Gruppe in ihren Einstellungen für Teilen &amp; Synchronisieren ändern.</value></data>
+  <data name="OnboardingStorageAccountNote" xml:space="preserve"><value>Wenn du «Mein Konto» wählst, wirst du als Nächstes gebeten, dich anzumelden oder ein Konto zu erstellen.</value></data>
+  <data name="OnboardingStorageSave" xml:space="preserve"><value>Speichern</value></data>
+  <data name="OnboardingStorageSkip" xml:space="preserve"><value>Jetzt nicht</value></data>
+  <data name="SettingsDefaultStorageTitle" xml:space="preserve"><value>Standard-Speicherort für neue Gruppen</value></data>
+  <data name="SettingsDefaultStorageHint" xml:space="preserve"><value>Neue Gruppen starten mit diesem Speicherort. Du kannst ihn pro Gruppe weiterhin ändern.</value></data>
 </root>
