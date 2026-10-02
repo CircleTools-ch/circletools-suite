@@ -205,8 +205,10 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
             }
 
             // Stored on the server and account-scoped now; the local copy is kept as a cache. Not dirty —
-            // the claim route uploaded exactly this version, so the next cycle re-pulls it harmlessly.
-            records[index] = record with { AccountScope = accountId, Dirty = false };
+            // the claim route uploaded exactly this version, so the next cycle re-pulls it harmlessly. Also
+            // record Mode = Account so the storage mode reflects reality (FR-038): the claim path is the
+            // one place a group actually becomes account-owned, and the mode must track it.
+            records[index] = record with { AccountScope = accountId, Dirty = false, Mode = StorageMode.Account };
             claimed++;
         }
 
@@ -222,6 +224,48 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
         }
 
         return new ClaimOutcome(SyncStatus.Synced, claimed, requested);
+    }
+
+    /// <summary>
+    /// Records that a local group should live on the signed-in account (FR-038): sets its storage mode to
+    /// <see cref="StorageMode.Account"/> so the next sync cycle's auto-claim uploads and account-scopes it.
+    /// </summary>
+    /// <remarks>
+    /// Local-only and best-effort — the actual upload happens on the claim cycle (so it works offline and
+    /// retries), which is why this only marks intent rather than calling the server. A group that is not
+    /// held here, already account-scoped, or not currently "On this device" (e.g. shared-by-link) is left
+    /// unchanged: the account intent only applies to a plain local group.
+    /// </remarks>
+    /// <param name="groupId">The local group to mark for the account.</param>
+    /// <param name="cancellationToken">Cancels the write.</param>
+    public async Task MarkForAccountAsync(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        List<SyncedGroupRecord> records;
+        try
+        {
+            records = (await local.LoadGroupsAsync(cancellationToken)).ToList();
+        }
+        catch (StorageUnavailableException)
+        {
+            return;
+        }
+
+        var index = records.FindIndex(r => r.State.Id == groupId);
+        if (index < 0 || records[index].AccountScope is not null || records[index].Mode != StorageMode.OnThisDevice)
+        {
+            return;
+        }
+
+        records[index] = records[index] with { Mode = StorageMode.Account };
+
+        try
+        {
+            await local.SaveGroupsAsync(records, cancellationToken);
+        }
+        catch (StorageUnavailableException)
+        {
+            // Best-effort: a lost write just means the group stays "On this device" until re-marked.
+        }
     }
 
     private async Task PersistIfAnyClaimedAsync(

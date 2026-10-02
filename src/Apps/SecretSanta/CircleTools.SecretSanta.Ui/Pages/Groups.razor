@@ -11,6 +11,7 @@
 @inject BookmarkService Bookmarks
 @inject AutoSyncService AutoSync
 @inject SharedSyncService SharedSync
+@inject SyncService Sync
 @inject IHapticFeedback Haptics
 @inject IDialogService Dialogs
 @inject StorageModePreferences StoragePrefs
@@ -35,11 +36,11 @@
                 @L["CreateGroup"]
             </MudButton>
         </div>
-        @* The storage mode is offered at creation (ADR-0058, FR-038); "On this device" is preselected
-           so the private default needs no decision. It is changeable later in Sharing & sync. *@
-        <MudText Typo="Typo.overline">@L["StorageModeLabel"]</MudText>
-        <StorageModePicker Value="_createMode" ValueChanged="@(m => _createMode = m)"
-                           AccountEnabled="@(_accountId != Guid.Empty)" />
+        @* Compact storage affordance (ADR-0073): show how the group will be stored — the default from
+           onboarding/Settings, same icon as the list — with a "Change" for this group, instead of an
+           always-open radio picker. The default is the single source of truth; this just surfaces it. *@
+        <StorageModeField Value="_createMode" ValueChanged="@(m => _createMode = m)"
+                          AccountEnabled="@(_accountId != Guid.Empty)" />
     </MudPaper>
 </MudHidden>
 
@@ -127,9 +128,9 @@ else
                                not the domain summary. *@
                             @if (_modeByGroup.TryGetValue(group.Id, out var mode))
                             {
-                                <MudTooltip Text="@ModeLabel(mode)">
-                                    <MudIcon Icon="@ModeIcon(mode)" Size="Size.Small" Class="mud-text-secondary"
-                                             aria-label="@ModeLabel(mode)" />
+                                <MudTooltip Text="@L[StorageModeDisplay.LabelKey(mode)]">
+                                    <MudIcon Icon="@StorageModeDisplay.Icon(mode)" Size="Size.Small" Class="mud-text-secondary"
+                                             aria-label="@L[StorageModeDisplay.LabelKey(mode)]" />
                                 </MudTooltip>
                             }
                             @if (group.AnyDrawInvalidated)
@@ -336,20 +337,21 @@ else
         }
     }
 
-    // The inline field (wide screens) creates from the bound value.
-    private Task CreateAsync() => CreateNamedAsync(_newName);
+    // The inline field (wide screens) creates from the bound value + the compact storage field's mode.
+    private Task CreateAsync() => CreateNamedAsync(_newName, _createMode);
 
-    // The phone FAB collects the name in a bottom sheet, then creates it (like adding members).
+    // The phone FAB opens the "New group" sheet (name + storage mode, ADR-0073), pre-selecting the
+    // default, then creates with the name and mode the user confirmed there.
     private async Task CreateViaFabAsync()
     {
-        var name = await Dialogs.ShowTextInputSheetAsync(L["CreateGroup"], L["NewGroupPlaceholder"], L["CreateGroup"], L["Cancel"]);
-        if (!string.IsNullOrWhiteSpace(name))
+        var result = await Dialogs.ShowNewGroupDialogAsync(_createMode, _accountId != Guid.Empty);
+        if (result is { } created)
         {
-            await CreateNamedAsync(name);
+            await CreateNamedAsync(created.Name, created.Mode);
         }
     }
 
-    private async Task CreateNamedAsync(string rawName)
+    private async Task CreateNamedAsync(string rawName, StorageMode chosenMode)
     {
         if (_busy || string.IsNullOrWhiteSpace(rawName))
         {
@@ -370,14 +372,19 @@ else
                 await AddSelfAsync(id, name, _displayName.Trim());
             }
 
-            // Apply the chosen storage mode (FR-048): the picker value on wide screens, or the seeded
-            // default on the phone FAB. "Shared by link" uploads and mints its links now (ADR-0058); "My
-            // account" needs no action — a signed-in device auto-claims it on the next background cycle;
-            // "On this device" stays local. Account while signed out is clamped to local (auto-claims later).
-            var mode = ClampForAccount(_createMode);
+            // Apply the chosen storage mode (FR-038/ADR-0073): the picker value on wide screens, or the
+            // seeded default on the phone FAB. "Shared by link" uploads and mints its links now (ADR-0058);
+            // "My account" marks the group for the account so the next sync cycle claims it (and it is NOT
+            // just left as a plain local group, which now stays local); "On this device" stays local.
+            // Account while signed out is clamped to local.
+            var mode = ClampForAccount(chosenMode);
             if (mode == StorageMode.SharedByLink)
             {
                 await SharedSync.ShareByLinkAsync(id);
+            }
+            else if (mode == StorageMode.Account)
+            {
+                await Sync.MarkForAccountAsync(id);
             }
 
             _newName = string.Empty;
@@ -426,22 +433,6 @@ else
         await Haptics.TapAsync();
         await LoadAsync();
     }
-
-    // Per-group storage indicator (FR-048): device / link / cloud icon, matching the Sharing & sync
-    // vocabulary (GroupEditor's mode chip uses the link / cloud-done icons).
-    private static string ModeIcon(StorageMode mode) => mode switch
-    {
-        StorageMode.SharedByLink => Icons.Material.Filled.Link,
-        StorageMode.Account => Icons.Material.Filled.CloudDone,
-        _ => Icons.Material.Filled.Smartphone,
-    };
-
-    private string ModeLabel(StorageMode mode) => mode switch
-    {
-        StorageMode.SharedByLink => L["ModeSharedTitle"],
-        StorageMode.Account => L["ModeAccountTitle"],
-        _ => L["ModeLocalTitle"],
-    };
 
     private void Open(Guid id) => Navigation.NavigateTo($"groups/{id}");
 
