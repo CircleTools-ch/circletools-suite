@@ -221,11 +221,12 @@ public sealed class AutoSyncService(
         // are manageable here too. Signed-in only (this cycle), so the bearer is present.
         await sharedSync.MergeOwnedAsync();
 
-        // Auto-claim only on-this-device groups into the account (the M3 flow). Shared-by-link and
-        // account-owned-shared groups (FEAT-013) live in the token-keyed store, not the account sync
-        // store, so they must never be M3-claimed.
+        // Auto-claim only the groups the user has marked "My account" and that are not yet account-scoped
+        // (FR-038, ADR-0073). A group left "On this device" stays local even while signed in — its mode is
+        // honoured, not silently synced. Shared-by-link groups live in the token-keyed store and are never
+        // M3-claimed either (they are not OnThisDevice/Account here).
         var accountFree = (await claimable.GetAccountFreeAsync())
-            .Where(g => g.Mode == StorageMode.OnThisDevice)
+            .Where(g => g.Mode == StorageMode.Account)
             .Select(g => g.Id)
             .ToList();
         if (accountFree.Count > 0)

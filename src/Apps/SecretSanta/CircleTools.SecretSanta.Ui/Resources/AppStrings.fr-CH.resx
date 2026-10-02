@@ -360,4 +360,6 @@
   <data name="OnboardingStorageSkip" xml:space="preserve"><value>Plus tard</value></data>
   <data name="SettingsDefaultStorageTitle" xml:space="preserve"><value>Stockage par défaut des nouveaux groupes</value></data>
   <data name="SettingsDefaultStorageHint" xml:space="preserve"><value>Les nouveaux groupes démarrent avec ce stockage. Vous pouvez toujours le changer pour chaque groupe.</value></data>
+  <data name="StorageStoredAs" xml:space="preserve"><value>Stocké</value></data>
+  <data name="StorageChange" xml:space="preserve"><value>Modifier</value></data>
 </root>

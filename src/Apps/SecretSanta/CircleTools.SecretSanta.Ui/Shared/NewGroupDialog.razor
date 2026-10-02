@@ -1,0 +1,61 @@
+@using CircleTools.SecretSanta.LocalStore
+@inject IStringLocalizer<AppStrings> L
+
+@*
+    The phone "+" create flow (ADR-0073): a small sheet that collects the group name AND shows how it will
+    be stored (StorageModeField), so the storage mode is visible and changeable right where the group is
+    named — instead of a name-only sheet that silently used the default. Resolve with
+    NewGroupDialogExtensions.ShowNewGroupDialogAsync.
+*@
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@L["CreateGroup"]</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_name" Immediate="true" OnKeyDown="OnKeyDown" AutoFocus="true"
+                      Label="@L["NewGroupPlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+        <div class="mt-3">
+            <StorageModeField Value="_mode" ValueChanged="@(m => _mode = m)" AccountEnabled="AccountEnabled" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Create"
+                   Disabled="@string.IsNullOrWhiteSpace(_name)">@L["CreateGroup"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance Dialog { get; set; } = default!;
+
+    /// <summary>The initially selected storage mode (the current default).</summary>
+    [Parameter] public StorageMode Mode { get; set; }
+
+    /// <summary>Whether "My account" is selectable (a session is live).</summary>
+    [Parameter] public bool AccountEnabled { get; set; }
+
+    private string _name = string.Empty;
+    private StorageMode _mode;
+
+    protected override void OnInitialized() => _mode = Mode;
+
+    private void Create()
+    {
+        if (!string.IsNullOrWhiteSpace(_name))
+        {
+            Dialog.Close(DialogResult.Ok(new NewGroupResult(_name.Trim(), _mode)));
+        }
+    }
+
+    private void Cancel() => Dialog.Cancel();
+
+    private void OnKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            Create();
+        }
+    }
+}
