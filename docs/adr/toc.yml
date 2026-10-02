@@ -142,5 +142,7 @@
   href: 0070-always-on-bottom-navigation-on-phones.md
 - name: 0071 Default storage mode & first-run onboarding
   href: 0071-default-storage-mode-and-first-run-onboarding.md
+- name: 0072 Reflection-based JSON on the native heads
+  href: 0072-reflection-json-on-native-heads.md
 - name: Template
   href: _template-adr.md
