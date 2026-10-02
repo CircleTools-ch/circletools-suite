@@ -86,6 +86,7 @@
   <data name="GroupsTitle" xml:space="preserve"><value>Groups</value></data>
   <data name="NewGroupPlaceholder" xml:space="preserve"><value>New group name</value></data>
   <data name="CreateGroup" xml:space="preserve"><value>Create group</value></data>
+  <data name="CreateGroupFailed" xml:space="preserve"><value>The group could not be created:</value></data>
   <data name="EmptyStateHeadline" xml:space="preserve"><value>Run a Secret Santa with your group</value></data>
   <data name="EmptyStateExplainer" xml:space="preserve"><value>Add everyone, mark who shouldn't draw whom, and draw names fairly. Each person gets a private link that reveals only who they got and their wishlist — it works offline, with no account. Create your first group to get started.</value></data>
   <data name="EmptyStateAccountSell" xml:space="preserve"><value>Sign in to sync your groups across devices, see your own assignment, and keep your own wishlist.</value></data>
