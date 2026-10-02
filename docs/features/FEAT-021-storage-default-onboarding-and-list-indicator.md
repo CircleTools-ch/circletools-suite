@@ -102,6 +102,12 @@ phone-FAB seeding, the Settings control, and the list icons across DE/EN/FR and 
   note.
 - **Default = Account while signed out** — resolved by the clamp to On this device (FR-048); the group
   auto-claims after sign-in.
+- **Icon vs. `Mode` for account-synced groups (fixed 2026-10-02)** — the list icon must derive the shown
+  mode from `ClaimableGroup.IsAccountFree` first (`!IsAccountFree ⇒ My account`), not from `Mode` alone:
+  the normal claim/sync path sets `AccountScope` but leaves `Mode = OnThisDevice` (only the
+  shared-by-link→account transitions set `Mode = Account`), so reading `Mode` alone mislabels
+  account-synced groups as "device-only". The underlying `Mode`/`AccountScope` overlap is a known
+  LocalStore inconsistency; normalising it (set `Mode = Account` on claim) is a follow-up.
 
 ## Definition of Done
 
