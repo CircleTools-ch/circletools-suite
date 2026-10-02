@@ -32,6 +32,7 @@
   <data name="GroupsTitle" xml:space="preserve"><value>Gruppen</value></data>
   <data name="NewGroupPlaceholder" xml:space="preserve"><value>Name der neuen Gruppe</value></data>
   <data name="CreateGroup" xml:space="preserve"><value>Gruppe erstellen</value></data>
+  <data name="CreateGroupFailed" xml:space="preserve"><value>Die Gruppe konnte nicht erstellt werden:</value></data>
   <data name="EmptyStateHeadline" xml:space="preserve"><value>Verlose ein Wichteln mit deiner Gruppe</value></data>
   <data name="EmptyStateExplainer" xml:space="preserve"><value>Füge alle hinzu, lege fest, wer wen nicht ziehen soll, und lose fair aus. Jede Person erhält einen privaten Link, der nur die gezogene Person und deren Wunschliste zeigt – ganz offline und ohne Konto. Erstelle deine erste Gruppe, um zu starten.</value></data>
   <data name="EmptyStateAccountSell" xml:space="preserve"><value>Melde dich an, um deine Gruppen geräteübergreifend zu synchronisieren, deine eigene Zuteilung zu sehen und deine eigene Wunschliste zu führen.</value></data>

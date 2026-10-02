@@ -22,6 +22,16 @@
 
 <MudText Typo="Typo.h4" GutterBottom="true">@L["GroupsTitle"]</MudText>
 
+@* A create failure is shown here rather than silently freezing the page. The detail is the exception
+   text, which is what makes a device-only write failure diagnosable without attached logs. *@
+@if (_createError is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4" ShowCloseIcon="true"
+              CloseIconClicked="@(() => _createError = null)">
+        @L["CreateGroupFailed"] <code>@_createError</code>
+    </MudAlert>
+}
+
 @* The inline create field is the wide-screen path; on a phone it moves behind the "+" FAB (like adding
    members) so the list of groups leads. *@
 <MudHidden Breakpoint="Breakpoint.SmAndDown">
@@ -204,6 +214,10 @@ else
     // account changes and clamped for the current sign-in state.
     private StorageMode _createMode = StorageMode.OnThisDevice;
     private bool _busy;
+    // Surfaces a create failure instead of letting the exception escape the event handler (which tears
+    // down the Blazor render and freezes the page). Carries the exception detail so a device-only failure
+    // (e.g. the iOS write path) is diagnosable from the screen rather than needing attached logs.
+    private string? _createError;
 
     protected override void OnInitialized() => AutoSync.SyncCompleted += OnSyncCompleted;
 
@@ -359,6 +373,7 @@ else
         }
 
         _busy = true;
+        _createError = null;
         try
         {
             var name = rawName.Trim();
@@ -389,6 +404,13 @@ else
 
             _newName = string.Empty;
             Open(id);
+        }
+        catch (Exception ex)
+        {
+            // A create that throws must not take the whole page down with it. Show that it failed and keep
+            // the exception detail visible so a platform-specific failure (seen on the iOS head, where the
+            // first local write threw and froze the screen) can be diagnosed on the device itself.
+            _createError = $"{ex.GetType().Name}: {ex.Message}";
         }
         finally
         {

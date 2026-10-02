@@ -32,6 +32,7 @@
   <data name="GroupsTitle" xml:space="preserve"><value>Groupes</value></data>
   <data name="NewGroupPlaceholder" xml:space="preserve"><value>Nom du nouveau groupe</value></data>
   <data name="CreateGroup" xml:space="preserve"><value>Créer un groupe</value></data>
+  <data name="CreateGroupFailed" xml:space="preserve"><value>Le groupe n'a pas pu être créé :</value></data>
   <data name="EmptyStateHeadline" xml:space="preserve"><value>Organisez un Père Noël secret avec votre groupe</value></data>
   <data name="EmptyStateExplainer" xml:space="preserve"><value>Ajoutez tout le monde, indiquez qui ne doit pas tirer qui, et tirez les noms équitablement. Chaque personne reçoit un lien privé qui ne révèle que la personne tirée et sa liste de souhaits — sans connexion et sans compte. Créez votre premier groupe pour commencer.</value></data>
   <data name="EmptyStateAccountSell" xml:space="preserve"><value>Connectez-vous pour synchroniser vos groupes entre vos appareils, voir votre propre attribution et tenir votre propre liste de souhaits.</value></data>

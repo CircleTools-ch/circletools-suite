@@ -111,6 +111,21 @@ else). The origin allow-list is the server change ADR-0066 missed.
   redeploy. **Android's** `"Passkey could not be created here"` is unrelated (client-side Digital Asset
   Links, see follow-up 2): the hosted `assetlinks.json` SHA-256 must be the **Play App Signing** cert, not
   the upload cert, and the `apk-key-hash` origin must be derived from that same cert.
+- **Update 2026-10-02 (b) — Android root cause found: wrong signing cert (upload key, not app-signing key).**
+  With iOS passkeys working, Android still failed, and logcat gave the exact reason:
+  `ValidateRpIdOperation` → `ctrq: [50152] RP ID cannot be validated` →
+  `CreatePublicKeyCredentialDomException: RP ID cannot be validated`. Google's own Digital Asset Links
+  API (`digitalassetlinks.googleapis.com/v1/statements:list`) confirmed the hosted file was live and
+  correct *for the fingerprint it listed* — but that fingerprint was wrong. The committed value
+  `FD:D7:27:…:63:5E` was extracted earlier from a locally-signed build and is the **upload/local key**.
+  The Play Console (**App integrity → App signing key certificate**) shows the real app-signing key is
+  `4D:93:F9:…:70:BF:C1`; Play re-signs every distributed build (all tracks) with it, so that is the cert
+  on-device that Credential Manager validates. Fix (config only, no app rebuild): put the app-signing
+  fingerprint first in **both** `assetlinks.json` files and add its `apk-key-hash`
+  (`android:apk-key-hash:TZP5Y67jfRjnBHyfPFzFA9NTUqPQ1Pl4fFptWhhwv8E`) to `Auth:Passkey:Origins`. The
+  upload/local key is kept as a second entry so sideloaded dev builds also validate. Needs a **web-front
+  redeploy** (Main + Secret-Santa WebApps serve the `.well-known` files) — the Main API redeploy only
+  matters for the `Origins` list. This closes follow-up 2.
 - **Follow-ups:**
   1. Deploy the Main service with `Auth:Passkey:Origins` set (Production config added here).
   2. Verify the association files are live on the apex: `assetlinks.json` and
