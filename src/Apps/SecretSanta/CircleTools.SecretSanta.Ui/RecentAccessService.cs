@@ -1,7 +1,17 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using CircleTools.Ui.Abstractions;
 
 namespace CircleTools.SecretSanta.Ui;
+
+/// <summary>
+/// Source-generated JSON for the recency lists (ADR-0072): reflection-based serialization of
+/// <c>List&lt;Guid&gt;</c> throws on the fully-trimmed/AOT iOS head, which would break opening or creating a
+/// group (the recency is recorded on navigation). Source generation keeps it AOT-safe regardless of the
+/// <c>JsonSerializerIsReflectionEnabledByDefault</c> switch.
+/// </summary>
+[JsonSerializable(typeof(List<Guid>))]
+internal sealed partial class RecentAccessJsonContext : JsonSerializerContext;
 
 /// <summary>
 /// Tracks the most-recently-opened groups and events for the navigation's quick-access section (R2-5).
@@ -56,7 +66,7 @@ public sealed class RecentAccessService(IKeyValueStore store)
                 list.RemoveRange(Cap, list.Count - Cap);
             }
 
-            await store.SetAsync(StorageScope.Durable, key, JsonSerializer.Serialize(list), cancellationToken);
+            await store.SetAsync(StorageScope.Durable, key, JsonSerializer.Serialize(list, RecentAccessJsonContext.Default.ListGuid), cancellationToken);
         }
         catch (StorageUnavailableException)
         {
@@ -74,7 +84,7 @@ public sealed class RecentAccessService(IKeyValueStore store)
                 return [];
             }
 
-            return JsonSerializer.Deserialize<List<Guid>>(raw) ?? [];
+            return JsonSerializer.Deserialize(raw, RecentAccessJsonContext.Default.ListGuid) ?? [];
         }
         catch (StorageUnavailableException)
         {

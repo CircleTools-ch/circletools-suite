@@ -55,8 +55,14 @@ Removing the auth gate raised the next question — *which surfaces* should have
 ## Decision outcome
 
 **Chosen: option 3.** The bottom bar is gated on `!OperatingSystem.IsBrowser()` **and** the existing
-`MudHidden Breakpoint="MdAndUp"` width gate (plus `_bottomNavEnabled` driving the app-bar hamburger and
-the content's clearance padding). The net behaviour:
+`MudHidden Breakpoint="MdAndUp"` width gate (plus `_bottomNavEnabled` driving the content's clearance
+padding). The net behaviour:
+
+> **Amended 2026-10-02 — the top-left hamburger is always shown.** The original lever hid the hamburger on
+> narrow native viewports (the bottom bar's "More" owned the drawer). On-device (iPad portrait) that left
+> no obvious menu: "More" at the bottom-right does not read as the way into Groups / quick-access / pinned
+> / Settings. The hamburger now shows at every width/head; the bottom bar's "More" still opens the same
+> drawer. Two entry points to one drawer is accepted as the lesser evil over a hidden menu.
 
 | Head / viewport | Primary navigation |
 |---|---|
