@@ -1,0 +1,38 @@
+@using CircleTools.SecretSanta.LocalStore
+@inject IStringLocalizer<AppStrings> L
+
+@*
+    Compact storage-mode affordance for group creation (ADR-0073). Instead of an always-open radio picker,
+    it shows HOW the group will be stored — the same icon the list uses — with a "Change" menu to override
+    the mode for this one group. The default (onboarding/Settings) is the source of truth; this just shows
+    it. "My account" is disabled while signed out (no account to sync to). Used by the inline wide-screen
+    create and by the phone "New group" sheet.
+*@
+
+<div class="d-flex align-center flex-wrap gap-1">
+    <MudIcon Icon="@StorageModeDisplay.Icon(Value)" Size="Size.Small" Class="mud-text-secondary" aria-hidden="true" />
+    <MudText Typo="Typo.body2">@L["StorageStoredAs"]: <strong>@L[StorageModeDisplay.LabelKey(Value)]</strong></MudText>
+    <MudMenu Label="@L["StorageChange"]" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+             EndIcon="@Icons.Material.Filled.ArrowDropDown" Dense="true"
+             AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+        <MudMenuItem Icon="@StorageModeDisplay.Icon(StorageMode.OnThisDevice)"
+                     OnClick="@(() => SetAsync(StorageMode.OnThisDevice))">@L["ModeLocalTitle"]</MudMenuItem>
+        <MudMenuItem Icon="@StorageModeDisplay.Icon(StorageMode.SharedByLink)"
+                     OnClick="@(() => SetAsync(StorageMode.SharedByLink))">@L["ModeSharedTitle"]</MudMenuItem>
+        <MudMenuItem Icon="@StorageModeDisplay.Icon(StorageMode.Account)" Disabled="@(!AccountEnabled)"
+                     OnClick="@(() => SetAsync(StorageMode.Account))">@L["ModeAccountTitle"]</MudMenuItem>
+    </MudMenu>
+</div>
+
+@code {
+    /// <summary>The selected storage mode.</summary>
+    [Parameter] public StorageMode Value { get; set; }
+
+    /// <summary>Raised when the selection changes.</summary>
+    [Parameter] public EventCallback<StorageMode> ValueChanged { get; set; }
+
+    /// <summary>Whether "My account" is selectable (a session is live).</summary>
+    [Parameter] public bool AccountEnabled { get; set; } = true;
+
+    private Task SetAsync(StorageMode mode) => ValueChanged.InvokeAsync(mode);
+}
