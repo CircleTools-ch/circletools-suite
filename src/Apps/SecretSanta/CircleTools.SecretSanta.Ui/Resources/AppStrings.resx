@@ -415,4 +415,6 @@
   <data name="OnboardingStorageSkip" xml:space="preserve"><value>Not now</value></data>
   <data name="SettingsDefaultStorageTitle" xml:space="preserve"><value>Default storage for new groups</value></data>
   <data name="SettingsDefaultStorageHint" xml:space="preserve"><value>New groups start with this storage. You can still change it for each group.</value></data>
+  <data name="StorageStoredAs" xml:space="preserve"><value>Stored</value></data>
+  <data name="StorageChange" xml:space="preserve"><value>Change</value></data>
 </root>

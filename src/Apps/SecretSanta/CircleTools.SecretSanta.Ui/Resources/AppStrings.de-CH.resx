@@ -360,4 +360,6 @@
   <data name="OnboardingStorageSkip" xml:space="preserve"><value>Jetzt nicht</value></data>
   <data name="SettingsDefaultStorageTitle" xml:space="preserve"><value>Standard-Speicherort für neue Gruppen</value></data>
   <data name="SettingsDefaultStorageHint" xml:space="preserve"><value>Neue Gruppen starten mit diesem Speicherort. Du kannst ihn pro Gruppe weiterhin ändern.</value></data>
+  <data name="StorageStoredAs" xml:space="preserve"><value>Gespeichert</value></data>
+  <data name="StorageChange" xml:space="preserve"><value>Ändern</value></data>
 </root>

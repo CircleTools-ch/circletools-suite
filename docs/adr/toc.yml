@@ -144,5 +144,7 @@
   href: 0071-default-storage-mode-and-first-run-onboarding.md
 - name: 0072 Reflection-based JSON on the native heads
   href: 0072-reflection-json-on-native-heads.md
+- name: 0073 Per-group storage mode is authoritative
+  href: 0073-storage-mode-is-authoritative.md
 - name: Template
   href: _template-adr.md
