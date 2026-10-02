@@ -52,7 +52,13 @@ account at the moment of sign-in?**
   callback, registration), if the device holds any **account-free** groups, the app shows one dialog:
   - **Import** — claim every account-free group into the account, then a full sync (push + pull).
   - **Discard** — delete every account-free group locally, then sync (pulls the account's data).
-  - **Cancel** — sign back out; nothing imported, nothing deleted.
+  - **Cancel** — nothing imported, nothing deleted; the sign-in **stays**. *(Amended 2026-10-02: Cancel
+    originally signed the user back out via `SignOutAsync`, which calls `POST /logout` → `RevokeAll` and
+    revokes **every** session on **every** device. Worse, when the prompt failed to display,
+    `ShowMessageBoxAsync` returned `null`, which the code treated as Cancel — so a sign-in with local
+    groups silently logged the user out everywhere. A non-choice must never end the session: Cancel/dismiss
+    now keeps the sign-in and leaves the local groups device-only, importable later per group. The explicit
+    account-menu "Sign out" is unchanged.)*
 
   With **no** account-free groups, no dialog appears — just a background sync. A **restored** session
   (silent startup refresh, [ADR-0021](0021-web-auth-token-model.md)) is **not** prompted: the

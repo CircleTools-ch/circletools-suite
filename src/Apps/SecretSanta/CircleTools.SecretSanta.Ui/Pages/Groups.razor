@@ -286,10 +286,15 @@ else
         _groups = await VisibleGroups.GetVisibleAsync();
 
         // Each group's storage mode for the per-group list icon (FR-048), read from the sync record. A
-        // storage failure just drops the icons; the list still renders.
+        // storage failure just drops the icons; the list still renders. A group claimed into the account
+        // is authoritative by its AccountScope (IsAccountFree == false); the Mode field is only set to
+        // Account on the shared-by-link→account transitions, so a normally-claimed group still carries
+        // Mode=OnThisDevice. Derive the shown mode from the account scope first so an account-synced group
+        // reads as "My account", not "device-only".
         try
         {
-            _modeByGroup = (await Claimable.GetAllAsync()).ToDictionary(g => g.Id, g => g.Mode);
+            _modeByGroup = (await Claimable.GetAllAsync())
+                .ToDictionary(g => g.Id, g => g.IsAccountFree ? g.Mode : StorageMode.Account);
         }
         catch (StorageUnavailableException)
         {

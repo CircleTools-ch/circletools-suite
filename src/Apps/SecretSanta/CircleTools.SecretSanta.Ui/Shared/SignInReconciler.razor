@@ -5,7 +5,6 @@
 @inject SyncService Sync
 @inject ISender Sender
 @inject AccountSession Session
-@inject NavigationManager Navigation
 @inject AutoSyncService AutoSync
 @inject IStringLocalizer<AppStrings> L
 
@@ -93,9 +92,13 @@
 
                         break;
                     case OfflineChoice.Cancel:
-                        await Session.SignOutAsync();
-                        Navigation.NavigateTo("");
-                        return; // Sign-in undone: do not start a sync.
+                        // No explicit Import/Discard choice — the user dismissed the prompt, or (the real
+                        // bug) it never displayed and ShowMessageBoxAsync returned null immediately. Either
+                        // way, KEEP the sign-in: a non-choice must never end the session. Earlier this did
+                        // SignOutAsync → POST /logout → RevokeAll, which revoked every session on every
+                        // device right after login. Leave the local groups device-only (importable later
+                        // per group from Sharing & sync) and fall through to the normal sync below.
+                        break;
                 }
             }
         }
