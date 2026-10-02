@@ -115,6 +115,15 @@ builder.Services.Configure<IdentityPasskeyOptions>(options =>
         options.ServerDomain = serverDomain;
     }
 
+    // User verification is "preferred", not the framework default of "required" (FR-010, ADR-0069).
+    // The native heads run the ceremony through the OS passkey APIs; on iOS the attestation came back
+    // without the authenticator-data UserVerified flag, so a "required" server rejected it with
+    // "User verification is required, but the authenticator data flags did not have the 'UserVerified'
+    // flag" even though Face ID / Touch ID had run. Platform authenticators perform user verification in
+    // practice, so "preferred" keeps the biometric UX while not failing a credential that omits the flag —
+    // the standard posture for a consumer app. (Revisit if a UV-asserting policy is ever required.)
+    options.UserVerificationRequirement = "preferred";
+
     // Explicit allowed-origins list for the attestation/assertion ceremony (FR-010, ADR-0069).
     // Identity's default origin check (PasskeyHandler.ValidateOriginAsync) only accepts a ceremony
     // whose clientDataJSON.origin equals the request's Origin HTTP header. Browsers always send that

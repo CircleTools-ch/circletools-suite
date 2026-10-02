@@ -102,6 +102,15 @@ else). The origin allow-list is the server change ADR-0066 missed.
   the server fix only matters once Credential Manager succeeds. Android needs
   `https://circletools.ch/.well-known/assetlinks.json` served over HTTPS (no redirects,
   `application/json`) with a SHA-256 matching the **installed build's** Play App Signing cert.
+- **Update 2026-10-02 — user verification set to "preferred".** With the origin fix deployed, iOS got
+  past the origin check and then failed attestation with *"User verification is required, but the
+  authenticator data flags did not have the 'UserVerified' flag"*: `IdentityPasskeyOptions.UserVerificationRequirement`
+  defaults to `required`, but the OS passkey ceremony returned no UserVerified flag even though Face ID
+  ran. Set it to `preferred` in `Program.cs` — platform authenticators still perform user verification, so
+  the biometric UX stays while the server stops rejecting a credential that omits the flag. Needs a Main
+  redeploy. **Android's** `"Passkey could not be created here"` is unrelated (client-side Digital Asset
+  Links, see follow-up 2): the hosted `assetlinks.json` SHA-256 must be the **Play App Signing** cert, not
+  the upload cert, and the `apk-key-hash` origin must be derived from that same cert.
 - **Follow-ups:**
   1. Deploy the Main service with `Auth:Passkey:Origins` set (Production config added here).
   2. Verify the association files are live on the apex: `assetlinks.json` and
