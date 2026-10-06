@@ -147,13 +147,26 @@ else). The origin allow-list is the server change ADR-0066 missed.
   Fix (config only, no app rebuild): list **both** app-signing certs in **both** `assetlinks.json` files
   (`FD:D7…` current, `BB:EF…` previous) and both `apk-key-hash` origins in `Auth:Passkey:Origins`
   (`_dcnO99Fawre2Qym6BxR9RIsg_ffHBrHGTwaDASCY14` for `FD:D7…`,
-  `u-94a0XqcwN1A4jHA1169_xGEsGhA6YOEwy4oYI68ew` for `BB:EF…`). The earlier speculative `45:A8…`/`4D:93…`
-  values were dropped — they are not app-signing keys per Play Console. Needs the same **web-front
-  redeploy** + Main API redeploy as (b). On the test device, GMS caches the Digital-Asset-Links verdict
-  for ~1h (observed `maxAge` 3600s), so after the redeploy clear Google Play services' cache or wait out
-  the TTL before retrying. **Lesson:** take signing fingerprints from **Play Console / apksigner**, never
-  from `dumpsys` and never transcribed by hand; and whenever the app signing key is (or may be) rotated,
-  list **every** app-signing certificate (current + all previous). Re-confirm each with
+  `u-94a0XqcwN1A4jHA1169_xGEsGhA6YOEwy4oYI68ew` for `BB:EF…`). Needs the same **web-front redeploy** +
+  Main API redeploy as (b).
+- **Update 2026-10-06 (2) — current + previous app-signing keys were NOT enough; added the on-device
+  PackageManager signature.** After the above was deployed and verified live (`assetlinks:check` returns
+  `linked:true` for both `FD:D7…` and `BB:EF…`; file served `200 / application/json`, no redirects),
+  Android create/sign-in STILL failed `RP ID cannot be validated` (fresh logcat, `ValidateRpIdOperation`
+  doing a ~640ms fetch and rejecting — so not a cache). Diagnosis: for this Play-App-Signing + key-rotated
+  app, Credential Manager validates whatever **PackageManager** reports as the app's signer, and on the
+  installed build that value (`adb shell dumpsys package ch.circletools.secretsanta` → `Signatures:`) is
+  **`45:A8:01:D8:F6:2E:DB:14:E5:52:F9:4D:9B:53:21:B5:6A:8C:33:A4:08:F4:AE:A6:E0:D5:9F:3A:7B:C0:C4:4A`** —
+  which is NOT the APK's embedded cert (apksigner reports `FD:D7…`) and NOT either Play Console
+  app-signing key. So `45:A8…` was ADDED back (first-removed in the (2)-draft) alongside `FD:D7…`+`BB:EF…`
+  in both `assetlinks.json` files and as `apk-key-hash:RagB2PYu2xTlUvlNm1MhtWqMM6QI9K6m4NWfOnvAxEo` in
+  `Auth:Passkey:Origins`. Listing all three is safe (Google accepts any well-formed SHA-256; the others
+  keep working). **Status: PENDING device confirmation after the next web-front + API redeploy.** A
+  separate device anomaly was also seen in the logs (`BadAuthentication` / `UserRecoverableAuthException`
+  on the Google account) — likely the account needs a non-destructive re-sign-in; being tracked as a
+  possible contributor. **Lesson:** for a rotated Play-App-Signing app, the fingerprint GMS checks is the
+  one PackageManager holds on the device under test (`dumpsys package … Signatures:`), which can differ
+  from both Play Console and apksigner — read it off the device and list it. Re-confirm each with
   `digitalassetlinks.googleapis.com/v1/assetlinks:check`.
 - **Follow-ups:**
   1. Deploy the Main service with `Auth:Passkey:Origins` set (Production config added here).
