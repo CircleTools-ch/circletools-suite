@@ -126,6 +126,35 @@ else). The origin allow-list is the server change ADR-0066 missed.
   upload/local key is kept as a second entry so sideloaded dev builds also validate. Needs a **web-front
   redeploy** (Main + Secret-Santa WebApps serve the `.well-known` files) — the Main API redeploy only
   matters for the `Origins` list. This closes follow-up 2.
+- **Update 2026-10-06 — Android STILL failed: the app signing key was ROTATED; both certs must be listed.**
+  After the (b) fix was deployed (verified live: Google's `assetlinks:check` returned `linked:true` for the
+  listed certs, the Android browser and iPad both worked, and the production API returned
+  `rpId: circletools.ch`), the **Android app** alone still failed with the same `ValidateRpIdOperation` →
+  `ctst: [50152] RP ID cannot be validated` (confirmed by fresh verbose GMS logcat, tag
+  `Auth.Api.Credentials`, on a Pixel 9 Pro, GMS 26.36.35, for both create and sign-in). Root cause: **Play
+  App Signing had rotated the app signing key, and only the current key was in the file.** Play Console
+  (App integrity → App signing) showed **two** app-signing certificates:
+  - **Current app signing key:** `FD:D7:27:…:63:5E` — already in the file (it had been mislabelled the
+    "upload/local key" in the (b) update; it is in fact the current Play app-signing key).
+  - **Previous app signing key:** `BB:EF:78:6B:…:3A:F1:EC` — **missing** from the file.
+  For a rotated app, Credential Manager/FIDO validates against the **pre-rotation** certificate, so listing
+  only the current key is insufficient even though `assetlinks:check` reports the current key `linked:true`.
+  (Caveat on diagnosis: `dumpsys package … Signatures:` prints a signing **lineage/keyset digest**, not the
+  leaf-cert SHA-256 — treat Play Console / `apksigner verify --print-certs` as authoritative for the
+  fingerprints, not `dumpsys`.) Note App-Links (`handle_all_urls`) for `secretsanta.circletools.ch` showed
+  `verified` on-device because App-Links validation accepts any **lineage** cert, whereas `get_login_creds`
+  (passkeys) did not accept the current-only list — which is why App Links passed but passkeys did not.
+  Fix (config only, no app rebuild): list **both** app-signing certs in **both** `assetlinks.json` files
+  (`FD:D7…` current, `BB:EF…` previous) and both `apk-key-hash` origins in `Auth:Passkey:Origins`
+  (`_dcnO99Fawre2Qym6BxR9RIsg_ffHBrHGTwaDASCY14` for `FD:D7…`,
+  `u-94a0XqcwN1A4jHA1169_xGEsGhA6YOEwy4oYI68ew` for `BB:EF…`). The earlier speculative `45:A8…`/`4D:93…`
+  values were dropped — they are not app-signing keys per Play Console. Needs the same **web-front
+  redeploy** + Main API redeploy as (b). On the test device, GMS caches the Digital-Asset-Links verdict
+  for ~1h (observed `maxAge` 3600s), so after the redeploy clear Google Play services' cache or wait out
+  the TTL before retrying. **Lesson:** take signing fingerprints from **Play Console / apksigner**, never
+  from `dumpsys` and never transcribed by hand; and whenever the app signing key is (or may be) rotated,
+  list **every** app-signing certificate (current + all previous). Re-confirm each with
+  `digitalassetlinks.googleapis.com/v1/assetlinks:check`.
 - **Follow-ups:**
   1. Deploy the Main service with `Auth:Passkey:Origins` set (Production config added here).
   2. Verify the association files are live on the apex: `assetlinks.json` and
