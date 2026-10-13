@@ -35,12 +35,14 @@ public static class TextInputSheetExtensions
             { x => x.Initial, initial },
         };
 
-        // Top, not bottom: this sheet always focuses its field and raises the soft keyboard, which slides
-        // up from the bottom edge and would cover a bottom sheet — hiding the field and the confirm button
-        // (the confirm-only ConfirmSheet has no keyboard, so it stays a bottom sheet).
+        // Centered, matching the create-group sheet (NewGroupDialog). A top-anchored sheet sat under the
+        // phone status bar / notch (MudBlazor pads top dialogs a flat 32px, less than the iOS safe-area
+        // inset); centering clears both the status bar and the soft keyboard, which the browser scrolls the
+        // focused field above — the create-group sheet also auto-focuses a field and reads correctly this
+        // way (user-reported on iOS + Android). The confirm-only ConfirmSheet stays a bottom sheet.
         var options = new DialogOptions
         {
-            Position = DialogPosition.TopCenter,
+            Position = DialogPosition.Center,
             FullWidth = true,
             CloseOnEscapeKey = true,
         };

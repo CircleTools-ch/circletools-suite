@@ -38,11 +38,13 @@ public static class CarryForwardEventDialogExtensions
             { x => x.InitialName, initialName },
         };
 
-        // Top, not bottom: the name field raises the soft keyboard, which would cover a bottom sheet
-        // (same reasoning as TextInputSheet).
+        // Centered, matching the add-member (TextInputSheet) and create-group (NewGroupDialog) sheets: the
+        // name field raises the soft keyboard, and a top-anchored sheet sat under the phone status bar /
+        // notch, while a bottom one would be covered by the keyboard. Centering clears both — the browser
+        // scrolls the focused field above the keyboard.
         var options = new DialogOptions
         {
-            Position = DialogPosition.TopCenter,
+            Position = DialogPosition.Center,
             FullWidth = true,
             CloseOnEscapeKey = true,
         };

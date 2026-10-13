@@ -4,8 +4,9 @@
 <dict>
     <!-- Universal Links (ADR-0053 reveal links, ADR-0065 follow-up #3). A tap on
          https://secretsanta.circletools.ch/r… or /groups/…/events/… opens the app instead of the
-         browser, and AppDelegate forwards it to DeepLinkService (offline render, no server) — the iOS
-         counterpart to Android's App Link intent filters in MainActivity.
+         browser, and SceneDelegate forwards it to DeepLinkService (offline render, no server) — the iOS
+         counterpart to Android's App Link intent filters in MainActivity. (The forwarding is on the scene
+         delegate, not AppDelegate: under the UIScene lifecycle, ADR-0065, iOS delivers links to the scene.)
 
          Value format is host only: "applinks:<subdomain>.<tld>", no scheme, no path, no trailing slash.
          Requires two external steps that cannot be done from Windows:

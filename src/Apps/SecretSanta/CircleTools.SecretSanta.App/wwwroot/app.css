@@ -78,3 +78,18 @@ h1:focus {
 .mud-main-content {
     border-top: env(safe-area-inset-top) solid transparent;
 }
+
+/* Dialog safe-area insets. MudBlazor pads a top- or bottom-anchored dialog by a flat 32px, which on a
+   notched iPhone (viewport-fit=cover) is smaller than the status-bar / home-indicator inset — so a
+   top-anchored sheet renders under the clock/battery and a bottom sheet under the home indicator. Stack
+   the inset on top of the 32px (same specificity as MudBlazor's rule, and this sheet loads after it, so
+   it wins). env(safe-area-inset-*) is 0 on desktop and on devices with no inset, so this is a no-op
+   there. The add-member/rename sheet is centred (TextInputSheetExtensions) and so is unaffected; this
+   covers the carry-forward sheet (top) and the confirm sheet (bottom). */
+.mud-dialog-container.mud-dialog-topcenter {
+    padding-top: calc(32px + env(safe-area-inset-top));
+}
+
+.mud-dialog-container.mud-dialog-bottomcenter {
+    padding-bottom: calc(32px + env(safe-area-inset-bottom));
+}

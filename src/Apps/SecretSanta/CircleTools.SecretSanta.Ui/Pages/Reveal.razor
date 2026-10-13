@@ -11,6 +11,7 @@
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
 @inject IHapticFeedback Haptics
+@implements IDisposable
 
 <PageTitle>@L["RevealTitle"]</PageTitle>
 
@@ -136,6 +137,41 @@ else if (_payload is not null)
 
     protected override async Task OnInitializedAsync()
     {
+        // A reveal link can arrive while this page is already open: the native deep-link handler navigates
+        // to /r with a new #fragment, but the route (/r) is unchanged, so the router reuses this component
+        // and OnInitialized does NOT run again. Re-parse on every navigation so a second reveal link
+        // replaces the first instead of silently keeping the old one shown (the warm-start device deep
+        // link the user hit — "it doesn't show a link if another link is already displayed" — and the web).
+        Navigation.LocationChanged += OnLocationChanged;
+        await LoadAsync();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => _ = InvokeAsync(async () =>
+    {
+        // Only re-handle while this is still the reveal route; navigating away disposes the component.
+        var path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('#', '?')[0].TrimEnd('/');
+        if (!string.Equals(path, "r", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    private async Task LoadAsync()
+    {
+        // Reset first, so re-opening over an existing reveal never leaks the previous link's state — above
+        // all _revealed, so the new recipient stays hidden behind the reveal button until it is tapped.
+        _payload = null;
+        _label = string.Empty;
+        _eventDate = null;
+        _calendarEvent = null;
+        _revealed = false;
+        _error = false;
+        _backendBacked = false;
+        _live = false;
+
         try
         {
             var fragment = new Uri(Navigation.Uri).Fragment;
@@ -168,6 +204,8 @@ else if (_payload is not null)
             _error = true;
         }
     }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
 
     // Fetch the live per-giver slice and swap it in for the snapshot when it loads. Returns false on any
     // failure (offline, revoked token, malformed slice) so the caller keeps showing the embedded snapshot.
