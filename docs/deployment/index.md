@@ -12,11 +12,17 @@ Two tracks:
     stack bring-up), executed on the box.
   - **[Backups & restore](backups.md)** — nightly `pg_dump` → Swiss Backup via restic, and the
     (safe) restore drill that keeps GL-5's "restore tested" honest.
+  - **[Operator read-only DB access](operator-db-read-access.md)** — a `SELECT`-only role reached over an
+    SSH tunnel for inspecting production data, with the ADR-0020 privacy caveat (ADR-0075).
 - **[Mobile apps](mobile-apps.md)** — Android (Play) & iOS (App Store): costs, enrolment,
   submission and the recurring platform deadlines.
 
 And, before either of them, **[device testing](device-testing.md)** — which of our machines can
 build each head, which devices can run it, and what to type. Nothing there needs a store account.
+
+The **[documentation site](docs-site.md)** is this DocFX site itself, published to **private** GitHub
+Pages ([ADR-0076](../adr/0076-docs-site-to-private-github-pages.md)) — a one-time owner enablement, after
+which every push to `main` republishes it for repo members.
 
 For the observability the VM will run, **[local observability](dev-observability.md)** brings up the
 same Loki + Prometheus + Grafana stack under Aspire — with the production dashboards and datasources —

@@ -1,0 +1,73 @@
+# Publish the DocFX documentation site to GitHub Pages (ADR-0076).
+# Builds the same link-checked site as the CI `docs` job and deploys it to Pages. The deploy job is
+# GATED on the `DOCS_PAGES_ENABLED` repository variable (mirroring deploy.yml's self-activation), so until
+# the owner has enabled Pages with PRIVATE visibility and set that variable, the site is only built and
+# uploaded as an artifact — never published. See docs/deployment/docs-site.md.
+name: Docs site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Only the deploy needs write/id-token; the build is read-only. Pages deploys do not cancel each other.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: docs-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        # Full history: Nerdbank.GitVersioning (ADR-0047) computes the version from git height.
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET (from global.json)
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+
+      # DocFX metadata is scoped to the library projects (docfx/docfx.json); restore so its Roslyn
+      # workspace can load them. (Not --locked-mode — same reason as ci.yml.)
+      - name: Restore
+        run: dotnet restore CircleTools.NoMaui.slnx
+
+      - name: Restore local tools (DocFX)
+        run: dotnet tool restore
+
+      # Fails on broken links / unresolved xrefs (ADR-0002), exactly like the CI docs job.
+      - name: Build docs site
+        run: dotnet docfx docfx/docfx.json
+
+      # Uploads the rendered site as the Pages artifact. This needs no Pages settings, so the build stays
+      # green before the owner enables Pages; the artifact is simply unused when the deploy job is skipped.
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docfx/_site
+
+  deploy:
+    name: deploy
+    needs: build
+    # Self-activates only once the owner enables Pages (Settings -> Pages -> Source: GitHub Actions) with
+    # PRIVATE access control and sets the DOCS_PAGES_ENABLED repository variable to 'true' (ADR-0076). Until
+    # then this job is skipped and no site is published.
+    if: vars.DOCS_PAGES_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -71,6 +71,13 @@ builder.Services.AddHostedService<SharedGroupRetentionService>();
 builder.Services.AddCirclesCore();
 builder.Services.AddCirclesRepository(mainConnectionString);
 builder.Services.AddCirclesRetention(builder.Configuration);
+
+// Business metrics (FEAT-022): a background collector that counts across the four counted contexts on a
+// timer and exports PII-free gauges on the CircleTools.Business meter for Prometheus/Grafana (ADR-0051).
+// This host is the only project that can resolve every context the collector counts. The meter holder is
+// a singleton the hosted collector depends on, so it is constructed (and its gauges registered) on start.
+builder.Services.AddSingleton<BusinessMetrics>();
+builder.Services.AddHostedService<BusinessMetricsCollector>();
 builder.Services.Configure<CircleLimits>(builder.Configuration.GetSection(CircleLimits.SectionName));
 builder.Services.Configure<CircleSecurityOptions>(builder.Configuration.GetSection(CircleSecurityOptions.SectionName));
 

@@ -51,6 +51,8 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-018](TP-018-branded-transactional-emails.md) | Test plan — Branded transactional emails | Main | Draft |
 | [FEAT-021](FEAT-021-storage-default-onboarding-and-list-indicator.md) | Storage default, first-run onboarding & group-list storage indicator (device-local default seeds every create path incl. the phone FAB; one-time skippable onboarding; per-group storage icon — ADR-0071, FR-048) | SecretSanta | In progress |
 | [TP-021](TP-021-storage-default-onboarding-and-list-indicator.md) | Test plan — Storage default, onboarding & list indicator | SecretSanta | Draft |
+| [FEAT-022](FEAT-022-business-metrics-dashboard.md) | Business-metrics dashboard (PII-free counts of accounts/groups/events/draws over time on the existing Grafana stack — ADR-0051) | Platform | In progress |
+| [TP-022](TP-022-business-metrics-dashboard.md) | Test plan — Business-metrics dashboard | Platform | Draft |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and

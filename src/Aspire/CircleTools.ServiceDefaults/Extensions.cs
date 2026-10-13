@@ -79,6 +79,10 @@ public static class Extensions
                     // reference — ServiceDefaults sits below the app modules and must not depend up
                     // into them; the name is mirrored by SyncCollisionTelemetry.MeterName.
                     .AddMeter("CircleTools.Sync")
+                    // The business counters (FEAT-022): PII-free counts of accounts/groups/events/
+                    // draws/members. Same literal-name rule as above; mirrored by
+                    // BusinessMetricsCollector.MeterName in the Main service host.
+                    .AddMeter("CircleTools.Business")
                     // Production scrapes metrics with Prometheus (ADR-0051): this exposes the meter
                     // provider at GET /metrics (mapped in MapDefaultEndpoints). Harmless in dev.
                     .AddPrometheusExporter();

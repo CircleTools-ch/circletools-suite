@@ -80,6 +80,10 @@
   href: FEAT-020-live-reveal-links-for-backend-backed-groups.md
 - name: FEAT-021 Storage default, onboarding & list indicator
   href: FEAT-021-storage-default-onboarding-and-list-indicator.md
+- name: FEAT-022 Business-metrics dashboard
+  href: FEAT-022-business-metrics-dashboard.md
+- name: TP-022 Business-metrics dashboard test plan
+  href: TP-022-business-metrics-dashboard.md
 - name: Templates
   items:
     - name: Feature spec template

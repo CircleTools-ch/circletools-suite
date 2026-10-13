@@ -148,5 +148,9 @@
   href: 0073-storage-mode-is-authoritative.md
 - name: 0074 AOT-safe mediator pipeline over value-type results
   href: 0074-aot-safe-mediator-pipeline-over-value-types.md
+- name: 0075 Operator read-only database access
+  href: 0075-operator-read-only-database-access.md
+- name: 0076 Docs site to private GitHub Pages
+  href: 0076-docs-site-to-private-github-pages.md
 - name: Template
   href: _template-adr.md

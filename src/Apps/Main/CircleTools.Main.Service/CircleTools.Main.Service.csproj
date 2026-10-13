@@ -26,4 +26,11 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The business-metrics collector (FEAT-022) is internal; its count-query logic is verified directly
+         by the host test project rather than only black-box through the meter. This is the repo's only
+         InternalsVisibleTo. -->
+    <InternalsVisibleTo Include="CircleTools.Main.Service.Test" />
+  </ItemGroup>
+
 </Project>

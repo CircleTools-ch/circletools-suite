@@ -6,6 +6,10 @@
   href: server-setup.md
 - name: Backups & restore
   href: backups.md
+- name: Operator read-only DB access
+  href: operator-db-read-access.md
+- name: Documentation site (GitHub Pages)
+  href: docs-site.md
 - name: Mobile apps (Android / iOS)
   href: mobile-apps.md
 - name: Device testing
