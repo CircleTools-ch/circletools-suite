@@ -168,6 +168,26 @@ else). The origin allow-list is the server change ADR-0066 missed.
   one PackageManager holds on the device under test (`dumpsys package … Signatures:`), which can differ
   from both Play Console and apksigner — read it off the device and list it. Re-confirm each with
   `digitalassetlinks.googleapis.com/v1/assetlinks:check`.
+- **Update 2026-10-07 — CONFIG CONFIRMED CORRECT; residual failure is a device-side stale GMS verdict, not
+  the backend.** With all three fingerprints (`FD:D7…`, `BB:EF…`, `45:A8…`) live and each `assetlinks:check`
+  → `linked:true`, the apex file served `200 / application/json` with no redirect, and `rpId=circletools.ch`
+  confirmed, the one test device (Samsung, GMS 26.36.35) STILL failed `RP ID cannot be validated` for both
+  create and sign-in. Decisive evidence it is NOT config: a fresh verbose capture showed
+  `ValidateRpIdOperation` completing in **~105 ms with no network fetch** (no cronet/HTTP to `circletools.ch`
+  or `digitalasset…` in the window) — i.e. Google Play services is **replaying a cached "not associated"
+  verdict and never re-reading the file**. That negative verdict was poisoned earlier (when the file was
+  still wrong, compounded by a concurrent `BadAuthentication`/`UserRecoverableAuthException` on the device's
+  Google account) and survived "Clear cache", reboot, full app uninstall/reinstall, and
+  `pm verify-app-links --re-verify` (App Links/`handle_all_urls` re-verified fine — it accepts a lineage
+  cert — but that does not touch the GMS FIDO `get_login_creds` cache). Only a full Google Play services
+  **data** wipe reliably evicts it (declined here — it also wipes Google Wallet). Non-destructive
+  resolutions: (a) use a **fresh Google account** (no poisoned per-account verdict + healthy auth → GMS
+  re-validates against the now-correct file); (b) **re-authenticate** the affected Google account to clear
+  the `BadAuthentication` and prompt re-validation; (c) **wait out** the negative TTL (the verdict is not
+  re-fetched on every attempt). **Takeaway:** once `assetlinks:check` returns `linked:true` for the device's
+  cert and the capture shows a <~150 ms, zero-network `ValidateRpIdOperation`, stop editing the file — the
+  server is right and the problem is the device's cached DAL verdict + account-auth state. The deployed
+  config is correct for all healthy devices; FR-011 password sign-in keeps users unblocked meanwhile.
 - **Follow-ups:**
   1. Deploy the Main service with `Auth:Passkey:Origins` set (Production config added here).
   2. Verify the association files are live on the apex: `assetlinks.json` and

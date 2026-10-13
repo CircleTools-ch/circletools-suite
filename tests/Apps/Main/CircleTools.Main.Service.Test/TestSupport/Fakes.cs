@@ -16,6 +16,36 @@ public sealed class PingCommandHandler : ICommandHandler<PingCommand, string>
         Task.FromResult($"pong:{command.Text}");
 }
 
+/// <summary>A test command that returns a <b>value-type</b> result (the shape that broke on iOS full-AOT, ADR-0074).</summary>
+public sealed record NewIdCommand : ICommand<Guid>;
+
+/// <summary>Handler for <see cref="NewIdCommand"/>; returns a fixed id so the result is assertable.</summary>
+public sealed class NewIdCommandHandler : ICommandHandler<NewIdCommand, Guid>
+{
+    /// <summary>The id this handler always returns.</summary>
+    public static readonly Guid Id = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
+    /// <inheritdoc />
+    public Task<Guid> HandleAsync(NewIdCommand command, CancellationToken cancellationToken) => Task.FromResult(Id);
+}
+
+/// <summary>A test command that returns <b>no</b> result (dispatched over the internal <c>Unit</c> struct, ADR-0074).</summary>
+public sealed record TouchCommand : ICommand;
+
+/// <summary>Handler for <see cref="TouchCommand"/>; records that it ran so the void pipeline is observable.</summary>
+public sealed class TouchCommandHandler : ICommandHandler<TouchCommand>
+{
+    /// <summary>Whether <see cref="HandleAsync"/> has run.</summary>
+    public bool Handled { get; private set; }
+
+    /// <inheritdoc />
+    public Task HandleAsync(TouchCommand command, CancellationToken cancellationToken)
+    {
+        Handled = true;
+        return Task.CompletedTask;
+    }
+}
+
 /// <summary>Logger provider that records formatted log messages for assertions.</summary>
 public sealed class RecordingLoggerProvider : ILoggerProvider
 {

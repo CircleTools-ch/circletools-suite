@@ -146,5 +146,7 @@
   href: 0072-reflection-json-on-native-heads.md
 - name: 0073 Per-group storage mode is authoritative
   href: 0073-storage-mode-is-authoritative.md
+- name: 0074 AOT-safe mediator pipeline over value-type results
+  href: 0074-aot-safe-mediator-pipeline-over-value-types.md
 - name: Template
   href: _template-adr.md

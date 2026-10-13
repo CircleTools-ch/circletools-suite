@@ -44,7 +44,15 @@ public sealed class Sender(IServiceProvider provider) : ISender
         var handler = provider.GetRequiredService(handlerType);
         var handleMethod = handlerType.GetMethod("HandleAsync")!;
 
-        PipelineContinuation<TResult> pipeline = async () =>
+        // The behavior pipeline runs over a boxed (object) response so that IPipelineBehavior<,> is
+        // only ever closed over reference types. iOS Release is full-AOT (ADR-0072), and Mono full-AOT
+        // cannot create a generic instantiation over a value-type argument at runtime: resolving the
+        // behaviors closed over a value-type TResult — Guid (create/add) or the internal Unit of a void
+        // command (edit/rename/delete) — threw "InvalidOperationException: AotCannotCreateGenericValueType"
+        // on iPad, while Android and the web worked. Closing them over `object` uses shared generics,
+        // which full-AOT supports; the real TResult is boxed out of the handler and unboxed once at the
+        // end. Reference-type results already worked, so this is behaviour-preserving everywhere. See ADR-0074.
+        PipelineContinuation<object?> pipeline = async () =>
         {
             var invocation = handleMethod.Invoke(handler, [request, cancellationToken]);
             if (hasResult)
@@ -53,10 +61,10 @@ public sealed class Sender(IServiceProvider provider) : ISender
             }
 
             await (Task)invocation!;
-            return default!;
+            return default(TResult);
         };
 
-        var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(requestType, typeof(TResult));
+        var behaviorType = typeof(IPipelineBehavior<,>).MakeGenericType(requestType, typeof(object));
         var behaviors = ((IEnumerable<object?>)provider.GetServices(behaviorType)).ToArray();
         if (behaviors.Length > 0)
         {
@@ -65,10 +73,10 @@ public sealed class Sender(IServiceProvider provider) : ISender
             {
                 var behavior = behaviors[i]!;
                 var next = pipeline;
-                pipeline = () => (Task<TResult>)behaviorMethod.Invoke(behavior, [request, next, cancellationToken])!;
+                pipeline = () => (Task<object?>)behaviorMethod.Invoke(behavior, [request, next, cancellationToken])!;
             }
         }
 
-        return await pipeline();
+        return (TResult)(await pipeline())!;
     }
 }
