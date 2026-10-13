@@ -120,6 +120,7 @@ jobs:
           name: secretsanta-android-${{ steps.nbgv.outputs.SimpleVersion }}-${{ steps.code.outputs.value }}
           path: "src/Apps/SecretSanta/CircleTools.SecretSanta.App/bin/Release/net10.0-android/**/*.aab"
           if-no-files-found: error
+          retention-days: 7
 
       # --- Play internal-track upload (activates once the signing + Play API secrets exist) ---
       # Requires the app's FIRST release to have been uploaded manually in Play Console once: the Play
@@ -253,6 +254,7 @@ jobs:
           name: secretsanta-ios-${{ steps.nbgv.outputs.SimpleVersion }}-${{ steps.code.outputs.value }}
           path: "src/Apps/SecretSanta/CircleTools.SecretSanta.App/bin/Release/net10.0-ios/ios-arm64/publish/*.ipa"
           if-no-files-found: error
+          retention-days: 7
 
       # TestFlight upload — needs BOTH the signed .ipa and the App Store Connect API key.
       - name: Upload to TestFlight
