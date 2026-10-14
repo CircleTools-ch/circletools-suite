@@ -151,11 +151,24 @@ public sealed class BusinessMetricsInstrumentTests
     {
         var measurements = new List<Recorded>();
 
+        using var metrics = new BusinessMetrics();
+        metrics.Publish(new BusinessCounts(
+            AccountsConfirmed: 2,
+            AccountsUnconfirmed: 1,
+            CircleGroups: 3,
+            SharedGroups: 4,
+            Events: 5,
+            Members: 6,
+            Draws: 7));
+
+        // Filter on this instance's meter, not the meter name: API hosts built by other tests in this
+        // assembly run in parallel and register their own "CircleTools.Business" meter, whose gauges would
+        // otherwise be recorded too (duplicate measurements → Single() throws, flaky on CI).
         using var listener = new MeterListener
         {
             InstrumentPublished = (instrument, meterListener) =>
             {
-                if (instrument.Meter.Name == BusinessMetrics.MeterName)
+                if (ReferenceEquals(instrument.Meter, metrics.Meter))
                 {
                     meterListener.EnableMeasurementEvents(instrument);
                 }
@@ -171,16 +184,6 @@ public sealed class BusinessMetricsInstrumentTests
 
             measurements.Add(new Recorded(instrument.Name, value, tagMap));
         });
-
-        using var metrics = new BusinessMetrics();
-        metrics.Publish(new BusinessCounts(
-            AccountsConfirmed: 2,
-            AccountsUnconfirmed: 1,
-            CircleGroups: 3,
-            SharedGroups: 4,
-            Events: 5,
-            Members: 6,
-            Draws: 7));
 
         listener.Start();
         listener.RecordObservableInstruments();

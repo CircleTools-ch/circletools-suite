@@ -28,6 +28,7 @@ public sealed class OrganizerSharingTests : IAsyncLifetime
             ViewportSize = new ViewportSize { Width = 1280, Height = 950 }, // wide: the inline create + picker
         });
         await _context.AddInitScriptAsync("try { localStorage.setItem('secretsanta.culture','en'); } catch (e) {}");
+        await _context.AddInitScriptAsync(GroupCreation.SkipStorageOnboardingScript);
         await _context.AddInitScriptAsync(SharingLinks.CaptureCopyScript);
 
         _page = await _context.NewPageAsync();
@@ -48,9 +49,7 @@ public sealed class OrganizerSharingTests : IAsyncLifetime
         await _page.GotoAsync($"{SecretSantaStackFixture.WebOrigin}/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
 
         // Name the group and choose "Shared by link" at creation (ids are language-independent).
-        await _page.FillAsync("#new-group-name", "E2E Familie");
-        await _page.ClickAsync("#mode-shared");
-        await _page.ClickAsync("#create-group-btn");
+        await GroupCreation.CreateSharedGroupAsync(_page, "E2E Familie");
 
         // Landed on the group hub, now shared — the mode chip appears, and the Sharing & sync row leads
         // to the links.

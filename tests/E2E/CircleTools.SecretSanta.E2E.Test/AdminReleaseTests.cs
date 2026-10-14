@@ -34,9 +34,7 @@ public sealed class AdminReleaseTests : IAsyncLifetime
         var organizer = await NewContextAsync();
         var page = await organizer.NewPageAsync();
         await page.GotoAsync($"{SecretSantaStackFixture.WebOrigin}/", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
-        await page.FillAsync("#new-group-name", "E2E Release");
-        await page.ClickAsync("#mode-shared");
-        await page.ClickAsync("#create-group-btn");
+        await GroupCreation.CreateSharedGroupAsync(page, "E2E Release");
         await page.WaitForURLAsync(new Regex(@"/groups/[0-9a-fA-F-]+$"), new PageWaitForURLOptions { Timeout = 20_000 });
         var groupId = new Regex(@"/groups/([0-9a-fA-F-]+)$").Match(page.Url).Groups[1].Value;
 
@@ -88,6 +86,7 @@ public sealed class AdminReleaseTests : IAsyncLifetime
             ViewportSize = new ViewportSize { Width = 1280, Height = 950 },
         });
         await context.AddInitScriptAsync("try { localStorage.setItem('secretsanta.culture','en'); } catch (e) {}");
+        await context.AddInitScriptAsync(GroupCreation.SkipStorageOnboardingScript);
         await context.AddInitScriptAsync(SharingLinks.CaptureCopyScript);
         return context;
     }

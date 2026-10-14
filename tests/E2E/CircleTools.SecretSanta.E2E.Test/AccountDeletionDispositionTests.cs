@@ -36,6 +36,7 @@ public sealed class AccountDeletionDispositionTests : IAsyncLifetime
         // Pin both apps to English so the assertions are stable across the two origins.
         await _context.AddInitScriptAsync(
             "try { localStorage.setItem('secretsanta.culture','en'); localStorage.setItem('main.culture','en'); } catch (e) {}");
+        await _context.AddInitScriptAsync(GroupCreation.SkipStorageOnboardingScript);
         _page = await _context.NewPageAsync();
     }
 
@@ -55,9 +56,7 @@ public sealed class AccountDeletionDispositionTests : IAsyncLifetime
         // Register + verify + sign in on the Secret-Santa app, then create an account-owned shared group.
         await SignUpVerifyAndSignInAsync(SecretSantaStackFixture.WebOrigin, email, password, "Delete Tester");
         await Goto(SecretSantaStackFixture.WebOrigin, "/");
-        await _page.FillAsync("#new-group-name", "E2E Delete Disposition");
-        await _page.ClickAsync("#mode-shared");
-        await _page.ClickAsync("#create-group-btn");
+        await GroupCreation.CreateSharedGroupAsync(_page, "E2E Delete Disposition");
         await _page.WaitForURLAsync(new Regex(@"/groups/[0-9a-fA-F-]+$"), new PageWaitForURLOptions { Timeout = 20_000 });
         var groupId = new Regex(@"/groups/([0-9a-fA-F-]+)$").Match(_page.Url).Groups[1].Value;
 

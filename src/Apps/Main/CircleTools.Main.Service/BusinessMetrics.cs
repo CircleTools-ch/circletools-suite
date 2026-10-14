@@ -98,6 +98,12 @@ internal sealed class BusinessMetrics : IDisposable
     private readonly Meter _meter;
     private volatile BusinessCounts _counts = BusinessCounts.Empty;
 
+    /// <summary>
+    /// This instance's meter. Every instance shares <see cref="MeterName"/>, so a listener that must observe
+    /// only one instance (e.g. a test while API hosts run in parallel) filters on this reference, not the name.
+    /// </summary>
+    internal Meter Meter => _meter;
+
     /// <summary>Creates the meter and registers the gauges.</summary>
     public BusinessMetrics()
     {

@@ -29,6 +29,7 @@ public sealed class ClaimAdminTests : IAsyncLifetime
             ViewportSize = new ViewportSize { Width = 1280, Height = 950 },
         });
         await _context.AddInitScriptAsync("try { localStorage.setItem('secretsanta.culture','en'); } catch (e) {}");
+        await _context.AddInitScriptAsync(GroupCreation.SkipStorageOnboardingScript);
         _page = await _context.NewPageAsync();
     }
 
@@ -49,9 +50,7 @@ public sealed class ClaimAdminTests : IAsyncLifetime
 
         // Create a shared-by-link group while signed in.
         await Goto("/");
-        await _page.FillAsync("#new-group-name", "E2E Claim");
-        await _page.ClickAsync("#mode-shared");
-        await _page.ClickAsync("#create-group-btn");
+        await GroupCreation.CreateSharedGroupAsync(_page, "E2E Claim");
         await _page.WaitForURLAsync(new Regex(@"/groups/[0-9a-fA-F-]+$"), new PageWaitForURLOptions { Timeout = 20_000 });
         var groupId = new Regex(@"/groups/([0-9a-fA-F-]+)$").Match(_page.Url).Groups[1].Value;
 
