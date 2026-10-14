@@ -176,7 +176,7 @@ public sealed class SyncServiceTests
         var account = Guid.NewGuid();
         var (service, local, api) = NewService();
         var state = SyncTestData.GroupWith("Kept", "A");
-        await SeedAsync(local, new SyncedGroupRecord(state, 4, account, Dirty: false));
+        await SeedAsync(local, new SyncedGroupRecord(state, 4, account, Dirty: false, Mode: StorageMode.Account));
         api.Returns(new SyncResponse(Cursor: 9, [], [], [new SyncUnclaimed(state.Id)], []));
 
         var outcome = await service.SyncNowAsync(account, default);
@@ -184,6 +184,8 @@ public sealed class SyncServiceTests
         Assert.Equal(1, outcome.Unclaimed);
         var record = Assert.Single(await local.LoadGroupsAsync(default));
         Assert.Null(record.AccountScope);
+        // Back to "On this device", or this device's auto-claim (Mode == Account) would undo the removal.
+        Assert.Equal(StorageMode.OnThisDevice, record.Mode);
     }
 
     [Fact]
@@ -192,7 +194,7 @@ public sealed class SyncServiceTests
         var account = Guid.NewGuid();
         var (service, local, api) = NewService();
         var state = SyncTestData.GroupWith("Leaving", "A");
-        await SeedAsync(local, new SyncedGroupRecord(state, 5, account, Dirty: true));
+        await SeedAsync(local, new SyncedGroupRecord(state, 5, account, Dirty: true, Mode: StorageMode.Account));
 
         var outcome = await service.UnclaimAsync(account, state.Id, default);
 
@@ -204,6 +206,7 @@ public sealed class SyncServiceTests
         var record = Assert.Single(await local.LoadGroupsAsync(default));
         Assert.Null(record.AccountScope);
         Assert.False(record.Dirty);
+        Assert.Equal(StorageMode.OnThisDevice, record.Mode); // the intent follows, so no auto-claim re-claims it
     }
 
     [Fact]

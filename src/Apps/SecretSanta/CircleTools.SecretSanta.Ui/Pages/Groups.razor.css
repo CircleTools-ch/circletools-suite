@@ -1,8 +1,0 @@
-/* A clickable item name that opens the item, mirroring the Open button. */
-.ct-openable {
-    cursor: pointer;
-}
-
-.ct-openable:hover {
-    text-decoration: underline;
-}

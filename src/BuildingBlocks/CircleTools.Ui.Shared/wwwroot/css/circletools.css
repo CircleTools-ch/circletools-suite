@@ -238,3 +238,40 @@ input[type="date"]::-webkit-inner-spin-button,
 input[type="date"]::-webkit-clear-button {
     display: none !important;
 }
+
+/* Footer at the bottom of short pages (UX review P3, 2026-10-14). A shell opts in with ct-main-fill on its
+   content container and wraps the page in .ct-page: the container fills the viewport below the app bar
+   and the page grows, so the legal footer rests at the bottom instead of floating mid-screen. */
+.ct-main-fill {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100dvh - var(--mud-appbar-height));
+}
+
+.ct-main-fill > .ct-page {
+    flex: 1 0 auto;
+}
+
+/* An empty native date input shows the browser's raw format mask ("dd.mm.yyyy" / "tt.mm.jjjj") under the
+   field label (UX review P4). Hide the mask while the field is empty and not focused; focusing it (or a
+   chosen date) shows the real value. */
+.ct-date-empty input[type="date"]:not(:focus)::-webkit-datetime-edit {
+    color: transparent;
+}
+
+/* A whole row or card that opens its item (group/event cards, getting-started steps — UX review U7/U8).
+   Global rather than page-scoped so it also reaches child components; a subtle background on hover and a
+   visible focus ring replace the old underline, which looked wrong once the whole card became the target. */
+.ct-openable {
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+.ct-openable:hover {
+    background-color: var(--mud-palette-action-default-hover);
+}
+
+.ct-openable:focus-visible {
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: 2px;
+}

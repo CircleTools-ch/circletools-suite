@@ -35,6 +35,9 @@ public static class SecretSantaUiServiceCollectionExtensions
 
         services.AddCircleToolsLocalization(CultureStorageKey);
 
+        // MudBlazor's built-in accessible names (close buttons, nav-group toggles) in the app's language.
+        services.Replace(ServiceDescriptor.Transient<MudBlazor.MudLocalizer, SecretSantaMudLocalizer>());
+
         // Replace the account block's default online profile writer with the offline-capable one
         // (ADR-0035): a profile edit made offline is queued locally and PUT-flushed on the next sync,
         // which the SyncCoordinator runs alongside the group cycle.
@@ -73,6 +76,8 @@ public static class SecretSantaUiServiceCollectionExtensions
         // Device-local default storage mode for new groups + the one-time onboarding flag (FR-048,
         // ADR-0071). Per-device, never synced — a signed-out user needs a default too.
         services.AddScoped<StorageModePreferences>();
+        // Groups the user explicitly kept on this device, so the sign-in prompt does not re-ask (ADR-0044).
+        services.AddScoped<KeptLocalGroups>();
         services.AddScoped<ReminderScheduler>();
         services.AddScoped<IReminderRescheduler>(sp => sp.GetRequiredService<ReminderScheduler>());
 

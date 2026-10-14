@@ -60,7 +60,7 @@
   <data name="WishlistLabel" xml:space="preserve"><value>Wishlist (one item per line)</value></data>
   <data name="NoMembers" xml:space="preserve"><value>No members yet.</value></data>
   <data name="ExclusionsTitle" xml:space="preserve"><value>Exclusions</value></data>
-  <data name="ExclusionHint" xml:space="preserve"><value>The giver will not be assigned the chosen recipient.</value></data>
+  <data name="ExclusionHint" xml:space="preserve"><value>Keep certain people from drawing each other — for example couples, or siblings who already exchange gifts.</value></data>
   <data name="GiverLabel" xml:space="preserve"><value>Giver</value></data>
   <data name="RecipientLabel" xml:space="preserve"><value>Must not give to</value></data>
   <data name="ExclusionRow" xml:space="preserve"><value>{0} must not give to {1}</value></data>
@@ -120,7 +120,7 @@
   <data name="RevealButton" xml:space="preserve"><value>Reveal who you got</value></data>
   <data name="RevealRecipientLabel" xml:space="preserve"><value>You are Secret Santa for</value></data>
   <data name="RevealWishlistLabel" xml:space="preserve"><value>Their wishlist</value></data>
-  <data name="RevealNoWishlist" xml:space="preserve"><value>No wishlist provided.</value></data>
+  <data name="RevealNoWishlist" xml:space="preserve"><value>No wishlist yet — a little detective work may be needed.</value></data>
   <data name="RevealMalformed" xml:space="preserve"><value>This reveal link is invalid or incomplete.</value></data>
   <data name="RevealPrimer" xml:space="preserve"><value>This is your private Secret Santa link — only you can see who you got.</value></data>
   <data name="RevealSpoilerNote" xml:space="preserve"><value>Tap the button when you are ready - no peeking!</value></data>
@@ -143,13 +143,13 @@
   <data name="FromCirclePeopleCountPlural" xml:space="preserve"><value>{0} people</value><comment>The count for two or more; never used at one.</comment></data>
   <data name="MyAssignmentsTitle" xml:space="preserve"><value>My assignments</value></data>
   <data name="MyAssignmentsLead" xml:space="preserve"><value>Who you are giving to, in each group you take part in.</value></data>
-  <data name="MyAssignmentsOperatorPrivacyNote" xml:space="preserve"><value>When you are signed in, your assignment is stored on the server and protected by who you are — the operator can technically read it.</value><comment>States the ADR-0020 operator-readable fact plainly.</comment></data>
+  <data name="MyAssignmentsOperatorPrivacyNote" xml:space="preserve"><value>Good to know: so you can see your assignment on all your devices, it is stored on our server and shown only to your account. The operator has technical access to it.</value><comment>States the ADR-0020 operator-readable fact plainly.</comment></data>
   <data name="MyAssignmentsNone" xml:space="preserve"><value>You have no assignments yet. They appear once an organizer has drawn a group you are linked in.</value></data>
   <data name="MyAssignmentsOffline" xml:space="preserve"><value>You are offline. Your assignments need a connection.</value></data>
   <data name="MyAssignmentsReadFailed" xml:space="preserve"><value>Your assignments could not be read. Please try again.</value></data>
   <data name="MyWishlistsTitle" xml:space="preserve"><value>My wishlists</value></data>
   <data name="MyWishlistsLead" xml:space="preserve"><value>Your own wishlist in each group you are linked in. Only you can edit it.</value></data>
-  <data name="MyWishlistsRevealLinkCaveat" xml:space="preserve"><value>In the app your giver always sees the latest. A share link that was already sent keeps showing the wishlist as it was when the link was made, until a new link is issued.</value><comment>The reveal-link snapshot caveat (FR-030).</comment></data>
+  <data name="MyWishlistsRevealLinkCaveat" xml:space="preserve"><value>Changes save automatically. A link that was already sent keeps showing the old list until the organizer sends a new one.</value><comment>The reveal-link snapshot caveat (FR-030).</comment></data>
   <data name="MyWishlistsNoMemberships" xml:space="preserve"><value>You are not linked in any group yet.</value></data>
   <data name="MyWishlistsCopyOfferLabel" xml:space="preserve"><value>Copy from:</value></data>
   <data name="MyWishlistsAddPlaceholder" xml:space="preserve"><value>Add a wish</value></data>
@@ -331,4 +331,29 @@
   <data name="SettingsDefaultStorageHint" xml:space="preserve"><value>New groups start with this storage. You can still change it for each group.</value></data>
   <data name="StorageStoredAs" xml:space="preserve"><value>Stored</value></data>
   <data name="StorageChange" xml:space="preserve"><value>Change</value></data>
+  <data name="OpenNamed" xml:space="preserve"><value>Open {0}</value></data>
+  <data name="MoreActionsFor" xml:space="preserve"><value>More actions for {0}</value></data>
+  <data name="Done" xml:space="preserve"><value>Done</value></data>
+  <data name="MemberAddedAddAnother" xml:space="preserve"><value>{0} added. Add the next person, or tap Done.</value></data>
+  <data name="SyncStatusSynced" xml:space="preserve"><value>Synced — everything is up to date</value></data>
+  <data name="ExclusionPickPerson" xml:space="preserve"><value>Choose a person</value></data>
+  <data name="RevealNextStep" xml:space="preserve"><value>You will receive a gift too: tell the organizer what you would like, so your own Secret Santa has ideas.</value></data>
+  <data name="DrawSummary" xml:space="preserve"><value>{0} people taking part · exclusions: {1}</value></data>
+  <data name="DrawBeforeNote" xml:space="preserve"><value>The draw happens on this device. Nobody sees who got whom here — not even you. Each person finds out through their own link.</value></data>
+  <data name="DrawAgain" xml:space="preserve"><value>Draw again</value></data>
+  <data name="Retry" xml:space="preserve"><value>Try again</value></data>
+  <data name="RemoveNamed" xml:space="preserve"><value>Remove {0}</value></data>
+  <data name="UnsavedChangesWarning" xml:space="preserve"><value>You have unsaved changes. Leave and discard them?</value></data>
+  <data name="DiscardChanges" xml:space="preserve"><value>Discard</value></data>
+  <data name="KeepEditing" xml:space="preserve"><value>Keep editing</value></data>
+  <data name="GroupCardCounts" xml:space="preserve"><value>Members: {0} · Events: {1}</value></data>
+  <data name="Mud_MudDialog_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Mud_MudAlert_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Mud_MudChip_Close" xml:space="preserve"><value>Remove</value></data>
+  <data name="Mud_MudSnackbar_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Mud_MudNavGroup_ToggleExpand" xml:space="preserve"><value>Show or hide {0}</value></data>
+  <data name="MoveToAccountConfirm" xml:space="preserve"><value>Move this group into your account? It is stored on the server and synced to every device you sign in on.</value></data>
+  <data name="MoveToAccountConfirmYes" xml:space="preserve"><value>Move to my account</value></data>
+  <data name="AccountToLocalConfirm" xml:space="preserve"><value>Keep this group only on this device? It is removed from your account and the server, and disappears from your other devices.</value></data>
+  <data name="AccountToLocalConfirmYes" xml:space="preserve"><value>Keep on this device only</value></data>
 </root>

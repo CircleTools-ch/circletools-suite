@@ -13,7 +13,7 @@
         <MudText Typo="Typo.h6">@L["CreateGroup"]</MudText>
     </TitleContent>
     <DialogContent>
-        <MudTextField @bind-Value="_name" Immediate="true" OnKeyDown="OnKeyDown" AutoFocus="true"
+        <MudTextField @ref="_field" @bind-Value="_name" Immediate="true" OnKeyDown="OnKeyDown" AutoFocus="true"
                       Label="@L["NewGroupPlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
         <div class="mt-3">
             <StorageModeField Value="_mode" ValueChanged="@(m => _mode = m)" AccountEnabled="AccountEnabled" />
@@ -36,10 +36,22 @@
     /// <summary>Whether "My account" is selectable (a session is live).</summary>
     [Parameter] public bool AccountEnabled { get; set; }
 
+    private MudTextField<string> _field = default!;
     private string _name = string.Empty;
     private StorageMode _mode;
 
     protected override void OnInitialized() => _mode = Mode;
+
+    // Same focus dance as TextInputSheet: AutoFocus fires before the dialog transition settles on a phone,
+    // so the field never took focus and the keyboard stayed closed (UX review B8). Focus once it has appeared.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Task.Delay(150);
+            await _field.FocusAsync();
+        }
+    }
 
     private void Create()
     {

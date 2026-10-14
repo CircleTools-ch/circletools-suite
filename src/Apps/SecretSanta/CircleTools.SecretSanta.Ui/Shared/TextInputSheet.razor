@@ -6,6 +6,10 @@
 
 <MudDialog>
     <DialogContent>
+        @if (!string.IsNullOrWhiteSpace(Hint))
+        {
+            <MudText Typo="Typo.body2" Color="Color.Success" Class="mb-2" role="status">@Hint</MudText>
+        }
         <MudTextField @ref="_field" @bind-Value="_value" Immediate="true" Label="@Label" Variant="Variant.Outlined"
                       AutoFocus="true" OnKeyDown="OnKeyDownAsync" Class="mt-1" />
     </DialogContent>
@@ -32,6 +36,9 @@
     /// <summary>Optional initial text (e.g. the current name when renaming).</summary>
     [Parameter] public string? Initial { get; set; }
 
+    /// <summary>Optional status line above the field (e.g. who was just added when adding several in a row).</summary>
+    [Parameter] public string? Hint { get; set; }
+
     private MudTextField<string> _field = default!;
 
     private string _value = string.Empty;
@@ -41,14 +48,16 @@
     // MudBlazor's AutoFocus is unreliable for a field inside a dialog on mobile: it fires before the
     // sheet's slide-up transition finishes, so the field never really takes focus and the soft keyboard
     // stays closed. Focus explicitly once the sheet has settled so the user can start typing straight
-    // away — the caret sits at the end so an initial value (e.g. a name being renamed) stays editable.
+    // away. An initial value (a suggested event name, the name being renamed) is selected in full, so typing
+    // replaces it instead of appending to it ("Weihnachten 2026Weihnachten 2026"), while a tap still places
+    // the caret to edit it.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             await Task.Delay(150);
             await _field.FocusAsync();
-            await _field.SelectRangeAsync(_value.Length, _value.Length);
+            await _field.SelectRangeAsync(0, _value.Length);
         }
     }
 

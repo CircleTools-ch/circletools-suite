@@ -10,8 +10,8 @@ namespace CircleTools.SecretSanta.Ui.Test;
 
 /// <summary>
 /// The account-scoped visibility rule of <see cref="VisibleGroupsService"/> (ADR-0044): signed in shows
-/// every group, signed out shows only the account-free ones — account groups are hidden from the offline
-/// view (kept on the device, not deleted).
+/// the account-free groups plus that account's own, signed out shows only the account-free ones — account
+/// groups are hidden from the offline view (kept on the device, not deleted).
 /// </summary>
 public sealed class VisibleGroupsServiceTests
 {
@@ -30,13 +30,25 @@ public sealed class VisibleGroupsServiceTests
     }
 
     [Fact]
-    public async Task SignedIn_ShowsEveryGroup()
+    public async Task SignedIn_ShowsAccountFreeAndOwnAccountGroups()
     {
         var service = Build(signedInAs: Account);
 
         var visible = await service.GetVisibleAsync();
 
         Assert.Equal([AccountFreeId, AccountScopedId], visible.Select(g => g.Id));
+    }
+
+    [Fact]
+    public async Task SignedIn_HidesAnotherAccountsGroupCachedOnThisDevice()
+    {
+        // 2026-10-14 review: a group claimed into a different account (shared device / earlier sign-in)
+        // must not show up for the account signed in now.
+        var service = Build(signedInAs: Guid.Parse("44444444-4444-4444-4444-444444444444"));
+
+        var visible = await service.GetVisibleAsync();
+
+        Assert.Equal([AccountFreeId], visible.Select(g => g.Id));
     }
 
     private static VisibleGroupsService Build(Guid signedInAs)

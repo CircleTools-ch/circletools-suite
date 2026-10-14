@@ -1,5 +1,6 @@
 using CircleTools.SecretSanta.Core.Domain;
 using CircleTools.SecretSanta.LocalStore;
+using CircleTools.SecretSanta.LocalStore.Linking;
 
 namespace CircleTools.SecretSanta.Ui;
 
@@ -22,12 +23,16 @@ namespace CircleTools.SecretSanta.Ui;
 /// <param name="resolutions">Applies pending member-link resolutions onto the local groups.</param>
 /// <param name="publisher">Publishes a drawn group's linked-giver assignment rows.</param>
 /// <param name="groups">The local group repository, to publish each drawn group.</param>
+/// <param name="local">The local sync store holding the queued retractions of deleted groups.</param>
+/// <param name="linking">The linking API the queued retractions are sent to.</param>
 public sealed class SyncCoordinator(
     SyncService sync,
     OfflineProfileWriter profile,
     LinkResolutionApplier resolutions,
     AssignmentPublisher publisher,
-    IGroupRepository groups)
+    IGroupRepository groups,
+    ILocalSyncStore local,
+    ILinkingApi linking)
 {
     /// <summary>Reconciles the profile and links, runs one group cycle, then publishes drawn groups.</summary>
     /// <param name="accountId">The signed-in account — the only sync scope.</param>
@@ -40,9 +45,37 @@ public sealed class SyncCoordinator(
 
         var outcome = await sync.SyncNowAsync(accountId, cancellationToken);
 
+        await RetractDeletedGroupsAsync(cancellationToken);
         await PublishGroupsAsync(cancellationToken);
 
         return outcome;
+    }
+
+    // Sends the retractions queued by deleting a group that had linked members (ADR-0077), so a deleted
+    // group leaves every linked member's My assignments / My wishlists. Best-effort: one that fails (offline,
+    // server error) stays queued for the next cycle; the server side is idempotent.
+    private async Task RetractDeletedGroupsAsync(CancellationToken cancellationToken)
+    {
+        var state = await local.LoadStateAsync(cancellationToken);
+        if (state.Retractions is not { Count: > 0 } queued)
+        {
+            return;
+        }
+
+        var remaining = new List<Guid>();
+        foreach (var groupId in queued)
+        {
+            var result = await linking.RetractGroupAsync(groupId, cancellationToken);
+            if (!result.IsSuccess)
+            {
+                remaining.Add(groupId);
+            }
+        }
+
+        // Re-read before writing: the group cycle above may have saved the state (cursors, tombstones).
+        var latest = await local.LoadStateAsync(cancellationToken);
+        var stillQueued = (latest.Retractions ?? []).Where(id => remaining.Contains(id) || !queued.Contains(id)).ToList();
+        await local.SaveStateAsync(latest with { Retractions = stillQueued }, cancellationToken);
     }
 
     // Best-effort publication of every group's linking projection: its event registry (so linked members

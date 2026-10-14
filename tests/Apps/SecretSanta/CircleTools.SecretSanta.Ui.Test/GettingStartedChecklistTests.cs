@@ -46,7 +46,7 @@ public sealed class GettingStartedChecklistTests : IDisposable
 
         Assert.Contains("SetupTitle", cut.Markup);
         // "Name your group" + add members + add an occasion + draw names.
-        Assert.Equal(4, cut.FindAll(".mud-list-item").Count);
+        Assert.Equal(4, cut.FindAll(".ct-setup-step").Count);
     }
 
     [Fact]
@@ -66,8 +66,21 @@ public sealed class GettingStartedChecklistTests : IDisposable
         var cut = Render(Group(members: 2, events: 1));
 
         Assert.Contains("SetupTitle", cut.Markup); // draw not done yet, so still shown
-        var membersItem = cut.FindAll(".mud-list-item").Single(li => li.TextContent.Contains("GoToMembers"));
+        var membersItem = cut.FindAll(".ct-setup-step").Single(li => li.TextContent.Contains("GoToMembers"));
         Assert.DoesNotContain("line-through", membersItem.InnerHtml);
+    }
+
+    [Fact]
+    public void OpenSteps_AreButtons_DoneAndLockedStepsAreNot()
+    {
+        // UX review U8: an open step must read (and announce) as an action; done/locked ones must not.
+        var cut = Render(Group());
+
+        var steps = cut.FindAll(".ct-setup-step");
+        Assert.Null(steps.Single(s => s.TextContent.Contains("SetupStepName")).GetAttribute("role"));   // done
+        Assert.Equal("button", steps.Single(s => s.TextContent.Contains("GoToMembers")).GetAttribute("role"));
+        Assert.Equal("button", steps.Single(s => s.TextContent.Contains("SetupStepEvent")).GetAttribute("role"));
+        Assert.Null(steps.Single(s => s.TextContent.Contains("SetupStepDraw")).GetAttribute("role"));    // locked
     }
 
     [Fact]
@@ -75,7 +88,7 @@ public sealed class GettingStartedChecklistTests : IDisposable
     {
         var cut = Render(Group(members: 3));
 
-        var membersItem = cut.FindAll(".mud-list-item").Single(li => li.TextContent.Contains("GoToMembers"));
+        var membersItem = cut.FindAll(".ct-setup-step").Single(li => li.TextContent.Contains("GoToMembers"));
         Assert.Contains("line-through", membersItem.InnerHtml);
     }
 

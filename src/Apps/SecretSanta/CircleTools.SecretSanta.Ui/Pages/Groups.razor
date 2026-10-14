@@ -16,6 +16,7 @@
 @inject IDialogService Dialogs
 @inject StorageModePreferences StoragePrefs
 @inject ClaimableGroupsService Claimable
+@inject KeptLocalGroups KeptLocal
 @implements IDisposable
 
 <PageTitle>@L["GroupsTitle"]</PageTitle>
@@ -117,65 +118,58 @@ else
     <MudStack Spacing="2">
         @foreach (var group in _groups)
         {
+            @* One compact card per group (UX review U7): the whole card opens the group (a separate "Open"
+               button only repeated it), the facts sit on one line under the name, and pin + kebab are the
+               only controls. *@
             <MudCard Elevation="1">
-                <MudCardContent Class="pb-2">
-                    <div class="d-flex justify-space-between align-center flex-wrap gap-2">
-                        <div class="d-flex align-center flex-wrap gap-2">
-                            @* The name opens the group, the same as the Open button, so the whole row reads
-                               as a link — with keyboard support to match the button. *@
-                            <div class="ct-openable" role="button" tabindex="0"
-                                 @onclick="() => Open(group.Id)" @onkeydown="@(e => OpenOnEnter(e, group.Id))">
+                <MudCardContent Class="py-2 pr-1">
+                    <div class="d-flex align-center gap-1">
+                        <div class="ct-openable flex-grow-1" role="button" tabindex="0" style="min-width:0;"
+                             aria-label="@L["OpenNamed", group.Name]"
+                             @onclick="() => Open(group.Id)" @onkeydown="@(e => OpenOnEnter(e, group.Id))">
+                            <div class="d-flex align-center flex-wrap gap-2">
                                 <MudText Typo="Typo.subtitle1"><strong>@group.Name</strong></MudText>
+                                @if (group.AnyDrawInvalidated)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
+                                }
+                                else if (group.HasAnyDraw)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
+                                }
                             </div>
-                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                                @L["MembersColumn"]: @group.MemberCount
-                            </MudText>
-                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                                @L["EventsColumn"]: @group.EventCount
-                            </MudText>
-                            @* Per-group storage indicator (FR-048): where this group lives, at a glance —
-                               device / link / cloud. Mode is read from the sync record (ClaimableGroups),
-                               not the domain summary. *@
-                            @if (_modeByGroup.TryGetValue(group.Id, out var mode))
-                            {
-                                <MudTooltip Text="@L[StorageModeDisplay.LabelKey(mode)]">
-                                    <MudIcon Icon="@StorageModeDisplay.Icon(mode)" Size="Size.Small" Class="mud-text-secondary"
-                                             aria-label="@L[StorageModeDisplay.LabelKey(mode)]" />
-                                </MudTooltip>
-                            }
-                            @if (group.AnyDrawInvalidated)
-                            {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
-                            }
-                            else if (group.HasAnyDraw)
-                            {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
-                            }
+                            <div class="d-flex align-center flex-wrap gap-x-3 mud-text-secondary" style="column-gap:12px;">
+                                <MudText Typo="Typo.body2">@L["GroupCardCounts", group.MemberCount, group.EventCount]</MudText>
+                                @* Per-group storage indicator (FR-048): where this group lives — device / link /
+                                   cloud — now with its label, not an unexplained icon. Mode is read from the sync
+                                   record (ClaimableGroups), not the domain summary. *@
+                                @if (_modeByGroup.TryGetValue(group.Id, out var mode))
+                                {
+                                    <span class="d-inline-flex align-center gap-1">
+                                        <MudIcon Icon="@StorageModeDisplay.Icon(mode)" Size="Size.Small" aria-hidden="true" />
+                                        <MudText Typo="Typo.body2">@L[StorageModeDisplay.LabelKey(mode)]</MudText>
+                                    </span>
+                                }
+                            </div>
                         </div>
-                        <div class="d-flex align-center gap-1">
-                            <AuthorizeView>
-                                <Authorized>
-                                    @{
-                                        var isPinned = _pinned.Contains(group.Id);
-                                    }
-                                    <MudIconButton Icon="@(isPinned ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)"
-                                                   Color="@(isPinned ? Color.Warning : Color.Default)"
-                                                   OnClick="() => TogglePinAsync(group.Id)"
-                                                   aria-label="@(isPinned ? L["UnpinGroup"] : L["PinGroup"])" />
-                                </Authorized>
-                            </AuthorizeView>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
-                                       OnClick="() => Open(group.Id)">@L["Open"]</MudButton>
-                            @* Delete is destructive and rare, so it moves out of the row into an overflow
-                               menu — keeping a phone row to pin + Open + a single kebab. *@
-                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
-                                     AriaLabel="@L["MoreActions"]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                                <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error"
-                                             OnClick="() => AskDeleteAsync(group.Id, group.Name)">@L["Delete"]</MudMenuItem>
-                            </MudMenu>
-                        </div>
+                        <AuthorizeView>
+                            <Authorized>
+                                @{
+                                    var isPinned = _pinned.Contains(group.Id);
+                                }
+                                <MudIconButton Icon="@(isPinned ? Icons.Material.Filled.Star : Icons.Material.Filled.StarBorder)"
+                                               Color="@(isPinned ? Color.Warning : Color.Default)"
+                                               OnClick="() => TogglePinAsync(group.Id)"
+                                               aria-label="@(isPinned ? L["UnpinGroup"] : L["PinGroup"])" />
+                            </Authorized>
+                        </AuthorizeView>
+                        @* Delete is destructive and rare, so it lives in an overflow menu. *@
+                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
+                                 AriaLabel="@L["MoreActionsFor", group.Name]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                            <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error"
+                                         OnClick="() => AskDeleteAsync(group.Id, group.Name)">@L["Delete"]</MudMenuItem>
+                        </MudMenu>
                     </div>
-
                 </MudCardContent>
             </MudCard>
         }
@@ -326,6 +320,10 @@ else
         {
             _pinned = [];
         }
+
+        // Pinned first, then newest first (GuidV7 ids are time-ordered), so the group just created is at
+        // the top instead of below everything else (UX review U7).
+        _groups = [.. _groups.OrderByDescending(g => _pinned.Contains(g.Id)).ThenByDescending(g => g.Id)];
     }
 
     private async Task TogglePinAsync(Guid id)
@@ -378,13 +376,17 @@ else
         {
             var name = rawName.Trim();
             var id = await Sender.Send(new CreateGroupCommand(name));
+            var mode = ClampForAccount(chosenMode);
 
-            // The organizer is a member of the group they create. Signed in, add them and link their own
-            // account so their membership, wishlist and (once drawn) assignment are theirs on the My*
-            // screens (FR-032). Signed out there is no identity to add, so the group starts empty as before.
+            // The organizer is a member of the group they create. Signed in, add them; for a group that
+            // leaves the device (shared by link, my account) also link their own account so their
+            // membership, wishlist and (once drawn) assignment are theirs on the My* screens (FR-032).
+            // "On this device" is private (ADR-0073): a self-link would put the group's name, events and the
+            // organizer's assignment on the server, so it is not made automatically (ADR-0077) — the
+            // organizer can still link explicitly from Members. Signed out there is no identity to add.
             if (_accountId != Guid.Empty && !string.IsNullOrWhiteSpace(_displayName))
             {
-                await AddSelfAsync(id, name, _displayName.Trim());
+                await AddSelfAsync(id, name, _displayName.Trim(), link: mode != StorageMode.OnThisDevice);
             }
 
             // Apply the chosen storage mode (FR-038/ADR-0073): the picker value on wide screens, or the
@@ -392,10 +394,15 @@ else
             // "My account" marks the group for the account so the next sync cycle claims it (and it is NOT
             // just left as a plain local group, which now stays local); "On this device" stays local.
             // Account while signed out is clamped to local.
-            var mode = ClampForAccount(chosenMode);
             if (mode == StorageMode.SharedByLink)
             {
                 await SharedSync.ShareByLinkAsync(id);
+            }
+            else if (mode == StorageMode.OnThisDevice && _accountId != Guid.Empty)
+            {
+                // Chosen "On this device" while signed in: an explicit decision, so the sign-in
+                // reconciliation must not later ask to import it as if it were made while signed out.
+                await KeptLocal.AddAsync([id]);
             }
             else if (mode == StorageMode.Account)
             {
@@ -418,17 +425,22 @@ else
         }
     }
 
-    // Add the organizer as the first member and link their own account. Best-effort: the self-link needs
-    // the server, so an unreachable server just leaves them an unlinked member — still in the group, with
-    // the link applying on a later "Sync now". Applying the resolution here sets Member.UserId at once so
-    // the roster shows the link immediately rather than only after the next sync.
-    private async Task AddSelfAsync(Guid groupId, string groupName, string displayName)
+    // Add the organizer as the first member and, when asked, link their own account. Best-effort: the
+    // self-link needs the server, so an unreachable server just leaves them an unlinked member — still in
+    // the group, with the link applying on a later "Sync now". Applying the resolution here sets
+    // Member.UserId at once so the roster shows the link immediately rather than only after the next sync.
+    private async Task AddSelfAsync(Guid groupId, string groupName, string displayName, bool link)
     {
         try
         {
             var memberId = await Sender.Send(new AddMemberCommand(groupId, displayName));
-            var link = await Linking.SelfLinkAsync(new SelfLinkRequest(groupId, groupName, memberId, displayName));
-            if (link.IsSuccess)
+            if (!link)
+            {
+                return;
+            }
+
+            var selfLink = await Linking.SelfLinkAsync(new SelfLinkRequest(groupId, groupName, memberId, displayName));
+            if (selfLink.IsSuccess)
             {
                 await Resolutions.ApplyPendingAsync();
             }

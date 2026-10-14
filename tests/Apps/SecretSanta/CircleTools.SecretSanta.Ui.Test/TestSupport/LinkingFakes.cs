@@ -52,6 +52,14 @@ public sealed class FakeLinkingApi : ILinkingApi
     public Task<ApiResult> UnlinkMemberAsync(Guid groupId, Guid memberId, CancellationToken cancellationToken = default) =>
         Task.FromResult(ApiResult.Ok());
 
+    public List<Guid> Retracted { get; } = [];
+
+    public Task<ApiResult> RetractGroupAsync(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        Retracted.Add(groupId);
+        return Task.FromResult(ApiResult.Ok());
+    }
+
     public Task<ApiResult<MemberLinkResolutionsResponse>> DrainResolutionsAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(ApiResult.Ok(Resolutions));
 

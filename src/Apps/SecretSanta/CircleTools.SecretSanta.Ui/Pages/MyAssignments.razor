@@ -22,7 +22,7 @@
     <Authorized>
         <MudText Typo="Typo.h4" GutterBottom="true">@L["MyAssignmentsTitle"]</MudText>
         <MudText Class="mud-text-secondary">@L["MyAssignmentsLead"]</MudText>
-        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-4">@L["MyAssignmentsOperatorPrivacyNote"]</MudText>
+        <div class="mb-4"></div>
 
         @if (_error is not null)
         {
@@ -118,6 +118,10 @@
                 }
             </MudStack>
         }
+
+        @* The ADR-0020 operator-readable fact, stated plainly but as a "good to know" footnote under the
+           content rather than a warning at the top of a main screen (UX review P7). *@
+        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-6">@L["MyAssignmentsOperatorPrivacyNote"]</MudText>
     </Authorized>
     <NotAuthorized>
         <RedirectToLogin />

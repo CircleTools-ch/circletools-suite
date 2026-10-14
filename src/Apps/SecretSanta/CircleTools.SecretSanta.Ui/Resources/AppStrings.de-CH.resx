@@ -60,7 +60,7 @@
   <data name="WishlistLabel" xml:space="preserve"><value>Wunschliste (ein Eintrag pro Zeile)</value></data>
   <data name="NoMembers" xml:space="preserve"><value>Noch keine Mitglieder.</value></data>
   <data name="ExclusionsTitle" xml:space="preserve"><value>Ausschlüsse</value></data>
-  <data name="ExclusionHint" xml:space="preserve"><value>Der Schenkende wird der gewählten Person nicht zugelost.</value></data>
+  <data name="ExclusionHint" xml:space="preserve"><value>Lege fest, wer wen nicht ziehen darf – zum Beispiel Paare oder Geschwister, die sich ohnehin beschenken.</value></data>
   <data name="GiverLabel" xml:space="preserve"><value>Schenkende Person</value></data>
   <data name="RecipientLabel" xml:space="preserve"><value>Darf nicht beschenken</value></data>
   <data name="ExclusionRow" xml:space="preserve"><value>{0} darf {1} nicht beschenken</value></data>
@@ -120,14 +120,14 @@
   <data name="RevealButton" xml:space="preserve"><value>Zeig mir, wen ich beschenke</value></data>
   <data name="RevealRecipientLabel" xml:space="preserve"><value>Du bist Wichtel für</value></data>
   <data name="RevealWishlistLabel" xml:space="preserve"><value>Wunschliste</value></data>
-  <data name="RevealNoWishlist" xml:space="preserve"><value>Keine Wunschliste angegeben.</value></data>
+  <data name="RevealNoWishlist" xml:space="preserve"><value>Noch keine Wunschliste – vielleicht ist etwas Detektivarbeit gefragt.</value></data>
   <data name="RevealMalformed" xml:space="preserve"><value>Dieser Link ist ungültig oder unvollständig.</value></data>
   <data name="RevealPrimer" xml:space="preserve"><value>Das ist dein privater Wichtel-Link – nur du siehst, wen du beschenkst.</value></data>
   <data name="RevealSpoilerNote" xml:space="preserve"><value>Tippe auf die Schaltfläche, wenn du bereit bist - nicht schummeln!</value></data>
   <data name="SignIn" xml:space="preserve"><value>Anmelden</value></data>
   <data name="SignOut" xml:space="preserve"><value>Abmelden</value></data>
   <data name="SignedInAs" xml:space="preserve"><value>Angemeldet als {0}</value></data>
-  <data name="SyncStatusSynced" xml:space="preserve"><value>Aktuell</value></data>
+  <data name="SyncStatusSynced" xml:space="preserve"><value>Synchronisiert – alles auf dem neuesten Stand</value></data>
   <data name="SyncStatusSyncing" xml:space="preserve"><value>Wird synchronisiert…</value></data>
   <data name="SyncStatusOffline" xml:space="preserve"><value>Offline — Änderungen folgen später</value></data>
   <data name="SyncStatusFailed" xml:space="preserve"><value>Synchronisierung unterbrochen</value></data>
@@ -175,13 +175,13 @@
   <data name="FromCirclePeopleCountPlural" xml:space="preserve"><value>{0} Personen</value></data>
   <data name="MyAssignmentsTitle" xml:space="preserve"><value>Meine Zuteilungen</value></data>
   <data name="MyAssignmentsLead" xml:space="preserve"><value>Wen du in jeder Gruppe beschenkst, an der du teilnimmst.</value></data>
-  <data name="MyAssignmentsOperatorPrivacyNote" xml:space="preserve"><value>Wenn du angemeldet bist, wird deine Zuteilung auf dem Server gespeichert und dadurch geschützt, wer du bist – die Betreiberin kann sie technisch lesen.</value></data>
+  <data name="MyAssignmentsOperatorPrivacyNote" xml:space="preserve"><value>Gut zu wissen: Damit du deine Zuteilung auf allen deinen Geräten siehst, wird sie auf unserem Server gespeichert und nur deinem Konto angezeigt. Der Betreiber hat technisch Zugriff darauf.</value></data>
   <data name="MyAssignmentsNone" xml:space="preserve"><value>Du hast noch keine Zuteilungen. Sie erscheinen, sobald eine Organisatorin eine Gruppe ausgelost hat, in der du verknüpft bist.</value></data>
   <data name="MyAssignmentsOffline" xml:space="preserve"><value>Du bist offline. Für deine Zuteilungen braucht es eine Verbindung.</value></data>
   <data name="MyAssignmentsReadFailed" xml:space="preserve"><value>Deine Zuteilungen konnten nicht gelesen werden. Bitte versuche es erneut.</value></data>
   <data name="MyWishlistsTitle" xml:space="preserve"><value>Meine Wunschlisten</value></data>
   <data name="MyWishlistsLead" xml:space="preserve"><value>Deine eigene Wunschliste in jeder Gruppe, in der du verknüpft bist. Nur du kannst sie bearbeiten.</value></data>
-  <data name="MyWishlistsRevealLinkCaveat" xml:space="preserve"><value>In der App sieht die schenkende Person immer die aktuelle Version. Ein bereits geteilter Link zeigt die Wunschliste weiterhin so, wie sie beim Erstellen des Links war, bis ein neuer Link erstellt wird.</value></data>
+  <data name="MyWishlistsRevealLinkCaveat" xml:space="preserve"><value>Änderungen werden automatisch gespeichert. Ein bereits verschickter Link zeigt die alte Liste, bis die organisierende Person einen neuen schickt.</value></data>
   <data name="MyWishlistsNoMemberships" xml:space="preserve"><value>Du bist noch in keiner Gruppe verknüpft.</value></data>
   <data name="MyWishlistsCopyOfferLabel" xml:space="preserve"><value>Übernehmen von:</value></data>
   <data name="MyWishlistsAddPlaceholder" xml:space="preserve"><value>Wunsch hinzufügen</value></data>
@@ -363,4 +363,28 @@
   <data name="SettingsDefaultStorageHint" xml:space="preserve"><value>Neue Gruppen starten mit diesem Speicherort. Du kannst ihn pro Gruppe weiterhin ändern.</value></data>
   <data name="StorageStoredAs" xml:space="preserve"><value>Gespeichert</value></data>
   <data name="StorageChange" xml:space="preserve"><value>Ändern</value></data>
+  <data name="OpenNamed" xml:space="preserve"><value>{0} öffnen</value></data>
+  <data name="MoreActionsFor" xml:space="preserve"><value>Weitere Aktionen für {0}</value></data>
+  <data name="Done" xml:space="preserve"><value>Fertig</value></data>
+  <data name="MemberAddedAddAnother" xml:space="preserve"><value>{0} hinzugefügt. Nächste Person eingeben oder auf Fertig tippen.</value></data>
+  <data name="ExclusionPickPerson" xml:space="preserve"><value>Person wählen</value></data>
+  <data name="RevealNextStep" xml:space="preserve"><value>Du wirst auch beschenkt: Sag der organisierenden Person, was du dir wünschst – dann hat auch dein Wichtel Ideen.</value></data>
+  <data name="DrawSummary" xml:space="preserve"><value>{0} Personen machen mit · Ausschlüsse: {1}</value></data>
+  <data name="DrawBeforeNote" xml:space="preserve"><value>Die Auslosung passiert auf diesem Gerät. Hier sieht niemand, wer wen gezogen hat – auch du nicht. Jede Person erfährt es über ihren eigenen Link.</value></data>
+  <data name="DrawAgain" xml:space="preserve"><value>Neu auslosen</value></data>
+  <data name="Retry" xml:space="preserve"><value>Erneut versuchen</value></data>
+  <data name="RemoveNamed" xml:space="preserve"><value>{0} entfernen</value></data>
+  <data name="UnsavedChangesWarning" xml:space="preserve"><value>Du hast ungespeicherte Änderungen. Verlassen und Änderungen verwerfen?</value></data>
+  <data name="DiscardChanges" xml:space="preserve"><value>Verwerfen</value></data>
+  <data name="KeepEditing" xml:space="preserve"><value>Weiter bearbeiten</value></data>
+  <data name="GroupCardCounts" xml:space="preserve"><value>Mitglieder: {0} · Anlässe: {1}</value></data>
+  <data name="Mud_MudDialog_Close" xml:space="preserve"><value>Schliessen</value></data>
+  <data name="Mud_MudAlert_Close" xml:space="preserve"><value>Schliessen</value></data>
+  <data name="Mud_MudChip_Close" xml:space="preserve"><value>Entfernen</value></data>
+  <data name="Mud_MudSnackbar_Close" xml:space="preserve"><value>Schliessen</value></data>
+  <data name="Mud_MudNavGroup_ToggleExpand" xml:space="preserve"><value>{0} auf- oder zuklappen</value></data>
+  <data name="MoveToAccountConfirm" xml:space="preserve"><value>Diese Gruppe in dein Konto verschieben? Sie wird auf dem Server gespeichert und auf allen Geräten synchronisiert, auf denen du angemeldet bist.</value></data>
+  <data name="MoveToAccountConfirmYes" xml:space="preserve"><value>In mein Konto verschieben</value></data>
+  <data name="AccountToLocalConfirm" xml:space="preserve"><value>Diese Gruppe nur noch auf diesem Gerät behalten? Sie wird aus deinem Konto und vom Server entfernt und verschwindet von deinen anderen Geräten.</value></data>
+  <data name="AccountToLocalConfirmYes" xml:space="preserve"><value>Nur auf diesem Gerät</value></data>
 </root>

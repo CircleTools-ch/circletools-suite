@@ -127,7 +127,9 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
                 return new SyncOutcome(SyncStatus.Synced, 0, 0, 0, Unclaimed: 0, 0);
             }
 
-            records[index] = records[index] with { AccountScope = null, Dirty = false };
+            // Back to "On this device" as well as account-free: Mode is the authoritative intent
+            // (ADR-0073), and the auto-claim re-claims any Mode == Account group on the next cycle.
+            records[index] = records[index] with { AccountScope = null, Dirty = false, Mode = StorageMode.OnThisDevice };
             await local.SaveGroupsAsync(records, cancellationToken);
 
             return new SyncOutcome(SyncStatus.Synced, 0, 0, 0, Unclaimed: 1, 0);
@@ -476,7 +478,9 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
             if (index >= 0 && records[index].AccountScope is not null)
             {
                 // Un-claim keeps the local copy and makes it account-free again — it is not a delete.
-                records[index] = records[index] with { AccountScope = null, Dirty = false };
+                // The intent goes back to "On this device" too, or this device's auto-claim (Mode ==
+                // Account, ADR-0073) would undo the removal made on the other device.
+                records[index] = records[index] with { AccountScope = null, Dirty = false, Mode = StorageMode.OnThisDevice };
                 dropped++;
             }
         }

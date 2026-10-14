@@ -60,11 +60,11 @@
   <data name="WishlistLabel" xml:space="preserve"><value>Liste de souhaits (un élément par ligne)</value></data>
   <data name="NoMembers" xml:space="preserve"><value>Aucun membre pour l'instant.</value></data>
   <data name="ExclusionsTitle" xml:space="preserve"><value>Exclusions</value></data>
-  <data name="ExclusionHint" xml:space="preserve"><value>La personne offrant ne sera pas attribuée au destinataire choisi.</value></data>
+  <data name="ExclusionHint" xml:space="preserve"><value>Indiquez qui ne doit pas tirer qui — par exemple les couples, ou les frères et sœurs qui s'offrent déjà des cadeaux.</value></data>
   <data name="GiverLabel" xml:space="preserve"><value>Personne offrant</value></data>
   <data name="RecipientLabel" xml:space="preserve"><value>Ne doit pas offrir à</value></data>
   <data name="ExclusionRow" xml:space="preserve"><value>{0} ne doit pas offrir à {1}</value></data>
-  <data name="ExclusionRowMutual" xml:space="preserve"><value>{0} et {1} ne doivent pas s'offrir de cadeau</value></data>
+  <data name="ExclusionRowMutual" xml:space="preserve"><value>{0} et {1} ne se feront pas de cadeau entre eux</value></data>
   <data name="ExclusionBothWays" xml:space="preserve"><value>Dans les deux sens (aucun n'offre à l'autre)</value></data>
   <data name="AddExclusion" xml:space="preserve"><value>Ajouter une exclusion</value></data>
   <data name="NoExclusions" xml:space="preserve"><value>Aucune exclusion.</value></data>
@@ -120,14 +120,14 @@
   <data name="RevealButton" xml:space="preserve"><value>Découvrir qui vous avez tiré</value></data>
   <data name="RevealRecipientLabel" xml:space="preserve"><value>Vous êtes le Père Noël secret de</value></data>
   <data name="RevealWishlistLabel" xml:space="preserve"><value>Sa liste de souhaits</value></data>
-  <data name="RevealNoWishlist" xml:space="preserve"><value>Aucune liste de souhaits fournie.</value></data>
+  <data name="RevealNoWishlist" xml:space="preserve"><value>Pas encore de liste de souhaits — un peu d'enquête discrète s'impose peut-être.</value></data>
   <data name="RevealMalformed" xml:space="preserve"><value>Ce lien est invalide ou incomplet.</value></data>
   <data name="RevealPrimer" xml:space="preserve"><value>Ceci est votre lien privé de Père Noël secret — vous seul voyez qui vous avez tiré.</value></data>
   <data name="RevealSpoilerNote" xml:space="preserve"><value>Appuyez sur le bouton quand vous êtes prêt - pas de triche !</value></data>
   <data name="SignIn" xml:space="preserve"><value>Se connecter</value></data>
   <data name="SignOut" xml:space="preserve"><value>Se déconnecter</value></data>
   <data name="SignedInAs" xml:space="preserve"><value>Connecté en tant que {0}</value></data>
-  <data name="SyncStatusSynced" xml:space="preserve"><value>À jour</value></data>
+  <data name="SyncStatusSynced" xml:space="preserve"><value>Synchronisé — tout est à jour</value></data>
   <data name="SyncStatusSyncing" xml:space="preserve"><value>Synchronisation…</value></data>
   <data name="SyncStatusOffline" xml:space="preserve"><value>Hors ligne — les changements se synchroniseront plus tard</value></data>
   <data name="SyncStatusFailed" xml:space="preserve"><value>La synchronisation ne s'est pas terminée</value></data>
@@ -175,13 +175,13 @@
   <data name="FromCirclePeopleCountPlural" xml:space="preserve"><value>{0} personnes</value></data>
   <data name="MyAssignmentsTitle" xml:space="preserve"><value>Mes attributions</value></data>
   <data name="MyAssignmentsLead" xml:space="preserve"><value>À qui vous offrez, dans chaque groupe auquel vous participez.</value></data>
-  <data name="MyAssignmentsOperatorPrivacyNote" xml:space="preserve"><value>Lorsque vous êtes connecté, votre attribution est stockée sur le serveur et protégée par votre identité — l'exploitant peut techniquement la lire.</value></data>
+  <data name="MyAssignmentsOperatorPrivacyNote" xml:space="preserve"><value>Bon à savoir : pour que vous voyiez votre attribution sur tous vos appareils, elle est enregistrée sur notre serveur et affichée uniquement pour votre compte. L'exploitant y a techniquement accès.</value></data>
   <data name="MyAssignmentsNone" xml:space="preserve"><value>Vous n'avez pas encore d'attribution. Elles apparaissent dès qu'un organisateur a tiré au sort un groupe où vous êtes lié.</value></data>
   <data name="MyAssignmentsOffline" xml:space="preserve"><value>Vous êtes hors ligne. Vos attributions nécessitent une connexion.</value></data>
   <data name="MyAssignmentsReadFailed" xml:space="preserve"><value>Vos attributions n'ont pas pu être lues. Veuillez réessayer.</value></data>
   <data name="MyWishlistsTitle" xml:space="preserve"><value>Mes listes de souhaits</value></data>
   <data name="MyWishlistsLead" xml:space="preserve"><value>Votre propre liste de souhaits dans chaque groupe où vous êtes lié. Vous seul pouvez la modifier.</value></data>
-  <data name="MyWishlistsRevealLinkCaveat" xml:space="preserve"><value>Dans l'application, votre donneur voit toujours la dernière version. Un lien déjà partagé continue d'afficher la liste telle qu'elle était lors de sa création, jusqu'à ce qu'un nouveau lien soit émis.</value></data>
+  <data name="MyWishlistsRevealLinkCaveat" xml:space="preserve"><value>Les modifications sont enregistrées automatiquement. Un lien déjà envoyé affiche l'ancienne liste jusqu'à ce que la personne qui organise en envoie un nouveau.</value></data>
   <data name="MyWishlistsNoMemberships" xml:space="preserve"><value>Vous n'êtes encore lié dans aucun groupe.</value></data>
   <data name="MyWishlistsCopyOfferLabel" xml:space="preserve"><value>Copier depuis :</value></data>
   <data name="MyWishlistsAddPlaceholder" xml:space="preserve"><value>Ajouter un souhait</value></data>
@@ -363,4 +363,28 @@
   <data name="SettingsDefaultStorageHint" xml:space="preserve"><value>Les nouveaux groupes démarrent avec ce stockage. Vous pouvez toujours le changer pour chaque groupe.</value></data>
   <data name="StorageStoredAs" xml:space="preserve"><value>Stocké</value></data>
   <data name="StorageChange" xml:space="preserve"><value>Modifier</value></data>
+  <data name="OpenNamed" xml:space="preserve"><value>Ouvrir {0}</value></data>
+  <data name="MoreActionsFor" xml:space="preserve"><value>Plus d'actions pour {0}</value></data>
+  <data name="Done" xml:space="preserve"><value>Terminé</value></data>
+  <data name="MemberAddedAddAnother" xml:space="preserve"><value>{0} a été ajouté·e. Saisissez la personne suivante ou touchez Terminé.</value></data>
+  <data name="ExclusionPickPerson" xml:space="preserve"><value>Choisir une personne</value></data>
+  <data name="RevealNextStep" xml:space="preserve"><value>Vous recevrez aussi un cadeau : dites à la personne qui organise ce qui vous ferait plaisir, pour que votre Père Noël secret ait des idées.</value></data>
+  <data name="DrawSummary" xml:space="preserve"><value>{0} personnes participent · exclusions : {1}</value></data>
+  <data name="DrawBeforeNote" xml:space="preserve"><value>Le tirage a lieu sur cet appareil. Personne ne voit ici qui a tiré qui — pas même vous. Chacun le découvre grâce à son propre lien.</value></data>
+  <data name="DrawAgain" xml:space="preserve"><value>Refaire le tirage</value></data>
+  <data name="Retry" xml:space="preserve"><value>Réessayer</value></data>
+  <data name="RemoveNamed" xml:space="preserve"><value>Supprimer {0}</value></data>
+  <data name="UnsavedChangesWarning" xml:space="preserve"><value>Vous avez des modifications non enregistrées. Quitter et les abandonner ?</value></data>
+  <data name="DiscardChanges" xml:space="preserve"><value>Abandonner</value></data>
+  <data name="KeepEditing" xml:space="preserve"><value>Continuer</value></data>
+  <data name="GroupCardCounts" xml:space="preserve"><value>Membres : {0} · Événements : {1}</value></data>
+  <data name="Mud_MudDialog_Close" xml:space="preserve"><value>Fermer</value></data>
+  <data name="Mud_MudAlert_Close" xml:space="preserve"><value>Fermer</value></data>
+  <data name="Mud_MudChip_Close" xml:space="preserve"><value>Retirer</value></data>
+  <data name="Mud_MudSnackbar_Close" xml:space="preserve"><value>Fermer</value></data>
+  <data name="Mud_MudNavGroup_ToggleExpand" xml:space="preserve"><value>Afficher ou masquer {0}</value></data>
+  <data name="MoveToAccountConfirm" xml:space="preserve"><value>Déplacer ce groupe dans votre compte ? Il est enregistré sur le serveur et synchronisé sur tous les appareils où vous êtes connecté·e.</value></data>
+  <data name="MoveToAccountConfirmYes" xml:space="preserve"><value>Déplacer dans mon compte</value></data>
+  <data name="AccountToLocalConfirm" xml:space="preserve"><value>Garder ce groupe uniquement sur cet appareil ? Il est retiré de votre compte et du serveur, et disparaît de vos autres appareils.</value></data>
+  <data name="AccountToLocalConfirmYes" xml:space="preserve"><value>Uniquement sur cet appareil</value></data>
 </root>

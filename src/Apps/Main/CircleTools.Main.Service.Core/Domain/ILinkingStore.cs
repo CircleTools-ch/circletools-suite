@@ -216,6 +216,13 @@ public interface ILinkingStore
     /// </summary>
     Task UnlinkMemberAsync(Guid groupId, Guid memberId, Guid organizerAccountId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Retracts everything the linking store holds for a group the caller organizes — its event registry,
+    /// assignment projection, member-links, pending resolutions and the members' self-wishlists — because
+    /// the organizer deleted the group (ADR-0077). A no-op for a caller who does not organize the group.
+    /// </summary>
+    Task RetractGroupAsync(Guid groupId, Guid organizerAccountId, CancellationToken cancellationToken);
+
     /// <summary>Drains the pending link resolutions for groups owned by <paramref name="organizerAccountId"/>.</summary>
     Task<IReadOnlyList<LinkResolution>> DrainResolutionsAsync(Guid organizerAccountId, CancellationToken cancellationToken);
 

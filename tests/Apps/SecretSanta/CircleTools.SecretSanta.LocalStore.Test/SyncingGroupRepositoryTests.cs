@@ -93,6 +93,37 @@ public sealed class SyncingGroupRepositoryTests
     }
 
     [Fact]
+    public async Task Delete_GroupWithALinkedMember_QueuesARetraction_EvenWhenAccountFree()
+    {
+        // ADR-0077: a device-only (account-free) group whose member was linked has published its linking
+        // projection; deleting it must queue a retraction so it leaves the members' My* screens.
+        var (repo, local) = NewRepository();
+        var group = Group.Create("Family");
+        var memberId = group.AddMember("Alice");
+        group.LinkMember(memberId, Guid.NewGuid());
+        await repo.SaveAsync(group, default);
+
+        await repo.DeleteAsync(group.Id, default);
+
+        var state = await local.LoadStateAsync(default);
+        Assert.Equal([group.Id], state.Retractions);
+        Assert.Empty(state.Tombstones); // never on the server as a group document
+    }
+
+    [Fact]
+    public async Task Delete_GroupWithNoLinkedMember_QueuesNoRetraction()
+    {
+        var (repo, local) = NewRepository();
+        var group = GroupWith("Family", "Alice");
+        await repo.SaveAsync(group, default);
+
+        await repo.DeleteAsync(group.Id, default);
+
+        var state = await local.LoadStateAsync(default);
+        Assert.True(state.Retractions is null or { Count: 0 });
+    }
+
+    [Fact]
     public async Task Delete_ClaimedGroup_QueuesATombstoneForThatAccount()
     {
         var account = Guid.NewGuid();

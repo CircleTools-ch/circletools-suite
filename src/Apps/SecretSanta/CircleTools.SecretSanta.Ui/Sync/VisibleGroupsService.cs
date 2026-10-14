@@ -9,8 +9,10 @@ using Microsoft.AspNetCore.Components.Authorization;
 namespace CircleTools.SecretSanta.Ui;
 
 /// <summary>
-/// The account-scoped group list every group-listing surface reads (ADR-0044): <strong>all</strong>
-/// groups while signed in, <strong>only account-free</strong> groups while signed out.
+/// The account-scoped group list every group-listing surface reads (ADR-0044): the account-free groups
+/// plus <strong>this account's</strong> groups while signed in, <strong>only account-free</strong> groups
+/// while signed out. A group claimed into a <em>different</em> account that is still cached on this device
+/// (a shared device, or an earlier sign-in) is never shown to the current one (2026-10-14 review).
 /// </summary>
 /// <remarks>
 /// <para>
@@ -36,22 +38,22 @@ public sealed class VisibleGroupsService(
 {
     /// <summary>Reads the groups that should be visible for the current sign-in state.</summary>
     /// <param name="cancellationToken">Cancels the read.</param>
-    /// <returns>All groups when signed in; only account-free groups when signed out.</returns>
+    /// <returns>Account-free plus this account's groups when signed in; only account-free groups when signed out.</returns>
     public async Task<IReadOnlyList<GroupSummaryDto>> GetVisibleAsync(CancellationToken cancellationToken = default)
     {
         var groups = await sender.Send(new GetGroupsQuery(), cancellationToken);
 
         var state = await auth.GetAuthenticationStateAsync();
-        if (state.User.UserId() != Guid.Empty)
-        {
-            return groups;
-        }
+        var accountId = state.User.UserId();
 
         try
         {
             var all = await claimable.GetAllAsync(cancellationToken);
-            var accountFree = all.Where(g => g.IsAccountFree).Select(g => g.Id).ToHashSet();
-            return [.. groups.Where(g => accountFree.Contains(g.Id))];
+            var visible = all
+                .Where(g => g.IsAccountFree || (accountId != Guid.Empty && g.AccountScope == accountId))
+                .Select(g => g.Id)
+                .ToHashSet();
+            return [.. groups.Where(g => visible.Contains(g.Id))];
         }
         catch (StorageUnavailableException)
         {

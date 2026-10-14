@@ -12,15 +12,27 @@
 <div class="d-flex align-center flex-wrap gap-1">
     <MudIcon Icon="@StorageModeDisplay.Icon(Value)" Size="Size.Small" Class="mud-text-secondary" aria-hidden="true" />
     <MudText Typo="Typo.body2">@L["StorageStoredAs"]: <strong>@L[StorageModeDisplay.LabelKey(Value)]</strong></MudText>
+    @* Each option says what it means in one line (as Settings does) and the current one is checked
+       (UX review U3). The menu opens upward, so the dialog's Create button stays visible below it. *@
     <MudMenu Label="@L["StorageChange"]" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
-             EndIcon="@Icons.Material.Filled.ArrowDropDown" Dense="true"
-             AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
-        <MudMenuItem Icon="@StorageModeDisplay.Icon(StorageMode.OnThisDevice)"
-                     OnClick="@(() => SetAsync(StorageMode.OnThisDevice))">@L["ModeLocalTitle"]</MudMenuItem>
-        <MudMenuItem Icon="@StorageModeDisplay.Icon(StorageMode.SharedByLink)"
-                     OnClick="@(() => SetAsync(StorageMode.SharedByLink))">@L["ModeSharedTitle"]</MudMenuItem>
-        <MudMenuItem Icon="@StorageModeDisplay.Icon(StorageMode.Account)" Disabled="@(!AccountEnabled)"
-                     OnClick="@(() => SetAsync(StorageMode.Account))">@L["ModeAccountTitle"]</MudMenuItem>
+             EndIcon="@Icons.Material.Filled.ArrowDropDown"
+             AnchorOrigin="Origin.TopLeft" TransformOrigin="Origin.BottomLeft">
+        @foreach (var mode in Modes)
+        {
+            var enabled = mode != StorageMode.Account || AccountEnabled;
+            <MudMenuItem Disabled="@(!enabled)" OnClick="@(() => SetAsync(mode))"
+                         aria-checked="@(mode == Value ? "true" : "false")" role="menuitemradio">
+                <div class="d-flex align-start gap-3" style="max-width:20rem; white-space:normal;">
+                    <MudIcon Icon="@StorageModeDisplay.Icon(mode)" Size="Size.Small" Class="mt-1" />
+                    <div class="flex-grow-1">
+                        <MudText Typo="Typo.body1">@L[StorageModeDisplay.LabelKey(mode)]</MudText>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary">@Hint(mode, enabled)</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Primary"
+                             Class="mt-1" Style="@(mode == Value ? null : "visibility:hidden;")" aria-hidden="true" />
+                </div>
+            </MudMenuItem>
+        }
     </MudMenu>
 </div>
 
@@ -33,6 +45,15 @@
 
     /// <summary>Whether "My account" is selectable (a session is live).</summary>
     [Parameter] public bool AccountEnabled { get; set; } = true;
+
+    private static readonly StorageMode[] Modes = [StorageMode.OnThisDevice, StorageMode.SharedByLink, StorageMode.Account];
+
+    private string Hint(StorageMode mode, bool enabled) => mode switch
+    {
+        StorageMode.SharedByLink => L["ModeSharedHint"],
+        StorageMode.Account => enabled ? L["ModeAccountHint"] : L["ModeAccountSignInHint"],
+        _ => L["ModeLocalHint"],
+    };
 
     private Task SetAsync(StorageMode mode) => ValueChanged.InvokeAsync(mode);
 }

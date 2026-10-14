@@ -217,10 +217,16 @@ public sealed record AccountSyncCursor(Guid AccountId, long Cursor);
 /// </param>
 /// <param name="Cursors">The cursor reached on each account this device has synced.</param>
 /// <param name="Tombstones">Deletions queued for their next push, each bound to its account.</param>
+/// <param name="Retractions">
+/// Deleted groups whose linking projection (event registry, assignments, member-links) the server may
+/// still hold, queued until a signed-in sync retracts them (ADR-0077). Additive: an older state document
+/// without the field loads with none queued.
+/// </param>
 public sealed record SyncState(
     string DeviceId,
     IReadOnlyList<AccountSyncCursor> Cursors,
-    IReadOnlyList<PendingTombstone> Tombstones)
+    IReadOnlyList<PendingTombstone> Tombstones,
+    IReadOnlyList<Guid>? Retractions = null)
 {
     /// <summary>The cursor reached on <paramref name="accountId"/>, or zero if never synced there.</summary>
     /// <param name="accountId">The account whose cursor is wanted.</param>

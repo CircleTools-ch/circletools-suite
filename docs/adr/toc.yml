@@ -152,5 +152,7 @@
   href: 0075-operator-read-only-database-access.md
 - name: 0076 Docs site to private GitHub Pages
   href: 0076-docs-site-to-private-github-pages.md
+- name: 0077 Retract linking projection on group delete
+  href: 0077-retract-linking-projection-on-group-delete.md
 - name: Template
   href: _template-adr.md

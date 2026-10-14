@@ -88,6 +88,24 @@ lands and is verified on device.
   3. Consider backfilling `Mode = Account` for already-claimed records (cosmetic; the icon already derives
      it from `AccountScope`).
 
+### Amendment (2026-10-14) — every mode can be reached from every other
+
+The [2026-10-14 UX review](../brainstorming/2026-10-14-secret-santa-android-ux-review.md) (B9) found that
+Sharing & sync silently did nothing for two transitions. The radio moved, but the old mode came back on
+reload. Both are now wired, each behind a plain consequence prompt:
+
+- **On this device → My account:** `SyncService.MarkForAccountAsync` (the same intent the create flow
+  records), followed by an immediate sync request. It is offline-safe: the claim follows on the next
+  cycle.
+- **My account → On this device:** `SyncService.UnclaimAsync` (server first, then the local scope is
+  dropped; the copy is kept), for a group synced through the account store. A claimed shared group goes
+  back through release-to-link, then make-local. A group marked "My account" but not yet uploaded only has
+  its intent reset.
+- **My account → Shared by link** for a group synced through the account store: un-claim, then share.
+
+Un-claiming (here or on another device) now also resets `Mode` to "On this device". Without that, the
+auto-claim above (`Mode == Account`) would put the group straight back into the account on the next cycle.
+
 ## Pros and cons of the options
 
 ### 1. Keep behaviour, relabel UI

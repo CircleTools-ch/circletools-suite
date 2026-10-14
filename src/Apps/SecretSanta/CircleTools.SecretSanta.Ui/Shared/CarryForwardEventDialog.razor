@@ -64,14 +64,15 @@
     private string EventLabel(string name) => string.IsNullOrWhiteSpace(name) ? L["DefaultEventName"] : name;
 
     // Same focus dance as TextInputSheet: MudBlazor's AutoFocus fires before the dialog transition settles,
-    // so focus the field once the sheet has appeared and place the caret at the end of the pre-filled name.
+    // so focus the field once the sheet has appeared and select the whole pre-filled name, so typing replaces
+    // the suggestion rather than appending to it.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             await Task.Delay(150);
             await _field.FocusAsync();
-            await _field.SelectRangeAsync(_name.Length, _name.Length);
+            await _field.SelectRangeAsync(0, _name.Length);
         }
     }
 

@@ -33,6 +33,12 @@ public interface ILinkingApi
     /// <summary>Unlinks a member the caller organizes, by group and member (the pair the organizer's client holds).</summary>
     Task<ApiResult> UnlinkMemberAsync(Guid groupId, Guid memberId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Retracts everything the server projects for a group the caller organizes (event registry, assignments,
+    /// member-links, self-wishlists) because the organizer deleted it (ADR-0077). Idempotent.
+    /// </summary>
+    Task<ApiResult> RetractGroupAsync(Guid groupId, CancellationToken cancellationToken = default);
+
     /// <summary>Drains the pending link resolutions for the caller's own groups, to apply on the sync cycle.</summary>
     Task<ApiResult<MemberLinkResolutionsResponse>> DrainResolutionsAsync(CancellationToken cancellationToken = default);
 

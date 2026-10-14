@@ -1,10 +1,15 @@
 @page "/groups/{GroupId:guid}/events/{EventId:guid}/details"
 @inject ISender Sender
 @inject IStringLocalizer<AppStrings> L
+@inject IDialogService Dialogs
 
 <PageTitle>@L["EventDetailsTitle"]</PageTitle>
 
 <EventBackNav GroupId="GroupId" EventId="EventId" />
+
+@* Leaving with unsaved edits used to drop them silently (UX review B5): ask first. Covers in-app links, the
+   app bar and the Android Back gesture (a history navigation); a full page unload gets the browser prompt. *@
+<NavigationLock OnBeforeInternalNavigation="ConfirmLeaveAsync" ConfirmExternalNavigation="@IsDirty" />
 <MudText Typo="Typo.h4" GutterBottom="true">@L["NavEventDetails"]</MudText>
 
 @if (_event is null)
@@ -33,8 +38,12 @@ else
                                      Margin="Margin.Dense" Step="0.01M" Min="0" HideSpinButtons="true" Style="max-width:9rem;" />
                     <MudTextField @bind-Value="_budgetCurrency" Label="@L["CurrencyLabel"]" Variant="Variant.Outlined"
                                   Margin="Margin.Dense" MaxLength="3" Immediate="true" Style="max-width:7rem;" />
-                    @* Clears both amounts locally; the budget is removed when the form is saved with no maximum. *@
-                    <MudButton Variant="Variant.Outlined" OnClick="ClearBudget">@L["ClearBudget"]</MudButton>
+                    @* Clears both amounts locally; the budget is removed when the form is saved with no maximum.
+                       Only offered when there is a budget to remove (UX review P4). *@
+                    @if (_budgetAmount is not null || _budgetMinAmount is not null)
+                    {
+                        <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="ClearBudget">@L["ClearBudget"]</MudButton>
+                    }
                 </MudStack>
                 @if (_budgetError is not null)
                 {
@@ -61,7 +70,8 @@ else
                     else
                     {
                         <MudTextField @bind-Value="EventDateText" Label="@L["DateLabel"]" Variant="Variant.Outlined"
-                                      Margin="Margin.Dense" InputType="InputType.Date" Class="ct-date-field"
+                                      Margin="Margin.Dense" InputType="InputType.Date"
+                                      Class="@(_eventDate is null ? "ct-date-field ct-date-empty" : "ct-date-field")"
                                       Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.CalendarMonth" />
                     }
                     <MudTextField @bind-Value="_eventLocation" Label="@L["LocationLabel"]" Variant="Variant.Outlined"
@@ -73,7 +83,8 @@ else
         </MudCard>
 
         <div>
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveAsync">@L["Save"]</MudButton>
+            <MudButton Color="Color.Primary" Variant="@(IsDirty ? Variant.Filled : Variant.Outlined)"
+                       OnClick="SaveAsync" id="save-event">@L["Save"]</MudButton>
         </div>
 
         @if (_status is not null)
@@ -105,6 +116,21 @@ else
     private string _eventDescription = string.Empty;
     private string? _status;
     private string? _budgetError;
+    // The form as last loaded/saved, to tell whether there are unsaved edits (B5).
+    private string _savedSnapshot = string.Empty;
+
+    private string Snapshot() =>
+        string.Join('|', _name, _budgetAmount, _budgetMinAmount, _budgetCurrency, EventDateText, _eventLocation, _eventDescription);
+
+    private bool IsDirty => _event is not null && Snapshot() != _savedSnapshot;
+
+    private async Task ConfirmLeaveAsync(LocationChangingContext context)
+    {
+        if (IsDirty && !await Dialogs.ShowConfirmSheetAsync(L["UnsavedChangesWarning"], L["DiscardChanges"], L["KeepEditing"]))
+        {
+            context.PreventNavigation();
+        }
+    }
 
     // Adapts the DateTime? model to the invariant "yyyy-MM-dd" string a native <input type="date"> uses
     // (device head only). Empty string clears the date.
@@ -136,6 +162,7 @@ else
         _eventDate = _event.Details?.Date?.DateTime;
         _eventLocation = _event.Details?.Location ?? string.Empty;
         _eventDescription = _event.Details?.Description ?? string.Empty;
+        _savedSnapshot = Snapshot();
     }
 
     // Clears the amount locally only; the budget is actually removed when the form is saved with no

@@ -34,36 +34,52 @@ else
         <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true" role="alert">@L["DrawInvalidatedNotice"]</MudAlert>
     }
 
-    <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="mb-3"
-               StartIcon="@Icons.Material.Filled.Casino" OnClick="OnDrawClickedAsync" Disabled="@_busy">@L["RunDraw"]</MudButton>
-
-    @if (_result is not null)
+    @* What is about to be drawn, before the button (UX review U2): who takes part, how many exclusions
+       apply, and that nobody - the organizer included - sees the pairings here. *@
+    @if (!Drawn)
     {
-        @if (_result.Success)
+        <MudPaper Outlined="true" Class="pa-3 mb-3" id="draw-summary">
+            <MudText><strong>@L["DrawSummary", _memberCount, _exclusionCount]</strong></MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mt-1">@_memberNames</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mt-2">@L["DrawBeforeNote"]</MudText>
+        </MudPaper>
+    }
+
+    @if (_result is not null && !_result.Success)
+    {
+        <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3" role="alert">@FailureMessage(_result.FailureReason)</MudAlert>
+        @* Escape hatch (FR-035 5a): if the failure is because carrying forward left no room to avoid
+           last time's pairings, let the organizer draw anyway, ignoring that one constraint. *@
+        @if (_event.HasCarriedForwardBaseline)
         {
-            <MudAlert Severity="Severity.Success" Class="mb-3">
-                <MudText>@L["DrawSuccess"]</MudText>
-                <MudText>@L["DrawAssignmentCount", _result.AssignmentCount]</MudText>
-                <MudText>@L["DrawSpoilerNote"]</MudText>
-            </MudAlert>
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="GoToShare">@L["NavShare"]</MudButton>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Error" Dense="true" role="alert">@FailureMessage(_result.FailureReason)</MudAlert>
-            @* Escape hatch (FR-035 5a): if the failure is because carrying forward left no room to avoid
-               last time's pairings, let the organizer draw anyway, ignoring that one constraint. *@
-            @if (_event.HasCarriedForwardBaseline)
-            {
-                <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mt-2"
-                           OnClick="() => RunAsync(ignoreBaseline: true)" Disabled="@_busy">@L["DrawIgnoreBaseline"]</MudButton>
-            }
+            <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mb-3"
+                       OnClick="() => RunAsync(ignoreBaseline: true)" Disabled="@_busy">@L["DrawIgnoreBaseline"]</MudButton>
         }
     }
-    else if (_event.HasCurrentDraw)
+
+    @if (Drawn)
     {
-        <MudAlert Severity="Severity.Info" Class="mb-3">@L["DrawSpoilerNote"]</MudAlert>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="GoToShare">@L["NavShare"]</MudButton>
+        <MudAlert Severity="Severity.Success" Class="mb-3">
+            @if (_result is { Success: true })
+            {
+                <MudText>@L["DrawSuccess"]</MudText>
+                <MudText>@L["DrawAssignmentCount", _result.AssignmentCount]</MudText>
+            }
+            <MudText>@L["DrawSpoilerNote"]</MudText>
+        </MudAlert>
+        @* Once drawn, the next step is handing out the links, so that is the primary action; drawing again
+           is the rare, destructive one and steps back to an outlined button (UX review U2). *@
+        <div class="d-flex flex-wrap gap-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Share"
+                       OnClick="GoToShare" id="go-share">@L["NavShare"]</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Casino"
+                       OnClick="OnDrawClickedAsync" Disabled="@_busy" id="redraw-btn">@L["DrawAgain"]</MudButton>
+        </div>
+    }
+    else
+    {
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Size="Size.Large"
+                   StartIcon="@Icons.Material.Filled.Casino" OnClick="OnDrawClickedAsync" Disabled="@_busy" id="draw-btn">@L["RunDraw"]</MudButton>
     }
 }
 
@@ -78,6 +94,8 @@ else
 
     private EventDto? _event;
     private int _memberCount;
+    private int _exclusionCount;
+    private string _memberNames = string.Empty;
     private RunDrawResultDto? _result;
     private bool _busy;
 
@@ -101,7 +119,12 @@ else
         _event = await Sender.Send(new GetEventQuery(GroupId, EventId));
         var group = await Sender.Send(new GetGroupQuery(GroupId));
         _memberCount = group?.Members.Count ?? 0;
+        _exclusionCount = group?.Exclusions.Count ?? 0;
+        _memberNames = string.Join(", ", group?.Members.Select(m => m.Name) ?? []);
     }
+
+    // A current, valid draw exists (just run here, or from before) — the page then leads with sharing.
+    private bool Drawn => _result is { Success: true } || (_result is null && _event?.HasCurrentDraw == true);
 
     /// <summary>
     /// Re-drawing silently invalidates links the organizer may already have sent (ADR-0014 links

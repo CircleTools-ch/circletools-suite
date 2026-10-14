@@ -5,12 +5,18 @@
 @inject ILinkingApi Linking
 @inject IStringLocalizer<AppStrings> L
 @inject TimeProvider Time
+@inject IDialogService Dialogs
 
 @*
     Edit my own wishlist (FR-030). A linked member owns their wishlist per membership. In-app reveal is
     always current; a giver holding an already-issued reveal link keeps seeing the old text until it is
     re-issued — the member is told so here. A new membership can copy a previous wishlist.
+    Every change saves itself (UX review B5): adding, removing or copying saves at once and an edited line
+    saves when the field loses focus, so there is no separate Save step to forget. A wish typed but not yet
+    added, or a save that failed, guards navigation away.
 *@
+
+<NavigationLock OnBeforeInternalNavigation="ConfirmLeaveAsync" ConfirmExternalNavigation="@AnyUnsaved" />
 
 <PageTitle>@L["MyWishlistsTitle"]</PageTitle>
 
@@ -18,7 +24,7 @@
     <Authorized>
         <MudText Typo="Typo.h4" GutterBottom="true">@L["MyWishlistsTitle"]</MudText>
         <MudText Class="mud-text-secondary mb-2">@L["MyWishlistsLead"]</MudText>
-        <MudAlert Severity="Severity.Normal" Dense="true" Class="mb-4" role="note">@L["MyWishlistsRevealLinkCaveat"]</MudAlert>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mb-4" role="note">@L["MyWishlistsRevealLinkCaveat"]</MudText>
 
         @if (_error is not null)
         {
@@ -62,10 +68,11 @@
                                     var index = i;
                                     <div class="d-flex align-center gap-2">
                                         <MudTextField @bind-Value="editor.Items[index]" Immediate="true"
-                                                      Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" />
+                                                      Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1"
+                                                      OnBlur="() => SaveIfChangedAsync(editor)" />
                                         <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error"
-                                                       Size="Size.Small" OnClick="() => editor.Items.RemoveAt(index)"
-                                                       aria-label="@L["Remove"]" />
+                                                       Size="Size.Small" OnClick="() => RemoveItemAsync(editor, index)"
+                                                       aria-label="@L["RemoveNamed", editor.Items[index]]" />
                                     </div>
                                 }
                             </MudStack>
@@ -81,18 +88,20 @@
                                 </MudButton>
                             </div>
 
-                            <div class="d-flex align-center gap-2">
-                                <MudButton Color="Color.Primary" Variant="Variant.Filled"
-                                           OnClick="() => SaveAsync(editor)" Disabled="@editor.Busy">
-                                    @L["MyWishlistsSave"]
-                                </MudButton>
-                                @if (editor.Saved)
+                            <div class="d-flex align-center gap-2" style="min-height:2.25rem;">
+                                @if (editor.Busy)
                                 {
-                                    <MudText Color="Color.Success" Typo="Typo.body2" role="status">@L["MyWishlistsSaved"]</MudText>
+                                    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
                                 }
                                 else if (editor.SaveError is not null)
                                 {
                                     <MudText Color="Color.Error" Typo="Typo.body2" role="alert">@editor.SaveError</MudText>
+                                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
+                                               OnClick="() => SaveAsync(editor)">@L["Retry"]</MudButton>
+                                }
+                                else if (editor.Saved)
+                                {
+                                    <MudText Color="Color.Success" Typo="Typo.body2" role="status">@L["MyWishlistsSaved"]</MudText>
                                 }
                             </div>
                         </MudCardContent>
@@ -114,6 +123,9 @@
         public Guid EventId { get; init; }
         public string EventName { get; init; } = string.Empty;
         public List<string> Items { get; init; } = [];
+        // The items as last stored on the server, to tell whether an edit still needs saving.
+        public List<string> SavedItems { get; set; } = [];
+        public bool Unsaved => !Items.SequenceEqual(SavedItems) || !string.IsNullOrWhiteSpace(NewItem);
         public string NewItem { get; set; } = string.Empty;
         public bool Busy { get; set; }
         public bool Saved { get; set; }
@@ -157,6 +169,7 @@
                 EventId = m.EventId,
                 EventName = m.EventName,
                 Items = existing.TryGetValue((m.GroupId, m.EventId), out var items) ? [.. items] : [],
+                SavedItems = existing.TryGetValue((m.GroupId, m.EventId), out var saved) ? [.. saved] : [],
             })
             .ToList();
     }
@@ -164,26 +177,44 @@
     private IEnumerable<WishlistEditor> _copyableFrom(WishlistEditor target) =>
         _editors!.Where(e => (e.GroupId != target.GroupId || e.EventId != target.EventId) && e.Items.Count > 0);
 
-    private void CopyFrom(WishlistEditor target, WishlistEditor source)
+    private Task CopyFrom(WishlistEditor target, WishlistEditor source)
     {
         target.Items.Clear();
         target.Items.AddRange(source.Items);
+        return SaveAsync(target);
     }
 
-    private void OnAddKeyDown(KeyboardEventArgs args, WishlistEditor editor)
+    private Task OnAddKeyDown(KeyboardEventArgs args, WishlistEditor editor) =>
+        args.Key == "Enter" ? AddItem(editor) : Task.CompletedTask;
+
+    private Task AddItem(WishlistEditor editor)
     {
-        if (args.Key == "Enter")
+        if (string.IsNullOrWhiteSpace(editor.NewItem))
         {
-            AddItem(editor);
+            return Task.CompletedTask;
         }
+
+        editor.Items.Add(editor.NewItem.Trim());
+        editor.NewItem = string.Empty;
+        return SaveAsync(editor);
     }
 
-    private void AddItem(WishlistEditor editor)
+    private Task RemoveItemAsync(WishlistEditor editor, int index)
     {
-        if (!string.IsNullOrWhiteSpace(editor.NewItem))
+        editor.Items.RemoveAt(index);
+        return SaveAsync(editor);
+    }
+
+    private Task SaveIfChangedAsync(WishlistEditor editor) =>
+        editor.Items.SequenceEqual(editor.SavedItems) ? Task.CompletedTask : SaveAsync(editor);
+
+    private bool AnyUnsaved => _editors?.Any(e => e.Unsaved) ?? false;
+
+    private async Task ConfirmLeaveAsync(LocationChangingContext context)
+    {
+        if (AnyUnsaved && !await Dialogs.ShowConfirmSheetAsync(L["UnsavedChangesWarning"], L["DiscardChanges"], L["KeepEditing"]))
         {
-            editor.Items.Add(editor.NewItem.Trim());
-            editor.NewItem = string.Empty;
+            context.PreventNavigation();
         }
     }
 
@@ -199,6 +230,7 @@
         if (result.IsSuccess)
         {
             editor.Saved = true;
+            editor.SavedItems = [.. editor.Items];
         }
         else
         {

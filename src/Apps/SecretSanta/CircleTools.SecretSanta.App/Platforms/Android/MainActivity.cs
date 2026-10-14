@@ -83,22 +83,65 @@ public class MainActivity : MauiAppCompatActivity
         }
     }
 
+    // Closes the top-most open overlay (a MudBlazor dialog, menu/select popover or the temporary drawer) by
+    // clicking its scrim — exactly what a tap outside it does — and reports whether there was one. Android
+    // users expect Back to dismiss an open sheet or drawer before it navigates (B2, 2026-10-14 review).
+    private const string CloseTopOverlayScript = """
+        (function () {
+          var overlays = Array.prototype.filter.call(document.querySelectorAll('.mud-overlay'), function (o) {
+            var r = o.getBoundingClientRect();
+            return r.width > 0 && r.height > 0 && getComputedStyle(o).visibility !== 'hidden';
+          });
+          if (overlays.length === 0) { return false; }
+          overlays[overlays.length - 1].click();
+          return true;
+        })();
+        """;
+
     private sealed class WebViewBackCallback(MainActivity activity) : AndroidX.Activity.OnBackPressedCallback(true)
     {
         public override void HandleOnBackPressed()
         {
             var webView = CurrentWebView;
-            if (webView is not null && webView.CanGoBack())
+            if (webView is null)
             {
-                webView.GoBack();
+                ExitToSystem();
                 return;
             }
 
-            // No in-app history left: disable this callback and re-dispatch so the system's default
-            // behaviour (home / task switcher) runs — the normal "exit the app" Back at the root.
+            // First let an open drawer / dialog / menu close; only when nothing was open does Back navigate.
+            webView.EvaluateJavascript(CloseTopOverlayScript, new ValueCallback(closed =>
+            {
+                if (closed == "true")
+                {
+                    return;
+                }
+
+                if (webView.CanGoBack())
+                {
+                    webView.GoBack();
+                    return;
+                }
+
+                ExitToSystem();
+            }));
+        }
+
+        // No in-app history left: step aside for one dispatch so the system default (home / task switcher)
+        // runs — the normal "exit the app" Back at the root. Re-enabled right after (and again on resume):
+        // leaving it disabled made every later Back skip the app's own history and overlays.
+        private void ExitToSystem()
+        {
             Enabled = false;
             activity.OnBackPressedDispatcher.OnBackPressed();
+            Enabled = true;
         }
+    }
+
+    // Bridges WebView.evaluateJavascript's result callback to a delegate.
+    private sealed class ValueCallback(Action<string?> onResult) : Java.Lang.Object, Android.Webkit.IValueCallback
+    {
+        public void OnReceiveValue(Java.Lang.Object? value) => onResult(value?.ToString());
     }
 
     protected override void OnNewIntent(Intent? intent)

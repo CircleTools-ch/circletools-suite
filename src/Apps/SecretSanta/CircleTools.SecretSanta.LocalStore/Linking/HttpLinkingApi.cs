@@ -55,6 +55,10 @@ public sealed class HttpLinkingApi(HttpClient client) : ILinkingApi
         SendNoContentAsync(HttpMethod.Delete, $"{Groups}/{groupId}/members/{memberId}/link", content: null, cancellationToken);
 
     /// <inheritdoc />
+    public Task<ApiResult> RetractGroupAsync(Guid groupId, CancellationToken cancellationToken = default) =>
+        SendNoContentAsync(HttpMethod.Delete, $"{Groups}/{groupId}/linking", content: null, cancellationToken);
+
+    /// <inheritdoc />
     public Task<ApiResult<MemberLinkResolutionsResponse>> DrainResolutionsAsync(CancellationToken cancellationToken = default) =>
         GetAsync($"{MemberLinks}/resolutions", LinkingJsonContext.Default.MemberLinkResolutionsResponse, cancellationToken);
 

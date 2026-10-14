@@ -25,6 +25,12 @@ namespace CircleTools.SecretSanta.Contracts;
 /// or <see langword="null"/> when unset. Additive and optional like <paramref name="BudgetMin"/>:
 /// omitted from the link when absent, so the payload version is unchanged.
 /// </param>
+/// <param name="GroupName">
+/// The group's name, so a person in two exchanges can tell which one this link belongs to (UX review U4,
+/// 2026-10-14). Additive and optional like <paramref name="GiftNote"/>: an older link decodes to
+/// <see langword="null"/> and the page simply omits the line.
+/// </param>
+/// <param name="EventName">The occasion's name (e.g. "Christmas 2026"); additive and optional, as above.</param>
 public sealed record RevealPayload(
     [property: JsonPropertyName("v")] int Version,
     [property: JsonPropertyName("n")] string RecipientName,
@@ -35,7 +41,9 @@ public sealed record RevealPayload(
     [property: JsonPropertyName("el")] string? EventLocation,
     [property: JsonPropertyName("en")] string? EventNotes,
     [property: JsonPropertyName("bm")] decimal? BudgetMin = null,
-    [property: JsonPropertyName("gn")] string? GiftNote = null)
+    [property: JsonPropertyName("gn")] string? GiftNote = null,
+    [property: JsonPropertyName("gr")] string? GroupName = null,
+    [property: JsonPropertyName("on")] string? EventName = null)
 {
     /// <summary>The current reveal-payload format version.</summary>
     public const int CurrentVersion = 1;

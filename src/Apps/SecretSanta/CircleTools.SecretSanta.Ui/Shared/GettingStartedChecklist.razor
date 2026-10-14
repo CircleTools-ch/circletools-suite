@@ -22,18 +22,29 @@
             <MudSpacer />
             <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Default" OnClick="DismissAsync">@L["SetupSkip"]</MudButton>
         </div>
-        <MudList T="string" Dense="true" Class="pa-0">
+        @* Each open step is a real button with a chevron (UX review U8): as plain list rows they did not
+           read as tappable, and assistive tech did not announce them as actions. Done or locked steps are
+           shown for progress only. *@
+        <div class="d-flex flex-column">
             @foreach (var step in Steps)
             {
-                <MudListItem T="string" Disabled="@(!step.Enabled)"
-                             OnClick="@(async () => await step.OnClick())"
-                             Icon="@(step.Done ? Icons.Material.Filled.CheckCircle : Icons.Material.Outlined.RadioButtonUnchecked)"
-                             IconColor="@(step.Done ? Color.Success : Color.Primary)">
-                    <span class="@(step.Done ? "mud-text-secondary" : null)"
-                          style="@(step.Done ? "text-decoration:line-through;" : null)">@step.Label</span>
-                </MudListItem>
+                var actionable = step.Enabled && !step.Done;
+                <div class="@(actionable ? "ct-openable ct-setup-step d-flex align-center gap-3 py-2 px-1" : "ct-setup-step d-flex align-center gap-3 py-2 px-1")"
+                     role="@(actionable ? "button" : null)" tabindex="@(actionable ? "0" : null)"
+                     aria-disabled="@(step.Enabled ? null : "true")"
+                     @onclick="@(async () => { if (actionable) { await step.OnClick(); } })"
+                     @onkeydown="@(async e => { if (actionable && e.Key is "Enter" or " ") { await step.OnClick(); } })">
+                    <MudIcon Icon="@(step.Done ? Icons.Material.Filled.CheckCircle : Icons.Material.Outlined.RadioButtonUnchecked)"
+                             Color="@(step.Done ? Color.Success : step.Enabled ? Color.Primary : Color.Default)" Size="Size.Small" />
+                    <MudText Class="@(step.Done || !step.Enabled ? "flex-grow-1 mud-text-secondary" : "flex-grow-1")"
+                             Style="@(step.Done ? "text-decoration:line-through;" : null)">@step.Label</MudText>
+                    @if (actionable)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Color="Color.Primary" />
+                    }
+                </div>
             }
-        </MudList>
+        </div>
     </MudPaper>
 }
 

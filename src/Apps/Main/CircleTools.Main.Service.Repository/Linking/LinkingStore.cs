@@ -270,6 +270,37 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    /// <inheritdoc />
+    public async Task RetractGroupAsync(Guid groupId, Guid organizerAccountId, CancellationToken cancellationToken)
+    {
+        await using var transaction = await context.Database
+            .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        // Only the organizer retracts: every row below is scoped to the caller as organizer, and the
+        // members' self-wishlists (which carry no organizer column) go only once the caller is proven to
+        // organize this group — a stranger's call deletes nothing.
+        var organizes =
+            await context.MemberLinks.AnyAsync(m => m.GroupId == groupId && m.OrganizerAccountId == organizerAccountId, cancellationToken).ConfigureAwait(false)
+            || await context.GroupEvents.AnyAsync(e => e.GroupId == groupId && e.OrganizerAccountId == organizerAccountId, cancellationToken).ConfigureAwait(false)
+            || await context.Assignments.AnyAsync(a => a.GroupId == groupId && a.OrganizerAccountId == organizerAccountId, cancellationToken).ConfigureAwait(false);
+
+        if (organizes)
+        {
+            await context.MemberWishlists.Where(w => w.GroupId == groupId)
+                .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+            await context.Assignments.Where(a => a.GroupId == groupId && a.OrganizerAccountId == organizerAccountId)
+                .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+            await context.GroupEvents.Where(e => e.GroupId == groupId && e.OrganizerAccountId == organizerAccountId)
+                .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+            await context.Resolutions.Where(r => r.GroupId == groupId && r.OrganizerAccountId == organizerAccountId)
+                .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+            await context.MemberLinks.Where(m => m.GroupId == groupId && m.OrganizerAccountId == organizerAccountId)
+                .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
     // Unlink: the row is closed (not deleted) so a former member's read degrades to "gone", not a 403.
     // The account's assignment and wishlist rows go; the member and its wishlist content survive on the
     // organizer's group document.

@@ -82,15 +82,35 @@ public sealed class SyncingGroupRepository(ILocalSyncStore local) : IGroupReposi
         // Only a claimed group needs a tombstone: the server holds a copy that must be told to delete,
         // and the account's other devices must drop theirs. An account-free group was never on the
         // server, so its deletion is purely local.
-        if (removed.AccountScope is { } accountId)
+        var claimed = removed.AccountScope is not null;
+
+        // Any group with a linked member has had its linking projection published (event registry,
+        // assignments, member-links) — whatever its storage mode. Queue a retraction so the next signed-in
+        // sync removes it and the group leaves every linked member's My assignments / My wishlists
+        // (ADR-0077). Queued rather than called here: deleting works offline, the retraction follows.
+        var linked = removed.State.Members.Any(m => m.UserId is not null);
+
+        if (claimed || linked)
         {
             var stateDoc = await local.LoadStateAsync(cancellationToken);
-            var tombstone = new PendingTombstone(accountId, SyncKinds.Group, id, removed.Version);
-            var tombstones = stateDoc.Tombstones
-                .Where(t => t.Id != id)
-                .Append(tombstone)
-                .ToList();
-            await local.SaveStateAsync(stateDoc with { Tombstones = tombstones }, cancellationToken);
+            if (removed.AccountScope is { } accountId)
+            {
+                var tombstone = new PendingTombstone(accountId, SyncKinds.Group, id, removed.Version);
+                stateDoc = stateDoc with
+                {
+                    Tombstones = stateDoc.Tombstones.Where(t => t.Id != id).Append(tombstone).ToList(),
+                };
+            }
+
+            if (linked)
+            {
+                stateDoc = stateDoc with
+                {
+                    Retractions = (stateDoc.Retractions ?? []).Where(r => r != id).Append(id).ToList(),
+                };
+            }
+
+            await local.SaveStateAsync(stateDoc, cancellationToken);
         }
     }
 }

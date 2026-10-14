@@ -147,6 +147,21 @@ the confusing case the sign-in banner was added to explain. Two changes make thi
   disclosure (that a *specific* address the organizer typed maps to one of their *own* already-linked
   members) was judged an acceptable trade for immediate, honest feedback on a duplicate.
 
+### Amendment (2026-10-14) — visibility is per account; a "keep local" answer is remembered
+
+Found while testing sign-in / sign-out on the
+[2026-10-14 UX review](../brainstorming/2026-10-14-secret-santa-android-ux-review.md):
+
+- **Signed in, only the current account's groups are shown** (plus the account-free ones), not "all
+  groups". A group claimed into a *different* account and still cached on the device (a shared device,
+  or an earlier sign-in) used to appear for whoever signed in next, labelled "My account". It stays
+  cached, as on sign-out, but is hidden until its own account signs in again (`VisibleGroupsService`).
+- **The reconciliation prompt does not re-ask about groups already decided.** Answering "Cancel" (keep
+  local) used to bring the same prompt back on every sign-in. Worse, it also counted groups deliberately
+  created "On this device" *while signed in* as "created while signed out". Both decisions are now
+  remembered device-locally (`KeptLocalGroups`), and the prompt lists only undecided account-free groups.
+  Moving a kept group into the account later is still one tap in Sharing & sync.
+
 ## Pros and cons of the options
 
 ### 1. Keep the manual model

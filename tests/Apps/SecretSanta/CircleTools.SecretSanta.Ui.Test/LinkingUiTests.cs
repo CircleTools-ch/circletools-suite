@@ -236,17 +236,45 @@ public sealed class MembersPageLinkGuardTests : IDisposable
         var cut = _ctx.RenderComponent<Members>(p => p.Add(m => m.GroupId, groupId));
 
         ClickButton(cut, "MemberLink");                          // open the link box
-        cut.Find("input[type=email]").Input("adrian@test.ch");   // our own address
+        TypeEmail(cut, "adrian@test.ch");   // our own address
         ClickButton(cut, "MemberLinkSend");
 
-        Assert.Contains("MemberLinkVerifyEmailFirst", cut.Markup);
+        // The action runs from the overflow menu's popover; wait for the page to re-render with its outcome.
+        cut.WaitForAssertion(() => Assert.Contains("MemberLinkVerifyEmailFirst", cut.Markup));
         Assert.Empty(api.SentLinks); // short-circuited before any server call
     }
 
-    // Exact match: the roster now also has a "MemberLinkWithMyAccount" button whose key contains
-    // "MemberLink", so a Contains match would be ambiguous.
-    private static void ClickButton(IRenderedComponent<Members> cut, string text) =>
-        cut.FindAll("button").First(b => b.TextContent.Trim() == text).Click();
+    private IRenderedComponent<MudBlazor.MudPopoverProvider>? _popover;
+
+    // Exact match: the roster also has a "MemberLinkWithMyAccount" action whose key contains "MemberLink",
+    // so a Contains match would be ambiguous. Per-member actions (link, unlink, self-link) live in the row's
+    // overflow menu (UX review U5): when no page button matches, open the first row's menu and pick the item
+    // from the popover the menu renders into.
+    // Types into the link box's address field inside the renderer's dispatcher (see ClickButton).
+    private static void TypeEmail(IRenderedComponent<Members> cut, string address) =>
+        cut.InvokeAsync(() => cut.Find("input[type=email]").Input(address)).GetAwaiter().GetResult();
+
+    private void ClickButton(IRenderedComponent<Members> cut, string text)
+    {
+        // Find and click inside the renderer's dispatcher (bUnit's documented fix): the menu closing and the
+        // bound input re-render the page right after the previous step, and an element found outside the
+        // dispatcher can have a retired handler id by the time it is clicked.
+        var clicked = cut.InvokeAsync(() =>
+        {
+            var button = cut.FindAll("button").FirstOrDefault(b => b.TextContent.Trim() == text);
+            button?.Click();
+            return button is not null;
+        }).GetAwaiter().GetResult();
+        if (clicked)
+        {
+            return;
+        }
+
+        _popover ??= _ctx.RenderComponent<MudBlazor.MudPopoverProvider>();
+        cut.InvokeAsync(() => cut.FindAll("button").First(b => b.GetAttribute("aria-label") == "MoreActionsFor").Click()).GetAwaiter().GetResult();
+        _popover.WaitForAssertion(() => Assert.Contains(_popover.FindAll(".mud-menu-item"), i => i.TextContent.Trim() == text));
+        _popover.InvokeAsync(() => _popover.FindAll(".mud-menu-item").First(i => i.TextContent.Trim() == text).Click()).GetAwaiter().GetResult();
+    }
 
     /// <inheritdoc />
     public void Dispose() => _ctx.Dispose();
@@ -285,7 +313,8 @@ public sealed class MembersPageSelfLinkTests : IDisposable
 
         var self = Assert.Single(api.SelfLinks);
         Assert.Equal(member.Id, self.MemberId);
-        Assert.Contains("MemberLinkSelfLinked", cut.Markup);
+        // The action runs from the overflow menu's popover; wait for the page to re-render with its outcome.
+        cut.WaitForAssertion(() => Assert.Contains("MemberLinkSelfLinked", cut.Markup));
     }
 
     [Fact]
@@ -298,7 +327,11 @@ public sealed class MembersPageSelfLinkTests : IDisposable
 
         var cut = _ctx.RenderComponent<Members>(p => p.Add(m => m.GroupId, groupId));
 
-        Assert.DoesNotContain("MemberLinkWithMyAccount", cut.Markup);
+        // The per-member actions live in the row's overflow menu: open it and inspect what it offers.
+        _popover ??= _ctx.RenderComponent<MudBlazor.MudPopoverProvider>();
+        cut.FindAll("button").First(b => b.GetAttribute("aria-label") == "MoreActionsFor").Click();
+        _popover.WaitForAssertion(() => Assert.Contains(_popover.FindAll(".mud-menu-item"), i => i.TextContent.Trim() == "MemberUnlink"));
+        Assert.DoesNotContain(_popover.FindAll(".mud-menu-item"), i => i.TextContent.Trim() == "MemberLinkWithMyAccount");
     }
 
     [Fact]
@@ -312,10 +345,11 @@ public sealed class MembersPageSelfLinkTests : IDisposable
         var cut = _ctx.RenderComponent<Members>(p => p.Add(m => m.GroupId, groupId));
 
         ClickButton(cut, "MemberLink");
-        cut.Find("input[type=email]").Input("someone-else@test.ch");
+        TypeEmail(cut, "someone-else@test.ch");
         ClickButton(cut, "MemberLinkSend");
 
-        Assert.Contains("MemberLinkAlreadyInGroup", cut.Markup);
+        // The action runs from the overflow menu's popover; wait for the page to re-render with its outcome.
+        cut.WaitForAssertion(() => Assert.Contains("MemberLinkAlreadyInGroup", cut.Markup));
     }
 
     private void SignInWithGroup(Guid groupId, MemberDto member, out FakeLinkingApi api)
@@ -336,8 +370,37 @@ public sealed class MembersPageSelfLinkTests : IDisposable
             new Claim("email_verified", "true"));
     }
 
-    private static void ClickButton(IRenderedComponent<Members> cut, string text) =>
-        cut.FindAll("button").First(b => b.TextContent.Trim() == text).Click();
+    private IRenderedComponent<MudBlazor.MudPopoverProvider>? _popover;
+
+    // Exact match: the roster also has a "MemberLinkWithMyAccount" action whose key contains "MemberLink",
+    // so a Contains match would be ambiguous. Per-member actions (link, unlink, self-link) live in the row's
+    // overflow menu (UX review U5): when no page button matches, open the first row's menu and pick the item
+    // from the popover the menu renders into.
+    // Types into the link box's address field inside the renderer's dispatcher (see ClickButton).
+    private static void TypeEmail(IRenderedComponent<Members> cut, string address) =>
+        cut.InvokeAsync(() => cut.Find("input[type=email]").Input(address)).GetAwaiter().GetResult();
+
+    private void ClickButton(IRenderedComponent<Members> cut, string text)
+    {
+        // Find and click inside the renderer's dispatcher (bUnit's documented fix): the menu closing and the
+        // bound input re-render the page right after the previous step, and an element found outside the
+        // dispatcher can have a retired handler id by the time it is clicked.
+        var clicked = cut.InvokeAsync(() =>
+        {
+            var button = cut.FindAll("button").FirstOrDefault(b => b.TextContent.Trim() == text);
+            button?.Click();
+            return button is not null;
+        }).GetAwaiter().GetResult();
+        if (clicked)
+        {
+            return;
+        }
+
+        _popover ??= _ctx.RenderComponent<MudBlazor.MudPopoverProvider>();
+        cut.InvokeAsync(() => cut.FindAll("button").First(b => b.GetAttribute("aria-label") == "MoreActionsFor").Click()).GetAwaiter().GetResult();
+        _popover.WaitForAssertion(() => Assert.Contains(_popover.FindAll(".mud-menu-item"), i => i.TextContent.Trim() == text));
+        _popover.InvokeAsync(() => _popover.FindAll(".mud-menu-item").First(i => i.TextContent.Trim() == text).Click()).GetAwaiter().GetResult();
+    }
 
     /// <inheritdoc />
     public void Dispose() => _ctx.Dispose();

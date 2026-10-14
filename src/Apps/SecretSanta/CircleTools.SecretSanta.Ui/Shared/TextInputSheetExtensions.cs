@@ -18,6 +18,7 @@ public static class TextInputSheetExtensions
     /// <param name="confirmLabel">Label for the confirming action.</param>
     /// <param name="cancelLabel">Label for the dismissing action.</param>
     /// <param name="initial">Optional initial text (e.g. the current name when renaming).</param>
+    /// <param name="hint">Optional line above the field (e.g. "Anna added - next name?" when adding several).</param>
     /// <returns>The entered text, or <see langword="null"/> if cancelled.</returns>
     public static async Task<string?> ShowTextInputSheetAsync(
         this IDialogService dialogs,
@@ -25,7 +26,8 @@ public static class TextInputSheetExtensions
         string label,
         string confirmLabel,
         string cancelLabel,
-        string? initial = null)
+        string? initial = null,
+        string? hint = null)
     {
         var parameters = new DialogParameters<TextInputSheet>
         {
@@ -33,6 +35,7 @@ public static class TextInputSheetExtensions
             { x => x.ConfirmLabel, confirmLabel },
             { x => x.CancelLabel, cancelLabel },
             { x => x.Initial, initial },
+            { x => x.Hint, hint },
         };
 
         // Centered, matching the create-group sheet (NewGroupDialog). A top-anchored sheet sat under the

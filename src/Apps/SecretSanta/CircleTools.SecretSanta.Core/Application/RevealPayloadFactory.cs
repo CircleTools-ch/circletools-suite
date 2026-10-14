@@ -59,7 +59,9 @@ public static class RevealPayloadFactory
                 occasion.EventDetails?.Location,
                 occasion.EventDetails?.Description,
                 occasion.Budget?.MinAmount,
-                string.IsNullOrEmpty(recipient.GiftNote) ? null : recipient.GiftNote);
+                string.IsNullOrEmpty(recipient.GiftNote) ? null : recipient.GiftNote,
+                string.IsNullOrWhiteSpace(group.Name) ? null : group.Name,
+                string.IsNullOrWhiteSpace(occasion.Name) ? null : occasion.Name);
 
             built.Add(new Built(giver.Id, giver.Name, payload));
         }

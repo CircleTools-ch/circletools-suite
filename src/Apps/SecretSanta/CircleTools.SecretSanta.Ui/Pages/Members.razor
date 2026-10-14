@@ -60,7 +60,7 @@ else
         @foreach (var member in _members)
         {
             <MudCard Elevation="1">
-                <MudCardContent>
+                <MudCardContent Class="py-2">
                     @if (_editingId == member.Id)
                     {
                         <MudStack Spacing="2">
@@ -80,42 +80,16 @@ else
                     }
                     else
                     {
-                        <div class="d-flex justify-space-between align-start flex-wrap gap-2">
-                            <div>
+                        <div class="d-flex justify-space-between align-center gap-2">
+                            <div class="d-flex align-center flex-wrap gap-2" style="min-width:0;">
                                 <MudText Typo="Typo.subtitle1"><strong>@member.Name</strong></MudText>
-                                @if (!string.IsNullOrWhiteSpace(member.GiftNote))
-                                {
-                                    @* A stable per-person note the giver sees on the reveal (FR-037). *@
-                                    <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["GiftNoteLabel"]: @member.GiftNote</MudText>
-                                }
-                            </div>
-                            <div class="d-flex align-center flex-wrap gap-1">
-                                @* Linking is an account-only action (it calls the authorized server API), so
-                                   only show it when signed in. Edit/Remove are local and always available, but
-                                   moved into a per-row overflow menu so the row stays a single tap-friendly line
-                                   on a phone instead of a cramped cluster of small buttons. *@
                                 <AuthorizeView>
                                     @if (member.UserId is not null)
                                     {
                                         <MudTooltip Text="@L["MemberLinkedTitle"]">
-                                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text">@L["MemberLinkedBadge"]</MudChip>
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text"
+                                                     Icon="@Icons.Material.Filled.AccountCircle">@L["MemberLinkedBadge"]</MudChip>
                                         </MudTooltip>
-                                        <MudButton Variant="Variant.Outlined"
-                                                   OnClick="() => UnlinkAsync(member.Id)" Disabled="@_linkBusy">@L["MemberUnlink"]</MudButton>
-                                    }
-                                    else
-                                    {
-                                        @* The one-click self-link is the simplest way to become this member: no
-                                           address, no email confirmation, and — because one account backs at most
-                                           one member per group — offered only while none of my members is me yet. *@
-                                        @if (!_iAmLinkedInGroup)
-                                        {
-                                            <MudButton Variant="Variant.Filled" Color="Color.Info"
-                                                       StartIcon="@Icons.Material.Filled.AccountCircle"
-                                                       OnClick="() => LinkWithMyAccountAsync(member)" Disabled="@_linkBusy">@L["MemberLinkWithMyAccount"]</MudButton>
-                                        }
-                                        <MudButton Variant="Variant.Outlined" Color="Color.Info"
-                                                   OnClick="() => BeginLink(member.Id)">@L["MemberLink"]</MudButton>
                                     }
                                 </AuthorizeView>
                                 @if (_isSharedAdmin && _claimedMembers.Contains(member.Id))
@@ -123,16 +97,45 @@ else
                                     <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text"
                                              Icon="@Icons.Material.Filled.HowToReg">@L["MemberClaimedBadge"]</MudChip>
                                 }
-                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
-                                         AriaLabel="@L["MoreActions"]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                                    <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => BeginEdit(member)">@L["Edit"]</MudMenuItem>
-                                    @if (_isSharedAdmin && _claimedMembers.Contains(member.Id))
-                                    {
-                                        <MudMenuItem Icon="@Icons.Material.Filled.PersonOff" OnClick="() => ReleaseMemberAsync(member.Id, member.Name)">@L["ReleaseMember"]</MudMenuItem>
-                                    }
-                                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="() => AskRemoveAsync(member.Id, member.Name)">@L["Remove"]</MudMenuItem>
-                                </MudMenu>
+                                @if (!string.IsNullOrWhiteSpace(member.GiftNote))
+                                {
+                                    @* A stable per-person note the giver sees on the reveal (FR-037). *@
+                                    <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="flex-basis:100%;">@L["GiftNoteLabel"]: @member.GiftNote</MudText>
+                                }
                             </div>
+                            @* Every per-person action lives in one overflow menu, so a row is just the name and a
+                               kebab - one clean line on a phone. Linking an account is an occasional, advanced
+                               step (and account-only, since it calls the authorized server API), so it sits in
+                               the menu rather than as a prominent button on every row. *@
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
+                                     AriaLabel="@L["MoreActionsFor", member.Name]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                                <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => BeginEdit(member)">@L["Edit"]</MudMenuItem>
+                                <AuthorizeView>
+                                    @if (member.UserId is not null)
+                                    {
+                                        <MudMenuItem Icon="@Icons.Material.Filled.LinkOff" Disabled="@_linkBusy"
+                                                     OnClick="() => UnlinkAsync(member.Id)">@L["MemberUnlink"]</MudMenuItem>
+                                    }
+                                    else
+                                    {
+                                        @* The one-click self-link is the simplest way to become this member: no
+                                           address, no email confirmation, and - because one account backs at most
+                                           one member per group - offered only while none of my members is me yet. *@
+                                        @if (!_iAmLinkedInGroup)
+                                        {
+                                            <MudMenuItem Icon="@Icons.Material.Filled.AccountCircle" Disabled="@_linkBusy"
+                                                         OnClick="() => LinkWithMyAccountAsync(member)">@L["MemberLinkWithMyAccount"]</MudMenuItem>
+                                        }
+                                        <MudMenuItem Icon="@Icons.Material.Filled.Link"
+                                                     OnClick="() => BeginLink(member.Id)">@L["MemberLink"]</MudMenuItem>
+                                    }
+                                </AuthorizeView>
+                                @if (_isSharedAdmin && _claimedMembers.Contains(member.Id))
+                                {
+                                    <MudMenuItem Icon="@Icons.Material.Filled.PersonOff" OnClick="() => ReleaseMemberAsync(member.Id, member.Name)">@L["ReleaseMember"]</MudMenuItem>
+                                }
+                                <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="() => AskRemoveAsync(member.Id, member.Name)">@L["Remove"]</MudMenuItem>
+                            </MudMenu>
                         </div>
 
                         @* Send a member-link request: the member owns their wishlist and sees their own
@@ -375,21 +378,32 @@ else
     // The inline card (wide screens) adds from the bound field.
     private Task AddAsync() => AddNamedAsync(_newName);
 
-    // The phone FAB (FEAT-008 W4) collects the name in a bottom sheet, then adds it.
+    // The phone FAB (FEAT-008 W4) collects the name in a bottom sheet, then adds it. A family is 6-12
+    // people, so after each add the sheet comes straight back (saying who was just added) for the next
+    // name; "Done" or an empty dismiss ends the loop. A failed add (duplicate name) stops it so the error
+    // on the page is seen.
     private async Task AddViaFabAsync()
     {
-        var name = await Dialogs.ShowTextInputSheetAsync(L["AddMember"], L["NameLabel"], L["AddMember"], L["Cancel"]);
-        if (!string.IsNullOrWhiteSpace(name))
+        string? hint = null;
+        while (true)
         {
-            await AddNamedAsync(name);
+            var name = await Dialogs.ShowTextInputSheetAsync(
+                L["AddMember"], L["NameLabel"], L["AddMember"], hint is null ? L["Cancel"] : L["Done"], hint: hint);
+            if (string.IsNullOrWhiteSpace(name) || !await AddNamedAsync(name))
+            {
+                return;
+            }
+
+            StateHasChanged();
+            hint = L["MemberAddedAddAnother", name.Trim()];
         }
     }
 
-    private async Task AddNamedAsync(string name)
+    private async Task<bool> AddNamedAsync(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            return;
+            return false;
         }
 
         _error = null;
@@ -398,6 +412,7 @@ else
             await Sender.Send(new AddMemberCommand(GroupId, name));
             _newName = string.Empty;
             await LoadAsync();
+            return true;
         }
         catch (CircleTools.SecretSanta.Core.Domain.DuplicateMemberNameException exception)
         {
@@ -407,6 +422,8 @@ else
         {
             _error = L["MemberSaveFailed"];
         }
+
+        return false;
     }
 
     private void BeginEdit(MemberDto member)

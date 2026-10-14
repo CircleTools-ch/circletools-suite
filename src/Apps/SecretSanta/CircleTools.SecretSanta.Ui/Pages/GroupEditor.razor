@@ -72,12 +72,13 @@ else
        list leads. *@
     <MudHidden Breakpoint="Breakpoint.SmAndDown">
         <div class="d-flex gap-2 align-start flex-wrap mb-4">
+            @* The localized default ("Christmas 2026") is the placeholder, not a pre-filled value: typing
+               starts a fresh name instead of appending to the suggestion, and an empty field adds the default. *@
             <MudTextField @bind-Value="_newEventName" Immediate="true" OnKeyDown="OnNewEventKeyDown"
-                          Label="@L["EventNameLabel"]" Placeholder="@L["EventNamePlaceholder"]"
+                          Label="@L["EventNameLabel"]" Placeholder="@DefaultEventName()"
                           Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" Style="min-width:12rem;" />
             <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddEventAsync"
-                       StartIcon="@Icons.Material.Filled.Add" Class="mt-1"
-                       Disabled="@string.IsNullOrWhiteSpace(_newEventName)">@L["AddEvent"]</MudButton>
+                       StartIcon="@Icons.Material.Filled.Add" Class="mt-1">@L["AddEvent"]</MudButton>
         </div>
     </MudHidden>
 
@@ -92,7 +93,7 @@ else
         @foreach (var occasion in _group.Events)
         {
             <MudCard Elevation="1">
-                <MudCardContent Class="pb-2">
+                <MudCardContent Class="py-2">
                     @if (_editingId == occasion.Id)
                     {
                         <div class="d-flex gap-2 align-center flex-wrap">
@@ -104,13 +105,13 @@ else
                     }
                     else
                     {
-                        <div class="d-flex justify-space-between align-center flex-wrap gap-2">
-                            <div class="d-flex align-center flex-wrap gap-2">
-                                @* The name opens the occasion, the same as the Open button. *@
-                                <div class="ct-openable" role="button" tabindex="0"
-                                     @onclick="() => Open(occasion.Id)" @onkeydown="@(e => OpenOnEnter(e, occasion.Id))">
-                                    <MudText Typo="Typo.subtitle1"><strong>@EventLabel(occasion.Name)</strong></MudText>
-                                </div>
+                        <div class="d-flex justify-space-between align-center gap-2">
+                            @* The whole row opens the occasion (one big tap target); a separate "Open"
+                               button only repeated it. The chevron says the row navigates. *@
+                            <div class="ct-openable d-flex align-center flex-wrap gap-2 flex-grow-1" role="button" tabindex="0"
+                                 aria-label="@L["OpenNamed", EventLabel(occasion.Name)]"
+                                 @onclick="() => Open(occasion.Id)" @onkeydown="@(e => OpenOnEnter(e, occasion.Id))">
+                                <MudText Typo="Typo.subtitle1"><strong>@EventLabel(occasion.Name)</strong></MudText>
                                 @if (occasion.DrawInvalidatedByMembershipChange)
                                 {
                                     <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
@@ -121,10 +122,8 @@ else
                                 }
                             </div>
                             <div class="d-flex align-center gap-1">
-                                <MudButton Variant="Variant.Outlined" Color="Color.Primary"
-                                           OnClick="() => Open(occasion.Id)">@L["Open"]</MudButton>
-                                @* Rename/Remove fold into an overflow menu so the row stays Open + a single
-                                   kebab on a phone rather than three crowded small buttons. *@
+                                @* Rename/Remove fold into an overflow menu so the row stays a single tap
+                                   target + one kebab on a phone rather than crowded small buttons. *@
                                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
                                          AriaLabel="@L["MoreActions"]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                                     <MudMenuItem Icon="@Icons.Material.Filled.Edit"
@@ -135,6 +134,8 @@ else
                                                      OnClick="() => AskRemove(occasion.Id)">@L["Remove"]</MudMenuItem>
                                     }
                                 </MudMenu>
+                                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Class="ct-openable"
+                                         @onclick="() => Open(occasion.Id)" />
                             </div>
                         </div>
 
@@ -154,6 +155,14 @@ else
             </MudCard>
         }
     </MudStack>
+
+    @* Add an occasion on phones: an inline button right under the occasions it adds to (the wide screens'
+       inline field owns it there). It replaced a floating button that covered the section rows below
+       (UX review P2). *@
+    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="AddEventViaFabAsync" Class="mt-3" id="add-event-btn">@L["AddEvent"]</MudButton>
+    </MudHidden>
 
     @* Shared group sections (ADR-0055 group level): the roster and exclusions apply across every
        occasion, so they sit below the events as their own destinations rather than as tabs. *@
@@ -195,16 +204,6 @@ else
         </MudPaper>
     </MudStack>
 
-    @* Add an occasion via a FAB on phones; the inline field owns it on wide. The spacer keeps the FAB
-       clear of the last section row. *@
-    <MudHidden Breakpoint="Breakpoint.MdAndUp">
-        <div class="ct-fab-spacer"></div>
-        <div class="ct-fab">
-            @* Extended FAB (icon + label) so "+" names what it adds here — an event (UX-council #3). *@
-            <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Label="@L["AddEvent"]"
-                    aria-label="@L["AddEvent"]" OnClick="AddEventViaFabAsync" />
-        </div>
-    </MudHidden>
 }
 
 @code {
@@ -251,15 +250,6 @@ else
         _claimedMemberName = record?.ClaimedMemberId is { } claimedId && _group is not null
             ? _group.Members.FirstOrDefault(m => m.Id == claimedId)?.Name
             : null;
-        if (_group is not null)
-        {
-            // Offer a sensible default the user can accept or edit (item: default event name). Only
-            // pre-fill when the field is untouched, so a name the user is typing is never clobbered.
-            if (string.IsNullOrEmpty(_newEventName))
-            {
-                _newEventName = DefaultEventName();
-            }
-        }
     }
 
     // "Weihnachten 2026" / "Christmas 2026" / "Noël 2026" — the localized default gift-exchange occasion
@@ -315,10 +305,13 @@ else
     // The inline field (wide screens) adds from the bound value. Once the group has an occasion, adding a
     // second one offers carry-forward (FR-035); the very first occasion has nothing to carry, so it stays
     // the plain name-only add.
-    private Task AddEventAsync() =>
-        _group is { Events.Count: > 0 }
-            ? AddEventWithCarryForwardAsync(_newEventName)
-            : AddEventNamedAsync(_newEventName);
+    private Task AddEventAsync()
+    {
+        var name = string.IsNullOrWhiteSpace(_newEventName) ? DefaultEventName() : _newEventName;
+        return _group is { Events.Count: > 0 }
+            ? AddEventWithCarryForwardAsync(name)
+            : AddEventNamedAsync(name);
+    }
 
     // The phone FAB collects the name in a bottom sheet (pre-filled with the default) for the first
     // occasion, or the carry-forward dialog once occasions exist.
@@ -353,7 +346,7 @@ else
         }
 
         var id = await Sender.Send(new AddEventCommand(GroupId, choice.Name, choice.SourceEventId));
-        _newEventName = DefaultEventName();
+        _newEventName = string.Empty;
         Open(id);
     }
 
@@ -365,7 +358,7 @@ else
         }
 
         var id = await Sender.Send(new AddEventCommand(GroupId, name));
-        _newEventName = DefaultEventName();
+        _newEventName = string.Empty;
         Open(id);
     }
 

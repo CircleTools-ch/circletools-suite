@@ -65,24 +65,27 @@ else
                                          Icon="@Icons.Material.Filled.CheckCircle" Class="ml-1">@L["HandedOut"]</MudChip>
                             }
                         </MudText>
-                        @* Share is the primary action where the platform has a share sheet (the phone,
-                           and mobile browsers): one tap into WhatsApp / Messages / e-mail. Copy stays
-                           for every platform, and is the only action on a desktop browser. *@
-                        <div class="d-flex gap-2">
+                        @* Per-person actions are quiet (outlined / text) so "Hand out links" above stays the one
+                           primary action on the screen (UX review P5); every card used to carry a filled button.
+                           Share is first where the platform has a share sheet (the phone, mobile browsers):
+                           one tap into WhatsApp / Messages / e-mail. Copy works everywhere and is the only
+                           messaging action on a desktop browser. Using any of them marks the person as handed
+                           out, so the counter and the check mark follow what the organizer actually did. *@
+                        <div class="d-flex flex-wrap gap-1">
                             @if (_canShare)
                             {
-                                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
                                            StartIcon="@Icons.Material.Filled.Share" OnClick="() => ShareAsync(link)">
                                     @L["Share"]
                                 </MudButton>
                             }
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
-                                       StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="() => CopyAsync(link.Url)">
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.ContentCopy" OnClick="() => CopyAsync(link)">
                                 @(_copiedUrl == link.Url ? L["Copied"] : L["Copy"])
                             </MudButton>
                             @* A QR code the recipient scans off the organizer's screen — no messaging app
                                needed. Available on every platform (the code is generated client-side). *@
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
                                        StartIcon="@Icons.Material.Filled.QrCode2" OnClick="() => ShowQrAsync(link)">
                                 @L["ShowQr"]
                             </MudButton>
@@ -205,21 +208,39 @@ else
         // text, so this guarantees the reveal link reaches WhatsApp / SMS / e-mail.
         var text = $"{L["ShareMessage"]}\n{link.Url}";
         await ShareService.ShareAsync(L["AppName"], text, link.Url);
+        await MarkHandedOutAsync(link);
     }
 
-    private Task ShowQrAsync(RevealLinkDto link) =>
-        Dialogs.ShowQrDialogAsync(link.ForLabel, link.Url, L["QrHint"], L["Close"]);
+    private async Task ShowQrAsync(RevealLinkDto link)
+    {
+        var dialog = await Dialogs.ShowQrDialogAsync(link.ForLabel, link.Url, L["QrHint"], L["Close"]);
+        await dialog.Result;
+        await MarkHandedOutAsync(link);
+    }
 
-    private async Task CopyAsync(string url)
+    private async Task CopyAsync(RevealLinkDto link)
     {
         try
         {
-            await JS.InvokeVoidAsync("navigator.clipboard.writeText", url);
-            _copiedUrl = url;
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", link.Url);
+            _copiedUrl = link.Url;
+            await MarkHandedOutAsync(link);
         }
         catch (JSException)
         {
             _copiedUrl = null;
         }
+    }
+
+    // Record that this person's link went out (MNF-7), the same mark the guided hand-out sets.
+    private async Task MarkHandedOutAsync(RevealLinkDto link)
+    {
+        if (_links is null)
+        {
+            return;
+        }
+
+        _done = await Handout.SetDoneAsync(
+            GroupId, EventId, [.. _links.Select(l => l.Url)], HandoutProgressService.MemberKey(link.Url), done: true);
     }
 }

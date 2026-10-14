@@ -109,6 +109,32 @@ public sealed class RevealPageTests : IDisposable
     }
 
     [Fact]
+    public void RevealPage_NamesTheGroupAndEvent_WhenTheLinkCarriesThem()
+    {
+        // UX review U4: someone in two exchanges must be able to tell which one a link belongs to.
+        var payload = new RevealPayload(
+            RevealPayload.CurrentVersion, RecipientName, [], null, null, null, null, null,
+            GroupName: "Familie Muster", EventName: "Weihnachten 2026");
+        NavigateToRevealLink(BuildFragment(payload));
+
+        var cut = _ctx.RenderComponent<Reveal>();
+
+        Assert.Equal("Familie Muster · Weihnachten 2026", cut.Find("#reveal-context").TextContent.Trim());
+        Assert.DoesNotContain(RecipientName, cut.Markup); // the context line never spoils the giftee
+    }
+
+    [Fact]
+    public void RevealPage_OlderLinkWithoutNames_ShowsNoContextLine()
+    {
+        var payload = new RevealPayload(RevealPayload.CurrentVersion, RecipientName, [], null, null, null, null, null);
+        NavigateToRevealLink(BuildFragment(payload));
+
+        var cut = _ctx.RenderComponent<Reveal>();
+
+        Assert.Empty(cut.FindAll("#reveal-context"));
+    }
+
+    [Fact]
     public void RevealPage_LocalOnlyLink_ShowsNoFreshnessIndicator()
     {
         // A local-only link carries no rt=, so there is no live source and no indicator either way.

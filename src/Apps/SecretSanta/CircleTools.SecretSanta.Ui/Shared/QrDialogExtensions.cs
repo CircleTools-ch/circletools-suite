@@ -16,7 +16,7 @@ public static class QrDialogExtensions
     /// <param name="url">The reveal-link URL to encode.</param>
     /// <param name="hint">A one-line instruction shown under the code.</param>
     /// <param name="closeLabel">Label for the dismiss button.</param>
-    public static Task ShowQrDialogAsync(
+    public static Task<IDialogReference> ShowQrDialogAsync(
         this IDialogService dialogs,
         string label,
         string url,
@@ -35,7 +35,8 @@ public static class QrDialogExtensions
         {
             Position = DialogPosition.Center,
             CloseOnEscapeKey = true,
-            CloseButton = true,
+            // No corner X: the dialog's own Close button is the one way out (two close controls side by
+            // side was redundant - UX review P5). Tapping outside / Back also closes it.
         };
 
         return dialogs.ShowAsync<QrDialog>(title: null, parameters, options);

@@ -56,6 +56,7 @@ public static class LinkingEndpoints
         group.MapPost("/{id:guid}/assignments/publish", PublishAssignmentsAsync).WithName("PublishAssignments").RequireAuthorization();
         group.MapPut("/{id:guid}/events", PublishGroupEventsAsync).WithName("PublishGroupEvents").RequireAuthorization();
         group.MapDelete("/{id:guid}/members/{memberId:guid}/link", UnlinkMemberAsync).WithName("UnlinkMember").RequireAuthorization();
+        group.MapDelete("/{id:guid}/linking", RetractGroupAsync).WithName("RetractGroupLinking").RequireAuthorization();
 
         return group;
     }
@@ -320,6 +321,24 @@ public static class LinkingEndpoints
         }
 
         await store.UnlinkMemberAsync(id, memberId, caller, cancellationToken).ConfigureAwait(false);
+        return Results.NoContent();
+    }
+
+    // The organizer deleted the group on their device: drop what the linking store still projects for it
+    // (ADR-0077), so it leaves every linked member's My assignments / My wishlists. Idempotent; a caller
+    // who does not organize the group changes nothing and still gets 204 (no existence oracle).
+    private static async Task<IResult> RetractGroupAsync(
+        Guid id,
+        ClaimsPrincipal principal,
+        ILinkingStore store,
+        CancellationToken cancellationToken)
+    {
+        if (!principal.TryGetUserId(out var caller))
+        {
+            return Results.Unauthorized();
+        }
+
+        await store.RetractGroupAsync(id, caller, cancellationToken).ConfigureAwait(false);
         return Results.NoContent();
     }
 

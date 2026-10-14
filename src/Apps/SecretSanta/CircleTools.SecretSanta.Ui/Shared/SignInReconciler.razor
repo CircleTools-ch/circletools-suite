@@ -6,6 +6,7 @@
 @inject ISender Sender
 @inject AccountSession Session
 @inject AutoSyncService AutoSync
+@inject KeptLocalGroups KeptLocal
 @inject IStringLocalizer<AppStrings> L
 
 @*
@@ -70,7 +71,10 @@
             IReadOnlyList<Guid> ids;
             try
             {
-                ids = [.. (await Claimable.GetAccountFreeAsync()).Select(g => g.Id)];
+                // Only groups the user has not already decided about: one they kept local at an earlier
+                // sign-in, or created as "On this device" while signed in, is not asked about again.
+                var kept = await KeptLocal.GetAsync();
+                ids = [.. (await Claimable.GetAccountFreeAsync()).Select(g => g.Id).Where(id => !kept.Contains(id))];
             }
             catch (StorageUnavailableException)
             {
@@ -97,7 +101,9 @@
                         // way, KEEP the sign-in: a non-choice must never end the session. Earlier this did
                         // SignOutAsync → POST /logout → RevokeAll, which revoked every session on every
                         // device right after login. Leave the local groups device-only (importable later
-                        // per group from Sharing & sync) and fall through to the normal sync below.
+                        // per group from Sharing & sync) and fall through to the normal sync below. Remember
+                        // the choice so the next sign-in does not ask about the same groups again.
+                        await KeptLocal.AddAsync(ids);
                         break;
                 }
             }

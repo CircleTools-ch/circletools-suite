@@ -28,13 +28,18 @@ namespace CircleTools.SecretSanta.LocalStore;
 /// The group's storage mode (ADR-0058), so mode-aware surfaces (the hub chip, Sharing &amp; sync) can
 /// show it without reaching into the sync record directly.
 /// </param>
+/// <param name="AccountScope">
+/// The account the group is claimed into, or <see langword="null"/> when account-free — so a listing can
+/// show a signed-in user only their own account's groups, never another account's cached on this device.
+/// </param>
 public sealed record ClaimableGroup(
     Guid Id,
     string Name,
     int MemberCount,
     bool HasCurrentDraw,
     bool IsAccountFree,
-    StorageMode Mode);
+    StorageMode Mode,
+    Guid? AccountScope = null);
 
 /// <summary>
 /// Reads the local groups as the claim / un-claim / sync-status screens need them (FEAT-004), over the
@@ -78,6 +83,7 @@ public sealed class ClaimableGroupsService(ILocalSyncStore local)
             state.Members.Count,
             hasCurrentDraw,
             IsAccountFree: record.AccountScope is null,
-            record.Mode);
+            record.Mode,
+            AccountScope: record.AccountScope);
     }
 }

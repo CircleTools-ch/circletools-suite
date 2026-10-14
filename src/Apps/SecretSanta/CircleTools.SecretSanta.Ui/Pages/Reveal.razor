@@ -21,7 +21,13 @@
 }
 else if (_payload is not null)
 {
-    <MudText Typo="Typo.h4" GutterBottom="true">@L["RevealGreeting", _label]</MudText>
+    <MudText Typo="Typo.h4" GutterBottom="@(ContextLine is null)">@L["RevealGreeting", _label]</MudText>
+    @* Which exchange this is (UX review U4): someone in two exchanges otherwise cannot tell the links
+       apart. Older links carry no names and simply omit the line. *@
+    @if (ContextLine is { } context)
+    {
+        <MudText Typo="Typo.subtitle1" Class="mud-text-secondary mb-3" id="reveal-context">@context</MudText>
+    }
 
     @* Freshness indicator (ADR-0068, FEAT-020): a backend-backed link shows whether the details are the
        latest (fetched live) or a saved copy (offline fallback). A local-only link has no live source, so
@@ -78,9 +84,15 @@ else if (_payload is not null)
 
     @if (_revealed)
     {
-        <MudAlert Severity="Severity.Success" Class="mt-3">
-            <MudText Class="mb-1">@L["RevealRecipientLabel"]:</MudText>
-            <MudText Typo="Typo.h5" Class="mb-3">@_payload.RecipientName</MudText>
+        @* The moment itself: the name, large, in its own highlighted card. The wishlist and gift note are
+           information, not a success state, so they sit in a neutral card below (UX review U4) — "no
+           wishlist" used to read as a green success. *@
+        <MudPaper Elevation="2" Class="pa-4 mt-3 text-center" id="reveal-result">
+            <MudIcon Icon="@Icons.Material.Filled.Redeem" Color="Color.Primary" Size="Size.Large" />
+            <MudText Class="mt-1" Align="Align.Center">@L["RevealRecipientLabel"]</MudText>
+            <MudText Typo="Typo.h3" Color="Color.Primary" Align="Align.Center">@_payload.RecipientName</MudText>
+        </MudPaper>
+        <MudPaper Outlined="true" Class="pa-4 mt-3">
             @if (!string.IsNullOrWhiteSpace(_payload.GiftNote))
             {
                 @* The recipient's stable gift note — allergies, dietary/lifestyle, do-not-gift (FR-037). *@
@@ -89,7 +101,7 @@ else if (_payload is not null)
             <MudText Class="mb-1"><strong>@L["RevealWishlistLabel"]:</strong></MudText>
             @if (_payload.Wishlist.Count == 0)
             {
-                <MudText>@L["RevealNoWishlist"]</MudText>
+                <MudText Class="mud-text-secondary">@L["RevealNoWishlist"]</MudText>
             }
             else
             {
@@ -100,7 +112,9 @@ else if (_payload is not null)
                     }
                 </ul>
             }
-        </MudAlert>
+        </MudPaper>
+        @* A next step instead of a dead end: the giver is a recipient too. *@
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mt-4">@L["RevealNextStep"]</MudText>
     }
     else
     {
@@ -129,6 +143,12 @@ else if (_payload is not null)
         _revealed = true;
         await Haptics.TapAsync();
     }
+
+    // "Familie Muster · Christmas 2026" — whichever names the link carries; null for an older link.
+    private string? ContextLine =>
+        string.Join(" · ", new[] { _payload?.GroupName, _payload?.EventName }.Where(n => !string.IsNullOrWhiteSpace(n))) is { Length: > 0 } line
+            ? line
+            : null;
 
     private bool HasEvent =>
         _eventDate is not null ||
@@ -229,7 +249,7 @@ else if (_payload is not null)
         return false;
     }
 
-    // The reveal page's calendar entry: a generic title (the payload has no event name), the date/location/
+    // The reveal page's calendar entry: the occasion's name when the link carries it, the date/location/
     // notes/budget it carries, and the reveal link itself as the reopen URL (a raw-link holder need not
     // have the group). Null when there is no date. Never includes the recipient — that is the secret.
     private CalendarEvent? BuildCalendarEvent()
@@ -245,7 +265,7 @@ else if (_payload is not null)
 
         return new CalendarEvent(
             Uid: RevealUid(),
-            Title: L["AppName"],
+            Title: string.IsNullOrWhiteSpace(_payload.EventName) ? L["AppName"] : $"{L["AppName"]}: {_payload.EventName}",
             Date: DateOnly.FromDateTime(date.Date),
             Location: string.IsNullOrWhiteSpace(_payload.EventLocation) ? null : _payload.EventLocation,
             Notes: CalendarEventFactory.ComposeNotes(_payload.EventNotes, budget, L["RevealBudgetLabel"]),
