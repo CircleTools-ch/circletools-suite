@@ -39,17 +39,24 @@ public class SceneDelegate : MauiUISceneDelegate
         ForwardUrlContexts(connectionOptions.UrlContexts);
     }
 
-    // A Universal Link tapped while the app is already running.
-    [Export("scene:continueUserActivity:")]
-    public void ContinueUserActivity(UIScene scene, NSUserActivity userActivity) =>
+    // A Universal Link tapped while the app is already running. MauiUISceneDelegate already declares a
+    // virtual ContinueUserActivity carrying [Export("scene:continueUserActivity:")], so we override it
+    // (not re-export) — chaining base keeps MAUI's own scene-lifecycle dispatch intact.
+    public override void ContinueUserActivity(UIScene scene, NSUserActivity userActivity)
+    {
+        base.ContinueUserActivity(scene, userActivity);
         ForwardUserActivity(userActivity);
+    }
 
     // Custom-scheme fallback, while running (parity with the old AppDelegate.OpenUrl). No URL scheme is
     // registered today — reveal/event/email links are HTTPS Universal Links — but this keeps parity with
-    // Android if one is ever added.
-    [Export("scene:openURLContexts:")]
-    public void OpenUrlContexts(UIScene scene, NSSet<UIOpenUrlContext> urlContexts) =>
+    // Android if one is ever added. The base's virtual method for scene:openURLContexts: is named OpenUrl,
+    // so we override that; re-exporting the selector under a second name would clash at type registration.
+    public override void OpenUrl(UIScene scene, NSSet<UIOpenUrlContext> urlContexts)
+    {
+        base.OpenUrl(scene, urlContexts);
         ForwardUrlContexts(urlContexts);
+    }
 
     private static void ForwardUserActivity(NSUserActivity userActivity)
     {

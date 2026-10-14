@@ -1,7 +1,8 @@
 # Continuous integration gate for the CircleTools suite (ADR-0038).
 # Build under analyzers (warnings-as-errors), run the full test suite, and build the
-# link-checked DocFX site on every push and PR to main. The MAUI head (Android + Windows)
-# builds on a Windows runner; iOS is deferred to a future macOS runner (ADR-0031).
+# link-checked DocFX site on every push and PR to main. The MAUI Android head builds on a Windows
+# runner; iOS builds on macOS in release-mobile.yml only (ADR-0065). To save Actions minutes, the
+# expensive jobs (build-maui at the 2x Windows rate, webauthn-e2e) skip docs-only changes.
 name: CI
 
 on:
@@ -19,6 +20,32 @@ permissions:
   contents: read
 
 jobs:
+  # Which parts of the tree changed. The expensive jobs (the 2x Windows MAUI build and the long WebAuthn
+  # E2E) consult this so a docs-only commit skips them. They stay on BOTH push and PR, so a direct push
+  # to main is still gated (ADR-0038). Fails OPEN: if detection is unsure it reports changed, so a job is
+  # never wrongly skipped. (To move the expensive jobs to PR-only instead — valid only if every change
+  # reaches main through a PR — add `github.event_name == 'pull_request' &&` to each job's `if`.)
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    outputs:
+      src: ${{ steps.filter.outputs.src }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            src:
+              - 'src/**'
+              - 'tests/**'
+              - '**/*.props'
+              - '**/*.targets'
+              - '**/*.slnx'
+              - 'global.json'
+              - '.config/dotnet-tools.json'
+              - '.github/workflows/**'
+
   build-test:
     name: build-test
     runs-on: ubuntu-latest
@@ -80,6 +107,8 @@ jobs:
 
   webauthn-e2e:
     name: webauthn-e2e
+    needs: changes
+    if: needs.changes.outputs.src == 'true'
     runs-on: ubuntu-latest
     # Drives the real WebAuthn ceremony in Chromium via a CDP virtual authenticator against the
     # live Aspire stack (arc42 D4, ADR-0045). Kept off the build-test solution on purpose: this
@@ -121,6 +150,8 @@ jobs:
 
   build-maui:
     name: build-maui
+    needs: changes
+    if: needs.changes.outputs.src == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
@@ -133,15 +164,16 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
 
-      # Install the MAUI workloads this project needs (Android + Windows on a Windows runner).
+      # Install the MAUI workloads this project needs.
       - name: Restore MAUI workloads
         run: dotnet workload restore src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj
 
-      # Builds the Android and Windows heads (the TFMs the csproj enables on Windows).
-      # iOS/MacCatalyst are macOS-only and deferred to a future macOS runner (ADR-0031).
-      # No --no-restore / no separate restore step: the Windows head is RID-specific
-      # (<RuntimeIdentifier>win-x64</RuntimeIdentifier>), and its runtime pack is fetched during
-      # build, not by `dotnet restore` — so build must run its own restore (NETSDK1112 otherwise).
-      - name: Build MAUI heads (Android + Windows)
-        run: dotnet build src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj -c Release
+      # Builds only the Android head. The MAUI Windows desktop head is not a shipping target (the suite
+      # ships Web + Android + iOS), so CI no longer spends 2x Windows minutes compiling it.
+      # iOS/MacCatalyst are macOS-only and built by release-mobile.yml (ADR-0065).
+      # No --no-restore / no separate restore step: build runs its own restore.
+      - name: Build MAUI Android head
+        run: dotnet build src/Apps/SecretSanta/CircleTools.SecretSanta.App/CircleTools.SecretSanta.App.csproj -c Release -f net10.0-android
