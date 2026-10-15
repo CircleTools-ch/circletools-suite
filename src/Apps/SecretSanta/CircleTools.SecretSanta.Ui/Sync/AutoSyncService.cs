@@ -218,20 +218,25 @@ public sealed class AutoSyncService(
     private async Task RunCycleAsync(Guid accountId)
     {
         // Discover any groups this account claimed admin of on another device (D2), so they appear and
-        // are manageable here too. Signed-in only (this cycle), so the bearer is present.
-        await sharedSync.MergeOwnedAsync();
+        // are manageable here too — and attribute any already-held ones to this account. Signed-in only
+        // (this cycle), so the bearer is present.
+        // Send the owner deletes of "My account" groups deleted on this device first, so discovery below
+        // does not see them on the server (it also skips any still queued) — ADR-0078.
+        await sharedSync.SendOwnedDeletesAsync(accountId);
+        var ownedListed = await sharedSync.MergeOwnedAsync(accountId);
 
-        // Auto-claim only the groups the user has marked "My account" and that are not yet account-scoped
-        // (FR-038, ADR-0073). A group left "On this device" stays local even while signed in — its mode is
-        // honoured, not silently synced. Shared-by-link groups live in the token-keyed store and are never
-        // M3-claimed either (they are not OnThisDevice/Account here).
-        var accountFree = (await claimable.GetAccountFreeAsync())
-            .Where(g => g.Mode == StorageMode.Account)
+        // Auto-claim only the groups the user has marked "My account" for this account and that are not yet
+        // account-scoped (FR-038, ADR-0073). A group left "On this device" stays local even while signed in
+        // — its mode is honoured, not silently synced. Shared-by-link groups live in the token-keyed store
+        // and are never M3-claimed, nor is a shared group whose admin an account claimed (ADR-0078). A
+        // legacy "My account" record with no account recorded is claimed only once the owned list above was
+        // read, so an admin-claimed shared group among them has been recognised and is not uploaded twice.
+        var awaitingClaim = (await claimable.GetAwaitingClaimAsync(accountId, includeUnattributed: ownedListed))
             .Select(g => g.Id)
             .ToList();
-        if (accountFree.Count > 0)
+        if (awaitingClaim.Count > 0)
         {
-            await sync.ClaimAsync(accountId, accountFree);
+            await sync.ClaimAsync(accountId, awaitingClaim);
         }
 
         // Keep the group cycle's outcome so the shell can show it in its passive status line — the same

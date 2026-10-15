@@ -313,6 +313,51 @@ public sealed class SyncServiceTests
     }
 
     [Fact]
+    public async Task MarkForAccount_RecordsTheAccount_AndTheClaimClearsIt()
+    {
+        // ADR-0078: the intent carries its account, so until the claim the group is hidden while signed out
+        // and never claimed into another account; once claimed, AccountScope takes over.
+        var account = Guid.NewGuid();
+        var (service, local, _) = NewService();
+        var state = SyncTestData.GroupWith("Family", "Alice");
+        await SeedAsync(local, new SyncedGroupRecord(state, 1, AccountScope: null, Dirty: false));
+
+        await service.MarkForAccountAsync(account, state.Id, default);
+
+        var marked = Assert.Single(await local.LoadGroupsAsync(default));
+        Assert.Equal(StorageMode.Account, marked.Mode);
+        Assert.Equal(account, marked.PendingClaimAccount);
+        Assert.Null(marked.AccountScope);
+
+        await service.ClaimAsync(account, [state.Id], default);
+
+        var claimed = Assert.Single(await local.LoadGroupsAsync(default));
+        Assert.Equal(account, claimed.AccountScope);
+        Assert.Null(claimed.PendingClaimAccount);
+    }
+
+    [Fact]
+    public async Task Claim_RefusesAnAdminClaimedSharedGroup_AndOneMarkedForAnotherAccount()
+    {
+        // ADR-0078: an admin-claimed shared group already lives in the shared-group store - uploading it
+        // into the account store too would hold it twice; a group marked for another account is not ours.
+        var account = Guid.NewGuid();
+        var (service, local, api) = NewService();
+        var adminClaimed = SyncTestData.GroupWith("Admin", "A");
+        var anotherAccounts = SyncTestData.GroupWith("Theirs", "B");
+        await SeedAsync(
+            local,
+            new SyncedGroupRecord(adminClaimed, 1, null, false, StorageMode.Account, AdminAccount: account),
+            new SyncedGroupRecord(anotherAccounts, 1, null, false, StorageMode.Account, PendingClaimAccount: Guid.NewGuid()));
+
+        var outcome = await service.ClaimAsync(account, [adminClaimed.Id, anotherAccounts.Id], default);
+
+        Assert.Equal(0, outcome.Claimed);
+        Assert.Empty(api.Claimed);
+        Assert.All(await local.LoadGroupsAsync(default), r => Assert.Null(r.AccountScope));
+    }
+
+    [Fact]
     public async Task Claim_OfNothing_IsANoOpSuccess()
     {
         var account = Guid.NewGuid();

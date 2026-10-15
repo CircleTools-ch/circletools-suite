@@ -18,6 +18,10 @@ public sealed class VisibleGroupsServiceTests
     private static readonly Guid AccountFreeId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid AccountScopedId = Guid.Parse("22222222-2222-2222-2222-222222222222");
     private static readonly Guid Account = Guid.Parse("33333333-3333-3333-3333-333333333333");
+    private static readonly Guid OtherAccount = Guid.Parse("44444444-4444-4444-4444-444444444444");
+    private static readonly Guid PendingId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+    private static readonly Guid AdminClaimedId = Guid.Parse("66666666-6666-6666-6666-666666666666");
+    private static readonly Guid LegacyId = Guid.Parse("77777777-7777-7777-7777-777777777777");
 
     [Fact]
     public async Task SignedOut_HidesAccountScopedGroups()
@@ -44,11 +48,66 @@ public sealed class VisibleGroupsServiceTests
     {
         // 2026-10-14 review: a group claimed into a different account (shared device / earlier sign-in)
         // must not show up for the account signed in now.
-        var service = Build(signedInAs: Guid.Parse("44444444-4444-4444-4444-444444444444"));
+        var service = Build(signedInAs: OtherAccount);
 
         var visible = await service.GetVisibleAsync();
 
         Assert.Equal([AccountFreeId], visible.Select(g => g.Id));
+    }
+
+    [Fact]
+    public async Task SignedOut_HidesMyAccountGroupsThatHaveNoAccountScope()
+    {
+        // ADR-0078 (iPad, 0.1.113): a group marked "My account" but not claimed yet, an admin-claimed shared
+        // group, and a legacy "My account" record showed - with the My account icon - while signed out.
+        var service = BuildWithMyAccountKinds(signedInAs: Guid.Empty);
+
+        var visible = await service.GetVisibleAsync();
+
+        Assert.Equal([AccountFreeId], visible.Select(g => g.Id));
+    }
+
+    [Fact]
+    public async Task SignedIn_ShowsOwnMyAccountGroupsOfEveryKind_AndTheUnattributedLegacyOne()
+    {
+        var service = BuildWithMyAccountKinds(signedInAs: Account);
+
+        var visible = await service.GetVisibleAsync();
+
+        Assert.Equal([AccountFreeId, PendingId, AdminClaimedId, LegacyId], visible.Select(g => g.Id));
+    }
+
+    [Fact]
+    public async Task SignedIn_HidesAnotherAccountsMyAccountGroups()
+    {
+        var service = BuildWithMyAccountKinds(signedInAs: OtherAccount);
+
+        var visible = await service.GetVisibleAsync();
+
+        // The legacy record has no account recorded, so it cannot be told apart yet (ADR-0078).
+        Assert.Equal([AccountFreeId, LegacyId], visible.Select(g => g.Id));
+    }
+
+    private static VisibleGroupsService BuildWithMyAccountKinds(Guid signedInAs)
+    {
+        IReadOnlyList<GroupSummaryDto> summaries =
+        [
+            new(AccountFreeId, "Offline", 0, 0, false, false),
+            new(PendingId, "Pending", 0, 0, false, false),
+            new(AdminClaimedId, "Admin", 0, 0, false, false),
+            new(LegacyId, "Legacy", 0, 0, false, false),
+        ];
+
+        IReadOnlyList<SyncedGroupRecord> records =
+        [
+            new(State(AccountFreeId), Version: 1, AccountScope: null, Dirty: false),
+            new(State(PendingId), 1, null, false, StorageMode.Account, PendingClaimAccount: Account),
+            new(State(AdminClaimedId), 1, null, false, StorageMode.Account, AdminAccount: Account),
+            new(State(LegacyId), 1, null, false, StorageMode.Account),
+        ];
+
+        var claimable = new ClaimableGroupsService(new StubLocalSyncStore(records));
+        return new VisibleGroupsService(new StubSender(summaries), claimable, new StubAuth(signedInAs));
     }
 
     private static VisibleGroupsService Build(Guid signedInAs)

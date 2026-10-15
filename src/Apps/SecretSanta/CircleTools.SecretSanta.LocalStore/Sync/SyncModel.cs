@@ -138,6 +138,17 @@ public sealed record RevealTokenRef(Guid EventId, Guid MemberId, string Token);
 /// ("this is me"), so the app can show that person their own assignment. <see langword="null"/> for an
 /// organizer-owned or unjoined group. Additive since schema v3.
 /// </param>
+/// <param name="PendingClaimAccount">
+/// For a group marked <see cref="StorageMode.Account"/> that is not claimed yet, the account it was marked
+/// for — so it is hidden while signed out, never shown to or claimed into another account, and claimed into
+/// this one on its next cycle (ADR-0078). Cleared once claimed or when the intent is reset. Additive.
+/// </param>
+/// <param name="AdminAccount">
+/// For a shared-by-link group whose admin was claimed into an account (ADR-0058, <see cref="Mode"/> =
+/// <see cref="StorageMode.Account"/>, synced by the owner path), that account. It is never
+/// <see cref="AccountScope"/>: the group lives in the shared-group store, not the account sync store
+/// (ADR-0078). Cleared on release-to-link. Additive.
+/// </param>
 public sealed record SyncedGroupRecord(
     GroupState State,
     long Version,
@@ -145,7 +156,9 @@ public sealed record SyncedGroupRecord(
     bool Dirty,
     StorageMode Mode = StorageMode.OnThisDevice,
     SharedGroupTokens? Tokens = null,
-    Guid? ClaimedMemberId = null);
+    Guid? ClaimedMemberId = null,
+    Guid? PendingClaimAccount = null,
+    Guid? AdminAccount = null);
 
 /// <summary>
 /// The whole persisted group collection under the local-store key, carrying a schema version so an
@@ -208,6 +221,17 @@ public sealed record PendingTombstone(Guid AccountId, string Kind, Guid Id, long
 public sealed record AccountSyncCursor(Guid AccountId, long Cursor);
 
 /// <summary>
+/// A queued owner delete of a "My account" group's online copy in the shared-group store (ADR-0078).
+/// </summary>
+/// <param name="GroupId">The deleted group.</param>
+/// <param name="AccountId">
+/// The account that owns it, so only a sync of that account sends the delete; <see langword="null"/> for a
+/// legacy record with no account recorded, which any signed-in account may send (the server refuses a
+/// non-owner).
+/// </param>
+public sealed record PendingOwnedDelete(Guid GroupId, Guid? AccountId);
+
+/// <summary>
 /// The device-level sync state: the stable device id, a per-account cursor, and the deletions still
 /// waiting to be pushed (FEAT-004). Persisted alongside the groups but under its own key.
 /// </summary>
@@ -222,11 +246,17 @@ public sealed record AccountSyncCursor(Guid AccountId, long Cursor);
 /// still hold, queued until a signed-in sync retracts them (ADR-0077). Additive: an older state document
 /// without the field loads with none queued.
 /// </param>
+/// <param name="OwnedDeletes">
+/// Deleted "My account" groups whose online copy in the shared-group store only their owner can delete,
+/// queued until a signed-in sync of that account sends the delete (ADR-0078). Until then the owned-group
+/// discovery skips them, so a deleted group does not come back. Additive.
+/// </param>
 public sealed record SyncState(
     string DeviceId,
     IReadOnlyList<AccountSyncCursor> Cursors,
     IReadOnlyList<PendingTombstone> Tombstones,
-    IReadOnlyList<Guid>? Retractions = null)
+    IReadOnlyList<Guid>? Retractions = null,
+    IReadOnlyList<PendingOwnedDelete>? OwnedDeletes = null)
 {
     /// <summary>The cursor reached on <paramref name="accountId"/>, or zero if never synced there.</summary>
     /// <param name="accountId">The account whose cursor is wanted.</param>

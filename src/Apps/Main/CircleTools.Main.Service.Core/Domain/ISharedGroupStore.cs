@@ -103,6 +103,17 @@ public interface ISharedGroupStore
     /// <returns>The freshly-minted admin link, or <see langword="null"/> when the caller is not the owner.</returns>
     Task<RotatedAdminLink?> ReleaseAdminAsync(Guid accountId, Guid groupId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Deletes the online copy of an account-owned group and all its tokens (My account, ADR-0078): the owner
+    /// has no admin token, so the group is addressed by id. Like the admin-link delete, the join link stops
+    /// working too. Idempotent: a group that is already gone is a success, so a retried delete settles.
+    /// </summary>
+    /// <param name="accountId">The calling account.</param>
+    /// <param name="groupId">The group to delete.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns><see langword="true"/> when the group is gone (deleted now or already absent); <see langword="false"/> when it exists but the caller does not own it.</returns>
+    Task<bool> DeleteOwnedAsync(Guid accountId, Guid groupId, CancellationToken cancellationToken = default);
+
     /// <summary>Deletes owner-less shared groups whose last activity predates <paramref name="olderThan"/> (retention, NFR-010).</summary>
     /// <param name="olderThan">The cutoff; groups inactive since before this are removed.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>

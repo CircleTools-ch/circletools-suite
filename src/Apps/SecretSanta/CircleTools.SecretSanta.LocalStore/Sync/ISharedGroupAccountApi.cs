@@ -22,6 +22,12 @@ public interface ISharedGroupAccountApi
     /// <summary>Pushes a new body for a group the caller owns, by group id + bearer (My account mode, D2).</summary>
     Task<ApiResult<PushSharedGroupResult>> PushOwnedAsync(Guid groupId, PushSharedGroupRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Deletes the online copy of a group the caller owns, by group id + bearer (My account mode, ADR-0078).
+    /// Succeeds too when the group is already gone.
+    /// </summary>
+    Task<ApiResult> DeleteOwnedAsync(Guid groupId, CancellationToken cancellationToken = default);
+
     /// <summary>Lists the groups the caller owns, so this device can discover claimed groups (D2 discovery).</summary>
     Task<ApiResult<OwnedSharedGroups>> ListOwnedAsync(CancellationToken cancellationToken = default);
 

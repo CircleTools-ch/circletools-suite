@@ -299,6 +299,34 @@ public sealed class FakeSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
     }
 
     /// <inheritdoc />
+    public Task<ApiResult> DeleteOwnedAsync(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        if (Unreachable)
+        {
+            return Task.FromResult(ApiResult.Failed(new ApiError(ApiFailure.Unreachable)));
+        }
+
+        // Idempotent like the server: an already-gone group is a success. Owned = claimed (admin-retired).
+        if (!_groups.TryGetValue(groupId, out var g))
+        {
+            return Task.FromResult(ApiResult.Ok());
+        }
+
+        if (!g.AdminRetired)
+        {
+            return Task.FromResult(ApiResult.Failed(new ApiError(ApiFailure.Forbidden)));
+        }
+
+        _groups.Remove(groupId);
+        foreach (var key in _tokens.Where(t => t.Value.GroupId == groupId).Select(t => t.Key).ToList())
+        {
+            _tokens.Remove(key);
+        }
+
+        return Task.FromResult(ApiResult.Ok());
+    }
+
+    /// <inheritdoc />
     public Task<ApiResult<OwnedSharedGroups>> ListOwnedAsync(CancellationToken cancellationToken = default)
     {
         if (Unreachable)

@@ -90,7 +90,14 @@ public sealed class SyncingGroupRepository(ILocalSyncStore local) : IGroupReposi
         // (ADR-0077). Queued rather than called here: deleting works offline, the retraction follows.
         var linked = removed.State.Members.Any(m => m.UserId is not null);
 
-        if (claimed || linked)
+        // A "My account" group may also have an online copy in the shared-group store — an admin-claimed
+        // shared group, or one an older auto-claim put in both stores — that only its owner can delete.
+        // Queue that delete, or the next owned-group discovery downloads the group again (ADR-0078). Not
+        // for a group still waiting to be claimed: nothing of it is online yet.
+        var ownedOnline = (removed.Mode == StorageMode.Account || removed.AccountScope is not null)
+            && removed.PendingClaimAccount is null;
+
+        if (claimed || linked || ownedOnline)
         {
             var stateDoc = await local.LoadStateAsync(cancellationToken);
             if (removed.AccountScope is { } accountId)
@@ -107,6 +114,15 @@ public sealed class SyncingGroupRepository(ILocalSyncStore local) : IGroupReposi
                 stateDoc = stateDoc with
                 {
                     Retractions = (stateDoc.Retractions ?? []).Where(r => r != id).Append(id).ToList(),
+                };
+            }
+
+            if (ownedOnline)
+            {
+                var ownedDelete = new PendingOwnedDelete(id, removed.AdminAccount ?? removed.AccountScope);
+                stateDoc = stateDoc with
+                {
+                    OwnedDeletes = (stateDoc.OwnedDeletes ?? []).Where(d => d.GroupId != id).Append(ownedDelete).ToList(),
                 };
             }
 

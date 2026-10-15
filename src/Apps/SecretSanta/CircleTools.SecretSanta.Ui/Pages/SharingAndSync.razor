@@ -106,6 +106,7 @@ else
     // Set when the group is synced into the account through the account sync store (as opposed to a
     // shared-by-link group whose admin was claimed into the account, which keeps its join token).
     private Guid? _accountScope;
+    private Guid? _adminAccount;
     private string? _copiedUrl;
 
     protected override async Task OnParametersSetAsync()
@@ -125,6 +126,7 @@ else
         _mode = record?.Mode ?? StorageMode.OnThisDevice;
         _tokens = record?.Tokens;
         _accountScope = record?.AccountScope;
+        _adminAccount = record?.AdminAccount;
         // A group synced into the account reads as "My account" even if its stored intent predates the
         // Mode field being set on claim (ADR-0073 follow-up 3) — the same rule the groups list uses.
         if (_accountScope is not null)
@@ -179,7 +181,7 @@ else
         {
             if (await Dialogs.ShowConfirmSheetAsync(L["ClaimAdminConfirm"], L["ClaimAdminConfirmYes"], L["Cancel"], Color.Primary))
             {
-                await RunAsync(() => Shared.ClaimAdminToAccountAsync(GroupId));
+                await RunAsync(() => Shared.ClaimAdminToAccountAsync(_accountId, GroupId));
             }
 
             return;
@@ -193,7 +195,7 @@ else
             {
                 await RunAsync(async () =>
                 {
-                    await Sync.MarkForAccountAsync(GroupId);
+                    await Sync.MarkForAccountAsync(_accountId, GroupId);
                     AutoSync.RequestSync();
                     return true;
                 });
@@ -209,9 +211,9 @@ else
         {
             if (await Dialogs.ShowConfirmSheetAsync(L["ReleaseToLinkConfirm"], L["ReleaseToLinkConfirmYes"], L["Cancel"], Color.Primary))
             {
-                await RunAsync(async () => _accountScope is not null
-                    ? await LeaveAccountAsync() && await Shared.ShareByLinkAsync(GroupId) is not null
-                    : await Shared.ReleaseToLinkAsync(GroupId));
+                await RunAsync(async () => IsAdminClaimedShared
+                    ? await Shared.ReleaseToLinkAsync(GroupId)
+                    : await LeaveAccountAsync() && await Shared.ShareByLinkAsync(GroupId) is not null);
             }
 
             return;
@@ -225,7 +227,7 @@ else
             {
                 await RunAsync(async () =>
                 {
-                    if (_accountScope is not null || _tokens is null)
+                    if (!IsAdminClaimedShared)
                     {
                         return await LeaveAccountAsync();
                     }
@@ -250,6 +252,11 @@ else
         await LoadAsync();
     }
 
+    // A "My account" group that is a shared group whose admin the account claimed (ADR-0058), as opposed to
+    // one synced (or waiting to be synced) through the account store. Recorded since ADR-0078; a legacy
+    // record falls back to the tokens a claim-admin keeps on the device that made it.
+    private bool IsAdminClaimedShared => _accountScope is null && (_adminAccount is not null || _tokens is not null);
+
     // Removes the group from the account and keeps the local copy (FR-038). A group marked "My account" but
     // not yet uploaded (created offline) has nothing on the server, so only its intent is reset.
     private async Task<bool> LeaveAccountAsync()
@@ -267,7 +274,7 @@ else
             return false;
         }
 
-        records[index] = records[index] with { Mode = StorageMode.OnThisDevice };
+        records[index] = records[index] with { Mode = StorageMode.OnThisDevice, PendingClaimAccount = null };
         await Local.SaveGroupsAsync(records);
         return true;
     }

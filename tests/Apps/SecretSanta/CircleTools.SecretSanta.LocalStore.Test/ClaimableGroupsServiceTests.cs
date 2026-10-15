@@ -92,4 +92,55 @@ public sealed class ClaimableGroupsServiceTests
         Assert.Single(all, g => g.IsAccountFree);
         Assert.Single(all, g => !g.IsAccountFree);
     }
+
+    [Fact]
+    public async Task MyAccountGroupsWithoutAnAccountScope_AreNotAccountFree_AndReportTheirOwner()
+    {
+        // ADR-0078: a group marked "My account" but not claimed yet, an admin-claimed shared group, and a
+        // legacy "My account" record with no account recorded all belong to an account - none of them may
+        // be shown while signed out or offered in the sign-in import prompt.
+        var (service, local) = NewService();
+        var account = Guid.NewGuid();
+        var pending = SyncTestData.GroupWith("Pending");
+        var adminClaimed = SyncTestData.GroupWith("Admin");
+        var legacy = SyncTestData.GroupWith("Legacy");
+        await local.SaveGroupsAsync(
+        [
+            new SyncedGroupRecord(pending, 1, null, false, StorageMode.Account, PendingClaimAccount: account),
+            new SyncedGroupRecord(adminClaimed, 1, null, false, StorageMode.Account, AdminAccount: account),
+            new SyncedGroupRecord(legacy, 1, null, false, StorageMode.Account),
+        ]);
+
+        var all = await service.GetAllAsync();
+
+        Assert.All(all, g => Assert.False(g.IsAccountFree));
+        Assert.Empty(await service.GetAccountFreeAsync());
+        Assert.Equal(account, all.Single(g => g.Id == pending.Id).Owner);
+        Assert.Equal(account, all.Single(g => g.Id == adminClaimed.Id).Owner);
+        Assert.Null(all.Single(g => g.Id == legacy.Id).Owner);
+    }
+
+    [Fact]
+    public async Task GetAwaitingClaim_TakesOnlyThisAccountsMarkedGroups_NeverAnAdminClaimedSharedGroup()
+    {
+        var (service, local) = NewService();
+        var account = Guid.NewGuid();
+        var mine = SyncTestData.GroupWith("Mine");
+        var anotherAccounts = SyncTestData.GroupWith("Theirs");
+        var adminClaimed = SyncTestData.GroupWith("Admin");
+        var legacy = SyncTestData.GroupWith("Legacy");
+        await local.SaveGroupsAsync(
+        [
+            new SyncedGroupRecord(mine, 1, null, false, StorageMode.Account, PendingClaimAccount: account),
+            new SyncedGroupRecord(anotherAccounts, 1, null, false, StorageMode.Account, PendingClaimAccount: Guid.NewGuid()),
+            new SyncedGroupRecord(adminClaimed, 1, null, false, StorageMode.Account, AdminAccount: account),
+            new SyncedGroupRecord(legacy, 1, null, false, StorageMode.Account),
+        ]);
+
+        var withoutLegacy = await service.GetAwaitingClaimAsync(account, includeUnattributed: false);
+        var withLegacy = await service.GetAwaitingClaimAsync(account, includeUnattributed: true);
+
+        Assert.Equal([mine.Id], withoutLegacy.Select(g => g.Id));
+        Assert.Equal([mine.Id, legacy.Id], withLegacy.Select(g => g.Id));
+    }
 }

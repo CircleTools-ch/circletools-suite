@@ -227,11 +227,13 @@ public sealed class SharedSyncServiceTests
         var groupId = await SeedLocalGroupAsync(store, "Family");
         await Service(store, api).ShareByLinkAsync(groupId);
 
-        var ok = await Service(store, api).ClaimAdminToAccountAsync(groupId);
+        var ok = await Service(store, api).ClaimAdminToAccountAsync(Account, groupId);
 
         Assert.True(ok);
         var record = await SingleAsync(store);
         Assert.Equal(StorageMode.Account, record.Mode);
+        Assert.Equal(Account, record.AdminAccount); // recorded, so it is hidden signed out (ADR-0078)
+        Assert.Null(record.AccountScope); // it lives in the shared-group store, not the account store
         Assert.Null(record.Tokens!.AdminToken); // the admin link is retired
         Assert.NotNull(record.Tokens.JoinToken); // the join link keeps working
     }
@@ -243,13 +245,14 @@ public sealed class SharedSyncServiceTests
         var api = new FakeSharedGroupApi();
         var groupId = await SeedLocalGroupAsync(store, "Family");
         await Service(store, api).ShareByLinkAsync(groupId);
-        await Service(store, api).ClaimAdminToAccountAsync(groupId);
+        await Service(store, api).ClaimAdminToAccountAsync(Account, groupId);
 
         var ok = await Service(store, api).ReleaseToLinkAsync(groupId);
 
         Assert.True(ok);
         var record = await SingleAsync(store);
         Assert.Equal(StorageMode.SharedByLink, record.Mode);
+        Assert.Null(record.AdminAccount); // account-free again
         Assert.NotNull(record.Tokens!.AdminToken); // a fresh admin link
     }
 
@@ -277,7 +280,7 @@ public sealed class SharedSyncServiceTests
         var api = new FakeSharedGroupApi();
         var groupId = await SeedLocalGroupAsync(store, "Family");
         await Service(store, api).ShareByLinkAsync(groupId);
-        await Service(store, api).ClaimAdminToAccountAsync(groupId); // now My account mode (owner path)
+        await Service(store, api).ClaimAdminToAccountAsync(Account, groupId); // now My account mode (owner path)
 
         // A local edit while account-owned.
         var record = await SingleAsync(store);
@@ -298,17 +301,100 @@ public sealed class SharedSyncServiceTests
         var deviceA = NewStore();
         var groupId = await SeedLocalGroupAsync(deviceA, "Family");
         await Service(deviceA, api).ShareByLinkAsync(groupId);
-        await Service(deviceA, api).ClaimAdminToAccountAsync(groupId); // claimed on device A → owned server-side
+        await Service(deviceA, api).ClaimAdminToAccountAsync(Account, groupId); // claimed on device A → owned server-side
 
         // Device B (same account) has never seen the group; discovery adds it as a My-account group.
         var deviceB = NewStore();
-        await Service(deviceB, api).MergeOwnedAsync();
+        var listed = await Service(deviceB, api).MergeOwnedAsync(Account);
 
+        Assert.True(listed);
         var record = (await deviceB.LoadGroupsAsync()).Single();
         Assert.Equal(groupId, record.State.Id);
         Assert.Equal(StorageMode.Account, record.Mode);
+        Assert.Equal(Account, record.AdminAccount);
+        Assert.Null(record.AccountScope);
         Assert.Equal("Family", record.State.Name);
     }
+
+    [Fact]
+    public async Task MergeOwned_AttributesAHeldLegacyRecord_SoTheAutoClaimLeavesItAlone()
+    {
+        // ADR-0078: a "My account" record written before its account was recorded is, if the account owns
+        // it as a shared group, attributed as admin-claimed - otherwise the auto-claim would upload it into
+        // the account sync store a second time.
+        var api = new FakeSharedGroupApi();
+        var store = NewStore();
+        var groupId = await SeedLocalGroupAsync(store, "Family");
+        await Service(store, api).ShareByLinkAsync(groupId);
+        await Service(store, api).ClaimAdminToAccountAsync(Account, groupId);
+        var claimed = await SingleAsync(store);
+        await store.SaveGroupsAsync([claimed with { AdminAccount = null }]); // as written by an older build
+
+        await Service(store, api).MergeOwnedAsync(Account);
+
+        var record = await SingleAsync(store);
+        Assert.Equal(Account, record.AdminAccount);
+        var awaiting = await new ClaimableGroupsService(store).GetAwaitingClaimAsync(Account, includeUnattributed: true);
+        Assert.Empty(awaiting);
+    }
+
+    [Fact]
+    public async Task DeletingAnAdminClaimedGroup_DoesNotComeBack_AndItsOnlineCopyIsDeleted()
+    {
+        // ADR-0078 (Android + iOS): deleting a "My account" group made it reappear — the delete was local
+        // only, and the next owned-group discovery downloaded the server copy again.
+        var api = new FakeSharedGroupApi();
+        var store = NewStore();
+        var groupId = await SeedLocalGroupAsync(store, "Family");
+        await Service(store, api).ShareByLinkAsync(groupId);
+        await Service(store, api).ClaimAdminToAccountAsync(Account, groupId);
+
+        await new SyncingGroupRepository(store).DeleteAsync(groupId, default);
+
+        // Still on the server (delete not sent yet, e.g. offline) — discovery must not bring it back.
+        await Service(store, api).MergeOwnedAsync(Account);
+        Assert.Empty(await store.LoadGroupsAsync());
+
+        await Service(store, api).SendOwnedDeletesAsync(Account);
+
+        Assert.Null(api.ServerVersion(groupId)); // the online copy is gone
+        Assert.Empty((await store.LoadStateAsync()).OwnedDeletes ?? []); // and the queue drained
+        await Service(store, api).MergeOwnedAsync(Account);
+        Assert.Empty(await store.LoadGroupsAsync());
+    }
+
+    [Fact]
+    public async Task SendOwnedDeletes_KeepsADeleteQueued_WhileTheServerIsUnreachable()
+    {
+        var api = new FakeSharedGroupApi();
+        var store = NewStore();
+        var groupId = await SeedLocalGroupAsync(store, "Family");
+        await Service(store, api).ShareByLinkAsync(groupId);
+        await Service(store, api).ClaimAdminToAccountAsync(Account, groupId);
+        await new SyncingGroupRepository(store).DeleteAsync(groupId, default);
+
+        api.Unreachable = true;
+        await Service(store, api).SendOwnedDeletesAsync(Account);
+
+        var queued = Assert.Single((await store.LoadStateAsync()).OwnedDeletes ?? []);
+        Assert.Equal(new PendingOwnedDelete(groupId, Account), queued);
+    }
+
+    [Fact]
+    public async Task DeletingAGroupStillWaitingForItsClaim_QueuesNoOwnedDelete()
+    {
+        // Nothing of it is online yet, so there is nothing for the owner to delete.
+        var store = NewStore();
+        var groupId = await SeedLocalGroupAsync(store, "Family");
+        var record = await SingleAsync(store);
+        await store.SaveGroupsAsync([record with { Mode = StorageMode.Account, PendingClaimAccount = Account }]);
+
+        await new SyncingGroupRepository(store).DeleteAsync(groupId, default);
+
+        Assert.Empty((await store.LoadStateAsync()).OwnedDeletes ?? []);
+    }
+
+    private static readonly Guid Account = Guid.Parse("33333333-3333-3333-3333-333333333333");
 
     private static LocalSyncStore NewStore() => new(new InMemoryKeyValueStore());
 

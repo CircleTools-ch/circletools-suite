@@ -311,6 +311,46 @@ public sealed class SharedGroupStore(
         await using var transaction = await context.Database
             .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
+        await DeleteGroupRowsAsync(groupId, cancellationToken).ConfigureAwait(false);
+
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> DeleteOwnedAsync(Guid accountId, Guid groupId, CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await context.Database
+            .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+
+        var owner = await context.Groups
+            .Where(g => g.GroupId == groupId)
+            .Select(g => new { g.OwnerAccountId })
+            .SingleOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
+        // Already gone: the delete a device queued has settled (idempotent, so a retry drains its queue).
+        if (owner is null)
+        {
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return true;
+        }
+
+        if (owner.OwnerAccountId != accountId)
+        {
+            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            return false;
+        }
+
+        await DeleteGroupRowsAsync(groupId, cancellationToken).ConfigureAwait(false);
+
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    // Removes a group's online copy across the four tables; the caller holds the transaction, so a mid-way
+    // failure never leaves a token-less, unreachable group behind.
+    private async Task DeleteGroupRowsAsync(Guid groupId, CancellationToken cancellationToken)
+    {
         await context.RevealSlices.Where(s => s.GroupId == groupId)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         await context.MemberClaims.Where(c => c.GroupId == groupId)
@@ -319,9 +359,6 @@ public sealed class SharedGroupStore(
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
         await context.Groups.Where(g => g.GroupId == groupId)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
-
-        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-        return true;
     }
 
     /// <inheritdoc />

@@ -406,7 +406,7 @@ else
             }
             else if (mode == StorageMode.Account)
             {
-                await Sync.MarkForAccountAsync(id);
+                await Sync.MarkForAccountAsync(_accountId, id);
             }
 
             _newName = string.Empty;

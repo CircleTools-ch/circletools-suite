@@ -72,6 +72,7 @@ public sealed class NoOpSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
     public Task<ApiResult<RotatedAdminLink>> ReleaseAdminAsync(Guid groupId, CancellationToken cancellationToken = default) => Unreachable<RotatedAdminLink>();
     public Task<ApiResult<SharedGroupView>> GetOwnedAsync(Guid groupId, CancellationToken cancellationToken = default) => Unreachable<SharedGroupView>();
     public Task<ApiResult<PushSharedGroupResult>> PushOwnedAsync(Guid groupId, PushSharedGroupRequest request, CancellationToken cancellationToken = default) => Unreachable<PushSharedGroupResult>();
+    public Task<ApiResult> DeleteOwnedAsync(Guid groupId, CancellationToken cancellationToken = default) => Unreachable();
     public Task<ApiResult<OwnedSharedGroups>> ListOwnedAsync(CancellationToken cancellationToken = default) => Unreachable<OwnedSharedGroups>();
     public Task<ApiResult> PublishOwnedRevealSlicesAsync(Guid groupId, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default) => Unreachable();
 

@@ -154,5 +154,7 @@
   href: 0076-docs-site-to-private-github-pages.md
 - name: 0077 Retract linking projection on group delete
   href: 0077-retract-linking-projection-on-group-delete.md
+- name: 0078 My-account groups record their account
+  href: 0078-my-account-groups-record-their-account.md
 - name: Template
   href: _template-adr.md

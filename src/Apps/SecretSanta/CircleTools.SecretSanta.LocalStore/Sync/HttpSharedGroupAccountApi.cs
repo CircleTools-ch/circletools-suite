@@ -75,6 +75,23 @@ public sealed class HttpSharedGroupAccountApi(HttpClient client) : ISharedGroupA
     }
 
     /// <inheritdoc />
+    public async Task<ApiResult> DeleteOwnedAsync(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(HttpMethod.Delete, $"{Route}/{groupId}/owned");
+        try
+        {
+            using var response = await client.SendAsync(message, cancellationToken);
+            return response.IsSuccessStatusCode
+                ? ApiResult.Ok()
+                : ApiResult.Failed(await ApiResponseReader.ReadErrorAsync(response, cancellationToken));
+        }
+        catch (HttpRequestException)
+        {
+            return ApiResult.Failed(new ApiError(ApiFailure.Unreachable));
+        }
+    }
+
+    /// <inheritdoc />
     public async Task<ApiResult<OwnedSharedGroups>> ListOwnedAsync(CancellationToken cancellationToken = default)
     {
         using var message = new HttpRequestMessage(HttpMethod.Get, $"{Route}/owned");

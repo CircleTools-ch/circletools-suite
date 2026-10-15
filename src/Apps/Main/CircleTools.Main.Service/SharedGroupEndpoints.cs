@@ -75,6 +75,10 @@ public static class SharedGroupEndpoints
         group.MapGet("/{groupId:guid}/owned", GetOwnedAsync).WithName("GetOwnedSharedGroup").RequireAuthorization();
         group.MapPut("/{groupId:guid}/owned", PushOwnedAsync).WithName("PushOwnedSharedGroup").RequireAuthorization();
 
+        // Owner delete of a claimed (My account) group's online copy (ADR-0078) — by id + bearer, since the
+        // owner has no admin token. Idempotent: an already-gone group is a success.
+        group.MapDelete("/{groupId:guid}/owned", DeleteOwnedAsync).WithName("DeleteOwnedSharedGroup").RequireAuthorization();
+
         // Live reveal links (ADR-0068, FEAT-020). Publish the per-giver reveal slices for a group: by
         // admin token (shared-by-link) or by owner bearer (account mode). Read one giver's slice by its
         // reveal token — the public reveal page's only call, anonymous. All account-free (NFR-009).
@@ -209,6 +213,21 @@ public static class SharedGroupEndpoints
 
         var rotated = await store.ReleaseAdminAsync(accountId, groupId, cancellationToken);
         return rotated is null ? Results.Forbid() : Results.Ok(rotated);
+    }
+
+    private static async Task<IResult> DeleteOwnedAsync(
+        Guid groupId,
+        ClaimsPrincipal principal,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        if (!principal.TryGetUserId(out var accountId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var deleted = await store.DeleteOwnedAsync(accountId, groupId, cancellationToken);
+        return deleted ? Results.NoContent() : Results.Forbid();
     }
 
     private static async Task<IResult> ListOwnedAsync(

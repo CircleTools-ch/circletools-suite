@@ -211,10 +211,11 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
     }
 
     /// <summary>Claims admin of a shared-by-link group into the signed-in account (ADR-0058): Shared by link → My account.</summary>
+    /// <param name="accountId">The signed-in account taking admin; recorded on the group (ADR-0078).</param>
     /// <param name="groupId">The shared group.</param>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns><see langword="true"/> when the account now owns the group.</returns>
-    public async Task<bool> ClaimAdminToAccountAsync(Guid groupId, CancellationToken cancellationToken = default)
+    public async Task<bool> ClaimAdminToAccountAsync(Guid accountId, Guid groupId, CancellationToken cancellationToken = default)
     {
         var records = (await local.LoadGroupsAsync(cancellationToken)).ToList();
         var index = records.FindIndex(r => r.State.Id == groupId);
@@ -231,8 +232,14 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
 
         var record = records[index];
         // The account now owns it; the admin link is retired. Drop the (now-dead) admin token, keep the
-        // join token (participants are unaffected), and mark the group account-owned.
-        records[index] = record with { Mode = StorageMode.Account, Tokens = record.Tokens! with { AdminToken = null } };
+        // join token (participants are unaffected), and mark the group account-owned — by this account, so
+        // it is hidden while signed out and from any other account on this device (ADR-0078).
+        records[index] = record with
+        {
+            Mode = StorageMode.Account,
+            Tokens = record.Tokens! with { AdminToken = null },
+            AdminAccount = accountId,
+        };
         await local.SaveGroupsAsync(records, cancellationToken);
         return true;
     }
@@ -261,6 +268,7 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
         {
             Mode = StorageMode.SharedByLink,
             Tokens = new SharedGroupTokens(result.Value.AdminToken, record.Tokens?.JoinToken),
+            AdminAccount = null,
         };
         await local.SaveGroupsAsync(records, cancellationToken);
         return true;
@@ -428,24 +436,44 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
     /// <summary>
     /// Discovers the signed-in account's owned shared groups on this device (D2): a group claimed on
     /// another device is fetched and added locally as a My-account group, so the owner manages it here
-    /// too. Existing records are left for <see cref="SyncGroupAsync"/> to reconcile.
+    /// too. Existing records are left for <see cref="SyncGroupAsync"/> to reconcile — except that a
+    /// held "My account" record not yet attributed to an account (written before ADR-0078) is attributed
+    /// to this one as its admin account, so the auto-claim never uploads it into the account store too.
     /// </summary>
+    /// <param name="accountId">The signed-in account whose owned groups are listed.</param>
     /// <param name="cancellationToken">Cancels the call.</param>
-    public async Task MergeOwnedAsync(CancellationToken cancellationToken = default)
+    /// <returns><see langword="true"/> when the owned list was read (whether or not anything changed).</returns>
+    public async Task<bool> MergeOwnedAsync(Guid accountId, CancellationToken cancellationToken = default)
     {
         var result = await accountApi.ListOwnedAsync(cancellationToken);
         if (!result.IsSuccess || result.Value is null)
         {
-            return;
+            return false;
         }
 
         var records = (await local.LoadGroupsAsync(cancellationToken)).ToList();
+        var syncState = await local.LoadStateAsync(cancellationToken);
+        var deleting = (syncState.OwnedDeletes ?? []).Select(d => d.GroupId).ToHashSet();
         var changed = false;
         foreach (var owned in result.Value.Groups)
         {
-            if (records.Any(r => r.State.Id == owned.GroupId))
+            // Deleted on this device, its owner delete not sent yet: never bring it back (ADR-0078).
+            if (deleting.Contains(owned.GroupId))
             {
-                continue; // already known — SyncGroupAsync reconciles it
+                continue;
+            }
+
+            var index = records.FindIndex(r => r.State.Id == owned.GroupId);
+            if (index >= 0)
+            {
+                // Already known — SyncGroupAsync reconciles it. Backfill the owner on a legacy record.
+                if (records[index] is { Mode: StorageMode.Account, AccountScope: null, AdminAccount: null })
+                {
+                    records[index] = records[index] with { AdminAccount = accountId, PendingClaimAccount = null };
+                    changed = true;
+                }
+
+                continue;
             }
 
             var state = owned.Body.Deserialize(SyncJsonContext.Default.GroupState);
@@ -456,7 +484,7 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
 
             records.Add(new SyncedGroupRecord(
                 state, owned.Version, AccountScope: null, Dirty: false,
-                Mode: StorageMode.Account, Tokens: null));
+                Mode: StorageMode.Account, Tokens: null, AdminAccount: accountId));
             changed = true;
         }
 
@@ -464,6 +492,49 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
         {
             await local.SaveGroupsAsync(records, cancellationToken);
         }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Sends the owner deletes queued by deleting "My account" groups on this device (ADR-0078), so the
+    /// online copy goes and the account's other devices stop discovering the group. Only the deletes for
+    /// <paramref name="accountId"/> (or with no account recorded) are sent.
+    /// </summary>
+    /// <remarks>
+    /// Best-effort and offline-safe: a delete that cannot reach the server stays queued for the next cycle.
+    /// One the server settles — deleted, already gone, or refused because the caller does not own the group
+    /// (any more) — is dropped: there is nothing more this device can do about it.
+    /// </remarks>
+    /// <param name="accountId">The signed-in account.</param>
+    /// <param name="cancellationToken">Cancels the calls.</param>
+    public async Task SendOwnedDeletesAsync(Guid accountId, CancellationToken cancellationToken = default)
+    {
+        var state = await local.LoadStateAsync(cancellationToken);
+        if (state.OwnedDeletes is not { Count: > 0 } queued)
+        {
+            return;
+        }
+
+        var settled = new HashSet<Guid>();
+        foreach (var pending in queued.Where(d => d.AccountId is null || d.AccountId == accountId))
+        {
+            var result = await accountApi.DeleteOwnedAsync(pending.GroupId, cancellationToken);
+            if (result.IsSuccess || result.Error!.Failure is ApiFailure.Forbidden or ApiFailure.NotFound)
+            {
+                settled.Add(pending.GroupId);
+            }
+        }
+
+        if (settled.Count == 0)
+        {
+            return;
+        }
+
+        // Re-read before writing: a delete made while the calls were in flight must stay queued.
+        var latest = await local.LoadStateAsync(cancellationToken);
+        var remaining = (latest.OwnedDeletes ?? []).Where(d => !settled.Contains(d.GroupId)).ToList();
+        await local.SaveStateAsync(latest with { OwnedDeletes = remaining }, cancellationToken);
     }
 
     // Reconcile a claimed (My account) shared group via the owner path (D2): the owner has no admin

@@ -129,7 +129,7 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
 
             // Back to "On this device" as well as account-free: Mode is the authoritative intent
             // (ADR-0073), and the auto-claim re-claims any Mode == Account group on the next cycle.
-            records[index] = records[index] with { AccountScope = null, Dirty = false, Mode = StorageMode.OnThisDevice };
+            records[index] = records[index] with { AccountScope = null, Dirty = false, Mode = StorageMode.OnThisDevice, PendingClaimAccount = null };
             await local.SaveGroupsAsync(records, cancellationToken);
 
             return new SyncOutcome(SyncStatus.Synced, 0, 0, 0, Unclaimed: 1, 0);
@@ -188,9 +188,14 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
         {
             var index = records.FindIndex(r => r.State.Id == groupId);
 
-            // Only an account-free local group can be claimed; anything already scoped (or not held
-            // here) is left exactly as it is.
-            if (index < 0 || records[index].AccountScope is not null)
+            // Only a local group no account has can be claimed; anything already scoped (or not held
+            // here) is left exactly as it is. Nor is a shared group whose admin an account claimed — it
+            // lives in the shared-group store — or one marked "My account" for a different account
+            // (ADR-0078).
+            if (index < 0
+                || records[index].AccountScope is not null
+                || records[index].AdminAccount is not null
+                || (records[index].PendingClaimAccount is { } marked && marked != accountId))
             {
                 continue;
             }
@@ -210,7 +215,13 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
             // the claim route uploaded exactly this version, so the next cycle re-pulls it harmlessly. Also
             // record Mode = Account so the storage mode reflects reality (FR-038): the claim path is the
             // one place a group actually becomes account-owned, and the mode must track it.
-            records[index] = record with { AccountScope = accountId, Dirty = false, Mode = StorageMode.Account };
+            records[index] = record with
+            {
+                AccountScope = accountId,
+                Dirty = false,
+                Mode = StorageMode.Account,
+                PendingClaimAccount = null,
+            };
             claimed++;
         }
 
@@ -231,6 +242,8 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
     /// <summary>
     /// Records that a local group should live on the signed-in account (FR-038): sets its storage mode to
     /// <see cref="StorageMode.Account"/> so the next sync cycle's auto-claim uploads and account-scopes it.
+    /// The account is recorded with the intent, so until the claim the group is hidden while signed out and
+    /// never shown to or claimed into another account on this device (ADR-0078).
     /// </summary>
     /// <remarks>
     /// Local-only and best-effort — the actual upload happens on the claim cycle (so it works offline and
@@ -238,9 +251,10 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
     /// held here, already account-scoped, or not currently "On this device" (e.g. shared-by-link) is left
     /// unchanged: the account intent only applies to a plain local group.
     /// </remarks>
+    /// <param name="accountId">The signed-in account the group is marked for.</param>
     /// <param name="groupId">The local group to mark for the account.</param>
     /// <param name="cancellationToken">Cancels the write.</param>
-    public async Task MarkForAccountAsync(Guid groupId, CancellationToken cancellationToken = default)
+    public async Task MarkForAccountAsync(Guid accountId, Guid groupId, CancellationToken cancellationToken = default)
     {
         List<SyncedGroupRecord> records;
         try
@@ -258,7 +272,7 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
             return;
         }
 
-        records[index] = records[index] with { Mode = StorageMode.Account };
+        records[index] = records[index] with { Mode = StorageMode.Account, PendingClaimAccount = accountId };
 
         try
         {
@@ -480,7 +494,7 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
                 // Un-claim keeps the local copy and makes it account-free again — it is not a delete.
                 // The intent goes back to "On this device" too, or this device's auto-claim (Mode ==
                 // Account, ADR-0073) would undo the removal made on the other device.
-                records[index] = records[index] with { AccountScope = null, Dirty = false, Mode = StorageMode.OnThisDevice };
+                records[index] = records[index] with { AccountScope = null, Dirty = false, Mode = StorageMode.OnThisDevice, PendingClaimAccount = null };
                 dropped++;
             }
         }

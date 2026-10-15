@@ -290,6 +290,26 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
     }
 
     [Fact]
+    public async Task DeleteOwned_ByOwner_RemovesTheGroup_OthersAreRefused_AndAGoneGroupIsASuccess()
+    {
+        // ADR-0078: an owner deletes a claimed group's online copy by id (no admin token). A non-owner is
+        // refused and changes nothing; a retry after the delete settles (idempotent).
+        await using var provider = fixture.CreateProvider();
+        var links = await Share(provider, Guid.NewGuid(), "{}");
+        var account = Guid.NewGuid();
+        await Store(provider).ClaimAdminAsync(links.AdminToken, account, "Anna");
+
+        Assert.False(await Store(provider).DeleteOwnedAsync(Guid.NewGuid(), links.GroupId)); // not the owner
+        Assert.NotNull(await Store(provider).GetAsync(links.JoinToken));
+
+        Assert.True(await Store(provider).DeleteOwnedAsync(account, links.GroupId));
+        Assert.Null(await Store(provider).GetAsync(links.JoinToken)); // the join link goes with it
+        Assert.Empty(await Store(provider).ListOwnedAsync(account)); // no device rediscovers it
+
+        Assert.True(await Store(provider).DeleteOwnedAsync(account, links.GroupId)); // already gone
+    }
+
+    [Fact]
     public async Task PruneExpired_RemovesOwnerLessInactiveGroups_ButKeepsOwnedOnes()
     {
         await using var provider = fixture.CreateProvider();
