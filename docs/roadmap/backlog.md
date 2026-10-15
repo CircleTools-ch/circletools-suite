@@ -3,6 +3,58 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Sync & storage-mode test follow-ups — Secret-Santa (2026-10-15)
+
+From the [2026-10-15 sync test](../brainstorming/2026-10-15-secret-santa-sync-device-test.md) (Pixel 9 Pro +
+browser against production). All findings are fixed in `7bb52d1`. The decisions are in
+[ADR-0073](../adr/0073-storage-mode-is-authoritative.md) Amendment 2,
+[ADR-0078](../adr/0078-my-account-groups-record-their-account.md) Amendments 2–3,
+[ADR-0044](../adr/0044-sign-in-reconciliation-and-account-scoped-visibility.md) (amendment 2026-10-15) and
+[ADR-0079](../adr/0079-sign-out-this-device-and-change-password.md)
+([FR-049](../requirements/functional/FR-049-change-password.md),
+[FEAT-023](../features/FEAT-023-session-scope-and-change-password.md)). Open:
+
+- **SYNC-1 · Deploy, server first.** The server must go out before the apps: ADR-0078 Amendment 2 (an
+  older server answers 404 for a released group, which a new client reads as "deleted") and ADR-0079 (an
+  older server ignores the logout body and ends every session, the old behaviour). Apps already installed
+  keep "sign out everywhere" until they update. After the deploy, re-check S4 on the phone.
+- **SYNC-2 · Device check on the Pixel.** These fixes are built but not yet run on the phone:
+  - D1: the keyboard no longer pushes the page or covers bottom sheets;
+  - D5: closing the share sheet doesn't count as "handed out" (Android chooser callback);
+  - S7: sync on resume and every 2 minutes in the foreground;
+  - S1: the import prompt on Android;
+  - D8: re-check the swallowed tap after "Draw again".
+
+  Planned after the deploy (SYNC-1): test the released build from the Play Store against production, with
+  the two test accounts, in a new session. Start from the
+  [session doc](../brainstorming/2026-10-15-secret-santa-sync-device-test.md)'s status table. Only if an
+  unreleased build is needed: a debug build against the local stack
+  ([device testing](../deployment/device-testing.md)), which requires removing the Play Store install
+  first and wipes the phone's local data.
+- **SYNC-3 · Decide: deleting a Shared-by-link group as its admin.** Today it is local-only. The online copy
+  stays for join-link holders and co-admins until it expires (NFR-010), while "Make local" does delete it.
+  Should one admin's delete remove the group for everyone, as for an admin-claimed group (ADR-0078
+  Amendment 1)? Until decided, the delete confirmation for such a group keeps the plain wording. Owner:
+  Adrian.
+- **SYNC-4 · Cosmetic: the page behind the import prompt keeps the old language.** When a sign-in switches
+  to the account's language, the prompt is correct but the page under its backdrop can stay in the previous
+  language until the prompt is answered. Likely cause: the UI culture is async-local, and the culture
+  boundary's rebuild renders in a flow that still holds the old culture. Low priority.
+- **SYNC-5 · Two-browser E2E coverage.** Add E2E tests (`tests/E2E`) for the new behaviour:
+  - signing out on one device leaves the other signed in;
+  - a password change ends the other session;
+  - a join-link participant gets the read-only view;
+  - "My account → On this device" removes the group from the account's other browser.
+
+  So far these are covered by unit and API tests plus a manual browser walkthrough only.
+- **SYNC-6 · Clean up the test data in production.** On the account account A: **T2-Link** (an
+  admin-claimed shared group) on the server. Also left over from testing:
+  - **T3-Admin** and a phantom "Fritz" in the test browser profile;
+  - **W1** (a local group with a draw) on the phone;
+  - the orphaned "Testq" / "UI-Test Familie" rows from the 2026-10-14 review.
+
+  The phone was left signed in as account B.
+
 ## First-run onboarding pass — Secret-Santa (2026-09-17)
 
 A mobile-first review of the **first session** (empty app → names drawn → links shared), run as a

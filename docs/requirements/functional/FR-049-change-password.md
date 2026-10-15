@@ -2,7 +2,7 @@
 id: FR-049
 title: Change password while signed in
 type: functional
-status: Approved
+status: Implemented
 priority: Must
 source: 2026-10-15 sync device test (D10), UC-MAIN-002
 verification: test

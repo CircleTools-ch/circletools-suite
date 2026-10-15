@@ -179,7 +179,13 @@ wipes its local data, and that needs Adrian's OK.
       (`adb reverse tcp:7180 tcp:7180`, `-p:ApiBaseUrl=https://localhost:7180`). Owner: Adrian (OK to replace the
       Play Store install).
 - [ ] Decide the open question on deleting a Shared by link group as its admin (see above). Owner: Adrian.
-- [ ] Deploy ADR-0078 Amendment 2 (server first, per its deploy order), then re-check S4 on the phone.
+- [x] Implement and verify everything selected: committed as `7bb52d1` (2026-10-15).
+- [ ] Deploy, server first (ADR-0078 Amendment 2 and ADR-0079 both depend on the order), then re-check S4 on
+      the phone — backlog **SYNC-1**.
+- [ ] The page behind the import prompt keeps the old language until it is answered — backlog **SYNC-4**.
+- [ ] Two-browser E2E coverage of the new behaviour — backlog **SYNC-5**.
+- [ ] The device check, the open delete question and the test-data cleanup below are tracked as backlog
+      **SYNC-2**, **SYNC-3** and **SYNC-6**.
 - [ ] Clean up the test data: on account A, **T2-Link** (admin-claimed shared group) on the server; the
       browser profile's orphan **T3-Admin** and phantom "Fritz"; the phone's **W1** (local, drawn). The
       phone was left signed in as **account B**.

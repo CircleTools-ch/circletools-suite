@@ -80,6 +80,13 @@ See [TP-023](TP-023-session-scope-and-change-password.md): endpoint integration 
 logout, logout-all, change password incl. wrong current password, policy failure, other sessions revoked,
 own kept), session-service unit tests, and a browser walkthrough with two devices.
 
+## Implementation status (2026-10-15)
+
+Built and committed in `7bb52d1`: the server endpoints with integration tests, the client session
+methods, the Security page, the "you were signed out" notice and the password-changed mail. Verified
+in a browser against the local stack (two sessions; DE/EN strings). Open: the two-browser E2E tests
+(backlog SYNC-5) and the deploy, server first (SYNC-1).
+
 ## Rollout / deployment & feature flags
 
 - Server first, then the web app and the mobile apps. No flag.
