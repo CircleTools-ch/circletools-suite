@@ -116,4 +116,18 @@
   <data name="DeleteDoneHome" xml:space="preserve"><value>Zurück zur App</value></data>
   <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Übergib oder lösche die Kreise, die dir gehören, bevor du dein Konto löschst.</value></data>
   <data name="CircleErrorRefused" xml:space="preserve"><value>Das ist nicht erlaubt.</value></data>
+  <data name="ChangePasswordTitle" xml:space="preserve"><value>Passwort</value></data>
+  <data name="ChangePasswordLead" xml:space="preserve"><value>Ändere dein Passwort. Dieses Gerät bleibt angemeldet, alle anderen Geräte werden abgemeldet.</value></data>
+  <data name="FieldCurrentPassword" xml:space="preserve"><value>Aktuelles Passwort</value></data>
+  <data name="FieldRepeatPassword" xml:space="preserve"><value>Neues Passwort wiederholen</value></data>
+  <data name="PasswordsDoNotMatch" xml:space="preserve"><value>Die beiden neuen Passwörter stimmen nicht überein.</value></data>
+  <data name="ChangePasswordSubmit" xml:space="preserve"><value>Passwort ändern</value></data>
+  <data name="PasswordChanged" xml:space="preserve"><value>Dein Passwort wurde geändert. Deine anderen Geräte wurden abgemeldet.</value></data>
+  <data name="SignOutEverywhereTitle" xml:space="preserve"><value>Angemeldete Geräte</value></data>
+  <data name="SignOutEverywhereLead" xml:space="preserve"><value>Abmelden beendet nur die Sitzung auf diesem Gerät. Wenn du ein Gerät verloren hast oder dich irgendwo angemeldet hast, dem du nicht mehr traust, melde dich überall ab.</value></data>
+  <data name="SignOutEverywhereButton" xml:space="preserve"><value>Auf allen Geräten abmelden</value></data>
+  <data name="SignOutEverywhereConfirm" xml:space="preserve"><value>Auf allen deinen Geräten abmelden, auch auf diesem?</value></data>
+  <data name="SignOutEverywhereConfirmYes" xml:space="preserve"><value>Überall abmelden</value></data>
+  <data name="SignedOutByServer" xml:space="preserve"><value>Du wurdest abgemeldet: Deine Sitzung wurde auf einem anderen Gerät beendet oder ist abgelaufen.</value></data>
+  <data name="ConfirmCancel" xml:space="preserve"><value>Abbrechen</value></data>
 </root>

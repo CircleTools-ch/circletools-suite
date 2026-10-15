@@ -7,6 +7,7 @@
 @inject RecentAccessService Recent
 @inject ISyncSignals SyncSignals
 @inject RevealLinkOptions RevealOptions
+@inject IServiceProvider Services
 @implements IDisposable
 
 @*
@@ -31,6 +32,11 @@
 }
 else
 {
+    @if (_access.ReadOnly)
+    {
+        <MudAlert Severity="Severity.Normal" Class="mb-3" Dense="true">@L["ParticipantReadOnlyNote"]</MudAlert>
+    }
+
     <MudStack Spacing="2">
         @foreach (var section in Sections)
         {
@@ -75,13 +81,25 @@ else
 
     private sealed record Section(string Href, string Icon, string Label, string? Status);
 
-    private IReadOnlyList<Section> Sections => _event is null ? [] :
-    [
-        new($"groups/{GroupId}/events/{EventId}/details", Icons.Material.Filled.Event, L["NavEventDetails"], DetailsStatus),
-        new($"groups/{GroupId}/events/{EventId}/wishlists", Icons.Material.Filled.CardGiftcard, L["NavWishlists"], WishlistStatus),
-        new($"groups/{GroupId}/events/{EventId}/draw", Icons.Material.Filled.Casino, L["NavDraw"], DrawStatus),
-        new($"groups/{GroupId}/events/{EventId}/share", Icons.Material.Filled.Share, L["NavShare"], ShareStatus),
-    ];
+    private GroupAccessInfo _access = GroupAccessInfo.Organizer;
+    private string? _ownRevealHref;
+
+    // A join-link participant sees the details and wishlists, and their own assignment once drawn - never
+    // the draw controls or the other people's reveal links (ADR-0058).
+    private IReadOnlyList<Section> Sections => _event is null ? [] : _access.ReadOnly
+        ? [
+            new($"groups/{GroupId}/events/{EventId}/details", Icons.Material.Filled.Event, L["NavEventDetails"], DetailsStatus),
+            new($"groups/{GroupId}/events/{EventId}/wishlists", Icons.Material.Filled.CardGiftcard, L["NavWishlists"], WishlistStatus),
+            .. _ownRevealHref is { } href
+                ? new[] { new Section(href, Icons.Material.Filled.Redeem, L["YourAssignment"], L["YourAssignmentHint"]) }
+                : [],
+        ]
+        : [
+            new($"groups/{GroupId}/events/{EventId}/details", Icons.Material.Filled.Event, L["NavEventDetails"], DetailsStatus),
+            new($"groups/{GroupId}/events/{EventId}/wishlists", Icons.Material.Filled.CardGiftcard, L["NavWishlists"], WishlistStatus),
+            new($"groups/{GroupId}/events/{EventId}/draw", Icons.Material.Filled.Casino, L["NavDraw"], DrawStatus),
+            new($"groups/{GroupId}/events/{EventId}/share", Icons.Material.Filled.Share, L["NavShare"], ShareStatus),
+        ];
 
     // Details: the date, when one is set — the single most useful at-a-glance fact.
     private string? DetailsStatus =>
@@ -142,6 +160,19 @@ else
         // The group name is a header nicety; a read failure just falls back to "All groups".
         var group = await Sender.Send(new GetGroupQuery(GroupId));
         _groupName = group?.Name;
+
+        _access = await GroupAccess.ForAsync(Services, GroupId);
+        _ownRevealHref = null;
+        if (_access is { ReadOnly: true, ClaimedMemberId: { } me } && _event?.HasCurrentDraw == true)
+        {
+            // The participant's own reveal link, opened inside the app: the same link the organizer would
+            // hand them, built from the draw this device holds.
+            var own = (await Sender.Send(new GetRevealLinksQuery(GroupId, EventId))).FirstOrDefault(l => l.GiverMemberId == me);
+            if (own is not null && own.Url.IndexOf('#', StringComparison.Ordinal) is var hash and >= 0)
+            {
+                _ownRevealHref = "r" + own.Url[hash..];
+            }
+        }
     }
 
     // A background sync may have pulled a co-organizer's edits into the local store (shared-by-link,

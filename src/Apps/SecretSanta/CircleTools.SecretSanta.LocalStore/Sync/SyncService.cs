@@ -21,8 +21,9 @@ namespace CircleTools.SecretSanta.LocalStore;
 /// </para>
 /// <para>
 /// <strong>Data safety.</strong> Nothing local is removed except by an applied tombstone (a group
-/// deleted on the account) or dropped from account scope by an un-claim marker (the local copy is
-/// kept). If the server is unreachable or a local write is refused, the cycle ends without advancing
+/// deleted on the account) or an un-claim marker (the group was moved out of the account on another
+/// device, which keeps it; a copy here holding unsynced edits is kept as a local copy instead —
+/// ADR-0073 Amendment 2). If the server is unreachable or a local write is refused, the cycle ends without advancing
 /// the cursor, so the delta is simply re-fetched next time — an interrupted cycle loses nothing and
 /// duplicates nothing (NFR-008).
 /// </para>
@@ -89,10 +90,10 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
     }
 
     /// <summary>
-    /// Removes a group from the account (FR-026): the out-of-cycle counterpart to a sync. Unlike an
-    /// offline edit, this requires a connection — it deletes the server copy and records an un-claim
-    /// marker for the account's other devices. The local copy is <strong>kept</strong> and becomes
-    /// account-free again; it is not a delete.
+    /// Moves a group out of the account onto this device (FR-026, ADR-0073 Amendment 2): the out-of-cycle
+    /// counterpart to a sync. Unlike an offline edit, this requires a connection — it deletes the server
+    /// copy and records an un-claim marker, on which the account's other devices drop their copy. The
+    /// copy on <strong>this</strong> device is kept and becomes account-free again; it is not a delete.
     /// </summary>
     /// <remarks>
     /// The server is called first and the local account scope cleared only once it confirms, so the
@@ -355,7 +356,7 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
 
         var pulled = ApplyPulledChanges(accountId, records, response.Changes, pendingDeletes);
         var deleted = ApplyPulledTombstones(records, response.Tombstones);
-        var unclaimed = ApplyUnclaimed(records, response.Unclaimed);
+        var (unclaimed, keptAsLocalCopy) = ApplyUnclaimed(records, response.Unclaimed, pushedVersions.Keys.ToHashSet());
 
         await local.SaveGroupsAsync(records, cancellationToken);
 
@@ -374,7 +375,8 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
 
         await local.SaveStateAsync(state with { Cursors = cursors, Tombstones = remainingTombstones }, cancellationToken);
 
-        return new SyncOutcome(SyncStatus.Synced, pushedChanges.Count, pulled, deleted, unclaimed, response.Collisions.Count);
+        return new SyncOutcome(
+            SyncStatus.Synced, pushedChanges.Count, pulled, deleted, unclaimed, response.Collisions.Count, keptAsLocalCopy);
     }
 
     // Reconcile the per-account UI preferences alongside the group cycle (ADR-0041): confirm a pushed
@@ -456,11 +458,21 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
                     continue;
                 }
 
-                records[index] = new SyncedGroupRecord(incoming, change.Version, accountId, Dirty: false);
+                // Keep the record's local facts (tokens, claimed member): rebuilding it from scratch reset
+                // Mode to "On this device" for every account group (ADR-0078 Amendment 3).
+                records[index] = existing with
+                {
+                    State = incoming,
+                    Version = change.Version,
+                    AccountScope = accountId,
+                    Dirty = false,
+                    Mode = StorageMode.Account,
+                    PendingClaimAccount = null,
+                };
             }
             else
             {
-                records.Add(new SyncedGroupRecord(incoming, change.Version, accountId, Dirty: false));
+                records.Add(new SyncedGroupRecord(incoming, change.Version, accountId, Dirty: false, Mode: StorageMode.Account));
             }
 
             applied++;
@@ -483,23 +495,44 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
         return deleted;
     }
 
-    private static int ApplyUnclaimed(List<SyncedGroupRecord> records, IReadOnlyList<SyncUnclaimed> unclaimed)
+    private static (int Dropped, IReadOnlyList<string> KeptAsLocalCopy) ApplyUnclaimed(
+        List<SyncedGroupRecord> records,
+        IReadOnlyList<SyncUnclaimed> unclaimed,
+        HashSet<Guid> pushedThisCycle)
     {
         var dropped = 0;
+        var kept = new List<string>();
         foreach (var marker in unclaimed)
         {
             var index = records.FindIndex(r => r.State.Id == marker.Id);
-            if (index >= 0 && records[index].AccountScope is not null)
+
+            // Only a copy still in the account: the device that moved the group out already dropped its
+            // scope and keeps the group — it is the one copy left (ADR-0073 Amendment 2).
+            if (index < 0 || records[index].AccountScope is null)
             {
-                // Un-claim keeps the local copy and makes it account-free again — it is not a delete.
-                // The intent goes back to "On this device" too, or this device's auto-claim (Mode ==
-                // Account, ADR-0073) would undo the removal made on the other device.
-                records[index] = records[index] with { AccountScope = null, Dirty = false, Mode = StorageMode.OnThisDevice, PendingClaimAccount = null };
-                dropped++;
+                continue;
             }
+
+            // An edit pushed in this very cycle counts as unsynced: the server refuses a push for a group
+            // moved out of the account, so the copy just marked clean holds the only copy of that edit.
+            var record = records[index];
+            if (record.Dirty || pushedThisCycle.Contains(record.State.Id))
+            {
+                // Edits this device never uploaded: keep them as a separate "On this device" copy rather
+                // than lose them, and say so. Mode goes back too, or the auto-claim would re-upload it.
+                records[index] = record with { AccountScope = null, Dirty = false, Mode = StorageMode.OnThisDevice, PendingClaimAccount = null };
+                kept.Add(record.State.Name);
+            }
+            else
+            {
+                // Moving a group out of the account is a move, not a copy: the other devices drop theirs.
+                records.RemoveAt(index);
+            }
+
+            dropped++;
         }
 
-        return dropped;
+        return (dropped, kept);
     }
 
     private static SyncStatus MapFailure(ApiFailure failure) => failure switch

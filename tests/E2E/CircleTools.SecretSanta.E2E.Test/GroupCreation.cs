@@ -23,12 +23,18 @@ internal static class GroupCreation
     /// Fills the inline create field, switches this group's storage to "Shared by link" via the Change
     /// menu, and clicks Create. The caller waits for the navigation to the new group.
     /// </summary>
-    public static async Task CreateSharedGroupAsync(IPage page, string name)
+    public static Task CreateSharedGroupAsync(IPage page, string name) => CreateGroupAsync(page, name, "Shared by link");
+
+    /// <summary>
+    /// Fills the inline create field, switches this group's storage to <paramref name="storage"/> (its English
+    /// title: "On this device", "Shared by link" or "My account") via the Change menu, and clicks Create.
+    /// </summary>
+    public static async Task CreateGroupAsync(IPage page, string name, string storage)
     {
         await page.FillAsync("#new-group-name", name);
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Change", Exact = true }).ClickAsync();
-        await page.Locator(".mud-popover-open").GetByText("Shared by link", new LocatorGetByTextOptions { Exact = true }).ClickAsync();
-        await page.GetByText("Stored:").Filter(new LocatorFilterOptions { HasTextString = "Shared by link" })
+        await page.Locator(".mud-popover-open").GetByText(storage, new LocatorGetByTextOptions { Exact = true }).ClickAsync();
+        await page.GetByText("Stored:").Filter(new LocatorFilterOptions { HasTextString = storage })
             .WaitForAsync(new LocatorWaitForOptions { Timeout = 10_000 });
         await page.ClickAsync("#create-group-btn");
     }

@@ -19,16 +19,22 @@ public sealed class MauiShareService : IShareService
         ValueTask.FromResult(true);
 
     /// <inheritdoc />
-    public async ValueTask ShareAsync(
+    public async ValueTask<ShareOutcome> ShareAsync(
         string title,
         string text,
         string? url = null,
         CancellationToken cancellationToken = default)
     {
+#if ANDROID
+        // Android can tell whether a target was chosen (D5): a chooser with a callback.
+        return await ShareChooser.ShareAsync(title, text);
+#else
         await Share.Default.RequestAsync(new ShareTextRequest
         {
             Title = title,
             Text = text,
         });
+        return ShareOutcome.Unknown;
+#endif
     }
 }

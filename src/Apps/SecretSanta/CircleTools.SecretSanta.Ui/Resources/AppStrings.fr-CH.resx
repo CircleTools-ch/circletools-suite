@@ -246,8 +246,8 @@
   <data name="CreateFromCircleAction" xml:space="preserve"><value>Créer à partir d'un cercle</value></data>
   <data name="AllGroups" xml:space="preserve"><value>Tous les groupes</value></data>
   <data name="ReconcileTitle" xml:space="preserve"><value>Importer vos données hors ligne ?</value></data>
-  <data name="ReconcileBodySingular" xml:space="preserve"><value>Vous avez créé un groupe en étant déconnecté. L'importer dans votre compte pour le synchroniser sur vos appareils, ou le supprimer ? La suppression est définitive.</value></data>
-  <data name="ReconcileBodyPlural" xml:space="preserve"><value>Vous avez créé {0} groupes en étant déconnecté. Les importer dans votre compte pour les synchroniser sur vos appareils, ou les supprimer ? La suppression est définitive.</value></data>
+  <data name="ReconcileBodySingular" xml:space="preserve"><value>Vous avez créé un groupe en étant déconnecté. L'importer dans votre compte pour le synchroniser sur vos appareils, le garder uniquement sur cet appareil ou le supprimer ? La suppression est définitive.</value></data>
+  <data name="ReconcileBodyPlural" xml:space="preserve"><value>Vous avez créé {0} groupes en étant déconnecté. Les importer dans votre compte pour les synchroniser sur vos appareils, les garder uniquement sur cet appareil ou les supprimer ? La suppression est définitive.</value></data>
   <data name="ReconcileImport" xml:space="preserve"><value>Importer</value></data>
   <data name="ReconcileDiscard" xml:space="preserve"><value>Supprimer</value></data>
   <data name="EventOverview" xml:space="preserve"><value>Aperçu</value></data>
@@ -387,4 +387,12 @@
   <data name="MoveToAccountConfirmYes" xml:space="preserve"><value>Déplacer dans mon compte</value></data>
   <data name="AccountToLocalConfirm" xml:space="preserve"><value>Garder ce groupe uniquement sur cet appareil ? Il est retiré de votre compte et du serveur, et disparaît de vos autres appareils.</value></data>
   <data name="AccountToLocalConfirmYes" xml:space="preserve"><value>Uniquement sur cet appareil</value></data>
+  <data name="ReconcileKeepLocal" xml:space="preserve"><value>Garder sur cet appareil</value></data>
+  <data name="KeptAsLocalCopySingular" xml:space="preserve"><value>« {0} » a été retiré de votre compte sur un autre appareil. Vos modifications non synchronisées sont conservées ici dans une copie séparée.</value></data>
+  <data name="ParticipantReadOnlyNote" xml:space="preserve"><value>Vous avez rejoint ce groupe par un lien. Seule la personne organisatrice peut le modifier.</value></data>
+  <data name="YourAssignment" xml:space="preserve"><value>Votre tirage</value></data>
+  <data name="YourAssignmentHint" xml:space="preserve"><value>Voyez à qui vous offrez un cadeau</value></data>
+  <data name="DeleteGroupOnlineConfirm" xml:space="preserve"><value>Supprimer « {0} » et tout son contenu ? Le groupe est aussi supprimé en ligne pour tout le monde et ses liens ne fonctionnent plus. Cette action est définitive.</value></data>
+  <data name="LeaveJoinedGroupConfirm" xml:space="preserve"><value>Retirer « {0} » de cet appareil ? Le groupe reste chez la personne organisatrice ; vous pouvez le rejoindre à nouveau avec le lien.</value></data>
+  <data name="DeleteGroupAccountConfirm" xml:space="preserve"><value>Supprimer « {0} » et tout son contenu ? Le groupe est aussi supprimé de votre compte et de tous vos autres appareils. Cette action est définitive.</value></data>
 </root>

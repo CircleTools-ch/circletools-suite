@@ -156,4 +156,40 @@ public sealed class SyncingGroupRepositoryTests
         await Assert.ThrowsAsync<Ui.Abstractions.StorageUnavailableException>(
             () => repo.SaveAsync(GroupWith("Family", "Alice"), default));
     }
+
+    [Fact]
+    public async Task Save_OfAJoinOnlyGroup_IsRefused()
+    {
+        // ADR-0058 (S6): a participant's edit could never be sent, so it must not exist only here.
+        var (repo, local) = NewRepository();
+        var group = GroupWith("Family", "Alice");
+        await local.SaveGroupsAsync(
+            [new SyncedGroupRecord(group.ToState(), 3, null, Dirty: false, Mode: StorageMode.SharedByLink, Tokens: new SharedGroupTokens(null, "join"))],
+            default);
+        group.AddMember("Fritz");
+
+        await Assert.ThrowsAsync<GroupReadOnlyException>(() => repo.SaveAsync(group, default));
+        Assert.Single(Assert.Single(await local.LoadGroupsAsync(default)).State.Members);
+    }
+
+    [Fact]
+    public async Task Delete_OfAJoinOnlyGroup_OnlyLeavesItOnThisDevice()
+    {
+        // Leaving a joined group must not retract the organizer's linking projection or delete anything online.
+        var (repo, local) = NewRepository();
+        var group = GroupWith("Family", "Alice");
+        var state = group.ToState();
+        state = state with { Members = [state.Members[0] with { UserId = Guid.NewGuid() }] };
+        await local.SaveGroupsAsync(
+            [new SyncedGroupRecord(state, 3, null, Dirty: false, Mode: StorageMode.SharedByLink, Tokens: new SharedGroupTokens(null, "join"))],
+            default);
+
+        await repo.DeleteAsync(group.Id, default);
+
+        Assert.Empty(await local.LoadGroupsAsync(default));
+        var syncState = await local.LoadStateAsync(default);
+        Assert.Empty(syncState.Retractions ?? []);
+        Assert.Empty(syncState.OwnedDeletes ?? []);
+        Assert.Empty(syncState.Tombstones);
+    }
 }

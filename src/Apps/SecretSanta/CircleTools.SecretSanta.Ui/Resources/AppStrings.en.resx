@@ -214,8 +214,8 @@
   <data name="CreateFromCircleAction" xml:space="preserve"><value>Create from a circle</value></data>
   <data name="AllGroups" xml:space="preserve"><value>All groups</value></data>
   <data name="ReconcileTitle" xml:space="preserve"><value>Bring your offline data in?</value></data>
-  <data name="ReconcileBodySingular" xml:space="preserve"><value>You created a group while signed out. Import it into your account to sync it across your devices, or discard it? Discarding can't be undone.</value></data>
-  <data name="ReconcileBodyPlural" xml:space="preserve"><value>You created {0} groups while signed out. Import them into your account to sync them across your devices, or discard them? Discarding can't be undone.</value></data>
+  <data name="ReconcileBodySingular" xml:space="preserve"><value>You created a group while signed out. Import it into your account to sync it across your devices, keep it only on this device, or discard it? Discarding can't be undone.</value></data>
+  <data name="ReconcileBodyPlural" xml:space="preserve"><value>You created {0} groups while signed out. Import them into your account to sync them across your devices, keep them only on this device, or discard them? Discarding can't be undone.</value></data>
   <data name="ReconcileImport" xml:space="preserve"><value>Import</value></data>
   <data name="ReconcileDiscard" xml:space="preserve"><value>Discard</value></data>
   <data name="EventOverview" xml:space="preserve"><value>Overview</value></data>
@@ -356,4 +356,12 @@
   <data name="MoveToAccountConfirmYes" xml:space="preserve"><value>Move to my account</value></data>
   <data name="AccountToLocalConfirm" xml:space="preserve"><value>Keep this group only on this device? It is removed from your account and the server, and disappears from your other devices.</value></data>
   <data name="AccountToLocalConfirmYes" xml:space="preserve"><value>Keep on this device only</value></data>
+  <data name="ReconcileKeepLocal" xml:space="preserve"><value>Keep on this device</value></data>
+  <data name="KeptAsLocalCopySingular" xml:space="preserve"><value>"{0}" was moved off your account on another device. Your unsynced changes are kept here as a separate copy.</value></data>
+  <data name="ParticipantReadOnlyNote" xml:space="preserve"><value>You joined this group with a link. Only the organizer can change it.</value></data>
+  <data name="YourAssignment" xml:space="preserve"><value>Your assignment</value></data>
+  <data name="YourAssignmentHint" xml:space="preserve"><value>See who you're giving a present to</value></data>
+  <data name="DeleteGroupOnlineConfirm" xml:space="preserve"><value>Delete "{0}" with everything in it? It is also deleted online for everyone, and its links stop working. This can't be undone.</value></data>
+  <data name="LeaveJoinedGroupConfirm" xml:space="preserve"><value>Remove "{0}" from this device? The group stays with its organizer; you can join again with the link.</value></data>
+  <data name="DeleteGroupAccountConfirm" xml:space="preserve"><value>Delete "{0}" with everything in it? It is also deleted from your account and from all your other devices. This can't be undone.</value></data>
 </root>

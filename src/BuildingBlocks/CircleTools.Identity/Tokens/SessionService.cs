@@ -99,8 +99,56 @@ public sealed class SessionService(
     }
 
     /// <summary>
-    /// Ends every session a user has. Called by password reset (FR-009) and account deletion
-    /// (FR-015), both of which must eject an intruder rather than merely inconvenience them.
+    /// Ends the one session a refresh secret belongs to — signing out on this device (FR-008, ADR-0079).
+    /// </summary>
+    /// <remarks>
+    /// Only a chain of <paramref name="userId"/> is revoked: a secret of someone else's session, or an
+    /// unknown one, ends nothing. The access token carries no session id, so the refresh secret is what
+    /// names "this session".
+    /// </remarks>
+    /// <param name="userId">The signed-in user.</param>
+    /// <param name="refreshSecret">The refresh secret the client holds for this session.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Whether a session of the user was ended.</returns>
+    public async Task<bool> RevokeSessionAsync(Guid userId, string refreshSecret, CancellationToken cancellationToken = default)
+    {
+        var chain = await FindOwnChainAsync(userId, refreshSecret, cancellationToken).ConfigureAwait(false);
+        if (chain is null)
+        {
+            return false;
+        }
+
+        chain.Revoke(clock.GetUtcNow());
+        await chains.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return true;
+    }
+
+    /// <summary>
+    /// Ends every session of a user except the one a refresh secret belongs to — what a password change
+    /// does (FR-049, ADR-0079). Without a recognisable secret of the user's own, every session ends.
+    /// </summary>
+    /// <param name="userId">The user whose other sessions end.</param>
+    /// <param name="keepRefreshSecret">The refresh secret of the session to keep, if the client sent one.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>How many sessions were revoked.</returns>
+    public async Task<int> RevokeOtherSessionsAsync(Guid userId, string? keepRefreshSecret, CancellationToken cancellationToken = default)
+    {
+        var keep = string.IsNullOrWhiteSpace(keepRefreshSecret)
+            ? null
+            : await FindOwnChainAsync(userId, keepRefreshSecret, cancellationToken).ConfigureAwait(false);
+
+        var revoked = keep is null
+            ? await chains.RevokeAllForUserAsync(userId, clock.GetUtcNow(), cancellationToken).ConfigureAwait(false)
+            : await chains.RevokeAllForUserExceptAsync(userId, keep.Id, clock.GetUtcNow(), cancellationToken).ConfigureAwait(false);
+
+        await chains.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return revoked;
+    }
+
+    /// <summary>
+    /// Ends every session a user has. Called by password reset (FR-009), account deletion (FR-015) and
+    /// "sign out on all devices" (FR-049), all of which must eject an intruder rather than merely
+    /// inconvenience them.
     /// </summary>
     /// <param name="userId">The user whose sessions end.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -113,5 +161,15 @@ public sealed class SessionService(
 
         await chains.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return revoked;
+    }
+
+    // The live chain a refresh secret belongs to, when it is the user's own.
+    private async Task<RefreshTokenChain?> FindOwnChainAsync(Guid userId, string refreshSecret, CancellationToken cancellationToken)
+    {
+        var chain = await chains
+            .FindByTokenHandleAsync(RefreshTokenSecret.HandleFor(refreshSecret), cancellationToken)
+            .ConfigureAwait(false);
+
+        return chain is { IsRevoked: false } && chain.UserId == userId ? chain : null;
     }
 }

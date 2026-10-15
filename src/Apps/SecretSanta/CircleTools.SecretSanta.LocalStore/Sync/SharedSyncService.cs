@@ -83,13 +83,18 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
         }
 
         var links = result.Value;
-        records[index] = record with
-        {
-            Mode = StorageMode.SharedByLink,
-            Tokens = new SharedGroupTokens(links.AdminToken, links.JoinToken, creatorKey),
-            Dirty = false,
-        };
-        await local.SaveGroupsAsync(records, cancellationToken);
+        var sentVersion = record.Version;
+        await UpdateAsync(
+            groupId,
+            current => current with
+            {
+                Mode = StorageMode.SharedByLink,
+                Tokens = new SharedGroupTokens(links.AdminToken, links.JoinToken, creatorKey),
+
+                // Clean only if nothing changed since the uploaded copy; an edit made meanwhile is pushed next.
+                Dirty = current.Version != sentVersion,
+            },
+            cancellationToken);
         return links;
     }
 
@@ -116,8 +121,7 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
 
         // Tokens (including the creator key) are dropped: the server copy is gone, so a later re-share is
         // a fresh group as far as the server is concerned and mints a new creator key.
-        records[index] = record with { Mode = StorageMode.OnThisDevice, Tokens = null, Dirty = false };
-        await local.SaveGroupsAsync(records, cancellationToken);
+        await UpdateAsync(groupId, current => current with { Mode = StorageMode.OnThisDevice, Tokens = null, Dirty = false }, cancellationToken);
     }
 
     /// <summary>Disables the current admin link and mints a fresh one (ADR-0058).</summary>
@@ -139,10 +143,12 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
             return null;
         }
 
-        var record = records[index];
-        records[index] = record with { Tokens = record.Tokens! with { AdminToken = result.Value.AdminToken } };
-        await local.SaveGroupsAsync(records, cancellationToken);
-        return result.Value.AdminToken;
+        var fresh = result.Value.AdminToken;
+        await UpdateAsync(
+            groupId,
+            current => current with { Tokens = (current.Tokens ?? new SharedGroupTokens(null, null)) with { AdminToken = fresh } },
+            cancellationToken);
+        return fresh;
     }
 
     /// <summary>
@@ -230,17 +236,18 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
             return false;
         }
 
-        var record = records[index];
         // The account now owns it; the admin link is retired. Drop the (now-dead) admin token, keep the
         // join token (participants are unaffected), and mark the group account-owned — by this account, so
         // it is hidden while signed out and from any other account on this device (ADR-0078).
-        records[index] = record with
-        {
-            Mode = StorageMode.Account,
-            Tokens = record.Tokens! with { AdminToken = null },
-            AdminAccount = accountId,
-        };
-        await local.SaveGroupsAsync(records, cancellationToken);
+        await UpdateAsync(
+            groupId,
+            current => current with
+            {
+                Mode = StorageMode.Account,
+                Tokens = (current.Tokens ?? new SharedGroupTokens(null, null)) with { AdminToken = null },
+                AdminAccount = accountId,
+            },
+            cancellationToken);
         return true;
     }
 
@@ -263,14 +270,16 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
             return false;
         }
 
-        var record = records[index];
-        records[index] = record with
-        {
-            Mode = StorageMode.SharedByLink,
-            Tokens = new SharedGroupTokens(result.Value.AdminToken, record.Tokens?.JoinToken),
-            AdminAccount = null,
-        };
-        await local.SaveGroupsAsync(records, cancellationToken);
+        var admin = result.Value.AdminToken;
+        await UpdateAsync(
+            groupId,
+            current => current with
+            {
+                Mode = StorageMode.SharedByLink,
+                Tokens = new SharedGroupTokens(admin, current.Tokens?.JoinToken),
+                AdminAccount = null,
+            },
+            cancellationToken);
         return true;
     }
 
@@ -353,27 +362,33 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
     }
 
     /// <summary>Runs one reconcile for a single shared group: pull if the server is newer, push a dirty local edit.</summary>
+    /// <remarks>
+    /// Every write re-reads the record and changes only what this reconcile decided, never the copy read
+    /// before the network call: an edit made while the request was in flight (a member added, a draw run)
+    /// used to be overwritten by that stale copy and never uploaded. A pull never replaces an unsynced
+    /// local edit at least as new as the server's copy; it is pushed instead, as in <see cref="SyncService"/>.
+    /// </remarks>
     /// <param name="groupId">The shared group to reconcile.</param>
     /// <param name="cancellationToken">Cancels the call.</param>
     public async Task SyncGroupAsync(Guid groupId, CancellationToken cancellationToken = default)
     {
-        var records = (await local.LoadGroupsAsync(cancellationToken)).ToList();
-        var index = records.FindIndex(r => r.State.Id == groupId);
-        if (index < 0)
+        var record = (await local.LoadGroupsAsync(cancellationToken)).FirstOrDefault(r => r.State.Id == groupId);
+        if (record is null)
         {
             return;
         }
 
         // A claimed (My account) shared group is owner-authorized: reconcile it by group id + bearer
         // (D2). This covers both the device that claimed it (which kept a join token) and a second
-        // device that discovered it via MergeOwnedAsync (no tokens at all).
-        if (records[index].Mode == StorageMode.Account)
+        // device that discovered it via MergeOwnedAsync. An account-store group is also "My account" but
+        // lives in the account sync store, so it never comes this way (ADR-0078 Amendment 3).
+        if (record.IsAdminClaimedShared())
         {
-            await SyncOwnedAsync(records, index, groupId, cancellationToken);
+            await SyncOwnedAsync(groupId, cancellationToken);
             return;
         }
 
-        if (records[index] is not { Mode: StorageMode.SharedByLink, Tokens: { } tokens })
+        if (record is not { Mode: StorageMode.SharedByLink, Tokens: { } tokens })
         {
             return;
         }
@@ -391,44 +406,39 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
             // keep the local copy. An unreachable server leaves everything untouched (NFR-001).
             if (get.Error?.Failure == ApiFailure.NotFound)
             {
-                records[index] = records[index] with { Mode = StorageMode.OnThisDevice, Tokens = null };
-                await local.SaveGroupsAsync(records, cancellationToken);
+                await UpdateAsync(groupId, current => current with { Mode = StorageMode.OnThisDevice, Tokens = null }, cancellationToken);
             }
 
             return;
         }
 
         var view = get.Value!;
-        var record = records[index];
 
         // An account has claimed admin: this device's admin link is retired. Keep the join link (so a
         // participant keeps access) and stop trying to push through the dead admin link.
         if (view.AdminRetired && record.Tokens?.AdminToken is not null)
         {
-            record = record with { Tokens = record.Tokens with { AdminToken = null } };
-            records[index] = record;
-            await local.SaveGroupsAsync(records, cancellationToken);
+            await UpdateAsync(
+                groupId,
+                current => current.Tokens is { AdminToken: not null } held ? current with { Tokens = held with { AdminToken = null } } : current,
+                cancellationToken);
         }
 
-        if (view.Version > record.Version)
+        if (await PullIfNewerAsync(groupId, view, cancellationToken))
         {
-            var state = view.Body.Deserialize(SyncJsonContext.Default.GroupState);
-            if (state is not null)
-            {
-                records[index] = record with { State = state, Version = view.Version, Dirty = false };
-                await local.SaveGroupsAsync(records, cancellationToken);
-            }
+            return;
         }
-        else if (record is { Dirty: true, Tokens.AdminToken: { } admin })
+
+        // Only an admin-link holder pushes the whole group; a participant's own edits travel a narrower
+        // per-member path (a later slice). Server last-write-wins arbitrates.
+        var pending = (await local.LoadGroupsAsync(cancellationToken)).FirstOrDefault(r => r.State.Id == groupId);
+        if (pending is { Dirty: true, Tokens.AdminToken: { } admin })
         {
-            // Only an admin-link holder pushes the whole group; a participant's own edits travel a
-            // narrower per-member path (a later slice). Server last-write-wins arbitrates.
-            var body = JsonSerializer.SerializeToElement(record.State, SyncJsonContext.Default.GroupState);
-            var push = await api.PushAsync(admin, new PushSharedGroupRequest(record.Version, body), cancellationToken);
+            var body = JsonSerializer.SerializeToElement(pending.State, SyncJsonContext.Default.GroupState);
+            var push = await api.PushAsync(admin, new PushSharedGroupRequest(pending.Version, body), cancellationToken);
             if (push.IsSuccess && push.Value is not null)
             {
-                records[index] = record with { Version = push.Value.Version, Dirty = false };
-                await local.SaveGroupsAsync(records, cancellationToken);
+                await MarkPushedAsync(groupId, pending.Version, push.Value.Version, cancellationToken);
             }
         }
     }
@@ -439,6 +449,9 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
     /// too. Existing records are left for <see cref="SyncGroupAsync"/> to reconcile — except that a
     /// held "My account" record not yet attributed to an account (written before ADR-0078) is attributed
     /// to this one as its admin account, so the auto-claim never uploads it into the account store too.
+    /// A held group this account claimed admin of that is no longer listed is settled: removed when it was
+    /// deleted online, handed back to its link (or kept on this device) when another owner or a release
+    /// took it (ADR-0078).
     /// </summary>
     /// <param name="accountId">The signed-in account whose owned groups are listed.</param>
     /// <param name="cancellationToken">Cancels the call.</param>
@@ -451,6 +464,27 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
             return false;
         }
 
+        // A group this account claimed admin of but no longer owns online: deleted on another device, or
+        // handed back to a link there. Ask which (network) before touching the local list, so this device
+        // follows instead of keeping a stale "My account" copy for good (ADR-0078). Only this account's
+        // admin-claimed groups: an account-store group (AccountScope) follows its own tombstones, and another
+        // account's group is not ours to settle.
+        var listed = result.Value.Groups.Select(g => g.GroupId).ToHashSet();
+        var verdicts = new Dictionary<Guid, ApiFailure>();
+        foreach (var groupId in (await local.LoadGroupsAsync(cancellationToken))
+            .Where(r => r is { Mode: StorageMode.Account, AccountScope: null } && r.AdminAccount == accountId
+                && !listed.Contains(r.State.Id))
+            .Select(r => r.State.Id)
+            .ToList())
+        {
+            if ((await accountApi.GetOwnedAsync(groupId, cancellationToken)).Error?.Failure is { } failure)
+            {
+                verdicts[groupId] = failure;
+            }
+        }
+
+        // Now apply everything to the list as it is now, with no network call before the save, so an edit
+        // made meanwhile is not overwritten by an older copy.
         var records = (await local.LoadGroupsAsync(cancellationToken)).ToList();
         var syncState = await local.LoadStateAsync(cancellationToken);
         var deleting = (syncState.OwnedDeletes ?? []).Select(d => d.GroupId).ToHashSet();
@@ -463,20 +497,40 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
                 continue;
             }
 
+            var state = owned.Body.Deserialize(SyncJsonContext.Default.GroupState);
             var index = records.FindIndex(r => r.State.Id == owned.GroupId);
             if (index >= 0)
             {
-                // Already known — SyncGroupAsync reconciles it. Backfill the owner on a legacy record.
-                if (records[index] is { Mode: StorageMode.Account, AccountScope: null, AdminAccount: null })
+                var held = records[index];
+
+                // Held here only through its join link, by a device signed into the account that owns it:
+                // follow the claim and become the owner's copy (ADR-0078 Amendment 3). The join-only copy
+                // could never send an edit, so the server body replaces it.
+                if (held.IsJoinOnly() && held.AccountScope is null && state is not null)
                 {
-                    records[index] = records[index] with { AdminAccount = accountId, PendingClaimAccount = null };
+                    records[index] = held with
+                    {
+                        State = state,
+                        Version = owned.Version,
+                        Dirty = false,
+                        Mode = StorageMode.Account,
+                        AdminAccount = accountId,
+                        PendingClaimAccount = null,
+                        Tokens = held.Tokens is { } tokens ? tokens with { AdminToken = null } : null,
+                    };
+                    changed = true;
+                }
+
+                // Otherwise already known — SyncGroupAsync reconciles it. Backfill the owner on a legacy record.
+                else if (held is { Mode: StorageMode.Account, AccountScope: null, AdminAccount: null })
+                {
+                    records[index] = held with { AdminAccount = accountId, PendingClaimAccount = null };
                     changed = true;
                 }
 
                 continue;
             }
 
-            var state = owned.Body.Deserialize(SyncJsonContext.Default.GroupState);
             if (state is null)
             {
                 continue;
@@ -486,6 +540,36 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
                 state, owned.Version, AccountScope: null, Dirty: false,
                 Mode: StorageMode.Account, Tokens: null, AdminAccount: accountId));
             changed = true;
+        }
+
+        foreach (var (groupId, failure) in verdicts)
+        {
+            var index = records.FindIndex(r => r.State.Id == groupId);
+            if (index < 0)
+            {
+                continue;
+            }
+
+            switch (failure)
+            {
+                case ApiFailure.NotFound:
+                    // Deleted online: deleting means gone, on every device.
+                    records.RemoveAt(index);
+                    changed = true;
+                    break;
+                case ApiFailure.Forbidden:
+                    // Still online but not this account's any more: keep the local copy, and keep following
+                    // the group by its join link when this device has one.
+                    var record = records[index];
+                    records[index] = record.Tokens is { JoinToken: not null } tokens
+                        ? record with { Mode = StorageMode.SharedByLink, AdminAccount = null, Tokens = tokens with { AdminToken = null } }
+                        : record with { Mode = StorageMode.OnThisDevice, AdminAccount = null, Tokens = null };
+                    changed = true;
+                    break;
+                default:
+                    // Unreachable, or another failure: leave it for the next cycle.
+                    break;
+            }
         }
 
         if (changed)
@@ -538,36 +622,103 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
     }
 
     // Reconcile a claimed (My account) shared group via the owner path (D2): the owner has no admin
-    // token, so they read and write it by group id, authorized by their bearer.
-    private async Task SyncOwnedAsync(List<SyncedGroupRecord> records, int index, Guid groupId, CancellationToken cancellationToken)
+    // token, so they read and write it by group id, authorized by their bearer. Writes re-read the record,
+    // like SyncGroupAsync.
+    private async Task SyncOwnedAsync(Guid groupId, CancellationToken cancellationToken)
     {
-        var record = records[index];
         var get = await accountApi.GetOwnedAsync(groupId, cancellationToken);
         if (!get.IsSuccess || get.Value is null)
         {
-            return; // not the owner any more, or the server is unreachable — leave the local copy as-is
+            return; // not the owner any more, or the server is unreachable - leave the local copy as-is
         }
 
         var view = get.Value;
-        if (view.Version > record.Version)
+
+        // Keep the owner's join link current, so Sharing & sync can offer it on every device of the
+        // owner - including one that discovered the group and never held a token (ADR-0078 Amendment 3).
+        if (view.JoinToken is { } joinToken)
         {
-            var state = view.Body.Deserialize(SyncJsonContext.Default.GroupState);
-            if (state is not null)
-            {
-                records[index] = record with { State = state, Version = view.Version, Dirty = false };
-                await local.SaveGroupsAsync(records, cancellationToken);
-            }
+            await UpdateAsync(
+                groupId,
+                current => current.Tokens?.JoinToken == joinToken
+                    ? current
+                    : current with { Tokens = (current.Tokens ?? new SharedGroupTokens(null, null)) with { AdminToken = null, JoinToken = joinToken } },
+                cancellationToken);
         }
-        else if (record.Dirty)
+
+        if (await PullIfNewerAsync(groupId, view, cancellationToken))
         {
-            var body = JsonSerializer.SerializeToElement(record.State, SyncJsonContext.Default.GroupState);
-            var push = await accountApi.PushOwnedAsync(groupId, new PushSharedGroupRequest(record.Version, body), cancellationToken);
+            return;
+        }
+
+        var pending = (await local.LoadGroupsAsync(cancellationToken)).FirstOrDefault(r => r.State.Id == groupId);
+        if (pending is { Dirty: true })
+        {
+            var body = JsonSerializer.SerializeToElement(pending.State, SyncJsonContext.Default.GroupState);
+            var push = await accountApi.PushOwnedAsync(groupId, new PushSharedGroupRequest(pending.Version, body), cancellationToken);
             if (push.IsSuccess && push.Value is not null)
             {
-                records[index] = record with { Version = push.Value.Version, Dirty = false };
-                await local.SaveGroupsAsync(records, cancellationToken);
+                await MarkPushedAsync(groupId, pending.Version, push.Value.Version, cancellationToken);
             }
         }
+    }
+
+    // Applies a newer server copy, unless the local copy holds an unsynced edit at least as new: that one is
+    // pushed instead (last-write-wins, as in SyncService). Returns whether the server copy was applied.
+    private async Task<bool> PullIfNewerAsync(Guid groupId, SharedGroupView view, CancellationToken cancellationToken)
+    {
+        var state = view.Body.Deserialize(SyncJsonContext.Default.GroupState);
+        if (state is null)
+        {
+            return false;
+        }
+
+        var applied = false;
+        await UpdateAsync(
+            groupId,
+            current =>
+            {
+                if (view.Version <= current.Version)
+                {
+                    return current;
+                }
+
+                applied = true;
+                return current with { State = state, Version = view.Version, Dirty = false };
+            },
+            cancellationToken);
+        return applied;
+    }
+
+    // Marks a push as accepted. Clean only if nothing changed locally since the copy that was sent; an edit
+    // made meanwhile stays dirty for the next reconcile, on top of the server's version.
+    private Task MarkPushedAsync(Guid groupId, long sentVersion, long serverVersion, CancellationToken cancellationToken) =>
+        UpdateAsync(
+            groupId,
+            current => current.Version == sentVersion
+                ? current with { Version = serverVersion, Dirty = false }
+                : current with { Version = Math.Max(current.Version, serverVersion + 1) },
+            cancellationToken);
+
+    // Re-reads the group list and applies one change to the record as it is now, so nothing written since
+    // the caller last read it (a local edit, another reconcile) is lost.
+    private async Task UpdateAsync(Guid groupId, Func<SyncedGroupRecord, SyncedGroupRecord> change, CancellationToken cancellationToken)
+    {
+        var records = (await local.LoadGroupsAsync(cancellationToken)).ToList();
+        var index = records.FindIndex(r => r.State.Id == groupId);
+        if (index < 0)
+        {
+            return;
+        }
+
+        var updated = change(records[index]);
+        if (ReferenceEquals(updated, records[index]))
+        {
+            return;
+        }
+
+        records[index] = updated;
+        await local.SaveGroupsAsync(records, cancellationToken);
     }
 
     /// <summary>Mints a fresh, unguessable creator key (256 bits, URL-safe) for a first share (ADR-0058).</summary>

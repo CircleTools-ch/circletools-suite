@@ -193,6 +193,23 @@ public sealed class SyncStoreTests(SyncPostgresFixture fixture)
     }
 
     [Fact]
+    public async Task AStalePush_AfterAnUnclaim_DoesNotPutTheGroupBackIntoTheAccount()
+    {
+        // ADR-0073 Amendment 2: device A moved the group out of the account and keeps it. Device B, which had
+        // not heard yet, pushes an offline edit; that must not resurrect the group in the account.
+        var account = Guid.NewGuid();
+        var groupId = Guid.NewGuid();
+
+        await ExchangeAsync(account, Push("A", 0, Change(groupId, 1, """{ "v": 1 }""")));
+        await UnclaimAsync(account, groupId);
+        await ExchangeAsync(account, Push("B", 0, Change(groupId, 2, """{ "v": 2 }""")));
+
+        var onC = await ExchangeAsync(account, new SyncRequest("C", 0, [], []));
+        Assert.DoesNotContain(onC.Changes, c => c.Id == groupId);
+        Assert.Contains(onC.Unclaimed, u => u.Id == groupId);
+    }
+
+    [Fact]
     public async Task Unclaiming_IsIdempotent_AndSurfacesNoError()
     {
         var account = Guid.NewGuid();
@@ -239,8 +256,9 @@ public sealed class SyncStoreTests(SyncPostgresFixture fixture)
         await ExchangeAsync(account, Push("A", 0, Change(groupId, 1, """{ "v": 1 }""")));
         await UnclaimAsync(account, groupId);
 
-        // Re-claiming pushes the body again; the un-claim marker (not a tombstone) does not block it.
-        await ExchangeAsync(account, Push("A", 0, Change(groupId, 1, """{ "v": 1 }""")));
+        // Re-claiming goes through the claim route, which clears the un-claim marker. (A plain push no longer
+        // can: it would let a stale copy resurrect a group moved out of the account — ADR-0073 Amendment 2.)
+        await ClaimAsync(account, groupId, 1, """{ "v": 1 }""");
 
         var onC = await ExchangeAsync(account, new SyncRequest("C", 0, [], []));
         Assert.Contains(onC.Changes, c => c.Id == groupId);

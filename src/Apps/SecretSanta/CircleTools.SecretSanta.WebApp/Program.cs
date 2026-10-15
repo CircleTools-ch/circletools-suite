@@ -37,6 +37,7 @@ var apiBaseUrl = new Uri(builder.Configuration["ApiBaseUrl"] ?? builder.HostEnvi
 // exactly these registrations; everything above them is shared feature code.
 builder.Services.AddScoped<IKeyValueStore, BrowserKeyValueStore>();
 builder.Services.AddScoped<IConnectivity, BrowserConnectivity>();
+builder.Services.AddScoped<IAppForeground, BrowserForeground>();
 builder.Services.AddScoped<BrowserPasskeyCeremony>();
 builder.Services.AddScoped<IPasskeyCeremony>(sp => sp.GetRequiredService<BrowserPasskeyCeremony>());
 builder.Services.AddScoped<IShareService, BrowserShareService>();

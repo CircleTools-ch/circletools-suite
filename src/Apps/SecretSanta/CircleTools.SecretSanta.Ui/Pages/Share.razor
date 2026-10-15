@@ -2,6 +2,8 @@
 @using CircleTools.SecretSanta.Core.Reveal
 @using CircleTools.SecretSanta.LocalStore
 @inject ISender Sender
+@inject NavigationManager Navigation
+@inject IServiceProvider Services
 @inject IJSRuntime JS
 @inject IShareService ShareService
 @inject IDialogService Dialogs
@@ -126,6 +128,14 @@ else
 
     private async Task LoadAsync()
     {
+        // The draw and everyone's reveal links are the organizer's (ADR-0058): a join-link participant is sent
+        // back to the event, which offers their own assignment instead.
+        if ((await GroupAccess.ForAsync(Services, GroupId)).ReadOnly)
+        {
+            Navigation.NavigateTo($"groups/{GroupId}/events/{EventId}", replace: true);
+            return;
+        }
+
         // Ensure this backend-backed group's reveal slices are published and its per-giver reveal tokens
         // exist, so each link can carry rt= (ADR-0068). Best-effort and a no-op for a local-only or
         // join-only group.
@@ -207,8 +217,13 @@ else
         // Carry the link in the message body (not only the url field): some share targets read only the
         // text, so this guarantees the reveal link reaches WhatsApp / SMS / e-mail.
         var text = $"{L["ShareMessage"]}\n{link.Url}";
-        await ShareService.ShareAsync(L["AppName"], text, link.Url);
-        await MarkHandedOutAsync(link);
+
+        // Only a share that went somewhere counts as handed out (D5): closing the sheet sends nothing. A
+        // platform that cannot tell keeps the old behaviour and counts it.
+        if (await ShareService.ShareAsync(L["AppName"], text, link.Url) != ShareOutcome.Dismissed)
+        {
+            await MarkHandedOutAsync(link);
+        }
     }
 
     private async Task ShowQrAsync(RevealLinkDto link)

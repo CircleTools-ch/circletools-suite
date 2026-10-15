@@ -47,6 +47,14 @@ public sealed class SyncingGroupRepository(ILocalSyncStore local) : IGroupReposi
         if (index >= 0)
         {
             var existing = records[index];
+
+            // A join-only participant has no way to send a group edit (ADR-0058), so an edit here would only
+            // ever exist on this device. The UI offers none; this keeps a missed path from diverging silently.
+            if (existing.IsJoinOnly())
+            {
+                throw new GroupReadOnlyException(group.Id);
+            }
+
             // Every local edit bumps the version and marks the copy dirty. The account scope is
             // preserved across the edit — editing a claimed group keeps it claimed.
             records[index] = existing with
@@ -78,6 +86,13 @@ public sealed class SyncingGroupRepository(ILocalSyncStore local) : IGroupReposi
         var removed = records[index];
         records.RemoveAt(index);
         await local.SaveGroupsAsync(records, cancellationToken);
+
+        // A join-only participant removing the group only leaves it on this device. The group, its links and
+        // its linking projection are the organizer's; nothing about them may be retracted or deleted from here.
+        if (removed.IsJoinOnly())
+        {
+            return;
+        }
 
         // Only a claimed group needs a tombstone: the server holds a copy that must be told to delete,
         // and the account's other devices must drop theirs. An account-free group was never on the

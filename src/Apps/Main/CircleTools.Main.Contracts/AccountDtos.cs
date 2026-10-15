@@ -20,6 +20,20 @@ public sealed record LoginRequest(string Email, string Password);
 /// <param name="RefreshToken">The refresh secret previously issued.</param>
 public sealed record RefreshRequest(string RefreshToken);
 
+/// <summary>Sign-out of this device's session (FR-008, ADR-0079).</summary>
+/// <param name="RefreshToken">
+/// The refresh secret this device holds — it names the session to end. Without one (an app built before
+/// ADR-0079) the server ends every session, as it used to.
+/// </param>
+public sealed record LogoutRequest(string? RefreshToken);
+
+/// <summary>Change of the password by a signed-in user (FR-049, ADR-0079).</summary>
+/// <param name="CurrentPassword">The password the account has now.</param>
+/// <param name="NewPassword">The replacement password; same policy as sign-up.</param>
+/// <param name="RefreshToken">The refresh secret of this device's session, which stays signed in; every other session ends.</param>
+/// <param name="SourceApp">The app the change came from, for the notice mail's branding (ADR-0064).</param>
+public sealed record ChangePasswordRequest(string CurrentPassword, string NewPassword, string? RefreshToken, string? SourceApp = null);
+
 /// <summary>
 /// Request to mint a cross-app single-sign-on authorization code (FR-031, ADR-0039).
 /// </summary>

@@ -144,10 +144,12 @@ public sealed class SharePageTests : IDisposable
         public ValueTask<bool> IsSupportedAsync(CancellationToken cancellationToken = default) =>
             ValueTask.FromResult(Supported);
 
-        public ValueTask ShareAsync(string title, string text, string? url = null, CancellationToken cancellationToken = default)
+        public ShareOutcome Outcome { get; set; } = ShareOutcome.Shared;
+
+        public ValueTask<ShareOutcome> ShareAsync(string title, string text, string? url = null, CancellationToken cancellationToken = default)
         {
             Calls.Add((title, text, url));
-            return ValueTask.CompletedTask;
+            return ValueTask.FromResult(Outcome);
         }
     }
 }

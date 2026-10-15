@@ -76,6 +76,22 @@ public sealed class MailTemplateRendererTests
     }
 
     [Theory]
+    [InlineData("de-CH", "Passwort wurde geändert")]
+    [InlineData("fr-CH", "mot de passe a été modifié")]
+    [InlineData("en", "password was changed")]
+    public void PasswordChanged_TellsTheOwner_InTheirLanguage_WithoutALink(string language, string expected)
+    {
+        var payload = JsonSerializer.Serialize(new { email = "anna@example.test", language });
+
+        var mail = Renderer().Render(MailTemplateRenderer.PasswordChangedType, payload);
+
+        Assert.NotNull(mail);
+        Assert.Equal("anna@example.test", mail.To);
+        Assert.Contains(expected, mail.Subject, StringComparison.Ordinal);
+        Assert.DoesNotContain("https://", mail.Body, StringComparison.Ordinal);
+    }
+
+    [Theory]
     [InlineData("de-CH", "lädt dich")]
     [InlineData("fr-CH", "vous invite")]
     [InlineData("en", "invites you")]

@@ -576,10 +576,22 @@ public sealed class SharedGroupStore(
         group.LastActivityAt = timeProvider.GetUtcNow();
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
+        // The owner may share the join link from any of their devices (ADR-0078 Amendment 3): hand back the
+        // current join token, decrypted from its at-rest ciphertext (ADR-0061). Only ever on this owner read.
+        var join = await context.Tokens
+            .Where(t => t.GroupId == groupId && t.Capability == SharedCapability.Join && t.Active)
+            .Select(t => t.TokenCipher)
+            .FirstOrDefaultAsync(cancellationToken).ConfigureAwait(false);
+
         return new SharedGroupView(
             group.GroupId, group.Version, ParseBody(group.Body),
-            SharedCapability.Admin, AdminRetired: false, AdminClaimedByName: null);
+            SharedCapability.Admin, AdminRetired: false, AdminClaimedByName: null,
+            JoinToken: string.IsNullOrEmpty(join) ? null : cipher.Decrypt(join));
     }
+
+    /// <inheritdoc />
+    public Task<bool> ExistsAsync(Guid groupId, CancellationToken cancellationToken = default) =>
+        context.Groups.AnyAsync(g => g.GroupId == groupId, cancellationToken);
 
     /// <inheritdoc />
     public async Task<SharedWriteResult> PushAsOwnerAsync(

@@ -53,6 +53,8 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-021](TP-021-storage-default-onboarding-and-list-indicator.md) | Test plan — Storage default, onboarding & list indicator | SecretSanta | Draft |
 | [FEAT-022](FEAT-022-business-metrics-dashboard.md) | Business-metrics dashboard (PII-free counts of accounts/groups/events/draws over time on the existing Grafana stack — ADR-0051) | Platform | In progress |
 | [TP-022](TP-022-business-metrics-dashboard.md) | Test plan — Business-metrics dashboard | Platform | Draft |
+| [FEAT-023](FEAT-023-session-scope-and-change-password.md) | Session scope and change password (sign out ends this device only; "Sign out on all devices"; change password ends the other sessions — ADR-0079) | Identity | In progress |
+| [TP-023](TP-023-session-scope-and-change-password.md) | Test plan — Session scope and change password | Identity | Draft |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and

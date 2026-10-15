@@ -1,5 +1,6 @@
 using CircleTools.Application;
 using CircleTools.Localization;
+using CircleTools.Ui.Abstractions;
 using CircleTools.Ui.Account.Api;
 using CircleTools.Ui.Shared;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,6 +73,13 @@ public static class SecretSantaUiServiceCollectionExtensions
         services.AddScoped<BookmarkService>();
         services.AddScoped<RecentAccessService>();
         services.AddScoped<HandoutProgressService>();
+        services.AddScoped<GroupAccess>();
+        services.AddScoped<SignInReconciliation>();
+
+        // Resume and foreground-poll sync triggers (ADR-0044 amendment 2026-10-15). A head that cannot tell
+        // foreground from background gets the always-foreground default.
+        services.TryAddScoped<IAppForeground, AlwaysForeground>();
+        services.AddScoped<ForegroundSyncTrigger>();
         services.AddScoped<NotificationPreferences>();
         // Device-local default storage mode for new groups + the one-time onboarding flag (FR-048,
         // ADR-0071). Per-device, never synced — a signed-out user needs a default too.

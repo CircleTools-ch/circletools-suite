@@ -133,6 +133,16 @@ public interface ISharedGroupStore
     /// <returns>The group view (admin capability), or <see langword="null"/> when the caller is not the owner.</returns>
     Task<SharedGroupView?> GetAsOwnerAsync(Guid accountId, Guid groupId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Whether a shared group still exists, whoever owns it. Lets the owner read tell a deleted group (gone)
+    /// from one the caller no longer owns, so the account's other devices can drop or hand back their copy
+    /// (ADR-0078).
+    /// </summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns><see langword="true"/> when the group exists.</returns>
+    Task<bool> ExistsAsync(Guid groupId, CancellationToken cancellationToken = default);
+
     /// <summary>Pushes a new body for a group the caller owns (My account mode, D2): last-write-wins, owner-authorized.</summary>
     /// <param name="accountId">The owning account.</param>
     /// <param name="groupId">The group.</param>

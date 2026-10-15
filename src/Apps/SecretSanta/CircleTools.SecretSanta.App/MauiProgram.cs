@@ -125,6 +125,7 @@ public static class MauiProgram
         // Fully qualified: MAUI's global usings also expose a Microsoft.Maui.Networking.IConnectivity,
         // so the bare name would be ambiguous here.
         builder.Services.AddScoped<CircleTools.Ui.Abstractions.IConnectivity, MauiConnectivity>();
+        builder.Services.AddScoped<CircleTools.Ui.Abstractions.IAppForeground, MauiForeground>();
         builder.Services.AddScoped<IPasskeyCeremony, MauiPasskeyCeremony>();
         builder.Services.AddScoped<IShareService, MauiShareService>();
         builder.Services.AddScoped<ICalendarService, MauiCalendarService>();

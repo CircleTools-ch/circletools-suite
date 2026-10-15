@@ -32,7 +32,7 @@ public sealed class BrowserShareService(IJSRuntime js) : IShareService, IAsyncDi
     }
 
     /// <inheritdoc />
-    public async ValueTask ShareAsync(
+    public async ValueTask<ShareOutcome> ShareAsync(
         string title,
         string text,
         string? url = null,
@@ -41,12 +41,14 @@ public sealed class BrowserShareService(IJSRuntime js) : IShareService, IAsyncDi
         try
         {
             var module = await LoadAsync(cancellationToken);
-            await module.InvokeVoidAsync("share", cancellationToken, title, text, url);
+            var shared = await module.InvokeAsync<bool>("share", cancellationToken, title, text, url);
+            return shared ? ShareOutcome.Shared : ShareOutcome.Dismissed;
         }
         catch (JSException)
         {
             // Best-effort (IShareService): a browser that refuses the share leaves the always-present
-            // Copy button as the fallback. Nothing above this seam depends on the sheet appearing.
+            // Copy button as the fallback. Nothing went out.
+            return ShareOutcome.Dismissed;
         }
     }
 

@@ -1,5 +1,6 @@
 @page "/groups/{GroupId:guid}/events/{EventId:guid}/draw"
 @inject ISender Sender
+@inject IServiceProvider Services
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
 @inject IHapticFeedback Haptics
@@ -116,6 +117,14 @@ else
 
     private async Task LoadAsync()
     {
+        // The draw and everyone's reveal links are the organizer's (ADR-0058): a join-link participant is sent
+        // back to the event, which offers their own assignment instead.
+        if ((await GroupAccess.ForAsync(Services, GroupId)).ReadOnly)
+        {
+            Navigation.NavigateTo($"groups/{GroupId}/events/{EventId}", replace: true);
+            return;
+        }
+
         _event = await Sender.Send(new GetEventQuery(GroupId, EventId));
         var group = await Sender.Send(new GetGroupQuery(GroupId));
         _memberCount = group?.Members.Count ?? 0;

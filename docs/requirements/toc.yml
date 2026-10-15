@@ -98,6 +98,8 @@
       href: functional/FR-047-account-deletion-farewell-email.md
     - name: FR-048 Default storage mode for new groups
       href: functional/FR-048-default-storage-mode-for-new-groups.md
+    - name: FR-049 Change password
+      href: functional/FR-049-change-password.md
 - name: Non-functional
   items:
     - name: NFR-001 Local-first & offline

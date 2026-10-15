@@ -83,6 +83,13 @@ public sealed class AutoSyncService(
     public event Action? LocalChanged;
 
     /// <summary>
+    /// Raised when a cycle kept groups as "On this device" copies because another device moved them out of
+    /// the account while this device held unsynced edits (ADR-0073 Amendment 2). Carries the group names, so
+    /// the shell tells the user once. Fired off the render context.
+    /// </summary>
+    public event Action<IReadOnlyList<string>>? KeptAsLocalCopy;
+
+    /// <summary>
     /// Starts listening for reconnects and, if a session is already live, runs the app-start sync.
     /// Called once from the shell's first render, when the JS runtime is available. Idempotent.
     /// </summary>
@@ -194,8 +201,9 @@ public sealed class AutoSyncService(
     // engine, so the set naturally shrinks.
     private async Task RunSharedCycleAsync()
     {
+        // Account-store groups (AccountScope) sync through the account cycle, not here (ADR-0078 Amendment 3).
         var shared = (await claimable.GetAllAsync())
-            .Where(g => g.Mode is StorageMode.SharedByLink or StorageMode.Account)
+            .Where(g => g.AccountScope is null && g.Mode is StorageMode.SharedByLink or StorageMode.Account)
             .Select(g => g.Id)
             .ToList();
 
@@ -241,7 +249,12 @@ public sealed class AutoSyncService(
 
         // Keep the group cycle's outcome so the shell can show it in its passive status line — the same
         // status the removed manual button used to surface.
-        LastStatus = (await coordinator.SyncNowAsync(accountId)).Status;
+        var outcome = await coordinator.SyncNowAsync(accountId);
+        LastStatus = outcome.Status;
+        if (outcome.KeptAsLocalCopy is { Count: > 0 } kept)
+        {
+            KeptAsLocalCopy?.Invoke(kept);
+        }
     }
 
     private void OnConnectivityChanged(bool online)

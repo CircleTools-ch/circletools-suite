@@ -364,6 +364,89 @@ public sealed class SharedSyncServiceTests
     }
 
     [Fact]
+    public async Task MergeOwned_RemovesAGroupDeletedOnAnotherDevice()
+    {
+        // ADR-0078 (Pixel): a "My account" group deleted on the iPad stayed on the other device for good.
+        var api = new FakeSharedGroupApi();
+        var deviceA = NewStore();
+        var groupId = await SeedLocalGroupAsync(deviceA, "Family");
+        await Service(deviceA, api).ShareByLinkAsync(groupId);
+        await Service(deviceA, api).ClaimAdminToAccountAsync(Account, groupId);
+        var deviceB = NewStore();
+        await Service(deviceB, api).MergeOwnedAsync(Account);
+        Assert.Single(await deviceB.LoadGroupsAsync());
+
+        await new SyncingGroupRepository(deviceA).DeleteAsync(groupId, default);
+        await Service(deviceA, api).SendOwnedDeletesAsync(Account);
+        var listed = await Service(deviceB, api).MergeOwnedAsync(Account);
+
+        Assert.True(listed);
+        Assert.Empty(await deviceB.LoadGroupsAsync());
+    }
+
+    [Fact]
+    public async Task MergeOwned_HandsAGroupReleasedElsewhereBackToItsJoinLink()
+    {
+        // Still online but no longer owned: keep the copy, and keep following it by the join link it has.
+        var api = new FakeSharedGroupApi();
+        var store = NewStore();
+        var groupId = await SeedLocalGroupAsync(store, "Family");
+        await Service(store, api).ShareByLinkAsync(groupId);
+        await Service(store, api).ClaimAdminToAccountAsync(Account, groupId);
+
+        await api.ReleaseAdminAsync(groupId); // released to link on another device
+        await Service(store, api).MergeOwnedAsync(Account);
+
+        var record = await SingleAsync(store);
+        Assert.Equal(StorageMode.SharedByLink, record.Mode);
+        Assert.Null(record.AdminAccount);
+        Assert.Null(record.Tokens!.AdminToken);
+        Assert.NotNull(record.Tokens.JoinToken);
+    }
+
+    [Fact]
+    public async Task MergeOwned_KeepsAGroupReleasedElsewhereOnThisDevice_WhenItHasNoJoinLink()
+    {
+        var api = new FakeSharedGroupApi();
+        var deviceA = NewStore();
+        var groupId = await SeedLocalGroupAsync(deviceA, "Family");
+        await Service(deviceA, api).ShareByLinkAsync(groupId);
+        await Service(deviceA, api).ClaimAdminToAccountAsync(Account, groupId);
+        var deviceB = NewStore();
+        await Service(deviceB, api).MergeOwnedAsync(Account); // discovered: no tokens at all
+
+        await api.ReleaseAdminAsync(groupId);
+        await Service(deviceB, api).MergeOwnedAsync(Account);
+
+        var record = (await deviceB.LoadGroupsAsync()).Single();
+        Assert.Equal(StorageMode.OnThisDevice, record.Mode);
+        Assert.Null(record.AdminAccount);
+        Assert.Null(record.Tokens);
+    }
+
+    [Fact]
+    public async Task MergeOwned_LeavesAccountStoreAndOtherAccountsGroupsAlone()
+    {
+        // Neither is in the shared-group owned list, and neither is this account's to settle there.
+        var api = new FakeSharedGroupApi();
+        var store = NewStore();
+        var accountGroup = SyncTestData.GroupWith("Account store", "Alice");
+        var otherAccounts = SyncTestData.GroupWith("Other account", "Bob");
+        await store.SaveGroupsAsync(
+        [
+            new SyncedGroupRecord(accountGroup, Version: 1, AccountScope: Account, Dirty: false, Mode: StorageMode.Account),
+            new SyncedGroupRecord(otherAccounts, Version: 1, AccountScope: null, Dirty: false, Mode: StorageMode.Account,
+                AdminAccount: Guid.Parse("44444444-4444-4444-4444-444444444444")),
+        ]);
+
+        await Service(store, api).MergeOwnedAsync(Account);
+
+        var records = await store.LoadGroupsAsync();
+        Assert.Equal(2, records.Count);
+        Assert.All(records, r => Assert.Equal(StorageMode.Account, r.Mode));
+    }
+
+    [Fact]
     public async Task SendOwnedDeletes_KeepsADeleteQueued_WhileTheServerIsUnreachable()
     {
         var api = new FakeSharedGroupApi();
@@ -395,6 +478,114 @@ public sealed class SharedSyncServiceTests
     }
 
     private static readonly Guid Account = Guid.Parse("33333333-3333-3333-3333-333333333333");
+
+    [Fact]
+    public async Task SyncGroup_LeavesAnAccountStoreGroupToTheAccountCycle()
+    {
+        // ADR-0078 Amendment 3 (S2): an account-store group is "My account" too, but lives in the account
+        // sync store. Reading it through the shared-group owner path answered 404.
+        var api = new FakeSharedGroupApi();
+        var store = NewStore();
+        var state = SyncTestData.GroupWith("Imported", "Alice");
+        await store.SaveGroupsAsync([new SyncedGroupRecord(state, 2, Account, Dirty: false, Mode: StorageMode.Account)]);
+
+        await Service(store, api).SyncGroupAsync(state.Id);
+
+        Assert.Empty(api.OwnedReads);
+    }
+
+    [Fact]
+    public async Task OwnerSync_StoresTheJoinToken_SoEveryOwnerDeviceCanShareTheJoinLink()
+    {
+        // ADR-0078 Amendment 3 (S8): a device that discovered the group held no join token at all.
+        var api = new FakeSharedGroupApi();
+        var deviceA = NewStore();
+        var groupId = await SeedLocalGroupAsync(deviceA, "Family");
+        var links = await Service(deviceA, api).ShareByLinkAsync(groupId);
+        await Service(deviceA, api).ClaimAdminToAccountAsync(Account, groupId);
+        var deviceB = NewStore();
+        await Service(deviceB, api).MergeOwnedAsync(Account);
+
+        await Service(deviceB, api).SyncGroupAsync(groupId);
+
+        var record = await SingleAsync(deviceB);
+        Assert.Equal(links!.JoinToken, record.Tokens?.JoinToken);
+        Assert.Null(record.Tokens?.AdminToken);
+        Assert.True(record.IsAdminClaimedShared());
+    }
+
+    [Fact]
+    public async Task MergeOwned_TurnsASameAccountJoinHolder_IntoTheOwnersCopy()
+    {
+        // ADR-0078 Amendment 3 (S10): a browser that joined by link, signed into the account that later
+        // claimed admin, stayed a join-only participant. Its unsendable local edit is dropped.
+        var api = new FakeSharedGroupApi();
+        var organizer = NewStore();
+        var groupId = await SeedLocalGroupAsync(organizer, "Family");
+        var links = await Service(organizer, api).ShareByLinkAsync(groupId);
+        var participant = NewStore();
+        var memberId = (await SingleAsync(organizer)).State.Members[0].Id;
+        await Service(participant, api).JoinAsync(links!.JoinToken, memberId, PersonClaimKind.Device, "device", null);
+        var joined = await SingleAsync(participant);
+        await participant.SaveGroupsAsync([joined with { State = joined.State with { Name = "Phantom edit" }, Version = joined.Version + 5, Dirty = true }]);
+        await Service(organizer, api).ClaimAdminToAccountAsync(Account, groupId);
+
+        await Service(participant, api).MergeOwnedAsync(Account);
+
+        var record = await SingleAsync(participant);
+        Assert.Equal(StorageMode.Account, record.Mode);
+        Assert.Equal(Account, record.AdminAccount);
+        Assert.Equal(links.JoinToken, record.Tokens?.JoinToken);
+        Assert.Equal(memberId, record.ClaimedMemberId);
+        Assert.False(record.Dirty);
+        Assert.Equal("Family", record.State.Name);
+    }
+
+    [Fact]
+    public void RecordKind_TellsTheTwoMyAccountKindsApart()
+    {
+        var state = SyncTestData.GroupWith("G", "A");
+        var accountStore = new SyncedGroupRecord(state, 1, Account, Dirty: false, Mode: StorageMode.Account);
+        var adminClaimed = new SyncedGroupRecord(state, 1, null, Dirty: false, Mode: StorageMode.Account, AdminAccount: Account);
+        var legacyAdminClaimed = new SyncedGroupRecord(state, 1, null, Dirty: false, Mode: StorageMode.Account, Tokens: new SharedGroupTokens(null, "j"));
+        var awaitingClaim = new SyncedGroupRecord(state, 1, null, Dirty: false, Mode: StorageMode.Account, PendingClaimAccount: Account);
+        var joinOnly = new SyncedGroupRecord(state, 1, null, Dirty: false, Mode: StorageMode.SharedByLink, Tokens: new SharedGroupTokens(null, "j"));
+        var adminLink = new SyncedGroupRecord(state, 1, null, Dirty: false, Mode: StorageMode.SharedByLink, Tokens: new SharedGroupTokens("a", "j"));
+
+        Assert.False(accountStore.IsAdminClaimedShared());
+        Assert.True(adminClaimed.IsAdminClaimedShared());
+        Assert.True(legacyAdminClaimed.IsAdminClaimedShared());
+        Assert.False(awaitingClaim.IsAdminClaimedShared());
+        Assert.True(joinOnly.IsJoinOnly());
+        Assert.False(adminLink.IsJoinOnly());
+        Assert.Equal(StorageMode.Account, (accountStore with { Mode = StorageMode.OnThisDevice }).EffectiveMode());
+    }
+
+    [Fact]
+    public async Task SyncGroup_KeepsAnEditMadeWhileTheRequestWasInFlight_AndPushesIt()
+    {
+        // 2026-10-15: the reconcile wrote back the copy it read before its network call, so a member added
+        // (or a draw run) during the round trip vanished locally and never reached the server.
+        var api = new FakeSharedGroupApi();
+        var store = NewStore();
+        var groupId = await SeedLocalGroupAsync(store, "Family");
+        await Service(store, api).ShareByLinkAsync(groupId);
+        api.DuringGet = () =>
+        {
+            api.DuringGet = null;
+            var held = store.LoadGroupsAsync().GetAwaiter().GetResult().Single();
+            var edited = held.State with { Members = [.. held.State.Members, SyncTestData.GroupWith("x", "Max").Members[0]] };
+            store.SaveGroupsAsync([held with { State = edited, Version = held.Version + 1, Dirty = true }]).GetAwaiter().GetResult();
+        };
+
+        await Service(store, api).SyncGroupAsync(groupId);
+        await Service(store, api).SyncGroupAsync(groupId);
+
+        var record = await SingleAsync(store);
+        Assert.Contains(record.State.Members, m => m.Name == "Max");
+        Assert.False(record.Dirty);
+        Assert.Contains("Max", api.ServerBody(groupId), StringComparison.Ordinal);
+    }
 
     private static LocalSyncStore NewStore() => new(new InMemoryKeyValueStore());
 

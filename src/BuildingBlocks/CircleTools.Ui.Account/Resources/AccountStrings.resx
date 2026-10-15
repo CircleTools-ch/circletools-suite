@@ -172,4 +172,18 @@
   <data name="DeleteDoneHome" xml:space="preserve"><value>Back to the app</value></data>
   <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Hand over or delete the circles you own before deleting your account.</value></data>
   <data name="CircleErrorRefused" xml:space="preserve"><value>That is not allowed.</value></data>
+  <data name="ChangePasswordTitle" xml:space="preserve"><value>Password</value></data>
+  <data name="ChangePasswordLead" xml:space="preserve"><value>Change your password. This device stays signed in; all your other devices are signed out.</value></data>
+  <data name="FieldCurrentPassword" xml:space="preserve"><value>Current password</value></data>
+  <data name="FieldRepeatPassword" xml:space="preserve"><value>Repeat the new password</value></data>
+  <data name="PasswordsDoNotMatch" xml:space="preserve"><value>The two new passwords don't match.</value></data>
+  <data name="ChangePasswordSubmit" xml:space="preserve"><value>Change password</value></data>
+  <data name="PasswordChanged" xml:space="preserve"><value>Your password was changed. Your other devices were signed out.</value></data>
+  <data name="SignOutEverywhereTitle" xml:space="preserve"><value>Signed-in devices</value></data>
+  <data name="SignOutEverywhereLead" xml:space="preserve"><value>Signing out ends the session on this device only. If you lost a device or signed in somewhere you no longer trust, sign out everywhere.</value></data>
+  <data name="SignOutEverywhereButton" xml:space="preserve"><value>Sign out on all devices</value></data>
+  <data name="SignOutEverywhereConfirm" xml:space="preserve"><value>Sign out on all your devices, including this one?</value></data>
+  <data name="SignOutEverywhereConfirmYes" xml:space="preserve"><value>Sign out everywhere</value></data>
+  <data name="SignedOutByServer" xml:space="preserve"><value>You were signed out: your session was ended on another device or expired.</value></data>
+  <data name="ConfirmCancel" xml:space="preserve"><value>Cancel</value></data>
 </root>

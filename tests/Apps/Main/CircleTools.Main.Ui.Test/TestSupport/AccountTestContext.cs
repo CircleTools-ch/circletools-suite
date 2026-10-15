@@ -62,6 +62,7 @@ public sealed class AccountTestContext : Bunit.TestContext
         Services.AddSingleton<IRefreshTokenStore, RefreshTokenStore>();
         Services.AddSingleton<TokenAuthStateProvider>();
         Services.AddSingleton<AuthenticationStateProvider>(sp => sp.GetRequiredService<TokenAuthStateProvider>());
+        Services.AddSingleton<SessionNotices>();
         Services.AddSingleton<ISessionRefresher, SessionRefresher>();
         Services.AddSingleton<AccountApiClient>();
         Services.AddSingleton<CirclesApiClient>();

@@ -6,7 +6,7 @@ status: Implemented
 priority: Must
 source: UC-MAIN-002
 verification: test
-related: [UC-MAIN-002, NFR-001, NFR-005, ADR-0009, ADR-0021]
+related: [UC-MAIN-002, NFR-001, NFR-005, ADR-0009, ADR-0021, ADR-0079, FR-049]
 ---
 
 # FR-008 — Sign in with email and password
@@ -21,7 +21,11 @@ password, establishing a session on that device:
 - **reuse of a consumed refresh token is treated as theft** — the whole token chain is revoked.
 
 Sessions survive a browser restart by default; there is no separate "remember me" control, and
-signing out is the way to end a session on a shared device. On page reload the client silently
+signing out is the way to end a session on a shared device. **Signing out ends this device's session
+only** ([ADR-0079](../../adr/0079-sign-out-this-device-and-change-password.md), amended 2026-10-15; it
+used to end every session). Ending every session is a separate, explicit **"Sign out on all devices"**
+action ([FR-049](FR-049-change-password.md)). A session ended elsewhere is noticed at the next refresh:
+the client signs out cleanly and says so. On page reload the client silently
 refreshes; if the refresh fails the user is signed out cleanly rather than left half-authenticated.
 
 Failed sign-in must not distinguish an unknown address from a wrong password
@@ -67,6 +71,15 @@ Given repeated failed sign-in attempts for one address or from one source
 When further attempts are made
 Then they are rate-limited with progressive backoff
 And the response shape does not reveal whether the account exists
+
+Given a user signed in on two devices
+When they sign out on one device
+Then that device's session ends
+And the other device stays signed in
+
+Given a session that was ended on another device
+When this device next refreshes its access token
+Then it is signed out cleanly and shows a short notice
 
 Given a user who was signed in and is now offline
 When they open the app

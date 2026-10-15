@@ -91,7 +91,7 @@ public sealed class AccountSession(
     }
 
     /// <summary>
-    /// Ends the session everywhere (FR-008).
+    /// Ends this device's session (FR-008, ADR-0079). The account's other devices stay signed in.
     /// </summary>
     /// <remarks>
     /// The local tokens are cleared whatever the server says. A failed <c>/logout</c> — offline, or
@@ -104,10 +104,40 @@ public sealed class AccountSession(
     {
         if (tokens.AccessToken is not null)
         {
-            await api.LogoutAsync(cancellationToken);
+            var refreshToken = await refreshTokens.ReadAsync(cancellationToken);
+            await api.LogoutAsync(refreshToken, cancellationToken);
         }
 
         await ForgetAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Ends every session of the account, on every device, including this one (FR-049, ADR-0079).
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the server call, not the local clear.</param>
+    /// <returns>The server's answer; this device is signed out either way.</returns>
+    public async Task<ApiResult> SignOutEverywhereAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await api.LogoutAllAsync(cancellationToken);
+        await ForgetAsync(cancellationToken);
+        return result;
+    }
+
+    /// <summary>
+    /// Changes the password (FR-049, ADR-0079). This device stays signed in; every other session ends.
+    /// </summary>
+    /// <param name="currentPassword">The password the account has now.</param>
+    /// <param name="newPassword">The replacement password.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome: a wrong current password answers like a failed sign-in.</returns>
+    public async Task<ApiResult> ChangePasswordAsync(
+        string currentPassword,
+        string newPassword,
+        CancellationToken cancellationToken = default)
+    {
+        var refreshToken = await refreshTokens.ReadAsync(cancellationToken);
+        return await api.ChangePasswordAsync(
+            new ChangePasswordRequest(currentPassword, newPassword, refreshToken), cancellationToken);
     }
 
     /// <summary>

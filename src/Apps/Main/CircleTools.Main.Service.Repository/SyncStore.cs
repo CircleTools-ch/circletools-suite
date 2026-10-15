@@ -280,6 +280,14 @@ public sealed class SyncStore(SyncDbContext context, ISyncTelemetry telemetry, T
             return seq;
         }
 
+        // Nor may a plain push put back a group that was moved out of the account on another device: that
+        // device kept it as its own, and a stale copy's offline edit would resurrect it in the account
+        // (ADR-0073 Amendment 2). Bringing it back is an explicit claim, which has its own route.
+        if (marker is { MarkerType: SyncMarkerType.Unclaim })
+        {
+            return seq;
+        }
+
         var existing = await context.Aggregates
             .FindAsync([accountId, change.Id], cancellationToken).ConfigureAwait(false);
 

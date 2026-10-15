@@ -256,7 +256,14 @@ public static class SharedGroupEndpoints
         }
 
         var view = await store.GetAsOwnerAsync(accountId, groupId, cancellationToken);
-        return view is null ? Results.NotFound() : Results.Ok(view);
+        if (view is not null)
+        {
+            return Results.Ok(view);
+        }
+
+        // 404 only when the group is gone (deleted on another device), 403 when it exists but the caller no
+        // longer owns it: the client drops its copy for the first and hands it back for the second (ADR-0078).
+        return await store.ExistsAsync(groupId, cancellationToken) ? Results.Forbid() : Results.NotFound();
     }
 
     private static async Task<IResult> PushOwnedAsync(

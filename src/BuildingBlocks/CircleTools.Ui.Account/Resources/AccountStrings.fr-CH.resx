@@ -116,4 +116,18 @@
   <data name="DeleteDoneHome" xml:space="preserve"><value>Retour à l'application</value></data>
   <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Cédez ou supprimez les cercles que vous possédez avant de supprimer votre compte.</value></data>
   <data name="CircleErrorRefused" xml:space="preserve"><value>Ce n'est pas autorisé.</value></data>
+  <data name="ChangePasswordTitle" xml:space="preserve"><value>Mot de passe</value></data>
+  <data name="ChangePasswordLead" xml:space="preserve"><value>Modifiez votre mot de passe. Cet appareil reste connecté ; tous vos autres appareils sont déconnectés.</value></data>
+  <data name="FieldCurrentPassword" xml:space="preserve"><value>Mot de passe actuel</value></data>
+  <data name="FieldRepeatPassword" xml:space="preserve"><value>Répétez le nouveau mot de passe</value></data>
+  <data name="PasswordsDoNotMatch" xml:space="preserve"><value>Les deux nouveaux mots de passe ne correspondent pas.</value></data>
+  <data name="ChangePasswordSubmit" xml:space="preserve"><value>Modifier le mot de passe</value></data>
+  <data name="PasswordChanged" xml:space="preserve"><value>Votre mot de passe a été modifié. Vos autres appareils ont été déconnectés.</value></data>
+  <data name="SignOutEverywhereTitle" xml:space="preserve"><value>Appareils connectés</value></data>
+  <data name="SignOutEverywhereLead" xml:space="preserve"><value>La déconnexion ne ferme que la session de cet appareil. Si vous avez perdu un appareil ou vous êtes connecté quelque part où vous n'avez plus confiance, déconnectez-vous partout.</value></data>
+  <data name="SignOutEverywhereButton" xml:space="preserve"><value>Se déconnecter de tous les appareils</value></data>
+  <data name="SignOutEverywhereConfirm" xml:space="preserve"><value>Vous déconnecter de tous vos appareils, y compris celui-ci ?</value></data>
+  <data name="SignOutEverywhereConfirmYes" xml:space="preserve"><value>Se déconnecter partout</value></data>
+  <data name="SignedOutByServer" xml:space="preserve"><value>Vous avez été déconnecté : votre session a été fermée sur un autre appareil ou a expiré.</value></data>
+  <data name="ConfirmCancel" xml:space="preserve"><value>Annuler</value></data>
 </root>

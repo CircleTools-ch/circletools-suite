@@ -68,6 +68,16 @@ public class MainActivity : MauiAppCompatActivity
         // when there is nothing left to go back to does the system default (leave the app) take over.
         OnBackPressedDispatcher.AddCallback(this, new WebViewBackCallback(this));
 
+        // The soft keyboard (D1, 2026-10-15 sync test; B6). Targeting Android 15+ the app is drawn edge to edge
+        // and "adjustResize" no longer shrinks the window, so the system panned the whole view instead: the
+        // app bar slid under the status bar, or a bottom sheet's field and button stayed under the keyboard.
+        // Shrink the content by the keyboard's height ourselves; the WebView's viewport follows, and the page
+        // lays its dialogs and sheets out above the keyboard.
+        if (FindViewById(Android.Resource.Id.Content) is { } content)
+        {
+            AndroidX.Core.View.ViewCompat.SetOnApplyWindowInsetsListener(content, new KeyboardInsetsListener());
+        }
+
         ForwardDeepLink(Intent); // a link that cold-started the app
     }
 
@@ -139,6 +149,29 @@ public class MainActivity : MauiAppCompatActivity
     }
 
     // Bridges WebView.evaluateJavascript's result callback to a delegate.
+    // Pads the content view's bottom by the part of the keyboard that covers it. The navigation-bar strip is
+    // left out: the page already reserves it (safe-area insets), so only the keyboard above it is added.
+    private sealed class KeyboardInsetsListener : Java.Lang.Object, AndroidX.Core.View.IOnApplyWindowInsetsListener
+    {
+        public AndroidX.Core.View.WindowInsetsCompat OnApplyWindowInsets(
+            Android.Views.View? view,
+            AndroidX.Core.View.WindowInsetsCompat? insets)
+        {
+            if (view is not null && insets is not null)
+            {
+                var ime = insets.GetInsets(AndroidX.Core.View.WindowInsetsCompat.Type.Ime())?.Bottom ?? 0;
+                var navigation = insets.GetInsets(AndroidX.Core.View.WindowInsetsCompat.Type.NavigationBars())?.Bottom ?? 0;
+                var bottom = Math.Max(0, ime - navigation);
+                if (view.PaddingBottom != bottom)
+                {
+                    view.SetPadding(view.PaddingLeft, view.PaddingTop, view.PaddingRight, bottom);
+                }
+            }
+
+            return insets!;
+        }
+    }
+
     private sealed class ValueCallback(Action<string?> onResult) : Java.Lang.Object, Android.Webkit.IValueCallback
     {
         public void OnReceiveValue(Java.Lang.Object? value) => onResult(value?.ToString());

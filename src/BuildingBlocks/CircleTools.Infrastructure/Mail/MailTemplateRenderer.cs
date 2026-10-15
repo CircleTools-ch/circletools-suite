@@ -46,6 +46,9 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
     /// <summary>Outbox type for the notice sent to the address being replaced (FR-013).</summary>
     public const string EmailChangeNoticeType = "mail.email-change-notice";
 
+    /// <summary>Outbox type for the notice that the password was changed (FR-049, ADR-0079).</summary>
+    public const string PasswordChangedType = "mail.password-changed";
+
     /// <summary>Outbox type for the circle invitation (FR-017).</summary>
     /// <remarks>
     /// The first mail the suite sends to someone who has no relationship with it. Everything it may
@@ -94,6 +97,7 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
             PasswordResetType => RenderPasswordReset(root, email, language),
             EmailChangeType => RenderEmailChange(root, email, language),
             EmailChangeNoticeType => RenderEmailChangeNotice(root, email, language),
+            PasswordChangedType => RenderPasswordChanged(root, email, language),
             InvitationType => RenderInvitation(root, email, language),
             MemberLinkType => RenderMemberLink(root, email, language),
             AccountDeletedType => RenderAccountDeleted(root, email, language),
@@ -346,6 +350,40 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
                 null,
                 null,
                 "For your security this notice never carries an action link. It's sent to your previous address."),
+        };
+
+        return Compose(email, brand, language, model);
+    }
+
+    private OutboundMail RenderPasswordChanged(JsonElement root, string email, string language)
+    {
+        // The real owner hears about a password change even if someone else made it (FR-049). No link, by
+        // design (NFR-005): the way back is "Forgot password", which they reach themselves.
+        var brand = ResolveBranding(SourceApp(root));
+
+        var model = language switch
+        {
+            "de" => new MailModel(
+                "Dein Passwort wurde geändert",
+                "Dein Passwort wurde geändert",
+                ["Das Passwort deines CircleTools-Kontos wurde soeben geändert. Alle anderen Geräte wurden abgemeldet.", "Falls du das nicht warst, setze dein Passwort über «Passwort vergessen?» auf der Anmeldeseite sofort zurück."],
+                null,
+                null,
+                "Aus Sicherheitsgründen enthält dieser Hinweis nie einen Aktionslink."),
+            "fr" => new MailModel(
+                "Votre mot de passe a été modifié",
+                "Votre mot de passe a été modifié",
+                ["Le mot de passe de votre compte CircleTools vient d'être modifié. Tous vos autres appareils ont été déconnectés.", "Si vous n'êtes pas à l'origine de ce changement, réinitialisez immédiatement votre mot de passe via « Mot de passe oublié ? » sur la page de connexion."],
+                null,
+                null,
+                "Par sécurité, cet avis ne contient jamais de lien d'action."),
+            _ => new MailModel(
+                "Your password was changed",
+                "Your password was changed",
+                ["The password of your CircleTools account was just changed. All your other devices were signed out.", "If this wasn't you, reset your password right away with \"Forgot your password?\" on the sign-in page."],
+                null,
+                null,
+                "For your security this notice never carries an action link."),
         };
 
         return Compose(email, brand, language, model);

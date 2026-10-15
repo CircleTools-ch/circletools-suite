@@ -16,11 +16,13 @@ export async function share(title, text, url) {
 
     try {
         await navigator.share(data);
+        return true;
     } catch (e) {
         // The user dismissing the sheet rejects with AbortError; that is a normal outcome, not a
-        // failure to report. Anything else (a genuine share error) bubbles to the .NET caller.
+        // failure to report - but nothing was shared. Anything else (a genuine share error) bubbles to
+        // the .NET caller.
         if (e && e.name === 'AbortError') {
-            return;
+            return false;
         }
 
         throw e;

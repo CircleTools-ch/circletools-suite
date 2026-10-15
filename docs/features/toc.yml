@@ -84,6 +84,10 @@
   href: FEAT-022-business-metrics-dashboard.md
 - name: TP-022 Business-metrics dashboard test plan
   href: TP-022-business-metrics-dashboard.md
+- name: FEAT-023 Session scope and change password
+  href: FEAT-023-session-scope-and-change-password.md
+- name: TP-023 Session scope and change password test plan
+  href: TP-023-session-scope-and-change-password.md
 - name: Templates
   items:
     - name: Feature spec template

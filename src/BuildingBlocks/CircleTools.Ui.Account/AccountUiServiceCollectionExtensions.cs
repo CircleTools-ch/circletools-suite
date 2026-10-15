@@ -53,6 +53,7 @@ public static class AccountUiServiceCollectionExtensions
         services.AddScoped<TokenAuthStateProvider>();
         services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<TokenAuthStateProvider>());
 
+        services.AddScoped<SessionNotices>();
         services.AddScoped<ISessionRefresher, SessionRefresher>();
         services.AddScoped<AccountApiClient>();
         services.AddScoped<AccountSession>();

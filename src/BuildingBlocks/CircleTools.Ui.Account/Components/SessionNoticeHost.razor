@@ -1,0 +1,28 @@
+@implements IDisposable
+@inject SessionNotices Notices
+@inject ISnackbar Snackbar
+@inject IStringLocalizer<AccountStrings> L
+
+@*
+    Tells the user when the server ended this device's session (FR-008, ADR-0079): signed out on all
+    devices elsewhere, a password change on another device, or expiry. No visual output of its own; place
+    it once in an app shell that has a MudSnackbarProvider.
+*@
+
+@code {
+    protected override void OnInitialized() => Notices.SignedOutByServer += OnSignedOutByServer;
+
+    // A notice raised before this host existed (the startup session restore) is shown once it can be.
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender && Notices.TakePending())
+        {
+            OnSignedOutByServer();
+        }
+    }
+
+    private void OnSignedOutByServer() =>
+        _ = InvokeAsync(() => Snackbar.Add(L["SignedOutByServer"], Severity.Info));
+
+    public void Dispose() => Notices.SignedOutByServer -= OnSignedOutByServer;
+}

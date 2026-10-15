@@ -40,10 +40,27 @@ public interface IShareService
     /// <param name="text">The message body to share. Include the link here too for the widest reach.</param>
     /// <param name="url">An optional link, surfaced to platforms that treat it specially.</param>
     /// <param name="cancellationToken">Cancels the share.</param>
-    /// <returns>A task that completes once the sheet has been shown (and dismissed or acted on).</returns>
-    ValueTask ShareAsync(
+    /// <returns>
+    /// Whether the content went somewhere: <see cref="ShareOutcome.Shared"/> once a target was chosen,
+    /// <see cref="ShareOutcome.Dismissed"/> when the sheet was closed without one, or
+    /// <see cref="ShareOutcome.Unknown"/> on a platform that does not say (D5, 2026-10-15 sync test).
+    /// </returns>
+    ValueTask<ShareOutcome> ShareAsync(
         string title,
         string text,
         string? url = null,
         CancellationToken cancellationToken = default);
+}
+
+/// <summary>What became of a share request (<see cref="IShareService.ShareAsync"/>).</summary>
+public enum ShareOutcome
+{
+    /// <summary>The platform cannot tell whether a target was chosen.</summary>
+    Unknown,
+
+    /// <summary>A share target was chosen.</summary>
+    Shared,
+
+    /// <summary>The sheet was closed without choosing a target, or the share failed.</summary>
+    Dismissed,
 }

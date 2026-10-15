@@ -188,29 +188,46 @@ public sealed class TwoClientSyncTests(TwoClientSyncFactory factory)
     }
 
     [Fact]
-    public async Task UnclaimOnA_StopsSyncOnB_ButBKeepsItsLocalCopy()
+    public async Task UnclaimOnA_KeepsTheGroupOnA_AndRemovesItFromB()
     {
+        // ADR-0073 Amendment 2: "My account -> On this device" is a move. A keeps the group; B drops its copy
+        // rather than keeping an unsynced duplicate.
         var account = await factory.RegisterAccountAsync();
         var (deviceA, deviceB, groupId) = await ClaimedOnBothAsync(account);
 
-        // A removes the group from the account. Its own local copy is kept, account-free.
         var removal = await deviceA.UnclaimAsync(groupId);
         Assert.Equal(SyncStatus.Synced, removal.Status);
         Assert.NotNull(await deviceA.GroupAsync(groupId));
         Assert.Null((await deviceA.RecordAsync(groupId))!.AccountScope);
 
-        // B cycles and applies the un-claim marker — not a tombstone: the group stays, the scope drops.
         var onB = await deviceB.SyncAsync();
         Assert.Equal(1, onB.Unclaimed);
-        Assert.NotNull(await deviceB.GroupAsync(groupId));
+        Assert.Null(await deviceB.GroupAsync(groupId));
+
+        // A's copy is untouched by its own marker coming back.
+        await deviceA.SyncAsync();
+        Assert.NotNull(await deviceA.GroupAsync(groupId));
+    }
+
+    [Fact]
+    public async Task UnclaimOnA_WhileBHasAnOfflineEdit_KeepsBsEditLocally_WithoutPuttingTheGroupBack()
+    {
+        var account = await factory.RegisterAccountAsync();
+        var (deviceA, deviceB, groupId) = await ClaimedOnBothAsync(account);
+
+        // B edits before it hears of the move; its next cycle pushes the edit and pulls the marker together.
+        await deviceA.UnclaimAsync(groupId);
+        await deviceB.RenameGroupAsync(groupId, "Edited offline on B");
+        var onB = await deviceB.SyncAsync();
+
+        Assert.Equal(["Edited offline on B"], onB.KeptAsLocalCopy);
+        Assert.Equal("Edited offline on B", (await deviceB.GroupAsync(groupId))!.Name);
         Assert.Null((await deviceB.RecordAsync(groupId))!.AccountScope);
 
-        // "Stops syncing": B edits its now-account-free copy and a further cycle pushes nothing, so A
-        // never hears of the edit — the group has genuinely left the account on both devices.
-        await deviceB.RenameGroupAsync(groupId, "Edited after removal");
-        await deviceB.SyncAsync();
-        await deviceA.SyncAsync();
-        Assert.NotEqual("Edited after removal", (await deviceA.GroupAsync(groupId))!.Name);
+        // The stale push did not put the group back into the account: a fresh device sees no copy of it.
+        var deviceC = account.NewDevice();
+        await deviceC.SyncAsync();
+        Assert.Null(await deviceC.GroupAsync(groupId));
     }
 
     [Fact]

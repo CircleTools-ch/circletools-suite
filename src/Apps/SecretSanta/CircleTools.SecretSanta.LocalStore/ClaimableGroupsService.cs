@@ -27,7 +27,8 @@ namespace CircleTools.SecretSanta.LocalStore;
 /// </param>
 /// <param name="Mode">
 /// The group's storage mode (ADR-0058), so mode-aware surfaces (the hub chip, Sharing &amp; sync) can
-/// show it without reaching into the sync record directly.
+/// show it without reaching into the sync record directly. An account-store group reads as "My account"
+/// whatever an older record stored (ADR-0078 Amendment 3).
 /// </param>
 /// <param name="AccountScope">
 /// The account the group is claimed into through the account sync store, or <see langword="null"/>.
@@ -43,6 +44,10 @@ namespace CircleTools.SecretSanta.LocalStore;
 /// Whether the group is marked "My account" but not yet claimed through the account sync store and is
 /// not an admin-claimed shared group — what the auto-claim uploads (ADR-0073, ADR-0078).
 /// </param>
+/// <param name="IsJoinOnly">
+/// Whether this device holds the group only through its join link (ADR-0058): a participant may look, but
+/// only the organizer changes the group.
+/// </param>
 public sealed record ClaimableGroup(
     Guid Id,
     string Name,
@@ -52,7 +57,8 @@ public sealed record ClaimableGroup(
     StorageMode Mode,
     Guid? AccountScope = null,
     Guid? Owner = null,
-    bool IsAwaitingClaim = false);
+    bool IsAwaitingClaim = false,
+    bool IsJoinOnly = false);
 
 /// <summary>
 /// Reads the local groups as the claim / un-claim / sync-status screens need them (FEAT-004), over the
@@ -124,9 +130,10 @@ public sealed class ClaimableGroupsService(ILocalSyncStore local)
             state.Members.Count,
             hasCurrentDraw,
             IsAccountFree: owner is null && record.Mode != StorageMode.Account,
-            record.Mode,
+            record.EffectiveMode(),
             AccountScope: record.AccountScope,
             Owner: owner,
-            IsAwaitingClaim: record.Mode == StorageMode.Account && record.AccountScope is null && record.AdminAccount is null);
+            IsAwaitingClaim: record.Mode == StorageMode.Account && record.AccountScope is null && record.AdminAccount is null,
+            IsJoinOnly: record.IsJoinOnly());
     }
 }

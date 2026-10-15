@@ -22,6 +22,12 @@ public sealed class FakeSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
     /// <summary>Set to make the next call behave as if the server is unreachable.</summary>
     public bool Unreachable { get; set; }
 
+    /// <summary>Gets the group ids read through the owner path (<c>GET /shared/{id}/owned</c>), in call order.</summary>
+    public List<Guid> OwnedReads { get; } = [];
+
+    /// <summary>Gets the group ids whose reveal slices were published through the owner path.</summary>
+    public List<Guid> OwnedSlicePublishes { get; } = [];
+
     /// <summary>The creator key the client last presented on a create for <paramref name="groupId"/>, or null.</summary>
     public string? CreatorKeyFor(Guid groupId) => _creatorKeys.GetValueOrDefault(groupId);
 
@@ -52,6 +58,14 @@ public sealed class FakeSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
     /// <summary>Reads a group's current server version, or null if it is gone.</summary>
     public long? ServerVersion(Guid groupId) => _groups.TryGetValue(groupId, out var g) ? g.Version : null;
 
+    /// <summary>Gets or sets an action run inside every <see cref="GetAsync"/>, as if during the round trip.</summary>
+    public Action? DuringGet { get; set; }
+
+    /// <summary>The stored body of a group, or <see langword="null"/>.</summary>
+    /// <param name="groupId">The group.</param>
+    /// <returns>The raw JSON body.</returns>
+    public string? ServerBody(Guid groupId) => _groups.TryGetValue(groupId, out var g) ? g.Body : null;
+
     /// <inheritdoc />
     public Task<ApiResult<MintedLinks>> CreateAsync(CreateSharedGroupRequest request, CancellationToken cancellationToken = default)
     {
@@ -78,6 +92,8 @@ public sealed class FakeSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
     /// <inheritdoc />
     public Task<ApiResult<SharedGroupView>> GetAsync(string token, CancellationToken cancellationToken = default)
     {
+        // Lets a test act while the read is "in flight" (a local edit racing the reconcile).
+        DuringGet?.Invoke();
         if (Unreachable)
         {
             return Fail<SharedGroupView>(ApiFailure.Unreachable);
@@ -265,18 +281,27 @@ public sealed class FakeSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
     /// <inheritdoc />
     public Task<ApiResult<SharedGroupView>> GetOwnedAsync(Guid groupId, CancellationToken cancellationToken = default)
     {
+        OwnedReads.Add(groupId);
         if (Unreachable)
         {
             return Fail<SharedGroupView>(ApiFailure.Unreachable);
         }
 
-        // The fake treats a claimed (admin-retired) group as owned; it has no bearer context.
-        if (!_groups.TryGetValue(groupId, out var g) || !g.AdminRetired)
+        // The fake treats a claimed (admin-retired) group as owned; it has no bearer context. Like the server,
+        // a gone group is NotFound and one that exists but is not owned is Forbidden (ADR-0078).
+        if (!_groups.TryGetValue(groupId, out var g))
         {
             return Fail<SharedGroupView>(ApiFailure.NotFound);
         }
 
-        return Task.FromResult(ApiResult.Ok(new SharedGroupView(g.Id, g.Version, Parse(g.Body), SharedCapability.Admin, false, null)));
+        if (!g.AdminRetired)
+        {
+            return Fail<SharedGroupView>(ApiFailure.Forbidden);
+        }
+
+        // Like the server, the owner read carries the group's current join token (ADR-0078 Amendment 3).
+        var join = _tokens.FirstOrDefault(t => t.Value.GroupId == groupId && t.Value is { Capability: SharedCapability.Join, Active: true }).Key;
+        return Task.FromResult(ApiResult.Ok(new SharedGroupView(g.Id, g.Version, Parse(g.Body), SharedCapability.Admin, false, null, join)));
     }
 
     /// <inheritdoc />
@@ -367,6 +392,7 @@ public sealed class FakeSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
     /// <inheritdoc />
     public Task<ApiResult> PublishOwnedRevealSlicesAsync(Guid groupId, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default)
     {
+        OwnedSlicePublishes.Add(groupId);
         if (Unreachable)
         {
             return Task.FromResult(ApiResult.Failed(new ApiError(ApiFailure.Unreachable)));

@@ -63,9 +63,11 @@ public sealed class RevealSlicePublisher(
         var adminToken = record.Tokens?.AdminToken;
 
         // Publish only from a device that can write slices: a shared-by-link admin-link holder, or the
-        // account owner. A join-only holder and an on-this-device group publish nothing.
+        // owner of an admin-claimed shared group. A join-only holder, an on-this-device group and an
+        // account-store group (no slice store; its links embed the snapshot) publish nothing —
+        // ADR-0078 Amendment 3.
         var canPublishByAdmin = record.Mode == StorageMode.SharedByLink && adminToken is not null;
-        var canPublishByOwner = record.Mode == StorageMode.Account;
+        var canPublishByOwner = record.IsAdminClaimedShared();
         if (!canPublishByAdmin && !canPublishByOwner)
         {
             return;
@@ -102,10 +104,17 @@ public sealed class RevealSlicePublisher(
             || !existing.All(e => tokens.Any(t => t.EventId == e.EventId && t.MemberId == e.MemberId && t.Token == e.Token));
         if (changed)
         {
-            var updatedTokens = (record.Tokens ?? new SharedGroupTokens(null, null))
-                with { RevealTokens = tokens.Count > 0 ? tokens : null };
-            records[index] = record with { Tokens = updatedTokens };
-            await local.SaveGroupsAsync(records, cancellationToken);
+            // Re-read before writing: only the reveal tokens change here. Writing back the copy read before the
+            // queries above would undo an edit made meanwhile (a draw, a member added).
+            var current = (await local.LoadGroupsAsync(cancellationToken)).ToList();
+            var at = current.FindIndex(r => r.State.Id == groupId);
+            if (at >= 0)
+            {
+                var updatedTokens = (current[at].Tokens ?? new SharedGroupTokens(null, null))
+                    with { RevealTokens = tokens.Count > 0 ? tokens : null };
+                current[at] = current[at] with { Tokens = updatedTokens };
+                await local.SaveGroupsAsync(current, cancellationToken);
+            }
         }
 
         // Publish the whole set (authoritative). Best-effort — a failure retries next reconcile.

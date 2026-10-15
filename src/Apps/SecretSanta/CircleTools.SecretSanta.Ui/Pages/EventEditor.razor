@@ -2,6 +2,7 @@
 @inject ISender Sender
 @inject IStringLocalizer<AppStrings> L
 @inject IDialogService Dialogs
+@inject IServiceProvider Services
 
 <PageTitle>@L["EventDetailsTitle"]</PageTitle>
 
@@ -21,7 +22,7 @@ else
     @* One form, one Save (ADR/UX: a single save button per screen). Name, budget and details are all
        persisted together by SaveAsync — the three separate per-section Save buttons were consolidated. *@
     <MudStack Spacing="4">
-        <MudTextField @bind-Value="_name" Label="@L["EventNameLabel"]" Placeholder="@L["EventNamePlaceholder"]"
+        <MudTextField ReadOnly="_readOnly" @bind-Value="_name" Label="@L["EventNameLabel"]" Placeholder="@L["EventNamePlaceholder"]"
                       Variant="Variant.Outlined" Margin="Margin.Dense" />
 
         <MudCard Elevation="1">
@@ -32,15 +33,15 @@ else
                        (the numeric spin buttons otherwise eat the little horizontal space there is). The
                        optional minimum is a lower bound on the maximum (FR-036); leave it blank for a bare
                        maximum, which is the prior behaviour. *@
-                    <MudNumericField @bind-Value="_budgetMinAmount" Label="@L["BudgetMinLabel"]" Variant="Variant.Outlined"
+                    <MudNumericField ReadOnly="_readOnly" @bind-Value="_budgetMinAmount" Label="@L["BudgetMinLabel"]" Variant="Variant.Outlined"
                                      Margin="Margin.Dense" Step="0.01M" Min="0" HideSpinButtons="true" Style="max-width:9rem;" />
-                    <MudNumericField @bind-Value="_budgetAmount" Label="@L["BudgetMaxLabel"]" Variant="Variant.Outlined"
+                    <MudNumericField ReadOnly="_readOnly" @bind-Value="_budgetAmount" Label="@L["BudgetMaxLabel"]" Variant="Variant.Outlined"
                                      Margin="Margin.Dense" Step="0.01M" Min="0" HideSpinButtons="true" Style="max-width:9rem;" />
-                    <MudTextField @bind-Value="_budgetCurrency" Label="@L["CurrencyLabel"]" Variant="Variant.Outlined"
+                    <MudTextField ReadOnly="_readOnly" @bind-Value="_budgetCurrency" Label="@L["CurrencyLabel"]" Variant="Variant.Outlined"
                                   Margin="Margin.Dense" MaxLength="3" Immediate="true" Style="max-width:7rem;" />
                     @* Clears both amounts locally; the budget is removed when the form is saved with no maximum.
                        Only offered when there is a budget to remove (UX review P4). *@
-                    @if (_budgetAmount is not null || _budgetMinAmount is not null)
+                    @if (!_readOnly && (_budgetAmount is not null || _budgetMinAmount is not null))
                     {
                         <MudButton Variant="Variant.Text" Color="Color.Default" OnClick="ClearBudget">@L["ClearBudget"]</MudButton>
                     }
@@ -64,28 +65,35 @@ else
                        the invariant "yyyy-MM-dd" string the input expects (EventDateText adapts it). *@
                     @if (OperatingSystem.IsBrowser())
                     {
-                        <MudDatePicker @bind-Date="_eventDate" Label="@L["DateLabel"]" Variant="Variant.Outlined"
+                        <MudDatePicker ReadOnly="_readOnly" @bind-Date="_eventDate" Label="@L["DateLabel"]" Variant="Variant.Outlined"
                                        Margin="Margin.Dense" Editable="true" />
                     }
                     else
                     {
-                        <MudTextField @bind-Value="EventDateText" Label="@L["DateLabel"]" Variant="Variant.Outlined"
+                        <MudTextField ReadOnly="_readOnly" @bind-Value="EventDateText" Label="@L["DateLabel"]" Variant="Variant.Outlined"
                                       Margin="Margin.Dense" InputType="InputType.Date"
                                       Class="@(_eventDate is null ? "ct-date-field ct-date-empty" : "ct-date-field")"
                                       Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.CalendarMonth" />
                     }
-                    <MudTextField @bind-Value="_eventLocation" Label="@L["LocationLabel"]" Variant="Variant.Outlined"
+                    <MudTextField ReadOnly="_readOnly" @bind-Value="_eventLocation" Label="@L["LocationLabel"]" Variant="Variant.Outlined"
                                   Margin="Margin.Dense" />
-                    <MudTextField @bind-Value="_eventDescription" Label="@L["DescriptionLabel"]" Variant="Variant.Outlined"
+                    <MudTextField ReadOnly="_readOnly" @bind-Value="_eventDescription" Label="@L["DescriptionLabel"]" Variant="Variant.Outlined"
                                   Margin="Margin.Dense" Lines="3" />
                 </MudStack>
             </MudCardContent>
         </MudCard>
 
-        <div>
-            <MudButton Color="Color.Primary" Variant="@(IsDirty ? Variant.Filled : Variant.Outlined)"
-                       OnClick="SaveAsync" id="save-event">@L["Save"]</MudButton>
-        </div>
+        @if (_readOnly)
+        {
+            <MudAlert Severity="Severity.Normal" Dense="true">@L["ParticipantReadOnlyNote"]</MudAlert>
+        }
+        else
+        {
+            <div>
+                <MudButton Color="Color.Primary" Variant="@(IsDirty ? Variant.Filled : Variant.Outlined)"
+                           OnClick="SaveAsync" id="save-event">@L["Save"]</MudButton>
+            </div>
+        }
 
         @if (_status is not null)
         {
@@ -105,6 +113,8 @@ else
 
     private EventDto? _event;
     private bool _loaded;
+    // A join-link participant sees the details but only the organizer changes them (ADR-0058).
+    private bool _readOnly;
     private string _name = string.Empty;
     private decimal? _budgetAmount;
     private decimal? _budgetMinAmount;
@@ -148,6 +158,7 @@ else
 
     private async Task LoadAsync()
     {
+        _readOnly = (await GroupAccess.ForAsync(Services, GroupId)).ReadOnly;
         _event = await Sender.Send(new GetEventQuery(GroupId, EventId));
         _loaded = true;
         if (_event is null)

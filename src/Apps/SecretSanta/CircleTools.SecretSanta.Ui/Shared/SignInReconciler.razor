@@ -1,158 +1,130 @@
 @implements IDisposable
-@inject AuthenticationStateProvider AuthProvider
 @inject IDialogService Dialog
 @inject ClaimableGroupsService Claimable
 @inject SyncService Sync
 @inject ISender Sender
-@inject AccountSession Session
 @inject AutoSyncService AutoSync
 @inject KeptLocalGroups KeptLocal
+@inject SignInReconciliation Reconciliation
 @inject IStringLocalizer<AppStrings> L
 
 @*
-    Sign-in reconciliation of offline data (ADR-0044). No visual output of its own: it watches for the
-    anonymous -> authenticated transition and, on the first interactive sign-in that finds account-free
-    groups on the device, asks the user to Import them into the account, Discard them, or Cancel the
-    sign-in. With no offline groups it simply lets the background sync run. A restored session (silent
-    startup refresh) happens before this component mounts, so it is never prompted.
+    Sign-in reconciliation of offline data (ADR-0044). No visual output of its own: on an interactive sign-in
+    that finds account-free groups on the device, it asks the user to Import them into the account, Keep them
+    on this device, or Discard them. With no offline groups it simply lets the background sync run. A
+    restored session (silent startup refresh) is not a sign-in and is never prompted.
+
+    Which sign-in still needs an answer lives in the SignInReconciliation service, not here (amendment
+    2026-10-15). Signing in can switch the UI language, and the culture boundary then rebuilds this
+    component and the dialog provider. The rebuilt reconciler picks the request up and asks again, in the
+    account's language. The prompt is a bottom sheet only its buttons close.
 *@
 
 @code {
-    private bool _wasAuthenticated;
+    private readonly CancellationTokenSource _lifetime = new();
     private bool _busy;
+    private bool _disposed;
 
     protected override async Task OnInitializedAsync()
     {
-        var state = await AuthProvider.GetAuthenticationStateAsync();
-        _wasAuthenticated = state.User.Identity?.IsAuthenticated == true;
-        AuthProvider.AuthenticationStateChanged += OnAuthenticationStateChanged;
+        await Reconciliation.InitializeAsync();
+        Reconciliation.PendingChanged += OnPendingChanged;
     }
 
-    private void OnAuthenticationStateChanged(Task<AuthenticationState> task) =>
-        _ = InvokeAsync(() => HandleAsync(task));
+    // A sign-in pending from before a rebuild (the language switch) is picked up on the first render.
+    protected override Task OnAfterRenderAsync(bool firstRender) => firstRender ? TryReconcileAsync() : Task.CompletedTask;
 
-    private async Task HandleAsync(Task<AuthenticationState> task)
+    private void OnPendingChanged() => _ = InvokeAsync(TryReconcileAsync);
+
+    private async Task TryReconcileAsync()
     {
-        AuthenticationState state;
-        try
-        {
-            state = await task;
-        }
-        catch
-        {
-            return;
-        }
-
-        var isAuthenticated = state.User.Identity?.IsAuthenticated == true;
-        var wasAuthenticated = _wasAuthenticated;
-        _wasAuthenticated = isAuthenticated;
-
-        // Only an anonymous -> authenticated transition, and only one at a time. A refresh
-        // (authenticated -> authenticated) or a sign-out (-> anonymous) is not a sign-in.
-        if (_busy || wasAuthenticated || !isAuthenticated)
-        {
-            return;
-        }
-
-        await ReconcileAsync(state.User.UserId());
-    }
-
-    private async Task ReconcileAsync(Guid accountId)
-    {
-        if (accountId == Guid.Empty)
+        if (_busy || _disposed || Reconciliation.Pending is not { } accountId)
         {
             return;
         }
 
         _busy = true;
-        AutoSync.Reconciling = true; // Suspend background auto-claim until the user decides.
         try
         {
-            IReadOnlyList<Guid> ids;
-            try
+            if (!await ReconcileAsync(accountId) && _disposed)
             {
-                // Only groups the user has not already decided about: one they kept local at an earlier
-                // sign-in, or created as "On this device" while signed in, is not asked about again.
-                var kept = await KeptLocal.GetAsync();
-                ids = [.. (await Claimable.GetAccountFreeAsync()).Select(g => g.Id).Where(id => !kept.Contains(id))];
-            }
-            catch (StorageUnavailableException)
-            {
-                ids = [];
+                // The prompt was torn down with this component (the tree was rebuilt mid-question). Leave
+                // the sign-in pending: the rebuilt reconciler asks again.
+                return;
             }
 
-            if (ids.Count > 0)
-            {
-                switch (await AskAsync(ids.Count))
-                {
-                    case OfflineChoice.Import:
-                        await Sync.ClaimAsync(accountId, ids);
-                        break;
-                    case OfflineChoice.Discard:
-                        foreach (var id in ids)
-                        {
-                            await Sender.Send(new DeleteGroupCommand(id));
-                        }
-
-                        break;
-                    case OfflineChoice.Cancel:
-                        // No explicit Import/Discard choice — the user dismissed the prompt, or (the real
-                        // bug) it never displayed and ShowMessageBoxAsync returned null immediately. Either
-                        // way, KEEP the sign-in: a non-choice must never end the session. Earlier this did
-                        // SignOutAsync → POST /logout → RevokeAll, which revoked every session on every
-                        // device right after login. Leave the local groups device-only (importable later
-                        // per group from Sharing & sync) and fall through to the normal sync below. Remember
-                        // the choice so the next sign-in does not ask about the same groups again.
-                        await KeptLocal.AddAsync(ids);
-                        break;
-                }
-            }
+            Reconciliation.Complete();
         }
         finally
         {
-            AutoSync.Reconciling = false;
             _busy = false;
         }
 
-        // Import, Discard, or nothing-to-reconcile: run the first cycle now to pull the account's data.
+        // Import, Discard, Keep, or nothing-to-reconcile: run the first cycle now to pull the account's data.
         AutoSync.RequestSync();
     }
 
-    private enum OfflineChoice
+    // Returns false when the prompt ended without an answer.
+    private async Task<bool> ReconcileAsync(Guid accountId)
     {
-        Import,
-        Discard,
-        Cancel,
+        IReadOnlyList<Guid> ids;
+        try
+        {
+            // Only groups the user has not already decided about: one they kept local at an earlier
+            // sign-in, or created as "On this device" while signed in, is not asked about again.
+            var kept = await KeptLocal.GetAsync();
+            ids = [.. (await Claimable.GetAccountFreeAsync()).Select(g => g.Id).Where(id => !kept.Contains(id))];
+        }
+        catch (StorageUnavailableException)
+        {
+            ids = [];
+        }
+
+        if (ids.Count == 0)
+        {
+            return true;
+        }
+
+        switch (await AskAsync(ids.Count))
+        {
+            case ReconcileChoice.Import:
+                await Sync.ClaimAsync(accountId, ids);
+                return true;
+            case ReconcileChoice.Discard:
+                foreach (var id in ids)
+                {
+                    await Sender.Send(new DeleteGroupCommand(id));
+                }
+
+                return true;
+            case ReconcileChoice.KeepLocal:
+                // An explicit "keep on this device": remember it, so the next sign-in does not ask about
+                // the same groups again. They stay importable per group from Sharing & sync.
+                await KeptLocal.AddAsync(ids);
+                return true;
+            default:
+                // No answer: decide nothing. The groups stay local; never end the session over it.
+                return false;
+        }
     }
 
-    private async Task<OfflineChoice> AskAsync(int count)
+    private Task<ReconcileChoice?> AskAsync(int count)
     {
         // Count-at-one is a distinct key, not "{0} things" with a swapped number: the noun is singular
         // in every language this app speaks.
         var body = count == 1 ? L["ReconcileBodySingular"] : L["ReconcileBodyPlural", count];
 
-        var messageBox = new MessageBoxOptions
-        {
-            Title = L["ReconcileTitle"],
-            Message = body,
-            YesText = L["ReconcileImport"],
-            NoText = L["ReconcileDiscard"],
-            CancelText = L["Cancel"],
-        };
-
-        // Only the three buttons resolve the dialog — an accidental backdrop click or Escape must not
-        // sign the user out.
-        var options = new DialogOptions { BackdropClick = false, CloseOnEscapeKey = false };
-
-        var result = await Dialog.ShowMessageBoxAsync(messageBox, options);
-
-        return result switch
-        {
-            true => OfflineChoice.Import,
-            false => OfflineChoice.Discard,
-            _ => OfflineChoice.Cancel,
-        };
+        return Dialog.ShowReconcileSheetAsync(
+            L["ReconcileTitle"], body, L["ReconcileImport"], L["ReconcileKeepLocal"], L["ReconcileDiscard"], _lifetime.Token);
     }
 
-    public void Dispose() => AuthProvider.AuthenticationStateChanged -= OnAuthenticationStateChanged;
+    public void Dispose()
+    {
+        _disposed = true;
+        Reconciliation.PendingChanged -= OnPendingChanged;
+
+        // Close a sheet still open: the rebuilt reconciler asks again, in the new language.
+        _lifetime.Cancel();
+        _lifetime.Dispose();
+    }
 }

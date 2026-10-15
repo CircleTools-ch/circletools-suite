@@ -34,6 +34,17 @@ public interface IRefreshTokenChainStore
     /// <returns>The number of chains revoked.</returns>
     Task<int> RevokeAllForUserAsync(Guid userId, DateTimeOffset now, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Revokes every live chain belonging to a user except one — used by a password change (FR-049), which
+    /// ends the other sessions and keeps the one that made the change (ADR-0079).
+    /// </summary>
+    /// <param name="userId">The user whose other sessions end.</param>
+    /// <param name="keepChainId">The chain to leave live.</param>
+    /// <param name="now">The current time.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The number of chains revoked.</returns>
+    Task<int> RevokeAllForUserExceptAsync(Guid userId, Guid keepChainId, DateTimeOffset now, CancellationToken cancellationToken = default);
+
     /// <summary>Counts a user's live sessions — reported in their data export (FR-014).</summary>
     /// <param name="userId">The user to count sessions for.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

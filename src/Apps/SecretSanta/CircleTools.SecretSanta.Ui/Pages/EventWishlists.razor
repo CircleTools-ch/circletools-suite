@@ -1,6 +1,7 @@
 @page "/groups/{GroupId:guid}/events/{EventId:guid}/wishlists"
 @inject ISender Sender
 @inject IStringLocalizer<AppStrings> L
+@inject IServiceProvider Services
 
 <PageTitle>@L["WishlistsTitle"]</PageTitle>
 
@@ -26,8 +27,8 @@ else
                 <MudCardContent>
                     <MudText Typo="Typo.subtitle1" GutterBottom="true"><strong>@editor.MemberName</strong></MudText>
                     <MudTextField @bind-Value="editor.Text" Label="@L["WishlistLabel"]" Variant="Variant.Outlined"
-                                  Margin="Margin.Dense" Lines="3" />
-                    <div class="d-flex align-center gap-2 mt-2">
+                                  Margin="Margin.Dense" Lines="3" ReadOnly="_readOnly" />
+                    <div class="d-flex align-center gap-2 mt-2" hidden="@_readOnly">
                         <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="() => SaveAsync(editor)">@L["Save"]</MudButton>
                         @if (editor.Saved)
                         {
@@ -59,12 +60,15 @@ else
 
     private EventDto? _event;
     private bool _loaded;
+    // A join-link participant sees the wishlists but only the organizer changes them here (ADR-0058).
+    private bool _readOnly;
     private List<WishlistEditor> _editors = [];
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
     private async Task LoadAsync()
     {
+        _readOnly = (await GroupAccess.ForAsync(Services, GroupId)).ReadOnly;
         _event = await Sender.Send(new GetEventQuery(GroupId, EventId));
         _loaded = true;
         _editors = _event is null

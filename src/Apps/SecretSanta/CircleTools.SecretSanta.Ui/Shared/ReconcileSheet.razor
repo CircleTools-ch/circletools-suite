@@ -1,0 +1,45 @@
+@*
+    The sign-in reconciliation prompt as a bottom sheet (ADR-0044 amendment 2026-10-15): Import, Keep on
+    this device, or Discard. It used to be a MudBlazor message box, the app's only one, and on Android that
+    never showed, so the reconciler read "no answer" as Cancel. A sheet is the component every other
+    confirmation uses. It closes only through one of its three buttons. Resolve with
+    ReconcileSheetExtensions.ShowReconcileSheetAsync.
+*@
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudText Typo="Typo.body1" Class="pb-1">@Message</MudText>
+    </DialogContent>
+    <DialogActions>
+        <div class="d-flex flex-wrap justify-end gap-2 pa-2" style="width:100%;">
+            <MudButton Color="Color.Error" OnClick="() => Choose(ReconcileChoice.Discard)" id="reconcile-discard">@DiscardLabel</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="() => Choose(ReconcileChoice.KeepLocal)" id="reconcile-keep">@KeepLocalLabel</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="() => Choose(ReconcileChoice.Import)" id="reconcile-import">@ImportLabel</MudButton>
+        </div>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance Dialog { get; set; } = default!;
+
+    /// <summary>The sheet's title.</summary>
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    /// <summary>The question, naming how many groups it is about.</summary>
+    [Parameter] public string Message { get; set; } = string.Empty;
+
+    /// <summary>Label for Import.</summary>
+    [Parameter] public string ImportLabel { get; set; } = string.Empty;
+
+    /// <summary>Label for Keep on this device.</summary>
+    [Parameter] public string KeepLocalLabel { get; set; } = string.Empty;
+
+    /// <summary>Label for Discard.</summary>
+    [Parameter] public string DiscardLabel { get; set; } = string.Empty;
+
+    private void Choose(ReconcileChoice choice) => Dialog.Close(DialogResult.Ok(choice));
+}

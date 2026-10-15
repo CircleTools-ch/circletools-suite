@@ -310,6 +310,20 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
     }
 
     [Fact]
+    public async Task Exists_TellsADeletedGroupFromOneOwnedBySomeoneElse()
+    {
+        // ADR-0078: the owner read answers 404 only for a gone group, so other devices know to drop it.
+        await using var provider = fixture.CreateProvider();
+        var links = await Share(provider, Guid.NewGuid(), "{}");
+        var account = Guid.NewGuid();
+        await Store(provider).ClaimAdminAsync(links.AdminToken, account, "Anna");
+
+        Assert.True(await Store(provider).ExistsAsync(links.GroupId));
+        await Store(provider).DeleteOwnedAsync(account, links.GroupId);
+        Assert.False(await Store(provider).ExistsAsync(links.GroupId));
+    }
+
+    [Fact]
     public async Task PruneExpired_RemovesOwnerLessInactiveGroups_ButKeepsOwnedOnes()
     {
         await using var provider = fixture.CreateProvider();
@@ -374,6 +388,8 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
         var view = await Store(provider).GetAsOwnerAsync(account, links.GroupId);
         Assert.NotNull(view);
         Assert.False(view!.AdminRetired);
+        // The owner read carries the live join link, so every owner device can share it (ADR-0078 Am. 3).
+        Assert.Equal(links.JoinToken, view.JoinToken);
         var push = await Store(provider).PushAsOwnerAsync(account, links.GroupId, view.Version + 1, Body("""{ "v": "b" }"""));
         Assert.Equal(SharedWriteStatus.Applied, push.Status);
         Assert.Equal("b", (await Store(provider).GetAsOwnerAsync(account, links.GroupId))!.Body.GetProperty("v").GetString());

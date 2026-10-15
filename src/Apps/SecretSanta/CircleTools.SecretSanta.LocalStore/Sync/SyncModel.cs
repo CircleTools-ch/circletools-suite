@@ -161,6 +161,56 @@ public sealed record SyncedGroupRecord(
     Guid? AdminAccount = null);
 
 /// <summary>
+/// The questions every reader asks about a <see cref="SyncedGroupRecord"/>'s kind, answered in one place
+/// (ADR-0078 Amendment 3). "My account" has two kinds that live in different server stores, and telling
+/// them apart by <see cref="SyncedGroupRecord.Mode"/> alone sent account-store groups down the shared-group
+/// owner path.
+/// </summary>
+public static class SyncedGroupRecordKind
+{
+    /// <summary>
+    /// Whether the record is a shared-by-link group whose admin an account claimed (ADR-0058): it lives in
+    /// the shared-group store and is read, written and published by its owner's bearer. A legacy record
+    /// written before <see cref="SyncedGroupRecord.AdminAccount"/> existed is recognised by the tokens a
+    /// claim-admin keeps, until the owned-group merge back-fills its account.
+    /// </summary>
+    /// <param name="record">The record.</param>
+    /// <returns><see langword="true"/> for an admin-claimed shared group.</returns>
+    public static bool IsAdminClaimedShared(this SyncedGroupRecord record)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        return record.AccountScope is null
+            && (record.AdminAccount is not null
+                || (record.Mode == StorageMode.Account && record.PendingClaimAccount is null && record.Tokens is not null));
+    }
+
+    /// <summary>
+    /// The storage mode to show for the record: an account-store group (it has an
+    /// <see cref="SyncedGroupRecord.AccountScope"/>) is "My account" whatever an older record's
+    /// <see cref="SyncedGroupRecord.Mode"/> says.
+    /// </summary>
+    /// <param name="record">The record.</param>
+    /// <returns>The mode the group is really in.</returns>
+    public static StorageMode EffectiveMode(this SyncedGroupRecord record)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        return record.AccountScope is not null ? StorageMode.Account : record.Mode;
+    }
+
+    /// <summary>
+    /// Whether this device holds the group only as a join-link participant (ADR-0058): it may see the
+    /// group, but only the organizer changes it. Such a device has no way to send a group edit.
+    /// </summary>
+    /// <param name="record">The record.</param>
+    /// <returns><see langword="true"/> for a join-only shared group.</returns>
+    public static bool IsJoinOnly(this SyncedGroupRecord record)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        return record.Mode == StorageMode.SharedByLink && record.Tokens?.AdminToken is null;
+    }
+}
+
+/// <summary>
 /// The whole persisted group collection under the local-store key, carrying a schema version so an
 /// older on-disk shape can be recognised and migrated in place (FEAT-004).
 /// </summary>

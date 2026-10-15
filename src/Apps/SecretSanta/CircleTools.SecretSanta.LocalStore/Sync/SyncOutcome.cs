@@ -28,15 +28,23 @@ public enum SyncStatus
 /// <param name="Pushed">Locally-dirty aggregates sent to the server.</param>
 /// <param name="Pulled">Aggregates created or updated elsewhere and applied locally.</param>
 /// <param name="Deleted">Tombstones applied locally — groups deleted elsewhere.</param>
-/// <param name="Unclaimed">Groups removed from the account elsewhere; the local copy was kept, scope dropped.</param>
+/// <param name="Unclaimed">
+/// Groups moved out of the account on another device. This device dropped its copy, unless it held unsynced
+/// edits (ADR-0073 Amendment 2).
+/// </param>
 /// <param name="Collisions">Pushed bodies the server discarded under last-write-wins.</param>
+/// <param name="KeptAsLocalCopy">
+/// The names of the groups among <paramref name="Unclaimed"/> this device kept as an "On this device" copy
+/// because it held edits it had not uploaded yet — the user is told once (ADR-0073 Amendment 2).
+/// </param>
 public sealed record SyncOutcome(
     SyncStatus Status,
     int Pushed,
     int Pulled,
     int Deleted,
     int Unclaimed,
-    int Collisions)
+    int Collisions,
+    IReadOnlyList<string>? KeptAsLocalCopy = null)
 {
     /// <summary>Whether the cycle completed.</summary>
     public bool IsSuccess => Status == SyncStatus.Synced;

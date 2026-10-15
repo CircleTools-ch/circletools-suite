@@ -171,21 +171,93 @@ public sealed class SyncServiceTests
     }
 
     [Fact]
-    public async Task Unclaimed_KeepsTheLocalCopy_ButDropsTheAccountScope()
+    public async Task Unclaimed_DropsTheCopy_OnTheOtherDevices()
     {
+        // ADR-0073 Amendment 2: moving a group out of the account is a move - the device that chose it keeps
+        // the group, every other device drops its copy instead of keeping a diverging duplicate.
         var account = Guid.NewGuid();
         var (service, local, api) = NewService();
-        var state = SyncTestData.GroupWith("Kept", "A");
+        var state = SyncTestData.GroupWith("Moved", "A");
         await SeedAsync(local, new SyncedGroupRecord(state, 4, account, Dirty: false, Mode: StorageMode.Account));
         api.Returns(new SyncResponse(Cursor: 9, [], [], [new SyncUnclaimed(state.Id)], []));
 
         var outcome = await service.SyncNowAsync(account, default);
 
         Assert.Equal(1, outcome.Unclaimed);
+        Assert.Empty(await local.LoadGroupsAsync(default));
+        Assert.Empty(outcome.KeptAsLocalCopy!);
+    }
+
+    [Fact]
+    public async Task Unclaimed_KeepsACopyWithUnsyncedEdits_AsALocalGroup_AndNamesIt()
+    {
+        var account = Guid.NewGuid();
+        var (service, local, api) = NewService();
+        var state = SyncTestData.GroupWith("Edited offline", "A");
+        await SeedAsync(local, new SyncedGroupRecord(state, 5, account, Dirty: true, Mode: StorageMode.Account));
+        api.Returns(new SyncResponse(Cursor: 9, [], [], [new SyncUnclaimed(state.Id)], []));
+
+        var outcome = await service.SyncNowAsync(account, default);
+
         var record = Assert.Single(await local.LoadGroupsAsync(default));
         Assert.Null(record.AccountScope);
-        // Back to "On this device", or this device's auto-claim (Mode == Account) would undo the removal.
+        Assert.False(record.Dirty);
+        // Back to "On this device", or this device's auto-claim (Mode == Account) would re-upload it.
         Assert.Equal(StorageMode.OnThisDevice, record.Mode);
+        Assert.Equal(["Edited offline"], outcome.KeptAsLocalCopy);
+    }
+
+    [Fact]
+    public async Task Unclaimed_LeavesTheDeviceThatMovedTheGroupOut_Alone()
+    {
+        // The device that chose "On this device" already dropped the scope; its copy is the one left.
+        var account = Guid.NewGuid();
+        var (service, local, api) = NewService();
+        var state = SyncTestData.GroupWith("Mine now", "A");
+        await SeedAsync(local, new SyncedGroupRecord(state, 4, AccountScope: null, Dirty: false));
+        api.Returns(new SyncResponse(Cursor: 9, [], [], [new SyncUnclaimed(state.Id)], []));
+
+        var outcome = await service.SyncNowAsync(account, default);
+
+        Assert.Equal(0, outcome.Unclaimed);
+        Assert.Single(await local.LoadGroupsAsync(default));
+    }
+
+    [Fact]
+    public async Task PulledChange_KeepsTheRecordsLocalFacts_AndRecordsTheAccountMode()
+    {
+        // ADR-0078 Amendment 3 (S3): a pull rebuilt the record and reset Mode to "On this device".
+        var account = Guid.NewGuid();
+        var memberId = Guid.NewGuid();
+        var (service, local, api) = NewService();
+        var state = SyncTestData.GroupWith("Family", "A");
+        var tokens = new SharedGroupTokens(null, "join-token");
+        await SeedAsync(local, new SyncedGroupRecord(state, 2, account, Dirty: false, Tokens: tokens, ClaimedMemberId: memberId));
+        var incoming = state with { Name = "Family (renamed)" };
+        api.Returns(new SyncResponse(Cursor: 3, [SyncTestData.GroupChange(incoming, 3)], [], [], []));
+
+        await service.SyncNowAsync(account, default);
+
+        var record = Assert.Single(await local.LoadGroupsAsync(default));
+        Assert.Equal("Family (renamed)", record.State.Name);
+        Assert.Equal(StorageMode.Account, record.Mode);
+        Assert.Equal(tokens, record.Tokens);
+        Assert.Equal(memberId, record.ClaimedMemberId);
+    }
+
+    [Fact]
+    public async Task PulledNewGroup_IsRecordedAsMyAccount()
+    {
+        var account = Guid.NewGuid();
+        var (service, local, api) = NewService();
+        var incoming = SyncTestData.GroupWith("From B", "Bob");
+        api.Returns(new SyncResponse(Cursor: 3, [SyncTestData.GroupChange(incoming, 1)], [], [], []));
+
+        await service.SyncNowAsync(account, default);
+
+        var record = Assert.Single(await local.LoadGroupsAsync(default));
+        Assert.Equal(StorageMode.Account, record.Mode);
+        Assert.False(record.IsAdminClaimedShared());
     }
 
     [Fact]

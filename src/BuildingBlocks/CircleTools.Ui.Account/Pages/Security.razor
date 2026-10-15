@@ -2,6 +2,8 @@
 @inject IStringLocalizer<AccountStrings> L
 @inject AccountApiClient Api
 @inject IPasskeyCeremony Passkeys
+@inject AccountSession Session
+@inject NavigationManager Navigation
 
 <PageTitle>@L["SecurityTitle"]</PageTitle>
 
@@ -9,6 +11,35 @@
     <Authorized>
         <MudText Typo="Typo.h4" GutterBottom="true">@L["SecurityTitle"]</MudText>
         <MudText Class="mud-text-secondary mb-4">@L["SecurityLead"]</MudText>
+
+        @* Change password (FR-049, ADR-0079): this device stays signed in, every other session ends. *@
+        <MudPaper Elevation="1" Class="pa-4 mb-4" id="change-password">
+            <MudText Typo="Typo.h6">@L["ChangePasswordTitle"]</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">@L["ChangePasswordLead"]</MudText>
+
+            @if (_passwordChanged)
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true" role="status">@L["PasswordChanged"]</MudAlert>
+            }
+
+            <form @onsubmit="ChangePasswordAsync" @onsubmit:preventDefault="true">
+                <ProblemAlert Message="@_passwordError" Details="@_passwordDetails" />
+
+                <MudStack Spacing="3" Style="max-width:26rem;">
+                    <MudTextField @bind-Value="_currentPassword" Label="@L["FieldCurrentPassword"]" InputType="InputType.Password"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" Required="true"
+                                  autocomplete="current-password" id="current-password" />
+                    <MudTextField @bind-Value="_newPassword" Label="@L["FieldNewPassword"]" InputType="InputType.Password"
+                                  HelperText="@L["PasswordHint"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                  Required="true" autocomplete="new-password" id="new-password" />
+                    <MudTextField @bind-Value="_repeatPassword" Label="@L["FieldRepeatPassword"]" InputType="InputType.Password"
+                                  Variant="Variant.Outlined" Margin="Margin.Dense" Required="true"
+                                  autocomplete="new-password" id="repeat-password" />
+
+                    <BusyButton Label="@L["ChangePasswordSubmit"]" Busy="_passwordBusy" />
+                </MudStack>
+            </form>
+        </MudPaper>
 
         <MudPaper Elevation="1" Class="pa-4 mb-4">
             <MudText Typo="Typo.h6">@L["PasskeysTitle"]</MudText>
@@ -80,6 +111,28 @@
                 </form>
             }
         </MudPaper>
+
+        @* Sign out on all devices (FR-049, ADR-0079): sign-out itself ends only this device's session. The
+           confirmation is inline rather than a dialog, so it shows on every head. *@
+        <MudPaper Elevation="1" Class="pa-4 mt-4" id="sign-out-everywhere">
+            <MudText Typo="Typo.h6">@L["SignOutEverywhereTitle"]</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">@L["SignOutEverywhereLead"]</MudText>
+
+            @if (_confirmSignOutEverywhere)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2" role="alert">@L["SignOutEverywhereConfirm"]</MudAlert>
+                <div class="d-flex flex-wrap gap-2">
+                    <BusyButton Type="button" Color="Color.Error" Label="@L["SignOutEverywhereConfirmYes"]"
+                                Busy="_signingOutEverywhere" OnClick="SignOutEverywhereAsync" />
+                    <MudButton Variant="Variant.Text" OnClick="() => _confirmSignOutEverywhere = false">@L["ConfirmCancel"]</MudButton>
+                </div>
+            }
+            else
+            {
+                <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Logout"
+                           OnClick="() => _confirmSignOutEverywhere = true" id="sign-out-everywhere-btn">@L["SignOutEverywhereButton"]</MudButton>
+            }
+        </MudPaper>
     </Authorized>
     <NotAuthorized>
         <RedirectToLogin />
@@ -101,7 +154,64 @@
     private bool _emailBusy;
     private bool _emailSent;
 
+    private string _currentPassword = string.Empty;
+    private string _newPassword = string.Empty;
+    private string _repeatPassword = string.Empty;
+    private string? _passwordError;
+    private IReadOnlyList<string>? _passwordDetails;
+    private bool _passwordBusy;
+    private bool _passwordChanged;
+
+    private bool _confirmSignOutEverywhere;
+    private bool _signingOutEverywhere;
+
     private static CultureInfo Culture => CultureInfo.CurrentCulture;
+
+    /// <summary>
+    /// Changes the password (FR-049). A mismatch between the two new entries is caught here, without a
+    /// round trip; a wrong current password comes back like a failed sign-in.
+    /// </summary>
+    private async Task ChangePasswordAsync()
+    {
+        _passwordError = null;
+        _passwordDetails = null;
+        _passwordChanged = false;
+
+        if (string.IsNullOrEmpty(_currentPassword) || string.IsNullOrEmpty(_newPassword))
+        {
+            _passwordError = L["ErrorValidation"];
+            return;
+        }
+
+        if (!string.Equals(_newPassword, _repeatPassword, StringComparison.Ordinal))
+        {
+            _passwordError = L["PasswordsDoNotMatch"];
+            return;
+        }
+
+        _passwordBusy = true;
+        var result = await Session.ChangePasswordAsync(_currentPassword, _newPassword);
+        _passwordBusy = false;
+
+        if (!result.IsSuccess)
+        {
+            _passwordError = ApiErrorText.Describe(L, result.Error);
+            _passwordDetails = ApiErrorText.Details(L, result.Error);
+            return;
+        }
+
+        _currentPassword = _newPassword = _repeatPassword = string.Empty;
+        _passwordChanged = true;
+    }
+
+    /// <summary>Ends every session of the account, this one included (FR-049), and returns to the start.</summary>
+    private async Task SignOutEverywhereAsync()
+    {
+        _signingOutEverywhere = true;
+        await Session.SignOutEverywhereAsync();
+        _signingOutEverywhere = false;
+        Navigation.NavigateTo(string.Empty);
+    }
 
     protected override async Task OnInitializedAsync() => await LoadPasskeysAsync();
 

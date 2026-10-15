@@ -103,7 +103,7 @@ through the account sync store.
 - **New risks:** the auto-claim selection now depends on the merge step's success signal. If the merge
   fails, legacy records simply wait for the next cycle, which is the safe direction.
 
-### Amendment (2026-10-15) — deleting a My account group reaches its online copy
+### Amendment 1 (2026-10-15) — deleting a My account group reaches its online copy
 
 Reported the same day on Android and iOS: a deleted "My account" group **disappeared and then came back**.
 `SyncingGroupRepository.DeleteAsync` only told the server about groups with an `AccountScope` (a
@@ -123,6 +123,74 @@ by admin token, and claiming admin retires that token.
   queue (`SharedSyncService.SendOwnedDeletesAsync`) **before** owned-group discovery, and discovery skips
   any group still queued. A delete the server settles (deleted, already gone, or not owned by the caller) is
   dropped from the queue; an unreachable server keeps it queued.
+
+### Amendment 2 (2026-10-15) — the account's other devices follow the delete
+
+After the first amendment shipped, a group deleted on the iPad was gone online and on the web, but stayed on
+a Pixel as "Account-synced" for good. An account-store group reaches other devices through its tombstone. An
+admin-claimed shared group has no tombstone: the Pixel's owner read (`GET /shared/{groupId}/owned`) answered
+404, which the client treated as "not the owner any more, or unreachable" and kept the copy. The server also
+answered 404 for a group that still exists but now belongs to someone else (released to a link on another
+device), so the client could not tell the two apart.
+
+- **Server:** the owner read answers **404 only when the group is gone** and **403 when it exists but the
+  caller does not own it** (`ISharedGroupStore.ExistsAsync`). This tells any signed-in caller whether a group
+  id exists. That is the same as the owner delete already does (204 vs 403), and group ids are random GUIDs.
+- **Client:** `MergeOwnedAsync` already reads the account's owned list. A held group whose `AdminAccount` is
+  the signed-in account, with no `AccountScope`, that is **missing from that list** is read once by id:
+  - 404 → the group was deleted: the local copy is removed (deleting means gone, on every device);
+  - 403 → it was released or taken over: the local copy is kept and becomes **Shared by link** when the
+    device holds the join link, otherwise **On this device**; `AdminAccount` is cleared;
+  - success or unreachable → left for the next cycle.
+
+  Account-store groups (`AccountScope` set), groups waiting for their claim, and another account's groups on
+  the same device are never settled this way. They don't live in this account's shared-group store, so a 404
+  for them means nothing.
+- **Deploy order:** server first. An older server answers 404 for a released group too, so a new client
+  against it would delete the local copy of a group that was only handed back to a link.
+- **Groups created as "My account"** (including offline) take the account-store path and were already
+  covered by tombstones. An end-to-end test now covers both kinds across two signed-in browsers.
+
+### Amendment 3 (2026-10-15) — the two My account kinds are told apart by their recorded account, everywhere
+
+The [2026-10-15 sync test](../brainstorming/2026-10-15-secret-santa-sync-device-test.md) (S2, S3, S8, S10)
+found code that still told the two kinds apart by `Mode`:
+
+- **S2.** The shared-group reconcile (`SharedSyncService.SyncGroupAsync`), the shared cycle in
+  `AutoSyncService` and `RevealSlicePublisher` treated **every** `Mode == Account` record as an
+  admin-claimed shared group. Right after an import, an **account-store** group was then read and
+  published through the shared-group owner API (`404`, `403`).
+- **S3.** A pull from the account sync store rebuilt the record from scratch. That dropped `Mode`,
+  `Tokens`, `PendingClaimAccount` and `AdminAccount`, so every account group fell back to
+  `Mode = OnThisDevice`. The group hub then showed "On this device" for an account group, while the list
+  showed "My account". The S2 bug only stopped because of this.
+- **S8.** After "Shared by link → My account", Sharing & sync no longer showed the join link, though the
+  confirmation says it stays active. A second device of the account never had the join token at all.
+- **S10.** A device that had **joined** the group by link, signed into the same account that later
+  claimed admin, kept it as a join-only "Shared by link" group.
+
+**Decision:**
+
+- **One rule for the kind**, used by every reader. A record is an **admin-claimed shared group** when
+  `AdminAccount` is set. A legacy record from before this ADR has no `AdminAccount`, but has
+  `Mode == Account`, no `AccountScope`, no `PendingClaimAccount`, and the tokens a claim-admin keeps. It
+  counts too until the merge back-fills its account. A record with `AccountScope` is an **account-store
+  group**. Only admin-claimed shared groups go through the shared-group owner path (reconcile, reveal
+  slices). Account-store groups use the embedded reveal link, as before. The rule is one helper on the
+  record, not a check repeated in each place.
+- **A pull keeps the local facts.** Applying a pulled account-store change updates `State`, `Version`,
+  `AccountScope` and `Dirty`, and sets `Mode = Account`. It keeps the record's `Tokens` and
+  `ClaimedMemberId`. A newly pulled group is created with `Mode = Account`. Screens that show a mode read
+  `AccountScope` first, so older records display correctly before their next pull.
+- **The owner sees the join link.** The owner read (`GET /shared/{groupId}/owned`) also returns the
+  group's **join token** (an additive field on `SharedGroupView`, filled only for the owner). The server
+  holds it encrypted at rest (ADR-0061). The owner reconcile stores it on the record, and Sharing & sync
+  shows the join-link card for an admin-claimed shared group, on every device of the owner.
+- **A same-account join holder follows the claim.** When owned-group discovery lists a group that this
+  device holds only as a join-link participant, the record becomes the account's admin-claimed group:
+  `Mode = Account`, `AdminAccount` set, the join token kept. It adopts the server body and version. Any
+  local edit the join-only copy held is dropped, since it could never have been sent (ADR-0058: a
+  participant doesn't edit the roster).
 
 ## Pros and cons of the options
 

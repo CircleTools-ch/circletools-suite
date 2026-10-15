@@ -50,6 +50,26 @@ public sealed class RefreshTokenChainStore(MainDbContext context) : IRefreshToke
     }
 
     /// <inheritdoc />
+    public async Task<int> RevokeAllForUserExceptAsync(
+        Guid userId,
+        Guid keepChainId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default)
+    {
+        var chains = await context.RefreshTokenChains
+            .Where(c => c.UserId == userId && c.RevokedAt == null && c.Id != keepChainId)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        foreach (var chain in chains)
+        {
+            chain.Revoke(now);
+        }
+
+        return chains.Count;
+    }
+
+    /// <inheritdoc />
     public async Task<int> CountActiveForUserAsync(Guid userId, CancellationToken cancellationToken = default) =>
         await context.RefreshTokenChains
             .CountAsync(c => c.UserId == userId && c.RevokedAt == null, cancellationToken)

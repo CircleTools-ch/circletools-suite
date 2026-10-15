@@ -9,6 +9,7 @@ using CircleTools.Main.Contracts;
 using CircleTools.Main.Service.Core.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.WebUtilities;
 
 namespace CircleTools.Main.Service;
@@ -33,6 +34,9 @@ public static class AccountEndpoints
 
     /// <summary>Outbox message type for the notice sent to the address being replaced.</summary>
     public const string EmailChangeNoticeMailType = "mail.email-change-notice";
+
+    /// <summary>Outbox message type for the notice that the password was changed (FR-049, ADR-0079).</summary>
+    public const string PasswordChangedMailType = "mail.password-changed";
 
     /// <summary>Outbox message type for the farewell confirmation sent after deletion (FR-047, ADR-0064).</summary>
     public const string AccountDeletedMailType = "mail.account-deleted";
@@ -64,6 +68,9 @@ public static class AccountEndpoints
         group.MapPost("/login", LoginAsync).WithName("Login").AllowAnonymous().RequireRateLimiting(SensitiveRateLimitPolicy);
         group.MapPost("/refresh", RefreshAsync).WithName("Refresh").AllowAnonymous();
         group.MapPost("/logout", LogoutAsync).WithName("Logout").RequireAuthorization();
+        group.MapPost("/logout-all", LogoutAllAsync).WithName("LogoutAll").RequireAuthorization();
+        group.MapPost("/change-password", ChangePasswordAsync).WithName("ChangePassword")
+            .RequireAuthorization().RequireRateLimiting(SensitiveRateLimitPolicy);
 
         // Cross-app SSO hand-off (FR-031, ADR-0039). Authorize is bearer-authorized (the authority
         // mints a code for its signed-in user); token is anonymous (the sibling redeems it), for the
@@ -503,8 +510,36 @@ public static class AccountEndpoints
         return Results.Ok(ToResponse(tokens, user.EmailConfirmed));
     }
 
-    /// <summary>Ends every session for the signed-in user (FR-008).</summary>
+    /// <summary>Ends this device's session (FR-008, ADR-0079).</summary>
+    /// <remarks>
+    /// The session is named by the refresh secret in the body. A request without one comes from an app built
+    /// before ADR-0079, which promised its user that signing out ends every session — so it still does.
+    /// </remarks>
     private static async Task<IResult> LogoutAsync(
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] LogoutRequest? request,
+        ClaimsPrincipal principal,
+        SessionService sessions,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        if (string.IsNullOrWhiteSpace(request?.RefreshToken))
+        {
+            await sessions.RevokeAllAsync(userId, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            await sessions.RevokeSessionAsync(userId, request.RefreshToken, cancellationToken).ConfigureAwait(false);
+        }
+
+        return Results.NoContent();
+    }
+
+    /// <summary>Ends every session of the signed-in user, on every device (FR-049, ADR-0079).</summary>
+    private static async Task<IResult> LogoutAllAsync(
         ClaimsPrincipal principal,
         SessionService sessions,
         CancellationToken cancellationToken)
@@ -515,6 +550,55 @@ public static class AccountEndpoints
         }
 
         await sessions.RevokeAllAsync(userId, cancellationToken).ConfigureAwait(false);
+        return Results.NoContent();
+    }
+
+    /// <summary>Changes the signed-in user's password and ends their other sessions (FR-049, ADR-0079).</summary>
+    /// <remarks>
+    /// A wrong current password gets exactly the failed sign-in answer (NFR-005), and the endpoint carries
+    /// the sign-in rate limit. The new password goes through the same validators as sign-up (policy and the
+    /// breached-password check). The session that made the change stays; every other one ends, and a
+    /// link-less notice goes to the account's address.
+    /// </remarks>
+    private static async Task<IResult> ChangePasswordAsync(
+        [FromBody] ChangePasswordRequest request,
+        ClaimsPrincipal principal,
+        UserManager<CircleToolsUser> users,
+        SessionService sessions,
+        IOutbox outbox,
+        TimeProvider clock,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var user = await users.FindByIdAsync(userId.ToString()).ConfigureAwait(false);
+
+        if (user is null || !await users.CheckPasswordAsync(user, request.CurrentPassword ?? string.Empty).ConfigureAwait(false))
+        {
+            return InvalidCredentials();
+        }
+
+        var result = await users
+            .ChangePasswordAsync(user, request.CurrentPassword ?? string.Empty, request.NewPassword ?? string.Empty)
+            .ConfigureAwait(false);
+
+        if (!result.Succeeded)
+        {
+            return PasswordRejected(result);
+        }
+
+        await sessions.RevokeOtherSessionsAsync(user.Id, request.RefreshToken, cancellationToken).ConfigureAwait(false);
+
+        await outbox.EnqueueAsync(
+            OutboxMessage.Create(
+                PasswordChangedMailType,
+                JsonSerializer.Serialize(new { email = user.Email, language = user.PreferredLanguage, sourceApp = request.SourceApp }),
+                clock.GetUtcNow()),
+            cancellationToken).ConfigureAwait(false);
+
         return Results.NoContent();
     }
 

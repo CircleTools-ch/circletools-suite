@@ -13,6 +13,16 @@ window.circletoolsConnectivity = {
     }
 };
 
+// Page visibility for the resume / foreground-poll sync triggers (ADR-0044 amendment 2026-10-15).
+window.circletoolsForeground = {
+    isVisible: function () { return document.visibilityState === 'visible'; },
+    register: function (dotNetRef) {
+        document.addEventListener('visibilitychange', function () {
+            dotNetRef.invokeMethodAsync('OnVisibilityChanged', document.visibilityState === 'visible');
+        });
+    }
+};
+
 // Blazor startup, in a file rather than an inline <script> so the two web heads start the runtime
 // the same way (see Main's js/app.js, where a Content-Security-Policy makes it mandatory).
 
@@ -33,11 +43,33 @@ window.circletoolsUpdate = {
     _reg: null,
     _reloading: false,
 
-    // Called from .NET (UpdatePrompt) with a reference that receives OnUpdateAvailable().
+    _dotNetRef: null,
+    _wired: false,
+
+    // Tells whichever UpdatePrompt is mounted now. A language switch rebuilds the component tree, so the
+    // reference handed to register() can be disposed and replaced; calling a stale one threw "no tracked
+    // object" and a second registration showed the prompt twice (2026-10-15).
+    _notify: function () {
+        if (this._dotNetRef) {
+            this._dotNetRef.invokeMethodAsync('OnUpdateAvailable').catch(() => { });
+        }
+    },
+
+    // Called from .NET (UpdatePrompt) with a reference that receives OnUpdateAvailable(). Every call
+    // replaces the reference; the service-worker listeners are attached only once.
     register: function (dotNetRef) {
         if (!('serviceWorker' in navigator)) {
             return;
         }
+
+        this._dotNetRef = dotNetRef;
+        if (this._wired) {
+            if (this._reg && this._reg.waiting && navigator.serviceWorker.controller) {
+                this._notify();
+            }
+            return;
+        }
+        this._wired = true;
 
         // When the newly activated worker takes control, reload once to run the new assets.
         navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -54,7 +86,7 @@ window.circletoolsUpdate = {
 
             // Already waiting (installed while the app was closed, or by another tab).
             if (reg.waiting && navigator.serviceWorker.controller) {
-                dotNetRef.invokeMethodAsync('OnUpdateAvailable');
+                this._notify();
             }
 
             // A new worker found now: notify once it finishes installing. The controller check keeps the
@@ -66,7 +98,7 @@ window.circletoolsUpdate = {
                 }
                 installing.addEventListener('statechange', () => {
                     if (installing.state === 'installed' && navigator.serviceWorker.controller) {
-                        dotNetRef.invokeMethodAsync('OnUpdateAvailable');
+                        this._notify();
                     }
                 });
             });

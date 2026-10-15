@@ -18,6 +18,12 @@ public partial class App : Microsoft.Maui.Controls.Application
 
 	protected override Window CreateWindow(IActivationState? activationState)
 	{
-		return new Window(new MainPage()) { Title = "CircleTools.SecretSanta.App" };
+		var window = new Window(new MainPage()) { Title = "CircleTools.SecretSanta.App" };
+
+		// Resume / background for the sync triggers (ADR-0044 amendment 2026-10-15): coming back to the app
+		// pulls what other devices changed, and the foreground poll stops while the app is in the background.
+		window.Resumed += (_, _) => Platform.AppForegroundSignal.Raise(true);
+		window.Stopped += (_, _) => Platform.AppForegroundSignal.Raise(false);
+		return window;
 	}
 }

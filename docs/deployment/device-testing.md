@@ -99,9 +99,16 @@ dotnet run --project src/Apps/SecretSanta/CircleTools.SecretSanta.WebApp --launc
 Then a link shared from the phone (via the new **Share** button → WhatsApp / Messages / e-mail) opens
 on any device on the same Wi-Fi. Adjust the IP in `RevealBaseUrl` if the machine's LAN address differs.
 
-> **Account sign-in / sync does not work over the LAN yet.** The Main API is served over HTTPS with
-> the local dev certificate, which the phone does not trust. The offline product and reveal-link
-> sharing need no API, so they are unaffected; a trusted origin lands with the suite domain.
+> **Account sign-in / sync against the local stack works over USB.** A Debug build accepts the local dev
+> certificate (`MauiProgram.CreateApiHandler`), so tunnel the API port and point the build at it:
+>
+> ```bash
+> adb reverse tcp:7180 tcp:7180
+> dotnet build src/Apps/SecretSanta/CircleTools.SecretSanta.App -f net10.0-android -t:Run >   -p:ApiBaseUrl=https://localhost:7180 -p:RevealBaseUrl=https://secretsanta.circletools.ch
+> ```
+>
+> A phone that has the Play Store build installed must uninstall it first (`adb uninstall
+> ch.circletools.secretsanta`): the signatures differ. That wipes the app's local data on the phone.
 
 Nothing here needs a Google Play account. Play enrolment is only for *distribution*.
 
@@ -161,8 +168,9 @@ Worth knowing before judging what you see on a device — these are tracked, not
 - `RevealBaseUrl` is a **dev LAN default** (`http://192.168.100.122:5081`), not `localhost`, so links
   generated on a device resolve on the home Wi-Fi while the WebApp runs (see above). The literal
   production origin still lands with the suite domain.
-- **Account sign-in / sync over the LAN** is the known gap — the dev HTTPS cert is untrusted by the
-  phone (see the note above). Offline + sharing are unaffected.
+- **The soft keyboard** is handled in `MainActivity` (D1, 2026-10-15): targeting Android 15+ the app is
+  edge to edge, "adjustResize" no longer resizes the window, so the content view is padded by the keyboard's
+  inset instead. Check dialogs and bottom sheets with the keyboard open after any change there.
 - **Not yet verified on a physical phone:** the Android top safe-area / status-bar behaviour on a
   punch-hole, gesture-nav device (the status bar is tinted via `colorPrimaryDark`, neutral by design —
   [ADR-0040](../adr/0040-ui-component-library-mudblazor.md)).

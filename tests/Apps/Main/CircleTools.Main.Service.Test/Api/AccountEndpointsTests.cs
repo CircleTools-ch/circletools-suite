@@ -45,7 +45,30 @@ public sealed class AccountEndpointsTests(AccountApiFactory factory)
         return (response, address);
     }
 
-    private async Task<SessionResponse> RegisterVerifyAndLoginAsync()
+    private async Task<SessionResponse> RegisterVerifyAndLoginAsync() =>
+        (await RegisterVerifyAndLoginWithEmailAsync()).Session;
+
+    private async Task<HttpResponseMessage> LoginAsync(string email, string password) =>
+        await Client().PostAsJsonAsync("/api/v1/account/login", new LoginRequest(email, password));
+
+    private async Task<SessionResponse> SecondSessionAsync(string email)
+    {
+        var login = await LoginAsync(email, ValidPassword);
+        login.EnsureSuccessStatusCode();
+        return (await login.Content.ReadFromJsonAsync<SessionResponse>())!;
+    }
+
+    private HttpClient Authorized(SessionResponse session)
+    {
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", session.AccessToken);
+        return client;
+    }
+
+    private async Task<HttpStatusCode> RefreshStatusAsync(SessionResponse session) =>
+        (await Client().PostAsJsonAsync("/api/v1/account/refresh", new RefreshRequest(session.RefreshToken))).StatusCode;
+
+    private async Task<(SessionResponse Session, string Email)> RegisterVerifyAndLoginWithEmailAsync()
     {
         var (_, email) = await RegisterAsync();
         var message = Assert.Single(await OutboxForAsync(email));
@@ -63,7 +86,7 @@ public sealed class AccountEndpointsTests(AccountApiFactory factory)
             new LoginRequest(email, ValidPassword));
         login.EnsureSuccessStatusCode();
 
-        return (await login.Content.ReadFromJsonAsync<SessionResponse>())!;
+        return ((await login.Content.ReadFromJsonAsync<SessionResponse>())!, email);
     }
 
     [Fact]
@@ -304,5 +327,99 @@ public sealed class AccountEndpointsTests(AccountApiFactory factory)
             new RefreshRequest(session.RefreshToken));
 
         Assert.Equal(HttpStatusCode.Unauthorized, refresh.StatusCode);
+    }
+
+    [Fact]
+    public async Task Logout_WithThisSessionsRefreshToken_EndsOnlyThisSession()
+    {
+        // ADR-0079: signing out on one device must not sign out the others.
+        var (phone, email) = await RegisterVerifyAndLoginWithEmailAsync();
+        var browser = await SecondSessionAsync(email);
+        using var client = Authorized(phone);
+
+        var logout = await client.PostAsJsonAsync("/api/v1/account/logout", new LogoutRequest(phone.RefreshToken));
+        logout.EnsureSuccessStatusCode();
+
+        Assert.Equal(HttpStatusCode.Unauthorized, await RefreshStatusAsync(phone));
+        Assert.Equal(HttpStatusCode.OK, await RefreshStatusAsync(browser));
+    }
+
+    [Fact]
+    public async Task Logout_WithAnotherUsersRefreshToken_EndsNothingOfTheirs()
+    {
+        var mine = await RegisterVerifyAndLoginAsync();
+        var theirs = await RegisterVerifyAndLoginAsync();
+        using var client = Authorized(mine);
+
+        var logout = await client.PostAsJsonAsync("/api/v1/account/logout", new LogoutRequest(theirs.RefreshToken));
+        logout.EnsureSuccessStatusCode();
+
+        Assert.Equal(HttpStatusCode.OK, await RefreshStatusAsync(theirs));
+    }
+
+    [Fact]
+    public async Task LogoutAll_EndsEverySession()
+    {
+        var (phone, email) = await RegisterVerifyAndLoginWithEmailAsync();
+        var browser = await SecondSessionAsync(email);
+        using var client = Authorized(phone);
+
+        var logout = await client.PostAsync(new Uri("/api/v1/account/logout-all", UriKind.Relative), content: null);
+        logout.EnsureSuccessStatusCode();
+
+        Assert.Equal(HttpStatusCode.Unauthorized, await RefreshStatusAsync(phone));
+        Assert.Equal(HttpStatusCode.Unauthorized, await RefreshStatusAsync(browser));
+    }
+
+    [Fact]
+    public async Task ChangePassword_SetsTheNewPassword_KeepsThisSession_EndsTheOthers_AndSendsANotice()
+    {
+        var (phone, email) = await RegisterVerifyAndLoginWithEmailAsync();
+        var browser = await SecondSessionAsync(email);
+        using var client = Authorized(phone);
+        const string newPassword = "a-brand-new-long-passphrase";
+
+        var change = await client.PostAsJsonAsync(
+            "/api/v1/account/change-password",
+            new ChangePasswordRequest(ValidPassword, newPassword, phone.RefreshToken));
+
+        Assert.Equal(HttpStatusCode.NoContent, change.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync(email, ValidPassword)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(email, newPassword)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, await RefreshStatusAsync(phone));
+        Assert.Equal(HttpStatusCode.Unauthorized, await RefreshStatusAsync(browser));
+        Assert.Contains(await OutboxForAsync(email), m => m.Type == AccountEndpoints.PasswordChangedMailType);
+    }
+
+    [Fact]
+    public async Task ChangePassword_WithAWrongCurrentPassword_AnswersLikeAFailedSignIn_AndChangesNothing()
+    {
+        var (session, email) = await RegisterVerifyAndLoginWithEmailAsync();
+        using var client = Authorized(session);
+
+        var change = await client.PostAsJsonAsync(
+            "/api/v1/account/change-password",
+            new ChangePasswordRequest("not-the-password", "a-brand-new-long-passphrase", session.RefreshToken));
+        var failedLogin = await LoginAsync(email, "not-the-password");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, change.StatusCode);
+        Assert.Equal(
+            WithoutTraceId(await failedLogin.Content.ReadAsStringAsync()),
+            WithoutTraceId(await change.Content.ReadAsStringAsync()));
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(email, ValidPassword)).StatusCode);
+    }
+
+    [Fact]
+    public async Task ChangePassword_ToOneThatBreaksThePolicy_IsRefused()
+    {
+        var (session, email) = await RegisterVerifyAndLoginWithEmailAsync();
+        using var client = Authorized(session);
+
+        var change = await client.PostAsJsonAsync(
+            "/api/v1/account/change-password",
+            new ChangePasswordRequest(ValidPassword, "short", session.RefreshToken));
+
+        Assert.Equal(HttpStatusCode.BadRequest, change.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await LoginAsync(email, ValidPassword)).StatusCode);
     }
 }

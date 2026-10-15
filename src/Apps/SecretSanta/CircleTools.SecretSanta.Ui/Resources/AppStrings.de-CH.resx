@@ -246,8 +246,8 @@
   <data name="CreateFromCircleAction" xml:space="preserve"><value>Aus einem Kreis erstellen</value></data>
   <data name="AllGroups" xml:space="preserve"><value>Alle Gruppen</value></data>
   <data name="ReconcileTitle" xml:space="preserve"><value>Offline erstellte Daten übernehmen?</value></data>
-  <data name="ReconcileBodySingular" xml:space="preserve"><value>Du hast eine Gruppe erstellt, während du abgemeldet warst. In dein Konto übernehmen, damit sie über deine Geräte synchronisiert wird, oder verwerfen? Verwerfen kann nicht rückgängig gemacht werden.</value></data>
-  <data name="ReconcileBodyPlural" xml:space="preserve"><value>Du hast {0} Gruppen erstellt, während du abgemeldet warst. In dein Konto übernehmen, damit sie über deine Geräte synchronisiert werden, oder verwerfen? Verwerfen kann nicht rückgängig gemacht werden.</value></data>
+  <data name="ReconcileBodySingular" xml:space="preserve"><value>Du hast eine Gruppe erstellt, während du abgemeldet warst. In dein Konto übernehmen, damit sie über deine Geräte synchronisiert wird, nur auf diesem Gerät behalten oder verwerfen? Verwerfen kann nicht rückgängig gemacht werden.</value></data>
+  <data name="ReconcileBodyPlural" xml:space="preserve"><value>Du hast {0} Gruppen erstellt, während du abgemeldet warst. In dein Konto übernehmen, damit sie über deine Geräte synchronisiert werden, nur auf diesem Gerät behalten oder verwerfen? Verwerfen kann nicht rückgängig gemacht werden.</value></data>
   <data name="ReconcileImport" xml:space="preserve"><value>Übernehmen</value></data>
   <data name="ReconcileDiscard" xml:space="preserve"><value>Verwerfen</value></data>
   <data name="EventOverview" xml:space="preserve"><value>Übersicht</value></data>
@@ -387,4 +387,12 @@
   <data name="MoveToAccountConfirmYes" xml:space="preserve"><value>In mein Konto verschieben</value></data>
   <data name="AccountToLocalConfirm" xml:space="preserve"><value>Diese Gruppe nur noch auf diesem Gerät behalten? Sie wird aus deinem Konto und vom Server entfernt und verschwindet von deinen anderen Geräten.</value></data>
   <data name="AccountToLocalConfirmYes" xml:space="preserve"><value>Nur auf diesem Gerät</value></data>
+  <data name="ReconcileKeepLocal" xml:space="preserve"><value>Nur auf diesem Gerät</value></data>
+  <data name="KeptAsLocalCopySingular" xml:space="preserve"><value>«{0}» wurde auf einem anderen Gerät aus deinem Konto genommen. Deine nicht synchronisierten Änderungen bleiben hier als eigene Kopie erhalten.</value></data>
+  <data name="ParticipantReadOnlyNote" xml:space="preserve"><value>Du bist dieser Gruppe per Link beigetreten. Nur die organisierende Person kann sie ändern.</value></data>
+  <data name="YourAssignment" xml:space="preserve"><value>Deine Zuteilung</value></data>
+  <data name="YourAssignmentHint" xml:space="preserve"><value>Sieh nach, wen du beschenkst</value></data>
+  <data name="DeleteGroupOnlineConfirm" xml:space="preserve"><value>«{0}» mit allen Inhalten löschen? Die Gruppe wird auch online für alle gelöscht, und ihre Links funktionieren nicht mehr. Das lässt sich nicht rückgängig machen.</value></data>
+  <data name="LeaveJoinedGroupConfirm" xml:space="preserve"><value>«{0}» von diesem Gerät entfernen? Die Gruppe bleibt bei der organisierenden Person bestehen; mit dem Link kannst du wieder beitreten.</value></data>
+  <data name="DeleteGroupAccountConfirm" xml:space="preserve"><value>«{0}» mit allen Inhalten löschen? Die Gruppe wird auch aus deinem Konto und von all deinen anderen Geräten gelöscht. Das lässt sich nicht rückgängig machen.</value></data>
 </root>

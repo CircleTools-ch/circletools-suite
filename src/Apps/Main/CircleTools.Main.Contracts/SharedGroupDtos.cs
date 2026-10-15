@@ -59,13 +59,19 @@ public sealed record PushSharedGroupRequest(long Version, JsonElement Body);
 /// the token no longer manages the group. The join token is never retired.
 /// </param>
 /// <param name="AdminClaimedByName">The display name of the account that claimed admin, when known — for the retired-link message.</param>
+/// <param name="JoinToken">
+/// The group's current join token — filled only on the owner read (<c>GET /shared/{groupId}/owned</c>), so
+/// the owner can share the join link from any of their devices (ADR-0078 Amendment 3). Never returned to a
+/// token holder. Additive: <see langword="null"/> from an older server.
+/// </param>
 public sealed record SharedGroupView(
     Guid GroupId,
     long Version,
     JsonElement Body,
     SharedCapability Capability,
     bool AdminRetired,
-    string? AdminClaimedByName);
+    string? AdminClaimedByName,
+    string? JoinToken = null);
 
 /// <summary>The result of pushing a shared group: the stored version and whether the push lost last-write-wins.</summary>
 /// <param name="Version">The version now stored.</param>

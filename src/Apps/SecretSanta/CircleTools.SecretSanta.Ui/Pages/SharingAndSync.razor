@@ -50,6 +50,22 @@ else
     @if (_mode == StorageMode.Account)
     {
         <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true" id="account-owned">@L["AccountOwnedNote"]</MudAlert>
+
+        @* A claimed shared group keeps its join link (the claim confirmation says so): the owner can still
+           invite people with it, from any of their devices (ADR-0078 Amendment 3). *@
+        @if (IsAdminClaimedShared && _tokens?.JoinToken is { } ownerJoinToken)
+        {
+            <MudCard Elevation="1" Class="mb-3" id="join-link-card">
+                <MudCardContent class="pb-2">
+                    <div class="d-flex align-center gap-2 mb-1">
+                        <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Color="Color.Primary" />
+                        <MudText Typo="Typo.subtitle1"><strong>@L["JoinLink"]</strong></MudText>
+                    </div>
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["JoinLinkHint"]</MudText>
+                    @LinkActions(JoinUrl(ownerJoinToken), L["JoinLink"])
+                </MudCardContent>
+            </MudCard>
+        }
     }
 
     @if (_mode == StorageMode.SharedByLink && _tokens is not null)

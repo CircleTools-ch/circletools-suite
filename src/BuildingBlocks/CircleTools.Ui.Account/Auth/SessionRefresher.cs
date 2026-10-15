@@ -25,11 +25,13 @@ namespace CircleTools.Ui.Account.Auth;
 /// <param name="tokens">The in-memory access-token store.</param>
 /// <param name="refreshTokens">Where the refresh token is remembered.</param>
 /// <param name="auth">The provider to notify when the session starts or ends.</param>
+/// <param name="notices">Told when the server refused the session, so the shell can say the user was signed out.</param>
 public sealed class SessionRefresher(
     [FromKeyedServices(AccountApiClients.Anonymous)] HttpClient http,
     IAccessTokenStore tokens,
     IRefreshTokenStore refreshTokens,
-    TokenAuthStateProvider auth) : ISessionRefresher
+    TokenAuthStateProvider auth,
+    SessionNotices notices) : ISessionRefresher
 {
     /// <inheritdoc />
     public async ValueTask<string?> RefreshAsync(CancellationToken cancellationToken = default)
@@ -53,7 +55,11 @@ public sealed class SessionRefresher(
 
             if (!response.IsSuccessStatusCode)
             {
+                // The server ended this session: signed out on another device ("sign out on all devices"),
+                // a password change elsewhere, or expiry. Say so instead of silently dropping the user out
+                // (FR-008, ADR-0079).
                 await SignOutAsync(cancellationToken);
+                notices.RaiseSignedOutByServer();
                 return null;
             }
 

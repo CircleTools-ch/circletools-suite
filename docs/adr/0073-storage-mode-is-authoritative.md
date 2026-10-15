@@ -106,6 +106,34 @@ reload. Both are now wired, each behind a plain consequence prompt:
 Un-claiming (here or on another device) now also resets `Mode` to "On this device". Without that, the
 auto-claim above (`Mode == Account`) would put the group straight back into the account on the next cycle.
 
+### Amendment 2 (2026-10-15) — "My account → On this device" removes the group from the other devices
+
+Found on the [2026-10-15 sync test](../brainstorming/2026-10-15-secret-santa-sync-device-test.md) (S5).
+The confirmation said the group "disappears from your other devices", but those devices kept their copy as
+an "On this device" group. They followed the un-claim rule of
+[FR-026](../requirements/functional/FR-026-remove-group-from-account.md) ("the local copy stays, on every
+device"). The user then held **several unsynced copies of the same group**, each of which could be edited
+and drawn on its own. That produces different reveal links for the same family. If one copy was later
+moved back into the account, it was unclear which version would win.
+
+**Decision:** moving a group out of the account is a move. It is not a copy.
+
+- The **device that makes the choice keeps the full group** as "On this device". It is the only copy now.
+- **Every other device of the account removes its copy** when it pulls the un-claim marker, the same way a
+  tombstone removes a deleted group.
+- **Exception, so no edit is lost:** a device holding edits it has not uploaded yet (`Dirty`) keeps its
+  copy as an "On this device" group. It tells the user once: "*{group}* was moved off your account on
+  another device. Your unsynced changes are kept here as a separate copy."
+- **The server refuses a plain push for a group moved out of the account** (it has an un-claim marker), as
+  it already did for a deleted one. Otherwise a device's stale offline edit would put the group back into
+  the account it just left. That device keeps its edit as the local copy above. Bringing the group back is
+  an explicit claim, through the claim route, which clears the marker.
+- The confirmation text stays as it is, because it now describes what happens.
+
+FR-026's worry was a "remote wipe" disguised as a tidy-up. That doesn't apply here. Nothing is wiped: the
+group is complete on the device where the user chose to keep it, and an un-uploaded edit is never
+dropped. Keeping silent duplicates was the worse surprise.
+
 ## Pros and cons of the options
 
 ### 1. Keep behaviour, relabel UI

@@ -212,8 +212,15 @@ else
     // down the Blazor render and freezes the page). Carries the exception detail so a device-only failure
     // (e.g. the iOS write path) is diagnosable from the screen rather than needing attached logs.
     private string? _createError;
+    private Dictionary<Guid, ClaimableGroup> _describedById = [];
 
-    protected override void OnInitialized() => AutoSync.SyncCompleted += OnSyncCompleted;
+    protected override void OnInitialized()
+    {
+        AutoSync.SyncCompleted += OnSyncCompleted;
+        // Also on a local change (e.g. the sign-in import just claimed groups): the list follows at once
+        // instead of waiting for the network cycle to finish (ADR-0044 amendment 2026-10-15, D2).
+        AutoSync.LocalChanged += OnSyncCompleted;
+    }
 
     // The cascading auth state re-runs this on every sign-in and sign-out. Reload when the account
     // actually changed, so the visible set switches at once — account groups appear on sign-in and are
@@ -286,7 +293,11 @@ else
         StateHasChanged();
     });
 
-    public void Dispose() => AutoSync.SyncCompleted -= OnSyncCompleted;
+    public void Dispose()
+    {
+        AutoSync.SyncCompleted -= OnSyncCompleted;
+        AutoSync.LocalChanged -= OnSyncCompleted;
+    }
 
     private async Task LoadAsync()
     {
@@ -302,12 +313,14 @@ else
         // reads as "My account", not "device-only".
         try
         {
-            _modeByGroup = (await Claimable.GetAllAsync())
-                .ToDictionary(g => g.Id, g => g.IsAccountFree ? g.Mode : StorageMode.Account);
+            var described = await Claimable.GetAllAsync();
+            _modeByGroup = described.ToDictionary(g => g.Id, g => g.IsAccountFree ? g.Mode : StorageMode.Account);
+            _describedById = described.ToDictionary(g => g.Id);
         }
         catch (StorageUnavailableException)
         {
             _modeByGroup = new Dictionary<Guid, StorageMode>();
+            _describedById = new Dictionary<Guid, ClaimableGroup>();
         }
 
         // Pinned groups are a per-account preference (FR-033); empty when signed out. A storage failure
@@ -454,11 +467,25 @@ else
     // Confirm a delete in a bottom sheet (FEAT-008 W4) rather than an inline warning that reflows the card.
     private async Task AskDeleteAsync(Guid id, string name)
     {
-        if (await Dialogs.ShowConfirmSheetAsync(L["ConfirmDeleteGroup", name], L["ConfirmYes"], L["Cancel"]))
+        // Let the overflow menu finish closing before the sheet slides up, so it does not stay open behind it.
+        await Task.Delay(150);
+
+        if (await Dialogs.ShowConfirmSheetAsync(DeleteQuestion(id, name), L["ConfirmYes"], L["Cancel"]))
         {
             await DeleteAsync(id);
         }
     }
+
+    // Say what the delete reaches (D6): an account group goes from every device of the account, an
+    // admin-claimed shared group goes online for everyone (ADR-0078), and a joined group only leaves this
+    // device - the organizer keeps it.
+    private string DeleteQuestion(Guid id, string name) => _describedById.GetValueOrDefault(id) switch
+    {
+        { IsJoinOnly: true } => L["LeaveJoinedGroupConfirm", name],
+        { AccountScope: not null } => L["DeleteGroupAccountConfirm", name],
+        { Mode: StorageMode.Account, IsAwaitingClaim: false } => L["DeleteGroupOnlineConfirm", name],
+        _ => L["ConfirmDeleteGroup", name],
+    };
 
     private async Task DeleteAsync(Guid id)
     {

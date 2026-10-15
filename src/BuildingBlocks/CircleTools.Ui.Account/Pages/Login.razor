@@ -4,6 +4,7 @@
 @inject AccountSession Session
 @inject IPasskeyCeremony Passkeys
 @inject NavigationManager Navigation
+@inject ICultureProvider Culture
 
 <PageTitle>@L["LoginTitle"]</PageTitle>
 
@@ -140,6 +141,12 @@
     {
         if (result.IsSuccess)
         {
+            // Signing in may have switched to the account's language. The UI culture is async-local, and it was
+            // set inside the awaited sign-in, so this handler's flow still holds the previous one; without this
+            // the page navigated to below would render in the old language until something re-rendered it.
+            CultureInfo.CurrentUICulture = Culture.CurrentCulture;
+            CultureInfo.CurrentCulture = Culture.FormattingCulture;
+
             // Only same-app paths are followed. An absolute returnUrl would let a crafted link
             // bounce a freshly signed-in user off-site (an open redirect), so anything that is not
             // a plain relative path falls back to the dashboard.

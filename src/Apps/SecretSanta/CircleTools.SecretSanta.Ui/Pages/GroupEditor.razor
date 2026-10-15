@@ -7,6 +7,7 @@
 @inject IDialogService Dialogs
 @inject ILocalSyncStore Local
 @inject ISyncSignals SyncSignals
+@inject IServiceProvider Services
 @implements IDisposable
 
 @* Group hub (ADR-0055 group level): the group's landing screen. The occasions (events) are the primary
@@ -44,10 +45,13 @@ else
         }
         @* The rename field is tucked into an overflow menu (opens a rename sheet) so the hub leads with
            the occasions, not a text box. *@
-        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" AriaLabel="@L["MoreActions"]"
-                 AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-            <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="RenameAsync">@L["Rename"]</MudMenuItem>
-        </MudMenu>
+        @if (!_readOnly)
+        {
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" AriaLabel="@L["MoreActions"]"
+                     AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="RenameAsync">@L["Rename"]</MudMenuItem>
+            </MudMenu>
+        }
     </div>
 
     @* When this device joined via a join link (ADR-0058), confirm which member it claimed — the
@@ -62,7 +66,16 @@ else
     @* Getting-started checklist (FEAT-019, OB-8): guides the empty→drawn sequence — add members → add an
        event → draw names — and supersedes the one-line first-run hint. The component self-hides once the
        group is set up or the organizer skips it. *@
-    <GettingStartedChecklist Group="_group" OnAddEvent="AddEventViaFabAsync" />
+    @* A join-link participant may look but not change the group (ADR-0058): say so, and offer none of the
+       editing affordances below. *@
+    @if (_readOnly)
+    {
+        <MudAlert Severity="Severity.Normal" Class="mb-4" Dense="true" id="participant-read-only">@L["ParticipantReadOnlyNote"]</MudAlert>
+    }
+    else
+    {
+        <GettingStartedChecklist Group="_group" OnAddEvent="AddEventViaFabAsync" />
+    }
 
     @* Events (occasions): the roster and exclusions are shared, but each event has its own draw,
        wishlists, budget and date (ADR-0042). *@
@@ -70,21 +83,24 @@ else
 
     @* Inline add-event field on wide screens; on a phone it moves behind the "+" FAB so the occasions
        list leads. *@
-    <MudHidden Breakpoint="Breakpoint.SmAndDown">
-        <div class="d-flex gap-2 align-start flex-wrap mb-4">
-            @* The localized default ("Christmas 2026") is the placeholder, not a pre-filled value: typing
-               starts a fresh name instead of appending to the suggestion, and an empty field adds the default. *@
-            <MudTextField @bind-Value="_newEventName" Immediate="true" OnKeyDown="OnNewEventKeyDown"
-                          Label="@L["EventNameLabel"]" Placeholder="@DefaultEventName()"
-                          Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" Style="min-width:12rem;" />
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddEventAsync"
-                       StartIcon="@Icons.Material.Filled.Add" Class="mt-1">@L["AddEvent"]</MudButton>
-        </div>
-    </MudHidden>
+    @if (!_readOnly)
+    {
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <div class="d-flex gap-2 align-start flex-wrap mb-4">
+                @* The localized default ("Christmas 2026") is the placeholder, not a pre-filled value: typing
+                   starts a fresh name instead of appending to the suggestion, and an empty field adds the default. *@
+                <MudTextField @bind-Value="_newEventName" Immediate="true" OnKeyDown="OnNewEventKeyDown"
+                              Label="@L["EventNameLabel"]" Placeholder="@DefaultEventName()"
+                              Variant="Variant.Outlined" Margin="Margin.Dense" Class="flex-grow-1" Style="min-width:12rem;" />
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="AddEventAsync"
+                           StartIcon="@Icons.Material.Filled.Add" Class="mt-1">@L["AddEvent"]</MudButton>
+            </div>
+        </MudHidden>
+    }
 
     @* Shown once there are members but still no event (the brand-new 0/0 case is covered by the
        getting-started checklist above, so this doesn't double up). The labelled "Add event" FAB is the action. *@
-    @if (_group.Events.Count == 0 && _group.Members.Count > 0)
+    @if (_group.Events.Count == 0 && _group.Members.Count > 0 && !_readOnly)
     {
         <MudAlert Severity="Severity.Normal" Class="mb-2" role="note">@L["NoEventsYet"]</MudAlert>
     }
@@ -124,16 +140,19 @@ else
                             <div class="d-flex align-center gap-1">
                                 @* Rename/Remove fold into an overflow menu so the row stays a single tap
                                    target + one kebab on a phone rather than crowded small buttons. *@
-                                <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
-                                         AriaLabel="@L["MoreActions"]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                                    <MudMenuItem Icon="@Icons.Material.Filled.Edit"
-                                                 OnClick="() => BeginEdit(occasion.Id, occasion.Name)">@L["Rename"]</MudMenuItem>
-                                    @if (_group.Events.Count > 1)
-                                    {
-                                        <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error"
-                                                     OnClick="() => AskRemove(occasion.Id)">@L["Remove"]</MudMenuItem>
-                                    }
-                                </MudMenu>
+                                @if (!_readOnly)
+                                {
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
+                                             AriaLabel="@L["MoreActions"]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                                        <MudMenuItem Icon="@Icons.Material.Filled.Edit"
+                                                     OnClick="() => BeginEdit(occasion.Id, occasion.Name)">@L["Rename"]</MudMenuItem>
+                                        @if (_group.Events.Count > 1)
+                                        {
+                                            <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error"
+                                                         OnClick="() => AskRemove(occasion.Id)">@L["Remove"]</MudMenuItem>
+                                        }
+                                    </MudMenu>
+                                }
                                 <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Class="ct-openable"
                                          @onclick="() => Open(occasion.Id)" />
                             </div>
@@ -159,10 +178,13 @@ else
     @* Add an occasion on phones: an inline button right under the occasions it adds to (the wide screens'
        inline field owns it there). It replaced a floating button that covered the section rows below
        (UX review P2). *@
-    <MudHidden Breakpoint="Breakpoint.MdAndUp">
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="AddEventViaFabAsync" Class="mt-3" id="add-event-btn">@L["AddEvent"]</MudButton>
-    </MudHidden>
+    @if (!_readOnly)
+    {
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="AddEventViaFabAsync" Class="mt-3" id="add-event-btn">@L["AddEvent"]</MudButton>
+        </MudHidden>
+    }
 
     @* Shared group sections (ADR-0055 group level): the roster and exclusions apply across every
        occasion, so they sit below the events as their own destinations rather than as tabs. *@
@@ -214,6 +236,7 @@ else
     private GroupDto? _group;
     private bool _loaded;
     private StorageMode _mode;
+    private bool _readOnly;
     private string? _claimedMemberName;
     private string _newEventName = string.Empty;
     private Guid? _editingId;
@@ -242,8 +265,10 @@ else
 
         // The storage mode lives in the sync record, not the domain group (ADR-0016) — read it here for
         // the chip and the Sharing & sync row's subtitle.
+        // An account group reads as "My account" whatever an older record stored (ADR-0078 Amendment 3).
         var record = (await Local.LoadGroupsAsync()).FirstOrDefault(r => r.State.Id == GroupId);
-        _mode = record?.Mode ?? StorageMode.OnThisDevice;
+        _mode = record?.EffectiveMode() ?? StorageMode.OnThisDevice;
+        _readOnly = (await GroupAccess.ForAsync(Services, GroupId)).ReadOnly;
 
         // If this device joined the group as a participant, resolve the claimed member's name for the
         // "this is me" banner.

@@ -162,6 +162,33 @@ Found while testing sign-in / sign-out on the
   remembered device-locally (`KeptLocalGroups`), and the prompt lists only undecided account-free groups.
   Moving a kept group into the account later is still one tap in Sharing & sync.
 
+### Amendment (2026-10-15) — the prompt is a sheet that must be answered; sync also runs on resume
+
+From the [2026-10-15 sync test](../brainstorming/2026-10-15-secret-santa-sync-device-test.md) (S1, S7, D2,
+D3):
+
+- **The import prompt never showed on Android (S1).** It was the app's only MudBlazor message box. Every
+  other confirmation is a `ConfirmSheet` and works on the phone. A message box that never appeared returned
+  "no answer", and the reconciler took that as **Cancel**: it silently kept the groups local and remembered
+  that, so they were never offered again. Now:
+  - the prompt is a **bottom sheet**, the same component family as every other confirmation, with the three
+    answers Import / Discard / Keep on this device. It can't be dismissed without one of them;
+  - **only an explicit "Keep on this device" is remembered.** If the prompt is closed with no answer (the
+    app is closed, or the sheet couldn't be shown), nothing is decided: the groups stay local and the
+    prompt asks again at the next sign-in.
+- **The prompt speaks the account's language (D3).** Signing in switches the UI to the account's language.
+  The prompt is now built after that switch, so it no longer appears in the previous language.
+- **The list follows an import immediately (D2).** After Import or Discard, the groups list refreshes
+  without a reload.
+- **Sync triggers (S7).** The original four triggers (sign-in, app start, every change, reconnect) never
+  fire while the app is just open, or when it comes back from the background. Changes made on another
+  device only arrived after pull-to-refresh. Two triggers are added:
+  - **resume:** coming back to the foreground (MAUI window resumed; on the web, the page becoming visible
+    again) requests a sync;
+  - **foreground poll:** while the app is in the foreground, a sync is requested every **2 minutes**. A
+    background app never polls. A no-op cycle carries no bodies (NFR-008), so the cost is one small
+    request per account and one per shared group.
+
 ## Pros and cons of the options
 
 ### 1. Keep the manual model

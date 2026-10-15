@@ -80,11 +80,27 @@ public sealed class AccountApiClient(
         CancellationToken cancellationToken = default) =>
         PostAsync<LoginRequest, SessionResponse>(anonymous, $"{Route}/login", request, cancellationToken);
 
-    /// <summary>Ends every session for the signed-in user (FR-008).</summary>
+    /// <summary>Ends this device's session (FR-008, ADR-0079).</summary>
+    /// <param name="refreshToken">The refresh secret of this device's session, which names the session to end.</param>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The outcome.</returns>
-    public Task<ApiResult> LogoutAsync(CancellationToken cancellationToken = default) =>
-        PostAsync<object?>(authorized, $"{Route}/logout", null, cancellationToken);
+    public Task<ApiResult> LogoutAsync(string? refreshToken, CancellationToken cancellationToken = default) =>
+        PostAsync(authorized, $"{Route}/logout", new LogoutRequest(refreshToken), cancellationToken);
+
+    /// <summary>Ends every session of the signed-in user, on every device (FR-049, ADR-0079).</summary>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome.</returns>
+    public Task<ApiResult> LogoutAllAsync(CancellationToken cancellationToken = default) =>
+        PostAsync<object?>(authorized, $"{Route}/logout-all", null, cancellationToken);
+
+    /// <summary>Changes the signed-in user's password; the other sessions end (FR-049, ADR-0079).</summary>
+    /// <param name="request">The current and new password, and this session's refresh secret.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome.</returns>
+    public Task<ApiResult> ChangePasswordAsync(
+        ChangePasswordRequest request,
+        CancellationToken cancellationToken = default) =>
+        PostAsync(authorized, $"{Route}/change-password", request with { SourceApp = AppId }, cancellationToken);
 
     /// <summary>
     /// As the SSO authority, mints a single-use authorization code for a sibling app (FR-031, ADR-0039).
