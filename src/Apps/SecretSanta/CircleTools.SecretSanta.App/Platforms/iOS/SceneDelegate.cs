@@ -27,16 +27,68 @@ public class SceneDelegate : MauiUISceneDelegate
     // delivered in connectionOptions (never via scene:continueUserActivity: on a cold start). The Blazor
     // tree is not mounted yet, so DeepLinkService holds the link until DeepLinkListener consumes it on
     // first render (same pending-link path Android uses for a cold-started App Link).
+    //
+    // A managed exception escaping this override is converted to an NSException and aborts the process
+    // inside +[UIScene _sceneForFBSScene:…] — the crash report then shows only SIGABRT, never the .NET
+    // message (0.1.113 crashed on iPad exactly this way). So neither half may throw out of here: a failed
+    // window creation is shown on screen with its full exception text, and a failed link hand-off only
+    // drops that one link — it must never cost the user the app launch.
     public override void WillConnect(UIScene scene, UISceneSession session, UISceneConnectionOptions connectionOptions)
     {
-        base.WillConnect(scene, session, connectionOptions);
-
-        foreach (var activity in connectionOptions.UserActivities)
+#pragma warning disable CA1031 // Any exception here aborts the app with its message lost; surface it instead.
+        try
         {
-            ForwardUserActivity(activity);
+            base.WillConnect(scene, session, connectionOptions);
+        }
+        catch (Exception ex)
+        {
+            ShowStartupFailure(scene, ex);
+            return;
         }
 
-        ForwardUrlContexts(connectionOptions.UrlContexts);
+        try
+        {
+            foreach (var activity in connectionOptions.UserActivities)
+            {
+                ForwardUserActivity(activity);
+            }
+
+            ForwardUrlContexts(connectionOptions.UrlContexts);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"SceneDelegate: dropped launch deep link: {ex}");
+        }
+#pragma warning restore CA1031
+    }
+
+    // Last-resort native screen when MAUI could not build its window: the exception text, selectable so it
+    // can be copied from the device. Deliberately plain UIKit — the MAUI/Blazor stack is what just failed.
+    private void ShowStartupFailure(UIScene scene, Exception exception)
+    {
+        Console.Error.WriteLine($"SceneDelegate: window creation failed: {exception}");
+
+        if (scene is not UIWindowScene windowScene)
+        {
+            return;
+        }
+
+        var details = new UITextView
+        {
+            Text = exception.ToString(),
+            Editable = false,
+            Selectable = true,
+            Font = UIFont.GetMonospacedSystemFont(12, UIFontWeight.Regular),
+            BackgroundColor = UIColor.SystemBackground,
+            TextColor = UIColor.Label,
+        };
+
+        var window = new UIWindow(windowScene)
+        {
+            RootViewController = new UIViewController { View = details },
+        };
+        Window = window;
+        window.MakeKeyAndVisible();
     }
 
     // A Universal Link tapped while the app is already running. MauiUISceneDelegate already declares a

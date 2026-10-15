@@ -17,6 +17,7 @@
       "circletools.ui.abstractions": {
         "type": "Project"
       }
-    }
+    },
+    "net10.0/ios-arm64": {}
   }
 }
