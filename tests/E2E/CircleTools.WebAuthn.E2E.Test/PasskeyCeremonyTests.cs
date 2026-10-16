@@ -123,7 +123,7 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
 
         // Landed authenticated: the account menu now offers "Sign out".
         await OpenAccountMenuAsync();
-        await _page.GetByText("Sign out").WaitForAsync(new LocatorWaitForOptions { Timeout = 15_000 });
+        await _page.GetByText("Sign out", new PageGetByTextOptions { Exact = true }).WaitForAsync(new LocatorWaitForOptions { Timeout = 15_000 });
 
         // NFR-004 — inspect the stored credential server-side: exactly one passkey, exposed as public
         // metadata only. The private key never left the authenticator (WebAuthn), and the API surface
@@ -191,7 +191,7 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
     private async Task SignOutAsync()
     {
         await OpenAccountMenuAsync();
-        await _page.GetByText("Sign out").ClickAsync();
+        await _page.GetByText("Sign out", new PageGetByTextOptions { Exact = true }).ClickAsync();
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 
