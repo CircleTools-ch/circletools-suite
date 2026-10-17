@@ -1,0 +1,134 @@
+@inject AutoSyncService AutoSync
+@inject TimeProvider Time
+@inject IStringLocalizer<AppStrings> L
+@implements IDisposable
+
+@*
+    The app bar's sync status (T3, 2026-10-16 device test), shown only while signed in. Quiet when all is
+    well: a spinner while a cycle runs and a single "synced" icon afterwards, whose tooltip (hover or tap)
+    says when. A problem — offline, a failed cycle, full storage — gets the icon plus a short word, and a
+    tap opens the detail with what it means and, for a failed cycle, a retry. Replaces the drawer's status
+    line, which wrapped badly and read unclearly (Q14).
+*@
+
+@if (_syncing)
+{
+    <MudTooltip Text="@L["SyncStatusSyncing"]" ShowOnClick="true">
+        <span class="ct-sync-indicator" role="status" aria-label="@L["SyncStatusSyncing"]" id="sync-indicator" data-state="syncing">
+            <MudProgressCircular Indeterminate="true" Size="Size.Small" Color="Color.Inherit" Style="width:20px;height:20px;" />
+        </span>
+    </MudTooltip>
+}
+else if (_status == SyncStatus.Synced)
+{
+    <MudTooltip Text="@SyncedText" ShowOnClick="true">
+        <MudIconButton Icon="@Icons.Material.Filled.CloudDone" Color="Color.Inherit" Size="Size.Medium"
+                       aria-label="@SyncedText" id="sync-indicator" data-state="synced" />
+    </MudTooltip>
+}
+else if (_status is { } problem && problem != SyncStatus.SignedOut)
+{
+    @* The menu's own button (icon + short word): one real button, keyboard included. *@
+    <MudMenu Label="@ProblemShort(problem)" StartIcon="@ProblemIcon(problem)" Variant="Variant.Text" Color="Color.Inherit"
+             Size="Size.Small" AriaLabel="@ProblemDetail(problem)" Class="ct-sync-problem"
+             AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" id="sync-indicator" data-state="@problem.ToString()">
+        <ChildContent>
+            <div class="pa-3" style="max-width:18rem;" id="sync-detail">
+                <MudText Typo="Typo.subtitle2">@ProblemShort(problem)</MudText>
+                <MudText Typo="Typo.body2" Class="mt-1">@ProblemDetail(problem)</MudText>
+                @if (AutoSync.LastSyncedAt is not null)
+                {
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary mt-1 d-block">@L["SyncLastSuccess", Ago(AutoSync.LastSyncedAt.Value)]</MudText>
+                }
+            </div>
+            @if (problem != SyncStatus.StorageUnavailable)
+            {
+                <MudMenuItem Icon="@Icons.Material.Filled.Refresh" OnClick="Retry" id="sync-retry">@L["SyncRetry"]</MudMenuItem>
+            }
+        </ChildContent>
+    </MudMenu>
+}
+
+@code {
+    private SyncStatus? _status;
+    private bool _syncing;
+    private ITimer? _tick;
+
+    protected override void OnInitialized()
+    {
+        _status = AutoSync.LastStatus;
+        _syncing = AutoSync.IsSyncing;
+        AutoSync.SyncStarted += OnStarted;
+        AutoSync.SyncCompleted += OnCompleted;
+        AutoSync.StatusChanged += OnCompleted;
+        // Keeps "2 min ago" honest while the screen stays open.
+        _tick = Time.CreateTimer(_ => _ = InvokeAsync(StateHasChanged), null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+    }
+
+    private void OnStarted() => _ = InvokeAsync(() =>
+    {
+        _syncing = true;
+        StateHasChanged();
+    });
+
+    private void OnCompleted() => _ = InvokeAsync(() =>
+    {
+        _syncing = false;
+        _status = AutoSync.LastStatus;
+        StateHasChanged();
+    });
+
+    private void Retry() => AutoSync.RequestSync();
+
+    private string SyncedText => AutoSync.LastSyncedAt is { } at ? L["SyncIndicatorSynced", Ago(at)] : L["SyncIndicatorSyncedNoTime"];
+
+    private string Ago(DateTimeOffset at)
+    {
+        var elapsed = Time.GetUtcNow() - at;
+        if (elapsed < TimeSpan.FromMinutes(1))
+        {
+            return L["SyncAgoJustNow"];
+        }
+
+        if (elapsed < TimeSpan.FromHours(1))
+        {
+            return L["SyncAgoMinutes", (int)elapsed.TotalMinutes];
+        }
+
+        if (elapsed < TimeSpan.FromDays(1))
+        {
+            return L["SyncAgoHours", (int)elapsed.TotalHours];
+        }
+
+        return L["SyncAgoAt", TimeZoneInfo.ConvertTime(at, Time.LocalTimeZone).ToString("g", System.Globalization.CultureInfo.CurrentCulture)];
+    }
+
+    private static string ProblemIcon(SyncStatus status) => status switch
+    {
+        SyncStatus.Offline => Icons.Material.Filled.CloudOff,
+        SyncStatus.StorageUnavailable => Icons.Material.Filled.SdCardAlert,
+        _ => Icons.Material.Filled.SyncProblem,
+    };
+
+    private string ProblemShort(SyncStatus status) => status switch
+    {
+        SyncStatus.Offline => L["SyncShortOffline"],
+        SyncStatus.StorageUnavailable => L["SyncShortStorage"],
+        _ => L["SyncShortFailed"],
+    };
+
+    private string ProblemDetail(SyncStatus status) => status switch
+    {
+        SyncStatus.Offline => L["SyncDetailOffline"],
+        SyncStatus.StorageUnavailable => L["SyncDetailStorage"],
+        _ => L["SyncDetailFailed"],
+    };
+
+    public void Dispose()
+    {
+        AutoSync.SyncStarted -= OnStarted;
+        AutoSync.SyncCompleted -= OnCompleted;
+        AutoSync.StatusChanged -= OnCompleted;
+        _tick?.Dispose();
+    }
+}

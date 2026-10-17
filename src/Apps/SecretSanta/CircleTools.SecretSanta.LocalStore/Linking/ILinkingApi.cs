@@ -46,10 +46,10 @@ public interface ILinkingApi
     Task<ApiResult> AckResolutionsAsync(IReadOnlyList<Guid> resolutionIds, CancellationToken cancellationToken = default);
 
     /// <summary>Publishes one event's assignment projection after a draw or re-run (the event id is in the request).</summary>
-    Task<ApiResult> PublishAssignmentsAsync(Guid groupId, PublishAssignmentsRequest request, CancellationToken cancellationToken = default);
+    Task<ApiResult> PublishAssignmentsAsync(Guid groupId, PublishAssignmentsRequest request, string? adminToken = null, CancellationToken cancellationToken = default);
 
     /// <summary>Publishes the organizer's event registry for a group, so linked members can enumerate events (ADR-0042).</summary>
-    Task<ApiResult> PublishGroupEventsAsync(Guid groupId, PublishGroupEventsRequest request, CancellationToken cancellationToken = default);
+    Task<ApiResult> PublishGroupEventsAsync(Guid groupId, PublishGroupEventsRequest request, string? adminToken = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Reads the caller's own assignment in one event. A 404 (no draw yet, or unlinked) surfaces as

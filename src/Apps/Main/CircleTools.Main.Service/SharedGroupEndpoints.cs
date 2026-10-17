@@ -16,6 +16,12 @@ public static class SharedGroupEndpoints
     /// <summary>The per-IP rate-limit policy the account-free write routes carry (NFR-009).</summary>
     public const string AccountFreeRateLimitPolicy = "shared-account-free-write";
 
+    /// <summary>
+    /// The request header a joined device presents its participant key in (ADR-0080), proving which member
+    /// it speaks for. A header, not the URL, so the key never lands in access logs.
+    /// </summary>
+    public const string ParticipantKeyHeader = "X-Participant-Key";
+
     /// <summary>Maps the shared-by-link endpoints onto a route group.</summary>
     /// <param name="group">The <c>/api/v{version}/shared</c> group.</param>
     /// <returns>The same group, for chaining.</returns>
@@ -31,6 +37,9 @@ public static class SharedGroupEndpoints
         // List the groups the signed-in account owns, so a second device discovers them (D2). A literal
         // segment, so it takes precedence over the "/{token}" route below.
         group.MapGet("/owned", ListOwnedAsync).WithName("ListOwnedSharedGroups").RequireAuthorization();
+
+        // List the groups the signed-in account joined as a member, so its other devices add them (ADR-0080).
+        group.MapGet("/joined", ListJoinedAsync).WithName("ListJoinedSharedGroups").RequireAuthorization();
 
         // Resolve a token to the group + capability. A wrong/disabled token is an indistinguishable 404.
         // Rate-limited: a successful resolve stamps LastActivityAt (a DB write), so an unthrottled read is
@@ -58,6 +67,17 @@ public static class SharedGroupEndpoints
         group.MapPost("/{token}/claims", ClaimPersonAsync).WithName("ClaimSharedGroupPerson")
             .RequireRateLimiting(AccountFreeRateLimitPolicy);
 
+        // A joined participant's own entry — gift note and per-event wishlists — and leaving the group; both
+        // proven by the participant key or the account (ADR-0080). Rate-limited (account-free writes).
+        group.MapPut("/{token}/me", WriteEntryAsync).WithName("WriteSharedGroupParticipantEntry")
+            .RequireRateLimiting(AccountFreeRateLimitPolicy);
+        group.MapDelete("/{token}/claims/me", LeaveAsync).WithName("LeaveSharedGroup")
+            .RequireRateLimiting(AccountFreeRateLimitPolicy);
+
+        // Exchange a pre-ADR-0080 device claim's handle for a participant key, once. Rate-limited.
+        group.MapPost("/{token}/claims/{memberId:guid}/key", IssueParticipantKeyAsync).WithName("IssueSharedGroupParticipantKey")
+            .RequireRateLimiting(AccountFreeRateLimitPolicy);
+
         // Release a claimed member (admin only) — the sole recovery path. Rate-limited (account-free write).
         group.MapDelete("/{token}/claims/{memberId:guid}", ReleasePersonAsync).WithName("ReleaseSharedGroupPerson")
             .RequireRateLimiting(AccountFreeRateLimitPolicy);
@@ -79,6 +99,10 @@ public static class SharedGroupEndpoints
         // owner has no admin token. Idempotent: an already-gone group is a success.
         group.MapDelete("/{groupId:guid}/owned", DeleteOwnedAsync).WithName("DeleteOwnedSharedGroup").RequireAuthorization();
 
+        // The owner frees a joined person (ADR-0081) — an owned group has no admin token to release with.
+        group.MapDelete("/{groupId:guid}/owned/claims/{memberId:guid}", ReleasePersonAsOwnerAsync)
+            .WithName("ReleaseOwnedSharedGroupPerson").RequireAuthorization();
+
         // Live reveal links (ADR-0068, FEAT-020). Publish the per-giver reveal slices for a group: by
         // admin token (shared-by-link) or by owner bearer (account mode). Read one giver's slice by its
         // reveal token — the public reveal page's only call, anonymous. All account-free (NFR-009).
@@ -87,6 +111,14 @@ public static class SharedGroupEndpoints
         group.MapPut("/{groupId:guid}/owned/reveal-slices", PublishOwnedRevealSlicesAsync).WithName("PublishOwnedSharedGroupRevealSlices").RequireAuthorization();
         // A resolve stamps LastActivityAt (a DB write), so rate-limit it like the token read (NFR-009).
         group.MapGet("/reveal/{revealToken}", GetRevealSliceAsync).WithName("GetSharedGroupRevealSlice")
+            .RequireRateLimiting(AccountFreeRateLimitPolicy);
+
+        // The reveal-link holder's own entry (ADR-0084, FR-050): their gift note and their wishlist for the
+        // token's event — read and replaced by the reveal token alone, nothing else. Anonymous and rate-limited
+        // like every account-free write (NFR-009).
+        group.MapGet("/reveal/{revealToken}/me", GetRevealEntryAsync).WithName("GetSharedGroupRevealEntry")
+            .RequireRateLimiting(AccountFreeRateLimitPolicy);
+        group.MapPut("/reveal/{revealToken}/me", WriteRevealEntryAsync).WithName("WriteSharedGroupRevealEntry")
             .RequireRateLimiting(AccountFreeRateLimitPolicy);
 
         return group;
@@ -110,11 +142,23 @@ public static class SharedGroupEndpoints
 
     private static async Task<IResult> GetAsync(
         string token,
+        HttpRequest request,
+        ClaimsPrincipal principal,
         ISharedGroupStore store,
         CancellationToken cancellationToken)
     {
-        var view = await store.GetAsync(token, cancellationToken);
+        var view = await store.GetAsync(token, ProofOf(request, principal), cancellationToken);
         return view is null ? Results.NotFound() : Results.Ok(view);
+    }
+
+    // What a request presents to prove a claimed member (ADR-0080): the participant key header, and the
+    // signed-in account when a valid bearer came along (these routes are anonymous, so it is optional).
+    private static ParticipantProof ProofOf(HttpRequest request, ClaimsPrincipal principal)
+    {
+        var key = request.Headers[ParticipantKeyHeader].ToString();
+        return new ParticipantProof(
+            string.IsNullOrWhiteSpace(key) ? null : key,
+            principal.TryGetUserId(out var accountId) ? accountId : null);
     }
 
     private static async Task<IResult> PushAsync(
@@ -129,7 +173,7 @@ public static class SharedGroupEndpoints
             SharedWriteStatus.NotFound => Results.NotFound(),
             SharedWriteStatus.Forbidden => Results.Forbid(),
             SharedWriteStatus.TooLarge => Results.StatusCode(StatusCodes.Status413PayloadTooLarge),
-            _ => Results.Ok(new PushSharedGroupResult(result.Version, result.Status == SharedWriteStatus.Collision)),
+            _ => Results.Ok(new PushSharedGroupResult(result.Version, result.Status == SharedWriteStatus.Collision, result.Rewritten)),
         };
     }
 
@@ -157,22 +201,87 @@ public static class SharedGroupEndpoints
         CancellationToken cancellationToken)
     {
         var claimed = await store.GetClaimedMembersAsync(token, cancellationToken);
-        return claimed is null ? Results.NotFound() : Results.Ok(new ClaimedMembers(claimed));
+        if (claimed is null)
+        {
+            return Results.NotFound();
+        }
+
+        // Who keeps their own entry (ADR-0080/ADR-0084), so the organizer's copy of those fields is read-only.
+        var selfMaintained = await store.GetSelfMaintainedMembersAsync(token, cancellationToken);
+        return Results.Ok(new ClaimedMembers(claimed, selfMaintained));
     }
 
     private static async Task<IResult> ClaimPersonAsync(
         string token,
         ClaimPersonRequest request,
+        ClaimsPrincipal principal,
         ISharedGroupStore store,
         CancellationToken cancellationToken)
     {
-        var result = await store.ClaimPersonAsync(token, request, cancellationToken);
+        // An account claim binds to the signed-in caller only (ADR-0080), never to the id in the body.
+        Guid? caller = principal.TryGetUserId(out var accountId) ? accountId : null;
+        var result = await store.ClaimPersonAsync(token, request, caller, cancellationToken);
         return result.Status switch
         {
             PersonClaimStatus.NotFound => Results.NotFound(),
             PersonClaimStatus.AlreadyClaimed => Results.Ok(new PersonClaimResponse(false, true)),
-            _ => Results.Ok(new PersonClaimResponse(true, false)),
+            _ => Results.Ok(new PersonClaimResponse(true, false, result.ParticipantKey)),
         };
+    }
+
+    private static async Task<IResult> IssueParticipantKeyAsync(
+        string token,
+        Guid memberId,
+        ParticipantKeyRequest request,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var key = await store.IssueParticipantKeyAsync(token, memberId, request.DeviceHandle, cancellationToken);
+        return key is null ? Results.Forbid() : Results.Ok(new ParticipantKeyResponse(key));
+    }
+
+    private static async Task<IResult> WriteEntryAsync(
+        string token,
+        ParticipantEntry entry,
+        HttpRequest request,
+        ClaimsPrincipal principal,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        var result = await store.WriteEntryAsync(token, ProofOf(request, principal), entry, cancellationToken);
+        return result.Status switch
+        {
+            SharedWriteStatus.NotFound => Results.NotFound(),
+            SharedWriteStatus.Forbidden => Results.Forbid(),
+            SharedWriteStatus.TooLarge => Results.StatusCode(StatusCodes.Status413PayloadTooLarge),
+            _ => Results.Ok(new ParticipantEntryResult(result.Version)),
+        };
+    }
+
+    private static async Task<IResult> LeaveAsync(
+        string token,
+        HttpRequest request,
+        ClaimsPrincipal principal,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        var left = await store.LeaveAsync(token, ProofOf(request, principal), cancellationToken);
+        return left ? Results.NoContent() : Results.Forbid();
+    }
+
+    private static async Task<IResult> ListJoinedAsync(
+        ClaimsPrincipal principal,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        if (!principal.TryGetUserId(out var accountId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var joined = await store.ListJoinedAsync(accountId, cancellationToken);
+        return Results.Ok(new JoinedSharedGroups(joined));
     }
 
     private static async Task<IResult> ReleasePersonAsync(
@@ -230,6 +339,22 @@ public static class SharedGroupEndpoints
         return deleted ? Results.NoContent() : Results.Forbid();
     }
 
+    private static async Task<IResult> ReleasePersonAsOwnerAsync(
+        Guid groupId,
+        Guid memberId,
+        ClaimsPrincipal principal,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        if (!principal.TryGetUserId(out var accountId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var released = await store.ReleasePersonAsOwnerAsync(accountId, groupId, memberId, cancellationToken);
+        return released ? Results.NoContent() : Results.Forbid();
+    }
+
     private static async Task<IResult> ListOwnedAsync(
         ClaimsPrincipal principal,
         ISharedGroupStore store,
@@ -284,7 +409,7 @@ public static class SharedGroupEndpoints
             SharedWriteStatus.NotFound => Results.NotFound(),
             SharedWriteStatus.Forbidden => Results.Forbid(),
             SharedWriteStatus.TooLarge => Results.StatusCode(StatusCodes.Status413PayloadTooLarge),
-            _ => Results.Ok(new PushSharedGroupResult(result.Version, result.Status == SharedWriteStatus.Collision)),
+            _ => Results.Ok(new PushSharedGroupResult(result.Version, result.Status == SharedWriteStatus.Collision, result.Rewritten)),
         };
     }
 
@@ -296,7 +421,7 @@ public static class SharedGroupEndpoints
     {
         ArgumentNullException.ThrowIfNull(request);
         var stored = await store.SetRevealSlicesAsync(token, request.Slices, cancellationToken);
-        return stored ? Results.NoContent() : Results.Forbid();
+        return stored is null ? Results.Forbid() : Results.Ok(new PublishRevealSlicesResponse(stored));
     }
 
     private static async Task<IResult> PublishOwnedRevealSlicesAsync(
@@ -313,7 +438,7 @@ public static class SharedGroupEndpoints
         }
 
         var stored = await store.SetRevealSlicesAsOwnerAsync(accountId, groupId, request.Slices, cancellationToken);
-        return stored ? Results.NoContent() : Results.Forbid();
+        return stored is null ? Results.Forbid() : Results.Ok(new PublishRevealSlicesResponse(stored));
     }
 
     private static async Task<IResult> GetRevealSliceAsync(
@@ -323,5 +448,29 @@ public static class SharedGroupEndpoints
     {
         var view = await store.GetRevealSliceAsync(revealToken, cancellationToken);
         return view is null ? Results.NotFound() : Results.Ok(view);
+    }
+
+    private static async Task<IResult> GetRevealEntryAsync(
+        string revealToken,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        var entry = await store.GetRevealEntryAsync(revealToken, cancellationToken);
+        return entry is null ? Results.NotFound() : Results.Ok(entry);
+    }
+
+    private static async Task<IResult> WriteRevealEntryAsync(
+        string revealToken,
+        RevealEntryWrite entry,
+        ISharedGroupStore store,
+        CancellationToken cancellationToken)
+    {
+        var result = await store.WriteRevealEntryAsync(revealToken, entry, cancellationToken);
+        return result.Status switch
+        {
+            SharedWriteStatus.NotFound => Results.NotFound(),
+            SharedWriteStatus.TooLarge => Results.StatusCode(StatusCodes.Status413PayloadTooLarge),
+            _ => Results.Ok(new ParticipantEntryResult(result.Version)),
+        };
     }
 }

@@ -93,6 +93,20 @@ public sealed class AccountApiClient(
     public Task<ApiResult> LogoutAllAsync(CancellationToken cancellationToken = default) =>
         PostAsync<object?>(authorized, $"{Route}/logout-all", null, cancellationToken);
 
+    /// <summary>The signed-in devices, this one marked (ADR-0079 amendment).</summary>
+    /// <param name="refreshToken">This device's refresh secret, if it has one.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The sessions.</returns>
+    public Task<ApiResult<List<SessionInfoResponse>>> ListSessionsAsync(string? refreshToken, CancellationToken cancellationToken = default) =>
+        PostAsync<SessionListRequest, List<SessionInfoResponse>>(authorized, $"{Route}/sessions", new SessionListRequest(refreshToken), cancellationToken);
+
+    /// <summary>Signs out one device of the signed-in user (ADR-0079 amendment).</summary>
+    /// <param name="sessionId">The session to end.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome.</returns>
+    public Task<ApiResult> RevokeSessionAsync(Guid sessionId, CancellationToken cancellationToken = default) =>
+        PostAsync<object?>(authorized, $"{Route}/sessions/{sessionId}/revoke", null, cancellationToken);
+
     /// <summary>Changes the signed-in user's password; the other sessions end (FR-049, ADR-0079).</summary>
     /// <param name="request">The current and new password, and this session's refresh secret.</param>
     /// <param name="cancellationToken">Cancels the call.</param>

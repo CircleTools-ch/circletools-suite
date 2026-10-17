@@ -53,12 +53,16 @@ public static class SecretSantaUiServiceCollectionExtensions
         services.AddScoped<AssignmentPublisher>();
         services.AddScoped<CreateFromCircleService>();
 
+        // The invitation a signed-out invitee is signing in for, so sign-in returns to it (Q7).
+        services.AddScoped<PendingJoinLink>();
+
         // Silent auto-sync (ADR-0044): the coordinator that reacts to the four sync triggers, plus the
         // read filter that hides account groups while signed out. The after-change trigger is a CQRS
         // pipeline behavior appended after the host's other behaviors, so every mutating command asks
         // for a background sync; queries never do. The host must register an IConnectivity seam for the
         // reconnect trigger.
         services.AddScoped<AutoSyncService>();
+        services.AddScoped<GroupRemoval>();
         // Live reveal links for backend-backed groups (ADR-0068, FEAT-020): publishes the per-giver
         // reveal slices, run from the shared reconcile cycle and when the share screen opens.
         services.AddScoped<RevealSlicePublisher>();

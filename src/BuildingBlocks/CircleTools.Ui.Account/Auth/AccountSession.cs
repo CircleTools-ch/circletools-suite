@@ -56,7 +56,9 @@ public sealed class AccountSession(
             return false;
         }
 
-        await ApplyAccountLanguageAsync(cancellationToken);
+        // Not the account language again: it was applied when this device signed in, and since then the
+        // person may have chosen another language for this device in Settings ("only on this device"),
+        // which must survive a reload (2026-10-16 test). Signing in still applies it (FR-012).
         return true;
     }
 
@@ -122,6 +124,22 @@ public sealed class AccountSession(
         await ForgetAsync(cancellationToken);
         return result;
     }
+
+    /// <summary>The account's signed-in devices, this one marked (ADR-0079 amendment).</summary>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The sessions, or the failure.</returns>
+    public async Task<ApiResult<List<SessionInfoResponse>>> ListSessionsAsync(CancellationToken cancellationToken = default)
+    {
+        var refreshToken = await refreshTokens.ReadAsync(cancellationToken);
+        return await api.ListSessionsAsync(refreshToken, cancellationToken);
+    }
+
+    /// <summary>Signs out one other device (ADR-0079 amendment).</summary>
+    /// <param name="sessionId">The session to end.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome.</returns>
+    public Task<ApiResult> SignOutDeviceAsync(Guid sessionId, CancellationToken cancellationToken = default) =>
+        api.RevokeSessionAsync(sessionId, cancellationToken);
 
     /// <summary>
     /// Changes the password (FR-049, ADR-0079). This device stays signed in; every other session ends.

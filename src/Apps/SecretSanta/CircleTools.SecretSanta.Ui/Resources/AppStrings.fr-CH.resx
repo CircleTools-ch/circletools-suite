@@ -18,7 +18,6 @@
   <data name="Copied" xml:space="preserve"><value>Copié !</value></data>
   <data name="Share" xml:space="preserve"><value>Partager</value></data>
   <data name="MoreActions" xml:space="preserve"><value>Plus d'actions</value></data>
-  <data name="ShareMessage" xml:space="preserve"><value>Voici votre lien Père Noël secret 🎁</value></data>
   <data name="ShowQr" xml:space="preserve"><value>Code QR</value></data>
   <data name="QrHint" xml:space="preserve"><value>Faites scanner le code à cette personne pour ouvrir son lien.</value></data>
   <data name="Close" xml:space="preserve"><value>Fermer</value></data>
@@ -38,7 +37,6 @@
   <data name="EmptyStateAccountSell" xml:space="preserve"><value>Connectez-vous pour synchroniser vos groupes entre vos appareils, voir votre propre attribution et tenir votre propre liste de souhaits.</value></data>
   <data name="EmptyStateSignIn" xml:space="preserve"><value>Se connecter</value></data>
   <data name="EmptyStateCreateGroup" xml:space="preserve"><value>Créer un groupe</value></data>
-  <data name="EmptyStateSignedInHint" xml:space="preserve"><value>Aucun groupe pour l'instant. Créez-en un, ou partez de l'un de vos cercles.</value></data>
   <data name="MembersColumn" xml:space="preserve"><value>Membres</value></data>
   <data name="DrawCompleteBadge" xml:space="preserve"><value>Tirage effectué</value></data>
   <data name="DrawInvalidatedBadge" xml:space="preserve"><value>Nouveau tirage requis</value></data>
@@ -127,11 +125,7 @@
   <data name="SignIn" xml:space="preserve"><value>Se connecter</value></data>
   <data name="SignOut" xml:space="preserve"><value>Se déconnecter</value></data>
   <data name="SignedInAs" xml:space="preserve"><value>Connecté en tant que {0}</value></data>
-  <data name="SyncStatusSynced" xml:space="preserve"><value>Synchronisé — tout est à jour</value></data>
   <data name="SyncStatusSyncing" xml:space="preserve"><value>Synchronisation…</value></data>
-  <data name="SyncStatusOffline" xml:space="preserve"><value>Hors ligne — les changements se synchroniseront plus tard</value></data>
-  <data name="SyncStatusFailed" xml:space="preserve"><value>La synchronisation ne s'est pas terminée</value></data>
-  <data name="SyncStatusStorageUnavailable" xml:space="preserve"><value>Le stockage de cet appareil est plein</value></data>
   <data name="SyncNow" xml:space="preserve"><value>Synchroniser maintenant</value></data>
   <data name="ClaimNav" xml:space="preserve"><value>Ajouter au compte</value></data>
   <data name="ClaimTitle" xml:space="preserve"><value>Ajouter des groupes à votre compte</value></data>
@@ -159,7 +153,7 @@
   <!-- M4 — Linking (FEAT-005) -->
   <data name="FromCircleTitle" xml:space="preserve"><value>Créer un groupe à partir d'un cercle</value></data>
   <data name="FromCircleLead" xml:space="preserve"><value>Ajoutez les personnes de l'un de vos cercles comme membres. Le groupe est un instantané — modifier le cercle ensuite ne le change pas.</value></data>
-  <data name="FromCircleNoCircles" xml:space="preserve"><value>Vous n'avez pas encore de cercle. Créez-en un dans l'application de compte.</value></data>
+  <data name="FromCircleNoCircles" xml:space="preserve"><value>Vous n’avez pas encore de cercle. Les cercles se créent sur circletools.ch.</value></data>
   <data name="FromCircleChooseLabel" xml:space="preserve"><value>Choisir un cercle</value></data>
   <data name="FromCircleGroupNameLabel" xml:space="preserve"><value>Nom du groupe</value></data>
   <data name="FromCircleManagedBadge" xml:space="preserve"><value>géré</value></data>
@@ -243,13 +237,10 @@
   <data name="WishlistsTitle" xml:space="preserve"><value>Listes de souhaits</value></data>
   <data name="WishlistsLead" xml:space="preserve"><value>Définissez la liste de souhaits de chaque personne pour cet événement.</value></data>
   <data name="ConfirmRemoveEvent" xml:space="preserve"><value>Supprimer l'événement « {0} » ? Le tirage et les listes de souhaits seront perdus.</value></data>
-  <data name="CreateFromCircleAction" xml:space="preserve"><value>Créer à partir d'un cercle</value></data>
+  <data name="CreateFromCircleAction" xml:space="preserve"><value>Reprendre les membres d’un cercle</value></data>
   <data name="AllGroups" xml:space="preserve"><value>Tous les groupes</value></data>
-  <data name="ReconcileTitle" xml:space="preserve"><value>Importer vos données hors ligne ?</value></data>
-  <data name="ReconcileBodySingular" xml:space="preserve"><value>Vous avez créé un groupe en étant déconnecté. L'importer dans votre compte pour le synchroniser sur vos appareils, le garder uniquement sur cet appareil ou le supprimer ? La suppression est définitive.</value></data>
-  <data name="ReconcileBodyPlural" xml:space="preserve"><value>Vous avez créé {0} groupes en étant déconnecté. Les importer dans votre compte pour les synchroniser sur vos appareils, les garder uniquement sur cet appareil ou les supprimer ? La suppression est définitive.</value></data>
-  <data name="ReconcileImport" xml:space="preserve"><value>Importer</value></data>
-  <data name="ReconcileDiscard" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="ReconcileTitle" xml:space="preserve"><value>Ajouter vos groupes à votre compte ?</value></data>
+  <data name="ReconcileImport" xml:space="preserve"><value>Ajouter à mon compte</value></data>
   <data name="EventOverview" xml:space="preserve"><value>Aperçu</value></data>
   <data name="HubWishlistCount" xml:space="preserve"><value>{0} sur {1}</value></data>
   <data name="HubDrawPending" xml:space="preserve"><value>Pas encore tiré</value></data>
@@ -273,9 +264,9 @@
   <data name="SharingSubtitleAccount" xml:space="preserve"><value>Synchronisé avec votre compte</value></data>
   <data name="SharingTitle" xml:space="preserve"><value>Partage et sync</value></data>
   <data name="SharingLead" xml:space="preserve"><value>Choisissez où ce groupe est stocké et gérez ses liens.</value></data>
-  <data name="SharingSharedLead" xml:space="preserve"><value>Toute personne disposant d'un lien ci-dessous peut ouvrir ce groupe ; seul le lien admin permet de le gérer.</value></data>
-  <data name="AdminLink" xml:space="preserve"><value>Lien admin</value></data>
-  <data name="AdminLinkHint" xml:space="preserve"><value>Toute personne disposant de ce lien peut gérer le groupe et lancer le tirage.</value></data>
+  <data name="SharingSharedLead" xml:space="preserve"><value>Toute personne ayant un lien ci-dessous peut ouvrir ce groupe ; seul le lien de gestion permet de le modifier.</value></data>
+  <data name="AdminLink" xml:space="preserve"><value>Lien de gestion</value></data>
+  <data name="AdminLinkHint" xml:space="preserve"><value>Pour organiser à plusieurs : toute personne ayant ce lien peut modifier le groupe et lancer le tirage. Ne le partagez qu'avec les personnes qui organisent avec vous.</value></data>
   <data name="JoinLink" xml:space="preserve"><value>Lien pour rejoindre</value></data>
   <data name="JoinLinkHint" xml:space="preserve"><value>Permet de rejoindre, de choisir qui l'on est et de voir sa propre attribution.</value></data>
   <data name="DisableRegenerate" xml:space="preserve"><value>Désactiver et en créer un nouveau</value></data>
@@ -283,7 +274,7 @@
   <data name="ShareByLinkConfirmYes" xml:space="preserve"><value>Partager par lien</value></data>
   <data name="MakeLocalConfirm" xml:space="preserve"><value>Conserver ce groupe uniquement sur cet appareil ? La copie en ligne est supprimée et les liens partagés cessent de fonctionner. Votre copie reste sur cet appareil.</value></data>
   <data name="MakeLocalConfirmYes" xml:space="preserve"><value>Rendre local</value></data>
-  <data name="RotateAdminConfirm" xml:space="preserve"><value>Désactiver le lien admin actuel et en créer un nouveau ? L'ancien lien cessera de fonctionner.</value></data>
+  <data name="RotateAdminConfirm" xml:space="preserve"><value>Désactiver le lien de gestion actuel et en créer un nouveau ? L'ancien lien cessera de fonctionner.</value></data>
   <data name="RotateAdminConfirmYes" xml:space="preserve"><value>Créer un nouveau lien</value></data>
   <data name="ShareGroupQrHint" xml:space="preserve"><value>Faites scanner le code à cette personne pour ouvrir le groupe.</value></data>
   <data name="ShareGroupMessage" xml:space="preserve"><value>Rejoignez notre groupe Père Noël secret :</value></data>
@@ -309,15 +300,15 @@
   <data name="ReleaseMemberConfirm" xml:space="preserve"><value>Libérer la place de {0} ? La personne perdra l'accès jusqu'à ce qu'elle rejoigne via le lien.</value></data>
   <data name="ReleaseMemberConfirmYes" xml:space="preserve"><value>Libérer la place</value></data>
   <data name="Someone" xml:space="preserve"><value>Quelqu'un</value></data>
-  <data name="ClaimAdminConfirm" xml:space="preserve"><value>Reprendre ce groupe avec votre compte ? Vous devenez le seul administrateur — le lien admin cesse de fonctionner. Le lien pour rejoindre reste actif.</value></data>
-  <data name="ClaimAdminConfirmYes" xml:space="preserve"><value>Devenir admin</value></data>
-  <data name="ReleaseToLinkConfirm" xml:space="preserve"><value>Rendre ce groupe à un lien partagé ? Un nouveau lien admin est créé et vous n'êtes plus le seul administrateur.</value></data>
-  <data name="ReleaseToLinkConfirmYes" xml:space="preserve"><value>Transférer</value></data>
+  <data name="ClaimAdminConfirm" xml:space="preserve"><value>Garder ce groupe dans votre compte ? Il est alors synchronisé sur tous vos appareils et vous seul·e le gérez – le lien de gestion ne fonctionne plus. Le lien d'invitation continue de fonctionner.</value></data>
+  <data name="ClaimAdminConfirmYes" xml:space="preserve"><value>Garder dans mon compte</value></data>
+  <data name="ReleaseToLinkConfirm" xml:space="preserve"><value>Transmettre ce groupe sans compte ? Il quitte votre compte, et un nouveau lien de gestion permet à toute personne qui l'a de gérer le groupe avec vous. Le lien d'invitation continue de fonctionner.</value></data>
+  <data name="ReleaseToLinkConfirmYes" xml:space="preserve"><value>Transmettre</value></data>
   <data name="AccountOwnedNote" xml:space="preserve"><value>Ce groupe vous appartient. Il est synchronisé avec votre compte.</value></data>
   <data name="StorageModeChanging" xml:space="preserve"><value>Enregistrement en cours…</value></data>
   <data name="StorageModeChanged" xml:space="preserve"><value>Enregistré.</value></data>
   <data name="StorageModeChangeFailed" xml:space="preserve"><value>Impossible de modifier l'emplacement de stockage de ce groupe. Vérifiez votre connexion et réessayez.</value></data>
-  <data name="AdminRetiredTitle" xml:space="preserve"><value>Ce lien admin ne fonctionne plus</value></data>
+  <data name="AdminRetiredTitle" xml:space="preserve"><value>Ce lien de gestion ne fonctionne plus</value></data>
   <data name="AdminRetiredBody" xml:space="preserve"><value>{0} a repris le rôle d'administrateur de ce groupe.</value></data>
   <data name="AdminRetiredJoinHint" xml:space="preserve"><value>Vous pouvez toujours ouvrir le lien pour rejoindre en tant que participant.</value></data>
   <data name="AddToCalendar" xml:space="preserve"><value>Ajouter au calendrier</value></data>
@@ -330,7 +321,7 @@
   <data name="NotificationsHint" xml:space="preserve"><value>Choisissez les rappels affichés sur cet appareil. Désactivés par défaut.</value></data>
   <data name="NotificationsUnavailableWeb" xml:space="preserve"><value>Les rappels sont disponibles dans l'application installée.</value></data>
   <data name="ReminderDrawLabel" xml:space="preserve"><value>Tirage pas encore fait</value></data>
-  <data name="ReminderTomorrowLabel" xml:space="preserve"><value>L'événement est demain</value></data>
+  <data name="ReminderTomorrowLabel" xml:space="preserve"><value>Avant l'événement</value></data>
   <data name="ReminderWishlistLabel" xml:space="preserve"><value>Ma liste de souhaits est vide</value></data>
   <data name="ReminderDrawTitle" xml:space="preserve"><value>C'est l'heure du tirage</value></data>
   <data name="ReminderDrawBody" xml:space="preserve"><value>Tirez bientôt les noms pour {0}.</value></data>
@@ -353,12 +344,7 @@
   <data name="DataImportUnsupported" xml:space="preserve"><value>Cette sauvegarde a été créée avec une version plus récente de l'application. Mettez l'application à jour, puis réessayez.</value></data>
   <data name="DataImportViewGroups" xml:space="preserve"><value>Voir mes groupes</value></data>
   <data name="EmptyStateLocalDataNote" xml:space="preserve"><value>Vos groupes sont enregistrés dans ce navigateur, sur cet appareil. Gérez-les ou sauvegardez-les dans Réglages → Vos données.</value></data>
-  <data name="OnboardingStorageTitle" xml:space="preserve"><value>Où vos groupes doivent-ils être stockés ?</value></data>
-  <data name="OnboardingStorageIntro" xml:space="preserve"><value>Choisissez où les nouveaux groupes sont stockés par défaut. Sur cet appareil les garde privés et hors ligne ; Partagé par lien les stocke en ligne pour que d'autres les ouvrent avec un lien – sans compte ; Mon compte les synchronise sur vos appareils.</value></data>
   <data name="OnboardingStoragePerGroupNote" xml:space="preserve"><value>Vous pourrez le modifier pour chaque groupe plus tard, dans ses réglages de partage et synchronisation.</value></data>
-  <data name="OnboardingStorageAccountNote" xml:space="preserve"><value>Si vous choisissez « Mon compte », il vous sera ensuite demandé de vous connecter ou de créer un compte.</value></data>
-  <data name="OnboardingStorageSave" xml:space="preserve"><value>Enregistrer</value></data>
-  <data name="OnboardingStorageSkip" xml:space="preserve"><value>Plus tard</value></data>
   <data name="SettingsDefaultStorageTitle" xml:space="preserve"><value>Stockage par défaut des nouveaux groupes</value></data>
   <data name="SettingsDefaultStorageHint" xml:space="preserve"><value>Les nouveaux groupes démarrent avec ce stockage. Vous pouvez toujours le changer pour chaque groupe.</value></data>
   <data name="StorageStoredAs" xml:space="preserve"><value>Stocké</value></data>
@@ -387,7 +373,6 @@
   <data name="MoveToAccountConfirmYes" xml:space="preserve"><value>Déplacer dans mon compte</value></data>
   <data name="AccountToLocalConfirm" xml:space="preserve"><value>Garder ce groupe uniquement sur cet appareil ? Il est retiré de votre compte et du serveur, et disparaît de vos autres appareils.</value></data>
   <data name="AccountToLocalConfirmYes" xml:space="preserve"><value>Uniquement sur cet appareil</value></data>
-  <data name="ReconcileKeepLocal" xml:space="preserve"><value>Garder sur cet appareil</value></data>
   <data name="KeptAsLocalCopySingular" xml:space="preserve"><value>« {0} » a été retiré de votre compte sur un autre appareil. Vos modifications non synchronisées sont conservées ici dans une copie séparée.</value></data>
   <data name="ParticipantReadOnlyNote" xml:space="preserve"><value>Vous avez rejoint ce groupe par un lien. Seule la personne organisatrice peut le modifier.</value></data>
   <data name="YourAssignment" xml:space="preserve"><value>Votre tirage</value></data>
@@ -395,4 +380,128 @@
   <data name="DeleteGroupOnlineConfirm" xml:space="preserve"><value>Supprimer « {0} » et tout son contenu ? Le groupe est aussi supprimé en ligne pour tout le monde et ses liens ne fonctionnent plus. Cette action est définitive.</value></data>
   <data name="LeaveJoinedGroupConfirm" xml:space="preserve"><value>Retirer « {0} » de cet appareil ? Le groupe reste chez la personne organisatrice ; vous pouvez le rejoindre à nouveau avec le lien.</value></data>
   <data name="DeleteGroupAccountConfirm" xml:space="preserve"><value>Supprimer « {0} » et tout son contenu ? Le groupe est aussi supprimé de votre compte et de tous vos autres appareils. Cette action est définitive.</value></data>
+  <data name="MyEntryTitle" xml:space="preserve"><value>Ma liste de souhaits</value></data>
+  <data name="MyEntryLead" xml:space="preserve"><value>Que souhaitez-vous pour cet événement ? Seule la personne qui vous offre un cadeau le voit, avec votre remarque.</value></data>
+  <data name="MyGiftNoteLabel" xml:space="preserve"><value>Remarque pour mon Père Noël secret</value></data>
+  <data name="MyGiftNoteHelp" xml:space="preserve"><value>Allergies, ce que vous n'aimez pas, tailles … – vaut pour tous les événements de ce groupe.</value></data>
+  <data name="Saving" xml:space="preserve"><value>Enregistrement…</value></data>
+  <data name="SavedOfflinePending" xml:space="preserve"><value>Enregistré sur cet appareil – sera envoyé dès que vous serez en ligne.</value></data>
+  <data name="MyWishlistFilled" xml:space="preserve"><value>Complétée</value></data>
+  <data name="MyWishlistEmpty" xml:space="preserve"><value>Encore vide</value></data>
+  <data name="ParticipantSharingLead" xml:space="preserve"><value>Vous avez rejoint ce groupe avec son lien d'invitation. Seule la personne qui organise choisit où il est enregistré et gère ses liens.</value></data>
+  <data name="LeaveGroup" xml:space="preserve"><value>Quitter le groupe</value></data>
+  <data name="LeaveGroupConfirm" xml:space="preserve"><value>Quitter «{0}» ? Vous ne verrez plus le groupe ni votre tirage, et la personne qui organise verra que vous êtes parti·e. Vous pourrez revenir avec le lien.</value></data>
+  <data name="LeaveGroupConfirmYes" xml:space="preserve"><value>Quitter</value></data>
+  <data name="LeftGroup" xml:space="preserve"><value>Vous avez quitté «{0}».</value></data>
+  <data name="LeaveGroupOffline" xml:space="preserve"><value>Il faut une connexion pour quitter le groupe. Réessayez une fois en ligne.</value></data>
+  <data name="JoinAllTaken" xml:space="preserve"><value>Tout le monde a déjà rejoint ce groupe. Si l'une de ces personnes est vous, demandez à la personne qui organise de libérer votre nom.</value></data>
+  <data name="JoinTakenOrganizer" xml:space="preserve"><value>Organise le groupe</value></data>
+  <data name="JoinTakenLinked" xml:space="preserve"><value>Déjà connecté·e</value></data>
+  <data name="JoinRememberAccountHintFor" xml:space="preserve"><value>Sur tous les appareils où vous êtes connecté·e en tant que {0}.</value></data>
+  <data name="JoinSignInToKeep" xml:space="preserve"><value>Se connecter pour le garder sur votre compte</value></data>
+  <data name="HandoutEveryoneInApp" xml:space="preserve"><value>Tout le monde voit son tirage dans l'app – aucun lien à distribuer.</value></data>
+  <data name="MemberConnectedBadge" xml:space="preserve"><value>Connecté·e</value></data>
+  <data name="MemberConnectedJoined" xml:space="preserve"><value>A rejoint avec le lien d'invitation : voit son tirage dans l'app et gère sa liste et sa remarque.</value></data>
+  <data name="MemberConnectedLinked" xml:space="preserve"><value>Relié·e à un compte : voit son tirage dans l'app.</value></data>
+  <data name="MemberKeepsOwnEntry" xml:space="preserve"><value>{0} le tient à jour lui-même ou elle-même.</value></data>
+  <data name="ChangeSaved" xml:space="preserve"><value>Modification enregistrée.</value></data>
+  <data name="Undo" xml:space="preserve"><value>Annuler</value></data>
+  <data name="RevealOwnEntryTitle" xml:space="preserve"><value>Votre liste de souhaits</value></data>
+  <data name="RevealOwnEntryDelay" xml:space="preserve"><value>Votre Père Noël secret verra les changements après la prochaine synchronisation de l'app de la personne qui organise.</value></data>
+  <data name="TakeOverEntry" xml:space="preserve"><value>Modifier sa liste vous-même</value></data>
+  <data name="TakeOverEntryConfirm" xml:space="preserve"><value>Modifier vous-même la liste et la remarque de {0} ? Ce que {0} a saisi reste, et {0} peut encore le modifier depuis son lien.</value></data>
+  <data name="TakeOverEntryConfirmYes" xml:space="preserve"><value>Modifier moi-même</value></data>
+  <data name="ShareSelfInApp" xml:space="preserve"><value>C'est vous – votre tirage se trouve sous «Mes attributions».</value></data>
+  <data name="ShareConnectedInApp" xml:space="preserve"><value>Voit son tirage dans l'app.</value></data>
+  <data name="ShareLinkAnyway" xml:space="preserve"><value>Partager le lien quand même</value></data>
+  <data name="MyJoinedGroupsTitle" xml:space="preserve"><value>Groupes que vous avez rejoints</value></data>
+  <data name="EditMyEntry" xml:space="preserve"><value>Modifier</value></data>
+  <data name="ModeAccountSharedTitle" xml:space="preserve"><value>Mon compte · partagé</value></data>
+  <data name="ModeAccountSharedHint" xml:space="preserve"><value>Synchronisé sur vos appareils, et les autres rejoignent avec un lien.</value></data>
+  <data name="ModeAccountSignInNeeded" xml:space="preserve"><value>Mon compte (connexion requise)</value></data>
+  <data name="ModeChipAccountShared" xml:space="preserve"><value>Compte · partagé</value></data>
+  <data name="SharingSubtitleAccountShared" xml:space="preserve"><value>Dans votre compte, les autres rejoignent avec un lien</value></data>
+  <data name="StorageWhereTitle" xml:space="preserve"><value>Où ce groupe doit-il être enregistré ?</value></data>
+  <data name="InviteConfirm" xml:space="preserve"><value>Inviter des personnes ? Vous recevez un lien d'invitation pour votre famille ou vos amis. Le groupe reste dans votre compte et sur tous vos appareils.</value></data>
+  <data name="InviteConfirmYes" xml:space="preserve"><value>Inviter</value></data>
+  <data name="StopSharingConfirm" xml:space="preserve"><value>Arrêter le partage ? Le lien d'invitation ne fonctionne plus et les personnes qui ont rejoint ne voient plus le groupe. Il reste dans votre compte.</value></data>
+  <data name="StopSharingConfirmYes" xml:space="preserve"><value>Arrêter le partage</value></data>
+  <data name="AccountSharedToLocalConfirm" xml:space="preserve"><value>Garder ce groupe uniquement sur cet appareil ? Il est retiré de votre compte et du serveur, disparaît de vos autres appareils, et le lien d'invitation ne fonctionne plus pour les personnes qui ont rejoint.</value></data>
+  <data name="AccountSharedNote" xml:space="preserve"><value>Ce groupe est dans votre compte et synchronisé sur vos appareils. Les autres rejoignent avec le lien ci-dessous.</value></data>
+  <data name="ReleaseToLinkAction" xml:space="preserve"><value>Transmettre sans compte</value></data>
+  <data name="ReleaseToLinkActionHint" xml:space="preserve"><value>Pour organiser à plusieurs : le groupe quitte votre compte et reçoit un lien de gestion que vous pouvez transmettre.</value></data>
+  <data name="LinkNotInAccountNote" xml:space="preserve"><value>Ce groupe n'est pas encore dans votre compte, il n'est donc pas sur vos autres appareils.</value></data>
+  <data name="KeepInAccount" xml:space="preserve"><value>Garder dans mon compte</value></data>
+  <data name="ReconcileLead" xml:space="preserve"><value>Vous avez créé ces groupes sans être connecté·e. Ceux qui sont cochés passent dans votre compte et sont synchronisés sur vos appareils.</value></data>
+  <data name="ReconcileUntickedNote" xml:space="preserve"><value>Les groupes non cochés restent uniquement sur cet appareil. Vous pourrez les déplacer plus tard sous «Partage et sync».</value></data>
+  <data name="ReconcileLater" xml:space="preserve"><value>Plus tard</value></data>
+  <data name="ReconcileKeepAll" xml:space="preserve"><value>Garder sur cet appareil</value></data>
+  <data name="ReconcileSummary" xml:space="preserve"><value>{0} membres</value></data>
+  <data name="ReconcileSummaryDrawn" xml:space="preserve"><value>{0} membres · tirage effectué</value></data>
+  <data name="ReminderSoonTitle" xml:space="preserve"><value>{0} a lieu dans {1} jours</value></data>
+  <data name="ReminderSoonBody" xml:space="preserve"><value>Votre échange de cadeaux a lieu dans {0} jours.</value></data>
+  <data name="ReminderLeadLabel" xml:space="preserve"><value>Quand</value></data>
+  <data name="ReminderLeadOneDay" xml:space="preserve"><value>1 jour avant</value></data>
+  <data name="ReminderLeadDays" xml:space="preserve"><value>{0} jours avant</value></data>
+  <data name="ReminderTimeLabel" xml:space="preserve"><value>Me rappeler à</value></data>
+  <data name="NotificationsBlocked" xml:space="preserve"><value>Les notifications sont désactivées pour Père Noël secret. Pour recevoir des rappels, autorisez-les dans les réglages.</value></data>
+  <data name="OpenSystemSettings" xml:space="preserve"><value>Ouvrir les réglages</value></data>
+  <data name="EventReminderLabel" xml:space="preserve"><value>Rappel pour cet événement</value></data>
+  <data name="EventReminderDefault" xml:space="preserve"><value>Comme dans les réglages</value></data>
+  <data name="EventReminderOff" xml:space="preserve"><value>Aucun rappel</value></data>
+  <data name="RemindAfterDrawConfirm" xml:space="preserve"><value>Tirage effectué ! Voulez-vous un rappel avant l'événement ?</value></data>
+  <data name="RemindAfterDrawYes" xml:space="preserve"><value>Me rappeler</value></data>
+  <data name="NotNow" xml:space="preserve"><value>Pas maintenant</value></data>
+  <data name="SyncIndicatorSynced" xml:space="preserve"><value>Synchronisation réussie – {0}</value></data>
+  <data name="SyncIndicatorSyncedNoTime" xml:space="preserve"><value>Synchronisation réussie</value></data>
+  <data name="SyncAgoJustNow" xml:space="preserve"><value>à l’instant</value></data>
+  <data name="SyncAgoMinutes" xml:space="preserve"><value>il y a {0} min</value></data>
+  <data name="SyncAgoHours" xml:space="preserve"><value>il y a {0} h</value></data>
+  <data name="SyncAgoAt" xml:space="preserve"><value>le {0}</value></data>
+  <data name="SyncLastSuccess" xml:space="preserve"><value>Dernière synchronisation {0}</value></data>
+  <data name="SyncShortOffline" xml:space="preserve"><value>Hors ligne</value></data>
+  <data name="SyncShortFailed" xml:space="preserve"><value>Non synchronisé</value></data>
+  <data name="SyncShortStorage" xml:space="preserve"><value>Mémoire pleine</value></data>
+  <data name="SyncDetailOffline" xml:space="preserve"><value>Vous êtes hors ligne. Vos modifications sont enregistrées sur cet appareil et seront synchronisées dès que vous serez de nouveau en ligne.</value></data>
+  <data name="SyncDetailFailed" xml:space="preserve"><value>La dernière synchronisation n’a pas abouti. Rien n’a été perdu – elle sera relancée automatiquement.</value></data>
+  <data name="SyncDetailStorage" xml:space="preserve"><value>La mémoire de cet appareil est pleine : les modifications ne peuvent pas être enregistrées pour la synchronisation. Libérez de l’espace sur l’appareil.</value></data>
+  <data name="SyncRetry" xml:space="preserve"><value>Réessayer maintenant</value></data>
+  <data name="NavAllGroups" xml:space="preserve"><value>Tous les groupes</value></data>
+  <data name="NavRecentlyOpened" xml:space="preserve"><value>Récemment ouverts</value></data>
+  <data name="DataStoredExplainerSignedIn" xml:space="preserve"><value>Les groupes dans « Mon compte » sont synchronisés avec votre compte et restent intacts même si les données du navigateur sont effacées. Les groupes « Sur cet appareil » n’existent que dans ce navigateur – sauvegardez-les ou déplacez-les dans votre compte.</value></data>
+  <data name="FromCircleManageOnWeb" xml:space="preserve"><value>Ouvrir circletools.ch</value></data>
+  <data name="EmptyStateMemberHint" xml:space="preserve"><value>Vous participez déjà au groupe de quelqu’un d’autre – votre attribution et votre liste de souhaits sont sous « Mes attributions ».</value></data>
+  <data name="BudgetUpTo" xml:space="preserve"><value>jusqu’à {0}</value></data>
+  <data name="ExclusionsNoRecipient" xml:space="preserve"><value>Avec ces exclusions, {0} ne peut plus offrir de cadeau à personne.</value></data>
+  <data name="ExclusionsNoGiver" xml:space="preserve"><value>Avec ces exclusions, personne ne peut offrir de cadeau à {0}.</value></data>
+  <data name="ExclusionsNoDraw" xml:space="preserve"><value>Avec ces exclusions, aucun tirage n’est possible – supprimez-en une ou ajoutez un membre.</value></data>
+  <data name="DrawBreaksExclusionsNotice" xml:space="preserve"><value>Le tirage actuel ne respecte plus les exclusions. Refaire le tirage ?</value></data>
+  <data name="DrawBreaksExclusionsBadge" xml:space="preserve"><value>À refaire</value></data>
+  <data name="DrawPreviousKept" xml:space="preserve"><value>Le tirage précédent reste valable.</value></data>
+  <data name="CountdownToday" xml:space="preserve"><value>aujourd’hui</value></data>
+  <data name="CountdownTomorrow" xml:space="preserve"><value>demain</value></data>
+  <data name="CountdownDays" xml:space="preserve"><value>dans {0} jours</value></data>
+  <data name="EventNoDate" xml:space="preserve"><value>Pas encore de date</value></data>
+  <data name="EventWishlistProgress" xml:space="preserve"><value>Listes de souhaits {0}/{1}</value></data>
+  <data name="DetailsMissingDateAndBudget" xml:space="preserve"><value>Date et budget manquants</value></data>
+  <data name="DetailsMissingDate" xml:space="preserve"><value>pas de date</value></data>
+  <data name="DetailsMissingBudget" xml:space="preserve"><value>pas de budget</value></data>
+  <data name="DateOptionalLabel" xml:space="preserve"><value>Date (facultatif)</value></data>
+  <data name="DuplicateMemberErrorSuggest" xml:space="preserve"><value>Il y a déjà « {0} » dans ce groupe. Ajoutez une lettre pour les distinguer, p. ex. « {1} ».</value></data>
+  <data name="SavedCheck" xml:space="preserve"><value>Enregistré ✓</value></data>
+  <data name="WishlistSaveFailed" xml:space="preserve"><value>Enregistrement impossible – votre texte est conservé. Une nouvelle tentative a lieu pendant la saisie.</value></data>
+  <data name="UseAsTemplate" xml:space="preserve"><value>Utiliser comme modèle pour un nouveau groupe</value></data>
+  <data name="TemplateNewName" xml:space="preserve"><value>{0} (nouveau)</value></data>
+  <data name="TemplateExplainer" xml:space="preserve"><value>Les membres et les exclusions sont repris. Les événements, listes de souhaits et le tirage repartent de zéro.</value></data>
+  <data name="ShareMessageGreeting" xml:space="preserve"><value>Bonjour {0} ! 🎁</value></data>
+  <data name="ShareMessageForGroupEvent" xml:space="preserve"><value>Voici votre lien Père Noël secret pour « {0} » – {1}.</value></data>
+  <data name="ShareMessageForEvent" xml:space="preserve"><value>Voici votre lien Père Noël secret pour {0}.</value></data>
+  <data name="ShareMessageSecret" xml:space="preserve"><value>Ouvrez-le pour découvrir à qui vous offrez un cadeau – vous seul·e le voyez.</value></data>
+  <data name="RevealNeedsConnection" xml:space="preserve"><value>Ce lien nécessite une connexion Internet lors de la première ouverture. Connectez-vous et réessayez.</value></data>
+  <data name="RevealTryAgain" xml:space="preserve"><value>Réessayer</value></data>
+  <data name="WishlistOpenLink" xml:space="preserve"><value>Ouvrir le lien ({0})</value></data>
+  <data name="RevealLinkGone" xml:space="preserve"><value>Ce lien ne fonctionne plus – la copie en ligne du groupe n’existe plus. Demandez un nouveau lien à l’organisateur ou l’organisatrice.</value></data>
+  <data name="DataPersistedNoSignedIn" xml:space="preserve"><value>Ce navigateur peut effacer ses données s’il manque de place. Les groupes de votre compte sont en sécurité ; sauvegardez ceux enregistrés uniquement sur cet appareil.</value></data>
+  <data name="MyWishlistsUnsaved" xml:space="preserve"><value>Pas encore enregistré – enregistré en quittant le champ</value></data>
+  <data name="MyWishlistsAddPending" xml:space="preserve"><value>Appuyez sur Entrée ou « Ajouter » pour ajouter ce souhait</value></data>
 </root>

@@ -438,13 +438,22 @@ public static class LinkingEndpoints
         Guid id,
         PublishAssignmentsRequest request,
         ClaimsPrincipal principal,
+        HttpRequest httpRequest,
         ILinkingStore store,
+        ISyncStore sync,
+        ISharedGroupStore shared,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
         if (!principal.TryGetUserId(out var caller))
         {
             return Results.Unauthorized();
+        }
+
+        // Only the group's organizer writes its assignment rows (ADR-0080, Q3).
+        if (!await GroupOrganizerCheck.IsOrganizerAsync(id, caller, httpRequest, sync, shared, store, cancellationToken).ConfigureAwait(false))
+        {
+            return Results.Forbid();
         }
 
         var budget = request.Budget is null ? null : new LinkingBudget(request.Budget.Amount, request.Budget.Currency, request.Budget.MinAmount);
@@ -468,13 +477,22 @@ public static class LinkingEndpoints
         Guid id,
         PublishGroupEventsRequest request,
         ClaimsPrincipal principal,
+        HttpRequest httpRequest,
         ILinkingStore store,
+        ISyncStore sync,
+        ISharedGroupStore shared,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
         if (!principal.TryGetUserId(out var caller))
         {
             return Results.Unauthorized();
+        }
+
+        // Only the group's organizer writes its event registry (ADR-0080, Q3).
+        if (!await GroupOrganizerCheck.IsOrganizerAsync(id, caller, httpRequest, sync, shared, store, cancellationToken).ConfigureAwait(false))
+        {
+            return Results.Forbid();
         }
 
         var events = (request.Events ?? [])

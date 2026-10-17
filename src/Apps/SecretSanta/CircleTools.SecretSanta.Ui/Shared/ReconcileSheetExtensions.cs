@@ -1,54 +1,33 @@
+using CircleTools.SecretSanta.LocalStore;
 using CircleTools.SecretSanta.Ui.Shared;
 using MudBlazor;
 
 namespace CircleTools.SecretSanta.Ui;
 
-/// <summary>The answers to the sign-in reconciliation prompt (ADR-0044).</summary>
-public enum ReconcileChoice
-{
-    /// <summary>Claim the groups into the account.</summary>
-    Import,
+/// <summary>
+/// The answer to the sign-in reconciliation prompt (ADR-0044 amendment 2026-10-16): which groups to import into
+/// the account and which to keep on this device. There is no discard.
+/// </summary>
+/// <param name="Import">The ticked groups, to import.</param>
+/// <param name="KeepLocal">The unticked groups, kept on this device and not asked about again.</param>
+public sealed record ReconcileAnswer(IReadOnlyList<Guid> Import, IReadOnlyList<Guid> KeepLocal);
 
-    /// <summary>Keep the groups on this device only, and don't ask about them again.</summary>
-    KeepLocal,
-
-    /// <summary>Delete the groups.</summary>
-    Discard,
-}
-
-/// <summary>Shows a <see cref="ReconcileSheet"/> and resolves to the user's answer (ADR-0044 amendment 2026-10-15).</summary>
+/// <summary>Shows the sign-in reconciliation prompt as a bottom sheet that must be answered.</summary>
 public static class ReconcileSheetExtensions
 {
-    /// <summary>
-    /// Presents the reconciliation prompt as a bottom sheet that only its buttons close.
-    /// </summary>
+    /// <summary>Asks what to do with the groups made while signed out.</summary>
     /// <param name="dialogs">The dialog service.</param>
-    /// <param name="title">The title.</param>
-    /// <param name="message">The question.</param>
-    /// <param name="importLabel">Label for Import.</param>
-    /// <param name="keepLocalLabel">Label for Keep on this device.</param>
-    /// <param name="discardLabel">Label for Discard.</param>
-    /// <param name="cancellationToken">
-    /// Closes the sheet unanswered — when the asking component goes away. Open dialogs outlive a component
-    /// tree rebuild (the language switch), so a stale sheet must be closed by whoever opened it.
-    /// </param>
-    /// <returns>The answer, or <see langword="null"/> when the sheet closed without one — which decides nothing.</returns>
-    public static async Task<ReconcileChoice?> ShowReconcileSheetAsync(
+    /// <param name="groups">The groups, named in the sheet.</param>
+    /// <param name="cancellationToken">Closes the sheet unanswered (the prompt's owner went away).</param>
+    /// <returns>The answer, or <see langword="null"/> for "Later" or no answer — nothing decided.</returns>
+    public static async Task<ReconcileAnswer?> ShowReconcileSheetAsync(
         this IDialogService dialogs,
-        string title,
-        string message,
-        string importLabel,
-        string keepLocalLabel,
-        string discardLabel,
+        IReadOnlyList<ClaimableGroup> groups,
         CancellationToken cancellationToken = default)
     {
         var parameters = new DialogParameters<ReconcileSheet>
         {
-            { x => x.Title, title },
-            { x => x.Message, message },
-            { x => x.ImportLabel, importLabel },
-            { x => x.KeepLocalLabel, keepLocalLabel },
-            { x => x.DiscardLabel, discardLabel },
+            { x => x.Groups, groups },
         };
 
         var options = new DialogOptions
@@ -63,6 +42,6 @@ public static class ReconcileSheetExtensions
         var reference = await dialogs.ShowAsync<ReconcileSheet>(title: null, parameters, options);
         await using var closeOnCancel = cancellationToken.Register(() => reference.Close());
         var result = await reference.Result;
-        return result is { Canceled: false, Data: ReconcileChoice choice } ? choice : null;
+        return result is { Canceled: false, Data: ReconcileAnswer answer } ? answer : null;
     }
 }

@@ -99,11 +99,61 @@ public sealed class HttpSharedGroupAccountApi(HttpClient client) : ISharedGroupA
     }
 
     /// <inheritdoc />
-    public async Task<ApiResult> PublishOwnedRevealSlicesAsync(Guid groupId, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default)
+    public async Task<ApiResult<PublishRevealSlicesResponse>> PublishOwnedRevealSlicesAsync(Guid groupId, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
         var content = JsonContent.Create(request, SyncJsonContext.Default.PublishRevealSlicesRequest);
         using var message = new HttpRequestMessage(HttpMethod.Put, $"{Route}/{groupId}/owned/reveal-slices") { Content = content };
+        try
+        {
+            using var response = await client.SendAsync(message, cancellationToken);
+            return await HttpSharedGroupApi.ReadPublishAsync(response, cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            return ApiResult.Failed<PublishRevealSlicesResponse>(new ApiError(ApiFailure.Unreachable));
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult<PersonClaimResponse>> ClaimPersonAsync(
+        string joinToken,
+        ClaimPersonRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var message = new HttpRequestMessage(HttpMethod.Post, $"{Route}/{Uri.EscapeDataString(joinToken)}/claims")
+        {
+            Content = JsonContent.Create(request, SyncJsonContext.Default.ClaimPersonRequest),
+        };
+        return await SendForAsync(message, SyncJsonContext.Default.PersonClaimResponse, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult<SharedGroupView>> GetJoinedAsync(string joinToken, CancellationToken cancellationToken = default)
+    {
+        var message = new HttpRequestMessage(HttpMethod.Get, $"{Route}/{Uri.EscapeDataString(joinToken)}");
+        return await SendForAsync(message, SyncJsonContext.Default.SharedGroupView, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult<ParticipantEntryResult>> WriteEntryAsync(
+        string joinToken,
+        ParticipantEntry entry,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        var message = new HttpRequestMessage(HttpMethod.Put, $"{Route}/{Uri.EscapeDataString(joinToken)}/me")
+        {
+            Content = JsonContent.Create(entry, SyncJsonContext.Default.ParticipantEntry),
+        };
+        return await SendForAsync(message, SyncJsonContext.Default.ParticipantEntryResult, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult> LeaveAsync(string joinToken, CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(HttpMethod.Delete, $"{Route}/{Uri.EscapeDataString(joinToken)}/claims/me");
         try
         {
             using var response = await client.SendAsync(message, cancellationToken);
@@ -115,6 +165,30 @@ public sealed class HttpSharedGroupAccountApi(HttpClient client) : ISharedGroupA
         {
             return ApiResult.Failed(new ApiError(ApiFailure.Unreachable));
         }
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult> ReleasePersonAsOwnerAsync(Guid groupId, Guid memberId, CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(HttpMethod.Delete, $"{Route}/{groupId}/owned/claims/{memberId}");
+        try
+        {
+            using var response = await client.SendAsync(message, cancellationToken);
+            return response.IsSuccessStatusCode
+                ? ApiResult.Ok()
+                : ApiResult.Failed(await ApiResponseReader.ReadErrorAsync(response, cancellationToken));
+        }
+        catch (HttpRequestException)
+        {
+            return ApiResult.Failed(new ApiError(ApiFailure.Unreachable));
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult<JoinedSharedGroups>> ListJoinedAsync(CancellationToken cancellationToken = default)
+    {
+        var message = new HttpRequestMessage(HttpMethod.Get, $"{Route}/joined");
+        return await SendForAsync(message, SyncJsonContext.Default.JoinedSharedGroups, cancellationToken);
     }
 
     private async Task<ApiResult<T>> SendForAsync<T>(

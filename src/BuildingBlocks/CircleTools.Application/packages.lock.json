@@ -26,7 +26,6 @@
       "circletools.sharedkernel": {
         "type": "Project"
       }
-    },
-    "net10.0/ios-arm64": {}
+    }
   }
 }

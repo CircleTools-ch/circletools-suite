@@ -63,12 +63,25 @@ public sealed record AssignmentDto(Guid GiverMemberId, string GiverName, Guid Re
 /// <param name="HasCurrentDraw">Whether this event has a current draw.</param>
 /// <param name="DrawInvalidatedByMembershipChange">Whether this event's draw needs re-running because the roster changed while it is still upcoming.</param>
 /// <param name="Date">The event's date, if set — used to order occasions for quick access (nav).</param>
+/// <param name="WishlistsFilled">How many current members have at least one wishlist item (the card's progress, I5).</param>
+/// <param name="DrawBreaksExclusions">
+/// Whether the current draw pairs someone an exclusion added since forbids — "no longer matches the
+/// exclusions, draw again?" (Q13b).
+/// </param>
 public sealed record EventSummaryDto(
     Guid Id,
     string Name,
     bool HasCurrentDraw,
     bool DrawInvalidatedByMembershipChange,
-    DateTimeOffset? Date = null);
+    DateTimeOffset? Date = null,
+    int WishlistsFilled = 0,
+    bool DrawBreaksExclusions = false);
+
+/// <summary>Whether the exclusions still leave a valid draw (Q13a).</summary>
+/// <param name="WithoutRecipient">Names of members left with nobody they may give to.</param>
+/// <param name="WithoutGiver">Names of members nobody may give to.</param>
+/// <param name="Possible">Whether a draw exists; <see langword="null"/> when not judged (fewer than three members, or too large to check quickly).</param>
+public sealed record DrawFeasibilityDto(IReadOnlyList<string> WithoutRecipient, IReadOnlyList<string> WithoutGiver, bool? Possible);
 
 /// <summary>Group-level view for the editor screens: the group name, its shared roster and exclusions, and its events.</summary>
 /// <param name="Id">The group identity.</param>
@@ -104,6 +117,7 @@ public sealed record MemberWishlistDto(Guid MemberId, string MemberName, IReadOn
 /// first draw avoids last time's pairings. Lets the draw screen offer an "ignore last time" retry if that
 /// constraint over-constrains a small roster. <see langword="false"/> once a real draw has run.
 /// </param>
+/// <param name="DrawBreaksExclusions">Whether the current draw pairs someone a later exclusion forbids (Q13b).</param>
 public sealed record EventDto(
     Guid Id,
     Guid GroupId,
@@ -114,7 +128,8 @@ public sealed record EventDto(
     IReadOnlyList<AssignmentDto> CurrentAssignments,
     bool DrawInvalidatedByMembershipChange,
     IReadOnlyList<MemberWishlistDto> Wishlists,
-    bool HasCarriedForwardBaseline = false);
+    bool HasCarriedForwardBaseline = false,
+    bool DrawBreaksExclusions = false);
 
 /// <summary>Outcome of a draw attempt.</summary>
 /// <param name="Success">Whether a valid draw was produced.</param>

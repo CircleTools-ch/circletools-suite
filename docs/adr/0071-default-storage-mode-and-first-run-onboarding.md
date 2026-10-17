@@ -92,6 +92,25 @@ device-local.
 - **New risks:** low — the preference is best-effort (a read/write failure falls back to On this device),
   and nothing about the groups' actual storage depends on it beyond the pre-selected value.
 
+### Amendment (2026-10-16) — no first-run dialog; the choice is made where a group is created
+
+From the [2026-10-16 two-account test](../brainstorming/2026-10-16-secret-santa-two-account-device-test.md)
+(Q24): the first thing a new visitor saw was a modal about storage modes, before they knew what the app does
+or had a group; it offered *My account* to someone without an account; and the default it saved was not the
+one the create dialog then used. Now:
+
+- **No onboarding dialog.** The welcome card is the first thing a new visitor sees.
+- **The choice lives in "Create group".** The first time a device creates a group, the storage line there is
+  **expanded** with a one-line explanation of each option; afterwards it is the compact line ("Stored: … ·
+  Change") it already was. The default in Settings still seeds it.
+- Signed out, the account option reads **"My account (sign-in needed)"** and leads to sign-in; after signing
+  in the create dialog opens again with that choice.
+- Signed in, the options follow [ADR-0081](0081-signed-in-sharing-stays-in-the-account.md) (*On this
+  device*, *My account*, *My account · shared*).
+
+The device-local default (`secretsanta.storage.default`) is unchanged; `secretsanta.storage.onboarded` now
+records that the expanded explanation has been shown once.
+
 ## Pros and cons of the options
 
 ### 1. Status quo

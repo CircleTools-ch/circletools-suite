@@ -16,6 +16,7 @@
 @inject IStringLocalizer<AppStrings> L
 @inject SyncService Sync
 @inject AutoSyncService AutoSync
+@inject NavigationManager Navigation
 
 <PageTitle>@L["SharingTitle"]</PageTitle>
 
@@ -30,6 +31,18 @@
 else if (!_loaded)
 {
     <MudText>@L["Loading"]</MudText>
+}
+else if (_joinOnly)
+{
+    @* A participant doesn't choose where the group lives or manage its links: those belong to the organizer.
+       Turning the group into a local copy would make them its organizer, with everyone's reveal links
+       (ADR-0080, Q1). What they can do is leave. *@
+    <MudAlert Severity="Severity.Info" Class="mb-3" id="participant-sharing">
+        @(_claimedName is { } name ? L["YouAreMember", name] : L["ParticipantReadOnlyNote"])
+    </MudAlert>
+    <MudText Class="mud-text-secondary mb-4">@L["ParticipantSharingLead"]</MudText>
+    <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Logout"
+               OnClick="LeaveAsync" Disabled="_busy" id="leave-group">@L["LeaveGroup"]</MudButton>
 }
 else
 {
@@ -47,13 +60,17 @@ else
         </div>
     }
 
-    @if (_mode == StorageMode.Account)
+    @if (_kind == StorageKind.Account)
     {
         <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true" id="account-owned">@L["AccountOwnedNote"]</MudAlert>
+    }
 
-        @* A claimed shared group keeps its join link (the claim confirmation says so): the owner can still
-           invite people with it, from any of their devices (ADR-0078 Amendment 3). *@
-        @if (IsAdminClaimedShared && _tokens?.JoinToken is { } ownerJoinToken)
+    @* In the account and shared (ADR-0081): the join link invites people, from any of the owner's devices
+       (ADR-0078 Amendment 3); handing it over without an account is an explicit, secondary action (Q15). *@
+    @if (_kind == StorageKind.AccountShared)
+    {
+        <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true" id="account-owned">@L["AccountSharedNote"]</MudAlert>
+        @if (_tokens?.JoinToken is { } ownerJoinToken)
         {
             <MudCard Elevation="1" Class="mb-3" id="join-link-card">
                 <MudCardContent class="pb-2">
@@ -66,11 +83,27 @@ else
                 </MudCardContent>
             </MudCard>
         }
+
+        <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyOff"
+                   OnClick="ReleaseToLinkAsync" Disabled="_busy" id="release-to-link">@L["ReleaseToLinkAction"]</MudButton>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mb-3">@L["ReleaseToLinkActionHint"]</MudText>
     }
 
-    @if (_mode == StorageMode.SharedByLink && _tokens is not null)
+    @if (_kind == StorageKind.Link && _tokens is not null)
     {
         <MudText Class="mud-text-secondary mb-3">@L["SharingSharedLead"]</MudText>
+
+        @* Signed in with a group that has no owner: offer to keep it in the account (ADR-0081). *@
+        @if (_signedIn && _tokens.AdminToken is not null)
+        {
+            <MudAlert Severity="Severity.Info" Class="mb-3" Dense="true" id="keep-in-account">
+                <div class="d-flex flex-wrap align-center gap-2">
+                    <span>@L["LinkNotInAccountNote"]</span>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                               OnClick="KeepInAccountAsync" Disabled="_busy">@L["KeepInAccount"]</MudButton>
+                </div>
+            </MudAlert>
+        }
 
         @if (_tokens.AdminToken is { } adminToken)
         {
@@ -123,6 +156,10 @@ else
     // shared-by-link group whose admin was claimed into the account, which keeps its join token).
     private Guid? _accountScope;
     private Guid? _adminAccount;
+    // This device only joined the group with its join link (ADR-0058): the participant view (ADR-0080).
+    private bool _joinOnly;
+    private StorageKind _kind;
+    private string? _claimedName;
     private string? _copiedUrl;
 
     protected override async Task OnParametersSetAsync()
@@ -143,6 +180,9 @@ else
         _tokens = record?.Tokens;
         _accountScope = record?.AccountScope;
         _adminAccount = record?.AdminAccount;
+        _joinOnly = record is not null && record.IsJoinOnly();
+        _kind = record is null ? StorageKind.Device : StorageModeDisplay.KindOf(record);
+        _claimedName = record?.ClaimedMemberId is { } me ? record.State.Members.FirstOrDefault(m => m.Id == me)?.Name : null;
         // A group synced into the account reads as "My account" even if its stored intent predates the
         // Mode field being set on claim (ADR-0073 follow-up 3) — the same rule the groups list uses.
         if (_accountScope is not null)
@@ -150,7 +190,41 @@ else
             _mode = StorageMode.Account;
         }
 
+        // The picker's value (ADR-0081): signed in, "shared" is the account-owned shared group, and a link-only
+        // group shows as shared too (with an offer to keep it in the account).
+        _mode = _kind switch
+        {
+            StorageKind.AccountShared => _signedIn ? StorageMode.SharedByLink : StorageMode.Account,
+            StorageKind.Link => StorageMode.SharedByLink,
+            StorageKind.Account => StorageMode.Account,
+            _ => StorageMode.OnThisDevice,
+        };
+
         _loaded = true;
+    }
+
+    // Leaving releases this participant's claim on the server, so the organizer sees them as not joined, and
+    // removes the group from this device (ADR-0080, Q1). It needs the server, so it is refused offline.
+    private async Task LeaveAsync()
+    {
+        if (_groupName is null
+            || !await Dialogs.ShowConfirmSheetAsync(L["LeaveGroupConfirm", _groupName], L["LeaveGroupConfirmYes"], L["Cancel"]))
+        {
+            return;
+        }
+
+        _busy = true;
+        var left = await Shared.LeaveAsync(GroupId);
+        _busy = false;
+        if (!left)
+        {
+            Snackbar.Add(L["LeaveGroupOffline"], Severity.Warning);
+            return;
+        }
+
+        AutoSync.RequestSync();
+        Snackbar.Add(L["LeftGroup", _groupName], Severity.Success);
+        Navigation.NavigateTo(string.Empty);
     }
 
     private string Base => RevealOptions.BaseUrl.TrimEnd('/');
@@ -166,8 +240,14 @@ else
             return;
         }
 
-        // Local → Shared by link: upload and mint links, after a plain consequence prompt.
-        if (mode == StorageMode.SharedByLink && _mode == StorageMode.OnThisDevice)
+        if (_signedIn)
+        {
+            await OnSignedInChoiceAsync(mode);
+            return;
+        }
+
+        // Signed out (ADR-0058): On this device ⇄ Shared by link, account-free.
+        if (mode == StorageMode.SharedByLink && _kind == StorageKind.Device)
         {
             if (await Dialogs.ShowConfirmSheetAsync(L["ShareByLinkConfirm"], L["ShareByLinkConfirmYes"], L["Cancel"], Color.Primary))
             {
@@ -177,95 +257,143 @@ else
             return;
         }
 
-        // Shared by link → On this device: remove the online copy, keep the local one.
-        if (mode == StorageMode.OnThisDevice && _mode == StorageMode.SharedByLink)
+        if (mode == StorageMode.OnThisDevice && _kind == StorageKind.Link)
         {
-            if (await Dialogs.ShowConfirmSheetAsync(L["MakeLocalConfirm"], L["MakeLocalConfirmYes"], L["Cancel"]))
-            {
-                await RunAsync(async () =>
-                {
-                    await Shared.MakeLocalAsync(GroupId);
-                    return true;
-                });
-            }
-
-            return;
-        }
-
-        // Shared by link → My account (claim admin): sole admin, admin link retired, join link lives on.
-        if (mode == StorageMode.Account && _mode == StorageMode.SharedByLink && _signedIn)
-        {
-            if (await Dialogs.ShowConfirmSheetAsync(L["ClaimAdminConfirm"], L["ClaimAdminConfirmYes"], L["Cancel"], Color.Primary))
-            {
-                await RunAsync(() => Shared.ClaimAdminToAccountAsync(_accountId, GroupId));
-            }
-
-            return;
-        }
-
-        // On this device → My account: record the intent; the next sync cycle claims (uploads) it, which
-        // also works offline (ADR-0073). Kick a sync so a connected device does it right away.
-        if (mode == StorageMode.Account && _mode == StorageMode.OnThisDevice && _signedIn)
-        {
-            if (await Dialogs.ShowConfirmSheetAsync(L["MoveToAccountConfirm"], L["MoveToAccountConfirmYes"], L["Cancel"], Color.Primary))
-            {
-                await RunAsync(async () =>
-                {
-                    await Sync.MarkForAccountAsync(_accountId, GroupId);
-                    AutoSync.RequestSync();
-                    return true;
-                });
-            }
-
-            return;
-        }
-
-        // My account → Shared by link (release-admin): ownership is not a trap. A group synced through the
-        // account store is first removed from the account, then shared; a claimed shared group releases its
-        // admin back to a link.
-        if (mode == StorageMode.SharedByLink && _mode == StorageMode.Account)
-        {
-            if (await Dialogs.ShowConfirmSheetAsync(L["ReleaseToLinkConfirm"], L["ReleaseToLinkConfirmYes"], L["Cancel"], Color.Primary))
-            {
-                await RunAsync(async () => IsAdminClaimedShared
-                    ? await Shared.ReleaseToLinkAsync(GroupId)
-                    : await LeaveAccountAsync() && await Shared.ShareByLinkAsync(GroupId) is not null);
-            }
-
-            return;
-        }
-
-        // My account → On this device (UX review B9 — this used to do nothing): take the group out of the
-        // account and off the server, keeping the copy on this device. Other devices of the account drop it.
-        if (mode == StorageMode.OnThisDevice && _mode == StorageMode.Account)
-        {
-            if (await Dialogs.ShowConfirmSheetAsync(L["AccountToLocalConfirm"], L["AccountToLocalConfirmYes"], L["Cancel"]))
-            {
-                await RunAsync(async () =>
-                {
-                    if (!IsAdminClaimedShared)
-                    {
-                        return await LeaveAccountAsync();
-                    }
-
-                    // A shared group whose admin was claimed into the account: hand it back to a link,
-                    // then remove the online copy — the same two steps the user could take by hand.
-                    if (!await Shared.ReleaseToLinkAsync(GroupId))
-                    {
-                        return false;
-                    }
-
-                    await Shared.MakeLocalAsync(GroupId);
-                    return true;
-                });
-            }
-
+            await MakeLocalAsync();
             return;
         }
 
         // Any other combination is not offered (e.g. My account while signed out — the option is disabled).
         // Reload so the picker never shows a mode the group is not in.
         await LoadAsync();
+    }
+
+    // Signed in (ADR-0081), the choices are On this device / My account / My account · shared — the last one
+    // carried by StorageMode.SharedByLink: a group owned by the account that others join with a link.
+    private async Task OnSignedInChoiceAsync(StorageMode mode)
+    {
+        switch (mode, _kind)
+        {
+            // Invite people from a local group: shared and claimed into the account in one step.
+            case (StorageMode.SharedByLink, StorageKind.Device):
+                if (await Dialogs.ShowConfirmSheetAsync(L["InviteConfirm"], L["InviteConfirmYes"], L["Cancel"], Color.Primary))
+                {
+                    await RunAsync(() => Shared.ShareOwnedAsync(_accountId, GroupId));
+                }
+
+                return;
+
+            // Invite people from a My-account group: it leaves the account store and comes back owned and shared.
+            case (StorageMode.SharedByLink, StorageKind.Account):
+                if (await Dialogs.ShowConfirmSheetAsync(L["InviteConfirm"], L["InviteConfirmYes"], L["Cancel"], Color.Primary))
+                {
+                    await RunAsync(async () =>
+                    {
+                        if (!await LeaveAccountAsync())
+                        {
+                            return false;
+                        }
+
+                        var shared = await Shared.ShareOwnedAsync(_accountId, GroupId);
+                        AutoSync.RequestSync();
+                        return shared;
+                    });
+                }
+
+                return;
+
+            // A link-only group this device can manage: keep it in the account (claim admin). Also the answer
+            // when such a group is moved to "My account".
+            case (StorageMode.SharedByLink or StorageMode.Account, StorageKind.Link) when _tokens?.AdminToken is not null:
+                await KeepInAccountAsync();
+                return;
+
+            // On this device → My account: record the intent; the next sync cycle claims (uploads) it, which also
+            // works offline (ADR-0073). Kick a sync so a connected device does it right away.
+            case (StorageMode.Account, StorageKind.Device):
+                if (await Dialogs.ShowConfirmSheetAsync(L["MoveToAccountConfirm"], L["MoveToAccountConfirmYes"], L["Cancel"], Color.Primary))
+                {
+                    await RunAsync(async () =>
+                    {
+                        await Sync.MarkForAccountAsync(_accountId, GroupId);
+                        AutoSync.RequestSync();
+                        return true;
+                    });
+                }
+
+                return;
+
+            // Stop sharing: the online copy goes, joined people lose it, the group goes back to the account store.
+            case (StorageMode.Account, StorageKind.AccountShared):
+                if (await Dialogs.ShowConfirmSheetAsync(L["StopSharingConfirm"], L["StopSharingConfirmYes"], L["Cancel"]))
+                {
+                    await RunAsync(async () =>
+                    {
+                        if (!await Shared.StopSharingAsync(GroupId))
+                        {
+                            return false;
+                        }
+
+                        await Sync.MarkForAccountAsync(_accountId, GroupId);
+                        AutoSync.RequestSync();
+                        return true;
+                    });
+                }
+
+                return;
+
+            case (StorageMode.OnThisDevice, StorageKind.Link):
+                await MakeLocalAsync();
+                return;
+
+            // My account (either kind) → On this device (UX review B9): the group leaves the account and the server;
+            // this device keeps its copy and the account's other devices drop it.
+            case (StorageMode.OnThisDevice, StorageKind.Account or StorageKind.AccountShared):
+                var question = _kind == StorageKind.AccountShared ? L["AccountSharedToLocalConfirm"] : L["AccountToLocalConfirm"];
+                if (await Dialogs.ShowConfirmSheetAsync(question, L["AccountToLocalConfirmYes"], L["Cancel"]))
+                {
+                    await RunAsync(async () => _kind == StorageKind.AccountShared
+                        ? await Shared.StopSharingAsync(GroupId)
+                        : await LeaveAccountAsync());
+                }
+
+                return;
+
+            default:
+                await LoadAsync();
+                return;
+        }
+    }
+
+    private async Task MakeLocalAsync()
+    {
+        if (await Dialogs.ShowConfirmSheetAsync(L["MakeLocalConfirm"], L["MakeLocalConfirmYes"], L["Cancel"]))
+        {
+            await RunAsync(async () =>
+            {
+                await Shared.MakeLocalAsync(GroupId);
+                return true;
+            });
+        }
+    }
+
+    // A link-only group (admin token, no owner) while signed in: claim it into the account (ADR-0058, ADR-0081).
+    private async Task KeepInAccountAsync()
+    {
+        if (await Dialogs.ShowConfirmSheetAsync(L["ClaimAdminConfirm"], L["ClaimAdminConfirmYes"], L["Cancel"], Color.Primary))
+        {
+            await RunAsync(() => Shared.ClaimAdminToAccountAsync(_accountId, GroupId));
+        }
+    }
+
+    // Hand an owned shared group over to links without an account, so co-organizers can use a management link
+    // (ADR-0058 release-admin; worded per Q15).
+    private async Task ReleaseToLinkAsync()
+    {
+        if (await Dialogs.ShowConfirmSheetAsync(L["ReleaseToLinkConfirm"], L["ReleaseToLinkConfirmYes"], L["Cancel"], Color.Primary))
+        {
+            await RunAsync(() => Shared.ReleaseToLinkAsync(GroupId));
+        }
     }
 
     // A "My account" group that is a shared group whose admin the account claimed (ADR-0058), as opposed to

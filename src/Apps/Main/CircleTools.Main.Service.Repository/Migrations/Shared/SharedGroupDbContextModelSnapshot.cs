@@ -123,11 +123,42 @@ namespace CircleTools.Main.Service.Repository.Migrations.Shared
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
+                    b.Property<string>("ParticipantKeyHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.HasKey("GroupId", "MemberId");
 
                     b.HasIndex("AccountId");
 
+                    b.HasIndex("ParticipantKeyHash")
+                        .IsUnique();
+
                     b.ToTable("member_claims", "shared");
+                });
+
+            modelBuilder.Entity("CircleTools.Main.Service.Repository.SharedMemberEntry", b =>
+                {
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("GiftNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Wishlists")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.HasKey("GroupId", "MemberId");
+
+                    b.ToTable("member_entries", "shared");
                 });
 
             modelBuilder.Entity("CircleTools.Main.Service.Repository.SharedRevealSlice", b =>
@@ -140,11 +171,21 @@ namespace CircleTools.Main.Service.Repository.Migrations.Shared
                         .IsRequired()
                         .HasColumnType("jsonb");
 
+                    b.Property<Guid?>("EventId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("GroupId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Key")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
                     b.Property<DateTimeOffset>("LastActivityAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("MemberId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("TokenCipher")
                         .IsRequired()

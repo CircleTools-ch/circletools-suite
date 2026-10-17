@@ -5,7 +5,7 @@ app: Secret-Santa
 actors: [Member]
 status: Approved
 priority: Must
-related: [FR-006, NFR-001, NFR-002, NFR-003]
+related: [FR-006, FR-050, NFR-001, NFR-002, NFR-003]
 ---
 
 # UC-SS-006 — Open a reveal link

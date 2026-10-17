@@ -22,6 +22,21 @@ public sealed class MauiNotificationScheduler : INotificationScheduler
         await LocalNotificationCenter.Current.RequestNotificationPermission();
 
     /// <inheritdoc />
+    public async ValueTask<NotificationAccess> GetPermissionAsync(CancellationToken cancellationToken = default) =>
+        await LocalNotificationCenter.Current.AreNotificationsEnabled()
+            ? NotificationAccess.Granted
+            : NotificationAccess.Denied;
+
+    /// <inheritdoc />
+    public ValueTask OpenSettingsAsync(CancellationToken cancellationToken = default)
+    {
+        // The app's own page in the system settings (Android: App info; iOS: the app's Settings page), where
+        // notifications are switched back on after a "don't ask again".
+        MainThread.BeginInvokeOnMainThread(AppInfo.Current.ShowSettingsUI);
+        return ValueTask.CompletedTask;
+    }
+
+    /// <inheritdoc />
     public async ValueTask ScheduleAsync(ScheduledNotification notification, CancellationToken cancellationToken = default)
     {
         await LocalNotificationCenter.Current.Show(new NotificationRequest
@@ -50,6 +65,13 @@ public sealed class MauiNotificationScheduler : INotificationScheduler
     /// <inheritdoc />
     public ValueTask<bool> RequestPermissionAsync(CancellationToken cancellationToken = default) =>
         ValueTask.FromResult(false);
+
+    /// <inheritdoc />
+    public ValueTask<NotificationAccess> GetPermissionAsync(CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult(NotificationAccess.Unknown);
+
+    /// <inheritdoc />
+    public ValueTask OpenSettingsAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
     /// <inheritdoc />
     public ValueTask ScheduleAsync(ScheduledNotification notification, CancellationToken cancellationToken = default) =>

@@ -27,6 +27,18 @@ public sealed record RefreshRequest(string RefreshToken);
 /// </param>
 public sealed record LogoutRequest(string? RefreshToken);
 
+/// <summary>Asks for the signed-in devices (ADR-0079 amendment).</summary>
+/// <param name="RefreshToken">This device's refresh secret, so its row is marked; optional.</param>
+public sealed record SessionListRequest(string? RefreshToken);
+
+/// <summary>One signed-in device (ADR-0079 amendment).</summary>
+/// <param name="Id">The session id — what "sign out this device" names.</param>
+/// <param name="Device">A coarse label ("Chrome · Windows"); empty when unknown.</param>
+/// <param name="SignedInAt">When it signed in.</param>
+/// <param name="LastActiveAt">When it was last active.</param>
+/// <param name="IsCurrent">Whether it is the device asking.</param>
+public sealed record SessionInfoResponse(Guid Id, string Device, DateTimeOffset SignedInAt, DateTimeOffset LastActiveAt, bool IsCurrent);
+
 /// <summary>Change of the password by a signed-in user (FR-049, ADR-0079).</summary>
 /// <param name="CurrentPassword">The password the account has now.</param>
 /// <param name="NewPassword">The replacement password; same policy as sign-up.</param>

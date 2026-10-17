@@ -83,12 +83,13 @@ public sealed class SyncCoordinator(
     // linked members publishes nothing (the account-free and fully-unlinked cases stay inert), and a
     // re-publish of unchanged data is a server no-op, so running this each cycle is what backfills a group
     // the first time one of its members links (FR-029, ADR-0042).
-    private async Task PublishGroupsAsync(CancellationToken cancellationToken)
-    {
-        var all = await groups.ListAsync(cancellationToken);
-        foreach (var group in all)
-        {
-            await publisher.PublishAsync(group, cancellationToken);
-        }
-    }
+    //
+    // Only groups this device organizes are published (ADR-0080, Q4): a group it only joined through a join
+    // link is the organizer's to publish, and the server refuses anyone else. A shared-by-link group carries
+    // its admin token, which proves this device organizes it.
+    private async Task PublishGroupsAsync(CancellationToken cancellationToken) =>
+        await publisher.PublishOrganizedAsync(
+            await groups.ListAsync(cancellationToken),
+            await local.LoadGroupsAsync(cancellationToken),
+            cancellationToken);
 }

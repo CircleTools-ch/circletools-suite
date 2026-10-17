@@ -38,25 +38,30 @@ public sealed class RevealSlicePublisher(
     /// </summary>
     /// <param name="groupId">The group whose reveal slices to publish.</param>
     /// <param name="cancellationToken">Cancels the publish.</param>
-    public async Task PublishAsync(Guid groupId, CancellationToken cancellationToken = default)
+    /// <returns>
+    /// Whether the slices are on the server now — only then may the share screen hand out short links that
+    /// depend on them (ADR-0082). <see langword="false"/> for a group that does not publish, or on any failure.
+    /// </returns>
+    public async Task<bool> PublishAsync(Guid groupId, CancellationToken cancellationToken = default)
     {
         try
         {
-            await PublishCoreAsync(groupId, cancellationToken);
+            return await PublishCoreAsync(groupId, cancellationToken);
         }
         catch
         {
             // Best-effort by design (NFR-008): retried on the next reconcile, nothing lost.
+            return false;
         }
     }
 
-    private async Task PublishCoreAsync(Guid groupId, CancellationToken cancellationToken)
+    private async Task<bool> PublishCoreAsync(Guid groupId, CancellationToken cancellationToken)
     {
         var records = (await local.LoadGroupsAsync(cancellationToken)).ToList();
         var index = records.FindIndex(r => r.State.Id == groupId);
         if (index < 0)
         {
-            return;
+            return false;
         }
 
         var record = records[index];
@@ -70,13 +75,13 @@ public sealed class RevealSlicePublisher(
         var canPublishByOwner = record.IsAdminClaimedShared();
         if (!canPublishByAdmin && !canPublishByOwner)
         {
-            return;
+            return false;
         }
 
         var group = await sender.Send(new GetGroupQuery(groupId), cancellationToken);
         if (group is null)
         {
-            return;
+            return false;
         }
 
         var existing = record.Tokens?.RevealTokens ?? [];
@@ -94,12 +99,27 @@ public sealed class RevealSlicePublisher(
                 tokens.Add(new RevealTokenRef(occasion.Id, slice.GiverMemberId, token));
 
                 var body = JsonSerializer.SerializeToElement(slice.Payload, RevealJsonContext.Default.RevealPayload);
-                slices.Add(new RevealSlice(token, body));
+                // The event and giver go along so the token holder can keep their own entry (ADR-0084); the
+                // recipient stays inside the body (NFR-002).
+                slices.Add(new RevealSlice(token, body, SliceKey(occasion.Id, slice.GiverMemberId), occasion.Id, slice.GiverMemberId));
             }
         }
 
-        // Persist the token set when it changed (a mint or a removal), so links stay stable and the share
-        // screen can attach rt= immediately.
+        // Publish the whole set (authoritative). Best-effort — a failure retries next reconcile. The answer says
+        // which token each slice is stored under: another organizer device may have published first, and then
+        // its token wins, so every device hands out the same link (ADR-0068 amendment).
+        var request = new PublishRevealSlicesRequest(slices);
+        var result = canPublishByAdmin
+            ? await api.PublishRevealSlicesAsync(adminToken!, request, cancellationToken)
+            : await accountApi.PublishOwnedRevealSlicesAsync(groupId, request, cancellationToken);
+        if (result is { IsSuccess: true, Value: { } answer })
+        {
+            var effective = answer.Tokens.ToDictionary(t => t.Key, t => t.RevealToken, StringComparer.Ordinal);
+            tokens = [.. tokens.Select(t => effective.TryGetValue(SliceKey(t.EventId, t.MemberId), out var kept) ? t with { Token = kept } : t)];
+        }
+
+        // Persist the token set when it changed (a mint, a removal, or one adopted from the server), so links
+        // stay stable and the share screen can attach rt= immediately.
         var changed = existing.Count != tokens.Count
             || !existing.All(e => tokens.Any(t => t.EventId == e.EventId && t.MemberId == e.MemberId && t.Token == e.Token));
         if (changed)
@@ -117,17 +137,11 @@ public sealed class RevealSlicePublisher(
             }
         }
 
-        // Publish the whole set (authoritative). Best-effort — a failure retries next reconcile.
-        var request = new PublishRevealSlicesRequest(slices);
-        if (canPublishByAdmin)
-        {
-            await api.PublishRevealSlicesAsync(adminToken!, request, cancellationToken);
-        }
-        else
-        {
-            await accountApi.PublishOwnedRevealSlicesAsync(groupId, request, cancellationToken);
-        }
+        return result.IsSuccess;
     }
+
+    // The slice's stable place in the draw, sent with it so the server keeps one token per place.
+    private static string SliceKey(Guid eventId, Guid memberId) => $"{eventId:N}:{memberId:N}";
 
     /// <summary>Mints a fresh, unguessable reveal token (256 bits, URL-safe), matching the share-token style (ADR-0058/0068).</summary>
     private static string NewRevealToken() =>

@@ -33,6 +33,24 @@ public sealed class RefreshTokenChain
     /// <summary>Gets the user this session belongs to.</summary>
     public Guid UserId { get; }
 
+    /// <summary>
+    /// Gets the coarse device label recorded at sign-in ("Chrome · Windows"), for the list of signed-in
+    /// devices (ADR-0079 amendment). Empty when unknown.
+    /// </summary>
+    public string Device { get; private set; } = string.Empty;
+
+    /// <summary>Gets when the session started (its first token). By time, not list position: a store may load the tokens in any order.</summary>
+    public DateTimeOffset SignedInAt => _tokens.Min(t => t.IssuedAt);
+
+    /// <summary>Gets when the session was last used (its newest token).</summary>
+    public DateTimeOffset LastActiveAt => _tokens.Max(t => t.IssuedAt);
+
+    /// <summary>Gets when the session's newest token expires — after that nothing can refresh it.</summary>
+    public DateTimeOffset ExpiresAt => _tokens.Max(t => t.ExpiresAt);
+
+    /// <summary>The longest device label kept.</summary>
+    public const int MaxDeviceLength = 100;
+
     /// <summary>Gets the moment the chain was revoked, or <c>null</c> while it is live.</summary>
     public DateTimeOffset? RevokedAt { get; private set; }
 
@@ -50,17 +68,23 @@ public sealed class RefreshTokenChain
     /// <param name="handle">Stored handle of the first refresh token.</param>
     /// <param name="now">The current time.</param>
     /// <param name="options">Configured lifetimes.</param>
+    /// <param name="device">The coarse device label to show in the list of signed-in devices, if known.</param>
     /// <returns>The new chain, holding its first token.</returns>
     public static RefreshTokenChain Start(
         Guid userId,
         string handle,
         DateTimeOffset now,
-        TokenLifetimeOptions options)
+        TokenLifetimeOptions options,
+        string? device = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(handle);
         ArgumentNullException.ThrowIfNull(options);
 
-        var chain = new RefreshTokenChain(GuidV7.New(), userId);
+        var label = (device ?? string.Empty).Trim();
+        var chain = new RefreshTokenChain(GuidV7.New(), userId)
+        {
+            Device = label.Length > MaxDeviceLength ? label[..MaxDeviceLength] : label,
+        };
         chain._tokens.Add(new RefreshToken(handle, now, now + options.RefreshTokenLifetime));
         return chain;
     }

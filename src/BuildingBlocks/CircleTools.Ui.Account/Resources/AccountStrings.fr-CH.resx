@@ -130,4 +130,12 @@
   <data name="SignOutEverywhereConfirmYes" xml:space="preserve"><value>Se déconnecter partout</value></data>
   <data name="SignedOutByServer" xml:space="preserve"><value>Vous avez été déconnecté : votre session a été fermée sur un autre appareil ou a expiré.</value></data>
   <data name="ConfirmCancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="DevicesTitle" xml:space="preserve"><value>Appareils connectés</value></data>
+  <data name="DevicesLead" xml:space="preserve"><value>Les appareils où votre compte est connecté. Déconnectez un appareil que vous n’utilisez plus ou ne reconnaissez pas.</value></data>
+  <data name="DevicesLoading" xml:space="preserve"><value>Chargement…</value></data>
+  <data name="DevicesLoadFailed" xml:space="preserve"><value>La liste n’a pas pu être chargée. Vérifiez la connexion et rouvrez la page.</value></data>
+  <data name="DeviceUnknown" xml:space="preserve"><value>Appareil inconnu</value></data>
+  <data name="DeviceThis" xml:space="preserve"><value>Cet appareil</value></data>
+  <data name="DeviceTimes" xml:space="preserve"><value>Connecté le {0} · dernière activité {1}</value></data>
+  <data name="DeviceSignOut" xml:space="preserve"><value>Déconnecter</value></data>
 </root>

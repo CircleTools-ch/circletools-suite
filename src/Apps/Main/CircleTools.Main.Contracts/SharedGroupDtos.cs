@@ -64,6 +64,18 @@ public sealed record PushSharedGroupRequest(long Version, JsonElement Body);
 /// the owner can share the join link from any of their devices (ADR-0078 Amendment 3). Never returned to a
 /// token holder. Additive: <see langword="null"/> from an older server.
 /// </param>
+/// <param name="ClaimedMemberId">
+/// On a join read, the member the request proved to be (participant key or account, ADR-0080);
+/// <see langword="null"/> when it proved none. Additive.
+/// </param>
+/// <param name="Redacted">
+/// True when <paramref name="Body"/> was trimmed for a join-link reader (ADR-0080): it then holds only the
+/// proven member's pairing and their own and their recipient's wishlist and gift note. Additive.
+/// </param>
+/// <param name="TakenMembers">
+/// On a join read, the members that can't be claimed and why (ADR-0080, Q6). Additive: <see langword="null"/>
+/// from an older server and on admin/owner reads.
+/// </param>
 public sealed record SharedGroupView(
     Guid GroupId,
     long Version,
@@ -71,12 +83,37 @@ public sealed record SharedGroupView(
     SharedCapability Capability,
     bool AdminRetired,
     string? AdminClaimedByName,
-    string? JoinToken = null);
+    string? JoinToken = null,
+    Guid? ClaimedMemberId = null,
+    bool Redacted = false,
+    IReadOnlyList<TakenMember>? TakenMembers = null);
+
+/// <summary>Why a member of a shared group can't be claimed through the join link (ADR-0080).</summary>
+public enum TakenReason
+{
+    /// <summary>Someone already joined as this member.</summary>
+    Joined,
+
+    /// <summary>The member is linked to an account.</summary>
+    Linked,
+
+    /// <summary>The member is the organizer (linked to the owning account).</summary>
+    Organizer,
+}
+
+/// <summary>A member that can't be claimed through the join link, with the reason (ADR-0080).</summary>
+/// <param name="MemberId">The member.</param>
+/// <param name="Reason">Why it is taken.</param>
+public sealed record TakenMember(Guid MemberId, TakenReason Reason);
 
 /// <summary>The result of pushing a shared group: the stored version and whether the push lost last-write-wins.</summary>
 /// <param name="Version">The version now stored.</param>
 /// <param name="Collision">Whether an older-by-server-clock body was discarded in full (ADR-0016).</param>
-public sealed record PushSharedGroupResult(long Version, bool Collision);
+/// <param name="Rewritten">
+/// Whether the server changed the pushed body before storing it — it re-applied participants' own entries
+/// (ADR-0080) — so the pusher must pull the stored version. Additive: <see langword="false"/> from an older server.
+/// </param>
+public sealed record PushSharedGroupResult(long Version, bool Collision, bool Rewritten = false);
 
 /// <summary>The result of rotating (disabling + regenerating) a group's admin link (ADR-0058).</summary>
 /// <param name="AdminToken">The freshly-minted admin token; the previous one no longer resolves.</param>
@@ -94,19 +131,66 @@ public enum PersonClaimKind
 
 /// <summary>The set of members already claimed in a shared-by-link group (ADR-0058) — so the join UI can lock them.</summary>
 /// <param name="MemberIds">The claimed member ids.</param>
-public sealed record ClaimedMembers(IReadOnlyList<Guid> MemberIds);
+/// <param name="SelfMaintained">
+/// The members who keep their own entry (a participant entry exists — a joined participant or a reveal-link
+/// holder, ADR-0080/ADR-0084), so the organizer's copy of their wishlist and gift note is read-only.
+/// <see langword="null"/> from an older server.
+/// </param>
+public sealed record ClaimedMembers(IReadOnlyList<Guid> MemberIds, IReadOnlyList<Guid>? SelfMaintained = null);
 
 /// <summary>A person-claim through the join link (ADR-0058): "this is me".</summary>
 /// <param name="MemberId">The member the joiner is claiming.</param>
 /// <param name="Kind">Whether the claim is device-only or bound to an account.</param>
 /// <param name="DeviceHandle">The claiming device's stable handle, for a device claim.</param>
-/// <param name="AccountId">The claiming account, for an account claim (trust-based; the join path is anonymous).</param>
+/// <param name="AccountId">
+/// Ignored by the server since ADR-0080: an account claim is bound to the signed-in caller (the bearer),
+/// never to an id the client names. Kept for wire compatibility.
+/// </param>
 public sealed record ClaimPersonRequest(Guid MemberId, PersonClaimKind Kind, string? DeviceHandle, Guid? AccountId);
 
 /// <summary>The outcome of a person-claim (ADR-0058): claimed, or already taken (first-claim-locks).</summary>
 /// <param name="Claimed">Whether this call claimed the member.</param>
 /// <param name="AlreadyClaimed">Whether the member was already claimed by someone else (the lock held).</param>
-public sealed record PersonClaimResponse(bool Claimed, bool AlreadyClaimed);
+/// <param name="ParticipantKey">
+/// On a successful claim, the secret that proves this claim on later requests (ADR-0080); the server keeps
+/// only its hash. Additive: <see langword="null"/> from an older server.
+/// </param>
+public sealed record PersonClaimResponse(bool Claimed, bool AlreadyClaimed, string? ParticipantKey = null);
+
+/// <summary>One event's wishlist in a participant's own entry (ADR-0080).</summary>
+/// <param name="EventId">The event.</param>
+/// <param name="Items">The wishlist items, in order; empty clears the wishlist.</param>
+public sealed record ParticipantWishlist(Guid EventId, IReadOnlyList<string> Items);
+
+/// <summary>
+/// What a joined participant maintains themselves (ADR-0080): their gift note and their wishlist per event.
+/// A write replaces the whole entry.
+/// </summary>
+/// <param name="GiftNote">The participant's gift note; null or blank clears it.</param>
+/// <param name="Wishlists">The participant's wishlist for each event they set one for.</param>
+public sealed record ParticipantEntry(string? GiftNote, IReadOnlyList<ParticipantWishlist> Wishlists);
+
+/// <summary>The result of writing a participant's own entry: the group version now stored.</summary>
+/// <param name="Version">The stored version.</param>
+public sealed record ParticipantEntryResult(long Version);
+
+/// <summary>Exchanges a pre-ADR-0080 device claim's device handle for a participant key, once.</summary>
+/// <param name="DeviceHandle">The handle the device claimed with.</param>
+public sealed record ParticipantKeyRequest(string DeviceHandle);
+
+/// <summary>A participant key issued for an existing claim (ADR-0080).</summary>
+/// <param name="ParticipantKey">The key; the server keeps only its hash.</param>
+public sealed record ParticipantKeyResponse(string ParticipantKey);
+
+/// <summary>A shared group the signed-in account joined as a member (ADR-0080).</summary>
+/// <param name="GroupId">The group.</param>
+/// <param name="JoinToken">The group's current join token, to read it from this device.</param>
+/// <param name="MemberId">The member the account claimed.</param>
+public sealed record JoinedSharedGroup(Guid GroupId, string JoinToken, Guid MemberId);
+
+/// <summary>The shared groups the signed-in account joined (ADR-0080).</summary>
+/// <param name="Groups">The joined groups.</param>
+public sealed record JoinedSharedGroups(IReadOnlyList<JoinedSharedGroup> Groups);
 
 /// <summary>One group the calling account owns in shared-by-link storage (ADR-0058, D2 discovery).</summary>
 /// <param name="GroupId">The group's id.</param>
@@ -126,7 +210,30 @@ public sealed record OwnedSharedGroups(IReadOnlyList<OwnedSharedGroup> Groups);
 /// </summary>
 /// <param name="RevealToken">The per-giver reveal token this slice is addressed by (the link's <c>rt=</c>).</param>
 /// <param name="Body">The encoded reveal payload as opaque JSON (the same shape the offline snapshot carries).</param>
-public sealed record RevealSlice(string RevealToken, JsonElement Body);
+/// <param name="Key">
+/// A stable, opaque key for the slice's place in the draw (the client sends "event:giver"). When a slice with
+/// the same key is already stored, the server keeps <em>its</em> token and returns it, so every organizer
+/// device ends up handing out the same link (ADR-0068 amendment, 2026-10-16). <see langword="null"/> from
+/// clients that predate it: the token sent is stored as before.
+/// </param>
+/// <param name="EventId">
+/// The event the slice belongs to, so the token holder can keep their own wishlist for it (ADR-0084).
+/// <see langword="null"/> from clients that predate it: no own-entry editor for that slice.
+/// </param>
+/// <param name="MemberId">
+/// The giver the slice is for — the token holder (ADR-0084). Names only the giver; the recipient stays inside
+/// the opaque <see cref="Body"/> (NFR-002). <see langword="null"/> from clients that predate it.
+/// </param>
+public sealed record RevealSlice(string RevealToken, JsonElement Body, string? Key = null, Guid? EventId = null, Guid? MemberId = null);
+
+/// <summary>The reveal token in effect for a keyed slice after a publish (ADR-0068 amendment).</summary>
+/// <param name="Key">The slice's key as sent.</param>
+/// <param name="RevealToken">The token the slice is stored under — an existing one when the key was known.</param>
+public sealed record RevealTokenForKey(string Key, string RevealToken);
+
+/// <summary>The answer to a reveal-slice publish: the tokens in effect for the keyed slices.</summary>
+/// <param name="Tokens">One entry per keyed slice.</param>
+public sealed record PublishRevealSlicesResponse(IReadOnlyList<RevealTokenForKey> Tokens);
 
 /// <summary>
 /// Publishes the full current set of reveal slices for a group (ADR-0068, FEAT-020):
@@ -145,3 +252,20 @@ public sealed record PublishRevealSlicesRequest(IReadOnlyList<RevealSlice> Slice
 /// </summary>
 /// <param name="Body">The opaque reveal payload for this giver.</param>
 public sealed record RevealSliceView(JsonElement Body);
+
+/// <summary>
+/// The reveal-link holder's own entry as the reveal page shows it for editing (ADR-0084, FR-050):
+/// <c>GET /api/v1/shared/reveal/{revealToken}/me</c>.
+/// </summary>
+/// <param name="GiftNote">The holder's gift note (group-wide), or <see langword="null"/> when unset.</param>
+/// <param name="Items">The holder's wishlist for the reveal token's event (may be empty).</param>
+public sealed record RevealEntryView(string? GiftNote, IReadOnlyList<string> Items);
+
+/// <summary>
+/// Replaces the reveal-link holder's own gift note and their wishlist for the reveal token's event
+/// (ADR-0084, FR-050): <c>PUT /api/v1/shared/reveal/{revealToken}/me</c>. Their wishlists for other events
+/// are kept.
+/// </summary>
+/// <param name="GiftNote">The gift note; null or blank clears it.</param>
+/// <param name="Items">The wishlist items for the token's event; empty clears it.</param>
+public sealed record RevealEntryWrite(string? GiftNote, IReadOnlyList<string> Items);

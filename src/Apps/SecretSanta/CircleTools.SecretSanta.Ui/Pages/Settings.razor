@@ -1,4 +1,5 @@
 @page "/settings"
+@using Microsoft.Extensions.DependencyInjection
 @using CircleTools.SecretSanta.LocalStore
 @inject IStringLocalizer<AppStrings> L
 @inject IStringLocalizer<SharedStrings> LS
@@ -7,6 +8,7 @@
 @inject StorageModePreferences StoragePrefs
 @inject INotificationScheduler Notifications
 @inject IReminderRescheduler Reminders
+@inject IServiceProvider Services
 @implements IDisposable
 
 @*
@@ -63,13 +65,51 @@
         else
         {
             <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["NotificationsHint"]</MudText>
-            <MudStack Spacing="0">
-                <MudSwitch T="bool" Value="_enabled.Contains(ReminderKind.DrawNotDone)" Color="Color.Primary"
-                           ValueChanged="v => ToggleAsync(ReminderKind.DrawNotDone, v)" Label="@L["ReminderDrawLabel"]" />
-                <MudSwitch T="bool" Value="_enabled.Contains(ReminderKind.EventTomorrow)" Color="Color.Primary"
-                           ValueChanged="v => ToggleAsync(ReminderKind.EventTomorrow, v)" Label="@L["ReminderTomorrowLabel"]" />
-                <MudSwitch T="bool" Value="_enabled.Contains(ReminderKind.MyWishlistEmpty)" Color="Color.Primary"
-                           ValueChanged="v => ToggleAsync(ReminderKind.MyWishlistEmpty, v)" Label="@L["ReminderWishlistLabel"]" />
+
+            @* Blocked in the OS (Q8): say so and open the app's system settings; coming back re-checks. *@
+            @if (_permission == NotificationAccess.Denied && (_wanted.Count > 0 || _enabled.Count > 0))
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2" id="notifications-blocked">
+                    <div class="d-flex flex-column gap-2">
+                        <span>@L["NotificationsBlocked"]</span>
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Warning" Style="align-self:flex-start;"
+                                   StartIcon="@Icons.Material.Filled.Settings" OnClick="OpenSystemSettingsAsync">@L["OpenSystemSettings"]</MudButton>
+                    </div>
+                </MudAlert>
+            }
+
+            <MudStack Spacing="1">
+                @foreach (var kind in ReminderKinds)
+                {
+                    var on = _enabled.Contains(kind);
+                    <div class="d-flex flex-wrap align-center gap-2" style="min-height:3rem;">
+                        @* Re-created after a refused permission, so a switch MudBlazor already flipped falls back to off. *@
+                        <MudSwitch @key="(kind, _switchEpoch)" T="bool" Value="on" Color="Color.Primary"
+                                   ValueChanged="v => ToggleAsync(kind, v)" Label="@KindLabel(kind)" Class="flex-grow-1" />
+                        @if (on)
+                        {
+                            <MudSelect T="int" Value="_settings.Lead.For(kind)" ValueChanged="d => SetLeadAsync(kind, d)"
+                                       Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Style="max-width:11rem;"
+                                       Label="@L["ReminderLeadLabel"]">
+                                @foreach (var days in ReminderLeadTimes.Choices)
+                                {
+                                    <MudSelectItem T="int" Value="days">@LeadText(days)</MudSelectItem>
+                                }
+                            </MudSelect>
+                        }
+                    </div>
+                }
+
+                @if (_enabled.Count > 0)
+                {
+                    <MudSelect T="TimeOnly" Value="_settings.TimeOfDay" ValueChanged="SetTimeAsync" Label="@L["ReminderTimeLabel"]"
+                               Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Class="mt-2" Style="max-width:11rem;" id="reminder-time">
+                        @foreach (var t in TimeChoices)
+                        {
+                            <MudSelectItem T="TimeOnly" Value="t">@t.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
             </MudStack>
         }
     </div>
@@ -92,8 +132,21 @@
     [CascadingParameter]
     private Task<AuthenticationState>? AuthState { get; set; }
 
+    private static readonly ReminderKind[] ReminderKinds = [ReminderKind.DrawNotDone, ReminderKind.EventTomorrow, ReminderKind.MyWishlistEmpty];
+
+    // Every half hour from 06:00 to 22:00 — a reminder at a civil hour.
+    private static readonly IReadOnlyList<TimeOnly> TimeChoices =
+        [.. Enumerable.Range(12, 33).Select(i => new TimeOnly(i / 2, i % 2 * 30))];
+
     private bool _notificationsSupported;
     private HashSet<ReminderKind> _enabled = [];
+    private ReminderSettings _settings = ReminderSettings.Default;
+    private NotificationAccess _permission = NotificationAccess.Unknown;
+
+    // Kinds the user switched on while notifications were blocked: applied once they are allowed (Q8).
+    private readonly HashSet<ReminderKind> _wanted = [];
+    private int _switchEpoch;
+    private IAppForeground? _foreground;
     private StorageMode _defaultMode = StorageMode.OnThisDevice;
     private bool _signedIn;
 
@@ -103,6 +156,16 @@
     {
         _notificationsSupported = await Notifications.IsSupportedAsync();
         _enabled = new HashSet<ReminderKind>(await NotificationPrefs.GetEnabledAsync());
+        _settings = await NotificationPrefs.GetSettingsAsync();
+        if (_notificationsSupported)
+        {
+            _permission = await Notifications.GetPermissionAsync();
+            _foreground = Services.GetService<IAppForeground>();
+            if (_foreground is not null)
+            {
+                _foreground.Changed += OnForegroundChanged;
+            }
+        }
         _defaultMode = await StoragePrefs.GetDefaultAsync();
         _signedIn = AuthState is not null && (await AuthState).User.UserId() != Guid.Empty;
     }
@@ -120,13 +183,77 @@
     {
         if (enabled && !await Notifications.RequestPermissionAsync())
         {
-            return; // permission refused — leave the switch off
+            // Refused (or blocked for good): the switch stays off, the note explains it, and the choice is kept
+            // so it applies once notifications are allowed (Q8).
+            _wanted.Add(kind);
+            _permission = NotificationAccess.Denied;
+            _switchEpoch++;
+            return;
+        }
+
+        _wanted.Remove(kind);
+        if (enabled)
+        {
+            _permission = NotificationAccess.Granted;
         }
 
         await NotificationPrefs.SetEnabledAsync(kind, enabled);
         _enabled = new HashSet<ReminderKind>(await NotificationPrefs.GetEnabledAsync());
         await Reminders.ReconcileAsync();
     }
+
+    private async Task SetLeadAsync(ReminderKind kind, int days)
+    {
+        _settings = _settings with { Lead = _settings.Lead.With(kind, days) };
+        await NotificationPrefs.SetSettingsAsync(_settings);
+        await Reminders.ReconcileAsync();
+    }
+
+    private async Task SetTimeAsync(TimeOnly time)
+    {
+        _settings = _settings with { TimeOfDay = time };
+        await NotificationPrefs.SetSettingsAsync(_settings);
+        await Reminders.ReconcileAsync();
+    }
+
+    private Task OpenSystemSettingsAsync() => Notifications.OpenSettingsAsync().AsTask();
+
+    // Back from the system settings: if notifications are now allowed, apply what the user wanted.
+    private void OnForegroundChanged(bool foreground)
+    {
+        if (!foreground)
+        {
+            return;
+        }
+
+        _ = InvokeAsync(async () =>
+        {
+            _permission = await Notifications.GetPermissionAsync();
+            if (_permission == NotificationAccess.Granted && _wanted.Count > 0)
+            {
+                foreach (var kind in _wanted)
+                {
+                    await NotificationPrefs.SetEnabledAsync(kind, true);
+                }
+
+                _wanted.Clear();
+                _enabled = new HashSet<ReminderKind>(await NotificationPrefs.GetEnabledAsync());
+                _switchEpoch++;
+                await Reminders.ReconcileAsync();
+            }
+
+            StateHasChanged();
+        });
+    }
+
+    private string KindLabel(ReminderKind kind) => kind switch
+    {
+        ReminderKind.DrawNotDone => L["ReminderDrawLabel"],
+        ReminderKind.EventTomorrow => L["ReminderTomorrowLabel"],
+        _ => L["ReminderWishlistLabel"],
+    };
+
+    private string LeadText(int days) => days == 1 ? L["ReminderLeadOneDay"] : L["ReminderLeadDays", days];
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
 
@@ -139,5 +266,12 @@
         _ => Icons.Material.Filled.BrightnessAuto,
     };
 
-    public void Dispose() => Theme.Changed -= OnChanged;
+    public void Dispose()
+    {
+        Theme.Changed -= OnChanged;
+        if (_foreground is not null)
+        {
+            _foreground.Changed -= OnForegroundChanged;
+        }
+    }
 }

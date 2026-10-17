@@ -76,6 +76,21 @@ public sealed class RefreshTokenChainStore(MainDbContext context) : IRefreshToke
             .ConfigureAwait(false);
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<RefreshTokenChain>> ListUnrevokedForUserAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        await context.RefreshTokenChains
+            .Include(c => c.Tokens)
+            .Where(c => c.UserId == userId && c.RevokedAt == null)
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+    /// <inheritdoc />
+    public async Task<RefreshTokenChain?> FindByIdAsync(Guid chainId, CancellationToken cancellationToken = default) =>
+        await context.RefreshTokenChains
+            .Include(c => c.Tokens)
+            .SingleOrDefaultAsync(c => c.Id == chainId, cancellationToken)
+            .ConfigureAwait(false);
+
+    /// <inheritdoc />
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default) =>
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 }

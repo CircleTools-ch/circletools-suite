@@ -19,6 +19,8 @@ public sealed class RevealPageTests : IDisposable
 {
     private const string RecipientName = "Recipient-Zoe";
 
+    // Where a short link keeps the slice it fetched (ADR-0082).
+    private readonly TestSupport.FakeKeyValueStore _store = new();
     private readonly Bunit.TestContext _ctx = new();
     private readonly FakeHapticFeedback _haptics = new();
     private readonly NoOpSharedGroupApi _revealApi = new();
@@ -33,6 +35,7 @@ public sealed class RevealPageTests : IDisposable
         _ctx.Services.AddSingleton(new RevealLinkCodec());
         _ctx.Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassThroughStringLocalizer<AppStrings>());
         _ctx.Services.AddSingleton<IHapticFeedback>(_haptics);
+        _ctx.Services.AddSingleton<CircleTools.Ui.Abstractions.IKeyValueStore>(_store);
         // The reveal page offers "Add to calendar" (MNF-6) when the occasion has a date.
         _ctx.Services.AddSingleton<CircleTools.Ui.Abstractions.ICalendarService>(new TestSupport.FakeCalendarService());
         // Live reveal (ADR-0068): the page resolves the shared-group port to try a live slice for a
@@ -90,6 +93,66 @@ public sealed class RevealPageTests : IDisposable
         Assert.Contains("Live-Max", cut.Markup);
         Assert.Contains("New headphones", cut.Markup);
         Assert.DoesNotContain("Snapshot-Zoe", cut.Markup);
+    }
+
+    [Fact]
+    public void RevealPage_ALinkInAWish_ShowsAsATappableLink()
+    {
+        // ADR-0083 (I8): a link pasted anywhere in a wish is shown as "Open link (site)"; only http(s) is a link.
+        var payload = new RevealPayload(
+            RevealPayload.CurrentVersion, RecipientName, ["Drone https://www.shop.example/drone", "Socks"], 50m, "CHF", null, null, null);
+        NavigateToRevealLink(BuildFragment(payload));
+
+        var cut = _ctx.RenderComponent<Reveal>();
+        cut.Find("button").Click();
+
+        var link = cut.Find("a.ct-wishlist-link");
+        Assert.Equal("https://www.shop.example/drone", link.GetAttribute("href"));
+        Assert.Contains("noopener", link.GetAttribute("rel"));
+        Assert.DoesNotContain("https://www.shop.example/drone</", cut.Markup); // the address is not shown as text
+        Assert.Contains("Socks", cut.Markup);
+    }
+
+    [Fact]
+    public void RevealPage_ShortLink_FetchesTheSlice_AndKeepsItForOfflineReopening()
+    {
+        // ADR-0082: a short link carries only for= and rt=. Online it shows the live slice; once fetched, the
+        // slice is kept on the device so the same link reopens offline.
+        var live = new RevealPayload(RevealPayload.CurrentVersion, "Live-Max", ["New headphones"], null, null, null, null, null);
+        _revealApi.SeedRevealSlice("short-token", System.Text.Json.JsonSerializer.Serialize(live, RevealJsonContext.Default.RevealPayload));
+        NavigateToRevealLink("#for=Anna&rt=short-token");
+
+        var cut = _ctx.RenderComponent<Reveal>();
+        cut.Find("button").Click();
+        Assert.Contains("Live-Max", cut.Markup);
+
+        _revealApi.RevealSlicesUnreachable = true;
+        var again = _ctx.RenderComponent<Reveal>();
+        again.Find("button").Click();
+        Assert.Contains("Live-Max", again.Markup);
+    }
+
+    [Fact]
+    public void RevealPage_ShortLink_TheServerNoLongerKnows_SaysTheLinkIsGone()
+    {
+        NavigateToRevealLink("#for=Anna&rt=expired-token");
+
+        var cut = _ctx.RenderComponent<Reveal>();
+
+        Assert.Contains("RevealLinkGone", cut.Markup);
+        Assert.DoesNotContain("RevealNeedsConnection", cut.Markup);
+    }
+
+    [Fact]
+    public void RevealPage_ShortLink_FirstOpenedOffline_SaysItNeedsAConnection()
+    {
+        _revealApi.RevealSlicesUnreachable = true;
+        NavigateToRevealLink("#for=Anna&rt=never-fetched");
+
+        var cut = _ctx.RenderComponent<Reveal>();
+
+        Assert.Contains("RevealNeedsConnection", cut.Markup);
+        Assert.DoesNotContain("RevealMalformed", cut.Markup);
     }
 
     [Fact]
@@ -174,7 +237,7 @@ public sealed class RevealPageTests : IDisposable
         var cut = _ctx.RenderComponent<Reveal>();
 
         // The budget is shown before the reveal (it is not spoiler-sensitive).
-        Assert.Contains("10–30 CHF", cut.Markup);
+        Assert.Contains(BudgetDisplay.Format(10m, 30m, "CHF"), cut.Markup); // the one budget format (Q28)
     }
 
     [Fact]
@@ -186,7 +249,7 @@ public sealed class RevealPageTests : IDisposable
 
         var cut = _ctx.RenderComponent<Reveal>();
 
-        Assert.Contains("30 CHF", cut.Markup);
+        Assert.Contains(BudgetDisplay.Format(null, 30m, "CHF"), cut.Markup); // "up to CHF 30"
         Assert.DoesNotContain("–", cut.Markup); // no range dash for a max-only budget
     }
 

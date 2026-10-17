@@ -16,6 +16,7 @@ public sealed class FakeSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
     private readonly Dictionary<Guid, Group> _groups = [];
     private readonly Dictionary<string, (Guid GroupId, SharedCapability Capability, bool Active, bool RetiredByClaim)> _tokens = [];
     private readonly HashSet<(Guid GroupId, Guid MemberId)> _claims = [];
+    private readonly Dictionary<string, (Guid GroupId, Guid MemberId)> _participantKeys = [];
     private readonly Dictionary<Guid, string> _creatorKeys = [];
     private int _counter;
 
@@ -138,6 +139,14 @@ public sealed class FakeSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
         var g = _groups[t.GroupId];
         var collided = request.Version <= g.Version;
         var version = Math.Max(request.Version, g.Version);
+
+        // Simulates the server re-applying participants' entries to the pushed body (ADR-0080).
+        if (RewritePushes is { } rewrite)
+        {
+            _groups[t.GroupId] = g with { Body = rewrite(request.Body.GetRawText()), Version = version };
+            return Task.FromResult(ApiResult.Ok(new PushSharedGroupResult(version, collided, Rewritten: true)));
+        }
+
         _groups[t.GroupId] = g with { Body = request.Body.GetRawText(), Version = version };
         return Task.FromResult(ApiResult.Ok(new PushSharedGroupResult(version, collided)));
 
@@ -223,7 +232,9 @@ public sealed class FakeSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
             return Task.FromResult(ApiResult.Ok(new PersonClaimResponse(false, true)));
         }
 
-        return Task.FromResult(ApiResult.Ok(new PersonClaimResponse(true, false)));
+        var participantKey = $"pk-{++_counter}";
+        _participantKeys[participantKey] = key;
+        return Task.FromResult(ApiResult.Ok(new PersonClaimResponse(true, false, participantKey)));
     }
 
     /// <inheritdoc />
@@ -373,39 +384,37 @@ public sealed class FakeSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
     public IReadOnlyDictionary<string, Guid> RevealSliceTokens => _revealSlices.ToDictionary(k => k.Key, v => v.Value.GroupId);
 
     /// <inheritdoc />
-    public Task<ApiResult> PublishRevealSlicesAsync(string adminToken, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default)
+    public Task<ApiResult<PublishRevealSlicesResponse>> PublishRevealSlicesAsync(string adminToken, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default)
     {
         if (Unreachable)
         {
-            return Task.FromResult(ApiResult.Failed(new ApiError(ApiFailure.Unreachable)));
+            return Task.FromResult(ApiResult.Failed<PublishRevealSlicesResponse>(new ApiError(ApiFailure.Unreachable)));
         }
 
         if (!_tokens.TryGetValue(adminToken, out var t) || t is not { Active: true, Capability: SharedCapability.Admin })
         {
-            return Task.FromResult(ApiResult.Failed(new ApiError(ApiFailure.Forbidden)));
+            return Task.FromResult(ApiResult.Failed<PublishRevealSlicesResponse>(new ApiError(ApiFailure.Forbidden)));
         }
 
-        ReplaceSlices(t.GroupId, request);
-        return Task.FromResult(ApiResult.Ok());
+        return Task.FromResult(ApiResult.Ok(ReplaceSlices(t.GroupId, request)));
     }
 
     /// <inheritdoc />
-    public Task<ApiResult> PublishOwnedRevealSlicesAsync(Guid groupId, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default)
+    public Task<ApiResult<PublishRevealSlicesResponse>> PublishOwnedRevealSlicesAsync(Guid groupId, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default)
     {
         OwnedSlicePublishes.Add(groupId);
         if (Unreachable)
         {
-            return Task.FromResult(ApiResult.Failed(new ApiError(ApiFailure.Unreachable)));
+            return Task.FromResult(ApiResult.Failed<PublishRevealSlicesResponse>(new ApiError(ApiFailure.Unreachable)));
         }
 
         // The fake treats a claimed (admin-retired) group as owned; it has no bearer context.
         if (!_groups.TryGetValue(groupId, out var g) || !g.AdminRetired)
         {
-            return Task.FromResult(ApiResult.Failed(new ApiError(ApiFailure.Forbidden)));
+            return Task.FromResult(ApiResult.Failed<PublishRevealSlicesResponse>(new ApiError(ApiFailure.Forbidden)));
         }
 
-        ReplaceSlices(groupId, request);
-        return Task.FromResult(ApiResult.Ok());
+        return Task.FromResult(ApiResult.Ok(ReplaceSlices(groupId, request)));
     }
 
     /// <inheritdoc />
@@ -421,17 +430,133 @@ public sealed class FakeSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
             : Fail<RevealSliceView>(ApiFailure.NotFound);
     }
 
-    private void ReplaceSlices(Guid groupId, PublishRevealSlicesRequest request)
+    /// <inheritdoc />
+    public Task<ApiResult<RevealEntryView>> GetRevealEntryAsync(string revealToken, CancellationToken cancellationToken = default) =>
+        Fail<RevealEntryView>(ApiFailure.NotFound);
+
+    /// <inheritdoc />
+    public Task<ApiResult<ParticipantEntryResult>> WriteRevealEntryAsync(string revealToken, RevealEntryWrite entry, CancellationToken cancellationToken = default) =>
+        Fail<ParticipantEntryResult>(ApiFailure.NotFound);
+
+    // Like the server: a keyed slice keeps the token already stored for its key (ADR-0068 amendment).
+    private PublishRevealSlicesResponse ReplaceSlices(Guid groupId, PublishRevealSlicesRequest request)
     {
+        var kept = _sliceKeys.Where(x => x.Value.GroupId == groupId).ToDictionary(x => x.Value.Key, x => x.Key);
         foreach (var key in _revealSlices.Where(x => x.Value.GroupId == groupId).Select(x => x.Key).ToList())
         {
             _revealSlices.Remove(key);
+            _sliceKeys.Remove(key);
         }
 
+        var effective = new List<RevealTokenForKey>();
         foreach (var slice in request.Slices)
         {
-            _revealSlices[slice.RevealToken] = (groupId, slice.Body.GetRawText());
+            var token = slice.Key is { } k && kept.TryGetValue(k, out var existing) ? existing : slice.RevealToken;
+            _revealSlices[token] = (groupId, slice.Body.GetRawText());
+            if (slice.Key is { } key)
+            {
+                _sliceKeys[token] = (groupId, key);
+                effective.Add(new RevealTokenForKey(key, token));
+            }
         }
+
+        return new PublishRevealSlicesResponse(effective);
+    }
+
+    private readonly Dictionary<string, (Guid GroupId, string Key)> _sliceKeys = [];
+
+    /// <summary>When set, every admin push is stored through this rewrite and reported as rewritten (ADR-0080).</summary>
+    public Func<string, string>? RewritePushes { get; set; }
+
+    /// <summary>Gets the participant entries written (join token, entry), in call order.</summary>
+    public List<(string Token, ParticipantEntry Entry)> WrittenEntries { get; } = [];
+
+    /// <summary>Gets the join tokens a participant left through.</summary>
+    public List<string> Left { get; } = [];
+
+    /// <summary>Gets or sets the groups the signed-in account joined, for <see cref="ListJoinedAsync"/>.</summary>
+    public List<JoinedSharedGroup> Joined { get; set; } = [];
+
+    /// <summary>Whether a member of the group is claimed (joined).</summary>
+    public bool IsClaimed(Guid groupId, Guid memberId) => _claims.Contains((groupId, memberId));
+
+    /// <inheritdoc />
+    public async Task<ApiResult<SharedGroupView>> GetAsParticipantAsync(string token, string participantKey, CancellationToken cancellationToken = default)
+    {
+        var view = await GetAsync(token, cancellationToken);
+        return view.IsSuccess && _participantKeys.TryGetValue(participantKey, out var claim)
+            ? ApiResult.Ok(view.Value! with { ClaimedMemberId = claim.MemberId, Redacted = true })
+            : view;
+    }
+
+    /// <inheritdoc />
+    public Task<ApiResult<ParticipantEntryResult>> WriteEntryAsync(string token, string participantKey, ParticipantEntry entry, CancellationToken cancellationToken = default) =>
+        _participantKeys.ContainsKey(participantKey)
+            ? WriteEntry(token, entry)
+            : Fail<ParticipantEntryResult>(Unreachable ? ApiFailure.Unreachable : ApiFailure.Forbidden);
+
+    /// <inheritdoc />
+    public Task<ApiResult> LeaveAsync(string token, string participantKey, CancellationToken cancellationToken = default)
+    {
+        if (Unreachable)
+        {
+            return Task.FromResult(ApiResult.Failed(new ApiError(ApiFailure.Unreachable)));
+        }
+
+        if (_participantKeys.Remove(participantKey, out var claim))
+        {
+            _claims.Remove(claim);
+        }
+
+        Left.Add(token);
+        return Task.FromResult(ApiResult.Ok());
+    }
+
+    /// <inheritdoc />
+    public Task<ApiResult<ParticipantKeyResponse>> IssueParticipantKeyAsync(string token, Guid memberId, string deviceHandle, CancellationToken cancellationToken = default) =>
+        Fail<ParticipantKeyResponse>(ApiFailure.Forbidden);
+
+    /// <inheritdoc />
+    public Task<ApiResult<SharedGroupView>> GetJoinedAsync(string joinToken, CancellationToken cancellationToken = default) =>
+        GetAsync(joinToken, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<ApiResult<ParticipantEntryResult>> WriteEntryAsync(string joinToken, ParticipantEntry entry, CancellationToken cancellationToken = default) =>
+        WriteEntry(joinToken, entry);
+
+    /// <inheritdoc />
+    public Task<ApiResult> LeaveAsync(string joinToken, CancellationToken cancellationToken = default)
+    {
+        Left.Add(joinToken);
+        return Task.FromResult(Unreachable ? ApiResult.Failed(new ApiError(ApiFailure.Unreachable)) : ApiResult.Ok());
+    }
+
+    /// <inheritdoc />
+    public Task<ApiResult<JoinedSharedGroups>> ListJoinedAsync(CancellationToken cancellationToken = default) =>
+        Unreachable ? Fail<JoinedSharedGroups>(ApiFailure.Unreachable) : Task.FromResult(ApiResult.Ok(new JoinedSharedGroups(Joined)));
+
+    /// <inheritdoc />
+    public Task<ApiResult> ReleasePersonAsOwnerAsync(Guid groupId, Guid memberId, CancellationToken cancellationToken = default)
+    {
+        _claims.Remove((groupId, memberId));
+        return Task.FromResult(ApiResult.Ok());
+    }
+
+    private Task<ApiResult<ParticipantEntryResult>> WriteEntry(string token, ParticipantEntry entry)
+    {
+        if (Unreachable)
+        {
+            return Fail<ParticipantEntryResult>(ApiFailure.Unreachable);
+        }
+
+        if (!_tokens.TryGetValue(token, out var t) || !_groups.TryGetValue(t.GroupId, out var g))
+        {
+            return Fail<ParticipantEntryResult>(ApiFailure.NotFound);
+        }
+
+        WrittenEntries.Add((token, entry));
+        _groups[t.GroupId] = g with { Version = g.Version + 1 };
+        return Task.FromResult(ApiResult.Ok(new ParticipantEntryResult(g.Version + 1)));
     }
 
     private string Mint(Guid groupId, SharedCapability capability)

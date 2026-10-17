@@ -2,36 +2,29 @@
 @inject IStringLocalizer<AppStrings> L
 
 @*
-    The three-way storage-mode chooser (ADR-0058, FR-038): On this device (default) / Shared by link /
-    My account, each with a one-line explanation. Used at group creation and in Sharing & sync. "My
-    account" is disabled while signed out — there is no account to sync to.
+    The three-way storage-mode chooser (ADR-0058, FR-038, ADR-0081), each with a one-line explanation. Used in
+    Sharing & sync and Settings. Signed out: On this device / Shared by link / My account (disabled — no
+    account to sync to). Signed in: On this device / My account / My account · shared, where the shared choice
+    is a group owned by the account that others join with a link.
 *@
 
 <MudRadioGroup T="StorageMode" Value="Value" ValueChanged="OnChangedAsync" Class="ct-mode-picker">
-    <MudRadio T="StorageMode" Value="@StorageMode.OnThisDevice" Color="Color.Primary" Dense="true" id="mode-local">
-        <div class="ct-mode-opt">
-            <span class="ct-mode-title">@L["ModeLocalTitle"]</span>
-            <span class="ct-mode-hint">@L["ModeLocalHint"]</span>
-            @* On the web head "this device" is browser storage, which can be cleared (FEAT-017). Say so
-               where the user chooses it; the installed app stores natively, so the caveat is web-only. *@
-            @if (OperatingSystem.IsBrowser())
-            {
-                <MudText Typo="Typo.caption" Color="Color.Warning" Class="d-block mt-1">@L["ModeLocalWebWarning"]</MudText>
-            }
-        </div>
-    </MudRadio>
-    <MudRadio T="StorageMode" Value="@StorageMode.SharedByLink" Color="Color.Primary" Dense="true" id="mode-shared">
-        <div class="ct-mode-opt">
-            <span class="ct-mode-title">@L["ModeSharedTitle"]</span>
-            <span class="ct-mode-hint">@L["ModeSharedHint"]</span>
-        </div>
-    </MudRadio>
-    <MudRadio T="StorageMode" Value="@StorageMode.Account" Color="Color.Primary" Dense="true" Disabled="@(!AccountEnabled)" id="mode-account">
-        <div class="ct-mode-opt">
-            <span class="ct-mode-title">@L["ModeAccountTitle"]</span>
-            <span class="ct-mode-hint">@(AccountEnabled ? L["ModeAccountHint"] : L["ModeAccountSignInHint"])</span>
-        </div>
-    </MudRadio>
+    @foreach (var mode in StorageModeDisplay.Choices(AccountEnabled))
+    {
+        var enabled = mode != StorageMode.Account || AccountEnabled;
+        <MudRadio T="StorageMode" Value="@mode" Color="Color.Primary" Dense="true" Disabled="@(!enabled)" id="@Id(mode)">
+            <div class="ct-mode-opt">
+                <span class="ct-mode-title">@L[StorageModeDisplay.ChoiceLabelKey(mode, AccountEnabled)]</span>
+                <span class="ct-mode-hint">@L[StorageModeDisplay.ChoiceHintKey(mode, AccountEnabled)]</span>
+                @* On the web head "this device" is browser storage, which can be cleared (FEAT-017). Say so
+                   where the user chooses it; the installed app stores natively, so the caveat is web-only. *@
+                @if (mode == StorageMode.OnThisDevice && OperatingSystem.IsBrowser())
+                {
+                    <MudText Typo="Typo.caption" Color="Color.Warning" Class="d-block mt-1">@L["ModeLocalWebWarning"]</MudText>
+                }
+            </div>
+        </MudRadio>
+    }
 </MudRadioGroup>
 
 @code {
@@ -43,9 +36,16 @@
     [Parameter]
     public EventCallback<StorageMode> ValueChanged { get; set; }
 
-    /// <summary>Whether the "My account" option is selectable (i.e. a session is live).</summary>
+    /// <summary>Whether a session is live: "My account" is selectable, and the shared choice is account-owned.</summary>
     [Parameter]
     public bool AccountEnabled { get; set; } = true;
+
+    private static string Id(StorageMode mode) => mode switch
+    {
+        StorageMode.SharedByLink => "mode-shared",
+        StorageMode.Account => "mode-account",
+        _ => "mode-local",
+    };
 
     private Task OnChangedAsync(StorageMode mode) => ValueChanged.InvokeAsync(mode);
 }

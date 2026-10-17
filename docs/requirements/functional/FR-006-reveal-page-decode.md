@@ -58,6 +58,14 @@ Then it shows a clear "link could not be read" message
 And it does not display a partial or guessed assignment
 ```
 
+## Amendment (2026-10-16) — opening a short link
+
+From the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-santa-two-account-device-test.md) (Q32b, [ADR-0082](../../adr/0082-short-reveal-links-for-online-groups.md)):
+
+- [ ] A short link fetches the giver's slice; the slice is kept on the device so the link reopens offline.
+- [ ] Opened offline before it was ever fetched, the page says the link needs a connection once, with
+      "Try again" — not that the link is invalid.
+
 ## Dependencies & related
 
 - Derived from: [UC-SS-006](../../use-cases/secret-santa/UC-SS-006-open-reveal-link.md)

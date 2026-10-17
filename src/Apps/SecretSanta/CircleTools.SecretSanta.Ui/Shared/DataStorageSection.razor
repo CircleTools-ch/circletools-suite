@@ -16,14 +16,33 @@
 
 <div>
     <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["DataSectionTitle"]</MudText>
-    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["DataStoredExplainer"]</MudText>
+    @* Signed in, "there is no account" would be wrong: say which groups the account carries (2026-10-16 test). *@
+    <AuthorizeView>
+        <Authorized>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2" id="data-explainer">@L["DataStoredExplainerSignedIn"]</MudText>
+        </Authorized>
+        <NotAuthorized>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2" id="data-explainer">@L["DataStoredExplainer"]</MudText>
+        </NotAuthorized>
+    </AuthorizeView>
 
     @if (_statusKnown)
     {
-        <MudAlert Severity="@(_persisted ? Severity.Success : Severity.Warning)" Dense="true"
-                  Variant="Variant.Text" Class="mb-3">
-            @(_persisted ? L["DataPersistedYes"] : L["DataPersistedNo"])
-        </MudAlert>
+        <AuthorizeView>
+            <Authorized>
+                @* Signed in, "sign in to sync" is no advice; only the device-only groups are at risk. *@
+                <MudAlert Severity="@(_persisted ? Severity.Success : Severity.Warning)" Dense="true"
+                          Variant="Variant.Text" Class="mb-3">
+                    @(_persisted ? L["DataPersistedYes"] : L["DataPersistedNoSignedIn"])
+                </MudAlert>
+            </Authorized>
+            <NotAuthorized>
+                <MudAlert Severity="@(_persisted ? Severity.Success : Severity.Warning)" Dense="true"
+                          Variant="Variant.Text" Class="mb-3">
+                    @(_persisted ? L["DataPersistedYes"] : L["DataPersistedNo"])
+                </MudAlert>
+            </NotAuthorized>
+        </AuthorizeView>
     }
 
     <div class="d-flex flex-column gap-3">

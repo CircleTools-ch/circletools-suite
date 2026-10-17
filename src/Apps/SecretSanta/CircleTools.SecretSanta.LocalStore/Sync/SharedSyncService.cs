@@ -112,8 +112,15 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
 
         var record = records[index];
 
-        // An admin-link holder deletes the online copy (owner-less delete, NFR-010); a join-only holder
-        // simply detaches locally. Either way the local copy is kept — this is not a delete.
+        // A participant never turns a joined group into an editable local copy: that copy would make them its
+        // organizer, with everyone's reveal links (ADR-0080, Q1). They leave the group instead (LeaveAsync).
+        if (record.IsJoinOnly())
+        {
+            return;
+        }
+
+        // An admin-link holder deletes the online copy (owner-less delete, NFR-010). The local copy is kept —
+        // this is not a delete.
         if (record.Tokens?.AdminToken is { } adminToken)
         {
             await api.DeleteAsync(adminToken, cancellationToken);
@@ -177,8 +184,14 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
             return new JoinResult(JoinStatus.NotFound, Guid.Empty);
         }
 
-        var claim = await api.ClaimPersonAsync(
-            joinToken, new ClaimPersonRequest(memberId, kind, deviceHandle, accountId), cancellationToken);
+        // "Keep it on my account" is claimed with the account's bearer, which binds the claim to it (ADR-0080);
+        // a device-only claim goes through the anonymous client. Either way the server returns a participant
+        // key that proves the claim on later reads and own-entry writes.
+        var withAccount = kind == PersonClaimKind.Account && accountId is not null;
+        var request = new ClaimPersonRequest(memberId, kind, deviceHandle, null);
+        var claim = withAccount
+            ? await accountApi.ClaimPersonAsync(joinToken, request, cancellationToken)
+            : await api.ClaimPersonAsync(joinToken, request, cancellationToken);
         if (!claim.IsSuccess || claim.Value is null)
         {
             return new JoinResult(JoinStatus.Failed, Guid.Empty);
@@ -189,7 +202,16 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
             return new JoinResult(JoinStatus.AlreadyClaimed, Guid.Empty);
         }
 
-        var state = get.Value.Body.Deserialize(SyncJsonContext.Default.GroupState);
+        var key = claim.Value.ParticipantKey;
+
+        // Read again as the claimed member: the first read (before the claim) proved nobody, so it carried no
+        // pairing. Fall back to it when the second read fails; the next reconcile brings the pairing.
+        var proven = key is not null
+            ? await api.GetAsParticipantAsync(joinToken, key, cancellationToken)
+            : withAccount ? await accountApi.GetJoinedAsync(joinToken, cancellationToken) : get;
+        var view = proven is { IsSuccess: true, Value: not null } ? proven.Value : get.Value;
+
+        var state = view.Body.Deserialize(SyncJsonContext.Default.GroupState);
         if (state is null)
         {
             return new JoinResult(JoinStatus.Failed, Guid.Empty);
@@ -197,10 +219,11 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
 
         var records = (await local.LoadGroupsAsync(cancellationToken)).ToList();
         var joined = new SyncedGroupRecord(
-            state, get.Value.Version, AccountScope: null, Dirty: false,
+            state, view.Version, AccountScope: null, Dirty: false,
             Mode: StorageMode.SharedByLink,
-            Tokens: new SharedGroupTokens(AdminToken: null, JoinToken: joinToken),
-            ClaimedMemberId: memberId);
+            Tokens: new SharedGroupTokens(AdminToken: null, JoinToken: joinToken, ParticipantKey: key),
+            ClaimedMemberId: memberId,
+            JoinedAccount: withAccount ? accountId : null);
 
         var index = records.FindIndex(r => r.State.Id == state.Id);
         if (index >= 0)
@@ -214,6 +237,49 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
 
         await local.SaveGroupsAsync(records, cancellationToken);
         return new JoinResult(JoinStatus.Joined, state.Id);
+    }
+
+    /// <summary>
+    /// Shares a group as the signed-in organizer (ADR-0081): shared by link and claimed into the account in one
+    /// step, so it stays on all the account's devices and keeps its join link. When the claim can't complete
+    /// (offline after the share) the group is left shared by link, and Sharing &amp; sync offers to keep it in the
+    /// account.
+    /// </summary>
+    /// <param name="accountId">The signed-in account.</param>
+    /// <param name="groupId">The group to share.</param>
+    /// <param name="cancellationToken">Cancels the calls.</param>
+    /// <returns><see langword="true"/> when the group is shared and owned by the account.</returns>
+    public async Task<bool> ShareOwnedAsync(Guid accountId, Guid groupId, CancellationToken cancellationToken = default) =>
+        await ShareByLinkAsync(groupId, cancellationToken) is not null
+        && await ClaimAdminToAccountAsync(accountId, groupId, cancellationToken);
+
+    /// <summary>
+    /// Stops sharing an account-owned shared group (ADR-0081): deletes the online copy — the join link stops
+    /// working and joined people lose the group — and leaves this device's copy as a local group, for the caller
+    /// to put back into the account store.
+    /// </summary>
+    /// <param name="groupId">The owned shared group.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns><see langword="true"/> when the online copy is gone.</returns>
+    public async Task<bool> StopSharingAsync(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        var record = (await local.LoadGroupsAsync(cancellationToken)).FirstOrDefault(r => r.State.Id == groupId);
+        if (record is null || !record.IsAdminClaimedShared())
+        {
+            return false;
+        }
+
+        var deleted = await accountApi.DeleteOwnedAsync(groupId, cancellationToken);
+        if (!deleted.IsSuccess && deleted.Error?.Failure != ApiFailure.NotFound)
+        {
+            return false;
+        }
+
+        await UpdateAsync(
+            groupId,
+            current => current with { Mode = StorageMode.OnThisDevice, Tokens = null, AdminAccount = null, Dirty = false },
+            cancellationToken);
+        return true;
     }
 
     /// <summary>Claims admin of a shared-by-link group into the signed-in account (ADR-0058): Shared by link → My account.</summary>
@@ -344,6 +410,28 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
         return result is { IsSuccess: true, Value: not null } ? result.Value.MemberIds : [];
     }
 
+    /// <summary>
+    /// Reads who is claimed and who keeps their own entry — a joined participant or a reveal-link holder
+    /// (ADR-0080/ADR-0084) — in a shared group, in one call.
+    /// </summary>
+    /// <param name="groupId">The shared group.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>Both lists, or empty ones when the group is not shared or the server is unreachable.</returns>
+    public async Task<ClaimedMembers> GetMemberClaimsAsync(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        var record = (await local.LoadGroupsAsync(cancellationToken)).FirstOrDefault(r => r.State.Id == groupId);
+        var token = record?.Tokens?.AdminToken ?? record?.Tokens?.JoinToken;
+        if (token is null)
+        {
+            return new ClaimedMembers([], []);
+        }
+
+        var result = await api.GetClaimsAsync(token, cancellationToken);
+        return result is { IsSuccess: true, Value: { } claims }
+            ? new ClaimedMembers(claims.MemberIds, claims.SelfMaintained ?? [])
+            : new ClaimedMembers([], []);
+    }
+
     /// <summary>Releases a claimed member so it can be claimed again — admin only, the sole recovery path (ADR-0058).</summary>
     /// <param name="groupId">The shared group.</param>
     /// <param name="memberId">The member to free.</param>
@@ -352,12 +440,18 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
     public async Task<bool> ReleasePersonAsync(Guid groupId, Guid memberId, CancellationToken cancellationToken = default)
     {
         var record = (await local.LoadGroupsAsync(cancellationToken)).FirstOrDefault(r => r.State.Id == groupId);
-        if (record?.Tokens?.AdminToken is not { } adminToken)
+        if (record is null)
         {
             return false;
         }
 
-        var result = await api.ReleasePersonAsync(adminToken, memberId, cancellationToken);
+        // An admin-link holder releases with its token; the owner of an account-owned group with its bearer
+        // (ADR-0081), since that group has no admin token.
+        var result = record.Tokens?.AdminToken is { } adminToken
+            ? await api.ReleasePersonAsync(adminToken, memberId, cancellationToken)
+            : record.IsAdminClaimedShared()
+                ? await accountApi.ReleasePersonAsOwnerAsync(groupId, memberId, cancellationToken)
+                : ApiResult.Failed(new ApiError(ApiFailure.Forbidden));
         return result.IsSuccess;
     }
 
@@ -390,6 +484,13 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
 
         if (record is not { Mode: StorageMode.SharedByLink, Tokens: { } tokens })
         {
+            return;
+        }
+
+        // A participant never pushes the group: it sends its own entry and adopts the server's trimmed view.
+        if (record.IsJoinOnly())
+        {
+            await SyncJoinedAsync(groupId, cancellationToken);
             return;
         }
 
@@ -439,8 +540,227 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
             if (push.IsSuccess && push.Value is not null)
             {
                 await MarkPushedAsync(groupId, pending.Version, push.Value.Version, cancellationToken);
+
+                // The server re-applied participants' own entries to what was sent (ADR-0080): the stored body is
+                // not this copy, at the same version, so a version check would never fetch it. Adopt it now.
+                if (push.Value.Rewritten)
+                {
+                    await AdoptRewrittenAsync(groupId, await api.GetAsync(admin, cancellationToken), cancellationToken);
+                }
             }
         }
+    }
+
+    /// <summary>
+    /// Writes the participant's own entry in a joined group — gift note and per-event wishlists (ADR-0080,
+    /// Q5). The local copy shows it at once; it travels to the server now, or on the next reconcile when
+    /// offline.
+    /// </summary>
+    /// <param name="groupId">The joined group.</param>
+    /// <param name="entry">The whole entry.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns><see langword="true"/> when the server accepted it; <see langword="false"/> when it is still pending.</returns>
+    public async Task<bool> WriteOwnEntryAsync(Guid groupId, ParticipantEntry entry, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        var held = false;
+        await UpdateAsync(
+            groupId,
+            current =>
+            {
+                if (!current.IsJoinOnly() || current.ClaimedMemberId is not { } me)
+                {
+                    return current;
+                }
+
+                held = true;
+                return current with { State = ParticipantEntries.Apply(current.State, me, entry), PendingEntry = entry };
+            },
+            cancellationToken);
+        if (!held)
+        {
+            return false;
+        }
+
+        await SyncJoinedAsync(groupId, cancellationToken);
+        var after = (await local.LoadGroupsAsync(cancellationToken)).FirstOrDefault(r => r.State.Id == groupId);
+        return after is { PendingEntry: null };
+    }
+
+    /// <summary>
+    /// Leaves a joined group (ADR-0080, Q1): releases this participant's claim and entry on the server, so the
+    /// organizer sees the person as not joined, and removes the group from this device.
+    /// </summary>
+    /// <param name="groupId">The joined group.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns><see langword="true"/> when the group was left; <see langword="false"/> when the server could not be reached.</returns>
+    public async Task<bool> LeaveAsync(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        var record = (await local.LoadGroupsAsync(cancellationToken)).FirstOrDefault(r => r.State.Id == groupId);
+        if (record is null || !record.IsJoinOnly() || record.Tokens?.JoinToken is not { } joinToken)
+        {
+            return false;
+        }
+
+        var result = record.Tokens.ParticipantKey is { } key
+            ? await api.LeaveAsync(joinToken, key, cancellationToken)
+            : record.JoinedAccount is not null
+                ? await accountApi.LeaveAsync(joinToken, cancellationToken)
+                : ApiResult.Failed(new ApiError(ApiFailure.Forbidden));
+
+        // Gone or no longer ours on the server: leaving locally is all that is left to do. Unreachable: keep it,
+        // so the person is not shown as still joined while they believe they left.
+        if (!result.IsSuccess && result.Error?.Failure is ApiFailure.Unreachable)
+        {
+            return false;
+        }
+
+        var records = (await local.LoadGroupsAsync(cancellationToken)).ToList();
+        records.RemoveAll(r => r.State.Id == groupId);
+        await local.SaveGroupsAsync(records, cancellationToken);
+        return true;
+    }
+
+    /// <summary>
+    /// Adds the shared groups the signed-in account joined on another device ("keep it on my account") to this
+    /// one (ADR-0080, Q5): read as the account's claimed member, shown only while it is signed in.
+    /// </summary>
+    /// <param name="accountId">The signed-in account.</param>
+    /// <param name="cancellationToken">Cancels the calls.</param>
+    public async Task DiscoverJoinedAsync(Guid accountId, CancellationToken cancellationToken = default)
+    {
+        var result = await accountApi.ListJoinedAsync(cancellationToken);
+        if (result is not { IsSuccess: true, Value: not null })
+        {
+            return;
+        }
+
+        var held = (await local.LoadGroupsAsync(cancellationToken)).Select(r => r.State.Id).ToHashSet();
+        var fetched = new List<SyncedGroupRecord>();
+        foreach (var joined in result.Value.Groups.Where(g => !held.Contains(g.GroupId)))
+        {
+            var get = await accountApi.GetJoinedAsync(joined.JoinToken, cancellationToken);
+            if (get is not { IsSuccess: true, Value: not null }
+                || get.Value.Body.Deserialize(SyncJsonContext.Default.GroupState) is not { } state)
+            {
+                continue;
+            }
+
+            fetched.Add(new SyncedGroupRecord(
+                state, get.Value.Version, AccountScope: null, Dirty: false,
+                Mode: StorageMode.SharedByLink,
+                Tokens: new SharedGroupTokens(AdminToken: null, JoinToken: joined.JoinToken),
+                ClaimedMemberId: joined.MemberId,
+                JoinedAccount: accountId));
+        }
+
+        if (fetched.Count == 0)
+        {
+            return;
+        }
+
+        // Re-read before writing, and add only what is still missing: a join made meanwhile wins.
+        var records = (await local.LoadGroupsAsync(cancellationToken)).ToList();
+        records.AddRange(fetched.Where(f => records.TrueForAll(r => r.State.Id != f.State.Id)));
+        await local.SaveGroupsAsync(records, cancellationToken);
+    }
+
+    // The participant's reconcile (ADR-0080): obtain a key for a legacy claim, send the pending own entry, then
+    // adopt the server's trimmed view whatever its version — a copy stored before the server trimmed it may
+    // hold the full draw, and it must not survive.
+    private async Task SyncJoinedAsync(Guid groupId, CancellationToken cancellationToken)
+    {
+        var record = (await local.LoadGroupsAsync(cancellationToken)).FirstOrDefault(r => r.State.Id == groupId);
+        if (record?.Tokens?.JoinToken is not { } joinToken)
+        {
+            return;
+        }
+
+        var key = record.Tokens.ParticipantKey;
+        if (key is null && record is { JoinedAccount: null, ClaimedMemberId: { } claimed })
+        {
+            key = await ExchangeLegacyKeyAsync(groupId, joinToken, claimed, cancellationToken);
+        }
+
+        if (record.PendingEntry is { } pending)
+        {
+            var write = key is not null
+                ? await api.WriteEntryAsync(joinToken, key, pending, cancellationToken)
+                : record.JoinedAccount is not null
+                    ? await accountApi.WriteEntryAsync(joinToken, pending, cancellationToken)
+                    : ApiResult.Failed<ParticipantEntryResult>(new ApiError(ApiFailure.Forbidden));
+            if (write.IsSuccess)
+            {
+                // Clear only the entry that was sent; one edited meanwhile stays pending for the next round. Compared
+                // by content: the record is re-read from storage, so its lists are never the same instances.
+                var sentJson = JsonSerializer.Serialize(pending, SyncJsonContext.Default.ParticipantEntry);
+                await UpdateAsync(
+                    groupId,
+                    current => current.PendingEntry is { } now
+                        && JsonSerializer.Serialize(now, SyncJsonContext.Default.ParticipantEntry) == sentJson
+                            ? current with { PendingEntry = null }
+                            : current,
+                    cancellationToken);
+            }
+        }
+
+        var get = key is not null
+            ? await api.GetAsParticipantAsync(joinToken, key, cancellationToken)
+            : record.JoinedAccount is not null
+                ? await accountApi.GetJoinedAsync(joinToken, cancellationToken)
+                : await api.GetAsync(joinToken, cancellationToken);
+        if (!get.IsSuccess)
+        {
+            // The group is gone online (deleted or expired): a participant has nothing left to follow.
+            if (get.Error?.Failure == ApiFailure.NotFound)
+            {
+                var records = (await local.LoadGroupsAsync(cancellationToken)).ToList();
+                records.RemoveAll(r => r.State.Id == groupId);
+                await local.SaveGroupsAsync(records, cancellationToken);
+            }
+
+            return;
+        }
+
+        var view = get.Value!;
+        if (view.Body.Deserialize(SyncJsonContext.Default.GroupState) is not { } state)
+        {
+            return;
+        }
+
+        await UpdateAsync(
+            groupId,
+            current =>
+            {
+                var me = view.ClaimedMemberId ?? current.ClaimedMemberId;
+
+                // An entry still waiting to be sent stays visible on top of the server's view.
+                var shown = current.PendingEntry is { } waiting && me is { } member
+                    ? ParticipantEntries.Apply(state, member, waiting)
+                    : state;
+                return current with { State = shown, Version = view.Version, Dirty = false, ClaimedMemberId = me };
+            },
+            cancellationToken);
+    }
+
+    // A device that joined before participant keys existed proves its claim once with the handle it claimed
+    // with (ADR-0080). Refused (another device, or the handle was not stable): the organizer's release and a
+    // fresh join are the recovery; until then the device reads the group without its pairing.
+    private async Task<string?> ExchangeLegacyKeyAsync(Guid groupId, string joinToken, Guid memberId, CancellationToken cancellationToken)
+    {
+        var handle = (await local.LoadStateAsync(cancellationToken)).DeviceId;
+        var issued = await api.IssueParticipantKeyAsync(joinToken, memberId, handle, cancellationToken);
+        if (issued is not { IsSuccess: true, Value: not null })
+        {
+            return null;
+        }
+
+        var key = issued.Value.ParticipantKey;
+        await UpdateAsync(
+            groupId,
+            current => current.Tokens is { } tokens ? current with { Tokens = tokens with { ParticipantKey = key } } : current,
+            cancellationToken);
+        return key;
     }
 
     /// <summary>
@@ -659,6 +979,10 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
             if (push.IsSuccess && push.Value is not null)
             {
                 await MarkPushedAsync(groupId, pending.Version, push.Value.Version, cancellationToken);
+                if (push.Value.Rewritten)
+                {
+                    await AdoptRewrittenAsync(groupId, await accountApi.GetOwnedAsync(groupId, cancellationToken), cancellationToken);
+                }
             }
         }
     }
@@ -688,6 +1012,22 @@ public sealed class SharedSyncService(ILocalSyncStore local, ISharedGroupApi api
             },
             cancellationToken);
         return applied;
+    }
+
+    // Adopts the server's copy after a push it rewrote, unless a new local edit is already waiting (that one is
+    // pushed on the next reconcile and rewritten again).
+    private async Task AdoptRewrittenAsync(Guid groupId, ApiResult<SharedGroupView> read, CancellationToken cancellationToken)
+    {
+        if (read is not { IsSuccess: true, Value: { } view }
+            || view.Body.Deserialize(SyncJsonContext.Default.GroupState) is not { } state)
+        {
+            return;
+        }
+
+        await UpdateAsync(
+            groupId,
+            current => current.Dirty ? current : current with { State = state, Version = view.Version },
+            cancellationToken);
     }
 
     // Marks a push as accepted. Clean only if nothing changed locally since the copy that was sent; an edit

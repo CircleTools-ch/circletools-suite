@@ -1,0 +1,37 @@
+@using CircleTools.SecretSanta.Core.Domain
+@inject IStringLocalizer<AppStrings> L
+
+@*
+    A recipient's wishlist as the giver sees it (ADR-0083, I8): each line's text, and a link pasted anywhere in
+    it shown as a tappable "Open link (shop.example)" instead of a long address (http/https only, opened outside
+    the app). Nothing special has to be typed for this.
+*@
+
+<ul class="mb-0 ct-wishlist">
+    @foreach (var line in Items)
+    {
+        var item = WishlistItem.Parse(line);
+        <li>
+            @if (item.Link is { } link)
+            {
+                @if (!string.IsNullOrEmpty(item.Text))
+                {
+                    <span>@item.Text · </span>
+                }
+                <a href="@link.AbsoluteUri" target="_blank" rel="noopener noreferrer nofollow" class="ct-wishlist-link">@L["WishlistOpenLink", Site(link)]</a>
+            }
+            else
+            {
+                <span>@item.Text</span>
+            }
+        </li>
+    }
+</ul>
+
+@code {
+    /// <summary>The wishlist lines as stored.</summary>
+    [Parameter] public IReadOnlyList<string> Items { get; set; } = [];
+
+    private static string Site(Uri link) =>
+        link.Host.StartsWith("www.", StringComparison.OrdinalIgnoreCase) ? link.Host[4..] : link.Host;
+}

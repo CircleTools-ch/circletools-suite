@@ -130,4 +130,12 @@
   <data name="SignOutEverywhereConfirmYes" xml:space="preserve"><value>Überall abmelden</value></data>
   <data name="SignedOutByServer" xml:space="preserve"><value>Du wurdest abgemeldet: Deine Sitzung wurde auf einem anderen Gerät beendet oder ist abgelaufen.</value></data>
   <data name="ConfirmCancel" xml:space="preserve"><value>Abbrechen</value></data>
+  <data name="DevicesTitle" xml:space="preserve"><value>Angemeldete Geräte</value></data>
+  <data name="DevicesLead" xml:space="preserve"><value>Hier ist dein Konto angemeldet. Melde ein Gerät ab, das du nicht mehr nutzt oder nicht kennst.</value></data>
+  <data name="DevicesLoading" xml:space="preserve"><value>Wird geladen…</value></data>
+  <data name="DevicesLoadFailed" xml:space="preserve"><value>Die Liste konnte nicht geladen werden. Prüfe die Verbindung und öffne die Seite erneut.</value></data>
+  <data name="DeviceUnknown" xml:space="preserve"><value>Unbekanntes Gerät</value></data>
+  <data name="DeviceThis" xml:space="preserve"><value>Dieses Gerät</value></data>
+  <data name="DeviceTimes" xml:space="preserve"><value>Angemeldet {0} · zuletzt aktiv {1}</value></data>
+  <data name="DeviceSignOut" xml:space="preserve"><value>Abmelden</value></data>
 </root>

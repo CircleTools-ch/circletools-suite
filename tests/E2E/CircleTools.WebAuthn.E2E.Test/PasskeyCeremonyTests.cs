@@ -195,8 +195,9 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
         await _page.WaitForLoadStateAsync(LoadState.NetworkIdle);
     }
 
+    // Signed in, the account button is the initial avatar named "Signed in as <name>" (Q37).
     private Task OpenAccountMenuAsync() =>
-        _page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Account" }).First.ClickAsync();
+        _page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { NameRegex = new System.Text.RegularExpressions.Regex("^Signed in as") }).First.ClickAsync();
 
     // ---- out-of-band helpers ---------------------------------------------------------------------
 

@@ -4,11 +4,15 @@
 @using CircleTools.SecretSanta.Contracts
 @using CircleTools.SecretSanta.Core.Reveal
 @using CircleTools.SecretSanta.LocalStore.Linking
+@using CircleTools.Ui.Account.Auth
+@using Microsoft.AspNetCore.Components.Authorization
 @inject ILinkingApi Linking
 @inject IStringLocalizer<AppStrings> L
 @inject TimeProvider Time
 @inject IHapticFeedback Haptics
 @inject RevealLinkOptions RevealOptions
+@inject IServiceProvider Services
+@inject AuthenticationStateProvider Auth
 
 @*
     See my assignment while signed in (FR-029). The server returns only the caller's own pairing, one
@@ -33,7 +37,7 @@
         {
             <MudText>@L["Loading"]</MudText>
         }
-        else if (_assignments.Count == 0)
+        else if (_assignments.Count == 0 && _joined.Count == 0)
         {
             <MudText Class="mud-text-secondary">@L["MyAssignmentsNone"]</MudText>
         }
@@ -95,12 +99,7 @@
                                     }
                                     else
                                     {
-                                        <ul class="mb-0">
-                                            @foreach (var item in assignment.RecipientWishlist)
-                                            {
-                                                <li>@item</li>
-                                            }
-                                        </ul>
+                                        <WishlistItems Items="assignment.RecipientWishlist" />
                                     }
                                 </MudAlert>
                             }
@@ -122,6 +121,30 @@
         @* The ADR-0020 operator-readable fact, stated plainly but as a "good to know" footnote under the
            content rather than a warning at the top of a main screen (UX review P7). *@
         <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-6">@L["MyAssignmentsOperatorPrivacyNote"]</MudText>
+
+        @* Groups joined through a join link (ADR-0080): the assignment opens on the group's event page. *@
+        @if (_joined.Count > 0)
+        {
+            <MudText Typo="Typo.h6" Class="mt-6 mb-2" id="my-joined-assignments">@L["MyJoinedGroupsTitle"]</MudText>
+            <MudStack Spacing="2">
+                @foreach (var joined in _joined)
+                {
+                    <MudCard Elevation="1">
+                        <MudCardContent Class="d-flex flex-wrap justify-space-between align-center gap-2">
+                            <div>
+                                <MudText Typo="Typo.subtitle1"><strong>@joined.GroupName — @EventLabel(joined.EventName)</strong></MudText>
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary">@(joined.Drawn ? L["YourAssignmentHint"] : L["NoDrawYet"])</MudText>
+                            </div>
+                            @if (joined.Drawn)
+                            {
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                           Href="@($"groups/{joined.GroupId}/events/{joined.EventId}")">@L["YourAssignment"]</MudButton>
+                            }
+                        </MudCardContent>
+                    </MudCard>
+                }
+            </MudStack>
+        }
     </Authorized>
     <NotAuthorized>
         <RedirectToLogin />
@@ -150,8 +173,11 @@
         await Haptics.TapAsync();
     }
 
+    private IReadOnlyList<JoinedEvent> _joined = [];
+
     protected override async Task OnInitializedAsync()
     {
+        _joined = await JoinedGroups.ForAsync(Services, (await Auth.GetAuthenticationStateAsync()).User.UserId());
         var result = await Linking.GetMyAssignmentsAsync();
         if (result.IsSuccess)
         {

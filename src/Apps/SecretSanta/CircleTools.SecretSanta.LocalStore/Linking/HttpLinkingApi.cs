@@ -71,20 +71,22 @@ public sealed class HttpLinkingApi(HttpClient client) : ILinkingApi
             cancellationToken);
 
     /// <inheritdoc />
-    public Task<ApiResult> PublishAssignmentsAsync(Guid groupId, PublishAssignmentsRequest request, CancellationToken cancellationToken = default) =>
+    public Task<ApiResult> PublishAssignmentsAsync(Guid groupId, PublishAssignmentsRequest request, string? adminToken = null, CancellationToken cancellationToken = default) =>
         SendNoContentAsync(
             HttpMethod.Post,
             $"{Groups}/{groupId}/assignments/publish",
             JsonContent.Create(request, LinkingJsonContext.Default.PublishAssignmentsRequest),
-            cancellationToken);
+            cancellationToken,
+            adminToken);
 
     /// <inheritdoc />
-    public Task<ApiResult> PublishGroupEventsAsync(Guid groupId, PublishGroupEventsRequest request, CancellationToken cancellationToken = default) =>
+    public Task<ApiResult> PublishGroupEventsAsync(Guid groupId, PublishGroupEventsRequest request, string? adminToken = null, CancellationToken cancellationToken = default) =>
         SendNoContentAsync(
             HttpMethod.Put,
             $"{Groups}/{groupId}/events",
             JsonContent.Create(request, LinkingJsonContext.Default.PublishGroupEventsRequest),
-            cancellationToken);
+            cancellationToken,
+            adminToken);
 
     /// <inheritdoc />
     public Task<ApiResult<MyAssignmentResponse>> GetMyAssignmentAsync(Guid groupId, Guid eventId, CancellationToken cancellationToken = default) =>
@@ -162,9 +164,17 @@ public sealed class HttpLinkingApi(HttpClient client) : ILinkingApi
         }
     }
 
-    private async Task<ApiResult> SendNoContentAsync(HttpMethod method, string route, HttpContent? content, CancellationToken cancellationToken)
+    // The header a shared group's admin-link holder proves it organizes the group with (ADR-0080): the linking
+    // publish is refused to anyone but the organizer.
+    private const string AdminTokenHeader = "X-Admin-Token";
+
+    private async Task<ApiResult> SendNoContentAsync(HttpMethod method, string route, HttpContent? content, CancellationToken cancellationToken, string? adminToken = null)
     {
         using var message = new HttpRequestMessage(method, route) { Content = content };
+        if (adminToken is not null)
+        {
+            message.Headers.Add(AdminTokenHeader, adminToken);
+        }
 
         try
         {

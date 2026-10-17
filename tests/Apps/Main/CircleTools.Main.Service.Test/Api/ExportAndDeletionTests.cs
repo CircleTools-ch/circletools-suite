@@ -170,7 +170,7 @@ public sealed class ExportAndDeletionTests(MailApiFactory factory)
         await using var scope = factory.Services.CreateAsyncScope();
         var store = scope.ServiceProvider.GetRequiredService<ISharedGroupStore>();
         // The join link still resolves — participants are not stranded — but nobody owns it now.
-        Assert.NotNull(await store.GetAsync(group.JoinToken));
+        Assert.NotNull(await store.GetAsync(group.JoinToken, ParticipantProof.None));
         Assert.Empty(await store.ListOwnedAsync(accountId));
     }
 
@@ -188,7 +188,7 @@ public sealed class ExportAndDeletionTests(MailApiFactory factory)
         await using var scope = factory.Services.CreateAsyncScope();
         var store = scope.ServiceProvider.GetRequiredService<ISharedGroupStore>();
         // The online copy is gone: the join link no longer resolves.
-        Assert.Null(await store.GetAsync(group.JoinToken));
+        Assert.Null(await store.GetAsync(group.JoinToken, ParticipantProof.None));
         Assert.Empty(await store.ListOwnedAsync(accountId));
     }
 

@@ -87,6 +87,16 @@ Then locally cached data remains readable
 And sync resumes when connectivity returns
 ```
 
+## Amendment (2026-10-16) — the installed app always stays signed in
+
+From the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-santa-two-account-device-test.md) (Q25, Q37):
+
+- [ ] The native heads show no "Stay signed in on this device" box: an installed app always stays signed in
+      (the device lock protects it). *Sign out* and *Sign out everywhere* remain. The web keeps the box.
+- [ ] The account button shows the state without opening it: signed in, a round avatar with the person's
+      initial; signed out, the outlined account icon and "Sign in" where there is room, going straight to
+      the sign-in page.
+
 ## Dependencies & related
 
 - Derived from: [UC-MAIN-002](../../use-cases/main/UC-MAIN-002-sign-in-with-password.md)

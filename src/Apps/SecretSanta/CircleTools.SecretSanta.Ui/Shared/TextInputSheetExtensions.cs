@@ -19,6 +19,9 @@ public static class TextInputSheetExtensions
     /// <param name="cancelLabel">Label for the dismissing action.</param>
     /// <param name="initial">Optional initial text (e.g. the current name when renaming).</param>
     /// <param name="hint">Optional line above the field (e.g. "Anna added - next name?" when adding several).</param>
+    /// <param name="submitting">Applies the value in the sheet; an error it returns is shown under the field and the sheet stays open (Q10).</param>
+    /// <param name="continueWith">Stay open after an accepted value, with this status line, for the next entry.</param>
+    /// <param name="doneLabel">The dismiss label once a continuing sheet has accepted something.</param>
     /// <returns>The entered text, or <see langword="null"/> if cancelled.</returns>
     public static async Task<string?> ShowTextInputSheetAsync(
         this IDialogService dialogs,
@@ -27,7 +30,10 @@ public static class TextInputSheetExtensions
         string confirmLabel,
         string cancelLabel,
         string? initial = null,
-        string? hint = null)
+        string? hint = null,
+        Func<string, Task<string?>>? submitting = null,
+        Func<string, string>? continueWith = null,
+        string? doneLabel = null)
     {
         var parameters = new DialogParameters<TextInputSheet>
         {
@@ -36,6 +42,9 @@ public static class TextInputSheetExtensions
             { x => x.CancelLabel, cancelLabel },
             { x => x.Initial, initial },
             { x => x.Hint, hint },
+            { x => x.Submitting, submitting },
+            { x => x.Continue, continueWith },
+            { x => x.DoneLabel, doneLabel },
         };
 
         // Centered, matching the create-group sheet (NewGroupDialog). A top-anchored sheet sat under the

@@ -196,6 +196,7 @@ public static class PasskeyEndpoints
         [FromBody] PasskeyLoginRequest request,
         SignInManager<CircleToolsUser> signIn,
         SessionService sessions,
+        HttpContext http,
         CancellationToken cancellationToken)
     {
         PasskeyAssertionResult<CircleToolsUser> assertion;
@@ -223,7 +224,7 @@ public static class PasskeyEndpoints
         // Deliberately not SignInManager.PasskeySignInAsync: that establishes a cookie session,
         // and this suite is bearer-token only (ADR-0021). The session must be indistinguishable
         // from the one password sign-in produces.
-        var tokens = await sessions.StartAsync(assertion.User, cancellationToken).ConfigureAwait(false);
+        var tokens = await sessions.StartAsync(assertion.User, AccountEndpoints.DeviceOf(http), cancellationToken).ConfigureAwait(false);
 
         return Results.Ok(new SessionResponse(
             tokens.AccessToken,

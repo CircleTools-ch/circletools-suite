@@ -9,11 +9,24 @@ public enum ReminderKind
     /// <summary>The organizer has not run the draw yet and the event is approaching.</summary>
     DrawNotDone,
 
-    /// <summary>The event is tomorrow.</summary>
+    /// <summary>The event is near — "before the event", with a configurable lead (the name predates that).</summary>
     EventTomorrow,
 
     /// <summary>The user's own wishlist for an upcoming event is still empty.</summary>
     MyWishlistEmpty,
+}
+
+/// <summary>Whether the OS lets this app show notifications (FR-046 amendment, Q8).</summary>
+public enum NotificationAccess
+{
+    /// <summary>Notifications are allowed.</summary>
+    Granted,
+
+    /// <summary>Notifications are blocked for the app (refused, or turned off in the system settings).</summary>
+    Denied,
+
+    /// <summary>The platform can't tell (or has no notifications at all).</summary>
+    Unknown,
 }
 
 /// <summary>One local notification to deliver at a future time.</summary>
@@ -44,6 +57,16 @@ public interface INotificationScheduler
     /// <param name="cancellationToken">Cancels the request.</param>
     /// <returns><see langword="true"/> when notifications are permitted after the request.</returns>
     ValueTask<bool> RequestPermissionAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Reads whether notifications are allowed, without prompting (Q8).</summary>
+    /// <param name="cancellationToken">Cancels the check.</param>
+    /// <returns>The current permission.</returns>
+    ValueTask<NotificationAccess> GetPermissionAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Opens the app's page in the system settings, where notifications can be allowed (Q8).</summary>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>A task that completes once the settings were asked to open.</returns>
+    ValueTask OpenSettingsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Schedules one notification for future delivery.</summary>
     /// <param name="notification">The notification to schedule.</param>

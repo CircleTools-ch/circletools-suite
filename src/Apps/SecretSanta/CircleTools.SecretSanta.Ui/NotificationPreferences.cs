@@ -76,4 +76,119 @@ public sealed class NotificationPreferences(IKeyValueStore store)
             // Best-effort: a failed write just means the toggle is not remembered next launch.
         }
     }
+
+    // Lead times, time of day, per-occasion overrides and the after-draw offers made (FR-046 amendment). A plain
+    // line format ("lead:DrawNotDone=3", "time=09:00", "event:<id>=off|<days>", "offered:<id>") keeps the
+    // trimmed web build free of reflection-based JSON.
+    private const string SettingsKey = "secretsanta.reminders.settings";
+
+    /// <summary>Reads the reminder settings; defaults when unset or unreadable.</summary>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    /// <returns>The settings.</returns>
+    public async ValueTask<ReminderSettings> GetSettingsAsync(CancellationToken cancellationToken = default) =>
+        Parse(await ReadSettingsAsync(cancellationToken)).Settings;
+
+    /// <summary>Stores the reminder settings, keeping the after-draw offers already made.</summary>
+    /// <param name="settings">The settings.</param>
+    /// <param name="cancellationToken">Cancels the write.</param>
+    /// <returns>A task that completes when stored (best-effort).</returns>
+    public async ValueTask SetSettingsAsync(ReminderSettings settings, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        var (_, offered) = Parse(await ReadSettingsAsync(cancellationToken));
+        await WriteSettingsAsync(settings, offered, cancellationToken);
+    }
+
+    /// <summary>Records that the after-draw reminder offer was made for an occasion; returns whether it was new.</summary>
+    /// <param name="eventId">The occasion.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns><see langword="true"/> the first time for this occasion.</returns>
+    public async ValueTask<bool> MarkOfferedAsync(Guid eventId, CancellationToken cancellationToken = default)
+    {
+        var (settings, offered) = Parse(await ReadSettingsAsync(cancellationToken));
+        if (!offered.Add(eventId))
+        {
+            return false;
+        }
+
+        await WriteSettingsAsync(settings, offered, cancellationToken);
+        return true;
+    }
+
+    private async ValueTask<string?> ReadSettingsAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await store.GetAsync(StorageScope.Durable, SettingsKey, cancellationToken);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private async ValueTask WriteSettingsAsync(ReminderSettings settings, HashSet<Guid> offered, CancellationToken cancellationToken)
+    {
+        var lines = new List<string>
+        {
+            $"lead:{ReminderKind.DrawNotDone}={settings.Lead.DrawNotDoneDays}",
+            $"lead:{ReminderKind.EventTomorrow}={settings.Lead.EventTomorrowDays}",
+            $"lead:{ReminderKind.MyWishlistEmpty}={settings.Lead.MyWishlistEmptyDays}",
+            $"time={settings.TimeOfDay.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)}",
+        };
+        lines.AddRange(settings.Overrides.Select(o =>
+            $"event:{o.Key:N}={(o.Value.Off ? "off" : o.Value.EventLeadDays?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "default")}"));
+        lines.AddRange(offered.Select(id => $"offered:{id:N}"));
+
+        try
+        {
+            await store.SetAsync(StorageScope.Durable, SettingsKey, string.Join('\n', lines), cancellationToken);
+        }
+        catch
+        {
+            // Best-effort, like the toggles.
+        }
+    }
+
+    private static (ReminderSettings Settings, HashSet<Guid> Offered) Parse(string? raw)
+    {
+        var settings = ReminderSettings.Default;
+        var offered = new HashSet<Guid>();
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return (settings, offered);
+        }
+
+        var lead = settings.Lead;
+        var time = settings.TimeOfDay;
+        var overrides = new Dictionary<Guid, EventReminderOverride>();
+        foreach (var line in raw.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var eq = line.IndexOf('=', StringComparison.Ordinal);
+            var key = eq < 0 ? line : line[..eq];
+            var value = eq < 0 ? string.Empty : line[(eq + 1)..];
+            if (key.StartsWith("lead:", StringComparison.Ordinal)
+                && Enum.TryParse<ReminderKind>(key[5..], out var kind)
+                && int.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out var days) && days > 0)
+            {
+                lead = lead.With(kind, days);
+            }
+            else if (key == "time" && TimeOnly.TryParseExact(value, "HH:mm", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var t))
+            {
+                time = t;
+            }
+            else if (key.StartsWith("event:", StringComparison.Ordinal) && Guid.TryParse(key[6..], out var eventId))
+            {
+                overrides[eventId] = value == "off"
+                    ? new EventReminderOverride(true, null)
+                    : new EventReminderOverride(false, int.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, out var d) ? d : null);
+            }
+            else if (key.StartsWith("offered:", StringComparison.Ordinal) && Guid.TryParse(key[8..], out var offeredId))
+            {
+                offered.Add(offeredId);
+            }
+        }
+
+        return (new ReminderSettings(lead, time, overrides), offered);
+    }
 }

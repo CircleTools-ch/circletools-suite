@@ -71,6 +71,7 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-047](functional/FR-047-account-deletion-farewell-email.md) | Account-deletion farewell email (one link-less confirmation after successful deletion, DE/EN/FR, source-app branded) | Functional | Should | Implemented |
 | [FR-048](functional/FR-048-default-storage-mode-for-new-groups.md) | A user-level default storage mode seeds new groups, set at first run and in Settings (device-local; refines FR-038's fixed pre-selection; seeds the phone FAB; per-group storage icon in the list) | Functional | Should | Approved |
 | [FR-049](functional/FR-049-change-password.md) | Change password while signed in (current + new password, policy and breach check; ends the other sessions; link-less notice email); "Sign out on all devices" (ADR-0079) | Functional | Must | Implemented |
+| [FR-050](functional/FR-050-edit-own-entry-from-reveal-link.md) | Edit my own wishlist and gift note from my reveal link (live-link groups; autosaved; organizer's copy read-only — ADR-0084) | Functional | Should | Implemented |
 | [NFR-011](non-functional/NFR-011-local-data-durability-and-portability.md) | Local data is durable and portable on the web (persistence request + backup/restore) | Non-functional | Should | Implemented |
 
 _Add a row per requirement._

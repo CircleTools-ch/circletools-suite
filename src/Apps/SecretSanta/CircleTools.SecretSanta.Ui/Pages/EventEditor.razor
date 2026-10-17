@@ -1,4 +1,5 @@
 @page "/groups/{GroupId:guid}/events/{EventId:guid}/details"
+@using Microsoft.Extensions.DependencyInjection
 @inject ISender Sender
 @inject IStringLocalizer<AppStrings> L
 @inject IDialogService Dialogs
@@ -99,6 +100,23 @@ else
         {
             <MudAlert Severity="Severity.Success" Dense="true" role="status">@_status</MudAlert>
         }
+
+        @* This occasion's own reminder (FR-046 amendment): as in Settings, its own lead, or off. Device-local,
+           so it is offered to participants too; only where the device can schedule. *@
+        @if (_remindersSupported)
+        {
+            <MudSelect T="string" Value="_reminderChoice" ValueChanged="SetReminderAsync" Label="@L["EventReminderLabel"]"
+                       Dense="true" Margin="Margin.Dense" Variant="Variant.Outlined" Style="max-width:18rem;" id="event-reminder">
+                <MudSelectItem T="string" Value="@("default")">@L["EventReminderDefault"]</MudSelectItem>
+                @foreach (var days in ReminderLeadTimes.Choices)
+                {
+                    <MudSelectItem T="string" Value="@days.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                        @(days == 1 ? L["ReminderLeadOneDay"] : L["ReminderLeadDays", days])
+                    </MudSelectItem>
+                }
+                <MudSelectItem T="string" Value="@("off")">@L["EventReminderOff"]</MudSelectItem>
+            </MudSelect>
+        }
     </MudStack>
 }
 
@@ -115,6 +133,8 @@ else
     private bool _loaded;
     // A join-link participant sees the details but only the organizer changes them (ADR-0058).
     private bool _readOnly;
+    private bool _remindersSupported;
+    private string _reminderChoice = "default";
     private string _name = string.Empty;
     private decimal? _budgetAmount;
     private decimal? _budgetMinAmount;
@@ -156,10 +176,50 @@ else
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
+    private async Task SetReminderAsync(string choice)
+    {
+        _reminderChoice = choice;
+        if (Services.GetService<NotificationPreferences>() is not { } prefs)
+        {
+            return;
+        }
+
+        var settings = await prefs.GetSettingsAsync();
+        var overrides = new Dictionary<Guid, EventReminderOverride>(settings.Overrides);
+        if (choice == "default")
+        {
+            overrides.Remove(EventId);
+        }
+        else
+        {
+            overrides[EventId] = choice == "off"
+                ? new EventReminderOverride(true, null)
+                : new EventReminderOverride(false, int.Parse(choice, System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        await prefs.SetSettingsAsync(settings with { Overrides = overrides });
+        if (Services.GetService<IReminderRescheduler>() is { } reminders)
+        {
+            await reminders.ReconcileAsync();
+        }
+    }
+
     private async Task LoadAsync()
     {
         _readOnly = (await GroupAccess.ForAsync(Services, GroupId)).ReadOnly;
         _event = await Sender.Send(new GetEventQuery(GroupId, EventId));
+        if (Services.GetService<INotificationScheduler>() is { } notifications
+            && Services.GetService<NotificationPreferences>() is { } prefs)
+        {
+            _remindersSupported = await notifications.IsSupportedAsync();
+            var own = (await prefs.GetSettingsAsync()).Overrides.GetValueOrDefault(EventId);
+            _reminderChoice = own switch
+            {
+                { Off: true } => "off",
+                { EventLeadDays: { } days } => days.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                _ => "default",
+            };
+        }
         _loaded = true;
         if (_event is null)
         {

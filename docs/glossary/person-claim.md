@@ -20,7 +20,12 @@ Rules (the basis of the mode's trust-bounded privacy,
 - **First claim wins, and it locks.** Once a member is claimed, that member **cannot be claimed again**
   — a device claim is not silently overridden by a later account claim.
 - **Release** is the inverse and the **only recovery** for a new/lost device or a mis-claim: **only an
-  admin** can free a claimed member, after which the join link can claim it afresh.
+  admin** can free a claimed member, after which the join link can claim it afresh. The participant can
+  also **leave** the group, which releases their own claim.
+- **Proof.** The claiming device receives a [participant key](participant-key.md); an account claim is
+  also proven by the account's sign-in. Only a proven request gets the member's own assignment and may
+  write the member's [participant contribution](participant-contribution.md)
+  ([ADR-0080](../adr/0080-participant-access-to-shared-groups.md)).
 
 Distinct from [Claim](claim.md) (taking a *whole group* into a *User account*); a person claim is about
 *which member you are* inside a shared group, not about who owns the group.

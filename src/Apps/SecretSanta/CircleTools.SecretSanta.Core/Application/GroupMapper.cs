@@ -25,13 +25,25 @@ internal static class GroupMapper
             .Select(e => new ExclusionDto(e.GiverMemberId, e.RecipientMemberId, e.Mutual))
             .ToList();
 
-        var events = group.Events.Select(e => ToEventSummary(e, now)).ToList();
+        var events = group.Events.Select(e => ToEventSummary(group, e, now)).ToList();
 
         return new GroupDto(group.Id, group.Name, members, exclusions, events);
     }
 
-    public static EventSummaryDto ToEventSummary(Event occasion, DateTimeOffset now) =>
-        new(occasion.Id, occasion.Name, occasion.CurrentDraw is not null, IsStaleAndActionable(occasion, now), occasion.EventDetails?.Date);
+    public static EventSummaryDto ToEventSummary(Group group, Event occasion, DateTimeOffset now) =>
+        new(
+            occasion.Id,
+            occasion.Name,
+            occasion.CurrentDraw is not null,
+            IsStaleAndActionable(occasion, now),
+            occasion.EventDetails?.Date,
+            group.Members.Count(m => occasion.WishlistFor(m.Id).Items.Count > 0),
+            BreaksExclusions(group, occasion));
+
+    // A current draw that pairs someone an exclusion (added after the draw) forbids (Q13b).
+    private static bool BreaksExclusions(Group group, Event occasion) =>
+        occasion.CurrentDraw is { } draw
+        && draw.Assignments.Any(a => group.Exclusions.Any(e => e.Forbids(a.GiverMemberId, a.RecipientMemberId)));
 
     // A draw is "stale" the moment the roster changes (ADR-0052), but that is only worth surfacing while
     // the occasion is still upcoming: a past exchange (its date has come and gone) is history, not
@@ -70,6 +82,7 @@ internal static class GroupMapper
             assignments,
             IsStaleAndActionable(occasion, now),
             wishlists,
-            occasion.BaselineDraw is not null);
+            occasion.BaselineDraw is not null,
+            BreaksExclusions(group, occasion));
     }
 }

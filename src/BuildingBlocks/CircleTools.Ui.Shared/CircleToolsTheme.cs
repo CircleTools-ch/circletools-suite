@@ -10,9 +10,12 @@ namespace CircleTools.Ui.Shared;
 public static class CircleToolsTheme
 {
     // The single interactive accent — a desaturated indigo/blue in the suite family. Lifted on dark
-    // surfaces so it keeps contrast. Tunable; this is the agreed starting point.
-    private const string Accent = "#5b7cc4";
+    // surfaces so it keeps contrast. Every colour pair below passes WCAG AA (4.5:1) — text on the
+    // surfaces and the text on a filled button of that colour — which a test enforces (Q33, 2026-10-16:
+    // white on the light dark-mode blue was hard to read). On dark, filled buttons carry dark text.
+    private const string Accent = "#4a6bb5";
     private const string AccentDark = "#8aa6e0";
+    private const string OnDarkAccent = "#0d1220";
 
     // A system-ui font stack: no web-font download, so font-src 'self' is satisfied and the look
     // stays native/light on each platform.
@@ -26,7 +29,18 @@ public static class CircleToolsTheme
         PaletteLight = new PaletteLight
         {
             Primary = Accent,
+            PrimaryContrastText = "#ffffff",
             Secondary = "#5b6270",
+            SecondaryContrastText = "#ffffff",
+            // MudBlazor's defaults (#00c853, #ff9800, #f44336, #2196f3) are too light for text or white labels.
+            Success = "#2e7d32",
+            SuccessContrastText = "#ffffff",
+            Warning = "#b45309",
+            WarningContrastText = "#ffffff",
+            Error = "#c62828",
+            ErrorContrastText = "#ffffff",
+            Info = "#1565c0",
+            InfoContrastText = "#ffffff",
             AppbarBackground = "#ffffff",
             AppbarText = "#1f2430",
             Background = "#f6f7f9",
@@ -44,7 +58,17 @@ public static class CircleToolsTheme
         PaletteDark = new PaletteDark
         {
             Primary = AccentDark,
+            PrimaryContrastText = OnDarkAccent,
             Secondary = "#9aa1ad",
+            SecondaryContrastText = OnDarkAccent,
+            Success = "#66bb6a",
+            SuccessContrastText = OnDarkAccent,
+            Warning = "#ffb74d",
+            WarningContrastText = OnDarkAccent,
+            Error = "#ef9a9a",
+            ErrorContrastText = OnDarkAccent,
+            Info = "#90caf9",
+            InfoContrastText = OnDarkAccent,
             AppbarBackground = "#1a1d22",
             AppbarText = "#e7e9ee",
             Background = "#121417",
@@ -95,7 +119,17 @@ public static class CircleToolsTheme
     private static Palette WithAppBar(Palette target, Palette source, AppBranding branding)
     {
         target.Primary = source.Primary;
+        target.PrimaryContrastText = source.PrimaryContrastText;
         target.Secondary = source.Secondary;
+        target.SecondaryContrastText = source.SecondaryContrastText;
+        target.Success = source.Success;
+        target.SuccessContrastText = source.SuccessContrastText;
+        target.Warning = source.Warning;
+        target.WarningContrastText = source.WarningContrastText;
+        target.Error = source.Error;
+        target.ErrorContrastText = source.ErrorContrastText;
+        target.Info = source.Info;
+        target.InfoContrastText = source.InfoContrastText;
         target.AppbarBackground = branding.AppBarColor;
         target.AppbarText = branding.AppBarText;
         target.Background = source.Background;

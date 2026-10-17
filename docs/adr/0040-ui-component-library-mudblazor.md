@@ -141,6 +141,18 @@ additions, both staying inside this ADR's layering:
 
 Neither touches `script-src`; the CSP script posture from the main decision is unchanged.
 
+## Amendment (2026-10-16) — every theme colour pair passes WCAG AA
+
+From the [2026-10-16 two-account test](../brainstorming/2026-10-16-secret-santa-two-account-device-test.md)
+(Q33): in dark mode the primary buttons had white text on the light blue (about 2.4:1). `CircleToolsTheme`
+now sets every colour pair explicitly, in light and dark:
+
+- Light: the accent darkens slightly (`#4a6bb5`, 5.2:1 with white); success, warning, error and info use
+  darker shades than MudBlazor's defaults, which were too light for text and white labels.
+- Dark: filled buttons and chips carry **dark text** (`#0d1220`) on the lifted accent and status colours.
+- A unit test (`ThemeContrastTests`) fails if any pair drops below 4.5:1 — button labels on their fill, and
+  normal, hint, link and status text on the surface and the background.
+
 ## Pros and cons of the options
 
 ### 1. Keep Bootstrap + hand restyle

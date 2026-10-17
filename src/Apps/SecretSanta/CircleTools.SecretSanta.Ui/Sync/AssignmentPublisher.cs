@@ -1,5 +1,6 @@
 using CircleTools.SecretSanta.Contracts;
 using CircleTools.SecretSanta.Core.Domain;
+using CircleTools.SecretSanta.LocalStore;
 using CircleTools.SecretSanta.LocalStore.Linking;
 
 namespace CircleTools.SecretSanta.Ui;
@@ -21,15 +22,53 @@ namespace CircleTools.SecretSanta.Ui;
 public sealed class AssignmentPublisher(ILinkingApi api)
 {
     /// <summary>
+    /// Publishes the linking projection of every group this device <strong>organizes</strong> (ADR-0080, Q4): a
+    /// group it only joined through a join link is the organizer's to publish, and the server refuses anyone
+    /// else. A shared-by-link group carries this device's admin token, which proves it organizes the group.
+    /// </summary>
+    /// <param name="groups">The local groups.</param>
+    /// <param name="records">The groups' sync records, telling joined from organized groups.</param>
+    /// <param name="cancellationToken">Cancels the calls.</param>
+    /// <returns>The number of assignment rows published.</returns>
+    public async Task<int> PublishOrganizedAsync(
+        IEnumerable<Group> groups,
+        IEnumerable<SyncedGroupRecord> records,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(groups);
+        ArgumentNullException.ThrowIfNull(records);
+
+        var byId = records.ToDictionary(r => r.State.Id);
+        var published = 0;
+        foreach (var group in groups)
+        {
+            var record = byId.GetValueOrDefault(group.Id);
+            if (record is not null && record.IsJoinOnly())
+            {
+                continue;
+            }
+
+            var adminToken = record is { Mode: StorageMode.SharedByLink } ? record.Tokens?.AdminToken : null;
+            published += await PublishAsync(group, adminToken, cancellationToken);
+        }
+
+        return published;
+    }
+
+    /// <summary>
     /// Publishes a group's linking projection: its event registry (so linked members can enumerate
     /// events for their wishlists) and, for each drawn event, the linked-giver assignment rows (ADR-0042).
     /// A group with no linked members publishes nothing — the account-free and fully-unlinked cases stay
     /// inert (NFR-001).
     /// </summary>
     /// <param name="group">The group to publish.</param>
+    /// <param name="adminToken">
+    /// For a shared-by-link group, this device's admin token: the server accepts the projection only from the
+    /// group's organizer (ADR-0080).
+    /// </param>
     /// <param name="cancellationToken">Cancels the call.</param>
     /// <returns>The number of assignment rows published across the group's events.</returns>
-    public async Task<int> PublishAsync(Group group, CancellationToken cancellationToken = default)
+    public async Task<int> PublishAsync(Group group, string? adminToken = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(group);
 
@@ -46,18 +85,19 @@ public sealed class AssignmentPublisher(ILinkingApi api)
             new PublishGroupEventsRequest(
                 group.Name,
                 group.Events.Select(e => new GroupEventEntry(e.Id, e.Name, e.EventDetails?.Date)).ToList()),
+            adminToken,
             cancellationToken);
 
         var published = 0;
         foreach (var occasion in group.Events.Where(e => e.CurrentDraw is not null))
         {
-            published += await PublishEventAsync(group, occasion, cancellationToken);
+            published += await PublishEventAsync(group, occasion, adminToken, cancellationToken);
         }
 
         return published;
     }
 
-    private async Task<int> PublishEventAsync(Group group, Event occasion, CancellationToken cancellationToken)
+    private async Task<int> PublishEventAsync(Group group, Event occasion, string? adminToken, CancellationToken cancellationToken)
     {
         var draw = occasion.CurrentDraw!;
         var rows = new List<PublishedAssignment>();
@@ -96,7 +136,7 @@ public sealed class AssignmentPublisher(ILinkingApi api)
                 : new EventDetailsDto(occasion.EventDetails.Date, occasion.EventDetails.Location, occasion.EventDetails.Description),
             rows);
 
-        await api.PublishAssignmentsAsync(group.Id, request, cancellationToken);
+        await api.PublishAssignmentsAsync(group.Id, request, adminToken, cancellationToken);
         return rows.Count;
     }
 }

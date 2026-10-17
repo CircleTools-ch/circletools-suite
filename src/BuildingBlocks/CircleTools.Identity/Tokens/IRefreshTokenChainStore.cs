@@ -51,6 +51,18 @@ public interface IRefreshTokenChainStore
     /// <returns>How many chains are still live.</returns>
     Task<int> CountActiveForUserAsync(Guid userId, CancellationToken cancellationToken = default);
 
+    /// <summary>The user's unrevoked chains, with their tokens — the signed-in devices (ADR-0079 amendment).</summary>
+    /// <param name="userId">The user.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The chains, in no particular order.</returns>
+    Task<IReadOnlyList<RefreshTokenChain>> ListUnrevokedForUserAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>Finds a chain by its id.</summary>
+    /// <param name="chainId">The chain id.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The chain, or <c>null</c>.</returns>
+    Task<RefreshTokenChain?> FindByIdAsync(Guid chainId, CancellationToken cancellationToken = default);
+
     /// <summary>Persists pending changes.</summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task that completes once changes are written.</returns>

@@ -158,5 +158,15 @@
   href: 0078-my-account-groups-record-their-account.md
 - name: 0079 Sign out this device; change password
   href: 0079-sign-out-this-device-and-change-password.md
+- name: 0080 Participant access to shared groups
+  href: 0080-participant-access-to-shared-groups.md
+- name: 0081 Signed-in sharing stays in the account
+  href: 0081-signed-in-sharing-stays-in-the-account.md
+- name: 0082 Short reveal links for online groups
+  href: 0082-short-reveal-links-for-online-groups.md
+- name: 0083 Links in wishlist items
+  href: 0083-links-in-wishlist-items.md
+- name: 0084 Own entry from the reveal link
+  href: 0084-own-entry-from-the-reveal-link.md
 - name: Template
   href: _template-adr.md

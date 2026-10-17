@@ -97,13 +97,27 @@ public sealed class OfflineProfileWriterTests : IDisposable
     public async Task Reconcile_WithNoPendingEdit_AdoptsAnotherDevicesLanguage()
     {
         var writer = CreateWriter();
+        await writer.ReconcileAsync(_account); // this device now knows the account language
+
         // Another device changed the account language to fr-CH; there is no local edit pending here.
         _stub.Profile = _stub.Profile with { Language = "fr-CH" };
-
         await writer.ReconcileAsync(_account);
 
         Assert.Equal("fr-CH", _culture.LastSet);
         Assert.Equal(0, _stub.PutCount);
+    }
+
+    [Fact]
+    public async Task Reconcile_KeepsALanguageChosenForThisDevice_WhileTheAccountLanguageIsUnchanged()
+    {
+        // Settings says the language picked there applies "only on this device" (2026-10-16 test): a sync that
+        // finds the same account language as before must not switch it back.
+        var writer = CreateWriter();
+        _stub.Profile = _stub.Profile with { Language = "fr-CH" };
+        await writer.ReconcileAsync(_account);
+        await writer.ReconcileAsync(_account);
+
+        Assert.Null(_culture.LastSet);
     }
 
     [Fact]

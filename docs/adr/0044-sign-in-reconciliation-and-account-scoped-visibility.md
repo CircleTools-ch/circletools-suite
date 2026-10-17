@@ -114,7 +114,7 @@ auto-sync. In practice the four automatic triggers (sign-in, app-start, every ch
 cover every case, so the button was redundant and its only remaining value was *surfacing* the sync
 outcome. It is now removed from the shell. To keep that feedback, `AutoSyncService` exposes its last
 group-cycle outcome (`LastStatus`) and its `SyncCompleted` event; the drawer shows this in a passive
-status line. This completes the "sync is invisible" direction of this ADR rather than reversing it.
+status line (moved to the app bar on 2026-10-16, see below). This completes the "sync is invisible" direction of this ADR rather than reversing it.
 
 ### Amendment (2026-08-17) — one-click self-link, and send-time duplicate refusal
 
@@ -188,6 +188,34 @@ D3):
   - **foreground poll:** while the app is in the foreground, a sync is requested every **2 minutes**. A
     background app never polls. A no-op cycle carries no bodies (NFR-008), so the cost is one small
     request per account and one per shared group.
+
+### Amendment (2026-10-16) — the prompt names the groups and has no discard
+
+From the [2026-10-16 two-account test](../brainstorming/2026-10-16-secret-santa-two-account-device-test.md)
+(Q35): the prompt said "2 groups" without naming them, offered one answer for all, and its red **Discard**
+deleted every listed group irreversibly — at the moment people pay least attention (just signed in), and
+one of them held a draw. Now:
+
+- The prompt **lists each group by name** with a short summary ("4 members · drawn").
+- Every group is **ticked** by default. **Import** moves the ticked ones into the account; **unticked ones
+  stay on this device** and are remembered as kept (not asked again).
+- **Later** decides nothing; the prompt asks again at the next sign-in (as an unanswered prompt does today).
+- **No discard** in the prompt. Deleting stays where it is — the group's menu, with its own confirmation.
+
+### Amendment (2026-10-16) — the sync status moves to the app bar as an icon
+
+From the same test (Q14, T3): the drawer's status line ("Synchronisiert – alles auf dem neusten Stand")
+wrapped badly and read unclearly. The passive status now sits in the **app bar, beside the account button**,
+and only while signed in:
+
+- **Syncing:** a small spinner, nothing else.
+- **Synced:** a cloud-check icon only; hover or tap shows "Synced successfully – 2 min ago".
+- **Offline / failed / storage full:** the icon plus a short word ("Offline", "Not synced", "Storage
+  full"). Tapping it opens the detail — what it means, when the last sync succeeded and, unless storage is
+  full, **"Try again now"**. Offline shows as soon as the connection drops, not only after a failed attempt.
+
+`AutoSyncService` adds `IsSyncing`, `LastSyncedAt`, `SyncStarted` and `StatusChanged` for this. Still no
+manual "Sync now" in normal use: the retry appears only when something went wrong.
 
 ## Pros and cons of the options
 

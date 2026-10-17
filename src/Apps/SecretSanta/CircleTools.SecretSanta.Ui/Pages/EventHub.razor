@@ -40,7 +40,9 @@ else
     <MudStack Spacing="2">
         @foreach (var section in Sections)
         {
+            @* An accessible name of its own — title plus status, e.g. "Wishlists, 2 of 4" (Q18). *@
             <MudPaper Outlined="true" Class="ct-hub-row" role="button" tabindex="0"
+                      aria-label="@(string.IsNullOrEmpty(section.Status) ? section.Label : $"{section.Label}, {section.Status}")"
                       @onclick="() => Go(section.Href)" @onkeydown="@(e => GoOnEnter(e, section.Href))">
                 <div class="d-flex align-center gap-3 pa-3">
                     <MudIcon Icon="@section.Icon" Color="Color.Primary" />
@@ -86,10 +88,13 @@ else
 
     // A join-link participant sees the details and wishlists, and their own assignment once drawn - never
     // the draw controls or the other people's reveal links (ADR-0058).
+    // A participant's wishlist row is their own entry (ADR-0080): this device holds no one else's to count.
     private IReadOnlyList<Section> Sections => _event is null ? [] : _access.ReadOnly
         ? [
             new($"groups/{GroupId}/events/{EventId}/details", Icons.Material.Filled.Event, L["NavEventDetails"], DetailsStatus),
-            new($"groups/{GroupId}/events/{EventId}/wishlists", Icons.Material.Filled.CardGiftcard, L["NavWishlists"], WishlistStatus),
+            .. _access.ClaimedMemberId is { } me
+                ? new[] { new Section($"groups/{GroupId}/events/{EventId}/wishlists", Icons.Material.Filled.CardGiftcard, L["MyEntryTitle"], MyWishlistStatus(me)) }
+                : [],
             .. _ownRevealHref is { } href
                 ? new[] { new Section(href, Icons.Material.Filled.Redeem, L["YourAssignment"], L["YourAssignmentHint"]) }
                 : [],
@@ -101,9 +106,35 @@ else
             new($"groups/{GroupId}/events/{EventId}/share", Icons.Material.Filled.Share, L["NavShare"], ShareStatus),
         ];
 
-    // Details: the date, when one is set — the single most useful at-a-glance fact.
-    private string? DetailsStatus =>
-        _event?.Details?.Date is { } date ? date.ToString("d", CultureInfo.CurrentCulture) : null;
+    // Details: a summary of what is set ("24.12.2026 · up to CHF 30 · At Grandma's"), or what is still missing
+    // ("Date and budget missing") so the organizer knows the tile needs a visit (Q22).
+    private string? DetailsStatus
+    {
+        get
+        {
+            if (_event is null)
+            {
+                return null;
+            }
+
+            var date = _event.Details?.Date;
+            var budget = _event.Budget;
+            if (date is null && budget is null)
+            {
+                return L["DetailsMissingDateAndBudget"];
+            }
+
+            var parts = new List<string>(3);
+            parts.Add(date is { } d ? d.ToString("d", CultureInfo.CurrentCulture) : L["DetailsMissingDate"]);
+            parts.Add(budget is { } b ? BudgetDisplay.Format(b.MinAmount, b.Amount, b.Currency) : L["DetailsMissingBudget"]);
+            if (!string.IsNullOrWhiteSpace(_event.Details?.Location))
+            {
+                parts.Add(_event.Details.Location.Trim());
+            }
+
+            return string.Join(" · ", parts);
+        }
+    }
 
     // Wishlists: how many members have filled theirs in. No row-count when there are no members yet.
     private string? WishlistStatus
@@ -121,10 +152,15 @@ else
         }
     }
 
+    // The participant's own wishlist for this event: filled in or still empty.
+    private string MyWishlistStatus(Guid me) =>
+        _event?.Wishlists.FirstOrDefault(w => w.MemberId == me)?.Items.Count > 0 ? L["MyWishlistFilled"] : L["MyWishlistEmpty"];
+
     // Draw: drawn, drawn-but-stale, or not yet — the badges the group list already uses, plus a pending one.
     private string? DrawStatus => _event switch
     {
         { HasCurrentDraw: true, DrawInvalidatedByMembershipChange: true } => L["DrawInvalidatedBadge"],
+        { HasCurrentDraw: true, DrawBreaksExclusions: true } => L["DrawBreaksExclusionsBadge"],
         { HasCurrentDraw: true } => L["DrawCompleteBadge"],
         _ => L["HubDrawPending"],
     };

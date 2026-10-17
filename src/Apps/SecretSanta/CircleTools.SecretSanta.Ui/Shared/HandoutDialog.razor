@@ -3,6 +3,7 @@
 @inject IShareService ShareService
 @inject IJSRuntime JS
 @inject IStringLocalizer<AppStrings> L
+@inject ISender Sender
 
 @*
     Guided hand-out (MNF-7, FR-045): step through the draw one participant at a time so the organizer hands
@@ -14,7 +15,7 @@
     <TitleContent>@L["HandOutLinks"]</TitleContent>
     <DialogContent>
         <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
-            @L["HandoutProgress", _done.Count, Links.Count]
+            @L["HandoutProgress", Needed.Count(IsDone), Needed.Count()]
         </MudText>
 
         @if (Current is { } current)
@@ -42,9 +43,9 @@
 
         @* The full checklist: ✓ for done, so nobody is forgotten and any person can be revisited. *@
         <MudList T="string" Dense="true">
-            @foreach (var link in Links)
+            @foreach (var link in Needed)
             {
-                var done = _done.Contains(HandoutProgressService.MemberKey(link.Url));
+                var done = IsDone(link);
                 <MudListItem T="string" Icon="@(done ? Icons.Material.Filled.CheckCircle : Icons.Material.Outlined.RadioButtonUnchecked)"
                              IconColor="@(done ? Color.Success : Color.Default)"
                              OnClick="() => ToggleAsync(link)">
@@ -75,19 +76,33 @@
     [Parameter]
     public IReadOnlyList<RevealLinkDto> Links { get; set; } = [];
 
+    /// <summary>
+    /// The givers who see their assignment in the app (Q20) and need no link: left out of the steps and the
+    /// count. The progress is still keyed by all links, so someone joining doesn't read as "links changed".
+    /// </summary>
+    [Parameter]
+    public IReadOnlySet<Guid> Connected { get; set; } = new HashSet<Guid>();
+
     private HashSet<string> _done = [];
     private IReadOnlyList<string> _urls = [];
     private bool _canShare;
     private string? _copiedUrl;
+    private EventDto? _occasion;
+    private string _groupName = string.Empty;
 
     // The next participant still to hand out to (the first not marked done), or null when everyone is done.
-    private RevealLinkDto? Current =>
-        Links.FirstOrDefault(l => !_done.Contains(HandoutProgressService.MemberKey(l.Url)));
+    private RevealLinkDto? Current => Needed.FirstOrDefault(l => !IsDone(l));
+
+    private IEnumerable<RevealLinkDto> Needed => Links.Where(l => !Connected.Contains(l.GiverMemberId));
+
+    private bool IsDone(RevealLinkDto link) => _done.Contains(HandoutProgressService.MemberKey(link.Url));
 
     protected override async Task OnInitializedAsync()
     {
         _urls = Links.Select(l => l.Url).ToList();
         _done = await Handout.GetDoneAsync(GroupId, EventId, _urls);
+        _occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));
+        _groupName = (await Sender.Send(new GetGroupQuery(GroupId)))?.Name ?? string.Empty;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -105,7 +120,7 @@
     private async Task ShareAsync(RevealLinkDto link)
     {
         // The link goes in the body too, so a target that reads only text still receives it.
-        await ShareService.ShareAsync(L["AppName"], $"{L["ShareMessage"]}\n{link.Url}", link.Url);
+        await ShareService.ShareAsync(L["AppName"], RevealShareMessage.Compose(L, link.ForLabel, _groupName, _occasion, link.Url), link.Url);
     }
 
     private async Task CopyAsync(RevealLinkDto link)

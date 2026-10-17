@@ -372,6 +372,47 @@ public sealed class AccountEndpointsTests(AccountApiFactory factory)
     }
 
     [Fact]
+    public async Task Sessions_ListThisAccountsDevices_AndSignOutOneOfThem()
+    {
+        // ADR-0079 amendment (Q26): the browser signs in with a User-Agent, the phone without one.
+        var (phone, email) = await RegisterVerifyAndLoginWithEmailAsync();
+        using var browserClient = Client();
+        browserClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36");
+        var login = await browserClient.PostAsJsonAsync("/api/v1/account/login", new LoginRequest(email, ValidPassword));
+        var browser = (await login.Content.ReadFromJsonAsync<SessionResponse>())!;
+        using var client = Authorized(phone);
+
+        var list = await (await client.PostAsJsonAsync("/api/v1/account/sessions", new SessionListRequest(phone.RefreshToken)))
+            .Content.ReadFromJsonAsync<List<SessionInfoResponse>>();
+
+        Assert.Equal(2, list!.Count);
+        Assert.True(list[0].IsCurrent);
+        var other = Assert.Single(list, s => !s.IsCurrent);
+        Assert.Equal("Chrome · Windows", other.Device);
+
+        var revoke = await client.PostAsync(new Uri($"/api/v1/account/sessions/{other.Id}/revoke", UriKind.Relative), content: null);
+        Assert.Equal(HttpStatusCode.NoContent, revoke.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, await RefreshStatusAsync(browser));
+        Assert.Equal(HttpStatusCode.OK, await RefreshStatusAsync(phone));
+    }
+
+    [Fact]
+    public async Task Sessions_OfAnotherAccount_CannotBeSignedOut()
+    {
+        var mine = await RegisterVerifyAndLoginAsync();
+        var theirs = await RegisterVerifyAndLoginAsync();
+        using var theirClient = Authorized(theirs);
+        var theirSession = (await (await theirClient.PostAsJsonAsync("/api/v1/account/sessions", new SessionListRequest(theirs.RefreshToken)))
+            .Content.ReadFromJsonAsync<List<SessionInfoResponse>>())!.Single();
+        using var client = Authorized(mine);
+
+        var revoke = await client.PostAsync(new Uri($"/api/v1/account/sessions/{theirSession.Id}/revoke", UriKind.Relative), content: null);
+
+        Assert.Equal(HttpStatusCode.NotFound, revoke.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, await RefreshStatusAsync(theirs));
+    }
+
+    [Fact]
     public async Task ChangePassword_SetsTheNewPassword_KeepsThisSession_EndsTheOthers_AndSendsANotice()
     {
         var (phone, email) = await RegisterVerifyAndLoginWithEmailAsync();

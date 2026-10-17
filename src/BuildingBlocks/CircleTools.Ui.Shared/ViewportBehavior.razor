@@ -1,0 +1,100 @@
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+@*
+    Keyboard and scroll behaviour for the phone heads (Q11, 2026-10-16 device test): the bottom navigation
+    hides while typing, the focused field stays in view below the app bar, a page left scrolled by the
+    keyboard settles back, and a newly opened page starts at the top while Back restores the position. The
+    logic lives in js/viewport.js; this component wires it to navigation. Renders nothing — mount it once in
+    the shell. Without JS the behaviour is simply absent.
+*@
+
+@code {
+    private IJSObjectReference? _module;
+    private IDisposable? _changing;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        try
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./_content/CircleTools.Ui.Shared/js/viewport.js");
+            await _module.InvokeVoidAsync("attach");
+            _changing = Navigation.RegisterLocationChangingHandler(OnLocationChangingAsync);
+            Navigation.LocationChanged += OnLocationChanged;
+        }
+        catch (JSException)
+        {
+            // No JS environment or the module is unavailable: the behaviour is simply absent.
+        }
+    }
+
+    private async ValueTask OnLocationChangingAsync(LocationChangingContext context)
+    {
+        if (_module is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _module.InvokeVoidAsync("leaving", PathOf(Navigation.Uri));
+        }
+        catch (JSException)
+        {
+            // Best-effort: the position is just not remembered.
+        }
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) => _ = InvokeAsync(async () =>
+    {
+        if (_module is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _module.InvokeVoidAsync("arrived", PathOf(e.Location));
+        }
+        catch (JSException)
+        {
+            // Best-effort.
+        }
+    });
+
+    // The fragment is not part of a page's identity (a reveal link carries its payload there).
+    private static string PathOf(string uri)
+    {
+        var hash = uri.IndexOf('#', StringComparison.Ordinal);
+        return hash < 0 ? uri : uri[..hash];
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+        _changing?.Dispose();
+        try
+        {
+            if (_module is not null)
+            {
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+            // The page is going away.
+        }
+        catch (JSException)
+        {
+            // Best-effort teardown.
+        }
+    }
+}

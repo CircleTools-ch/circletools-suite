@@ -252,6 +252,12 @@ public interface ILinkingStore
     /// </summary>
     Task PublishGroupEventsAsync(Guid groupId, string groupName, Guid organizerAccountId, IReadOnlyList<GroupEventInput> events, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// The accounts that have published a linking projection (event registry or assignment rows) for a
+    /// group — for the "first publisher" rule of the organizer check (ADR-0080).
+    /// </summary>
+    Task<IReadOnlyList<Guid>> GetGroupPublishersAsync(Guid groupId, CancellationToken cancellationToken);
+
     /// <summary>Reads the caller's own assignment in one event, denying — not filtering — a non-member (NFR-002).</summary>
     Task<AssignmentReadResult> GetMyAssignmentAsync(Guid groupId, Guid eventId, Guid callerAccountId, CancellationToken cancellationToken);
 

@@ -74,6 +74,12 @@ assumption stop being acceptable.
 > which adds the **shared-by-link** mode: assignments then reach account-free join-link participants,
 > so "zero assignments stored server-side" holds for **on-this-device** mode only, and secrecy in
 > shared-by-link mode is **trust-bounded** (first-claim-locks), not cryptographic.
+>
+> **Clarified** by [ADR-0080](../../adr/0080-participant-access-to-shared-groups.md) (2026-10-16): the
+> trust boundary is *claiming someone else first*, **not** "every participant holds the draw". A
+> participant's device receives only the pairing of the member it has proven to be (participant key or
+> account), plus that member's and their recipient's wishlist and gift note. A request that proves no
+> member receives no pairing at all. Only the organizer publishes the linking projection.
 
 ## Acceptance criteria
 
@@ -86,6 +92,16 @@ Given the organizer is not signed in
 And the draw has run and links are generated and shared
 When servers and network traffic are inspected
 Then no giver→recipient assignment is stored server-side or transmitted to a server
+
+Given a shared-by-link group whose draw has run
+And a participant device that joined as member M
+When the device reads the group with the join link
+Then the response contains only M's assignment of the current draw and no earlier draws
+And it contains no wishlist or gift note other than M's and M's recipient's
+
+Given a join-link read that proves no member
+When the group is read
+Then the response contains no assignment, no wishlist and no gift note
 
 Given the reveal page for one member's link
 When it is displayed

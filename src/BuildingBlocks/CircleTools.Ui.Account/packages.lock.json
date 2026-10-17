@@ -241,7 +241,6 @@
           "Microsoft.Extensions.Localization": "10.0.1"
         }
       }
-    },
-    "net10.0/ios-arm64": {}
+    }
   }
 }

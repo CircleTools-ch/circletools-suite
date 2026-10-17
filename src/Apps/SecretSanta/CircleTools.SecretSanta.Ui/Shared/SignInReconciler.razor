@@ -2,7 +2,6 @@
 @inject IDialogService Dialog
 @inject ClaimableGroupsService Claimable
 @inject SyncService Sync
-@inject ISender Sender
 @inject AutoSyncService AutoSync
 @inject KeptLocalGroups KeptLocal
 @inject SignInReconciliation Reconciliation
@@ -10,8 +9,8 @@
 
 @*
     Sign-in reconciliation of offline data (ADR-0044). No visual output of its own: on an interactive sign-in
-    that finds account-free groups on the device, it asks the user to Import them into the account, Keep them
-    on this device, or Discard them. With no offline groups it simply lets the background sync run. A
+    that finds account-free groups on the device, it lists them, all ticked, and imports the ticked ones into
+    the account; the others stay on this device (amendment 2026-10-16 — no discard). With no offline groups it simply lets the background sync run. A
     restored session (silent startup refresh) is not a sign-in and is never prompted.
 
     Which sign-in still needs an answer lives in the SignInReconciliation service, not here (amendment
@@ -67,55 +66,44 @@
     // Returns false when the prompt ended without an answer.
     private async Task<bool> ReconcileAsync(Guid accountId)
     {
-        IReadOnlyList<Guid> ids;
+        IReadOnlyList<ClaimableGroup> groups;
         try
         {
             // Only groups the user has not already decided about: one they kept local at an earlier
             // sign-in, or created as "On this device" while signed in, is not asked about again.
             var kept = await KeptLocal.GetAsync();
-            ids = [.. (await Claimable.GetAccountFreeAsync()).Select(g => g.Id).Where(id => !kept.Contains(id))];
+            groups = [.. (await Claimable.GetAccountFreeAsync()).Where(g => !kept.Contains(g.Id))];
         }
         catch (StorageUnavailableException)
         {
-            ids = [];
+            groups = [];
         }
 
-        if (ids.Count == 0)
+        if (groups.Count == 0)
         {
             return true;
         }
 
-        switch (await AskAsync(ids.Count))
+        // Named, tickable groups; no discard (ADR-0044 amendment 2026-10-16, Q35).
+        if (await Dialog.ShowReconcileSheetAsync(groups, _lifetime.Token) is not { } answer)
         {
-            case ReconcileChoice.Import:
-                await Sync.ClaimAsync(accountId, ids);
-                return true;
-            case ReconcileChoice.Discard:
-                foreach (var id in ids)
-                {
-                    await Sender.Send(new DeleteGroupCommand(id));
-                }
-
-                return true;
-            case ReconcileChoice.KeepLocal:
-                // An explicit "keep on this device": remember it, so the next sign-in does not ask about
-                // the same groups again. They stay importable per group from Sharing & sync.
-                await KeptLocal.AddAsync(ids);
-                return true;
-            default:
-                // No answer: decide nothing. The groups stay local; never end the session over it.
-                return false;
+            // "Later", or no answer: decide nothing. The groups stay local; asked again at the next sign-in.
+            return false;
         }
-    }
 
-    private Task<ReconcileChoice?> AskAsync(int count)
-    {
-        // Count-at-one is a distinct key, not "{0} things" with a swapped number: the noun is singular
-        // in every language this app speaks.
-        var body = count == 1 ? L["ReconcileBodySingular"] : L["ReconcileBodyPlural", count];
+        if (answer.Import.Count > 0)
+        {
+            await Sync.ClaimAsync(accountId, answer.Import);
+        }
 
-        return Dialog.ShowReconcileSheetAsync(
-            L["ReconcileTitle"], body, L["ReconcileImport"], L["ReconcileKeepLocal"], L["ReconcileDiscard"], _lifetime.Token);
+        // Unticked: kept on this device, remembered so the next sign-in does not ask again. They stay
+        // importable per group from Sharing & sync.
+        if (answer.KeepLocal.Count > 0)
+        {
+            await KeptLocal.AddAsync(answer.KeepLocal);
+        }
+
+        return true;
     }
 
     public void Dispose()

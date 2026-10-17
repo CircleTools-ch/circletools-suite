@@ -106,6 +106,21 @@ public sealed class SharedRevealSlice
     /// <summary>The group this slice belongs to — used to replace a group's whole slice set on re-publish.</summary>
     public Guid GroupId { get; set; }
 
+    /// <summary>The client's stable key for this slice ("event:giver"), so a re-publish keeps the token (ADR-0068 amendment).</summary>
+    public string? Key { get; set; }
+
+    /// <summary>
+    /// The event the slice belongs to (ADR-0084): the token holder may keep their own wishlist for it.
+    /// <see langword="null"/> for a slice published by a client that predates it.
+    /// </summary>
+    public Guid? EventId { get; set; }
+
+    /// <summary>
+    /// The giver the slice is for — the token holder (ADR-0084). Only the giver: the recipient stays inside the
+    /// opaque <see cref="Body"/> (NFR-002). <see langword="null"/> for a slice from an older client.
+    /// </summary>
+    public Guid? MemberId { get; set; }
+
     /// <summary>The giver's opaque reveal payload as JSON (stored as <c>jsonb</c>, never deserialized by the server).</summary>
     public string Body { get; set; } = string.Empty;
 
@@ -137,4 +152,34 @@ public sealed class SharedMemberClaim
 
     /// <summary>When the member was claimed.</summary>
     public DateTimeOffset ClaimedAt { get; set; }
+
+    /// <summary>
+    /// The hash of the participant key that proves this claim on later requests (ADR-0080), or
+    /// <see langword="null"/> for a claim made before keys existed and not yet exchanged. Only the hash is
+    /// stored, as for share tokens (ADR-0061).
+    /// </summary>
+    public string? ParticipantKeyHash { get; set; }
+}
+
+/// <summary>
+/// A joined participant's own entry in a shared-by-link group (ADR-0080): their gift note and their
+/// wishlist per event. Merged into the group body on write and re-applied over every admin/owner push, so a
+/// stale organizer copy can't undo it. Removed with the claim.
+/// </summary>
+public sealed class SharedMemberEntry
+{
+    /// <summary>The group.</summary>
+    public Guid GroupId { get; set; }
+
+    /// <summary>The claimed member the entry belongs to.</summary>
+    public Guid MemberId { get; set; }
+
+    /// <summary>The participant's gift note, or <see langword="null"/> when unset.</summary>
+    public string? GiftNote { get; set; }
+
+    /// <summary>The participant's per-event wishlists, as JSON (<c>[{ eventId, items }]</c>).</summary>
+    public string Wishlists { get; set; } = "[]";
+
+    /// <summary>When the entry was last written.</summary>
+    public DateTimeOffset UpdatedAt { get; set; }
 }

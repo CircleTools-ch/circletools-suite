@@ -112,6 +112,44 @@
             }
         </MudPaper>
 
+        @* The signed-in devices (ADR-0079 amendment, Q26): each live session, this one marked, and the others
+           can be signed out one at a time — a lost phone no longer means signing out everywhere. *@
+        <MudPaper Elevation="1" Class="pa-4 mt-4" id="signed-in-devices">
+            <MudText Typo="Typo.h6">@L["DevicesTitle"]</MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">@L["DevicesLead"]</MudText>
+            @if (_sessions is null)
+            {
+                <MudText Typo="Typo.body2">@(_sessionsFailed ? L["DevicesLoadFailed"] : L["DevicesLoading"])</MudText>
+            }
+            else
+            {
+                <MudStack Spacing="1">
+                    @foreach (var session in _sessions)
+                    {
+                        <div class="d-flex flex-wrap align-center justify-space-between gap-2 py-1" id="@($"session-{session.Id}")">
+                            <div>
+                                <MudText Typo="Typo.body1">
+                                    @(string.IsNullOrEmpty(session.Device) ? L["DeviceUnknown"] : session.Device)
+                                    @if (session.IsCurrent)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Variant="Variant.Text" Class="ml-1">@L["DeviceThis"]</MudChip>
+                                    }
+                                </MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                    @L["DeviceTimes", session.SignedInAt.ToLocalTime().ToString("g", Culture), session.LastActiveAt.ToLocalTime().ToString("g", Culture)]
+                                </MudText>
+                            </div>
+                            @if (!session.IsCurrent)
+                            {
+                                <BusyButton Type="button" Variant="Variant.Text" Color="Color.Error" Label="@L["DeviceSignOut"]"
+                                            Busy="@(_revoking == session.Id)" OnClick="() => SignOutDeviceAsync(session.Id)" />
+                            }
+                        </div>
+                    }
+                </MudStack>
+            }
+        </MudPaper>
+
         @* Sign out on all devices (FR-049, ADR-0079): sign-out itself ends only this device's session. The
            confirmation is inline rather than a dialog, so it shows on every head. *@
         <MudPaper Elevation="1" Class="pa-4 mt-4" id="sign-out-everywhere">
@@ -165,6 +203,31 @@
     private bool _confirmSignOutEverywhere;
     private bool _signingOutEverywhere;
 
+    private List<SessionInfoResponse>? _sessions;
+    private bool _sessionsFailed;
+    private Guid? _revoking;
+
+    private async Task LoadSessionsAsync()
+    {
+        var result = await Session.ListSessionsAsync();
+        _sessionsFailed = !result.IsSuccess;
+        _sessions = result.IsSuccess ? result.Value : null;
+    }
+
+    private async Task SignOutDeviceAsync(Guid sessionId)
+    {
+        _revoking = sessionId;
+        try
+        {
+            await Session.SignOutDeviceAsync(sessionId);
+            await LoadSessionsAsync();
+        }
+        finally
+        {
+            _revoking = null;
+        }
+    }
+
     private static CultureInfo Culture => CultureInfo.CurrentCulture;
 
     /// <summary>
@@ -213,7 +276,11 @@
         Navigation.NavigateTo(string.Empty);
     }
 
-    protected override async Task OnInitializedAsync() => await LoadPasskeysAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPasskeysAsync();
+        await LoadSessionsAsync();
+    }
 
     /// <summary>
     /// Registers a passkey (FR-010): ask the server for a challenge, let the authenticator answer

@@ -46,6 +46,22 @@ When they attempt to save
 Then saving is blocked and the user is prompted to enter a valid amount
 ```
 
+## Amendment (2026-10-16) — group actions and starting from a template
+
+From the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-santa-two-account-device-test.md) (Q34, T1, Q23):
+
+- [ ] The group menu — on the list and on the group page — offers Rename, Pin/Unpin (signed in), Sharing &
+      sync, **Use as template for a new group**, then Delete, set apart at the end. A joined group offers
+      Sharing & sync and Leave group instead.
+- [ ] "Use as template" opens the create sheet prefilled ("Family (new)"), says what comes along, and creates
+      a new group with the **members (and their gift notes) and exclusions** copied; events, wishlists,
+      draws and account links are not.
+- [ ] "Take members from a circle" (FR-027) is offered only inside *Create group*, and only when the account
+      has a circle with two or more people. Without circles, the circle page links to the web instead of
+      naming an app that does not exist on the phone.
+- [ ] Signed in with no groups, the list shows the same welcome card as signed out, without the account sell,
+      plus a pointer to *My assignments* when the account takes part in someone else's group.
+
 ## Dependencies & related
 
 - Derived from: [UC-SS-001](../../use-cases/secret-santa/UC-SS-001-create-group.md)

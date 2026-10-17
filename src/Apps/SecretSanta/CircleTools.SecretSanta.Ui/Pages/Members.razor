@@ -48,7 +48,7 @@ else
     </MudHidden>
 }
 
-@if (_error is not null)
+@if (_error is not null && _editingId is null)
 {
     <MudAlert Severity="Severity.Error" Dense="true" role="alert" Class="mb-4">@_error</MudAlert>
 }
@@ -71,11 +71,17 @@ else
                     @if (_editingId == member.Id)
                     {
                         <MudStack Spacing="2">
-                            <MudTextField @bind-Value="_editName" Immediate="true" Label="@L["NameLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            @* A rename's error belongs under the field being edited, not at the top of the page (Q10). *@
+                            <MudTextField @bind-Value="_editName" Immediate="true" Label="@L["NameLabel"]" Variant="Variant.Outlined" Margin="Margin.Dense"
+                                          Error="@(_error is not null)" ErrorText="@_error" />
                             @* The gift note is a stable per-person hint the giver sees on the reveal (FR-037):
                                allergies, dietary/lifestyle needs, things not to buy. Capped to protect the
                                encoded reveal link (ADR-0014). *@
-                            <MudTextField @bind-Value="_editGiftNote" Label="@L["GiftNoteLabel"]" HelperText="@L["GiftNoteHint"]"
+                            @* A member who keeps their own entry — joined (ADR-0080) or from their reveal link (ADR-0084) —
+                               keeps their own gift note: the organizer sees it but can't change it. *@
+                            <MudTextField @bind-Value="_editGiftNote" Label="@L["GiftNoteLabel"]"
+                                          HelperText="@(_connected.KeepsOwnEntry(member.Id) ? L["MemberKeepsOwnEntry", member.Name] : L["GiftNoteHint"])"
+                                          ReadOnly="@_connected.KeepsOwnEntry(member.Id)"
                                           Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2"
                                           MaxLength="Member.MaxGiftNoteLength" Counter="Member.MaxGiftNoteLength" />
                             <div class="d-flex gap-1">
@@ -90,19 +96,14 @@ else
                         <div class="d-flex justify-space-between align-center gap-2">
                             <div class="d-flex align-center flex-wrap gap-2" style="min-width:0;">
                                 <MudText Typo="Typo.subtitle1"><strong>@member.Name</strong></MudText>
-                                <AuthorizeView>
-                                    @if (member.UserId is not null)
-                                    {
-                                        <MudTooltip Text="@L["MemberLinkedTitle"]">
-                                            <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text"
-                                                     Icon="@Icons.Material.Filled.AccountCircle">@L["MemberLinkedBadge"]</MudChip>
-                                        </MudTooltip>
-                                    }
-                                </AuthorizeView>
-                                @if (_isSharedAdmin && _claimedMembers.Contains(member.Id))
+                                @* One badge for "sees the assignment in the app" (Q30), however they got there; the
+                                   tooltip says how. Members without it need a reveal link. *@
+                                @if (_connected.Contains(member.Id))
                                 {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text"
-                                             Icon="@Icons.Material.Filled.HowToReg">@L["MemberClaimedBadge"]</MudChip>
+                                    <MudTooltip Text="@(_connected.Joined.Contains(member.Id) ? L["MemberConnectedJoined"] : L["MemberConnectedLinked"])">
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text"
+                                                 Icon="@Icons.Material.Filled.PhoneIphone">@L["MemberConnectedBadge"]</MudChip>
+                                    </MudTooltip>
                                 }
                                 @if (!string.IsNullOrWhiteSpace(member.GiftNote))
                                 {
@@ -141,9 +142,15 @@ else
                                     </AuthorizeView>
                                     @if (_isSharedAdmin && _claimedMembers.Contains(member.Id))
                                     {
-                                        <MudMenuItem Icon="@Icons.Material.Filled.PersonOff" OnClick="() => ReleaseMemberAsync(member.Id, member.Name)">@L["ReleaseMember"]</MudMenuItem>
+                                        <MudMenuItem Icon="@Icons.Material.Filled.PersonOff" OnClick="() => AfterMenu(() => ReleaseMemberAsync(member.Id, member.Name))">@L["ReleaseMember"]</MudMenuItem>
                                     }
-                                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="() => AskRemoveAsync(member.Id, member.Name)">@L["Remove"]</MudMenuItem>
+                                    else if (_canTakeOverEntries && _connected.SelfMaintained.Contains(member.Id))
+                                    {
+                                        @* Someone who keeps their wishlist from their reveal link has no spot to free (ADR-0084); the
+                                           organizer can still take the fields back. *@
+                                        <MudMenuItem Icon="@Icons.Material.Filled.EditNote" OnClick="() => AfterMenu(() => TakeOverEntryAsync(member.Id, member.Name))">@L["TakeOverEntry"]</MudMenuItem>
+                                    }
+                                    <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="() => AfterMenu(() => AskRemoveAsync(member.Id, member.Name))">@L["Remove"]</MudMenuItem>
                                 </MudMenu>
                             }
                         </div>
@@ -209,6 +216,11 @@ else
     // A join-link participant sees the roster but only the organizer changes it (ADR-0058).
     private bool _readOnly;
     private HashSet<Guid> _claimedMembers = [];
+
+    // Whether this device may hand a self-maintained entry back to the organizer (ADR-0084): the admin-link
+    // holder of a Shared-by-link group, or the owner of a My account · shared group.
+    private bool _canTakeOverEntries;
+    private ConnectedMembers _connected = ConnectedMembers.None;
     private string _newName = string.Empty;
     private string? _error;
 
@@ -269,13 +281,28 @@ else
             var record = (await local.LoadGroupsAsync()).FirstOrDefault(r => r.State.Id == GroupId);
             _isSharedAdmin = record is { Mode: StorageMode.SharedByLink, Tokens.AdminToken: not null };
             _claimedMembers = _isSharedAdmin ? [.. await sharedSync.GetClaimedMembersAsync(GroupId)] : [];
+            _canTakeOverEntries = _isSharedAdmin || (record?.IsAdminClaimedShared() ?? false);
         }
+
+        _connected = group is null ? ConnectedMembers.None : await ConnectedMembers.ForAsync(Services, group);
     }
 
     private async Task ReleaseMemberAsync(Guid memberId, string name)
     {
         if (Services.GetService<SharedSyncService>() is { } sharedSync
             && await Dialogs.ShowConfirmSheetAsync(L["ReleaseMemberConfirm", name], L["ReleaseMemberConfirmYes"], L["Cancel"], Color.Primary))
+        {
+            await sharedSync.ReleasePersonAsync(GroupId, memberId);
+            await LoadAsync();
+        }
+    }
+
+    // Hands a reveal-link holder's own entry back to the organizer (ADR-0084): the server drops the entry, so
+    // the fields are editable here again. What they wrote stays in the group.
+    private async Task TakeOverEntryAsync(Guid memberId, string name)
+    {
+        if (Services.GetService<SharedSyncService>() is { } sharedSync
+            && await Dialogs.ShowConfirmSheetAsync(L["TakeOverEntryConfirm", name], L["TakeOverEntryConfirmYes"], L["Cancel"], Color.Primary))
         {
             await sharedSync.ReleasePersonAsync(GroupId, memberId);
             await LoadAsync();
@@ -396,25 +423,35 @@ else
     // The inline card (wide screens) adds from the bound field.
     private Task AddAsync() => AddNamedAsync(_newName);
 
-    // The phone FAB (FEAT-008 W4) collects the name in a bottom sheet, then adds it. A family is 6-12
-    // people, so after each add the sheet comes straight back (saying who was just added) for the next
-    // name; "Done" or an empty dismiss ends the loop. A failed add (duplicate name) stops it so the error
-    // on the page is seen.
+    // The phone FAB (FEAT-008 W4) collects names in one sheet that stays open: a family is 6-12 people, so
+    // after each add it clears for the next name and says who was just added; "Done" ends it. A duplicate
+    // name keeps the sheet open with the error under the field and a suggestion (Q10).
     private async Task AddViaFabAsync()
     {
-        string? hint = null;
-        while (true)
-        {
-            var name = await Dialogs.ShowTextInputSheetAsync(
-                L["AddMember"], L["NameLabel"], L["AddMember"], hint is null ? L["Cancel"] : L["Done"], hint: hint);
-            if (string.IsNullOrWhiteSpace(name) || !await AddNamedAsync(name))
+        await Dialogs.ShowTextInputSheetAsync(
+            L["AddMember"], L["NameLabel"], L["AddMember"], L["Cancel"],
+            submitting: async name =>
             {
-                return;
-            }
+                var added = await AddNamedAsync(name);
+                StateHasChanged();
+                var error = added ? null : _error;
+                if (!added)
+                {
+                    _error = null; // shown in the sheet, not behind it
+                }
 
-            StateHasChanged();
-            hint = L["MemberAddedAddAnother", name.Trim()];
-        }
+                return error;
+            },
+            continueWith: name => L["MemberAddedAddAnother", name],
+            doneLabel: L["Done"]);
+    }
+
+    // "Anna" is taken: suggest "Anna B." (the first free letter), so the two can be told apart (Q10).
+    private string DuplicateMessage(string name)
+    {
+        var taken = (_members ?? []).Select(m => m.Name.Trim()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var suggestion = Enumerable.Range('B', 25).Select(c => $"{name.Trim()} {(char)c}.").FirstOrDefault(s => !taken.Contains(s));
+        return suggestion is null ? L["DuplicateMemberError", name] : L["DuplicateMemberErrorSuggest", name, suggestion];
     }
 
     private async Task<bool> AddNamedAsync(string name)
@@ -425,6 +462,14 @@ else
         }
 
         _error = null;
+
+        // Caught here first, so an expected duplicate is a message, not a logged exception.
+        if ((_members ?? []).Any(m => string.Equals(m.Name.Trim(), name.Trim(), StringComparison.OrdinalIgnoreCase)))
+        {
+            _error = DuplicateMessage(name.Trim());
+            return false;
+        }
+
         try
         {
             await Sender.Send(new AddMemberCommand(GroupId, name));
@@ -434,7 +479,7 @@ else
         }
         catch (CircleTools.SecretSanta.Core.Domain.DuplicateMemberNameException exception)
         {
-            _error = L["DuplicateMemberError", exception.Name];
+            _error = DuplicateMessage(exception.Name);
         }
         catch (InvalidOperationException)
         {
@@ -465,13 +510,16 @@ else
         try
         {
             await Sender.Send(new EditMemberCommand(GroupId, id, _editName));
-            await Sender.Send(new SetMemberGiftNoteCommand(GroupId, id, _editGiftNote));
+            if (!_connected.KeepsOwnEntry(id))
+            {
+                await Sender.Send(new SetMemberGiftNoteCommand(GroupId, id, _editGiftNote));
+            }
             _editingId = null;
             await LoadAsync();
         }
         catch (CircleTools.SecretSanta.Core.Domain.DuplicateMemberNameException exception)
         {
-            _error = L["DuplicateMemberError", exception.Name];
+            _error = DuplicateMessage(exception.Name);
         }
         catch (InvalidOperationException)
         {
@@ -494,4 +542,19 @@ else
         await Sender.Send(new RemoveMemberCommand(GroupId, memberId));
         await LoadAsync();
     }
+
+    // A menu item that opens a sheet starts it only after the menu has closed: the item's handler returns at
+    // once, so the menu is gone before the sheet slides in rather than staying open behind it (Q12).
+    private void AfterMenu(Func<Task> action) => _ = InvokeAsync(async () =>
+    {
+        await Task.Yield();
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            await DispatchExceptionAsync(ex);
+        }
+    });
 }

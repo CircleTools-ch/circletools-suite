@@ -3,9 +3,9 @@
      the status bar; the dark-mode variant lives in values-night/colors.xml. The festive brand lives on
      the icon/splash only. -->
 <resources>
-    <color name="colorPrimary">#5b7cc4</color>
+    <color name="colorPrimary">#4a6bb5</color>
     <color name="colorPrimaryDark">#45608f</color>
-    <color name="colorAccent">#5b7cc4</color>
+    <color name="colorAccent">#4a6bb5</color>
     <color name="colorOnPrimary">#ffffff</color>
     <color name="windowBackground">#f6f7f9</color>
 </resources>

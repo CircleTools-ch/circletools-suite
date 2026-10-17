@@ -36,6 +36,7 @@ namespace CircleTools.SecretSanta.Ui;
 /// <param name="revealSlices">Publishes backend-backed groups' live reveal slices after each reconcile (ADR-0068, FEAT-020).</param>
 /// <param name="auth">The current principal, read for the signed-in account id.</param>
 /// <param name="connectivity">The connectivity seam, subscribed for the reconnect trigger.</param>
+/// <param name="time">The clock, for when the last cycle completed (the app bar's sync indicator).</param>
 public sealed class AutoSyncService(
     SyncCoordinator coordinator,
     ClaimableGroupsService claimable,
@@ -43,7 +44,8 @@ public sealed class AutoSyncService(
     SharedSyncService sharedSync,
     RevealSlicePublisher revealSlices,
     AuthenticationStateProvider auth,
-    IConnectivity connectivity) : IDisposable, ISyncSignals
+    IConnectivity connectivity,
+    TimeProvider time) : IDisposable, ISyncSignals
 {
     private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(750);
 
@@ -65,6 +67,24 @@ public sealed class AutoSyncService(
     /// button (ADR-0044). Read it in a <see cref="SyncCompleted"/> handler.
     /// </summary>
     public SyncStatus? LastStatus { get; private set; }
+
+    /// <summary>When the last account cycle completed successfully, or <see langword="null"/> before one did.</summary>
+    public DateTimeOffset? LastSyncedAt { get; private set; }
+
+    /// <summary>Whether a cycle is running right now — the app bar shows a spinner meanwhile (T3).</summary>
+    public bool IsSyncing => _syncing;
+
+    /// <summary>
+    /// Raised when a cycle starts, so the app bar's sync indicator can show its spinner. Fired off the render
+    /// context; <see cref="SyncCompleted"/> follows when the cycle drains.
+    /// </summary>
+    public event Action? SyncStarted;
+
+    /// <summary>
+    /// Raised when <see cref="LastStatus"/> changes outside a cycle — the device just went offline — so the app
+    /// bar's sync indicator says so at once rather than after the next attempt. Fired off the render context.
+    /// </summary>
+    public event Action? StatusChanged;
 
     /// <summary>
     /// Raised after a background sync cycle drains, so a listing screen can refresh to show groups the
@@ -154,6 +174,7 @@ public sealed class AutoSyncService(
         }
 
         _syncing = true;
+        SyncStarted?.Invoke();
         try
         {
             do
@@ -233,6 +254,9 @@ public sealed class AutoSyncService(
         await sharedSync.SendOwnedDeletesAsync(accountId);
         var ownedListed = await sharedSync.MergeOwnedAsync(accountId);
 
+        // Groups this account joined on another device ("keep it on my account") come to this one too (ADR-0080).
+        await sharedSync.DiscoverJoinedAsync(accountId);
+
         // Auto-claim only the groups the user has marked "My account" for this account and that are not yet
         // account-scoped (FR-038, ADR-0073). A group left "On this device" stays local even while signed in
         // — its mode is honoured, not silently synced. Shared-by-link groups live in the token-keyed store
@@ -249,8 +273,21 @@ public sealed class AutoSyncService(
 
         // Keep the group cycle's outcome so the shell can show it in its passive status line — the same
         // status the removed manual button used to surface.
+        var heldBefore = (await claimable.GetAllAsync()).Select(g => g.Id).ToHashSet();
         var outcome = await coordinator.SyncNowAsync(accountId);
         LastStatus = outcome.Status;
+        if (outcome.IsSuccess)
+        {
+            LastSyncedAt = time.GetUtcNow();
+        }
+
+        // A group the account cycle just dropped may have moved out of the account store into the shared
+        // store as this account's own shared group ("Invite people", ADR-0081). Discovery ran before the drop
+        // saw it as already held; look again so it comes back in this cycle, not the next one.
+        if ((await claimable.GetAllAsync()).Count(g => heldBefore.Contains(g.Id)) < heldBefore.Count)
+        {
+            await sharedSync.MergeOwnedAsync(accountId);
+        }
         if (outcome.KeptAsLocalCopy is { Count: > 0 } kept)
         {
             KeptAsLocalCopy?.Invoke(kept);
@@ -262,7 +299,11 @@ public sealed class AutoSyncService(
         if (online)
         {
             RequestSync(); // Reconnect: flush queued edits and pull.
+            return;
         }
+
+        LastStatus = SyncStatus.Offline;
+        StatusChanged?.Invoke();
     }
 
     private async Task<Guid> CurrentAccountAsync()

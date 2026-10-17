@@ -33,7 +33,6 @@ public sealed class ReminderScheduler(
     TimeProvider time,
     AutoSyncService autoSync) : IReminderRescheduler, IDisposable
 {
-    private static readonly ReminderLeadTimes Lead = new();
     private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(750);
 
     private CancellationTokenSource? _debounce;
@@ -103,7 +102,11 @@ public sealed class ReminderScheduler(
         }
 
         var inputs = await BuildInputsAsync(enabled, cancellationToken);
-        var planned = ReminderPlanner.Plan(inputs, enabled, time.GetLocalNow(), Lead);
+        var settings = await preferences.GetSettingsAsync(cancellationToken);
+
+        // The device's time-zone rules for each target date, so a winter reminder planned in summer keeps its
+        // local time (Q9).
+        var planned = ReminderPlanner.Plan(inputs, enabled, time.GetUtcNow(), settings, time.LocalTimeZone);
 
         var id = 1;
         foreach (var reminder in planned)
@@ -163,6 +166,7 @@ public sealed class ReminderScheduler(
     private string Title(PlannedReminder reminder) => reminder.Kind switch
     {
         ReminderKind.DrawNotDone => localizer["ReminderDrawTitle"],
+        ReminderKind.EventTomorrow when reminder.DaysBefore > 1 => localizer["ReminderSoonTitle", reminder.EventName, reminder.DaysBefore],
         ReminderKind.EventTomorrow => localizer["ReminderTomorrowTitle", reminder.EventName],
         ReminderKind.MyWishlistEmpty => localizer["ReminderWishlistTitle"],
         _ => reminder.EventName,
@@ -171,6 +175,7 @@ public sealed class ReminderScheduler(
     private string Body(PlannedReminder reminder) => reminder.Kind switch
     {
         ReminderKind.DrawNotDone => localizer["ReminderDrawBody", reminder.EventName],
+        ReminderKind.EventTomorrow when reminder.DaysBefore > 1 => localizer["ReminderSoonBody", reminder.DaysBefore],
         ReminderKind.EventTomorrow => localizer["ReminderTomorrowBody"],
         ReminderKind.MyWishlistEmpty => localizer["ReminderWishlistBody", reminder.EventName],
         _ => string.Empty,

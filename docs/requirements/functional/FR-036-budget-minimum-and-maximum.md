@@ -70,6 +70,15 @@ When it is loaded
 Then its budget reads as a bare maximum (minimum absent), unchanged
 ```
 
+## Amendment (2026-10-16) — one budget format everywhere
+
+From the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-santa-two-account-device-test.md) (Q28). The reveal, my assignments, the details tile and the calendar entry use one format:
+
+- [ ] maximum only → "up to CHF 30" / "bis CHF 30" / "jusqu’à 30 CHF" (it is a limit, not a price);
+- [ ] minimum and maximum → "CHF 20–30"; minimum equal to the maximum → "CHF 30";
+- [ ] the currency sits where the user's region puts it (de-CH and English before the amount, fr-CH after),
+      from the formatting culture (ADR-0056). Unit-tested per combination and locale (`BudgetDisplayTests`).
+
 ## Dependencies & related
 
 - Derived from: [UC-SS-015](../../use-cases/secret-santa/UC-SS-015-budget-minimum-and-maximum.md)

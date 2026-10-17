@@ -14,6 +14,9 @@ member who is assigned to give to them. A wishlist belongs to a member **within 
 optional (it may be empty). When a [Draw](draw.md) is revealed, the giver sees their recipient's
 wishlist **for that event**.
 
+A wishlist is a list of **wishlist items**, one line each. A web link pasted anywhere in an item is shown
+to the giver as a tappable link ([ADR-0083](../adr/0083-links-in-wishlist-items.md)).
+
 ## Bounded context(s)
 
 - **Secret-Santa:** one wishlist per member **per event** (ADR-0042); authored content is not

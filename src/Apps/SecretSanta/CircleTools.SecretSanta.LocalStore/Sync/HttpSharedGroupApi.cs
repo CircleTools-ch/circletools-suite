@@ -113,7 +113,7 @@ public sealed class HttpSharedGroupApi(HttpClient client) : ISharedGroupApi
     }
 
     /// <inheritdoc />
-    public async Task<ApiResult> PublishRevealSlicesAsync(
+    public async Task<ApiResult<PublishRevealSlicesResponse>> PublishRevealSlicesAsync(
         string adminToken,
         PublishRevealSlicesRequest request,
         CancellationToken cancellationToken = default)
@@ -122,6 +122,97 @@ public sealed class HttpSharedGroupApi(HttpClient client) : ISharedGroupApi
         var content = JsonContent.Create(request, SyncJsonContext.Default.PublishRevealSlicesRequest);
         using var message = new HttpRequestMessage(
             HttpMethod.Put, $"{Route}/{Uri.EscapeDataString(adminToken)}/reveal-slices") { Content = content };
+        try
+        {
+            using var response = await client.SendAsync(message, cancellationToken);
+            return await ReadPublishAsync(response, cancellationToken);
+        }
+        catch (HttpRequestException)
+        {
+            return ApiResult.Failed<PublishRevealSlicesResponse>(new ApiError(ApiFailure.Unreachable));
+        }
+    }
+
+    // A server that predates the keyed publish answers 204 with no body: success, no tokens to adopt.
+    internal static async Task<ApiResult<PublishRevealSlicesResponse>> ReadPublishAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+    {
+        if (!response.IsSuccessStatusCode)
+        {
+            return ApiResult.Failed<PublishRevealSlicesResponse>(await ApiResponseReader.ReadErrorAsync(response, cancellationToken));
+        }
+
+        if (response.StatusCode == System.Net.HttpStatusCode.NoContent || response.Content.Headers.ContentLength == 0)
+        {
+            return ApiResult.Ok(new PublishRevealSlicesResponse([]));
+        }
+
+        var body = await response.Content.ReadFromJsonAsync(SyncJsonContext.Default.PublishRevealSlicesResponse, cancellationToken);
+        return ApiResult.Ok(body ?? new PublishRevealSlicesResponse([]));
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult<RevealSliceView>> GetRevealSliceAsync(string revealToken, CancellationToken cancellationToken = default)
+    {
+        return await SendForAsync(
+            new HttpRequestMessage(HttpMethod.Get, $"{Route}/reveal/{Uri.EscapeDataString(revealToken)}"),
+            SyncJsonContext.Default.RevealSliceView, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult<RevealEntryView>> GetRevealEntryAsync(string revealToken, CancellationToken cancellationToken = default)
+    {
+        return await SendForAsync(
+            new HttpRequestMessage(HttpMethod.Get, $"{Route}/reveal/{Uri.EscapeDataString(revealToken)}/me"),
+            SyncJsonContext.Default.RevealEntryView, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult<ParticipantEntryResult>> WriteRevealEntryAsync(
+        string revealToken,
+        RevealEntryWrite entry,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        return await SendForAsync(
+            new HttpRequestMessage(HttpMethod.Put, $"{Route}/reveal/{Uri.EscapeDataString(revealToken)}/me")
+            {
+                Content = JsonContent.Create(entry, SyncJsonContext.Default.RevealEntryWrite),
+            },
+            SyncJsonContext.Default.ParticipantEntryResult, cancellationToken);
+    }
+
+    /// <summary>The request header carrying a participant key (ADR-0080).</summary>
+    public const string ParticipantKeyHeader = "X-Participant-Key";
+
+    /// <inheritdoc />
+    public async Task<ApiResult<SharedGroupView>> GetAsParticipantAsync(string token, string participantKey, CancellationToken cancellationToken = default)
+    {
+        var message = new HttpRequestMessage(HttpMethod.Get, $"{Route}/{Uri.EscapeDataString(token)}");
+        message.Headers.Add(ParticipantKeyHeader, participantKey);
+        return await SendForAsync(message, SyncJsonContext.Default.SharedGroupView, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult<ParticipantEntryResult>> WriteEntryAsync(
+        string token,
+        string participantKey,
+        ParticipantEntry entry,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        var message = new HttpRequestMessage(HttpMethod.Put, $"{Route}/{Uri.EscapeDataString(token)}/me")
+        {
+            Content = JsonContent.Create(entry, SyncJsonContext.Default.ParticipantEntry),
+        };
+        message.Headers.Add(ParticipantKeyHeader, participantKey);
+        return await SendForAsync(message, SyncJsonContext.Default.ParticipantEntryResult, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<ApiResult> LeaveAsync(string token, string participantKey, CancellationToken cancellationToken = default)
+    {
+        using var message = new HttpRequestMessage(HttpMethod.Delete, $"{Route}/{Uri.EscapeDataString(token)}/claims/me");
+        message.Headers.Add(ParticipantKeyHeader, participantKey);
         try
         {
             using var response = await client.SendAsync(message, cancellationToken);
@@ -136,11 +227,17 @@ public sealed class HttpSharedGroupApi(HttpClient client) : ISharedGroupApi
     }
 
     /// <inheritdoc />
-    public async Task<ApiResult<RevealSliceView>> GetRevealSliceAsync(string revealToken, CancellationToken cancellationToken = default)
+    public async Task<ApiResult<ParticipantKeyResponse>> IssueParticipantKeyAsync(
+        string token,
+        Guid memberId,
+        string deviceHandle,
+        CancellationToken cancellationToken = default)
     {
-        return await SendForAsync(
-            new HttpRequestMessage(HttpMethod.Get, $"{Route}/reveal/{Uri.EscapeDataString(revealToken)}"),
-            SyncJsonContext.Default.RevealSliceView, cancellationToken);
+        var message = new HttpRequestMessage(HttpMethod.Post, $"{Route}/{Uri.EscapeDataString(token)}/claims/{memberId}/key")
+        {
+            Content = JsonContent.Create(new ParticipantKeyRequest(deviceHandle), SyncJsonContext.Default.ParticipantKeyRequest),
+        };
+        return await SendForAsync(message, SyncJsonContext.Default.ParticipantKeyResponse, cancellationToken);
     }
 
     private async Task<ApiResult<T>> SendForAsync<T>(

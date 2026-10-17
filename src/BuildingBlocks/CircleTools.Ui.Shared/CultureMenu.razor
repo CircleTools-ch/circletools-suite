@@ -1,0 +1,36 @@
+@using System.Globalization
+@inject ICultureProvider Culture
+@inject IStringLocalizer<SharedStrings> L
+
+@*
+    A compact language switch for an app bar ("🌐 DE ▾"): the same choice as CultureSelector, sized for pages
+    that have no Settings within reach — a reveal or join link opened from a message (2026-10-17). Switching
+    re-renders in place (CultureBoundary), so the page and its URL — including a link's #fragment — stay.
+*@
+
+<MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" aria-label="@L["Language"]">
+    <ActivatorContent>
+        <MudButton Variant="Variant.Text" Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Language"
+                   EndIcon="@Icons.Material.Filled.ArrowDropDown" aria-label="@L["Language"]" id="culture-menu"
+                   OnClick="@context.ToggleAsync">
+            @Code(Culture.CurrentCulture.Name)
+        </MudButton>
+    </ActivatorContent>
+    <ChildContent>
+        @foreach (var culture in AppCultures.Supported)
+        {
+            var current = culture == Culture.CurrentCulture.Name;
+            <MudMenuItem OnClick="() => ChooseAsync(culture)"
+                         Icon="@(current ? Icons.Material.Filled.Check : null)" aria-current="@(current ? "true" : null)">
+                @AppCultures.DisplayName(culture)
+            </MudMenuItem>
+        }
+    </ChildContent>
+</MudMenu>
+
+@code {
+    private static string Code(string culture) =>
+        CultureInfo.GetCultureInfo(culture).TwoLetterISOLanguageName.ToUpperInvariant();
+
+    private async Task ChooseAsync(string culture) => await Culture.SetCultureAsync(culture);
+}

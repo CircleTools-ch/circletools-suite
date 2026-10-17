@@ -28,8 +28,8 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
 
         Assert.NotEqual(links.AdminToken, links.JoinToken);
 
-        var admin = await Store(provider).GetAsync(links.AdminToken);
-        var join = await Store(provider).GetAsync(links.JoinToken);
+        var admin = await Store(provider).GetAsync(links.AdminToken, ParticipantProof.None);
+        var join = await Store(provider).GetAsync(links.JoinToken, ParticipantProof.None);
         Assert.Equal(SharedCapability.Admin, admin!.Capability);
         Assert.Equal(SharedCapability.Join, join!.Capability);
         Assert.Equal("Family", admin.Body.GetProperty("name").GetString());
@@ -41,8 +41,8 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
     {
         await using var provider = fixture.CreateProvider();
 
-        Assert.Null(await Store(provider).GetAsync("not-a-real-token"));
-        Assert.Null(await Store(provider).GetAsync(""));
+        Assert.Null(await Store(provider).GetAsync("not-a-real-token", ParticipantProof.None));
+        Assert.Null(await Store(provider).GetAsync("", ParticipantProof.None));
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
 
         Assert.Equal(SharedWriteStatus.Applied, result.Status);
         Assert.Equal(2, result.Version);
-        var join = await Store(provider).GetAsync(links.JoinToken);
+        var join = await Store(provider).GetAsync(links.JoinToken, ParticipantProof.None);
         Assert.Equal("Family 2026", join!.Body.GetProperty("name").GetString());
         Assert.Equal(2, join.Version);
     }
@@ -82,7 +82,7 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
         var result = await Store(provider).PushAsync(links.AdminToken, 5, Body("""{ "v": "incoming" }"""));
 
         Assert.Equal(SharedWriteStatus.Collision, result.Status);
-        var view = await Store(provider).GetAsync(links.AdminToken);
+        var view = await Store(provider).GetAsync(links.AdminToken, ParticipantProof.None);
         Assert.Equal("incoming", view!.Body.GetProperty("v").GetString());
     }
 
@@ -96,9 +96,9 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
 
         Assert.NotNull(rotated);
         Assert.NotEqual(links.AdminToken, rotated!.AdminToken);
-        Assert.Null(await Store(provider).GetAsync(links.AdminToken)); // old admin link no longer resolves
-        Assert.NotNull(await Store(provider).GetAsync(rotated.AdminToken));
-        Assert.NotNull(await Store(provider).GetAsync(links.JoinToken)); // join link unaffected
+        Assert.Null(await Store(provider).GetAsync(links.AdminToken, ParticipantProof.None)); // old admin link no longer resolves
+        Assert.NotNull(await Store(provider).GetAsync(rotated.AdminToken, ParticipantProof.None));
+        Assert.NotNull(await Store(provider).GetAsync(links.JoinToken, ParticipantProof.None)); // join link unaffected
         Assert.Equal(SharedWriteStatus.Applied, (await Store(provider).PushAsync(rotated.AdminToken, 2, Body("""{}"""))).Status);
     }
 
@@ -118,8 +118,8 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
         var links = await Share(provider, Guid.NewGuid(), "{}");
 
         Assert.True(await Store(provider).DeleteAsync(links.AdminToken));
-        Assert.Null(await Store(provider).GetAsync(links.JoinToken));
-        Assert.Null(await Store(provider).GetAsync(links.AdminToken));
+        Assert.Null(await Store(provider).GetAsync(links.JoinToken, ParticipantProof.None));
+        Assert.Null(await Store(provider).GetAsync(links.AdminToken, ParticipantProof.None));
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
         var links = await Share(provider, Guid.NewGuid(), "{}");
 
         Assert.False(await Store(provider).DeleteAsync(links.JoinToken));
-        Assert.NotNull(await Store(provider).GetAsync(links.JoinToken));
+        Assert.NotNull(await Store(provider).GetAsync(links.JoinToken, ParticipantProof.None));
     }
 
     [Fact]
@@ -224,9 +224,9 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
         var member = Guid.NewGuid();
 
         var first = await Store(provider).ClaimPersonAsync(links.JoinToken,
-            new ClaimPersonRequest(member, PersonClaimKind.Device, "device-a", null));
+            new ClaimPersonRequest(member, PersonClaimKind.Device, "device-a", null), null);
         var second = await Store(provider).ClaimPersonAsync(links.JoinToken,
-            new ClaimPersonRequest(member, PersonClaimKind.Account, null, Guid.NewGuid()));
+            new ClaimPersonRequest(member, PersonClaimKind.Account, null, Guid.NewGuid()), null);
 
         Assert.Equal(PersonClaimStatus.Claimed, first.Status);
         Assert.Equal(PersonClaimStatus.AlreadyClaimed, second.Status);
@@ -240,7 +240,7 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
         await using var provider = fixture.CreateProvider();
         var links = await Share(provider, Guid.NewGuid(), "{}");
         var member = Guid.NewGuid();
-        await Store(provider).ClaimPersonAsync(links.JoinToken, new ClaimPersonRequest(member, PersonClaimKind.Device, "d", null));
+        await Store(provider).ClaimPersonAsync(links.JoinToken, new ClaimPersonRequest(member, PersonClaimKind.Device, "d", null), null);
 
         // A join token cannot release; an admin token can.
         Assert.False(await Store(provider).ReleasePersonAsync(links.JoinToken, member));
@@ -248,7 +248,7 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
 
         // Freed — claimable again.
         var reclaim = await Store(provider).ClaimPersonAsync(links.JoinToken,
-            new ClaimPersonRequest(member, PersonClaimKind.Device, "d2", null));
+            new ClaimPersonRequest(member, PersonClaimKind.Device, "d2", null), null);
         Assert.Equal(PersonClaimStatus.Claimed, reclaim.Status);
     }
 
@@ -262,10 +262,10 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
         Assert.True(await Store(provider).ClaimAdminAsync(links.AdminToken, account, "Anna"));
 
         // The admin link now resolves to a "retired" view naming who took over; the join link is normal.
-        var adminView = await Store(provider).GetAsync(links.AdminToken);
+        var adminView = await Store(provider).GetAsync(links.AdminToken, ParticipantProof.None);
         Assert.True(adminView!.AdminRetired);
         Assert.Equal("Anna", adminView.AdminClaimedByName);
-        var joinView = await Store(provider).GetAsync(links.JoinToken);
+        var joinView = await Store(provider).GetAsync(links.JoinToken, ParticipantProof.None);
         Assert.False(joinView!.AdminRetired);
 
         // The retired admin token can no longer push.
@@ -284,7 +284,7 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
         var rotated = await Store(provider).ReleaseAdminAsync(account, links.GroupId);
 
         Assert.NotNull(rotated);
-        var view = await Store(provider).GetAsync(rotated!.AdminToken);
+        var view = await Store(provider).GetAsync(rotated!.AdminToken, ParticipantProof.None);
         Assert.False(view!.AdminRetired);
         Assert.Equal(SharedWriteStatus.Applied, (await Store(provider).PushAsync(rotated.AdminToken, 2, Body("""{}"""))).Status);
     }
@@ -300,10 +300,10 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
         await Store(provider).ClaimAdminAsync(links.AdminToken, account, "Anna");
 
         Assert.False(await Store(provider).DeleteOwnedAsync(Guid.NewGuid(), links.GroupId)); // not the owner
-        Assert.NotNull(await Store(provider).GetAsync(links.JoinToken));
+        Assert.NotNull(await Store(provider).GetAsync(links.JoinToken, ParticipantProof.None));
 
         Assert.True(await Store(provider).DeleteOwnedAsync(account, links.GroupId));
-        Assert.Null(await Store(provider).GetAsync(links.JoinToken)); // the join link goes with it
+        Assert.Null(await Store(provider).GetAsync(links.JoinToken, ParticipantProof.None)); // the join link goes with it
         Assert.Empty(await Store(provider).ListOwnedAsync(account)); // no device rediscovers it
 
         Assert.True(await Store(provider).DeleteOwnedAsync(account, links.GroupId)); // already gone
@@ -334,8 +334,8 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
         var removed = await Store(provider).PruneExpiredAsync(DateTimeOffset.UtcNow.AddDays(1));
 
         Assert.True(removed >= 1);
-        Assert.Null(await Store(provider).GetAsync(ownerLess.JoinToken)); // owner-less + inactive: swept
-        Assert.NotNull(await Store(provider).GetAsync(owned.JoinToken)); // account-owned: kept
+        Assert.Null(await Store(provider).GetAsync(ownerLess.JoinToken, ParticipantProof.None)); // owner-less + inactive: swept
+        Assert.NotNull(await Store(provider).GetAsync(owned.JoinToken, ParticipantProof.None)); // account-owned: kept
     }
 
     [Fact]
@@ -351,7 +351,7 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
         var handed = await Store(provider).ReleaseAllOwnedAsync(account);
 
         Assert.Equal(1, handed); // only the departing account's group
-        Assert.NotNull(await Store(provider).GetAsync(owned.JoinToken)); // participants keep join access
+        Assert.NotNull(await Store(provider).GetAsync(owned.JoinToken, ParticipantProof.None)); // participants keep join access
         // The released group is now owner-less; the account can no longer release it as owner.
         Assert.Null(await Store(provider).ReleaseAdminAsync(account, owned.GroupId));
     }
@@ -364,16 +364,16 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
         var owned = await Share(provider, Guid.NewGuid(), "{}");
         await Store(provider).ClaimAdminAsync(owned.AdminToken, account, "Anna");
         // A member is claimed, to prove the delete takes the claims with it.
-        await Store(provider).ClaimPersonAsync(owned.JoinToken, new ClaimPersonRequest(Guid.NewGuid(), PersonClaimKind.Device, "d", null));
+        await Store(provider).ClaimPersonAsync(owned.JoinToken, new ClaimPersonRequest(Guid.NewGuid(), PersonClaimKind.Device, "d", null), null);
         var otherOwned = await Share(provider, Guid.NewGuid(), "{}");
         await Store(provider).ClaimAdminAsync(otherOwned.AdminToken, Guid.NewGuid(), "Bruno");
 
         var deleted = await Store(provider).DeleteAllOwnedAsync(account);
 
         Assert.Equal(1, deleted); // only the departing account's group
-        Assert.Null(await Store(provider).GetAsync(owned.JoinToken)); // the online copy is gone — no hand-off
-        Assert.Null(await Store(provider).GetAsync(owned.AdminToken));
-        Assert.NotNull(await Store(provider).GetAsync(otherOwned.JoinToken)); // another owner's group untouched
+        Assert.Null(await Store(provider).GetAsync(owned.JoinToken, ParticipantProof.None)); // the online copy is gone — no hand-off
+        Assert.Null(await Store(provider).GetAsync(owned.AdminToken, ParticipantProof.None));
+        Assert.NotNull(await Store(provider).GetAsync(otherOwned.JoinToken, ParticipantProof.None)); // another owner's group untouched
     }
 
     [Fact]
@@ -415,7 +415,7 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
 
         var stored = await Store(provider).SetRevealSlicesAsync(
             links.AdminToken, [new RevealSlice("rt-1", Body("""{ "v": 1, "n": "Zoe", "w": ["Book"] }"""))]);
-        Assert.True(stored);
+        Assert.NotNull(stored);
 
         var view = await Store(provider).GetRevealSliceAsync("rt-1");
         Assert.NotNull(view);
@@ -442,6 +442,26 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
     }
 
     [Fact]
+    public async Task RevealSlices_WithAKnownKey_KeepTheirToken_WhenAnotherDevicePublishesItsOwn()
+    {
+        // ADR-0068 amendment: two organizer devices mint different tokens for the same (event, giver). The
+        // first one stored wins; the second publish gets it back and the first device's link keeps working.
+        await using var provider = fixture.CreateProvider();
+        var links = await Share(provider, Guid.NewGuid(), """{ "name": "Family" }""");
+
+        var first = await Store(provider).SetRevealSlicesAsync(links.AdminToken,
+            [new RevealSlice("rt-phone", Body("""{ "v": 1, "n": "A", "w": [] }"""), "e1:g1")]);
+        var second = await Store(provider).SetRevealSlicesAsync(links.AdminToken,
+            [new RevealSlice("rt-laptop", Body("""{ "v": 1, "n": "A2", "w": [] }"""), "e1:g1"),
+             new RevealSlice("rt-new", Body("""{ "v": 1, "n": "B", "w": [] }"""), "e1:g2")]);
+
+        Assert.Equal([new RevealTokenForKey("e1:g1", "rt-phone")], first);
+        Assert.Equal([new RevealTokenForKey("e1:g1", "rt-phone"), new RevealTokenForKey("e1:g2", "rt-new")], second);
+        Assert.Equal("A2", (await Store(provider).GetRevealSliceAsync("rt-phone"))!.Body.GetProperty("n").GetString());
+        Assert.Null(await Store(provider).GetRevealSliceAsync("rt-laptop"));
+    }
+
+    [Fact]
     public async Task RevealSlices_ByANonAdminToken_AreRejected()
     {
         await using var provider = fixture.CreateProvider();
@@ -450,7 +470,7 @@ public sealed class SharedGroupStoreTests(SharedGroupPostgresFixture fixture)
         var stored = await Store(provider).SetRevealSlicesAsync(
             links.JoinToken, [new RevealSlice("rt-x", Body("""{ "v": 1, "n": "Z", "w": [] }"""))]);
 
-        Assert.False(stored);
+        Assert.Null(stored);
         Assert.Null(await Store(provider).GetRevealSliceAsync("rt-x"));
     }
 

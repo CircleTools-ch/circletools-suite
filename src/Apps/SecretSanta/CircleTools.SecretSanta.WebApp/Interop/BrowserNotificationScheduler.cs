@@ -19,6 +19,13 @@ public sealed class BrowserNotificationScheduler : INotificationScheduler
         ValueTask.FromResult(false);
 
     /// <inheritdoc />
+    public ValueTask<NotificationAccess> GetPermissionAsync(CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult(NotificationAccess.Unknown);
+
+    /// <inheritdoc />
+    public ValueTask OpenSettingsAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
+
+    /// <inheritdoc />
     public ValueTask ScheduleAsync(ScheduledNotification notification, CancellationToken cancellationToken = default) =>
         ValueTask.CompletedTask;
 

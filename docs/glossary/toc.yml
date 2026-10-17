@@ -36,6 +36,10 @@
   href: member.md
 - name: Passkey
   href: passkey.md
+- name: Participant contribution
+  href: participant-contribution.md
+- name: Participant key
+  href: participant-key.md
 - name: Person claim
   href: person-claim.md
 - name: Reveal link

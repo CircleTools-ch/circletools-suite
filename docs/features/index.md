@@ -55,6 +55,12 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-022](TP-022-business-metrics-dashboard.md) | Test plan — Business-metrics dashboard | Platform | Draft |
 | [FEAT-023](FEAT-023-session-scope-and-change-password.md) | Session scope and change password (sign out ends this device only; "Sign out on all devices"; change password ends the other sessions — ADR-0079) | Identity | In progress |
 | [TP-023](TP-023-session-scope-and-change-password.md) | Test plan — Session scope and change password | Identity | Draft |
+| [FEAT-024](FEAT-024-participants-in-shared-groups.md) | Participants in shared groups (own pairing only, own entry editable, leave group, organizer-only linking publish — ADR-0080) | SecretSanta + Main | Done |
+| [TP-024](TP-024-participants-in-shared-groups.md) | Test plan — Participants in shared groups | SecretSanta + Main | Approved |
+| [FEAT-025](FEAT-025-storage-model-and-onboarding.md) | Storage model & onboarding (owned shared groups, create-time storage choice, named import prompt — ADR-0081) | SecretSanta + Main | Done |
+| [TP-025](TP-025-storage-model-and-onboarding.md) | Test plan — Storage model & onboarding | SecretSanta + Main | Approved |
+| [FEAT-026](FEAT-026-own-entry-from-the-reveal-link.md) | Own wishlist and gift note from the reveal link (live-link groups; organizer's copy read-only — ADR-0084) | SecretSanta + Main | Done |
+| [TP-026](TP-026-own-entry-from-the-reveal-link.md) | Test plan — Own entry from the reveal link | SecretSanta + Main | Reviewed |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and

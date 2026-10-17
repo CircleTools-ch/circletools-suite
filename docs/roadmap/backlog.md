@@ -3,6 +3,155 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Browser test pass before the Pixel test — Secret-Santa + Main (2026-10-17)
+
+Every feature driven in a browser at phone width (412×915) against the local Aspire stack on the working
+tree (build 0.1.118), with separate browser contexts as separate devices: local flow, carry-forward, backup,
+DE/FR, sign-up/verify/sign-in + import prompt, two-device sync, shared group with a participant (join, own
+assignment, own wishlist, leave), shared-by-link co-organizing, sessions/change password, circles. Console
+clean apart from the expected 400/401 of deliberate wrong inputs.
+
+- **BTP-1 · Wishlist edits lost behind "Saved ✓" (bug, P1).** ✅ **Fixed 2026-10-17.** Typing in a
+  member's wishlist and moving to the next field within the 700 ms pause stored nothing: MudBlazor's
+  `DebounceInterval` held the value back, so the blur saved the old text, showed "Saved ✓", and the pending
+  debounce was cancelled. `EventWishlists.razor` now takes every keystroke into the model and runs its own
+  pause timer; blur saves at once; saves are serialized (each rewrites the whole group in local storage);
+  leaving the page saves what is unsaved. Same for the participant's own entry. Component tests:
+  `EventWishlistsPageTests`. Browser-verified (field-to-field typing, reload).
+- **BTP-2 · Wishlists page went stale after a background sync (bug, P2).** ✅ **Fixed 2026-10-17.** The one
+  section page without the SBL-2 `ISyncSignals` refresh: it kept showing — and on the next edit saved over —
+  a wishlist another device had changed. Now reloads on `SyncCompleted`, keeping text still being typed.
+  Browser-verified across two devices without a reload.
+- **BTP-3 · Forms show "Required" on every field after a successful submit (P2).** Change password, circle
+  invite, add person: the form resets with validation still armed.
+- **BTP-4 · Security page (P3).** The device list is stale after a password change signed the others out;
+  two sections are titled "Signed-in devices" (the second is "sign out everywhere").
+- **BTP-5 · Second event's suggested name repeats the first (P3).** "Christmas 2026" again; one tap creates a
+  duplicate-named event. Suggest the next year, or block a duplicate name.
+- **BTP-6 · Participant's group card shows "Wishlists 2/5" (P3).** Correct for the device (own + recipient),
+  but reads as "3 missing". Hide the count for a participant.
+- **BTP-7 · `<html lang>` is always `en` (P2, a11y).** Hard-coded in `index.html`, never updated on a
+  language switch: screen readers use the English voice; Chrome on Android may offer to translate DE/FR.
+- **BTP-8 · Copy (P3).** DE footer "Ihre Daten löschen" (rest uses *du*); FR colon spacing inconsistent
+  ("Pour: Anna" vs "Distribués : 5"), hint says "Réglages" on the "Paramètres" page; EN 'There is already a
+  “anna”'; reveal page "ready - no peeking" (hyphen); leave dialog promises "the organizer will see that you
+  left" but nothing shows it; the reveal hint "tell the organizer what you would like" (see BTP-11).
+- **BTP-9 · Small UI (P3).** Tapping a member row does nothing (only ⋮); a "COPIED!" label never resets; the
+  back link keeps the old event name after a rename until navigation; tab title stays "Confirming your
+  address" after confirming; focus ring left on the Exclusions card after creating a group.
+- **BTP-10 · Dev only: the update banner can't apply in development.** `wwwroot/service-worker.js` (dev) has no
+  `SKIP_WAITING` handler, so "Reload" never activates a waiting worker and the banner returns. Production's
+  worker handles it.
+- **BTP-11 · Edit your own wishlist from the reveal link (P2).** ✅ **Built 2026-10-17** —
+  [ADR-0084](../adr/0084-own-entry-from-the-reveal-link.md), [FR-050](../requirements/functional/FR-050-edit-own-entry-from-reveal-link.md),
+  [FEAT-026](../features/FEAT-026-own-entry-from-the-reveal-link.md). Adrian chose: live-link groups only
+  (Shared by link, My account · shared), wishlist + gift note, the person owns the entry (organizer's copy
+  read-only; "Edit their wishlist yourself" hands it back). Browser-verified organizer → holder → giver.
+  **Deploy server first** (migration `AddRevealSliceMember`), as SYNC-1.
+- **BTP-12 · Undo for every text autosave (P2).** ✅ **Built 2026-10-17.** Adrian asked whether autosave
+  leaves a way back from an edit made by mistake. Decision: keep autosave (the mobile norm for notes and
+  lists; a missing save loses more than a wrong edit), and add undo — leaving a field whose text changed
+  shows "Change saved · Undo" for 6 s, restoring the text from before that visit (`UndoLastEdit`). Applies
+  to the organizer's wishlists, the participant's own entry, the reveal-page editor and My wishlists (there
+  every saved change, incl. remove). While typing, the platform's own undo applies.
+- **BTP-13 · Pages opened from a link are a page for one person (P2).** ✅ **Built 2026-10-17.** Adrian: the
+  left menu looked odd on a reveal link, and changing the language meant Settings and losing the link. Now
+  `/r` and `/join` use a link mode of the shell: no menu button, drawer, bottom bar, app switcher or account
+  menu; a compact language switch (`CultureMenu`, "🌐 DE ▾") that changes the language in place; and, only on
+  a device that already holds groups (organizer, joined participant), a way back ("All groups"; an arrow
+  alone below 600 px, where FR wrapped at 360 px). The first-visit language still follows the phone; no
+  `lang=` in links. The reveal page also shows the holder's own wishlist before the reveal (no spoiler).
+
+## Two-account test follow-ups — Secret-Santa (2026-10-16)
+
+From the [2026-10-16 two-account test](../brainstorming/2026-10-16-secret-santa-two-account-device-test.md)
+(Pixel 9 Pro, build 0.1.118, + browser, production). Adrian selected every item; the session doc holds
+the decision for each ID. Work packages in implementation order; each lists the documents to write
+**before** the code. Server changes deploy before the apps (as SYNC-1).
+
+- **WP-1 · Secrecy, server authorization, participants** — release blocker. Q1 (participant can't
+  become organizer; "Leave group"), Q2/I2 (join read is redacted to the device's own pairing), Q3
+  (organizer-only linking publish, 403 not 500), Q4 (client publishes only organized groups), Q5/I1
+  (participant edits own wishlist and gift note; account join links the member), Q6 (taken members
+  disabled on join), Q7 (account join preselected when signed in), Q20 (share counter counts only who
+  needs a link), Q30 ("Verbunden" badge), Q19 (verify password fields). *First:* ADR for participant
+  access and the redacted join view. **Done 2026-10-16** (ADR-0080, FEAT-024) — not yet committed or
+  deployed; server first. Pixel check pending.
+- **WP-2 · Storage model & onboarding.** Q31/I4 (a signed-in organizer's shared group stays owned by the
+  account; *My account* → "Invite people"), Q15 (sharing wording), Q24/I6 (storage choice moves into
+  *Create group*), Q35 (import prompt lists groups, no discard). *First:* ADR for Q31; ADR-0071 and
+  ADR-0044 amendments. Also: an **owner** release of a joined person (today only an admin token can release),
+  needed once signed-in organizers' shared groups are owned. **Implemented 2026-10-16** (ADR-0081, ADR-0071
+  and ADR-0044 amendments, owner release): unit/component/store tests green, browser-verified (first create
+  explains storage, import prompt, owned share, second device discovery, stop sharing, invite). Same-cycle
+  rediscovery re-checked. FEAT-025/TP-025. Open: E2E suite not run/adapted.
+- **WP-3 · Reminders.** T4 (lead time per kind, time of day, "Before the event", per-event override,
+  after-draw offer), Q8 (blocked-permission state + open settings; web says "in the app"), Q9 (DST-safe
+  delivery time). *First:* amend FR-046 and FEAT-016. **Implemented 2026-10-16** (FR-046 / FEAT-016 amended):
+  unit-tested, Android head builds; the phone behaviour needs the device check.
+- **WP-4 · Android chrome & theme.** Q11 (keyboard/scroll), Q12 (menu closes before sheet), Q17
+  (investigate tap fall-through), Q33 (contrast, central theme), Q14 + T3 (sync status icon), T2
+  (drawer "All groups" + "Recently opened"), Q18 (accessible tile names + check). Verified on the Pixel.
+  **Implemented 2026-10-16** (ADR-0044 and ADR-0040 amendments): sync icon in the app bar (offline shown at
+  once, detail + retry), drawer caption and initials, WCAG-checked theme (`ThemeContrastTests`), named hub
+  tiles (`AccessibleNameTests`), menus close before their sheet, `ViewportBehavior` (bottom nav hides while
+  typing, focused field below the app bar, new page at the top, Back restores). Browser-verified. Also: the
+  *Your data* explainer no longer says "there is no account" when signed in. Open: Q11/Q17 on the Pixel.
+- **WP-5 · Groups, events, members.** Q10 (duplicate name in the sheet), Q13 (exclusion warnings, draw
+  vs. exclusions, failed re-draw state), Q21 (share rows), Q22/I5 (event card date/countdown/progress,
+  *Details* summary, date in add dialog), Q23 (signed-in welcome card), T1 + Q36 (circles only inside
+  *Create group*), Q28 (budget format), Q29 (wishlist autosave), Q34 (group menu incl. "Use as template").
+  **Implemented 2026-10-16** (FR-001, FR-002, FR-003, FR-034, FR-036 amended): `DrawFeasibility` +
+  exclusion warnings, "draw no longer matches" flag, draw page keeps the draw after a failed re-draw; event
+  cards with date/countdown/wishlist progress, ordering, Details summary, date in *Add event*; welcome card
+  signed in; circles only inside *Create group* (2+ people), web link instead of the "account app"; one
+  budget format (`BudgetDisplayTests`); wishlist autosave; duplicate name kept in the sheet with a
+  suggestion, sheet stays open between names; uniform share rows; group menu on list and group page with
+  `CopyGroupCommand` ("Use as template") and a shared `GroupRemoval`. Tests green, browser-verified (DE).
+  Open: phone check.
+- **WP-6 · Account pages.** Q25 (native always stays signed in; FR-008), Q26/I7 (session list, sign out
+  one device, e-mail in menu and profile; ADR-0079 amendment), Q27 (SSO option only when it can work),
+  Q37 (account button shows the sign-in state: initial avatar / outlined icon or "Sign in" text).
+  **Implemented 2026-10-16** (ADR-0079 amendment; FR-008, FR-031, FR-049 amended): device label on each
+  session (`DeviceLabel`, migration `AddSessionDevice`), `POST /account/sessions` and
+  `/sessions/{id}/revoke`, *Signed-in devices* on *Security*, the installed app sends a `CircleTools-App`
+  User-Agent; no stay-signed-in box on the native heads; SSO button hidden; initial avatar / "Sign in"
+  account button; e-mail in the menu and on *Profile*. Unit + API tests green, browser-verified (second
+  browser signed out from the list). Open: phone check; production needs the migration.
+- **WP-7 · Sharing.** Q32/I3 (share text with context; short reveal links for online groups). *First:*
+  ADR for short links.
+  **Implemented 2026-10-16** ([ADR-0082](../adr/0082-short-reveal-links-for-online-groups.md); FR-005, FR-006
+  amended): `RevealShareMessage` (context message, DE/EN/FR); short `…/r#for=&rt=` links once the slices are
+  published (`RevealSlicePublisher` now reports success), long links otherwise; the reveal page fetches a
+  short link's slice, keeps it for offline reopening, and says when the first open needs a connection.
+  Found on the way: each organizer device minted its own reveal tokens and replaced the other's on every
+  sync (live links fell back to their snapshot without anyone noticing). Fixed with keyed slices — the
+  server keeps the stored token per (event, giver) and returns it ([ADR-0068](../adr/0068-live-reveal-links-for-backend-backed-groups.md)
+  amendment, migration `AddRevealSliceKey`). Old and new clients on one group still flip until the old
+  ones update — **deploy the server and ship the app together.**
+- **WP-8 · Wishlist items.** I8 (optional link and price, auto-linked URLs, over-budget hint,
+  backward-compatible format). *First:* ADR for the wishlist format.
+  **Implemented 2026-10-16** ([ADR-0083](../adr/0083-links-in-wishlist-items.md); FR-030 amended, glossary
+  *Wishlist*): links are recognised anywhere in a wish and shown as "Open link (site)" on the reveal page and
+  *My assignments*; no price. A first version with a "·" convention and prices was dropped on review as
+  confusing. The save status now follows every change. Unit + component tests green.
+- **WP-10 · Release & verification of WP-1…WP-8 (open).**
+  - **Deploy order:** server first (migrations `AddParticipantKeysAndEntries`, `AddSessionDevice`,
+    `AddRevealSliceKey`), then the apps. Keyed reveal slices only stay stable once no old app version
+    publishes for a group.
+  - **Pixel check** of what only shows on a device: Q11 keyboard/scroll (`ViewportBehavior`), Q17 tap
+    fall-through, reminders (WP-3), the app's `CircleTools-App` User-Agent in *Signed-in devices*, a second
+    reveal link arriving while one is open. Needs a debug build on the phone (replaces the Play install).
+  - **E2E suites** not run (they boot the AppHost on the ports and `bin` folders in use locally). Expected to
+    need updates for WP-2's "signed-in sharing stays in the account": `ClaimAdminTests`,
+    `AccountDeletionDispositionTests`, `MultiDeviceDeleteTests` (they claim admin after a signed-in shared
+    create). `PasskeyCeremonyTests` was adapted to the new account button.
+  - Also fixed on the way (2026-10-16): the device language from Settings no longer reverts on reload or
+    sync (FR-012 amendment); the *Your data* texts no longer tell a signed-in person to sign in.
+- **WP-9 · Test data.** On production: *QA-Familie* (Shared by link, organizer A, 3 exclusions) and its
+  local copy in the Playwright browser profile (account B); *T2-Link* gained a member "ResumeTest". The
+  phone is signed in as **A** (account A), in German.
+
 ## Sync & storage-mode test follow-ups — Secret-Santa (2026-10-15)
 
 From the [2026-10-15 sync test](../brainstorming/2026-10-15-secret-santa-sync-device-test.md) (Pixel 9 Pro +
@@ -18,7 +167,10 @@ browser against production). All findings are fixed in `7bb52d1`. The decisions 
   older server answers 404 for a released group, which a new client reads as "deleted") and ADR-0079 (an
   older server ignores the logout body and ends every session, the old behaviour). Apps already installed
   keep "sign out everywhere" until they update. After the deploy, re-check S4 on the phone.
-- **SYNC-2 · Device check on the Pixel.** These fixes are built but not yet run on the phone:
+- **SYNC-2 · Device check on the Pixel.** *Done 2026-10-16* in the
+  [two-account test](../brainstorming/2026-10-16-secret-santa-two-account-device-test.md): D5, S7 and S1
+  pass on the device; D1 is only partly fixed (rest → Q11, WP-4); D8 seen once (→ Q17, WP-4). Original
+  list — these fixes were built but not yet run on the phone:
   - D1: the keyboard no longer pushes the page or covers bottom sheets;
   - D5: closing the share sheet doesn't count as "handed out" (Android chooser callback);
   - S7: sync on resume and every 2 minutes in the foreground;
@@ -53,7 +205,8 @@ browser against production). All findings are fixed in `7bb52d1`. The decisions 
   - **W1** (a local group with a draw) on the phone;
   - the orphaned "Testq" / "UI-Test Familie" rows from the 2026-10-14 review.
 
-  The phone was left signed in as account B.
+  The phone was left signed in as account B. *(Superseded 2026-10-16: the phone is now signed in
+  as account A; new test data is listed under WP-9.)*
 
 ## First-run onboarding pass — Secret-Santa (2026-09-17)
 

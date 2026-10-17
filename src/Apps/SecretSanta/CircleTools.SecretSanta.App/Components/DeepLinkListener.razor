@@ -19,7 +19,25 @@
     }
 
     private void OnLink(string relativeUrl) =>
-        _ = InvokeAsync(() => Navigation.NavigateTo(relativeUrl));
+        _ = InvokeAsync(() => Navigation.NavigateTo(Distinct(relativeUrl)));
+
+    // A second reveal link arriving while one is open differs only in its #fragment, and Blazor treats such a
+    // navigation as an in-page scroll that raises no LocationChanged — the open reveal would never switch.
+    // A query that changes per link makes it a real navigation; the reveal page ignores the query.
+    private static long _sequence;
+
+    private static string Distinct(string relativeUrl)
+    {
+        var hash = relativeUrl.IndexOf('#', StringComparison.Ordinal);
+        if (hash < 0)
+        {
+            return relativeUrl;
+        }
+
+        var path = relativeUrl[..hash];
+        var separator = path.Contains('?', StringComparison.Ordinal) ? '&' : '?';
+        return $"{path}{separator}open={Interlocked.Increment(ref _sequence)}{relativeUrl[hash..]}";
+    }
 
     public void Dispose() => DeepLinks.LinkReceived -= OnLink;
 }

@@ -19,6 +19,7 @@ public sealed class CalendarEventFactoryTests
     {
         // The budget range uses the current culture; pin it so "10–30" is not localized to "10,30".
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en");
     }
 
     [Fact]
@@ -67,13 +68,13 @@ public sealed class CalendarEventFactoryTests
         var notes = CalendarEventFactory.ComposeNotes(
             "Bring something homemade", new BudgetDto(30m, "CHF", 10m), "Budget");
 
-        Assert.Equal("Bring something homemade\nBudget: 10–30 CHF", notes);
+        Assert.Equal("Bring something homemade\nBudget: CHF 10–30", notes);
     }
 
     [Fact]
     public void ComposesNotes_BudgetOnly_AndNotesOnly_AndNeither()
     {
-        Assert.Equal("Budget: 30 CHF", CalendarEventFactory.ComposeNotes(null, new BudgetDto(30m, "CHF"), "Budget"));
+        Assert.Equal("Budget: up to CHF 30", CalendarEventFactory.ComposeNotes(null, new BudgetDto(30m, "CHF"), "Budget"));
         Assert.Equal("Just notes", CalendarEventFactory.ComposeNotes("Just notes", null, "Budget"));
         Assert.Null(CalendarEventFactory.ComposeNotes(null, null, "Budget"));
         Assert.Null(CalendarEventFactory.ComposeNotes("   ", null, "Budget"));

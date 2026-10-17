@@ -77,6 +77,28 @@ devices" is the rare case.
 - **Follow-ups:** FR-008 is amended; FR-049 (change password) and
   [FEAT-023](../features/FEAT-023-session-scope-and-change-password.md) implement this.
 
+## Amendment (2026-10-16) — a list of signed-in devices, signing out one of them
+
+From the [2026-10-16 two-account test](../brainstorming/2026-10-16-secret-santa-two-account-device-test.md)
+(Q26, I7): "Sign out everywhere" is the only way to end a session on a lost or borrowed device, which also
+signs out every device the person still uses. *Security* now lists the signed-in devices:
+
+- **Each live session** (an unrevoked refresh chain) is a row: a device label taken from the browser's
+  User-Agent at sign-in ("Chrome · Windows", "Wichteln app · Android"), when it signed in, and when it was
+  last active (the newest token in the chain). The row of **this device** is marked and cannot be ended
+  from the list (that is "Sign out").
+- **Sign out a device** ends exactly that session — the chain is revoked, so its next refresh fails and the
+  app there is signed out within one access-token lifetime. Only the person's own sessions can be listed
+  or ended.
+- "This device" is recognised the way sign-out already recognises it: the client presents its refresh
+  secret (`POST /account/sessions` with the optional secret), so the access token still carries no
+  session id.
+- The label is coarse on purpose (browser family and OS, no version, no IP address, no location) —
+  enough to recognise a device, nothing more (NFR-004 data minimisation). It is stored on the chain and
+  goes when the chain is purged.
+- *Sign out everywhere* stays. The account menu and *Profile* show the account's e-mail address, so it is
+  clear which account these devices belong to.
+
 ## Pros and cons of the options
 
 ### 1. Keep "sign out everywhere"

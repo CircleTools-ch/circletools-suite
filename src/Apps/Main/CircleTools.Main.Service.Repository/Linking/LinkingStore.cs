@@ -372,9 +372,11 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
             return;
         }
 
-        // A re-run replaces this event's prior rows atomically (other events are untouched).
+        // A re-run replaces this event's prior rows atomically (other events are untouched). The caller was
+        // authorized as the group's organizer (ADR-0080), so rows another account left behind go too — they
+        // would otherwise collide on the giver key.
         await context.Assignments
-            .Where(a => a.GroupId == groupId && a.EventId == eventId && a.OrganizerAccountId == organizerAccountId)
+            .Where(a => a.GroupId == groupId && a.EventId == eventId)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
 
         foreach (var row in assignments)
@@ -418,10 +420,11 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
         await using var transaction = await context.Database
             .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
 
-        // Replace the organizer's registry for this group wholesale — the client always sends the full
-        // current list, so a removed event disappears and a rename lands (ADR-0042).
+        // Replace the registry for this group wholesale — the client always sends the full current list, so a
+        // removed event disappears and a rename lands (ADR-0042). The caller was authorized as the group's
+        // organizer (ADR-0080), so another account's leftover rows go too instead of colliding on the key.
         await context.GroupEvents
-            .Where(e => e.GroupId == groupId && e.OrganizerAccountId == organizerAccountId)
+            .Where(e => e.GroupId == groupId)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
 
         foreach (var occasion in events)
@@ -439,6 +442,22 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
 
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<Guid>> GetGroupPublishersAsync(Guid groupId, CancellationToken cancellationToken)
+    {
+        var fromEvents = await context.GroupEvents
+            .Where(e => e.GroupId == groupId)
+            .Select(e => e.OrganizerAccountId)
+            .Distinct()
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        var fromAssignments = await context.Assignments
+            .Where(a => a.GroupId == groupId)
+            .Select(a => a.OrganizerAccountId)
+            .Distinct()
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        return [.. fromEvents.Union(fromAssignments)];
     }
 
     /// <inheritdoc />

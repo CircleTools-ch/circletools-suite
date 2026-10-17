@@ -56,6 +56,12 @@ internal sealed class FakeChainStore : IRefreshTokenChainStore
     public Task<int> CountActiveForUserAsync(Guid userId, CancellationToken cancellationToken = default) =>
         Task.FromResult(_chains.Count(c => c.UserId == userId && !c.IsRevoked));
 
+    public Task<IReadOnlyList<RefreshTokenChain>> ListUnrevokedForUserAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<RefreshTokenChain>>([.. _chains.Where(c => c.UserId == userId && !c.IsRevoked)]);
+
+    public Task<RefreshTokenChain?> FindByIdAsync(Guid chainId, CancellationToken cancellationToken = default) =>
+        Task.FromResult(_chains.FirstOrDefault(c => c.Id == chainId));
+
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         SaveCount++;

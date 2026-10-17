@@ -22,7 +22,15 @@ public sealed class SessionService(
     /// <param name="user">The user signing in.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The access token and the refresh secret to hand to the client.</returns>
-    public async Task<SessionTokens> StartAsync(CircleToolsUser user, CancellationToken cancellationToken = default)
+    public Task<SessionTokens> StartAsync(CircleToolsUser user, CancellationToken cancellationToken = default) =>
+        StartAsync(user, device: null, cancellationToken);
+
+    /// <summary>Begins a session after a successful sign-in, recording the device it is on.</summary>
+    /// <param name="user">The user signing in.</param>
+    /// <param name="device">The coarse device label ("Chrome · Windows"), see <see cref="DeviceLabel"/>.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The access token and the refresh secret to hand to the client.</returns>
+    public async Task<SessionTokens> StartAsync(CircleToolsUser user, string? device, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(user);
 
@@ -30,7 +38,7 @@ public sealed class SessionService(
         var options = lifetimes.Value;
         var (secret, handle) = RefreshTokenSecret.Create();
 
-        var chain = RefreshTokenChain.Start(user.Id, handle, now, options);
+        var chain = RefreshTokenChain.Start(user.Id, handle, now, options, device);
         await chains.AddAsync(chain, cancellationToken).ConfigureAwait(false);
         await chains.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
@@ -161,6 +169,47 @@ public sealed class SessionService(
 
         await chains.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return revoked;
+    }
+
+    /// <summary>
+    /// The user's signed-in devices: every unrevoked, unexpired session, newest activity first, with the one a
+    /// refresh secret belongs to marked as this device (ADR-0079 amendment).
+    /// </summary>
+    /// <param name="userId">The signed-in user.</param>
+    /// <param name="currentRefreshSecret">The calling device's refresh secret, if it sent one.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The sessions.</returns>
+    public async Task<IReadOnlyList<SessionSummary>> ListAsync(Guid userId, string? currentRefreshSecret, CancellationToken cancellationToken = default)
+    {
+        var now = clock.GetUtcNow();
+        var current = string.IsNullOrWhiteSpace(currentRefreshSecret)
+            ? null
+            : await FindOwnChainAsync(userId, currentRefreshSecret, cancellationToken).ConfigureAwait(false);
+        var live = await chains.ListUnrevokedForUserAsync(userId, cancellationToken).ConfigureAwait(false);
+
+        return [.. live
+            .Where(c => c.Tokens.Count > 0 && c.ExpiresAt > now)
+            .OrderByDescending(c => c.Id == current?.Id)
+            .ThenByDescending(c => c.LastActiveAt)
+            .Select(c => new SessionSummary(c.Id, c.Device, c.SignedInAt, c.LastActiveAt, c.Id == current?.Id))];
+    }
+
+    /// <summary>Ends one session of the user by its id — "sign out this device" from another one.</summary>
+    /// <param name="userId">The signed-in user.</param>
+    /// <param name="sessionId">The session (chain) to end.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Whether a live session of the user was ended; someone else's or an unknown id ends nothing.</returns>
+    public async Task<bool> RevokeSessionByIdAsync(Guid userId, Guid sessionId, CancellationToken cancellationToken = default)
+    {
+        var chain = await chains.FindByIdAsync(sessionId, cancellationToken).ConfigureAwait(false);
+        if (chain is not { IsRevoked: false } || chain.UserId != userId)
+        {
+            return false;
+        }
+
+        chain.Revoke(clock.GetUtcNow());
+        await chains.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        return true;
     }
 
     // The live chain a refresh secret belongs to, when it is the user's own.

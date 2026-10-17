@@ -31,15 +31,19 @@ public interface ISharedGroupStore
     /// </returns>
     Task<CreateSharedGroupResult> CreateAsync(CreateSharedGroupRequest request, CancellationToken cancellationToken = default);
 
-    /// <summary>Resolves a token to the group it addresses and the capability it grants.</summary>
+    /// <summary>
+    /// Resolves a token to the group it addresses and the capability it grants. A join-token read is
+    /// trimmed to the member <paramref name="proof"/> proves (ADR-0080); admin reads are full.
+    /// </summary>
     /// <param name="token">The admin or join token from a link.</param>
+    /// <param name="proof">What the reader presented to prove a claimed member (participant key or account).</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>
     /// The group view, or <see langword="null"/> when the token does not resolve — a wrong, disabled,
     /// or never-existed token are indistinguishable (no oracle). A retired admin token resolves to a
     /// view with <see cref="SharedGroupView.AdminRetired"/> set, so the client can explain it.
     /// </returns>
-    Task<SharedGroupView?> GetAsync(string token, CancellationToken cancellationToken = default);
+    Task<SharedGroupView?> GetAsync(string token, ParticipantProof proof, CancellationToken cancellationToken = default);
 
     /// <summary>Pushes a new body for the group an admin token addresses (last-write-wins by server clock).</summary>
     /// <param name="token">The token; must grant the admin capability and not be retired.</param>
@@ -67,12 +71,76 @@ public interface ISharedGroupStore
     /// <returns>The claimed member ids, or <see langword="null"/> when the token does not resolve.</returns>
     Task<IReadOnlyList<Guid>?> GetClaimedMembersAsync(string token, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Reads which members keep their own entry — a joined participant's or a reveal-link holder's
+    /// (ADR-0080/ADR-0084) — so the organizer's copy of their wishlist and gift note is read-only.
+    /// </summary>
+    /// <param name="token">Any active token for the group (join or admin).</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns>The member ids with an entry; empty when the token does not resolve.</returns>
+    Task<IReadOnlyList<Guid>> GetSelfMaintainedMembersAsync(string token, CancellationToken cancellationToken = default);
+
     /// <summary>Claims a member for the caller through the join link — first claim wins and locks (ADR-0058).</summary>
     /// <param name="token">An active join or admin token for the group.</param>
     /// <param name="request">Which member, and how the claim is remembered (device or account).</param>
+    /// <param name="callerAccountId">
+    /// The signed-in caller, if any. An account claim binds to this account only (ADR-0080); without a
+    /// caller an account claim is recorded as a device claim.
+    /// </param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>The claim outcome (claimed / already-claimed / not-found).</returns>
-    Task<PersonClaimResult> ClaimPersonAsync(string token, ClaimPersonRequest request, CancellationToken cancellationToken = default);
+    Task<PersonClaimResult> ClaimPersonAsync(string token, ClaimPersonRequest request, Guid? callerAccountId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Issues a participant key for a device claim made before keys existed (ADR-0080), once: only when the
+    /// presented device handle matches the claim's and the claim has no key yet.
+    /// </summary>
+    /// <param name="token">An active join token for the group.</param>
+    /// <param name="memberId">The claimed member.</param>
+    /// <param name="deviceHandle">The handle the device claimed with.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns>The new key, or <see langword="null"/> when refused.</returns>
+    Task<string?> IssueParticipantKeyAsync(string token, Guid memberId, string deviceHandle, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Writes a joined participant's own entry — gift note and per-event wishlists (ADR-0080): records it,
+    /// merges it into the group body and bumps the version.
+    /// </summary>
+    /// <param name="token">An active join token for the group.</param>
+    /// <param name="proof">The participant's proof of their claimed member.</param>
+    /// <param name="entry">The entry; replaces the previous one.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns>Applied with the new version; Forbidden without a proven claim; TooLarge over the limits; NotFound for a bad token.</returns>
+    Task<SharedWriteResult> WriteEntryAsync(string token, ParticipantProof proof, ParticipantEntry entry, CancellationToken cancellationToken = default);
+
+    /// <summary>Releases the participant's own claim and entry — leaving the group (ADR-0080, Q1).</summary>
+    /// <param name="token">An active join token for the group.</param>
+    /// <param name="proof">The participant's proof of their claimed member.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns><see langword="true"/> when a proven claim was released.</returns>
+    Task<bool> LeaveAsync(string token, ParticipantProof proof, CancellationToken cancellationToken = default);
+
+    /// <summary>Lists the shared groups the account claimed a member in, with their join tokens (ADR-0080).</summary>
+    /// <param name="accountId">The signed-in account.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns>The joined groups.</returns>
+    Task<IReadOnlyList<JoinedSharedGroup>> ListJoinedAsync(Guid accountId, CancellationToken cancellationToken = default);
+
+    /// <summary>Releases every claim an account holds, with its entries — account deletion (ADR-0080).</summary>
+    /// <param name="accountId">The departing account.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns>How many claims were released.</returns>
+    Task<int> ReleaseClaimsOfAsync(Guid accountId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// What the store knows about who organizes a group, for authorizing the linking publish (ADR-0080):
+    /// its owner account and whether the presented admin token is active for it.
+    /// </summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="adminToken">An admin token the caller presented, if any.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns>The facts, or <see langword="null"/> when the store holds no such group.</returns>
+    Task<SharedGroupOrganizer?> GetOrganizerAsync(Guid groupId, string? adminToken, CancellationToken cancellationToken = default);
 
     /// <summary>Releases a claimed member so it can be claimed again — admin only, the sole recovery path (ADR-0058).</summary>
     /// <param name="adminToken">The current admin token.</param>
@@ -80,6 +148,17 @@ public interface ISharedGroupStore
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns><see langword="true"/> when the member was released (or was already free); <see langword="false"/> when the token does not grant admin.</returns>
     Task<bool> ReleasePersonAsync(string adminToken, Guid memberId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Releases a claimed member of a group the account owns (ADR-0081) — the owner's counterpart of
+    /// <see cref="ReleasePersonAsync"/>, since an owned group has no admin token. The member's entry goes too.
+    /// </summary>
+    /// <param name="accountId">The owning account.</param>
+    /// <param name="groupId">The group.</param>
+    /// <param name="memberId">The member to free.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns><see langword="true"/> when the caller owns the group (idempotent for a free member).</returns>
+    Task<bool> ReleasePersonAsOwnerAsync(Guid accountId, Guid groupId, Guid memberId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Claims admin of a shared-by-link group into an account (Shared by link → My account, ADR-0058):
@@ -180,16 +259,16 @@ public interface ISharedGroupStore
     /// <param name="adminToken">The current admin token for the group.</param>
     /// <param name="slices">The complete set of per-giver slices for the current draw.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
-    /// <returns><see langword="true"/> when the slices were stored; <see langword="false"/> when the token does not grant admin, or a slice is too large.</returns>
-    Task<bool> SetRevealSlicesAsync(string adminToken, IReadOnlyList<RevealSlice> slices, CancellationToken cancellationToken = default);
+    /// <returns>The tokens in effect for the keyed slices when stored; <see langword="null"/> when the token does not grant admin, or a slice is too large.</returns>
+    Task<IReadOnlyList<RevealTokenForKey>?> SetRevealSlicesAsync(string adminToken, IReadOnlyList<RevealSlice> slices, CancellationToken cancellationToken = default);
 
     /// <summary>Publishes reveal slices for a group the caller owns (account mode, ADR-0068): the owner authorizes by group id + bearer.</summary>
     /// <param name="accountId">The owning account.</param>
     /// <param name="groupId">The group.</param>
     /// <param name="slices">The complete set of per-giver slices for the current draw.</param>
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
-    /// <returns><see langword="true"/> when the slices were stored; <see langword="false"/> when the caller is not the owner, or a slice is too large.</returns>
-    Task<bool> SetRevealSlicesAsOwnerAsync(Guid accountId, Guid groupId, IReadOnlyList<RevealSlice> slices, CancellationToken cancellationToken = default);
+    /// <returns>The tokens in effect for the keyed slices when stored; <see langword="null"/> when the caller is not the owner, or a slice is too large.</returns>
+    Task<IReadOnlyList<RevealTokenForKey>?> SetRevealSlicesAsOwnerAsync(Guid accountId, Guid groupId, IReadOnlyList<RevealSlice> slices, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Reads one giver's reveal slice by its reveal token (ADR-0068) — the public reveal page's only call.
@@ -199,6 +278,31 @@ public interface ISharedGroupStore
     /// <param name="cancellationToken">A token to observe for cancellation.</param>
     /// <returns>The giver's slice, or <see langword="null"/> when the token does not resolve (unknown or revoked).</returns>
     Task<RevealSliceView?> GetRevealSliceAsync(string revealToken, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Reads the reveal-link holder's own gift note and their wishlist for the token's event (ADR-0084).
+    /// </summary>
+    /// <param name="revealToken">The per-giver reveal token from a link's <c>rt=</c>.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns>
+    /// The entry, or <see langword="null"/> when the token does not resolve, its slice names no member/event
+    /// (an older client published it), or the member is linked to an account (they use My wishlists).
+    /// </returns>
+    Task<RevealEntryView?> GetRevealEntryAsync(string revealToken, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Writes the reveal-link holder's own gift note and their wishlist for the token's event (ADR-0084): upserts
+    /// the member's participant entry (keeping their other events' wishlists), merges it into the group body and
+    /// bumps the version — as an ADR-0080 participant write. Touches nothing but that member's entry.
+    /// </summary>
+    /// <param name="revealToken">The per-giver reveal token from a link's <c>rt=</c>.</param>
+    /// <param name="entry">The gift note and this event's wishlist.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns>
+    /// Applied with the new version; TooLarge over the entry limits; NotFound when the token does not resolve,
+    /// names no member/event, or the member is linked to an account.
+    /// </returns>
+    Task<SharedWriteResult> WriteRevealEntryAsync(string revealToken, RevealEntryWrite entry, CancellationToken cancellationToken = default);
 }
 
 /// <summary>How a share-by-link create ended (ADR-0058).</summary>
@@ -237,7 +341,24 @@ public enum PersonClaimStatus
 
 /// <summary>The outcome of <see cref="ISharedGroupStore.ClaimPersonAsync"/>.</summary>
 /// <param name="Status">How the claim ended.</param>
-public sealed record PersonClaimResult(PersonClaimStatus Status);
+/// <param name="ParticipantKey">On a successful claim, the key that proves it later (ADR-0080).</param>
+public sealed record PersonClaimResult(PersonClaimStatus Status, string? ParticipantKey = null);
+
+/// <summary>
+/// What a join-link reader or writer presented to prove which member it speaks for (ADR-0080).
+/// </summary>
+/// <param name="ParticipantKey">The participant key from the claim, if presented.</param>
+/// <param name="AccountId">The signed-in account, if any (proves an account claim).</param>
+public sealed record ParticipantProof(string? ParticipantKey, Guid? AccountId)
+{
+    /// <summary>Gets a proof of nothing — an unproven reader.</summary>
+    public static ParticipantProof None { get; } = new(null, null);
+}
+
+/// <summary>Who organizes a stored shared group, for the linking-publish check (ADR-0080).</summary>
+/// <param name="OwnerAccountId">The owning account, or <see langword="null"/> for an owner-less group.</param>
+/// <param name="AdminTokenValid">Whether the presented admin token is active for this group.</param>
+public sealed record SharedGroupOrganizer(Guid? OwnerAccountId, bool AdminTokenValid);
 
 /// <summary>Why a push to a shared-by-link group ended as it did.</summary>
 public enum SharedWriteStatus
@@ -261,4 +382,5 @@ public enum SharedWriteStatus
 /// <summary>The outcome of <see cref="ISharedGroupStore.PushAsync"/>.</summary>
 /// <param name="Status">How the push ended.</param>
 /// <param name="Version">The version now stored (0 when nothing was stored).</param>
-public sealed record SharedWriteResult(SharedWriteStatus Status, long Version);
+/// <param name="Rewritten">Whether participants' entries were re-applied to the pushed body (ADR-0080).</param>
+public sealed record SharedWriteResult(SharedWriteStatus Status, long Version, bool Rewritten = false);

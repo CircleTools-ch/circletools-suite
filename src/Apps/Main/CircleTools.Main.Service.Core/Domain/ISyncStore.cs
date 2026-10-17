@@ -22,6 +22,16 @@ public interface ISyncStore
     Task<SyncResponse> ExchangeAsync(Guid accountId, SyncRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Whether an aggregate is held in this account's store, or in another account's — for authorizing a
+    /// write that only the group's organizer may make (ADR-0080).
+    /// </summary>
+    /// <param name="aggregateId">The aggregate (group) id.</param>
+    /// <param name="accountId">The calling account.</param>
+    /// <param name="cancellationToken">A token to observe for cancellation.</param>
+    /// <returns>Who holds the aggregate.</returns>
+    Task<AggregateHolding> GetHoldingAsync(Guid aggregateId, Guid accountId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Claims a group into the account (FR-025, <c>POST /api/v1/sync/groups/{id}/claim</c>): the first
     /// upload of a group that had no account behind it. It creates — or, on a retry, updates — the
     /// account-scoped copy so that, after it, the group rides the normal <see cref="ExchangeAsync"/>
@@ -58,3 +68,8 @@ public interface ISyncStore
     /// <returns>A task that completes when the un-claim has been recorded.</returns>
     Task UnclaimAsync(Guid accountId, Guid groupId, CancellationToken cancellationToken = default);
 }
+
+/// <summary>Who holds an aggregate in the account sync store (ADR-0080).</summary>
+/// <param name="HeldByAccount">The calling account's store holds it.</param>
+/// <param name="HeldByOther">Another account's store holds it.</param>
+public sealed record AggregateHolding(bool HeldByAccount, bool HeldByOther);

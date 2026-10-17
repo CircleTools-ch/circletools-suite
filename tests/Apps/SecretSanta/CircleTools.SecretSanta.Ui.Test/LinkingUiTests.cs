@@ -194,6 +194,32 @@ public sealed class MyWishlistsPageTests : IDisposable
         Assert.Contains("UndatedGroup", cut.Markup);
     }
 
+    [Fact]
+    public async Task RemovingAWish_OffersUndo_WhichPutsTheListBack()
+    {
+        // 2026-10-17: every saved change offers "Undo" — the way back from an accidental remove.
+        _ctx.Services.AddSingleton(TimeProvider.System);
+        var groupId = Guid.NewGuid();
+        var eventId = Guid.NewGuid();
+        var api = new FakeLinkingApi
+        {
+            Memberships = new MyMembershipsResponse([new MyMembership(groupId, "Family", eventId, "Christmas", null)]),
+            Wishlists = new MyWishlistsResponse([new MyWishlistResponse(groupId, "Family", eventId, "Christmas", ["Kite", "Book"])]),
+        };
+        _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.Linking.ILinkingApi>(api);
+        var snackbars = _ctx.RenderComponent<MudBlazor.MudSnackbarProvider>();
+        var cut = _ctx.RenderComponent<MyWishlists>();
+
+        await cut.InvokeAsync(() => cut.FindAll("button.mud-icon-button")[0].Click());
+        cut.WaitForAssertion(() => Assert.Equal(["Book"], Assert.Single(api.WishlistUpdates).Items));
+
+        snackbars.WaitForAssertion(() => Assert.Contains(snackbars.FindAll("button"), b => b.TextContent.Trim() == "Undo"));
+        await snackbars.InvokeAsync(() => snackbars.FindAll("button").First(b => b.TextContent.Trim() == "Undo").Click());
+
+        cut.WaitForAssertion(() => Assert.Equal(["Kite", "Book"], api.WishlistUpdates[^1].Items));
+        Assert.Equal(2, api.WishlistUpdates.Count); // the undo itself offers no further undo
+    }
+
     /// <inheritdoc />
     public void Dispose() => _ctx.Dispose();
 }
@@ -458,6 +484,39 @@ public sealed class AssignmentPublisherTests
         var published = Assert.Single(api.PublishedEvents);
         var entry = Assert.Single(published.Request.Events);
         Assert.Equal(date, entry.Date);
+    }
+
+    [Fact]
+    public async Task PublishOrganizedAsync_SkipsJoinedGroups_AndSendsTheAdminTokenForSharedOnes()
+    {
+        // ADR-0080, Q4: a group this device only joined is the organizer's to publish.
+        var local = LinkedGroup("Local");
+        var shared = LinkedGroup("Shared");
+        var joined = LinkedGroup("Joined");
+        var records = new[]
+        {
+            new CircleTools.SecretSanta.LocalStore.SyncedGroupRecord(local.ToState(), 1, null, false),
+            new CircleTools.SecretSanta.LocalStore.SyncedGroupRecord(shared.ToState(), 1, null, false,
+                CircleTools.SecretSanta.LocalStore.StorageMode.SharedByLink,
+                new CircleTools.SecretSanta.LocalStore.SharedGroupTokens("admin-token", "join-token")),
+            new CircleTools.SecretSanta.LocalStore.SyncedGroupRecord(joined.ToState(), 1, null, false,
+                CircleTools.SecretSanta.LocalStore.StorageMode.SharedByLink,
+                new CircleTools.SecretSanta.LocalStore.SharedGroupTokens(null, "join-token-2"), ClaimedMemberId: Guid.NewGuid()),
+        };
+
+        var api = new FakeLinkingApi();
+        await new AssignmentPublisher(api).PublishOrganizedAsync([local, shared, joined], records);
+
+        Assert.Equal([local.Id, shared.Id], api.PublishedEvents.Select(p => p.GroupId));
+        Assert.Equal([null, "admin-token"], api.EventAdminTokens);
+    }
+
+    private static Group LinkedGroup(string name)
+    {
+        var group = Group.Create(name);
+        group.LinkMember(group.AddMember("Alice"), Guid.NewGuid());
+        group.AddEvent("Christmas");
+        return group;
     }
 }
 

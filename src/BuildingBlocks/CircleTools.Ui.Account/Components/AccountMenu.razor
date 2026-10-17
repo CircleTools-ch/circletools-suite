@@ -8,34 +8,63 @@
     every app's shell (ADR-0034) so the account surface is identical suite-wide, and it replaces the
     per-app drawer sign-in/out entries. Sign-out mirrors the previous shell behaviour: end the session,
     then return to the app root, which stays fully usable signed out (NFR-001).
+
+    The button itself shows the state without opening it (Q37, 2026-10-16 device test): signed in, a round
+    avatar with the person's initial; signed out, the outlined account icon plus "Sign in" where there is
+    room. The menu names the account by display name and e-mail (Q26).
 *@
 
-<MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit"
-         AriaLabel="@L["AccountMenuLabel"]" Dense="true">
-    <AuthorizeView>
-        <Authorized>
-            <MudMenuItem Disabled="true">
-                <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                    @L["AccountMenuSignedInAs", context.User.DisplayName()]
-                </MudText>
-            </MudMenuItem>
-            <MudDivider Class="my-1" />
-            <MudMenuItem Href="/account/profile" Icon="@Icons.Material.Filled.Person">@L["ProfileTitle"]</MudMenuItem>
-            <MudMenuItem Href="/account/security" Icon="@Icons.Material.Filled.Security">@L["SecurityTitle"]</MudMenuItem>
-            @* The delete/export screen (FR-014/FR-015). The account-deletion legal page tells users to
-               reach it here — "open the account menu in the top-right corner … choose Delete account" —
-               so it has to be in this menu, in every app, not only in the Main app's drawer. *@
-            <MudMenuItem Href="/account/data" Icon="@Icons.Material.Filled.ManageAccounts">@L["AccountMenuData"]</MudMenuItem>
-            <MudDivider Class="my-1" />
-            <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="SignOutAsync">@L["AccountMenuSignOut"]</MudMenuItem>
-        </Authorized>
-        <NotAuthorized>
-            <MudMenuItem Href="/account/login" Icon="@Icons.Material.Filled.Login">@L["NavSignIn"]</MudMenuItem>
-        </NotAuthorized>
-    </AuthorizeView>
-</MudMenu>
+<AuthorizeView>
+    <Authorized>
+        @* The menu's own icon button (one real button, keyboard included), drawn as a disc with the initial. *@
+        <MudMenu Icon="@AvatarIcon(context.User.DisplayName())" Color="Color.Inherit" Dense="true"
+                 AriaLabel="@L["AccountMenuSignedInAs", context.User.DisplayName()]"
+                 AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" id="account-menu" data-state="signed-in">
+            <ChildContent>
+                <div class="px-4 py-2" id="account-menu-identity">
+                    <MudText Typo="Typo.subtitle2">@context.User.DisplayName()</MudText>
+                    @if (!string.IsNullOrEmpty(context.User.Email()))
+                    {
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@context.User.Email()</MudText>
+                    }
+                </div>
+                <MudDivider Class="my-1" />
+                <MudMenuItem Href="/account/profile" Icon="@Icons.Material.Filled.Person">@L["ProfileTitle"]</MudMenuItem>
+                <MudMenuItem Href="/account/security" Icon="@Icons.Material.Filled.Security">@L["SecurityTitle"]</MudMenuItem>
+                @* The delete/export screen (FR-014/FR-015). The account-deletion legal page tells users to
+                   reach it here — "open the account menu in the top-right corner … choose Delete account" —
+                   so it has to be in this menu, in every app, not only in the Main app's drawer. *@
+                <MudMenuItem Href="/account/data" Icon="@Icons.Material.Filled.ManageAccounts">@L["AccountMenuData"]</MudMenuItem>
+                <MudDivider Class="my-1" />
+                <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="SignOutAsync">@L["AccountMenuSignOut"]</MudMenuItem>
+            </ChildContent>
+        </MudMenu>
+    </Authorized>
+    <NotAuthorized>
+        @* Signed out there is one thing to do, so the button goes straight to it rather than opening a menu. *@
+        <MudHidden Breakpoint="Breakpoint.Xs">
+            <MudButton Href="/account/login" Variant="Variant.Text" Color="Color.Inherit" id="account-menu" data-state="signed-out"
+                       StartIcon="@Icons.Material.Outlined.AccountCircle" Style="text-transform:none;">@L["NavSignIn"]</MudButton>
+        </MudHidden>
+        <MudHidden Breakpoint="Breakpoint.SmAndUp">
+            <MudIconButton Href="/account/login" Icon="@Icons.Material.Outlined.AccountCircle" Color="Color.Inherit"
+                           aria-label="@L["NavSignIn"]" data-state="signed-out" />
+        </MudHidden>
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
+    private static string Initial(string name) =>
+        string.IsNullOrWhiteSpace(name) ? "?" : char.ToUpper(name.Trim()[0], System.Globalization.CultureInfo.CurrentCulture).ToString();
+
+    // SVG content for the icon button: a filled disc in the app-bar text colour with the initial cut out in the
+    // app-bar colour. The initial is escaped, as it is inserted as markup.
+    private static string AvatarIcon(string name) =>
+        "<circle cx=\"12\" cy=\"12\" r=\"11\" fill=\"currentColor\"/>"
+        + "<text x=\"12\" y=\"16.2\" text-anchor=\"middle\" font-size=\"12\" font-weight=\"600\" "
+        + "font-family=\"system-ui, sans-serif\" style=\"fill:var(--mud-palette-appbar-background)\">"
+        + System.Net.WebUtility.HtmlEncode(Initial(name)) + "</text>";
+
     private async Task SignOutAsync()
     {
         await Session.SignOutAsync();

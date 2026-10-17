@@ -31,6 +31,8 @@ only — they are **not** code names.
 | [Managed member](managed-member.md) | Circles | A person in a circle with a profile but no account, maintained by an admin. |
 | [Member](member.md) | Secret-Santa | A person participating in a group; optionally linked to a user. |
 | [Passkey](passkey.md) | Identity | A WebAuthn credential letting a user sign in without a password. |
+| [Participant contribution](participant-contribution.md) | Secret-Santa | What a joined participant maintains themselves: own gift note and own wishlist per event; kept over stale organizer uploads. |
+| [Participant key](participant-key.md) | Secret-Santa | Server-issued secret proving which member a joined device speaks for; stored hashed. |
 | [Person claim](person-claim.md) | Secret-Santa | A joiner asserting which member they are in a shared-by-link group; first-claim-locks, admin-released. |
 | [Reveal link](reveal-link.md) | Secret-Santa | A self-contained encoded link that reveals one giver's assignment client-side. |
 | [Share token](share-token.md) | Platform · Secret-Santa | The unguessable key a shared-by-link group is addressed by on the server; carried in its links. |

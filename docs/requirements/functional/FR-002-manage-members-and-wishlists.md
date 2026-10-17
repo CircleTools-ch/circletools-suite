@@ -44,6 +44,16 @@ Then the member and the affected exclusions are removed together
 And the user is informed that those exclusions were removed
 ```
 
+## Amendment (2026-10-16) — errors in place, autosave
+
+From the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-santa-two-account-device-test.md) (Q10, Q29):
+
+- [ ] A duplicate name keeps the add-member sheet open, shows the error under the field with a suggestion
+      ("Anna B."), keeps the text selected and the keyboard up. The sheet stays open between names ("Dora
+      added — next name?") until *Done*. A rename shows its error under the field being edited.
+- [ ] The organizer's wishlists page saves as you type and on leaving a field — no Save buttons — with a small
+      "Saved ✓"; a failed save says so and keeps the text.
+
 ## Dependencies & related
 
 - Derived from: [UC-SS-002](../../use-cases/secret-santa/UC-SS-002-manage-members.md)

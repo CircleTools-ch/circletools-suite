@@ -21,11 +21,11 @@ and:
 
 - **Starts as "On this device"** until the user changes it, so local-first
   ([NFR-001](../non-functional/NFR-001-local-first-offline.md)) holds for anyone who does nothing.
-- **Is set at first run** via a one-time, skippable onboarding dialog that explains the three modes and
-  **states that the storage can still be changed per group** (FR-038). In this onboarding dialog
-  **"My account" is selectable even while signed out** (unlike the create/Settings pickers, where it is
-  disabled): choosing it and saving **takes the user to sign in / register**, after which new groups
-  default to "My account".
+- **Is explained where a group is created** *(amended 2026-10-16, ADR-0071 amendment)*: there is no
+  first-run dialog. The first time a device creates a group, the create dialog's storage line is expanded
+  with a one-line explanation of each option and notes that it can be changed per group (FR-038); after that
+  it is the compact line. Signed out, the account option reads "My account (sign-in needed)" and leads to
+  sign-in, after which the create dialog opens again with that choice.
 - **Is changeable anytime** from **Settings** ("Default storage for new groups").
 - **Seeds every create path** — both the inline create picker (which pre-selects the default instead of a
   hard-coded "On this device") *and* the phone **"+" quick-create**, which previously always created a
@@ -52,21 +52,22 @@ plain first-run explanation, and a per-group storage icon make the storage model
 ## Acceptance criteria
 
 ```gherkin
-Given a fresh install where the storage onboarding has not been shown
-When the user first opens the groups screen
-Then a one-time dialog explains the three storage modes, notes it is changeable per group, and lets the user set a default (or skip)
+Given a fresh install that has not created a group yet
+When the user opens "Create group"
+Then the storage line is expanded with a one-line explanation of each option and notes it is changeable per group
+And no dialog about storage appears before that
 
-Given the onboarding dialog was shown or skipped once
-When the user opens the groups screen again
-Then the dialog is not shown again
+Given a group was already created on this device
+When the user opens "Create group" again
+Then the storage line is the compact "Stored: … · Change" line
 
 Given the user has set the default storage mode to "Shared by link"
 When the user creates a group from the phone "+" quick-create
 Then the new group is created in "Shared by link" mode (not "On this device")
 
-Given the first-run onboarding and the user is signed out
-When the user selects "My account" and saves
-Then they are taken to sign in / register, and after signing in new groups default to "My account"
+Given the user is signed out and in the create dialog
+When the user selects "My account (sign-in needed)"
+Then they are taken to sign in, and afterwards the create dialog opens again with "My account" chosen
 
 Given the user has set the default to "My account" and is signed out
 When the user creates a group
@@ -74,7 +75,7 @@ Then the group is created "On this device" and will auto-claim into the account 
 
 Given the groups list with groups in different modes
 When it is shown
-Then each group row shows a storage icon indicating On this device, Shared by link, or My account
+Then each group row shows a storage icon indicating On this device, Shared by link, My account, or My account · shared (ADR-0081)
 
 Given the Settings screen
 When the user changes "Default storage for new groups"

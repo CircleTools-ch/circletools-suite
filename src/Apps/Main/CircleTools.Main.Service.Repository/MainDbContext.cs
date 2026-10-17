@@ -75,10 +75,14 @@ public sealed class MainDbContext(DbContextOptions<MainDbContext> options)
             entity.Property(c => c.Id).ValueGeneratedNever();
             entity.Property(c => c.UserId).IsRequired();
             entity.Property(c => c.RevokedAt);
+            entity.Property(c => c.Device).HasMaxLength(RefreshTokenChain.MaxDeviceLength).IsRequired().HasDefaultValue(string.Empty);
 
             // Computed from state — never stored.
             entity.Ignore(c => c.IsRevoked);
             entity.Ignore(c => c.Current);
+            entity.Ignore(c => c.SignedInAt);
+            entity.Ignore(c => c.LastActiveAt);
+            entity.Ignore(c => c.ExpiresAt);
 
             entity.HasIndex(c => c.UserId);
 

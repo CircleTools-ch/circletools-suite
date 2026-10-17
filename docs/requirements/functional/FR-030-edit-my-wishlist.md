@@ -93,6 +93,18 @@ Then the editor UI is localized
 And the free-text content is stored and shown untranslated
 ```
 
+## Amendment (2026-10-16) — links in wishes
+
+From the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-santa-two-account-device-test.md)
+(I8), decided in [ADR-0083](../../adr/0083-links-in-wishlist-items.md):
+
+- [ ] A web link pasted anywhere in a wish is shown to the giver (reveal page, *My assignments*) as a
+      tappable "Open link (shop.example)" (http/https only, opened outside the app). Nothing special has to be
+      typed; the editors stay plain text.
+- [ ] Existing lists, links already sent and older app versions keep working.
+- [ ] The save status follows every change: typing shows "Saving…" (or "Not saved yet" where saving happens
+      on leaving the field), and "Saved ✓" only once the latest text is saved.
+
 ## Dependencies & related
 
 - Derived from: [UC-SS-012](../../use-cases/secret-santa/UC-SS-012-edit-my-wishlist.md)

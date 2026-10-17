@@ -119,12 +119,17 @@ public sealed class OfflineProfileWriter(
             }
 
             // No local edit pending: adopt the account's current preferences, so a language change made
-            // on another device takes effect here (FR-023).
+            // on another device takes effect here (FR-023). Only a *change* of the account language is
+            // adopted: a language chosen for this device in Settings ("only on this device") must not be
+            // undone by every sync (2026-10-16 test). The first read (nothing cached) adopts nothing.
             var current = await api.GetProfileAsync(cancellationToken);
             if (current.Value is { } profile)
             {
+                var known = pending?.Language;
                 await CacheAsync(accountId, profile.DisplayName, profile.Language, dirty: false, cancellationToken);
-                if (!SameCulture(profile.Language, culture.CurrentCulture))
+                if (known is not null
+                    && !SameCulture(profile.Language, known)
+                    && !SameCulture(profile.Language, culture.CurrentCulture))
                 {
                     await culture.SetCultureAsync(profile.Language, cancellationToken);
                 }
@@ -157,6 +162,9 @@ public sealed class OfflineProfileWriter(
     // page renders only the display name and language.
     private static ProfileResponse Synthesize(Guid accountId, SyncedProfileRecord record) =>
         new(accountId, record.DisplayName, string.Empty, record.Language, EmailVerified: true);
+
+    private static bool SameCulture(string language, string other) =>
+        string.Equals(AppCultures.Normalize(language), AppCultures.Normalize(other), StringComparison.OrdinalIgnoreCase);
 
     private static bool SameCulture(string language, CultureInfo current) =>
         string.Equals(AppCultures.Normalize(language), current.Name, StringComparison.OrdinalIgnoreCase);

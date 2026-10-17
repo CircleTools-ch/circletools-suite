@@ -91,6 +91,26 @@ else
         <MudAlert Severity="Severity.Error" Dense="true" Class="mb-3" role="alert">@message</MudAlert>
     }
 
+    @* Said at once, not only when the draw fails (Q13a): who the exclusions leave stuck, or that together they
+       rule out any draw. Saving them stays allowed — the organizer may be about to add someone. *@
+    @if (_feasibility is { Possible: false } f)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-3" role="alert" id="exclusions-warning">
+            @foreach (var name in f.WithoutRecipient)
+            {
+                <div>@L["ExclusionsNoRecipient", name]</div>
+            }
+            @foreach (var name in f.WithoutGiver)
+            {
+                <div>@L["ExclusionsNoGiver", name]</div>
+            }
+            @if (f.WithoutRecipient.Count == 0 && f.WithoutGiver.Count == 0)
+            {
+                <div>@L["ExclusionsNoDraw"]</div>
+            }
+        </MudAlert>
+    }
+
     @if (_group.Exclusions.Count == 0)
     {
         <MudText Class="mud-text-secondary">@L["NoExclusions"]</MudText>
@@ -122,6 +142,7 @@ else
     public Guid GroupId { get; set; }
 
     private GroupDto? _group;
+    private DrawFeasibilityDto? _feasibility;
     private bool _readOnly;
     private Guid? _giverId;
     private Guid? _recipientId;
@@ -183,6 +204,7 @@ else
     {
         _readOnly = (await GroupAccess.ForAsync(Services, GroupId)).ReadOnly;
         _group = await Sender.Send(new GetGroupQuery(GroupId));
+        _feasibility = await Sender.Send(new CheckDrawFeasibilityQuery(GroupId));
     }
 
     private string MemberName(Guid? memberId) =>

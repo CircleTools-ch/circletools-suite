@@ -46,6 +46,30 @@ the hosting decision ([ADR-0053](../../adr/0053-backend-free-first-mobile-releas
 the toggles render but say reminders need the installed app); **iOS deferred** with the iOS head
 ([ADR-0031](../../adr/0031-ios-build-host.md)). This is phone-first, mirroring the haptics seam.
 
+### Amendment (2026-10-16) — lead time, time of day, per-event override, blocked permission
+
+From the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-santa-two-account-device-test.md)
+(T4, Q8, Q9), selected by Adrian:
+
+- **Lead time per kind.** Next to each switch the user chooses how many days before the occasion it fires:
+  1, 2, 3, 5, 7 or 14. Defaults stay 3 / 1 / 3.
+- **Time of day.** One time for all reminders (default 09:00), chosen in the same section.
+- **"Before the event".** The second kind is shown as *Before the event* (it is no longer always "tomorrow");
+  its notification says "tomorrow" for a 1-day lead and "in N days" otherwise.
+- **Per-event override.** On an occasion's *Details*, a reminder setting: *as in Settings* (default),
+  *N days before* for this occasion's event reminder, or *off* (no reminders for this occasion).
+- **Offered after the draw.** After a successful draw, if *Before the event* is off and the device can
+  schedule, the app offers once per occasion to remind the user before it; accepting switches the kind on
+  (and asks for permission there, where it makes sense).
+- **Blocked permission (Q8).** When the OS refuses notifications, the switch stays **off** and a note says
+  notifications are off for the app, with **Open settings** (the app's system settings). Coming back to the
+  app re-checks: if allowed meanwhile, the switch the user wanted is turned on. The note also shows when
+  reminders are on but notifications were blocked later.
+- **Correct across clock changes (Q9).** The delivery time is the chosen local time **on the target date**,
+  resolved with the device's time-zone rules for that date — not today's UTC offset (a reminder planned in
+  summer for December used to fire an hour early).
+- Settings stay **per device**.
+
 ## Rationale
 
 Being nudged at the right moment — run the draw, the exchange is tomorrow, fill your wishlist — is the
@@ -88,6 +112,20 @@ And when I delete the occasion, all of its reminders are cancelled
 Given I decline the OS notification permission
 When a scheduled time is reached
 Then no notification is shown and nothing else in the app changes
+
+Given "Before the event" is on with a lead of 5 days and the time 07:30
+And an occasion on 24 December, planned in October (summer time)
+When the reminders are scheduled
+Then the event reminder fires on 19 December at 07:30 local time (winter time)
+
+Given notifications are blocked for the app in the OS
+When I switch on a reminder kind
+Then the switch stays off and a note offers to open the app's notification settings
+And after I allow notifications and return to the app, the switch is on
+
+Given an occasion whose Details reminder setting is "off"
+When reminders are scheduled
+Then no reminder is scheduled for that occasion
 
 Given I am on the web head
 When I open Settings › Notifications

@@ -77,6 +77,19 @@ When they view the other members
 Then no other member's email address is shown
 ```
 
+## Amendment (2026-10-16) — a device's language choice survives a reload
+
+Found while checking the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-santa-two-account-device-test.md)
+work in English and French: the account language was applied again on every app start (session restore)
+and on every background sync, so the language picked in Settings — which says "only on this device" —
+reverted within minutes.
+
+- [ ] Signing in applies the account's language (a borrowed device does not keep someone else's language).
+- [ ] Restoring a session on app start does not, and neither does a background sync while the account
+      language is unchanged; a language chosen for this device in Settings stays.
+- [ ] When the account language changes (on another device), the next sync here follows it (FR-023).
+- [ ] Changing the language in *Profile* changes the account and this device at once.
+
 ## Dependencies & related
 
 - Derived from: [UC-MAIN-005](../../use-cases/main/UC-MAIN-005-manage-profile.md)

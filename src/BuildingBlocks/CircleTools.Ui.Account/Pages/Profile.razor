@@ -10,6 +10,11 @@
     <Authorized>
         <MudText Typo="Typo.h4" GutterBottom="true">@L["ProfileTitle"]</MudText>
         <MudText Class="mud-text-secondary mb-4">@L["ProfileLead"]</MudText>
+        @* Which account this is, at the top (Q26): the e-mail is the sign-in identity. *@
+        @if (!string.IsNullOrEmpty(context.User.Email()))
+        {
+            <MudText Class="mb-4" id="profile-email"><strong>@L["FieldEmail"]:</strong> @context.User.Email()</MudText>
+        }
 
         <ProblemAlert Message="@_error" Details="@_details" />
 

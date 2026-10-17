@@ -46,6 +46,45 @@ public sealed class RevealLinkBuilder(RevealLinkOptions options, RevealLinkCodec
         return new RevealLinkDto(forLabel, giverMemberId, url);
     }
 
+    /// <summary>
+    /// The short, token-only form of a reveal link for a group whose live slice is published (ADR-0082):
+    /// <c>…/r#for=&lt;name&gt;&amp;rt=&lt;token&gt;</c>, without the embedded snapshot.
+    /// </summary>
+    /// <param name="longUrl">The full reveal link, for its origin and path.</param>
+    /// <param name="forLabel">The giver's name.</param>
+    /// <param name="revealToken">The giver's reveal token.</param>
+    /// <returns>The short link.</returns>
+    public static string ShortUrl(string longUrl, string forLabel, string revealToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(longUrl);
+        var hash = longUrl.IndexOf('#', StringComparison.Ordinal);
+        var basePart = hash < 0 ? longUrl : longUrl[..hash];
+        return $"{basePart}#for={Uri.EscapeDataString(forLabel)}&rt={Uri.EscapeDataString(revealToken)}";
+    }
+
+    /// <summary>Whether a fragment is a short, token-only link (no embedded snapshot, ADR-0082).</summary>
+    /// <param name="fragment">The fragment string (with or without a leading <c>#</c>).</param>
+    /// <returns><see langword="true"/> when it carries a reveal token but no <c>d=</c> payload.</returns>
+    public static bool IsShort(string fragment) =>
+        ParseRevealToken(fragment) is not null
+        && !(fragment ?? string.Empty).TrimStart('#').Split('&').Any(p => p.StartsWith("d=", StringComparison.Ordinal));
+
+    /// <summary>Reads the readable <c>for=</c> label alone, or an empty string.</summary>
+    /// <param name="fragment">The fragment string.</param>
+    /// <returns>The label.</returns>
+    public static string ParseLabel(string fragment)
+    {
+        foreach (var part in (fragment ?? string.Empty).TrimStart('#').Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (part.StartsWith("for=", StringComparison.Ordinal))
+            {
+                return Uri.UnescapeDataString(part[4..]);
+            }
+        }
+
+        return string.Empty;
+    }
+
     /// <summary>Parses a reveal-link fragment into its readable label and opaque blob.</summary>
     /// <param name="fragment">The fragment string (with or without a leading <c>#</c>).</param>
     /// <returns>The decoded <c>for</c> label and the <c>d</c> blob.</returns>

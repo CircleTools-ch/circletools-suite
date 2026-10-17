@@ -2,21 +2,26 @@
     A single-line text-input bottom sheet (FEAT-008 W4). Slides up from the bottom edge with one field
     and a confirm/cancel — the native pattern behind a FAB "add" action. Returns the trimmed text via
     TextInputSheetExtensions.ShowTextInputSheetAsync (or null if cancelled).
+
+    With a Submitting callback the sheet applies the value itself and stays open on an error — shown under
+    the field, the text kept and selected, the keyboard up (Q10). With Continue it also stays open after a
+    success, cleared for the next entry ("Anna added — next name?"), and its dismiss button reads Done.
 *@
 
 <MudDialog>
     <DialogContent>
-        @if (!string.IsNullOrWhiteSpace(Hint))
+        @if (!string.IsNullOrWhiteSpace(_hint))
         {
-            <MudText Typo="Typo.body2" Color="Color.Success" Class="mb-2" role="status">@Hint</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Success" Class="mb-2" role="status">@_hint</MudText>
         }
         <MudTextField @ref="_field" @bind-Value="_value" Immediate="true" Label="@Label" Variant="Variant.Outlined"
-                      AutoFocus="true" OnKeyDown="OnKeyDownAsync" Class="mt-1" />
+                      AutoFocus="true" OnKeyDown="OnKeyDownAsync" Class="mt-1"
+                      Error="@(_error is not null)" ErrorText="@_error" id="text-sheet-field" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">@CancelLabel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Submit"
-                   Disabled="@string.IsNullOrWhiteSpace(_value)">@ConfirmLabel</MudButton>
+        <MudButton OnClick="Cancel">@(_continued && DoneLabel is not null ? DoneLabel : CancelLabel)</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SubmitAsync"
+                   Disabled="@(string.IsNullOrWhiteSpace(_value) || _busy)">@ConfirmLabel</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -39,11 +44,31 @@
     /// <summary>Optional status line above the field (e.g. who was just added when adding several in a row).</summary>
     [Parameter] public string? Hint { get; set; }
 
+    /// <summary>
+    /// Applies the value; returns an error to show under the field (the sheet stays open), or
+    /// <see langword="null"/> when it was accepted.
+    /// </summary>
+    [Parameter] public Func<string, Task<string?>>? Submitting { get; set; }
+
+    /// <summary>After an accepted value, stay open for the next one with this status line (built from the value).</summary>
+    [Parameter] public Func<string, string>? Continue { get; set; }
+
+    /// <summary>The dismiss label once something was accepted in a continuing sheet.</summary>
+    [Parameter] public string? DoneLabel { get; set; }
+
     private MudTextField<string> _field = default!;
 
     private string _value = string.Empty;
+    private string? _hint;
+    private string? _error;
+    private bool _busy;
+    private bool _continued;
 
-    protected override void OnInitialized() => _value = Initial ?? string.Empty;
+    protected override void OnInitialized()
+    {
+        _value = Initial ?? string.Empty;
+        _hint = Hint;
+    }
 
     // MudBlazor's AutoFocus is unreliable for a field inside a dialog on mobile: it fires before the
     // sheet's slide-up transition finishes, so the field never really takes focus and the soft keyboard
@@ -61,23 +86,74 @@
         }
     }
 
-    private void Submit()
+    private async Task SubmitAsync()
     {
-        if (!string.IsNullOrWhiteSpace(_value))
+        if (string.IsNullOrWhiteSpace(_value) || _busy)
         {
-            Dialog.Close(DialogResult.Ok(_value.Trim()));
+            return;
         }
+
+        var value = _value.Trim();
+        if (Submitting is null)
+        {
+            Dialog.Close(DialogResult.Ok(value));
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            _error = await Submitting(value);
+        }
+        finally
+        {
+            _busy = false;
+        }
+
+        if (_error is not null)
+        {
+            // Keep the text, select it and keep the keyboard up, so the fix is one keystroke away.
+            StateHasChanged();
+            await _field.FocusAsync();
+            await _field.SelectRangeAsync(0, _value.Length);
+            return;
+        }
+
+        if (Continue is null)
+        {
+            Dialog.Close(DialogResult.Ok(value));
+            return;
+        }
+
+        _continued = true;
+        _hint = Continue(value);
+        _value = string.Empty;
+        StateHasChanged();
+        await _field.ClearAsync();
+        await _field.FocusAsync();
     }
 
-    private void Cancel() => Dialog.Cancel();
+    // In a continuing sheet that has accepted something, "Done" is not a cancel: it ends the loop.
+    private void Cancel()
+    {
+        if (_continued)
+        {
+            Dialog.Close(DialogResult.Ok(string.Empty));
+            return;
+        }
 
-    private Task OnKeyDownAsync(KeyboardEventArgs args)
+        Dialog.Cancel();
+    }
+
+    private async Task OnKeyDownAsync(KeyboardEventArgs args)
     {
         if (args.Key == "Enter")
         {
-            Submit();
+            await SubmitAsync();
         }
-
-        return Task.CompletedTask;
+        else if (_error is not null)
+        {
+            _error = null; // editing clears the message
+        }
     }
 }

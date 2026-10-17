@@ -117,12 +117,14 @@ public sealed class ClaimableGroupsService(ILocalSyncStore local)
         // A current draw is the most recent draw that a later membership change has not discarded —
         // the same "has a usable draw" reading the app uses, and what makes the claim screen warn that
         // assignments would be uploaded (NFR-002).
-        var hasCurrentDraw = state.Draws.Count > 0 && !state.DrawInvalidatedByMembershipChange;
+        // Draws live per event (ADR-0042); the group-level list is a legacy field only a pre-events snapshot fills.
+        var hasCurrentDraw = (state.Events ?? []).Any(e => e.Draws.Count > 0 && !e.DrawInvalidatedByMembershipChange)
+            || (state.Draws.Count > 0 && !state.DrawInvalidatedByMembershipChange);
 
         // Which account the group belongs to, whichever "My account" kind it is (ADR-0078). A legacy
         // record in "My account" mode with nothing recorded still belongs to *some* account, so it is never
         // account-free — it is hidden while signed out and resolved on the next signed-in cycle.
-        var owner = record.AccountScope ?? record.AdminAccount ?? record.PendingClaimAccount;
+        var owner = record.AccountScope ?? record.AdminAccount ?? record.PendingClaimAccount ?? record.JoinedAccount;
 
         return new ClaimableGroup(
             state.Id,

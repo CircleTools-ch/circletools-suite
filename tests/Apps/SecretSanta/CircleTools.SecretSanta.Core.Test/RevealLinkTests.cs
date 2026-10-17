@@ -117,4 +117,18 @@ public sealed class RevealLinkTests
     {
         Assert.Throws<FormatException>(() => RevealLinkBuilder.ParseFragment("#for=Bob"));
     }
+
+    [Fact]
+    public void ShortUrl_KeepsOnlyTheNameAndTheToken_InTheFragment()
+    {
+        // ADR-0082: no d= snapshot; the token stays in the fragment, never in the path or query.
+        var shortUrl = RevealLinkBuilder.ShortUrl("https://santa.example/r#for=Al&v=3&d=LONGBLOB&rt=old", "Anna Bé", "tok_123-x");
+
+        Assert.Equal("https://santa.example/r#for=Anna%20B%C3%A9&rt=tok_123-x", shortUrl);
+        var fragment = shortUrl[shortUrl.IndexOf('#')..];
+        Assert.True(RevealLinkBuilder.IsShort(fragment));
+        Assert.Equal("Anna Bé", RevealLinkBuilder.ParseLabel(fragment));
+        Assert.Equal("tok_123-x", RevealLinkBuilder.ParseRevealToken(fragment));
+        Assert.False(RevealLinkBuilder.IsShort("#for=Al&v=3&d=BLOB&rt=tok"));
+    }
 }

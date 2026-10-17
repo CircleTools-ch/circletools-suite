@@ -1,3 +1,4 @@
+using CircleTools.Main.Contracts;
 using CircleTools.SecretSanta.Core.Persistence;
 
 namespace CircleTools.SecretSanta.LocalStore;
@@ -84,11 +85,18 @@ public enum StorageMode
 /// <see cref="StorageMode.SharedByLink"/> admin-link holder or a <see cref="StorageMode.Account"/>
 /// owner). Additive and optional: a record written before this field decodes it as <see langword="null"/>.
 /// </param>
+/// <param name="ParticipantKey">
+/// The participant key the server issued when this device claimed a member through the join link
+/// (ADR-0080): it proves the claim on reads and own-entry writes, so the server includes this member's
+/// pairing. Additive: <see langword="null"/> for an admin-link holder, a device that joined before keys
+/// existed (exchanged once on the next sync) or a device that knows the group only through its account.
+/// </param>
 public sealed record SharedGroupTokens(
     string? AdminToken,
     string? JoinToken,
     string? CreatorKey = null,
-    IReadOnlyList<RevealTokenRef>? RevealTokens = null);
+    IReadOnlyList<RevealTokenRef>? RevealTokens = null,
+    string? ParticipantKey = null);
 
 /// <summary>
 /// A stable per-giver reveal token (ADR-0068, FEAT-020): the token addressing one giver's live reveal
@@ -149,6 +157,15 @@ public sealed record RevealTokenRef(Guid EventId, Guid MemberId, string Token);
 /// <see cref="AccountScope"/>: the group lives in the shared-group store, not the account sync store
 /// (ADR-0078). Cleared on release-to-link. Additive.
 /// </param>
+/// <param name="JoinedAccount">
+/// For a group joined through the join link <em>with an account</em> ("keep it on my account"), that account
+/// (ADR-0080): the claim is proven by its sign-in on any of its devices, so the group is shown only while it
+/// is signed in. <see langword="null"/> for a device-only join and for every other kind. Additive.
+/// </param>
+/// <param name="PendingEntry">
+/// For a joined group, the participant's own entry (gift note, per-event wishlists) edited on this device and
+/// not yet accepted by the server (ADR-0080); sent on the next reconcile, then cleared. Additive.
+/// </param>
 public sealed record SyncedGroupRecord(
     GroupState State,
     long Version,
@@ -158,7 +175,9 @@ public sealed record SyncedGroupRecord(
     SharedGroupTokens? Tokens = null,
     Guid? ClaimedMemberId = null,
     Guid? PendingClaimAccount = null,
-    Guid? AdminAccount = null);
+    Guid? AdminAccount = null,
+    Guid? JoinedAccount = null,
+    ParticipantEntry? PendingEntry = null);
 
 /// <summary>
 /// The questions every reader asks about a <see cref="SyncedGroupRecord"/>'s kind, answered in one place

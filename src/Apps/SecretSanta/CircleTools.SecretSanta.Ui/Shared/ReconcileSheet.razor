@@ -1,23 +1,38 @@
+@using CircleTools.SecretSanta.LocalStore
+@inject IStringLocalizer<AppStrings> L
+
 @*
-    The sign-in reconciliation prompt as a bottom sheet (ADR-0044 amendment 2026-10-15): Import, Keep on
-    this device, or Discard. It used to be a MudBlazor message box, the app's only one, and on Android that
-    never showed, so the reconciler read "no answer" as Cancel. A sheet is the component every other
-    confirmation uses. It closes only through one of its three buttons. Resolve with
-    ReconcileSheetExtensions.ShowReconcileSheetAsync.
+    The sign-in reconciliation prompt as a bottom sheet (ADR-0044 amendments 2026-10-15 and 2026-10-16). It
+    names every group made while signed out with a short summary, all ticked: Import moves the ticked ones into
+    the account and keeps the others on this device; Later decides nothing (asked again at the next sign-in).
+    There is no discard here — deleting stays in the group's menu, with its own confirmation (Q35). It closes
+    only through its buttons. Resolve with ReconcileSheetExtensions.ShowReconcileSheetAsync.
 *@
 
 <MudDialog>
     <TitleContent>
-        <MudText Typo="Typo.h6">@Title</MudText>
+        <MudText Typo="Typo.h6">@L["ReconcileTitle"]</MudText>
     </TitleContent>
     <DialogContent>
-        <MudText Typo="Typo.body1" Class="pb-1">@Message</MudText>
+        <MudText Typo="Typo.body1" Class="pb-2">@L["ReconcileLead"]</MudText>
+        <div id="reconcile-groups">
+            @foreach (var group in Groups)
+            {
+                <MudCheckBox T="bool" Value="_ticked.Contains(group.Id)" ValueChanged="@(v => Toggle(group.Id, v))"
+                             Color="Color.Primary" Dense="true">
+                    <span class="d-block"><strong>@group.Name</strong></span>
+                    <span class="d-block mud-text-secondary" style="font-size:0.85rem;">@Summary(group)</span>
+                </MudCheckBox>
+            }
+        </div>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">@L["ReconcileUntickedNote"]</MudText>
     </DialogContent>
     <DialogActions>
         <div class="d-flex flex-wrap justify-end gap-2 pa-2" style="width:100%;">
-            <MudButton Color="Color.Error" OnClick="() => Choose(ReconcileChoice.Discard)" id="reconcile-discard">@DiscardLabel</MudButton>
-            <MudButton Variant="Variant.Outlined" OnClick="() => Choose(ReconcileChoice.KeepLocal)" id="reconcile-keep">@KeepLocalLabel</MudButton>
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="() => Choose(ReconcileChoice.Import)" id="reconcile-import">@ImportLabel</MudButton>
+            <MudButton Variant="Variant.Text" OnClick="Later" id="reconcile-later">@L["ReconcileLater"]</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Import" id="reconcile-import">
+                @(_ticked.Count == 0 ? L["ReconcileKeepAll"] : L["ReconcileImport"])
+            </MudButton>
         </div>
     </DialogActions>
 </MudDialog>
@@ -26,20 +41,32 @@
     [CascadingParameter]
     private IMudDialogInstance Dialog { get; set; } = default!;
 
-    /// <summary>The sheet's title.</summary>
-    [Parameter] public string Title { get; set; } = string.Empty;
+    /// <summary>The groups made while signed out, in list order.</summary>
+    [Parameter] public IReadOnlyList<ClaimableGroup> Groups { get; set; } = [];
 
-    /// <summary>The question, naming how many groups it is about.</summary>
-    [Parameter] public string Message { get; set; } = string.Empty;
+    private HashSet<Guid> _ticked = [];
 
-    /// <summary>Label for Import.</summary>
-    [Parameter] public string ImportLabel { get; set; } = string.Empty;
+    protected override void OnInitialized() => _ticked = [.. Groups.Select(g => g.Id)];
 
-    /// <summary>Label for Keep on this device.</summary>
-    [Parameter] public string KeepLocalLabel { get; set; } = string.Empty;
+    private void Toggle(Guid id, bool on)
+    {
+        if (on)
+        {
+            _ticked.Add(id);
+        }
+        else
+        {
+            _ticked.Remove(id);
+        }
+    }
 
-    /// <summary>Label for Discard.</summary>
-    [Parameter] public string DiscardLabel { get; set; } = string.Empty;
+    // "4 members · drawn" — enough to tell groups apart.
+    private string Summary(ClaimableGroup group) =>
+        group.HasCurrentDraw ? L["ReconcileSummaryDrawn", group.MemberCount] : L["ReconcileSummary", group.MemberCount];
 
-    private void Choose(ReconcileChoice choice) => Dialog.Close(DialogResult.Ok(choice));
+    private void Import() => Dialog.Close(DialogResult.Ok(new ReconcileAnswer(
+        [.. Groups.Select(g => g.Id).Where(_ticked.Contains)],
+        [.. Groups.Select(g => g.Id).Where(id => !_ticked.Contains(id))])));
+
+    private void Later() => Dialog.Close(DialogResult.Cancel());
 }

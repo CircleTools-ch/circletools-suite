@@ -73,6 +73,16 @@ public static class MauiProgram
             ? value
             : fallback;
 
+    // Names the app in the User-Agent, so the list of signed-in devices reads "Wichteln app · Android" rather
+    // than an unknown device (ADR-0079 amendment). Without it .NET sends no User-Agent at all.
+    private static HttpClient WithAppUserAgent(HttpClient client)
+    {
+        client.DefaultRequestHeaders.TryAddWithoutValidation(
+            "User-Agent",
+            $"CircleTools-App/{AppInfo.Current.VersionString} ({AppInfo.Current.Name}; {DeviceInfo.Current.Platform})");
+        return client;
+    }
+
     /// <summary>
     /// The inner HTTP handler for the two account clients.
     /// </summary>
@@ -144,7 +154,7 @@ public static class MauiProgram
         // the chain (see AccountApiClients). The device head needs no browser-credentials handler, so
         // the inner handler is a plain HttpClientHandler.
         builder.Services.AddKeyedScoped<HttpClient>(AccountApiClients.Anonymous, (_, _) =>
-            new HttpClient(CreateApiHandler()) { BaseAddress = apiBaseUrl });
+            WithAppUserAgent(new HttpClient(CreateApiHandler()) { BaseAddress = apiBaseUrl }));
 
         builder.Services.AddKeyedScoped<HttpClient>(AccountApiClients.Authorized, (sp, _) =>
         {
@@ -155,7 +165,7 @@ public static class MauiProgram
                 InnerHandler = CreateApiHandler(),
             };
 
-            return new HttpClient(handler) { BaseAddress = apiBaseUrl };
+            return WithAppUserAgent(new HttpClient(handler) { BaseAddress = apiBaseUrl });
         });
 
         // Application + Secret-Santa module + the M3 client sync engine over the local store (FEAT-004).

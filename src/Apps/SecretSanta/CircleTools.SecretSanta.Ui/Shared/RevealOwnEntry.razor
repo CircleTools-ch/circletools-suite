@@ -1,0 +1,232 @@
+@using CircleTools.Main.Contracts
+@using CircleTools.SecretSanta.LocalStore
+@inject ISharedGroupApi Api
+@inject IStringLocalizer<AppStrings> L
+@inject ISnackbar Snackbar
+@implements IAsyncDisposable
+
+@*
+    The reveal-link holder's own wishlist for this event and their gift note (ADR-0084, FR-050): read and saved
+    by the link's reveal token, so it needs no account and no join. Shown only when the server offers it — a
+    live-link group whose slice names the holder, and a member not linked to an account. Offline, or for any
+    other link, it renders nothing and the reveal page keeps its "tell the organizer" hint.
+
+    Saved as you type and when leaving a field, like the other wishlist editors (Q29): every keystroke reaches
+    the model and the pause is this component's own timer, so leaving a field right after typing saves the
+    latest text (the 2026-10-17 lost-edit bug).
+*@
+
+@if (_available)
+{
+    <MudPaper Outlined="true" Class="pa-4 mt-4" id="reveal-own-entry">
+        <MudText Typo="Typo.h6" GutterBottom="true">@L["RevealOwnEntryTitle"]</MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">@L["MyEntryLead"]</MudText>
+        <MudTextField T="string" Value="_wishlist" ValueChanged="OnWishlistChanged" Label="@L["WishlistLabel"]"
+                      Variant="Variant.Outlined" Margin="Margin.Dense" Lines="4" Immediate="true"
+                      OnBlur="FlushAsync" id="reveal-own-wishlist" />
+        <MudTextField T="string" Value="_giftNote" ValueChanged="OnGiftNoteChanged" Label="@L["MyGiftNoteLabel"]"
+                      HelperText="@L["MyGiftNoteHelp"]" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2"
+                      MaxLength="500" Immediate="true" OnBlur="FlushAsync" Class="mt-3" id="reveal-own-gift-note" />
+        @if (_status is { } status)
+        {
+            <MudText Typo="Typo.body2" Class="mt-2" role="status"
+                     Color="@(status == SaveStatus.Failed ? Color.Error : status == SaveStatus.Saved ? Color.Success : Color.Default)">
+                @(status switch
+                {
+                    SaveStatus.Saving => L["Saving"],
+                    SaveStatus.Saved => L["SavedCheck"],
+                    _ => L["WishlistSaveFailed"],
+                })
+            </MudText>
+        }
+        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">@L["RevealOwnEntryDelay"]</MudText>
+    </MudPaper>
+}
+
+@code {
+    // How long typing must pause before an autosave. Leaving a field saves at once.
+    private static readonly TimeSpan SavePause = TimeSpan.FromMilliseconds(700);
+
+    private readonly SemaphoreSlim _saveLock = new(1, 1);
+    private string? _loadedToken;
+    private bool _available;
+    private bool _disposed;
+    private string _wishlist = string.Empty;
+    private string _giftNote = string.Empty;
+    private string _savedWishlist = string.Empty;
+    private string _savedGiftNote = string.Empty;
+    private CancellationTokenSource? _pending;
+
+    // The text before this visit to a field changed it — what "Undo" restores once the field is left.
+    private (string Wishlist, string GiftNote)? _baseline;
+    private SaveStatus? _status;
+
+    private enum SaveStatus
+    {
+        Saving,
+        Saved,
+        Failed,
+    }
+
+    /// <summary>The reveal token from the link (<c>rt=</c>).</summary>
+    [Parameter]
+    [EditorRequired]
+    public string RevealToken { get; set; } = string.Empty;
+
+    /// <summary>Raised with whether the editor is shown, so the page can drop its "tell the organizer" hint.</summary>
+    [Parameter]
+    public EventCallback<bool> AvailableChanged { get; set; }
+
+    private bool HasUnsavedText => _wishlist != _savedWishlist || _giftNote != _savedGiftNote;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (RevealToken == _loadedToken)
+        {
+            return;
+        }
+
+        _loadedToken = RevealToken;
+        _available = false;
+        try
+        {
+            var result = await Api.GetRevealEntryAsync(RevealToken);
+            if (result is { IsSuccess: true, Value: { } entry })
+            {
+                _giftNote = _savedGiftNote = entry.GiftNote ?? string.Empty;
+                _wishlist = _savedWishlist = string.Join('\n', entry.Items);
+                _available = true;
+            }
+        }
+        catch (Exception)
+        {
+            // Unreachable or malformed: no editor, the page keeps its hint.
+        }
+
+        await AvailableChanged.InvokeAsync(_available);
+    }
+
+    private void OnWishlistChanged(string value)
+    {
+        _baseline ??= (_wishlist, _giftNote);
+        _wishlist = value ?? string.Empty;
+        OnChanged();
+    }
+
+    private void OnGiftNoteChanged(string value)
+    {
+        _baseline ??= (_wishlist, _giftNote);
+        _giftNote = value ?? string.Empty;
+        OnChanged();
+    }
+
+    // Typing shows "Saving…" at once, so "Saved ✓" always means the latest text is saved.
+    private void OnChanged()
+    {
+        _status = SaveStatus.Saving;
+        _pending?.Cancel();
+        _pending?.Dispose();
+        _pending = new CancellationTokenSource();
+        _ = SaveAfterPauseAsync(_pending.Token);
+    }
+
+    private async Task SaveAfterPauseAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(SavePause, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        await InvokeAsync(async () =>
+        {
+            await SaveAsync();
+            if (!_disposed)
+            {
+                StateHasChanged();
+            }
+        });
+    }
+
+    // Leaving a field saves at once and offers to undo the visit's change.
+    private async Task FlushAsync()
+    {
+        _pending?.Cancel();
+        await SaveAsync();
+
+        var before = _baseline;
+        _baseline = null;
+        if (before is { } previous && previous != (_wishlist, _giftNote) && _status == SaveStatus.Saved)
+        {
+            UndoLastEdit.Offer(Snackbar, L, () => UndoAsync(previous));
+        }
+    }
+
+    private async Task UndoAsync((string Wishlist, string GiftNote) previous)
+    {
+        _pending?.Cancel();
+        (_wishlist, _giftNote) = previous;
+        await SaveAsync();
+        if (!_disposed)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    // A failed save keeps the text and says so; the next keystroke or leaving a field tries again.
+    private async Task SaveAsync()
+    {
+        await _saveLock.WaitAsync();
+        try
+        {
+            if (!HasUnsavedText)
+            {
+                if (_status == SaveStatus.Saving)
+                {
+                    _status = SaveStatus.Saved; // typed, then put it back as it was
+                }
+
+                return;
+            }
+
+            var wishlist = _wishlist;
+            var giftNote = _giftNote;
+            var items = wishlist.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            _status = SaveStatus.Saving;
+
+            var result = await Api.WriteRevealEntryAsync(RevealToken, new RevealEntryWrite(giftNote, items));
+            if (result.IsSuccess)
+            {
+                _savedWishlist = wishlist;
+                _savedGiftNote = giftNote;
+                _status = HasUnsavedText ? SaveStatus.Saving : SaveStatus.Saved;
+            }
+            else
+            {
+                _status = SaveStatus.Failed;
+            }
+        }
+        catch (Exception)
+        {
+            _status = SaveStatus.Failed;
+        }
+        finally
+        {
+            _saveLock.Release();
+        }
+    }
+
+    // Leaving the page within the typing pause must not drop the edit.
+    public async ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        _pending?.Cancel();
+        if (_available && HasUnsavedText)
+        {
+            await SaveAsync();
+        }
+    }
+}

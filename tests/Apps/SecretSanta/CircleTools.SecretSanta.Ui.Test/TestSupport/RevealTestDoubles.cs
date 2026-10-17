@@ -61,12 +61,40 @@ public sealed class NoOpSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
     public Task<ApiResult<ClaimedMembers>> GetClaimsAsync(string token, CancellationToken cancellationToken = default) => Unreachable<ClaimedMembers>();
     public Task<ApiResult<PersonClaimResponse>> ClaimPersonAsync(string token, ClaimPersonRequest request, CancellationToken cancellationToken = default) => Unreachable<PersonClaimResponse>();
     public Task<ApiResult> ReleasePersonAsync(string adminToken, Guid memberId, CancellationToken cancellationToken = default) => Unreachable();
-    public Task<ApiResult> PublishRevealSlicesAsync(string adminToken, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default) => Unreachable();
+    public Task<ApiResult<PublishRevealSlicesResponse>> PublishRevealSlicesAsync(string adminToken, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default) => Unreachable<PublishRevealSlicesResponse>();
 
     public Task<ApiResult<RevealSliceView>> GetRevealSliceAsync(string revealToken, CancellationToken cancellationToken = default) =>
-        !RevealSlicesUnreachable && _slices.TryGetValue(revealToken, out var body)
-            ? Task.FromResult(ApiResult.Ok(new RevealSliceView(body)))
-            : Unreachable<RevealSliceView>();
+        RevealSlicesUnreachable ? Unreachable<RevealSliceView>()
+        : _slices.TryGetValue(revealToken, out var body) ? Task.FromResult(ApiResult.Ok(new RevealSliceView(body)))
+        : Task.FromResult(ApiResult.Failed<RevealSliceView>(new ApiError(ApiFailure.NotFound)));
+
+    private readonly Dictionary<string, RevealEntryView> _entries = [];
+
+    /// <summary>The own-entry writes received (ADR-0084), in order.</summary>
+    public List<(string RevealToken, RevealEntryWrite Entry)> RevealEntryWrites { get; } = [];
+
+    /// <summary>When true, own-entry writes report the server unreachable.</summary>
+    public bool RevealEntryWritesFail { get; set; }
+
+    /// <summary>Seeds the holder's own entry for <paramref name="revealToken"/>, so the reveal page offers the editor.</summary>
+    public void SeedRevealEntry(string revealToken, RevealEntryView entry) => _entries[revealToken] = entry;
+
+    public Task<ApiResult<RevealEntryView>> GetRevealEntryAsync(string revealToken, CancellationToken cancellationToken = default) =>
+        RevealSlicesUnreachable ? Unreachable<RevealEntryView>()
+        : _entries.TryGetValue(revealToken, out var entry) ? Task.FromResult(ApiResult.Ok(entry))
+        : Task.FromResult(ApiResult.Failed<RevealEntryView>(new ApiError(ApiFailure.NotFound)));
+
+    public Task<ApiResult<ParticipantEntryResult>> WriteRevealEntryAsync(string revealToken, RevealEntryWrite entry, CancellationToken cancellationToken = default)
+    {
+        if (RevealEntryWritesFail)
+        {
+            return Unreachable<ParticipantEntryResult>();
+        }
+
+        RevealEntryWrites.Add((revealToken, entry));
+        _entries[revealToken] = new RevealEntryView(entry.GiftNote, entry.Items);
+        return Task.FromResult(ApiResult.Ok(new ParticipantEntryResult(RevealEntryWrites.Count + 1)));
+    }
 
     public Task<ApiResult> ClaimAdminAsync(string adminToken, CancellationToken cancellationToken = default) => Unreachable();
     public Task<ApiResult<RotatedAdminLink>> ReleaseAdminAsync(Guid groupId, CancellationToken cancellationToken = default) => Unreachable<RotatedAdminLink>();
@@ -74,7 +102,16 @@ public sealed class NoOpSharedGroupApi : ISharedGroupApi, ISharedGroupAccountApi
     public Task<ApiResult<PushSharedGroupResult>> PushOwnedAsync(Guid groupId, PushSharedGroupRequest request, CancellationToken cancellationToken = default) => Unreachable<PushSharedGroupResult>();
     public Task<ApiResult> DeleteOwnedAsync(Guid groupId, CancellationToken cancellationToken = default) => Unreachable();
     public Task<ApiResult<OwnedSharedGroups>> ListOwnedAsync(CancellationToken cancellationToken = default) => Unreachable<OwnedSharedGroups>();
-    public Task<ApiResult> PublishOwnedRevealSlicesAsync(Guid groupId, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default) => Unreachable();
+    public Task<ApiResult<PublishRevealSlicesResponse>> PublishOwnedRevealSlicesAsync(Guid groupId, PublishRevealSlicesRequest request, CancellationToken cancellationToken = default) => Unreachable<PublishRevealSlicesResponse>();
+    public Task<ApiResult<SharedGroupView>> GetAsParticipantAsync(string token, string participantKey, CancellationToken cancellationToken = default) => Unreachable<SharedGroupView>();
+    public Task<ApiResult<ParticipantEntryResult>> WriteEntryAsync(string token, string participantKey, ParticipantEntry entry, CancellationToken cancellationToken = default) => Unreachable<ParticipantEntryResult>();
+    public Task<ApiResult> LeaveAsync(string token, string participantKey, CancellationToken cancellationToken = default) => Unreachable();
+    public Task<ApiResult<ParticipantKeyResponse>> IssueParticipantKeyAsync(string token, Guid memberId, string deviceHandle, CancellationToken cancellationToken = default) => Unreachable<ParticipantKeyResponse>();
+    public Task<ApiResult<SharedGroupView>> GetJoinedAsync(string joinToken, CancellationToken cancellationToken = default) => Unreachable<SharedGroupView>();
+    public Task<ApiResult<ParticipantEntryResult>> WriteEntryAsync(string joinToken, ParticipantEntry entry, CancellationToken cancellationToken = default) => Unreachable<ParticipantEntryResult>();
+    public Task<ApiResult> LeaveAsync(string joinToken, CancellationToken cancellationToken = default) => Unreachable();
+    public Task<ApiResult<JoinedSharedGroups>> ListJoinedAsync(CancellationToken cancellationToken = default) => Unreachable<JoinedSharedGroups>();
+    public Task<ApiResult> ReleasePersonAsOwnerAsync(Guid groupId, Guid memberId, CancellationToken cancellationToken = default) => Unreachable();
 
     private static Task<ApiResult<T>> Unreachable<T>() => Task.FromResult(ApiResult.Failed<T>(new ApiError(ApiFailure.Unreachable)));
     private static Task<ApiResult> Unreachable() => Task.FromResult(ApiResult.Failed(new ApiError(ApiFailure.Unreachable)));

@@ -81,6 +81,17 @@ When it is opened after the change
 Then its draw, budget, event details and wishlists are intact inside one default event
 ```
 
+## Amendment (2026-10-16) — event cards and the add dialog
+
+From the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-santa-two-account-device-test.md) (Q22, I5):
+
+- [ ] Each event card shows its date and countdown ("24.12.2026 · in 69 days" or "No date yet") and the
+      wishlist progress ("Wishlists 2/4"); events are ordered upcoming first, then undated, past ones last and
+      muted.
+- [ ] The event hub's *Details* tile summarises what is set ("24.12.2026 · up to CHF 30 · At Grandma's") or
+      says what is missing ("Date and budget missing").
+- [ ] *Add event* offers an optional date field, for the first event as for later ones.
+
 ## Dependencies & related
 
 - Derived from: [UC-SS-013](../../use-cases/secret-santa/UC-SS-013-manage-events.md)

@@ -11,6 +11,7 @@
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
 @inject IHapticFeedback Haptics
+@inject CircleTools.Ui.Abstractions.IKeyValueStore Store
 @implements IDisposable
 
 <PageTitle>@L["RevealTitle"]</PageTitle>
@@ -18,6 +19,22 @@
 @if (_error)
 {
     <MudAlert Severity="Severity.Error" Dense="true" role="alert">@L["RevealMalformed"]</MudAlert>
+}
+else if (_gone)
+{
+    @* A short link whose slice the server no longer has (the group's online copy expired or was deleted). *@
+    <MudAlert Severity="Severity.Warning" Dense="true" role="alert" id="reveal-gone">@L["RevealLinkGone"]</MudAlert>
+}
+else if (_needsConnection)
+{
+    @* A short link (ADR-0082) carries no snapshot: the first open needs the server. Not "invalid". *@
+    <MudAlert Severity="Severity.Warning" Dense="true" role="alert" id="reveal-needs-connection">
+        <div class="d-flex flex-column gap-2">
+            <span>@L["RevealNeedsConnection"]</span>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Warning" Style="align-self:flex-start;"
+                       StartIcon="@Icons.Material.Filled.Refresh" OnClick="LoadAsync">@L["RevealTryAgain"]</MudButton>
+        </div>
+    </MudAlert>
 }
 else if (_payload is not null)
 {
@@ -105,16 +122,16 @@ else if (_payload is not null)
             }
             else
             {
-                <ul class="mb-0">
-                    @foreach (var item in _payload.Wishlist)
-                    {
-                        <li>@item</li>
-                    }
-                </ul>
+                @* A pasted link shows as "Open link (site)" (ADR-0083). *@
+                <WishlistItems Items="_payload.Wishlist" />
             }
         </MudPaper>
-        @* A next step instead of a dead end: the giver is a recipient too. *@
-        <MudText Typo="Typo.body2" Class="mud-text-secondary mt-4">@L["RevealNextStep"]</MudText>
+        @* A next step instead of a dead end: the giver is a recipient too. Where they can't keep their own
+           wishlist here — local-only, private account group, offline — the organizer collects it, so say so. *@
+        @if (!_ownEntryAvailable)
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary mt-4">@L["RevealNextStep"]</MudText>
+        }
     }
     else
     {
@@ -125,6 +142,14 @@ else if (_payload is not null)
         <MudButton Size="Size.Large" Color="Color.Primary" Variant="Variant.Filled"
                    StartIcon="@Icons.Material.Filled.CardGiftcard" OnClick="RevealAsync">@L["RevealButton"]</MudButton>
     }
+
+    @* The holder's own wishlist and note (ADR-0084) is about them, not whom they drew — no spoiler, so it is not
+       behind the reveal button. Outside the reveal branch it also stays mounted when the button is tapped, so
+       text being typed is not lost. *@
+    @if (_revealToken is { } revealToken)
+    {
+        <RevealOwnEntry @key="revealToken" RevealToken="@revealToken" AvailableChanged="OnOwnEntryAvailableChanged" />
+    }
 }
 
 @code {
@@ -134,8 +159,15 @@ else if (_payload is not null)
     private CalendarEvent? _calendarEvent;
     private bool _revealed;
     private bool _error;
+    private bool _needsConnection;
+    private bool _gone;
+    private bool _notFound;
     private bool _backendBacked;
     private bool _live;
+    private string? _revealToken;
+    private bool _ownEntryAvailable;
+
+    private void OnOwnEntryAvailableChanged(bool available) => _ownEntryAvailable = available;
 
     // A small confirmation buzz as the giftee is shown (FEAT-008 W3); a no-op on the web head.
     private async Task RevealAsync()
@@ -189,30 +221,62 @@ else if (_payload is not null)
         _calendarEvent = null;
         _revealed = false;
         _error = false;
+        _needsConnection = false;
+        _gone = false;
+        _notFound = false;
         _backendBacked = false;
         _live = false;
+        _revealToken = null;
+        _ownEntryAvailable = false;
 
         try
         {
             var fragment = new Uri(Navigation.Uri).Fragment;
-            var (label, blob) = RevealLinkBuilder.ParseFragment(fragment);
-            _label = label;
-
-            // The embedded snapshot always decodes — it is what makes the reveal work offline (ADR-0014).
-            _payload = Codec.Decode(blob);
-
-            // A backend-backed link (ADR-0068) carries a reveal token: try to load the live slice so the
-            // wishlist and event details are current. A fetch failure (offline, revoked) keeps the
-            // snapshot; a local-only link has no token and stays on the snapshot with no indicator.
             var revealToken = RevealLinkBuilder.ParseRevealToken(fragment);
             _backendBacked = revealToken is not null;
-            if (revealToken is not null)
+            _revealToken = revealToken;
+
+            if (RevealLinkBuilder.IsShort(fragment))
             {
-                _live = await TryLoadLiveAsync(revealToken);
+                // A short link (ADR-0082): no snapshot inside, so fetch the slice — and keep it on this device,
+                // so reopening the link later works offline. Without either, say it needs a connection once.
+                _label = RevealLinkBuilder.ParseLabel(fragment);
+                _live = await TryLoadLiveAsync(revealToken!);
+                if (_live)
+                {
+                    await KeepAsync(revealToken!, _payload!);
+                }
+                else if (await LoadKeptAsync(revealToken!) is { } kept)
+                {
+                    _payload = kept;
+                }
+                else
+                {
+                    // Reached the server and it does not know the token: the link is gone, not offline.
+                    _gone = _notFound;
+                    _needsConnection = !_notFound;
+                    return;
+                }
+            }
+            else
+            {
+                var (label, blob) = RevealLinkBuilder.ParseFragment(fragment);
+                _label = label;
+
+                // The embedded snapshot always decodes — it is what makes the reveal work offline (ADR-0014).
+                _payload = Codec.Decode(blob);
+
+                // A backend-backed link (ADR-0068) carries a reveal token: try to load the live slice so the
+                // wishlist and event details are current. A fetch failure (offline, revoked) keeps the
+                // snapshot; a local-only link has no token and stays on the snapshot with no indicator.
+                if (revealToken is not null)
+                {
+                    _live = await TryLoadLiveAsync(revealToken);
+                }
             }
 
             if (DateTimeOffset.TryParse(
-                    _payload.EventDate, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed))
+                    _payload?.EventDate, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed))
             {
                 _eventDate = parsed;
             }
@@ -227,6 +291,37 @@ else if (_payload is not null)
 
     public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
 
+    // A short link's slice, kept on this device under a hash of its token (the token itself is not stored as a
+    // key). Best-effort: without storage the link simply needs the connection again next time.
+    private static string KeptKey(string revealToken) =>
+        "secretsanta.reveal." + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(revealToken)))[..32];
+
+    private async Task KeepAsync(string revealToken, RevealPayload payload)
+    {
+        try
+        {
+            await Store.SetAsync(CircleTools.Ui.Abstractions.StorageScope.Durable, KeptKey(revealToken),
+                JsonSerializer.Serialize(payload, RevealJsonContext.Default.RevealPayload));
+        }
+        catch
+        {
+            // Best-effort.
+        }
+    }
+
+    private async Task<RevealPayload?> LoadKeptAsync(string revealToken)
+    {
+        try
+        {
+            var json = await Store.GetAsync(CircleTools.Ui.Abstractions.StorageScope.Durable, KeptKey(revealToken));
+            return string.IsNullOrEmpty(json) ? null : JsonSerializer.Deserialize(json, RevealJsonContext.Default.RevealPayload);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     // Fetch the live per-giver slice and swap it in for the snapshot when it loads. Returns false on any
     // failure (offline, revoked token, malformed slice) so the caller keeps showing the embedded snapshot.
     private async Task<bool> TryLoadLiveAsync(string revealToken)
@@ -234,6 +329,7 @@ else if (_payload is not null)
         try
         {
             var result = await RevealApi.GetRevealSliceAsync(revealToken);
+            _notFound = result.Error?.Failure == CircleTools.ApiClient.ApiFailure.NotFound;
             if (result is { IsSuccess: true, Value: { } view }
                 && view.Body.Deserialize(RevealJsonContext.Default.RevealPayload) is { } fresh)
             {

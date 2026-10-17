@@ -8,6 +8,8 @@
 @inject ILocalSyncStore Local
 @inject ISyncSignals SyncSignals
 @inject IServiceProvider Services
+@inject GroupRemoval Removal
+@inject BookmarkService Bookmarks
 @implements IDisposable
 
 @* Group hub (ADR-0055 group level): the group's landing screen. The occasions (events) are the primary
@@ -38,6 +40,12 @@ else
             <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text"
                      Icon="@Icons.Material.Filled.Link" OnClick="GoToSharing" id="mode-chip">@L["ModeChipShared"]</MudChip>
         }
+        else if (_kind == StorageKind.AccountShared)
+        {
+            @* In the account and shared with a join link (ADR-0081). *@
+            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text"
+                     Icon="@StorageModeDisplay.Icon(StorageKind.AccountShared)" OnClick="GoToSharing" id="mode-chip">@L["ModeChipAccountShared"]</MudChip>
+        }
         else if (_mode == StorageMode.Account)
         {
             <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text"
@@ -47,9 +55,30 @@ else
            the occasions, not a text box. *@
         @if (!_readOnly)
         {
+            @* The same actions as the group list's menu (Q34). *@
             <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" AriaLabel="@L["MoreActions"]"
-                     AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="RenameAsync">@L["Rename"]</MudMenuItem>
+                     AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" id="group-menu">
+                <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => AfterMenu(RenameAsync)">@L["Rename"]</MudMenuItem>
+                <AuthorizeView>
+                    <Authorized>
+                        <MudMenuItem Icon="@(_isPinned ? Icons.Material.Filled.StarBorder : Icons.Material.Filled.Star)"
+                                     OnClick="TogglePinAsync">@(_isPinned ? L["UnpinGroup"] : L["PinGroup"])</MudMenuItem>
+                    </Authorized>
+                </AuthorizeView>
+                <MudMenuItem Icon="@Icons.Material.Filled.Share" OnClick="GoToSharing">@L["SharingRow"]</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy"
+                             OnClick="@(() => Navigation.NavigateTo($"?template={GroupId}"))">@L["UseAsTemplate"]</MudMenuItem>
+                <MudDivider Class="my-1" />
+                <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="() => AfterMenu(DeleteAsync)">@L["Delete"]</MudMenuItem>
+            </MudMenu>
+        }
+        else
+        {
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" AriaLabel="@L["MoreActions"]"
+                     AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" id="group-menu">
+                <MudMenuItem Icon="@Icons.Material.Filled.Share" OnClick="GoToSharing">@L["SharingRow"]</MudMenuItem>
+                <MudDivider Class="my-1" />
+                <MudMenuItem Icon="@Icons.Material.Filled.Logout" IconColor="Color.Error" OnClick="() => AfterMenu(DeleteAsync)">@L["LeaveGroup"]</MudMenuItem>
             </MudMenu>
         }
     </div>
@@ -106,9 +135,10 @@ else
     }
 
     <MudStack Spacing="2">
-        @foreach (var occasion in _group.Events)
+        @* Upcoming first, then undated, past ones last and muted (I5). *@
+        @foreach (var occasion in OrderedEvents)
         {
-            <MudCard Elevation="1">
+            <MudCard Elevation="1" Class="@(IsPast(occasion) ? "ct-past" : null)">
                 <MudCardContent Class="py-2">
                     @if (_editingId == occasion.Id)
                     {
@@ -124,18 +154,26 @@ else
                         <div class="d-flex justify-space-between align-center gap-2">
                             @* The whole row opens the occasion (one big tap target); a separate "Open"
                                button only repeated it. The chevron says the row navigates. *@
-                            <div class="ct-openable d-flex align-center flex-wrap gap-2 flex-grow-1" role="button" tabindex="0"
+                            <div class="ct-openable flex-grow-1" role="button" tabindex="0" style="min-width:0;"
                                  aria-label="@L["OpenNamed", EventLabel(occasion.Name)]"
                                  @onclick="() => Open(occasion.Id)" @onkeydown="@(e => OpenOnEnter(e, occasion.Id))">
-                                <MudText Typo="Typo.subtitle1"><strong>@EventLabel(occasion.Name)</strong></MudText>
-                                @if (occasion.DrawInvalidatedByMembershipChange)
-                                {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
-                                }
-                                else if (occasion.HasCurrentDraw)
-                                {
-                                    <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
-                                }
+                                <div class="d-flex align-center flex-wrap gap-2">
+                                    <MudText Typo="Typo.subtitle1"><strong>@EventLabel(occasion.Name)</strong></MudText>
+                                    @if (occasion.DrawInvalidatedByMembershipChange)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawInvalidatedBadge"]</MudChip>
+                                    }
+                                    else if (occasion.DrawBreaksExclusions)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Warning" Variant="Variant.Text">@L["DrawBreaksExclusionsBadge"]</MudChip>
+                                    }
+                                    else if (occasion.HasCurrentDraw)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text">@L["DrawCompleteBadge"]</MudChip>
+                                    }
+                                </div>
+                                @* The facts at a glance (Q22/I5): when, how long to go, and how far the wishlists are. *@
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary" id="@($"event-facts-{occasion.Id}")">@EventFacts(occasion)</MudText>
                             </div>
                             <div class="d-flex align-center gap-1">
                                 @* Rename/Remove fold into an overflow menu so the row stays a single tap
@@ -190,7 +228,8 @@ else
        occasion, so they sit below the events as their own destinations rather than as tabs. *@
     <MudDivider Class="my-6" />
     <MudStack Spacing="2">
-        <MudPaper Outlined="true" Class="ct-hub-row" role="button" tabindex="0"
+        <MudPaper Outlined="true" Class="ct-hub-row" role="button" tabindex="0" id="members-row"
+                  aria-label="@($"{L["NavMembers"]}, {_group.Members.Count}")"
                   @onclick="@(() => Go($"groups/{GroupId}/members"))" @onkeydown="@(e => GoOnEnter(e, $"groups/{GroupId}/members"))">
             <div class="d-flex align-center gap-3 pa-3">
                 <MudIcon Icon="@Icons.Material.Filled.Group" Color="Color.Primary" />
@@ -201,7 +240,8 @@ else
                 <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
             </div>
         </MudPaper>
-        <MudPaper Outlined="true" Class="ct-hub-row" role="button" tabindex="0"
+        <MudPaper Outlined="true" Class="ct-hub-row" role="button" tabindex="0" id="exclusions-row"
+                  aria-label="@($"{L["NavExclusions"]}, {_group.Exclusions.Count}")"
                   @onclick="@(() => Go($"groups/{GroupId}/exclusions"))" @onkeydown="@(e => GoOnEnter(e, $"groups/{GroupId}/exclusions"))">
             <div class="d-flex align-center gap-3 pa-3">
                 <MudIcon Icon="@Icons.Material.Filled.Block" Color="Color.Primary" />
@@ -214,6 +254,7 @@ else
         </MudPaper>
         @* Sharing & sync (ADR-0058, FEAT-013): choose where the group lives and manage its links. *@
         <MudPaper Outlined="true" Class="ct-hub-row" role="button" tabindex="0" id="sharing-row"
+                  aria-label="@($"{L["SharingRow"]}, {SharingSubtitle()}")"
                   @onclick="GoToSharing" @onkeydown="@(e => GoOnEnter(e, $"groups/{GroupId}/sharing"))">
             <div class="d-flex align-center gap-3 pa-3">
                 <MudIcon Icon="@Icons.Material.Filled.Share" Color="Color.Primary" />
@@ -236,6 +277,7 @@ else
     private GroupDto? _group;
     private bool _loaded;
     private StorageMode _mode;
+    private StorageKind _kind;
     private bool _readOnly;
     private string? _claimedMemberName;
     private string _newEventName = string.Empty;
@@ -260,6 +302,15 @@ else
 
     private async Task LoadAsync()
     {
+        try
+        {
+            _isPinned = (await Bookmarks.GetPinnedAsync()).Contains(GroupId);
+        }
+        catch (Exception)
+        {
+            _isPinned = false; // a convenience only
+        }
+
         _group = await Sender.Send(new GetGroupQuery(GroupId));
         _loaded = true;
 
@@ -268,6 +319,7 @@ else
         // An account group reads as "My account" whatever an older record stored (ADR-0078 Amendment 3).
         var record = (await Local.LoadGroupsAsync()).FirstOrDefault(r => r.State.Id == GroupId);
         _mode = record?.EffectiveMode() ?? StorageMode.OnThisDevice;
+        _kind = record is null ? StorageKind.Device : StorageModeDisplay.KindOf(record);
         _readOnly = (await GroupAccess.ForAsync(Services, GroupId)).ReadOnly;
 
         // If this device joined the group as a participant, resolve the claimed member's name for the
@@ -282,6 +334,43 @@ else
     private string DefaultEventName() => string.Format(
         System.Globalization.CultureInfo.CurrentCulture, L["DefaultEventNameFormat"], Time.GetLocalNow().Year);
 
+    // Upcoming (soonest first), then undated, then past (latest first).
+    private IEnumerable<EventSummaryDto> OrderedEvents =>
+        (_group?.Events ?? []).OrderBy(e => e.Date is null ? 1 : IsPast(e) ? 2 : 0)
+            .ThenBy(e => IsPast(e) ? -(e.Date?.Ticks ?? 0) : e.Date?.Ticks ?? 0);
+
+    private DateOnly Today => DateOnly.FromDateTime(Time.GetLocalNow().Date);
+
+    private bool IsPast(EventSummaryDto occasion) =>
+        occasion.Date is { } date && DateOnly.FromDateTime(date.Date) < Today;
+
+    // "24.12.2026 · in 69 days · Wishlists 2/4" — the parts that are known.
+    private string EventFacts(EventSummaryDto occasion)
+    {
+        var parts = new List<string>(3);
+        if (occasion.Date is { } date)
+        {
+            var day = DateOnly.FromDateTime(date.Date);
+            parts.Add(day.ToString("d", System.Globalization.CultureInfo.CurrentCulture));
+            var days = day.DayNumber - Today.DayNumber;
+            if (days >= 0)
+            {
+                parts.Add(days switch { 0 => L["CountdownToday"], 1 => L["CountdownTomorrow"], _ => L["CountdownDays", days] });
+            }
+        }
+        else
+        {
+            parts.Add(L["EventNoDate"]);
+        }
+
+        if (_group is { Members.Count: > 0 } && !IsPast(occasion))
+        {
+            parts.Add(L["EventWishlistProgress", occasion.WishlistsFilled, _group.Members.Count]);
+        }
+
+        return string.Join(" · ", parts);
+    }
+
     private string EventLabel(string name) => string.IsNullOrWhiteSpace(name) ? L["DefaultEventName"] : name;
 
     private void GoToSharing() => Navigation.NavigateTo($"groups/{GroupId}/sharing");
@@ -289,12 +378,37 @@ else
     private string SharingSubtitle() => _mode switch
     {
         StorageMode.SharedByLink => L["SharingSubtitleShared"],
+        StorageMode.Account when _kind == StorageKind.AccountShared => L["SharingSubtitleAccountShared"],
         StorageMode.Account => L["SharingSubtitleAccount"],
         _ => L["SharingSubtitleLocal"],
     };
 
     // Rename the group from a bottom sheet pre-filled with the current name (ADR-0055 group level),
     // instead of an always-visible text field on the hub.
+    private bool _isPinned;
+
+    private async Task TogglePinAsync()
+    {
+        try
+        {
+            await Bookmarks.ToggleAsync(GroupId);
+            _isPinned = (await Bookmarks.GetPinnedAsync()).Contains(GroupId);
+        }
+        catch (Exception)
+        {
+            // Pinning is a convenience; a failure leaves it as it was.
+        }
+    }
+
+    // Delete (or leave a joined group) after asking; back to the list once it is gone (Q34).
+    private async Task DeleteAsync()
+    {
+        if (_group is not null && await Removal.AskAndRemoveAsync(GroupId, _group.Name))
+        {
+            Navigation.NavigateTo(string.Empty, replace: true);
+        }
+    }
+
     private async Task RenameAsync()
     {
         var name = await Dialogs.ShowTextInputSheetAsync(L["Rename"], L["NameLabel"], L["Save"], L["Cancel"], _group?.Name);
@@ -333,27 +447,14 @@ else
     private Task AddEventAsync()
     {
         var name = string.IsNullOrWhiteSpace(_newEventName) ? DefaultEventName() : _newEventName;
-        return _group is { Events.Count: > 0 }
-            ? AddEventWithCarryForwardAsync(name)
-            : AddEventNamedAsync(name);
+        return AddEventWithCarryForwardAsync(name);
     }
 
     // The phone FAB collects the name in a bottom sheet (pre-filled with the default) for the first
     // occasion, or the carry-forward dialog once occasions exist.
-    private async Task AddEventViaFabAsync()
-    {
-        if (_group is { Events.Count: > 0 })
-        {
-            await AddEventWithCarryForwardAsync(DefaultEventName());
-            return;
-        }
-
-        var name = await Dialogs.ShowTextInputSheetAsync(L["AddEvent"], L["EventNameLabel"], L["AddEvent"], L["Cancel"], DefaultEventName());
-        if (!string.IsNullOrWhiteSpace(name))
-        {
-            await AddEventNamedAsync(name);
-        }
-    }
+    // Every add goes through the one dialog: name, optional date (Q22), and carry-forward once there is
+    // something to carry.
+    private Task AddEventViaFabAsync() => AddEventWithCarryForwardAsync(DefaultEventName());
 
     // Add a new occasion, optionally carrying forward wishlists, budget and the no-repeat draw baseline
     // from a chosen previous occasion (FR-035 / UC-SS-014).
@@ -371,18 +472,13 @@ else
         }
 
         var id = await Sender.Send(new AddEventCommand(GroupId, choice.Name, choice.SourceEventId));
-        _newEventName = string.Empty;
-        Open(id);
-    }
-
-    private async Task AddEventNamedAsync(string name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
+        if (choice.Date is { } date)
         {
-            return;
+            // Stored like the details page stores it: the calendar day at midnight, offset zero.
+            await Sender.Send(new SetEventDetailsCommand(
+                GroupId, id, new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero), null, null));
         }
 
-        var id = await Sender.Send(new AddEventCommand(GroupId, name));
         _newEventName = string.Empty;
         Open(id);
     }
@@ -432,4 +528,19 @@ else
             Open(eventId);
         }
     }
+
+    // A menu item that opens a sheet starts it only after the menu has closed: the item's handler returns at
+    // once, so the menu is gone before the sheet slides in rather than staying open behind it (Q12).
+    private void AfterMenu(Func<Task> action) => _ = InvokeAsync(async () =>
+    {
+        await Task.Yield();
+        try
+        {
+            await action();
+        }
+        catch (Exception ex)
+        {
+            await DispatchExceptionAsync(ex);
+        }
+    });
 }

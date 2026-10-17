@@ -22,10 +22,15 @@
                               Variant="Variant.Outlined" Margin="Margin.Dense" Required="true"
                               autocomplete="current-password" />
 
-                <div>
-                    <MudCheckBox @bind-Value="_staySignedIn" Dense="true">@L["LoginStaySignedIn"]</MudCheckBox>
-                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@L["LoginStaySignedInHint"]</MudText>
-                </div>
+                @* Only the web asks (Q25, FR-008): an installed app always stays signed in — the device lock protects
+                   it, and "Sign out" / "Sign out everywhere" remain. *@
+                @if (OperatingSystem.IsBrowser())
+                {
+                    <div>
+                        <MudCheckBox @bind-Value="_staySignedIn" Dense="true">@L["LoginStaySignedIn"]</MudCheckBox>
+                        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">@L["LoginStaySignedInHint"]</MudText>
+                    </div>
+                }
 
                 <BusyButton Label="@L["LoginSubmit"]" Busy="_busy" FullWidth="true" />
             </MudStack>
@@ -40,9 +45,9 @@
                     Busy="_passkeyBusy"
                     OnClick="SignInWithPasskeyAsync" />
 
-        @* Cross-app SSO (FR-031, ADR-0039). Renders only on a requesting app that registered SSO —
-           nothing on the authority origin or a host without SSO (e.g. the MAUI head). *@
-        <ContinueWithAccount />
+        @* Cross-app SSO (FR-031, ADR-0039) is not offered here for now (Q27, 2026-10-16 device test): it read as a
+           third sign-in method and led nowhere for anyone without a session on circletools.ch, which the app
+           cannot detect cheaply (third-party cookies). ContinueWithAccount stays ready for when it can. *@
     </ChildContent>
     <Footer>
         <div><MudLink Href="account/forgot-password">@L["LoginForgot"]</MudLink></div>
@@ -53,7 +58,7 @@
 @code {
     private string _email = string.Empty;
     private string _password = string.Empty;
-    private bool _staySignedIn;
+    private bool _staySignedIn = !OperatingSystem.IsBrowser();
     private string? _error;
     private IReadOnlyList<string>? _details;
     private bool _busy;

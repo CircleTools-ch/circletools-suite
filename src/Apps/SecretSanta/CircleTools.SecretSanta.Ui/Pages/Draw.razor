@@ -1,4 +1,5 @@
 @page "/groups/{GroupId:guid}/events/{EventId:guid}/draw"
+@using Microsoft.Extensions.DependencyInjection
 @inject ISender Sender
 @inject IServiceProvider Services
 @inject NavigationManager Navigation
@@ -34,6 +35,11 @@ else
     {
         <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true" role="alert">@L["DrawInvalidatedNotice"]</MudAlert>
     }
+    else if (_result is null && _event.DrawBreaksExclusions)
+    {
+        @* Exclusions added after the draw (Q13b): the pairings no longer respect them. *@
+        <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true" role="alert" id="draw-breaks-exclusions">@L["DrawBreaksExclusionsNotice"]</MudAlert>
+    }
 
     @* What is about to be drawn, before the button (UX review U2): who takes part, how many exclusions
        apply, and that nobody - the organizer included - sees the pairings here. *@
@@ -65,6 +71,10 @@ else
             {
                 <MudText>@L["DrawSuccess"]</MudText>
                 <MudText>@L["DrawAssignmentCount", _result.AssignmentCount]</MudText>
+            }
+            else if (_result is { Success: false })
+            {
+                <MudText>@L["DrawPreviousKept"]</MudText>
             }
             <MudText>@L["DrawSpoilerNote"]</MudText>
         </MudAlert>
@@ -132,8 +142,9 @@ else
         _memberNames = string.Join(", ", group?.Members.Select(m => m.Name) ?? []);
     }
 
-    // A current, valid draw exists (just run here, or from before) — the page then leads with sharing.
-    private bool Drawn => _result is { Success: true } || (_result is null && _event?.HasCurrentDraw == true);
+    // A current, valid draw exists (just run here, or from before) — the page then leads with sharing. A failed
+    // re-draw keeps the previous draw, so the page keeps showing it, with the error above (Q13c).
+    private bool Drawn => _result is { Success: true } || _event?.HasCurrentDraw == true;
 
     /// <summary>
     /// Re-drawing silently invalidates links the organizer may already have sent (ADR-0014 links
@@ -169,6 +180,47 @@ else
         finally
         {
             _busy = false;
+        }
+
+        if (_result?.Success == true)
+        {
+            await OfferReminderAsync();
+        }
+    }
+
+    // After a draw, offer once per occasion to be reminded before it (FR-046 amendment) — where the device can
+    // schedule and the "before the event" reminder is not already on. The permission is asked here, where it
+    // makes sense, not on app start.
+    private async Task OfferReminderAsync()
+    {
+        if (Services.GetService<INotificationScheduler>() is not { } notifications
+            || Services.GetService<NotificationPreferences>() is not { } prefs
+            || !await notifications.IsSupportedAsync()
+            || await prefs.IsEnabledAsync(ReminderKind.EventTomorrow)
+            || !await prefs.MarkOfferedAsync(EventId))
+        {
+            return;
+        }
+
+        if (!await Dialogs.ShowConfirmSheetAsync(L["RemindAfterDrawConfirm"], L["RemindAfterDrawYes"], L["NotNow"], Color.Primary))
+        {
+            return;
+        }
+
+        if (!await notifications.RequestPermissionAsync())
+        {
+            if (await Dialogs.ShowConfirmSheetAsync(L["NotificationsBlocked"], L["OpenSystemSettings"], L["Cancel"], Color.Primary))
+            {
+                await notifications.OpenSettingsAsync();
+            }
+
+            return;
+        }
+
+        await prefs.SetEnabledAsync(ReminderKind.EventTomorrow, true);
+        if (Services.GetService<IReminderRescheduler>() is { } reminders)
+        {
+            await reminders.ReconcileAsync();
         }
     }
 

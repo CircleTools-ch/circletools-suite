@@ -88,6 +88,14 @@ When it is presented without the matching PKCE code_verifier
 Then the request is denied and no session is started
 ```
 
+## Amendment (2026-10-16) — not offered until it can work
+
+From the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-santa-two-account-device-test.md) (Q27): "Continue with your CircleTools account" read as a third sign-in method and led
+nowhere for anyone without a session on circletools.ch. A browser cannot cheaply tell whether that session
+exists (third-party cookies), so the option is **hidden** on the sign-in page for now. The hand-off itself
+(ADR-0039) and its component stay; when it returns it reads as a one-click continuation ("You're signed in
+on circletools.ch — continue with one click") and shows only when the session is known to exist.
+
 ## Dependencies & related
 
 - Derived from: [UC-MAIN-017](../../use-cases/main/UC-MAIN-017-single-sign-on-across-apps.md)

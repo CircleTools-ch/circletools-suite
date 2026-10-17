@@ -9,7 +9,8 @@ namespace CircleTools.SecretSanta.Ui;
 /// <param name="SourceEventId">
 /// The event to carry forward from, or <see langword="null"/> to start blank.
 /// </param>
-public sealed record CarryForwardEventChoice(string Name, Guid? SourceEventId);
+/// <param name="Date">The occasion's date when given right away (Q22), or <see langword="null"/>.</param>
+public sealed record CarryForwardEventChoice(string Name, Guid? SourceEventId, DateOnly? Date = null);
 
 /// <summary>
 /// Shows the <see cref="CarryForwardEventDialog"/> — add a new occasion, optionally carrying forward

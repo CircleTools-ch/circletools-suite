@@ -88,6 +88,18 @@
   href: FEAT-023-session-scope-and-change-password.md
 - name: TP-023 Session scope and change password test plan
   href: TP-023-session-scope-and-change-password.md
+- name: FEAT-024 Participants in shared groups
+  href: FEAT-024-participants-in-shared-groups.md
+- name: TP-024 Participants in shared groups test plan
+  href: TP-024-participants-in-shared-groups.md
+- name: FEAT-025 Storage model & onboarding
+  href: FEAT-025-storage-model-and-onboarding.md
+- name: TP-025 Storage model & onboarding test plan
+  href: TP-025-storage-model-and-onboarding.md
+- name: FEAT-026 Own entry from the reveal link
+  href: FEAT-026-own-entry-from-the-reveal-link.md
+- name: TP-026 Own entry from the reveal link test plan
+  href: TP-026-own-entry-from-the-reveal-link.md
 - name: Templates
   items:
     - name: Feature spec template

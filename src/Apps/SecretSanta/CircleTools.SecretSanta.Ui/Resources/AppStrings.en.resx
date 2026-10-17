@@ -18,7 +18,6 @@
   <data name="Copied" xml:space="preserve"><value>Copied!</value></data>
   <data name="Share" xml:space="preserve"><value>Share</value></data>
   <data name="MoreActions" xml:space="preserve"><value>More actions</value></data>
-  <data name="ShareMessage" xml:space="preserve"><value>Here's your Secret Santa link 🎁</value></data>
   <data name="ShowQr" xml:space="preserve"><value>QR code</value></data>
   <data name="QrHint" xml:space="preserve"><value>Have this person scan the code to open their reveal link.</value></data>
   <data name="Close" xml:space="preserve"><value>Close</value></data>
@@ -38,7 +37,6 @@
   <data name="EmptyStateAccountSell" xml:space="preserve"><value>Sign in to sync your groups across devices, see your own assignment, and keep your own wishlist.</value></data>
   <data name="EmptyStateSignIn" xml:space="preserve"><value>Sign in</value></data>
   <data name="EmptyStateCreateGroup" xml:space="preserve"><value>Create a group</value></data>
-  <data name="EmptyStateSignedInHint" xml:space="preserve"><value>No groups yet. Create one above, or start from one of your circles.</value></data>
   <data name="MembersColumn" xml:space="preserve"><value>Members</value></data>
   <data name="DrawCompleteBadge" xml:space="preserve"><value>Drawn</value></data>
   <data name="DrawInvalidatedBadge" xml:space="preserve"><value>Re-draw needed</value></data>
@@ -127,7 +125,7 @@
   <!-- M4 — Linking (FEAT-005) -->
   <data name="FromCircleTitle" xml:space="preserve"><value>Create a group from a circle</value></data>
   <data name="FromCircleLead" xml:space="preserve"><value>Bring the people from one of your circles in as members. The group is a snapshot — changing the circle later won't change it.</value></data>
-  <data name="FromCircleNoCircles" xml:space="preserve"><value>You have no circles yet. Create one in the account app first.</value></data>
+  <data name="FromCircleNoCircles" xml:space="preserve"><value>You don't have any circles yet. Circles are created on circletools.ch.</value></data>
   <data name="FromCircleChooseLabel" xml:space="preserve"><value>Choose a circle</value></data>
   <data name="FromCircleGroupNameLabel" xml:space="preserve"><value>Group name</value></data>
   <data name="FromCircleManagedBadge" xml:space="preserve"><value>managed</value></data>
@@ -211,13 +209,10 @@
   <data name="WishlistsTitle" xml:space="preserve"><value>Wishlists</value></data>
   <data name="WishlistsLead" xml:space="preserve"><value>Set each member's wishlist for this event.</value></data>
   <data name="ConfirmRemoveEvent" xml:space="preserve"><value>Remove the event "{0}"? Its draw and wishlists will be lost.</value></data>
-  <data name="CreateFromCircleAction" xml:space="preserve"><value>Create from a circle</value></data>
+  <data name="CreateFromCircleAction" xml:space="preserve"><value>Take members from a circle</value></data>
   <data name="AllGroups" xml:space="preserve"><value>All groups</value></data>
-  <data name="ReconcileTitle" xml:space="preserve"><value>Bring your offline data in?</value></data>
-  <data name="ReconcileBodySingular" xml:space="preserve"><value>You created a group while signed out. Import it into your account to sync it across your devices, keep it only on this device, or discard it? Discarding can't be undone.</value></data>
-  <data name="ReconcileBodyPlural" xml:space="preserve"><value>You created {0} groups while signed out. Import them into your account to sync them across your devices, keep them only on this device, or discard them? Discarding can't be undone.</value></data>
-  <data name="ReconcileImport" xml:space="preserve"><value>Import</value></data>
-  <data name="ReconcileDiscard" xml:space="preserve"><value>Discard</value></data>
+  <data name="ReconcileTitle" xml:space="preserve"><value>Bring your groups into your account?</value></data>
+  <data name="ReconcileImport" xml:space="preserve"><value>Bring into my account</value></data>
   <data name="EventOverview" xml:space="preserve"><value>Overview</value></data>
   <data name="HubWishlistCount" xml:space="preserve"><value>{0} of {1}</value></data>
   <data name="HubDrawPending" xml:space="preserve"><value>Not drawn yet</value></data>
@@ -241,9 +236,9 @@
   <data name="SharingSubtitleAccount" xml:space="preserve"><value>Synced to your account</value></data>
   <data name="SharingTitle" xml:space="preserve"><value>Sharing &amp; sync</value></data>
   <data name="SharingLead" xml:space="preserve"><value>Choose where this group lives and manage its links.</value></data>
-  <data name="SharingSharedLead" xml:space="preserve"><value>Anyone with a link below can open this group; only the admin link can manage it.</value></data>
-  <data name="AdminLink" xml:space="preserve"><value>Admin link</value></data>
-  <data name="AdminLinkHint" xml:space="preserve"><value>Anyone with this link can manage the group and run the draw.</value></data>
+  <data name="SharingSharedLead" xml:space="preserve"><value>Anyone with a link below can open this group; only the management link can change it.</value></data>
+  <data name="AdminLink" xml:space="preserve"><value>Management link</value></data>
+  <data name="AdminLinkHint" xml:space="preserve"><value>For co-organizing: anyone with this link can change the group and run the draw. Only share it with people who organize with you.</value></data>
   <data name="JoinLink" xml:space="preserve"><value>Join link</value></data>
   <data name="JoinLinkHint" xml:space="preserve"><value>Lets people join, pick who they are, and see their own assignment.</value></data>
   <data name="DisableRegenerate" xml:space="preserve"><value>Disable &amp; create new</value></data>
@@ -251,7 +246,7 @@
   <data name="ShareByLinkConfirmYes" xml:space="preserve"><value>Share by link</value></data>
   <data name="MakeLocalConfirm" xml:space="preserve"><value>Make this group on-this-device only? The online copy is removed and shared links stop working. Your copy stays on this device.</value></data>
   <data name="MakeLocalConfirmYes" xml:space="preserve"><value>Make it local</value></data>
-  <data name="RotateAdminConfirm" xml:space="preserve"><value>Disable the current admin link and create a new one? The old link will stop working.</value></data>
+  <data name="RotateAdminConfirm" xml:space="preserve"><value>Disable the current management link and create a new one? The old link will stop working.</value></data>
   <data name="RotateAdminConfirmYes" xml:space="preserve"><value>Create new link</value></data>
   <data name="ShareGroupQrHint" xml:space="preserve"><value>Have this person scan the code to open the group.</value></data>
   <data name="ShareGroupMessage" xml:space="preserve"><value>Join our Secret Santa group:</value></data>
@@ -277,15 +272,15 @@
   <data name="ReleaseMemberConfirm" xml:space="preserve"><value>Free {0}'s spot? They'll lose access until they rejoin with the join link.</value></data>
   <data name="ReleaseMemberConfirmYes" xml:space="preserve"><value>Free the spot</value></data>
   <data name="Someone" xml:space="preserve"><value>Someone</value></data>
-  <data name="ClaimAdminConfirm" xml:space="preserve"><value>Take over this group with your account? You become the only admin — the admin link stops working. The join link keeps working.</value></data>
-  <data name="ClaimAdminConfirmYes" xml:space="preserve"><value>Claim admin</value></data>
-  <data name="ReleaseToLinkConfirm" xml:space="preserve"><value>Hand this group back to a shared link? A new admin link is created and you stop being the sole admin.</value></data>
-  <data name="ReleaseToLinkConfirmYes" xml:space="preserve"><value>Hand off</value></data>
+  <data name="ClaimAdminConfirm" xml:space="preserve"><value>Keep this group in your account? It then syncs to all your devices and only you manage it — the management link stops working. The join link keeps working.</value></data>
+  <data name="ClaimAdminConfirmYes" xml:space="preserve"><value>Keep in my account</value></data>
+  <data name="ReleaseToLinkConfirm" xml:space="preserve"><value>Hand this group over without an account? It leaves your account, and a new management link lets anyone who has it manage the group with you. The join link keeps working.</value></data>
+  <data name="ReleaseToLinkConfirmYes" xml:space="preserve"><value>Hand over</value></data>
   <data name="AccountOwnedNote" xml:space="preserve"><value>You own this group. It's synced to your account.</value></data>
   <data name="StorageModeChanging" xml:space="preserve"><value>Saving your change…</value></data>
   <data name="StorageModeChanged" xml:space="preserve"><value>Saved.</value></data>
   <data name="StorageModeChangeFailed" xml:space="preserve"><value>Couldn't change where this group is stored. Check your connection and try again.</value></data>
-  <data name="AdminRetiredTitle" xml:space="preserve"><value>This admin link no longer works</value></data>
+  <data name="AdminRetiredTitle" xml:space="preserve"><value>This management link no longer works</value></data>
   <data name="AdminRetiredBody" xml:space="preserve"><value>{0} has claimed the admin role for this group.</value></data>
   <data name="AdminRetiredJoinHint" xml:space="preserve"><value>You can still open the join link to join as a participant.</value></data>
   <data name="AddToCalendar" xml:space="preserve"><value>Add to calendar</value></data>
@@ -298,7 +293,7 @@
   <data name="NotificationsHint" xml:space="preserve"><value>Choose which reminders this device shows. Off by default.</value></data>
   <data name="NotificationsUnavailableWeb" xml:space="preserve"><value>Reminders are available in the installed app.</value></data>
   <data name="ReminderDrawLabel" xml:space="preserve"><value>Draw not done yet</value></data>
-  <data name="ReminderTomorrowLabel" xml:space="preserve"><value>Event is tomorrow</value></data>
+  <data name="ReminderTomorrowLabel" xml:space="preserve"><value>Before the event</value></data>
   <data name="ReminderWishlistLabel" xml:space="preserve"><value>My wishlist is empty</value></data>
   <data name="ReminderDrawTitle" xml:space="preserve"><value>Time to draw</value></data>
   <data name="ReminderDrawBody" xml:space="preserve"><value>Draw names for {0} soon.</value></data>
@@ -321,12 +316,7 @@
   <data name="DataImportUnsupported" xml:space="preserve"><value>This backup was made by a newer version of the app. Update the app, then try again.</value></data>
   <data name="DataImportViewGroups" xml:space="preserve"><value>View my groups</value></data>
   <data name="EmptyStateLocalDataNote" xml:space="preserve"><value>Your groups are saved in this browser, on this device. Manage or back them up under Settings → Your data.</value></data>
-  <data name="OnboardingStorageTitle" xml:space="preserve"><value>Where should your groups be stored?</value></data>
-  <data name="OnboardingStorageIntro" xml:space="preserve"><value>Choose where new groups are kept by default. On this device keeps them private and offline; Shared by link stores them online so others can open them with a link — no account; My account syncs them across your devices.</value></data>
   <data name="OnboardingStoragePerGroupNote" xml:space="preserve"><value>You can change this for each group later, in its sharing &amp; sync settings.</value></data>
-  <data name="OnboardingStorageAccountNote" xml:space="preserve"><value>If you pick My account, you'll be asked to sign in or create an account next.</value></data>
-  <data name="OnboardingStorageSave" xml:space="preserve"><value>Save</value></data>
-  <data name="OnboardingStorageSkip" xml:space="preserve"><value>Not now</value></data>
   <data name="SettingsDefaultStorageTitle" xml:space="preserve"><value>Default storage for new groups</value></data>
   <data name="SettingsDefaultStorageHint" xml:space="preserve"><value>New groups start with this storage. You can still change it for each group.</value></data>
   <data name="StorageStoredAs" xml:space="preserve"><value>Stored</value></data>
@@ -335,7 +325,6 @@
   <data name="MoreActionsFor" xml:space="preserve"><value>More actions for {0}</value></data>
   <data name="Done" xml:space="preserve"><value>Done</value></data>
   <data name="MemberAddedAddAnother" xml:space="preserve"><value>{0} added. Add the next person, or tap Done.</value></data>
-  <data name="SyncStatusSynced" xml:space="preserve"><value>Synced — everything is up to date</value></data>
   <data name="ExclusionPickPerson" xml:space="preserve"><value>Choose a person</value></data>
   <data name="RevealNextStep" xml:space="preserve"><value>You will receive a gift too: tell the organizer what you would like, so your own Secret Santa has ideas.</value></data>
   <data name="DrawSummary" xml:space="preserve"><value>{0} people taking part · exclusions: {1}</value></data>
@@ -356,7 +345,6 @@
   <data name="MoveToAccountConfirmYes" xml:space="preserve"><value>Move to my account</value></data>
   <data name="AccountToLocalConfirm" xml:space="preserve"><value>Keep this group only on this device? It is removed from your account and the server, and disappears from your other devices.</value></data>
   <data name="AccountToLocalConfirmYes" xml:space="preserve"><value>Keep on this device only</value></data>
-  <data name="ReconcileKeepLocal" xml:space="preserve"><value>Keep on this device</value></data>
   <data name="KeptAsLocalCopySingular" xml:space="preserve"><value>"{0}" was moved off your account on another device. Your unsynced changes are kept here as a separate copy.</value></data>
   <data name="ParticipantReadOnlyNote" xml:space="preserve"><value>You joined this group with a link. Only the organizer can change it.</value></data>
   <data name="YourAssignment" xml:space="preserve"><value>Your assignment</value></data>
@@ -364,4 +352,128 @@
   <data name="DeleteGroupOnlineConfirm" xml:space="preserve"><value>Delete "{0}" with everything in it? It is also deleted online for everyone, and its links stop working. This can't be undone.</value></data>
   <data name="LeaveJoinedGroupConfirm" xml:space="preserve"><value>Remove "{0}" from this device? The group stays with its organizer; you can join again with the link.</value></data>
   <data name="DeleteGroupAccountConfirm" xml:space="preserve"><value>Delete "{0}" with everything in it? It is also deleted from your account and from all your other devices. This can't be undone.</value></data>
+  <data name="MyEntryTitle" xml:space="preserve"><value>My wishlist</value></data>
+  <data name="MyEntryLead" xml:space="preserve"><value>What would you like for this event? Only the person who gives you a present sees it, together with your note.</value></data>
+  <data name="MyGiftNoteLabel" xml:space="preserve"><value>Note for my Secret Santa</value></data>
+  <data name="MyGiftNoteHelp" xml:space="preserve"><value>Allergies, things you don't like, sizes … — applies to every event of this group.</value></data>
+  <data name="Saving" xml:space="preserve"><value>Saving…</value></data>
+  <data name="SavedOfflinePending" xml:space="preserve"><value>Saved on this device — it will be sent as soon as you're online.</value></data>
+  <data name="MyWishlistFilled" xml:space="preserve"><value>Filled in</value></data>
+  <data name="MyWishlistEmpty" xml:space="preserve"><value>Still empty</value></data>
+  <data name="ParticipantSharingLead" xml:space="preserve"><value>You joined this group with its join link. Only the organizer decides where it is stored and manages its links.</value></data>
+  <data name="LeaveGroup" xml:space="preserve"><value>Leave group</value></data>
+  <data name="LeaveGroupConfirm" xml:space="preserve"><value>Leave «{0}»? You'll no longer see the group or your assignment, and the organizer will see that you left. You can join again with the link.</value></data>
+  <data name="LeaveGroupConfirmYes" xml:space="preserve"><value>Leave</value></data>
+  <data name="LeftGroup" xml:space="preserve"><value>You left «{0}».</value></data>
+  <data name="LeaveGroupOffline" xml:space="preserve"><value>Leaving needs a connection. Try again when you're online.</value></data>
+  <data name="JoinAllTaken" xml:space="preserve"><value>Everyone in this group has already joined. If one of them is you, ask the organizer to free your name.</value></data>
+  <data name="JoinTakenOrganizer" xml:space="preserve"><value>Organizer</value></data>
+  <data name="JoinTakenLinked" xml:space="preserve"><value>Already connected</value></data>
+  <data name="JoinRememberAccountHintFor" xml:space="preserve"><value>On every device where you're signed in as {0}.</value></data>
+  <data name="JoinSignInToKeep" xml:space="preserve"><value>Sign in to keep it on your account</value></data>
+  <data name="HandoutEveryoneInApp" xml:space="preserve"><value>Everyone sees their assignment in the app — no links to hand out.</value></data>
+  <data name="MemberConnectedBadge" xml:space="preserve"><value>Connected</value></data>
+  <data name="MemberConnectedJoined" xml:space="preserve"><value>Joined with the join link: sees their assignment in the app and keeps their own wishlist and note.</value></data>
+  <data name="MemberConnectedLinked" xml:space="preserve"><value>Connected to an account: sees their assignment in the app.</value></data>
+  <data name="MemberKeepsOwnEntry" xml:space="preserve"><value>{0} keeps this up to date themselves.</value></data>
+  <data name="ChangeSaved" xml:space="preserve"><value>Change saved.</value></data>
+  <data name="Undo" xml:space="preserve"><value>Undo</value></data>
+  <data name="RevealOwnEntryTitle" xml:space="preserve"><value>Your wishlist</value></data>
+  <data name="RevealOwnEntryDelay" xml:space="preserve"><value>Your Secret Santa sees changes after the organizer's app next syncs.</value></data>
+  <data name="TakeOverEntry" xml:space="preserve"><value>Edit their wishlist yourself</value></data>
+  <data name="TakeOverEntryConfirm" xml:space="preserve"><value>Edit {0}'s wishlist and note yourself? What {0} entered stays, and {0} can still change it from their reveal link.</value></data>
+  <data name="TakeOverEntryConfirmYes" xml:space="preserve"><value>Edit it myself</value></data>
+  <data name="ShareSelfInApp" xml:space="preserve"><value>That's you — your assignment is under My assignments.</value></data>
+  <data name="ShareConnectedInApp" xml:space="preserve"><value>Sees the assignment in the app.</value></data>
+  <data name="ShareLinkAnyway" xml:space="preserve"><value>Share link anyway</value></data>
+  <data name="MyJoinedGroupsTitle" xml:space="preserve"><value>Groups you joined</value></data>
+  <data name="EditMyEntry" xml:space="preserve"><value>Edit</value></data>
+  <data name="ModeAccountSharedTitle" xml:space="preserve"><value>My account · shared</value></data>
+  <data name="ModeAccountSharedHint" xml:space="preserve"><value>Synced across your devices, and others join with a link.</value></data>
+  <data name="ModeAccountSignInNeeded" xml:space="preserve"><value>My account (sign-in needed)</value></data>
+  <data name="ModeChipAccountShared" xml:space="preserve"><value>Account · shared</value></data>
+  <data name="SharingSubtitleAccountShared" xml:space="preserve"><value>In your account, others join with a link</value></data>
+  <data name="StorageWhereTitle" xml:space="preserve"><value>Where should this group be kept?</value></data>
+  <data name="InviteConfirm" xml:space="preserve"><value>Invite people? You get a join link for your family or friends. The group stays in your account and on all your devices.</value></data>
+  <data name="InviteConfirmYes" xml:space="preserve"><value>Invite</value></data>
+  <data name="StopSharingConfirm" xml:space="preserve"><value>Stop sharing? The join link stops working and the people who joined no longer see the group. It stays in your account.</value></data>
+  <data name="StopSharingConfirmYes" xml:space="preserve"><value>Stop sharing</value></data>
+  <data name="AccountSharedToLocalConfirm" xml:space="preserve"><value>Keep this group only on this device? It is removed from your account and the server, disappears from your other devices, and the join link stops working for everyone who joined.</value></data>
+  <data name="AccountSharedNote" xml:space="preserve"><value>This group is in your account and synced to your devices. Others join with the link below.</value></data>
+  <data name="ReleaseToLinkAction" xml:space="preserve"><value>Hand over without an account</value></data>
+  <data name="ReleaseToLinkActionHint" xml:space="preserve"><value>For co-organizing: the group leaves your account and gets a management link you can pass on.</value></data>
+  <data name="LinkNotInAccountNote" xml:space="preserve"><value>This group isn't in your account yet, so it isn't on your other devices.</value></data>
+  <data name="KeepInAccount" xml:space="preserve"><value>Keep in my account</value></data>
+  <data name="ReconcileLead" xml:space="preserve"><value>You created these groups while signed out. Ticked ones move into your account and sync to your devices.</value></data>
+  <data name="ReconcileUntickedNote" xml:space="preserve"><value>Unticked groups stay on this device only. You can move them later under Sharing &amp; sync.</value></data>
+  <data name="ReconcileLater" xml:space="preserve"><value>Later</value></data>
+  <data name="ReconcileKeepAll" xml:space="preserve"><value>Keep on this device</value></data>
+  <data name="ReconcileSummary" xml:space="preserve"><value>{0} members</value></data>
+  <data name="ReconcileSummaryDrawn" xml:space="preserve"><value>{0} members · drawn</value></data>
+  <data name="ReminderSoonTitle" xml:space="preserve"><value>{0} is in {1} days</value></data>
+  <data name="ReminderSoonBody" xml:space="preserve"><value>Your gift exchange is in {0} days.</value></data>
+  <data name="ReminderLeadLabel" xml:space="preserve"><value>When</value></data>
+  <data name="ReminderLeadOneDay" xml:space="preserve"><value>1 day before</value></data>
+  <data name="ReminderLeadDays" xml:space="preserve"><value>{0} days before</value></data>
+  <data name="ReminderTimeLabel" xml:space="preserve"><value>Remind me at</value></data>
+  <data name="NotificationsBlocked" xml:space="preserve"><value>Notifications are turned off for Secret Santa. To get reminders, allow them in the settings.</value></data>
+  <data name="OpenSystemSettings" xml:space="preserve"><value>Open settings</value></data>
+  <data name="EventReminderLabel" xml:space="preserve"><value>Reminder for this event</value></data>
+  <data name="EventReminderDefault" xml:space="preserve"><value>As in Settings</value></data>
+  <data name="EventReminderOff" xml:space="preserve"><value>No reminders</value></data>
+  <data name="RemindAfterDrawConfirm" xml:space="preserve"><value>Drawn! Should I remind you before the event?</value></data>
+  <data name="RemindAfterDrawYes" xml:space="preserve"><value>Remind me</value></data>
+  <data name="NotNow" xml:space="preserve"><value>Not now</value></data>
+  <data name="SyncIndicatorSynced" xml:space="preserve"><value>Synced successfully – {0}</value></data>
+  <data name="SyncIndicatorSyncedNoTime" xml:space="preserve"><value>Synced successfully</value></data>
+  <data name="SyncAgoJustNow" xml:space="preserve"><value>just now</value></data>
+  <data name="SyncAgoMinutes" xml:space="preserve"><value>{0} min ago</value></data>
+  <data name="SyncAgoHours" xml:space="preserve"><value>{0} h ago</value></data>
+  <data name="SyncAgoAt" xml:space="preserve"><value>on {0}</value></data>
+  <data name="SyncLastSuccess" xml:space="preserve"><value>Last synced {0}</value></data>
+  <data name="SyncShortOffline" xml:space="preserve"><value>Offline</value></data>
+  <data name="SyncShortFailed" xml:space="preserve"><value>Not synced</value></data>
+  <data name="SyncShortStorage" xml:space="preserve"><value>Storage full</value></data>
+  <data name="SyncDetailOffline" xml:space="preserve"><value>You are offline. Your changes are saved on this device and will sync as soon as you are back online.</value></data>
+  <data name="SyncDetailFailed" xml:space="preserve"><value>The last sync did not finish. Nothing was lost — it will be tried again automatically.</value></data>
+  <data name="SyncDetailStorage" xml:space="preserve"><value>This device's storage is full, so changes cannot be saved for syncing. Free up some space on the device.</value></data>
+  <data name="SyncRetry" xml:space="preserve"><value>Try again now</value></data>
+  <data name="NavAllGroups" xml:space="preserve"><value>All groups</value></data>
+  <data name="NavRecentlyOpened" xml:space="preserve"><value>Recently opened</value></data>
+  <data name="DataStoredExplainerSignedIn" xml:space="preserve"><value>Groups in “My account” are synced with your account and safe even if this browser's data is cleared. Groups stored “On this device” live only in this browser — back them up or move them into your account.</value></data>
+  <data name="FromCircleManageOnWeb" xml:space="preserve"><value>Open circletools.ch</value></data>
+  <data name="EmptyStateMemberHint" xml:space="preserve"><value>You already take part in someone else's group — your assignment and wishlist are under “My assignments”.</value></data>
+  <data name="BudgetUpTo" xml:space="preserve"><value>up to {0}</value></data>
+  <data name="ExclusionsNoRecipient" xml:space="preserve"><value>With these exclusions, {0} has nobody left to give to.</value></data>
+  <data name="ExclusionsNoGiver" xml:space="preserve"><value>With these exclusions, nobody can give to {0}.</value></data>
+  <data name="ExclusionsNoDraw" xml:space="preserve"><value>With these exclusions no draw is possible — remove one or add a member.</value></data>
+  <data name="DrawBreaksExclusionsNotice" xml:space="preserve"><value>The current draw no longer matches the exclusions. Draw again?</value></data>
+  <data name="DrawBreaksExclusionsBadge" xml:space="preserve"><value>Draw again</value></data>
+  <data name="DrawPreviousKept" xml:space="preserve"><value>The previous draw still applies.</value></data>
+  <data name="CountdownToday" xml:space="preserve"><value>today</value></data>
+  <data name="CountdownTomorrow" xml:space="preserve"><value>tomorrow</value></data>
+  <data name="CountdownDays" xml:space="preserve"><value>in {0} days</value></data>
+  <data name="EventNoDate" xml:space="preserve"><value>No date yet</value></data>
+  <data name="EventWishlistProgress" xml:space="preserve"><value>Wishlists {0}/{1}</value></data>
+  <data name="DetailsMissingDateAndBudget" xml:space="preserve"><value>Date and budget missing</value></data>
+  <data name="DetailsMissingDate" xml:space="preserve"><value>no date</value></data>
+  <data name="DetailsMissingBudget" xml:space="preserve"><value>no budget</value></data>
+  <data name="DateOptionalLabel" xml:space="preserve"><value>Date (optional)</value></data>
+  <data name="DuplicateMemberErrorSuggest" xml:space="preserve"><value>There is already a “{0}” in this group. Add a letter to tell them apart, e.g. “{1}”.</value></data>
+  <data name="SavedCheck" xml:space="preserve"><value>Saved ✓</value></data>
+  <data name="WishlistSaveFailed" xml:space="preserve"><value>Could not save — your text is kept. It is tried again as you type.</value></data>
+  <data name="UseAsTemplate" xml:space="preserve"><value>Use as template for a new group</value></data>
+  <data name="TemplateNewName" xml:space="preserve"><value>{0} (new)</value></data>
+  <data name="TemplateExplainer" xml:space="preserve"><value>The members and exclusions are copied. Events, wishlists and the draw start fresh.</value></data>
+  <data name="ShareMessageGreeting" xml:space="preserve"><value>Hi {0}! 🎁</value></data>
+  <data name="ShareMessageForGroupEvent" xml:space="preserve"><value>Here is your Secret Santa link for “{0}” – {1}.</value></data>
+  <data name="ShareMessageForEvent" xml:space="preserve"><value>Here is your Secret Santa link for {0}.</value></data>
+  <data name="ShareMessageSecret" xml:space="preserve"><value>Open it to see who you are giving to – only you can see it.</value></data>
+  <data name="RevealNeedsConnection" xml:space="preserve"><value>This link needs an internet connection the first time it is opened. Connect and try again.</value></data>
+  <data name="RevealTryAgain" xml:space="preserve"><value>Try again</value></data>
+  <data name="WishlistOpenLink" xml:space="preserve"><value>Open link ({0})</value></data>
+  <data name="RevealLinkGone" xml:space="preserve"><value>This link no longer works – the group's online copy is gone. Ask the organizer for a new link.</value></data>
+  <data name="DataPersistedNoSignedIn" xml:space="preserve"><value>This browser may clear its data if it runs low on space. Groups in your account are safe; back up the ones stored only on this device.</value></data>
+  <data name="MyWishlistsUnsaved" xml:space="preserve"><value>Not saved yet – saved when you leave the field</value></data>
+  <data name="MyWishlistsAddPending" xml:space="preserve"><value>Press Enter or “Add” to add this wish</value></data>
 </root>

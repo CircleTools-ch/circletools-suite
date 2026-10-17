@@ -69,6 +69,8 @@ public static class AccountEndpoints
         group.MapPost("/refresh", RefreshAsync).WithName("Refresh").AllowAnonymous();
         group.MapPost("/logout", LogoutAsync).WithName("Logout").RequireAuthorization();
         group.MapPost("/logout-all", LogoutAllAsync).WithName("LogoutAll").RequireAuthorization();
+        group.MapPost("/sessions", ListSessionsAsync).WithName("ListSessions").RequireAuthorization();
+        group.MapPost("/sessions/{sessionId:guid}/revoke", RevokeSessionAsync).WithName("RevokeSession").RequireAuthorization();
         group.MapPost("/change-password", ChangePasswordAsync).WithName("ChangePassword")
             .RequireAuthorization().RequireRateLimiting(SensitiveRateLimitPolicy);
 
@@ -381,6 +383,7 @@ public static class AccountEndpoints
         UserManager<CircleToolsUser> users,
         SessionService sessions,
         DecoyPasswordVerifier decoy,
+        HttpContext http,
         CancellationToken cancellationToken)
     {
         var user = await users.FindByEmailAsync(request.Email ?? string.Empty).ConfigureAwait(false);
@@ -402,7 +405,7 @@ public static class AccountEndpoints
             return InvalidCredentials();
         }
 
-        var tokens = await sessions.StartAsync(user, cancellationToken).ConfigureAwait(false);
+        var tokens = await sessions.StartAsync(user, DeviceOf(http), cancellationToken).ConfigureAwait(false);
         return Results.Ok(ToResponse(tokens, user.EmailConfirmed));
     }
 
@@ -481,7 +484,7 @@ public static class AccountEndpoints
     /// </summary>
     /// <remarks>
     /// Anonymous, PKCE-proven, single-use. The code yields only a user id; the session itself comes
-    /// from <see cref="SessionService.StartAsync"/>, so this is the same token contract as a password
+    /// from <see cref="SessionService.StartAsync(CircleToolsUser, string?, CancellationToken)"/>, so this is the same token contract as a password
     /// sign-in and there is exactly one path that issues tokens. Every rejection reads identically, as
     /// a bad refresh does.
     /// </remarks>
@@ -490,6 +493,7 @@ public static class AccountEndpoints
         ConnectAuthorizationCodeService codes,
         SessionService sessions,
         UserManager<CircleToolsUser> users,
+        HttpContext http,
         CancellationToken cancellationToken)
     {
         var userId = await codes.RedeemAsync(request.Code, request.CodeVerifier, cancellationToken).ConfigureAwait(false);
@@ -506,7 +510,7 @@ public static class AccountEndpoints
             return InvalidCredentials();
         }
 
-        var tokens = await sessions.StartAsync(user, cancellationToken).ConfigureAwait(false);
+        var tokens = await sessions.StartAsync(user, DeviceOf(http), cancellationToken).ConfigureAwait(false);
         return Results.Ok(ToResponse(tokens, user.EmailConfirmed));
     }
 
@@ -537,6 +541,42 @@ public static class AccountEndpoints
 
         return Results.NoContent();
     }
+
+    /// <summary>The signed-in devices, this one marked (ADR-0079 amendment).</summary>
+    private static async Task<IResult> ListSessionsAsync(
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] SessionListRequest? request,
+        ClaimsPrincipal principal,
+        SessionService sessions,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var list = await sessions.ListAsync(userId, request?.RefreshToken, cancellationToken).ConfigureAwait(false);
+        return Results.Ok(list.Select(s => new SessionInfoResponse(s.Id, s.Device, s.SignedInAt, s.LastActiveAt, s.IsCurrent)).ToList());
+    }
+
+    /// <summary>Signs out one device of the signed-in user (ADR-0079 amendment). Someone else's session: 404.</summary>
+    private static async Task<IResult> RevokeSessionAsync(
+        Guid sessionId,
+        ClaimsPrincipal principal,
+        SessionService sessions,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        return await sessions.RevokeSessionByIdAsync(userId, sessionId, cancellationToken).ConfigureAwait(false)
+            ? Results.NoContent()
+            : Results.NotFound();
+    }
+
+    // The coarse device label for a new session, from the request's User-Agent (ADR-0079 amendment).
+    internal static string DeviceOf(HttpContext http) => DeviceLabel.FromUserAgent(http.Request.Headers.UserAgent.ToString());
 
     /// <summary>Ends every session of the signed-in user, on every device (FR-049, ADR-0079).</summary>
     private static async Task<IResult> LogoutAllAsync(

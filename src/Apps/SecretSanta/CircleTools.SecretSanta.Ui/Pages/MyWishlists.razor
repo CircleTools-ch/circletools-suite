@@ -2,10 +2,16 @@
 @using CircleTools.ApiClient
 @using CircleTools.SecretSanta.Contracts
 @using CircleTools.SecretSanta.LocalStore.Linking
+@using CircleTools.Ui.Account.Auth
+@using Microsoft.AspNetCore.Components.Authorization
 @inject ILinkingApi Linking
 @inject IStringLocalizer<AppStrings> L
 @inject TimeProvider Time
 @inject IDialogService Dialogs
+@inject IServiceProvider Services
+@inject AuthenticationStateProvider Auth
+@inject ISnackbar Snackbar
+@implements IDisposable
 
 @*
     Edit my own wishlist (FR-030). A linked member owns their wishlist per membership. In-app reveal is
@@ -13,7 +19,8 @@
     re-issued — the member is told so here. A new membership can copy a previous wishlist.
     Every change saves itself (UX review B5): adding, removing or copying saves at once and an edited line
     saves when the field loses focus, so there is no separate Save step to forget. A wish typed but not yet
-    added, or a save that failed, guards navigation away.
+    added, or a save that failed, guards navigation away. Each saved change offers a short "Undo" that puts
+    the list back as it was before it (2026-10-17) — the way back from an accidental remove or edit.
 *@
 
 <NavigationLock OnBeforeInternalNavigation="ConfirmLeaveAsync" ConfirmExternalNavigation="@AnyUnsaved" />
@@ -35,7 +42,7 @@
         {
             <MudText>@L["Loading"]</MudText>
         }
-        else if (_editors.Count == 0)
+        else if (_editors.Count == 0 && _joined.Count == 0)
         {
             <MudText Class="mud-text-secondary">@L["MyWishlistsNoMemberships"]</MudText>
         }
@@ -99,11 +106,42 @@
                                     <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary"
                                                OnClick="() => SaveAsync(editor)">@L["Retry"]</MudButton>
                                 }
+                                else if (!editor.Items.SequenceEqual(editor.SavedItems))
+                                {
+                                    @* A change since the last save is said as such, so "Saved" always means the latest. *@
+                                    <MudText Class="mud-text-secondary" Typo="Typo.body2" role="status">@L["MyWishlistsUnsaved"]</MudText>
+                                }
+                                else if (!string.IsNullOrWhiteSpace(editor.NewItem))
+                                {
+                                    @* A wish typed in the add field counts once it is added. *@
+                                    <MudText Class="mud-text-secondary" Typo="Typo.body2" role="status">@L["MyWishlistsAddPending"]</MudText>
+                                }
                                 else if (editor.Saved)
                                 {
                                     <MudText Color="Color.Success" Typo="Typo.body2" role="status">@L["MyWishlistsSaved"]</MudText>
                                 }
                             </div>
+                        </MudCardContent>
+                    </MudCard>
+                }
+            </MudStack>
+        }
+
+        @* Groups joined through a join link (ADR-0080): the own entry lives on the group's event page. *@
+        @if (_joined.Count > 0)
+        {
+            <MudText Typo="Typo.h6" Class="mt-6 mb-2" id="my-joined-wishlists">@L["MyJoinedGroupsTitle"]</MudText>
+            <MudStack Spacing="2">
+                @foreach (var joined in _joined)
+                {
+                    <MudCard Elevation="1">
+                        <MudCardContent Class="d-flex flex-wrap justify-space-between align-center gap-2">
+                            <div>
+                                <MudText Typo="Typo.subtitle1"><strong>@joined.GroupName — @EventLabel(joined.EventName)</strong></MudText>
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary">@(joined.WishlistFilled ? L["MyWishlistFilled"] : L["MyWishlistEmpty"])</MudText>
+                            </div>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                       Href="@($"groups/{joined.GroupId}/events/{joined.EventId}/wishlists")">@L["EditMyEntry"]</MudButton>
                         </MudCardContent>
                     </MudCard>
                 }
@@ -133,6 +171,8 @@
     }
 
     private List<WishlistEditor>? _editors;
+    private bool _disposed;
+    private IReadOnlyList<JoinedEvent> _joined = [];
     private string? _error;
 
     private string EventLabel(string name) => string.IsNullOrWhiteSpace(name) ? L["DefaultEventName"] : name;
@@ -143,6 +183,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _joined = await JoinedGroups.ForAsync(Services, (await Auth.GetAuthenticationStateAsync()).User.UserId());
         var memberships = await Linking.GetMyMembershipsAsync();
         var wishlists = await Linking.GetMyWishlistsAsync();
 
@@ -208,6 +249,20 @@
     private Task SaveIfChangedAsync(WishlistEditor editor) =>
         editor.Items.SequenceEqual(editor.SavedItems) ? Task.CompletedTask : SaveAsync(editor);
 
+    private async Task UndoAsync(WishlistEditor editor, List<string> before)
+    {
+        editor.Items.Clear();
+        editor.Items.AddRange(before);
+        await SaveAsync(editor, offerUndo: false);
+        if (!_disposed)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    /// <inheritdoc />
+    public void Dispose() => _disposed = true;
+
     private bool AnyUnsaved => _editors?.Any(e => e.Unsaved) ?? false;
 
     private async Task ConfirmLeaveAsync(LocationChangingContext context)
@@ -218,8 +273,11 @@
         }
     }
 
-    private async Task SaveAsync(WishlistEditor editor)
+    private async Task SaveAsync(WishlistEditor editor) => await SaveAsync(editor, offerUndo: true);
+
+    private async Task SaveAsync(WishlistEditor editor, bool offerUndo)
     {
+        var before = editor.SavedItems.ToList();
         editor.Busy = true;
         editor.Saved = false;
         editor.SaveError = null;
@@ -231,6 +289,10 @@
         {
             editor.Saved = true;
             editor.SavedItems = [.. editor.Items];
+            if (offerUndo && !before.SequenceEqual(editor.Items))
+            {
+                UndoLastEdit.Offer(Snackbar, L, () => UndoAsync(editor, before));
+            }
         }
         else
         {

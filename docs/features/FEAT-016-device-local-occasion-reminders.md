@@ -140,6 +140,17 @@ wishlist filled → cancel that occasion's empty-wishlist reminder; occasion del
 reminders; app start → full reconcile (recreate what should exist, drop what should not). This is what
 prevents stale ("draw already done") or duplicate reminders.
 
+### Amendment (2026-10-16) — configurable reminders (FR-046 amendment)
+
+- `ReminderSettings` (device-local, key `secretsanta.reminders.settings`): lead days per kind, time of day,
+  per-occasion overrides (off / custom event lead), the occasions already offered a reminder after the draw.
+- `ReminderPlanner.Plan` takes the settings and a `TimeZoneInfo`; each `PlannedReminder` carries its lead so
+  the text can say "tomorrow" or "in N days".
+- `INotificationScheduler` gains `GetPermissionAsync` and `OpenSettingsAsync`; the MAUI head answers from
+  the plugin and `AppInfo.ShowSettingsUI`. Settings re-checks on resume (`IAppForeground`).
+- UI: Settings (switch + lead per kind, time of day, blocked note); event *Details* (override); Draw page
+  (after-draw offer).
+
 ## Domain model impact
 
 - **None to the domain.** The scheduler reads existing `Event` / `EventDetails` / draw state / the user's

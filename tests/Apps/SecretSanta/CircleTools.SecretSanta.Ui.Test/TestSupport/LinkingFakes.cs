@@ -71,15 +71,19 @@ public sealed class FakeLinkingApi : ILinkingApi
 
     public List<(Guid GroupId, PublishGroupEventsRequest Request)> PublishedEvents { get; } = [];
 
-    public Task<ApiResult> PublishAssignmentsAsync(Guid groupId, PublishAssignmentsRequest request, CancellationToken cancellationToken = default)
+    /// <summary>The admin token sent with each event-registry publish, in call order (ADR-0080).</summary>
+    public List<string?> EventAdminTokens { get; } = [];
+
+    public Task<ApiResult> PublishAssignmentsAsync(Guid groupId, PublishAssignmentsRequest request, string? adminToken = null, CancellationToken cancellationToken = default)
     {
         Published.Add((groupId, request));
         return Task.FromResult(ApiResult.Ok());
     }
 
-    public Task<ApiResult> PublishGroupEventsAsync(Guid groupId, PublishGroupEventsRequest request, CancellationToken cancellationToken = default)
+    public Task<ApiResult> PublishGroupEventsAsync(Guid groupId, PublishGroupEventsRequest request, string? adminToken = null, CancellationToken cancellationToken = default)
     {
         PublishedEvents.Add((groupId, request));
+        EventAdminTokens.Add(adminToken);
         return Task.FromResult(ApiResult.Ok());
     }
 
@@ -89,11 +93,20 @@ public sealed class FakeLinkingApi : ILinkingApi
     public Task<ApiResult<MyAssignmentsResponse>> GetMyAssignmentsAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(ApiResult.Ok(Assignments));
 
-    public Task<ApiResult> UpdateMyWishlistAsync(Guid groupId, Guid eventId, UpdateMyWishlistRequest request, CancellationToken cancellationToken = default) =>
-        Task.FromResult(ApiResult.Ok());
+    /// <summary>The wishlists the page loads.</summary>
+    public MyWishlistsResponse Wishlists { get; set; } = new([]);
+
+    /// <summary>Every wishlist save received, in order.</summary>
+    public List<UpdateMyWishlistRequest> WishlistUpdates { get; } = [];
+
+    public Task<ApiResult> UpdateMyWishlistAsync(Guid groupId, Guid eventId, UpdateMyWishlistRequest request, CancellationToken cancellationToken = default)
+    {
+        WishlistUpdates.Add(request);
+        return Task.FromResult(ApiResult.Ok());
+    }
 
     public Task<ApiResult<MyWishlistsResponse>> GetMyWishlistsAsync(CancellationToken cancellationToken = default) =>
-        Task.FromResult(ApiResult.Ok(new MyWishlistsResponse([])));
+        Task.FromResult(ApiResult.Ok(Wishlists));
 
     public Task<ApiResult<MyMembershipsResponse>> GetMyMembershipsAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(ApiResult.Ok(Memberships));

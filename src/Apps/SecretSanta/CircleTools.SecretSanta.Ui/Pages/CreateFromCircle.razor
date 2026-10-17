@@ -4,6 +4,7 @@
 @inject CreateFromCircleService Service
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
+@inject IEnumerable<CircleTools.Ui.Shared.SuiteAppLink> SuiteApps
 
 @*
     Create a group from a circle (FR-027): pick a circle, everyone is pre-selected, name the group. The
@@ -43,7 +44,10 @@
         }
         else if (_circles.Count == 0)
         {
+            @* No app is named here: on the phone there is no "account app" (Q36). Circles are managed on the web. *@
             <MudText Class="mud-text-secondary">@L["FromCircleNoCircles"]</MudText>
+            <MudButton Href="@CirclesUrl" Target="_blank" Variant="Variant.Text" Color="Color.Primary" Class="mt-2"
+                       EndIcon="@Icons.Material.Filled.OpenInNew" id="manage-circles">@L["FromCircleManageOnWeb"]</MudButton>
         }
         else if (_detail is null)
         {
@@ -110,6 +114,11 @@
     private IReadOnlyList<string> _broughtInUnlinked = [];
 
     private int _selectedCount => _selected.Count;
+
+    // Circles live in the suite's account app on the web; the device heads register no suite links, so fall
+    // back to the production origin.
+    private string CirclesUrl =>
+        (SuiteApps.FirstOrDefault(a => !a.IsCurrent)?.Url ?? "https://circletools.ch").TrimEnd('/') + "/circles";
 
     protected override async Task OnInitializedAsync() => await LoadCirclesAsync();
 

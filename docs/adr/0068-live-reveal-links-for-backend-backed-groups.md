@@ -127,6 +127,23 @@ are shown **live** for a backend-backed group rather than frozen at share time.
   re-draw; **resolving the freshness sub-decision** (accept eventual re-publish, or add recipient-keyed
   wishlist tokens for instant freshness); and tests across online/offline and all three storage tiers.
 
+## Amendment (2026-10-16) — one token per slice across the organizer's devices
+
+Found while building short links ([ADR-0082](0082-short-reveal-links-for-online-groups.md)): each device that
+can publish (an admin-link holder, or every device of the owning account) kept its **own** reveal tokens and
+published them as the whole set. Two organizer devices therefore replaced each other's tokens on every sync,
+and a link handed out from one device stopped resolving after the other published. Long links hid it — they
+fall back to their snapshot — but the live view was lost, and a short link has no snapshot to fall back to.
+
+- Each published slice now carries a **key** — its place in the draw, `event:giver`, opaque to the server.
+- On publish the server **keeps the token it already stores for a key** and ignores the newly minted one;
+  the answer lists the token in effect for every key. The publishing device adopts those tokens locally, so
+  every organizer device hands out the same link. New keys take the sent token.
+- Older clients send no key and get the previous behaviour (their tokens replace the set). A mix of old and
+  new clients on one group keeps flipping until the old ones update, which the store rollout resolves.
+- Server: `reveal_slices.Key` (migration `AddRevealSliceKey`); publish answers `200` with the tokens instead
+  of `204`. A client tolerates a `204` from a server that predates it.
+
 ## Pros and cons of the options
 
 ### 1. Status quo — snapshot only

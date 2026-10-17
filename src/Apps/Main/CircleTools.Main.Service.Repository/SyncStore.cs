@@ -453,6 +453,17 @@ public sealed class SyncStore(SyncDbContext context, ISyncTelemetry telemetry, T
         return Convert.ToInt64(result, CultureInfo.InvariantCulture);
     }
 
+    /// <inheritdoc />
+    public async Task<AggregateHolding> GetHoldingAsync(Guid aggregateId, Guid accountId, CancellationToken cancellationToken = default)
+    {
+        var holders = await context.Aggregates
+            .Where(a => a.AggregateId == aggregateId)
+            .Select(a => a.AccountId)
+            .Distinct()
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        return new AggregateHolding(holders.Contains(accountId), holders.Any(h => h != accountId));
+    }
+
     private static JsonElement ParseBody(string bodyJson)
     {
         // Clone so the element outlives the document it was parsed from — it is serialised into the

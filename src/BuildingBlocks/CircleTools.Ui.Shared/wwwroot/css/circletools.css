@@ -275,3 +275,84 @@ input[type="date"]::-webkit-clear-button {
     outline: 2px solid var(--mud-palette-primary);
     outline-offset: 2px;
 }
+
+/* The drawer's "All groups" entry is a destination of its own, not one more group (T2). */
+.ct-nav-primary .mud-nav-link-text {
+    font-weight: 600;
+}
+
+/* A recently opened group's initial, in place of a generic icon, so groups are told apart at a glance. */
+.ct-nav-initial {
+    width: 24px;
+    height: 24px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* While a text field has focus the soft keyboard is up: the bottom navigation steps aside instead of riding
+   on top of the keyboard, and the content gives back the room it reserved for it (Q11, js/viewport.js). */
+body.ct-typing .ct-bottomnav {
+    display: none;
+}
+
+body.ct-typing .ct-has-bottomnav {
+    padding-bottom: 16px !important;
+}
+
+/* A field scrolled into view keeps clear of the fixed app bar. */
+html {
+    scroll-padding-top: calc(var(--mud-appbar-height, 64px) + 8px);
+}
+
+/* A past occasion stays reachable but steps back behind the upcoming ones (I5). */
+.ct-past {
+    opacity: 0.65;
+}
+
+/* A share-links row (Q21): name + status, then the actions — the same layout for every person. Side by side
+   only where there is room for both on every row. */
+.ct-share-row {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.ct-share-row__name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (min-width: 960px) {
+    .ct-share-row {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+}
+
+
+/* The sync problem's short word reads as a word, not a shouted button label. */
+.ct-sync-problem .mud-button-label {
+    text-transform: none;
+}
+
+/* A link pasted into a wish reads as a link (ADR-0083). */
+.ct-wishlist-link {
+    color: var(--mud-palette-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* A wishlist's bullets sit inside the card, aligned under the "Wunschliste:" label: MudBlazor's reset leaves
+   a <ul> with no indent, which put the bullets outside the text column. */
+.ct-wishlist {
+    margin: 0;
+    padding-left: 1.25rem;
+    list-style: disc;
+}
+
+.ct-wishlist li + li {
+    margin-top: 2px;
+}

@@ -63,6 +63,16 @@ When they choose "Sign out on all devices" and confirm
 Then every session of the account ends, including this one
 ```
 
+## Amendment (2026-10-16) — signed-in devices
+
+From the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-santa-two-account-device-test.md) (Q26, I7), decided in the [ADR-0079 amendment](../../adr/0079-sign-out-this-device-and-change-password.md):
+
+- [ ] *Security* lists the signed-in devices: a coarse label ("Chrome · Windows", "Wichteln app · Android"),
+      when each signed in and was last active; this device is marked.
+- [ ] Any other device can be signed out on its own; it is signed out at its next refresh. Only the
+      person's own sessions can be listed or ended (someone else's: not found).
+- [ ] *Sign out everywhere* stays. The account menu and *Profile* show the account's e-mail address.
+
 ## Dependencies & related
 
 - Derived from: [UC-MAIN-002](../../use-cases/main/UC-MAIN-002-sign-in-with-password.md) (password

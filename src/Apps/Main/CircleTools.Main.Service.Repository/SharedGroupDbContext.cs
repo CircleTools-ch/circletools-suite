@@ -28,6 +28,9 @@ public sealed class SharedGroupDbContext(DbContextOptions<SharedGroupDbContext> 
     /// <summary>Gets the per-member person-claims that lock which participant is whom.</summary>
     public DbSet<SharedMemberClaim> MemberClaims => Set<SharedMemberClaim>();
 
+    /// <summary>Gets the joined participants' own entries (ADR-0080).</summary>
+    public DbSet<SharedMemberEntry> MemberEntries => Set<SharedMemberEntry>();
+
     /// <summary>Gets the per-giver reveal slices that back live reveal links (ADR-0068, FEAT-020).</summary>
     public DbSet<SharedRevealSlice> RevealSlices => Set<SharedRevealSlice>();
 
@@ -79,6 +82,7 @@ public sealed class SharedGroupDbContext(DbContextOptions<SharedGroupDbContext> 
             entity.HasKey(s => s.Token);
             entity.Property(s => s.Token).HasMaxLength(64);
             entity.Property(s => s.TokenCipher).IsRequired().HasMaxLength(128);
+            entity.Property(s => s.Key).HasMaxLength(80);
             entity.Property(s => s.Body).IsRequired().HasColumnType("jsonb");
             entity.Property(s => s.LastActivityAt).IsRequired();
 
@@ -97,6 +101,19 @@ public sealed class SharedGroupDbContext(DbContextOptions<SharedGroupDbContext> 
             // Account-deletion cleanup releases every claim an account holds; without this it is a
             // seq scan of the whole claim table per deleted account.
             entity.HasIndex(c => c.AccountId);
+
+            // A participant key resolves its claim (ADR-0080); unique when set.
+            entity.Property(c => c.ParticipantKeyHash).HasMaxLength(64);
+            entity.HasIndex(c => c.ParticipantKeyHash).IsUnique();
+        });
+
+        modelBuilder.Entity<SharedMemberEntry>(entity =>
+        {
+            entity.ToTable("member_entries");
+            entity.HasKey(e => new { e.GroupId, e.MemberId });
+            entity.Property(e => e.GiftNote).HasMaxLength(2000);
+            entity.Property(e => e.Wishlists).IsRequired().HasColumnType("jsonb");
+            entity.Property(e => e.UpdatedAt).IsRequired();
         });
     }
 }

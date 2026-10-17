@@ -58,6 +58,16 @@ When the user attempts to generate reveal links
 Then generation is blocked and the user is prompted to run or re-run the draw
 ```
 
+## Amendment (2026-10-16) — share message and short links
+
+From the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-santa-two-account-device-test.md) (Q32), decided in [ADR-0082](../../adr/0082-short-reveal-links-for-online-groups.md):
+
+- [ ] Sharing a link sends a message with context: a greeting with the person's name, the group and
+      occasion, date, place and budget (one budget format), "only you see who you got", and the link on its
+      own last line — DE/EN/FR.
+- [ ] For a group whose live reveal slices were just published (shared by link, or an account-owned shared
+      group), the link is short: `…/r#for=<name>&rt=<token>`. Otherwise the long link is handed out as before.
+
 ## Dependencies & related
 
 - Derived from: [UC-SS-005](../../use-cases/secret-santa/UC-SS-005-share-reveal-links.md)

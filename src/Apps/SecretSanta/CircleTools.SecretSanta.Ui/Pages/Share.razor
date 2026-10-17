@@ -1,6 +1,8 @@
 @page "/groups/{GroupId:guid}/events/{EventId:guid}/share"
 @using CircleTools.SecretSanta.Core.Reveal
 @using CircleTools.SecretSanta.LocalStore
+@using CircleTools.Ui.Account.Auth
+@using Microsoft.AspNetCore.Components.Authorization
 @inject ISender Sender
 @inject NavigationManager Navigation
 @inject IServiceProvider Services
@@ -48,25 +50,54 @@ else
 {
     @* Guided hand-out (MNF-7): hand each participant their own link without forgetting anyone. *@
     <MudPaper Outlined="true" Class="pa-3 mb-3 d-flex flex-wrap align-center justify-space-between gap-2">
-        <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["HandoutProgress", _done.Count, _links.Count]</MudText>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Outbox"
-                   OnClick="OpenHandoutAsync" id="hand-out-links">@L["HandOutLinks"]</MudButton>
+        @* Only the people who need a link count (Q20): a member who sees their assignment in the app is covered. *@
+        @if (NeededCount == 0)
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary" id="handout-progress">@L["HandoutEveryoneInApp"]</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2" Class="mud-text-secondary" id="handout-progress">@L["HandoutProgress", DoneCount, NeededCount]</MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Outbox"
+                       OnClick="OpenHandoutAsync" id="hand-out-links">@L["HandOutLinks"]</MudButton>
+        }
     </MudPaper>
 
     <MudStack Spacing="2">
         @foreach (var link in _links)
         {
+            var connected = _connected.Contains(link.GiverMemberId);
             <MudCard Elevation="1">
                 <MudCardContent class="pb-2">
-                    <div class="d-flex flex-wrap justify-space-between align-center gap-2">
-                        <MudText>
+                    @* Every row the same shape (Q21): name and status first, the actions under them; on a wide
+                       screen both on one line. Long names wrap instead of pushing the buttons around. *@
+                    <div class="ct-share-row">
+                        <MudText Class="ct-share-row__name">
                             <strong>@L["ForLabel"]:</strong> @link.ForLabel
-                            @if (_done.Contains(HandoutProgressService.MemberKey(link.Url)))
+                            @if (connected)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text"
+                                         Icon="@Icons.Material.Filled.PhoneIphone" Class="ml-1">@L["MemberConnectedBadge"]</MudChip>
+                            }
+                            else if (_done.Contains(HandoutProgressService.MemberKey(link.Url)))
                             {
                                 <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text"
                                          Icon="@Icons.Material.Filled.CheckCircle" Class="ml-1">@L["HandedOut"]</MudChip>
                             }
                         </MudText>
+                        @if (connected && _showAnyway != link.GiverMemberId)
+                        {
+                            @* They see their assignment in the app; the link stays one tap away, e.g. for another device. *@
+                            <div class="d-flex flex-wrap align-center gap-1">
+                                <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                    @(link.GiverMemberId == _myMemberId ? L["ShareSelfInApp"] : L["ShareConnectedInApp"])
+                                </MudText>
+                                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="() => _showAnyway = link.GiverMemberId">@L["ShareLinkAnyway"]</MudButton>
+                            </div>
+                        }
+                        else
+                        {
                         @* Per-person actions are quiet (outlined / text) so "Hand out links" above stays the one
                            primary action on the screen (UX review P5); every card used to carry a filled button.
                            Share is first where the platform has a share sheet (the phone, mobile browsers):
@@ -92,6 +123,7 @@ else
                                 @L["ShowQr"]
                             </MudButton>
                         </div>
+                        }
                     </div>
                     @* The raw encoded URL is intentionally not shown — Share, Copy and QR cover every way
                        to hand it out, and displaying the long opaque link only alarms (it is not meant to be
@@ -115,12 +147,28 @@ else
     [Parameter]
     public Guid EventId { get; set; }
 
+    // Who is signed in, to recognise the organizer's own member (optional: absent in a component test).
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; }
+
     private IReadOnlyList<RevealLinkDto>? _links;
+    // For the share message's context (Q32a): group, occasion, date, place, budget.
+    private EventDto? _occasion;
+    private string _groupName = string.Empty;
     private HashSet<string> _done = [];
     private string? _copiedUrl;
     private bool _drawInvalidated;
     private bool _linksChanged;
     private bool _canShare;
+    // Members who see their assignment in the app (Q20) — no link needed; and this account's own member.
+    private ConnectedMembers _connected = ConnectedMembers.None;
+    private Guid? _myMemberId;
+    private Guid? _showAnyway;
+
+    private int NeededCount => _links?.Count(l => !_connected.Contains(l.GiverMemberId)) ?? 0;
+
+    private int DoneCount => _links?.Count(l => !_connected.Contains(l.GiverMemberId)
+        && _done.Contains(HandoutProgressService.MemberKey(l.Url))) ?? 0;
 
     protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
 
@@ -139,19 +187,29 @@ else
         // Ensure this backend-backed group's reveal slices are published and its per-giver reveal tokens
         // exist, so each link can carry rt= (ADR-0068). Best-effort and a no-op for a local-only or
         // join-only group.
-        await RevealPublisher.PublishAsync(GroupId);
+        var published = await RevealPublisher.PublishAsync(GroupId);
 
         var revealTokens = (await Local.LoadGroupsAsync())
             .FirstOrDefault(r => r.State.Id == GroupId)?.Tokens?.RevealTokens?
             .Where(t => t.EventId == EventId)
             .ToDictionary(t => t.MemberId, t => t.Token) ?? [];
 
-        // For a backend-backed group, append the giver's reveal token so the link fetches the live slice
-        // (the d= snapshot stays as the offline fallback). Local-only links are unchanged.
+        // For a backend-backed group whose slices are on the server, hand out the short token-only link
+        // (ADR-0082); if publishing failed just now, append the token to the long link so it still fetches the
+        // live slice with the d= snapshot as fallback. Local-only links are unchanged.
         var baseLinks = await Sender.Send(new GetRevealLinksQuery(GroupId, EventId));
+        _occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));
+        _groupName = (await Sender.Send(new GetGroupQuery(GroupId)))?.Name ?? string.Empty;
         _links = [.. baseLinks.Select(l => revealTokens.TryGetValue(l.GiverMemberId, out var rt)
-            ? l with { Url = $"{l.Url}&rt={Uri.EscapeDataString(rt)}" }
+            ? l with { Url = published ? RevealLinkBuilder.ShortUrl(l.Url, l.ForLabel, rt) : $"{l.Url}&rt={Uri.EscapeDataString(rt)}" }
             : l)];
+
+        if (await Sender.Send(new GetGroupQuery(GroupId)) is { } group)
+        {
+            _connected = await ConnectedMembers.ForAsync(Services, group);
+            var me = AuthState is null ? Guid.Empty : (await AuthState).User.UserId();
+            _myMemberId = me == Guid.Empty ? null : group.Members.FirstOrDefault(m => m.UserId == me)?.Id;
+        }
 
         var occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));
         _drawInvalidated = occasion?.DrawInvalidatedByMembershipChange ?? false;
@@ -178,6 +236,7 @@ else
             { x => x.GroupId, GroupId },
             { x => x.EventId, EventId },
             { x => x.Links, _links },
+            { x => x.Connected, _links.Select(l => l.GiverMemberId).Where(_connected.Contains).ToHashSet() },
         };
 
         var dialog = await Dialogs.ShowAsync<HandoutDialog>(L["HandOutLinks"], parameters);
@@ -216,7 +275,7 @@ else
     {
         // Carry the link in the message body (not only the url field): some share targets read only the
         // text, so this guarantees the reveal link reaches WhatsApp / SMS / e-mail.
-        var text = $"{L["ShareMessage"]}\n{link.Url}";
+        var text = RevealShareMessage.Compose(L, link.ForLabel, _groupName, _occasion, link.Url);
 
         // Only a share that went somewhere counts as handed out (D5): closing the sheet sends nothing. A
         // platform that cannot tell keeps the old behaviour and counts it.

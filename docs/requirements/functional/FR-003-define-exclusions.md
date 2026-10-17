@@ -43,6 +43,18 @@ When the user adds the same exclusion again
 Then the duplicate is ignored
 ```
 
+## Amendment (2026-10-16) — warn while editing
+
+From the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-santa-two-account-device-test.md) (Q13):
+
+- [ ] The exclusions page warns **as soon as** the exclusions leave someone with nobody to give to, or
+      nobody who may give to them, naming the person; or, when nobody is stuck on their own, that together
+      they rule out any draw (the no-reciprocal rule included). Saving them stays allowed.
+- [ ] A drawn occasion whose current draw pairs someone a **later** exclusion forbids says so — on its card,
+      its hub tile and the draw page ("no longer matches the exclusions — draw again?").
+- [ ] After a failed re-draw the draw page keeps showing the existing draw (it still applies), with the error
+      above it.
+
 ## Dependencies & related
 
 - Derived from: [UC-SS-003](../../use-cases/secret-santa/UC-SS-003-define-exclusions.md)

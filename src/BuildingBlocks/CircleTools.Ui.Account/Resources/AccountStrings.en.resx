@@ -130,4 +130,12 @@
   <data name="SignOutEverywhereConfirmYes" xml:space="preserve"><value>Sign out everywhere</value></data>
   <data name="SignedOutByServer" xml:space="preserve"><value>You were signed out: your session was ended on another device or expired.</value></data>
   <data name="ConfirmCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="DevicesTitle" xml:space="preserve"><value>Signed-in devices</value></data>
+  <data name="DevicesLead" xml:space="preserve"><value>Where your account is signed in. Sign out a device you no longer use or don't recognise.</value></data>
+  <data name="DevicesLoading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="DevicesLoadFailed" xml:space="preserve"><value>The list could not be loaded. Check the connection and open the page again.</value></data>
+  <data name="DeviceUnknown" xml:space="preserve"><value>Unknown device</value></data>
+  <data name="DeviceThis" xml:space="preserve"><value>This device</value></data>
+  <data name="DeviceTimes" xml:space="preserve"><value>Signed in {0} · last active {1}</value></data>
+  <data name="DeviceSignOut" xml:space="preserve"><value>Sign out</value></data>
 </root>

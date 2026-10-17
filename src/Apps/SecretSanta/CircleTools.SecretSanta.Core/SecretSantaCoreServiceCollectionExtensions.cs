@@ -34,6 +34,7 @@ public static class SecretSantaCoreServiceCollectionExtensions
 
         // Command handlers.
         services.AddScoped<ICommandHandler<CreateGroupCommand, Guid>, CreateGroupCommandHandler>();
+        services.AddScoped<ICommandHandler<CopyGroupCommand, Guid>, CopyGroupCommandHandler>();
         services.AddScoped<ICommandHandler<CreateGroupFromCircleCommand, CreateGroupFromCircleResult>, CreateGroupFromCircleCommandHandler>();
         services.AddScoped<ICommandHandler<LinkMemberCommand>, LinkMemberCommandHandler>();
         services.AddScoped<ICommandHandler<UnlinkMemberCommand>, UnlinkMemberCommandHandler>();
@@ -58,6 +59,7 @@ public static class SecretSantaCoreServiceCollectionExtensions
         // Query handlers.
         services.AddScoped<IQueryHandler<GetGroupsQuery, IReadOnlyList<GroupSummaryDto>>, GetGroupsQueryHandler>();
         services.AddScoped<IQueryHandler<GetGroupQuery, GroupDto?>, GetGroupQueryHandler>();
+        services.AddScoped<IQueryHandler<CheckDrawFeasibilityQuery, DrawFeasibilityDto?>, CheckDrawFeasibilityQueryHandler>();
         services.AddScoped<IQueryHandler<GetEventQuery, EventDto?>, GetEventQueryHandler>();
         services.AddScoped<IQueryHandler<GetRevealLinksQuery, IReadOnlyList<RevealLinkDto>>, GetRevealLinksQueryHandler>();
         services.AddScoped<IQueryHandler<GetRevealSlicesQuery, IReadOnlyList<RevealSliceData>>, GetRevealSlicesQueryHandler>();
