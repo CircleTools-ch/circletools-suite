@@ -39,26 +39,50 @@ public sealed class ClaimAdminTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Signed_in_organizer_claims_admin_and_the_group_becomes_account_owned()
+    public async Task Signed_in_organizers_shared_group_is_account_owned_from_the_start()
     {
         var email = $"claimadmin.e2e+{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}@circletools.test";
         const string password = "Correct-Horse-9";
 
         await RegisterVerifyAndSignInAsync(email, password, "Claim Tester");
 
-        // Create a shared-by-link group while signed in.
+        // Signed in, sharing shares and claims admin in one step (ADR-0081): "My account · shared".
         await Goto("/");
         await GroupCreation.CreateSharedGroupAsync(_page, "E2E Claim");
         await _page.WaitForURLAsync(new Regex(@"/groups/[0-9a-fA-F-]+$"), new PageWaitForURLOptions { Timeout = 20_000 });
         var groupId = new Regex(@"/groups/([0-9a-fA-F-]+)$").Match(_page.Url).Groups[1].Value;
 
-        // Claim admin into the account from Sharing & sync (My account mode).
+        // Owned by the account, with a join link to invite people and no admin link to pass around.
         await Goto($"/groups/{groupId}/sharing");
-        await _page.Locator("#admin-link-card").WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
-        await _page.ClickAsync("#mode-account");
-        await _page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Claim admin" }).ClickAsync();
+        await _page.Locator("#account-owned").WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
+        await _page.Locator("#join-link-card").WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
+        Assert.Equal(0, await _page.Locator("#admin-link-card").CountAsync());
+    }
 
-        // The group is now account-owned; the admin/join link cards are gone (My account mode).
+    [Fact]
+    public async Task A_link_group_made_signed_out_is_kept_in_the_account_after_sign_in()
+    {
+        var email = $"keepinaccount.e2e+{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}@circletools.test";
+        const string password = "Correct-Horse-9";
+
+        // Signed out, "Shared by link" has no owner: only its admin link manages it.
+        await Goto("/");
+        await GroupCreation.CreateSharedGroupAsync(_page, "E2E Keep");
+        await _page.WaitForURLAsync(new Regex(@"/groups/[0-9a-fA-F-]+$"), new PageWaitForURLOptions { Timeout = 20_000 });
+        var groupId = new Regex(@"/groups/([0-9a-fA-F-]+)$").Match(_page.Url).Groups[1].Value;
+
+        await RegisterVerifyAndSignInAsync(email, password, "Keep Tester");
+        await DismissImportPromptAsync();
+
+        // Signed in, the sharing page offers to keep it in the account — claiming admin (ADR-0081).
+        await Goto($"/groups/{groupId}/sharing");
+        var keep = _page.Locator("#keep-in-account");
+        await keep.WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
+        await keep.GetByRole(AriaRole.Button).ClickAsync();
+
+        // It asks first: the management link stops working, the join link keeps working.
+        await _page.Locator(".mud-dialog").GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Keep in my account" }).ClickAsync();
+
         await _page.Locator("#account-owned").WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
         Assert.Equal(0, await _page.Locator("#admin-link-card").CountAsync());
     }
@@ -77,12 +101,11 @@ public sealed class ClaimAdminTests : IAsyncLifetime
         await _page.WaitForURLAsync(new Regex(@"/groups/[0-9a-fA-F-]+$"), new PageWaitForURLOptions { Timeout = 20_000 });
         var groupId = new Regex(@"/groups/([0-9a-fA-F-]+)$").Match(_page.Url).Groups[1].Value;
 
-        // Keep the join link: claiming admin hides it, and it must stop working once the group is deleted.
+        // Signed in, the shared group is account-owned at once (ADR-0081). Keep its join link: it must stop
+        // working once the group is deleted.
         await Goto($"/groups/{groupId}/sharing");
-        var joinUrl = await SharingLinks.CopyLinkAsync(_page, "#join-link-card");
-        await _page.ClickAsync("#mode-account");
-        await _page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Claim admin" }).ClickAsync();
         await _page.Locator("#account-owned").WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
+        var joinUrl = await SharingLinks.CopyLinkAsync(_page, "#join-link-card");
 
         // Delete it from the group list (ADR-0078 amendment).
         await Goto("/");
@@ -109,6 +132,22 @@ public sealed class ClaimAdminTests : IAsyncLifetime
         await participantPage.GotoAsync(joinUrl, new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         await participantPage.Locator("#join-notfound").WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
         await participant.CloseAsync();
+    }
+
+    // Signing in with a group made while signed out may ask whether to bring it into the account (FEAT-025).
+    // "Later" decides nothing, so the test makes the choice itself on the sharing page.
+    private async Task DismissImportPromptAsync()
+    {
+        var later = _page.Locator(".mud-dialog").GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Later" });
+        try
+        {
+            await later.WaitForAsync(new LocatorWaitForOptions { Timeout = 5_000 });
+            await later.ClickAsync();
+        }
+        catch (TimeoutException)
+        {
+            // No prompt for this group — nothing to dismiss.
+        }
     }
 
     private Task RegisterVerifyAndSignInAsync(string email, string password, string displayName) =>

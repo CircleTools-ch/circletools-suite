@@ -53,7 +53,7 @@ public sealed class AdminReleaseTests : IAsyncLifetime
         // Organizer frees Anna's spot from the Members screen.
         await page.GotoAsync($"{SecretSantaStackFixture.WebOrigin}/groups/{groupId}/members", new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
         var annaCard = page.Locator(".mud-card").Filter(new LocatorFilterOptions { HasTextString = "Anna" });
-        await annaCard.GetByText("Joined", new LocatorGetByTextOptions { Exact = true }).WaitForAsync(new LocatorWaitForOptions { Timeout = 15_000 });
+        await annaCard.GetByText("Connected", new LocatorGetByTextOptions { Exact = true }).WaitForAsync(new LocatorWaitForOptions { Timeout = 15_000 });
         await annaCard.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "More actions" }).ClickAsync();
         await page.GetByText("Free this spot", new PageGetByTextOptions { Exact = true }).ClickAsync();
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Free the spot" }).ClickAsync();

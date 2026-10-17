@@ -41,10 +41,8 @@ public sealed class MultiDeviceDeleteTests : IAsyncLifetime
         await AccountSignIn.GotoAsync(deviceA, "/");
         await GroupCreation.CreateSharedGroupAsync(deviceA, name);
         var groupId = await WaitForGroupPageAsync(deviceA);
+        // Signed in, the shared group is account-owned at once (ADR-0081).
         await AccountSignIn.GotoAsync(deviceA, $"/groups/{groupId}/sharing");
-        await deviceA.Locator("#admin-link-card").WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
-        await deviceA.ClickAsync("#mode-account");
-        await deviceA.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Claim admin" }).ClickAsync();
         await deviceA.Locator("#account-owned").WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
 
         // Device B signs into the same account and discovers the group.

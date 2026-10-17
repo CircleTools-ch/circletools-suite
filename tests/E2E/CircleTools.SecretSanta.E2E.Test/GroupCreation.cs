@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 
 namespace CircleTools.SecretSanta.E2E.Test;
@@ -20,21 +21,27 @@ internal static class GroupCreation
         "try { localStorage.setItem('secretsanta.storage.onboarded','1'); } catch (e) {}";
 
     /// <summary>
-    /// Fills the inline create field, switches this group's storage to "Shared by link" via the Change
-    /// menu, and clicks Create. The caller waits for the navigation to the new group.
+    /// Fills the inline create field, switches this group's storage to the shared choice via the Change menu,
+    /// and clicks Create. The caller waits for the navigation to the new group. Signed out the choice is
+    /// "Shared by link"; signed in it is "My account · shared" — shared and owned by the account in one step
+    /// (ADR-0081) — so whichever the menu offers is taken.
     /// </summary>
-    public static Task CreateSharedGroupAsync(IPage page, string name) => CreateGroupAsync(page, name, "Shared by link");
+    public static Task CreateSharedGroupAsync(IPage page, string name) =>
+        CreateGroupAsync(page, name, new Regex("^(Shared by link|My account · shared)$"));
 
     /// <summary>
     /// Fills the inline create field, switches this group's storage to <paramref name="storage"/> (its English
     /// title: "On this device", "Shared by link" or "My account") via the Change menu, and clicks Create.
     /// </summary>
-    public static async Task CreateGroupAsync(IPage page, string name, string storage)
+    public static Task CreateGroupAsync(IPage page, string name, string storage) =>
+        CreateGroupAsync(page, name, new Regex($"^{Regex.Escape(storage)}$"));
+
+    private static async Task CreateGroupAsync(IPage page, string name, Regex storage)
     {
         await page.FillAsync("#new-group-name", name);
         await page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Change", Exact = true }).ClickAsync();
-        await page.Locator(".mud-popover-open").GetByText(storage, new LocatorGetByTextOptions { Exact = true }).ClickAsync();
-        await page.GetByText("Stored:").Filter(new LocatorFilterOptions { HasTextString = storage })
+        await page.Locator(".mud-popover-open").GetByText(storage).First.ClickAsync();
+        await page.GetByText("Stored:").Locator("strong").Filter(new LocatorFilterOptions { HasTextRegex = storage })
             .WaitForAsync(new LocatorWaitForOptions { Timeout = 10_000 });
         await page.ClickAsync("#create-group-btn");
     }

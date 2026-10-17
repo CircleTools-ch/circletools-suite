@@ -60,10 +60,8 @@ public sealed class AccountDeletionDispositionTests : IAsyncLifetime
         await _page.WaitForURLAsync(new Regex(@"/groups/[0-9a-fA-F-]+$"), new PageWaitForURLOptions { Timeout = 20_000 });
         var groupId = new Regex(@"/groups/([0-9a-fA-F-]+)$").Match(_page.Url).Groups[1].Value;
 
+        // Signed in, the shared group is account-owned at once (ADR-0081).
         await Goto(SecretSantaStackFixture.WebOrigin, $"/groups/{groupId}/sharing");
-        await _page.Locator("#admin-link-card").WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
-        await _page.ClickAsync("#mode-account");
-        await _page.GetByRole(AriaRole.Button, new PageGetByRoleOptions { Name = "Claim admin" }).ClickAsync();
         await _page.Locator("#account-owned").WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
 
         // Move to the Main shell (different origin) and sign in again with the same account.
