@@ -38,10 +38,10 @@ public sealed class CircleConfirmationTextTests
     [InlineData("de-CH")]
     [InlineData("en")]
     [InlineData("fr-CH")]
-    public void DeleteConfirmation_ReadsAsSentences_InEveryLanguage(string language)
+    public async Task DeleteConfirmation_ReadsAsSentences_InEveryLanguage(string language)
     {
         using var scope = new CultureScope(language);
-        using var context = RealTextContext();
+        await using var context = RealTextContext();
 
         var circleId = Guid.CreateVersion7();
         context.Api.RespondJson(
@@ -95,10 +95,10 @@ public sealed class CircleConfirmationTextTests
     [InlineData("de-CH")]
     [InlineData("en")]
     [InlineData("fr-CH")]
-    public void DeleteConfirmation_UsesTheSingular_WhenOnlyTheOwnerLosesAccess(string language)
+    public async Task DeleteConfirmation_UsesTheSingular_WhenOnlyTheOwnerLosesAccess(string language)
     {
         using var scope = new CultureScope(language);
-        using var context = RealTextContext();
+        await using var context = RealTextContext();
 
         var circleId = Guid.CreateVersion7();
         context.Api.RespondJson(
@@ -137,10 +137,10 @@ public sealed class CircleConfirmationTextTests
     [InlineData("de-CH", "Konto")]
     [InlineData("en", "account")]
     [InlineData("fr-CH", "compte")]
-    public void LeaveConfirmation_MentionsTheAccountAndSecretSanta_InEveryLanguage(string language, string account)
+    public async Task LeaveConfirmation_MentionsTheAccountAndSecretSanta_InEveryLanguage(string language, string account)
     {
         using var scope = new CultureScope(language);
-        using var context = RealTextContext();
+        await using var context = RealTextContext();
 
         var circleId = Guid.CreateVersion7();
         context.Api.RespondJson(
@@ -167,12 +167,12 @@ public sealed class CircleConfirmationTextTests
 
     /// <summary>Every language renders every key — an untranslated key would surface as its own name.</summary>
     [Fact]
-    public void NoConfirmationRendersARawResourceKey()
+    public async Task NoConfirmationRendersARawResourceKey()
     {
         foreach (var language in _languages)
         {
             using var scope = new CultureScope(language);
-            using var context = RealTextContext();
+            await using var context = RealTextContext();
 
             var circleId = Guid.CreateVersion7();
             context.Api.RespondJson(
@@ -224,7 +224,7 @@ public sealed class CircleConfirmationTextTests
         context.Services.GetRequiredService<IStringLocalizer<AppStrings>>()[key].Value;
 
     private static IRenderedComponent<CircleDetail> RenderDetail(AccountTestContext context, Guid circleId) =>
-        context.RenderComponent<Microsoft.AspNetCore.Components.Authorization.CascadingAuthenticationState>(
+        context.Render<Microsoft.AspNetCore.Components.Authorization.CascadingAuthenticationState>(
                 parameters => parameters.AddChildContent<CircleDetail>(
                     child => child.Add(p => p.CircleId, circleId)))
             .FindComponent<CircleDetail>();

@@ -56,12 +56,12 @@ jobs:
       HAS_SIGNING: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
       HAS_PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # full history: nbgv version + the git-count versionCode (ADR-0047).
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
@@ -69,7 +69,7 @@ jobs:
         id: nbgv
         uses: dotnet/nbgv@v0.5.2
         with:
-          toolVersion: "3.7.115"
+          toolVersion: "3.10.94"
 
       # versionCode = total commits on this history. Monotonic as long as main is never rewritten
       # (git-conventions), which a store upload requires.
@@ -115,7 +115,7 @@ jobs:
             -p:AndroidPackageFormat=aab
 
       - name: Upload bundle artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: secretsanta-android-${{ steps.nbgv.outputs.SimpleVersion }}-${{ steps.code.outputs.value }}
           path: "src/Apps/SecretSanta/CircleTools.SecretSanta.App/bin/Release/net10.0-android/**/*.aab"
@@ -164,7 +164,7 @@ jobs:
       HAS_SIGNING: ${{ secrets.IOS_DIST_CERT_P12_BASE64 != '' }}
       HAS_TESTFLIGHT: ${{ secrets.APPSTORE_ISSUER_ID != '' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # full history: nbgv version + the git-count build number (ADR-0047).
 
@@ -177,7 +177,7 @@ jobs:
           xcode-version: '27.0'
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
@@ -185,7 +185,7 @@ jobs:
         id: nbgv
         uses: dotnet/nbgv@v0.5.2
         with:
-          toolVersion: "3.7.115"
+          toolVersion: "3.10.94"
 
       # iOS CFBundleVersion (build number) = total commits, matching the Android versionCode. Monotonic
       # as long as main is never rewritten (git-conventions), which a store upload requires (ADR-0047).
@@ -249,7 +249,7 @@ jobs:
 
       - name: Upload .ipa artifact
         if: ${{ env.HAS_SIGNING == 'true' }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: secretsanta-ios-${{ steps.nbgv.outputs.SimpleVersion }}-${{ steps.code.outputs.value }}
           path: "src/Apps/SecretSanta/CircleTools.SecretSanta.App/bin/Release/net10.0-ios/ios-arm64/publish/*.ipa"
@@ -259,7 +259,7 @@ jobs:
       # TestFlight upload — needs BOTH the signed .ipa and the App Store Connect API key.
       - name: Upload to TestFlight
         if: ${{ env.HAS_SIGNING == 'true' && env.HAS_TESTFLIGHT == 'true' }}
-        uses: apple-actions/upload-testflight-build@v3
+        uses: apple-actions/upload-testflight-build@v5
         with:
           app-path: "src/Apps/SecretSanta/CircleTools.SecretSanta.App/bin/Release/net10.0-ios/ios-arm64/publish/CircleTools.SecretSanta.App.ipa"
           issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}

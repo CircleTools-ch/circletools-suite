@@ -14,9 +14,9 @@ namespace CircleTools.SecretSanta.Ui.Test;
 /// WP-2 (ADR-0081, ADR-0044 and ADR-0071 amendments of 2026-10-16): the storage choices a signed-in or
 /// signed-out person sees, and the sign-in import prompt that names the groups and has no discard.
 /// </summary>
-public sealed class StorageAndImportPromptTests : IDisposable
+public sealed class StorageAndImportPromptTests : IAsyncDisposable
 {
-    private readonly Bunit.TestContext _ctx = new();
+    private readonly Bunit.BunitContext _ctx = new();
 
     public StorageAndImportPromptTests()
     {
@@ -28,7 +28,7 @@ public sealed class StorageAndImportPromptTests : IDisposable
     [Fact]
     public void SignedIn_TheChoicesAreDevice_Account_AccountShared()
     {
-        var cut = _ctx.RenderComponent<StorageModePicker>(p => p.Add(x => x.AccountEnabled, true));
+        var cut = _ctx.Render<StorageModePicker>(p => p.Add(x => x.AccountEnabled, true));
 
         var titles = cut.FindAll(".ct-mode-title").Select(e => e.TextContent).ToList();
         Assert.Equal(["ModeLocalTitle", "ModeAccountTitle", "ModeAccountSharedTitle"], titles);
@@ -37,7 +37,7 @@ public sealed class StorageAndImportPromptTests : IDisposable
     [Fact]
     public void SignedOut_TheChoicesAreDevice_Link_AccountDisabled()
     {
-        var cut = _ctx.RenderComponent<StorageModePicker>(p => p.Add(x => x.AccountEnabled, false));
+        var cut = _ctx.Render<StorageModePicker>(p => p.Add(x => x.AccountEnabled, false));
 
         var titles = cut.FindAll(".ct-mode-title").Select(e => e.TextContent).ToList();
         Assert.Equal(["ModeLocalTitle", "ModeSharedTitle", "ModeAccountTitle"], titles);
@@ -47,7 +47,7 @@ public sealed class StorageAndImportPromptTests : IDisposable
     [Fact]
     public void TheCreateField_ExplainsEveryOption_TheFirstTime()
     {
-        var cut = _ctx.RenderComponent<StorageModeField>(p => p
+        var cut = _ctx.Render<StorageModeField>(p => p
             .Add(x => x.AccountEnabled, false)
             .Add(x => x.Expanded, true));
 
@@ -59,7 +59,7 @@ public sealed class StorageAndImportPromptTests : IDisposable
     [Fact]
     public async Task TheImportPrompt_NamesTheGroups_AndKeepsTheUntickedOnesLocal()
     {
-        var provider = _ctx.RenderComponent<MudDialogProvider>();
+        var provider = _ctx.Render<MudDialogProvider>();
         var dialogs = _ctx.Services.GetRequiredService<IDialogService>();
         var family = new ClaimableGroup(Guid.NewGuid(), "Family", 4, HasCurrentDraw: true, IsAccountFree: true, StorageMode.OnThisDevice);
         var test = new ClaimableGroup(Guid.NewGuid(), "Test", 0, HasCurrentDraw: false, IsAccountFree: true, StorageMode.OnThisDevice);
@@ -85,7 +85,7 @@ public sealed class StorageAndImportPromptTests : IDisposable
     [Fact]
     public async Task Later_DecidesNothing()
     {
-        var provider = _ctx.RenderComponent<MudDialogProvider>();
+        var provider = _ctx.Render<MudDialogProvider>();
         var dialogs = _ctx.Services.GetRequiredService<IDialogService>();
         var family = new ClaimableGroup(Guid.NewGuid(), "Family", 4, false, true, StorageMode.OnThisDevice);
 
@@ -96,5 +96,5 @@ public sealed class StorageAndImportPromptTests : IDisposable
         Assert.Null(await asked);
     }
 
-    public void Dispose() => _ctx.Dispose();
+    public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 }

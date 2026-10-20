@@ -15,9 +15,9 @@ namespace CircleTools.SecretSanta.Ui.Test;
 /// (a device-local, per-group choice). With the pass-through localizer, resource keys echo back as text, so
 /// the assertions look for keys (e.g. <c>SetupTitle</c>, <c>GoToMembers</c>).
 /// </summary>
-public sealed class GettingStartedChecklistTests : IDisposable
+public sealed class GettingStartedChecklistTests : IAsyncDisposable
 {
-    private readonly Bunit.TestContext _ctx = new();
+    private readonly Bunit.BunitContext _ctx = new();
     private readonly FakeKeyValueStore _store = new();
 
     public GettingStartedChecklistTests()
@@ -37,7 +37,7 @@ public sealed class GettingStartedChecklistTests : IDisposable
             new EventSummaryDto(Guid.NewGuid(), $"E{i}", HasCurrentDraw: drawn, DrawInvalidatedByMembershipChange: false))]);
 
     private IRenderedComponent<GettingStartedChecklist> Render(GroupDto group) =>
-        _ctx.RenderComponent<GettingStartedChecklist>(p => p.Add(c => c.Group, group));
+        _ctx.Render<GettingStartedChecklist>(p => p.Add(c => c.Group, group));
 
     [Fact]
     public void Shows_OnAFreshGroup_WithNameDoneAndFourSteps()
@@ -109,5 +109,5 @@ public sealed class GettingStartedChecklistTests : IDisposable
         Assert.DoesNotContain("SetupTitle", again.Markup);
     }
 
-    public void Dispose() => _ctx.Dispose();
+    public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 }

@@ -64,17 +64,17 @@ api.WithEnvironment("Cors__AllowedOrigins__1", secretSantaWeb.GetEndpoint("https
 // which is exactly the hostnames the provisioned Grafana datasources use — so no datasource edits.
 if (enableObservability)
 {
-    var loki = builder.AddContainer("loki", "grafana/loki", "3.3.2")
+    var loki = builder.AddContainer("loki", "grafana/loki", "3.7.8")
         .WithBindMount("../../../deploy/loki/loki-config.yaml", "/etc/loki/loki-config.yaml", isReadOnly: true)
         .WithArgs("-config.file=/etc/loki/loki-config.yaml")
         .WithHttpEndpoint(port: 3100, targetPort: 3100, name: "http");
 
-    var prometheus = builder.AddContainer("prometheus", "prom/prometheus", "v3.1.0")
+    var prometheus = builder.AddContainer("prometheus", "prom/prometheus", "v3.15.0")
         .WithBindMount("../../../deploy/prometheus/prometheus.dev.yml", "/etc/prometheus/prometheus.yml", isReadOnly: true)
         .WithArgs("--config.file=/etc/prometheus/prometheus.yml")
         .WithHttpEndpoint(port: 9090, targetPort: 9090, name: "http");
 
-    builder.AddContainer("grafana", "grafana/grafana", "11.4.0")
+    builder.AddContainer("grafana", "grafana/grafana", "13.2.4")
         .WithBindMount("../../../deploy/grafana/provisioning", "/etc/grafana/provisioning", isReadOnly: true)
         // Dev convenience only: skip the login wall (the production Grafana keeps its admin login).
         .WithEnvironment("GF_AUTH_ANONYMOUS_ENABLED", "true")

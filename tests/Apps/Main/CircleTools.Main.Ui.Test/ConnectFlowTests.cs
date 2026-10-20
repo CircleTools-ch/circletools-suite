@@ -35,7 +35,7 @@ public sealed class ConnectFlowTests
     [Fact]
     public async Task ConnectCallback_WhenTheExchangeIsRefused_FallsBackToItsOwnSignIn_NotADeadEnd()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         var sso = RegisterSso(ctx);
 
         // The authority sent us back with a code, but the API refuses to redeem it (expired, replayed,
@@ -62,7 +62,7 @@ public sealed class ConnectFlowTests
     [Fact]
     public async Task ConnectCallback_OnASuccessfulExchange_LandsSignedIn_AndLeavesTheCallbackUrl()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         var sso = RegisterSso(ctx);
 
         // The token exchange returns the same SessionResponse a password sign-in does (parity, FR-008).
@@ -85,7 +85,7 @@ public sealed class ConnectFlowTests
     [Fact]
     public async Task ConnectCallback_OnASuccessfulExchange_PersistsTheSessionAcrossTabs()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         var sso = RegisterSso(ctx);
 
         ctx.Api.RespondJson(
@@ -107,9 +107,9 @@ public sealed class ConnectFlowTests
     }
 
     [Fact]
-    public void ContinueWithAccount_OffersItself_ToASignedOutVisitorOnARequestingApp()
+    public async Task ContinueWithAccount_OffersItself_ToASignedOutVisitorOnARequestingApp()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         RegisterSso(ctx);
 
         var cut = ctx.RenderPage<ContinueWithAccount>();
@@ -118,9 +118,9 @@ public sealed class ConnectFlowTests
     }
 
     [Fact]
-    public void ContinueWithAccount_IsAbsent_OnceThereIsALocalSession()
+    public async Task ContinueWithAccount_IsAbsent_OnceThereIsALocalSession()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         RegisterSso(ctx);
         ctx.SignIn();
 
@@ -131,9 +131,9 @@ public sealed class ConnectFlowTests
     }
 
     [Fact]
-    public void ContinueWithAccount_SuppressesItself_OnTheAuthorityOrigin()
+    public async Task ContinueWithAccount_SuppressesItself_OnTheAuthorityOrigin()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
 
         // The authority origin equals this app's own origin: it never hands off to itself.
         RegisterSso(ctx, authority: "http://localhost/");

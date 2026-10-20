@@ -11,9 +11,9 @@ namespace CircleTools.SecretSanta.Ui.Test;
 /// The "Change saved · Undo" offer hides by itself (R13, 2026-10-20 device test): MudBlazor keeps a snackbar
 /// with an action open until closed by hand unless told otherwise, and the offer sat over the app bar for minutes.
 /// </summary>
-public sealed class UndoLastEditTests : IDisposable
+public sealed class UndoLastEditTests : IAsyncDisposable
 {
-    private readonly Bunit.TestContext _ctx = new();
+    private readonly Bunit.BunitContext _ctx = new();
 
     [Fact]
     public void TheUndoOffer_HidesByItself_AfterAFewSeconds()
@@ -32,7 +32,7 @@ public sealed class UndoLastEditTests : IDisposable
     }
 
     /// <inheritdoc />
-    public void Dispose() => _ctx.Dispose();
+    public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 }
 
 /// <summary>Passes every call to a real snackbar service and keeps the options callback of the last Add.</summary>

@@ -17,8 +17,7 @@ namespace CircleTools.Main.Service.Test;
 /// </summary>
 public sealed class BusinessMetricsPostgresFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
-        .WithImage("postgres:17-alpine")
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("businessmetrics_tests")
         .Build();
 

@@ -1,0 +1,154 @@
+# Deployment — Production-release plan (Secret-Santa 1.0)
+
+Written **2026-10-20**, after the release device test
+([2026-10-20 session](../brainstorming/2026-10-20-secret-santa-release-device-test.md)). The web stack has
+been live since 2026-09-18 ([launch-readiness](launch-readiness.md)); this plan covers what still stands
+between today and a **public 1.0 in both app stores**, and the **order** in which to do it.
+
+## The constraint: the calendar, not the code
+
+Secret Santa is a December product. The Play Store gate for a personal developer account
+([mobile runbook, Track A step 9](mobile-apps.md)) is **12 testers opted in for 14 continuous days**,
+then a production-access review of **up to 7 days**. Started on 2026-10-20, that is production access
+around **mid-to-late November** at the earliest — every week of delay comes straight off the season.
+
+So the work runs as **parallel tracks**, with the long-lead store steps started first and the code work
+(updates, review) feeding new builds into the already-running tests.
+
+| Track | Start | Why now |
+|---|---|---|
+| **1. Play closed test** | immediately, with the current build | 14-day clock + review; new builds can be uploaded to the closed track without resetting the clock, and regular updates show active testing |
+| **2. Apple App Store setup** | immediately | no tester gate, but record, declarations, privacy labels and App Review take calendar time |
+| **3. Dependency & toolchain updates** | now (branch) | before the review, so the review covers the shipped code |
+| **4. Full project review** | after track 3 | code, deployment, database, security, operations |
+| **5. Store listings & screenshots** | last | only once the UI is stable, or screenshots are redone |
+
+## Track 1 — Google Play closed test
+
+- [ ] Recruit **~15 testers** (family and friends, real devices, real Google accounts — **no paid tester
+      services**: Google screens tester quality and such pools are a known rejection reason). Ask them to
+      really use the app — the production-access application asks what feedback testing produced.
+- [ ] Collect their Google-account emails into a tester list in Play Console.
+- [ ] Promote the current build to a **closed testing** track; the store listing in
+      `store/google-play/` is sufficient for a closed track for now.
+- [ ] Confirm the **data-safety form** still matches the app *now* — sync, shared groups, live reveal links
+      (ADR-0068), own-entry editing (FR-050) and local notifications (ADR-0060) were added since it was
+      first filled.
+- [ ] Track opt-ins; the 14-day clock starts once the release is approved **and** 12 testers are in. Keep
+      ≥ 12 for the whole window.
+- [ ] Ship each fix build (from tracks 3–4) to the closed track during the window.
+- [ ] Day 14+: apply for production access; then staged rollout (20 % → 50 % → 100 %).
+
+## Track 2 — Apple App Store
+
+See [mobile runbook, Track B](mobile-apps.md#track-b--apple-app-store) for the step detail.
+
+- [ ] First TestFlight build on our own iPad/iPhone; verify Universal Links and native passkeys on device
+      (backlog: open device-verify items).
+- [ ] App Store Connect record; **DSA trader status** declaration (mandatory, or the app is removed from the
+      EU store).
+- [ ] **Privacy labels** — must match actual collection (same inventory as the Play data-safety form).
+- [ ] Age rating, export compliance, content rights.
+- [ ] **Support URL** (required) — decide what it points to (see "Support" below).
+- [ ] **App Review demo account** with a pre-filled group, so reviewers can exercise sign-in and sync.
+- [ ] Listing DE/EN/FR: name, subtitle, description, keywords, promotional text — mirror the Play copy.
+- [ ] Screenshots per device class, incl. **iPad** (required because the app supports iPad).
+- [ ] Submit for review; TestFlight external testing optional (needs a Beta App Review).
+
+## Track 3 — Dependency & toolchain updates
+
+Snapshot from `dotnet list CircleTools.slnx package --outdated` (2026-10-20):
+
+| Group | Current → latest | Risk |
+|---|---|---|
+| ASP.NET Core / EF Core / Extensions / Identity / JSInterop | 10.0.10 → **10.0.13** | low — servicing (security fixes); bump together, keep EF Core and Identity on one band |
+| Npgsql EF provider | 10.0.0 → 10.0.3 | low; re-check the `Relational` pin comment |
+| MAUI Controls / WebView.Maui | 10.0.20 → **10.0.110** | medium — newer MAUI servicing band; device-test Android + iOS after |
+| Android / iOS workloads | installed 36.1 / 26.5 | medium — align with the MAUI band; iOS already runs on the `xcode-27` runner (see `release-mobile.yml`) |
+| MudBlazor | 9.8.0 → 9.11.0 | medium — UI library minors can shift visuals; browser pass required |
+| Plugin.LocalNotification | 12.0.0 → **14.1.2** | **high** — two majors; read the changelog, re-test ADR-0060 scheduling and permission flow on device |
+| Microsoft.Extensions.Http.Resilience / ServiceDiscovery | 10.6.0 → 10.11.0 | low |
+| OpenTelemetry | 1.15.x → 1.20.x | low–medium; check the Prometheus exporter (beta) still composes |
+| Aspire.Hosting.PostgreSQL | 13.4.6 → 13.6.2 | low (dev-time only) |
+| Asp.Versioning.Http | 10.0.0 → 10.2.3 | low |
+| IdentityModel.JsonWebTokens | 8.19.2 → 8.23.0 | low; token tests cover it |
+| MailKit, QRCoder | minor/patch | low |
+| Test stack: Test.Sdk 17.14 → **18.11**, Playwright 1.55 → 1.63, Testcontainers 4.6 → 4.16, bUnit, ArchUnitNET | — | medium for Test.Sdk major; test-only |
+| Nerdbank.GitVersioning | 3.7.115 → 3.10.94 | low–medium; verify version stamping (ADR-0047) unchanged |
+| .NET SDK | `global.json` 10.0.302 (rollForward `latestFeature`), local 10.0.401 | pin to the current feature band for reproducible CI |
+| Local tools | `dotnet-ef` 10.0.10, `docfx` 2.78.3 | bump `dotnet-ef` with EF Core |
+| Container images (`deploy/compose.yaml`) | Grafana 11.4, Loki 3.3, Prometheus 3.1, node-exporter, cAdvisor; **Postgres 17** | observability images: update; **Postgres: stay on 17** (take minor patches only — a major upgrade is a dump/restore, not a pre-launch task) |
+| GitHub Actions | `upload-pages-artifact@v3`, `deploy-pages@v4`, `nbgv@v0.5.2`, … | low |
+
+Order: servicing band first (low risk, security) → MudBlazor → MAUI + workloads → Plugin.LocalNotification →
+test stack → images. Build (0 warnings), full test suite, browser pass, device pass after each risky step.
+
+### Status (2026-10-20) — applied in the working tree
+
+Everything in the table above is bumped, plus what the bump surfaced:
+
+- **Packages:** all to latest stable; the test stack included the **bUnit 2** (`BunitContext`, `Render`,
+  `AddAuthorization`, async disposal — MudBlazor's services are `IAsyncDisposable`-only) and
+  **Testcontainers 4.16** (image passed to the builder constructor) migrations. xUnit stays on **v2**
+  (2.9.3, the latest v2); v3 is a separate migration, not needed for release.
+- **Security:** `dotnet list package --vulnerable --include-transitive` flagged
+  `System.Security.Cryptography.Pkcs` 10.0.0 (via MailKit → MimeKit; GHSA-846f-f764-76mx high,
+  GHSA-2fmv-rv2c-59x7 moderate) in the production API — pinned to 10.0.13. Scan now clean.
+- **Plugin.LocalNotification 14:** request types moved to `Plugin.LocalNotification.Core.Models`;
+  `NotifyTime` is now a `DateTimeOffset` (the scheduler passes the absolute instant instead of a local
+  wall-clock time). **Needs a device check** — schedule, permission prompt, delivery, cancel.
+- **Aspire 13.6:** new ASPIRE010 notice (CLI bundle) silenced in the AppHost — we keep `dotnet run`.
+- **Observability images** (compose + AppHost): Loki 3.7.8, Prometheus 3.15.0, **Grafana 13.2.4** (two
+  majors; dashboards use only current panel types; the Grafana DB migrates forward on first start — no way
+  back to 11 without restoring the volume), node-exporter 1.12.1, cAdvisor 0.60.6 — **moved registry** to
+  `ghcr.io/google/cadvisor` (gcr.io stopped at 0.52). Postgres stays `postgres:17` (floating minor).
+- **GitHub Actions:** checkout v7, setup-dotnet v6, upload-artifact v7, upload-pages-artifact v5 /
+  deploy-pages v5, docker build-push v7 / login v4, paths-filter v4, upload-testflight-build v5; NBGV
+  tool 3.10.94.
+- **EF Core:** `has-pending-model-changes` is clean for all five DbContexts — no migration from the bump.
+- **Verified:** full solution builds (0 errors; only the documented NU1608 AndroidX skew on the MAUI
+  head), all 1,100+ unit/component/integration tests green, both E2E suites green (WebAuthn 2/2,
+  Secret-Santa 9/9) against the Aspire 13.6 stack, NBGV still stamps `0.1.<height>+<sha>`. Browser pass
+  (create → members → event → draw → share/QR → reveal, EN/DE/FR, console clean) on MudBlazor 9.11 —
+  findings PR-8…PR-11 in the [backlog](../roadmap/backlog.md), none introduced by the update.
+- **Still open:** `global.json` SDK pin (latest 10.0.402; local machines need it installed first), local
+  MAUI workload update (`dotnet workload update`), the Android device pass (incl. reminders on
+  LocalNotification 14), the first iOS build on the new MAUI band, and a production deploy of the new
+  observability images (check Grafana dashboards after the 11 → 13 migration).
+
+## Track 4 — Full project review
+
+- **Known open defects first.** From the 2026-10-20 device test: **R1** (linked givers' *My assignments*
+  frozen at draw time — `LinkingStore.PublishAssignmentsAsync` drops same-version re-publishes), **R5**
+  (password readable in the Android accessibility tree), plus the open BTP-3…BTP-9 items in the
+  [backlog](../roadmap/backlog.md).
+- **Code:** layering/architecture tests, dead code, TODOs, error handling paths, `Ui.Shared` test gaps.
+- **Security:** `dotnet list package --vulnerable --include-transitive`, auth/token flows, rate limits,
+  CSP/headers, secrets handling, operator access (ADR-0075).
+- **Database:** confirm production ran the 2026-09-15 migrations ([launch-readiness §D](launch-readiness.md));
+  indexes against real query paths; retention jobs; backup retention vs privacy-policy wording.
+- **Deployment & operations:** alerting actually reaches the owner (API down, error rate, email bounces,
+  disk, backup failure); a written **rollback** procedure for API, web and DB migrations.
+- **December capacity:** **Brevo free tier = 300 emails/day** ([ADR-0037](../adr/0037-transactional-email-provider.md))
+  — one busy evening of invitations, verifications and resets can exhaust it and silently break onboarding.
+  Decide: upgrade before December, or at least alert on quota. Check VPS headroom and rate-limit tuning
+  for legitimate bursts.
+- **Mobile crash visibility:** how do we learn about crashes in the wild (Play Console vitals, App Store
+  Connect crashes, anything more)?
+- **Quality passes:** native-speaker read of **FR**; accessibility basics (contrast, screen reader,
+  dynamic type; BTP-7 `<html lang>`).
+
+## Track 5 — Store listings & screenshots
+
+- [ ] Update `store/google-play/` copy for the features added since 2026-09-17 (accounts & sync, shared
+      groups, live reveal links, own wishlist from the link, reminders, events).
+- [ ] New phone + tablet screenshots in DE/EN/FR from the final build.
+- [ ] Create the equivalent `store/app-store/` package (copy, keywords, iPhone + iPad screenshots).
+- [ ] "What's new" text per store and language; a version/release-notes routine (ADR-0047).
+
+## Other go-live items
+
+- **Legal:** the light legal review of `/privacy`, `/imprint`, `/delete-account` still owed
+  ([launch-readiness §B](launch-readiness.md)).
+- **Support:** a support page/contact (needed for Apple's support URL), a short FAQ, and a feedback path for
+  the closed-test testers.

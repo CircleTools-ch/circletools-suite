@@ -1,6 +1,7 @@
 using CircleTools.Ui.Abstractions;
 #if ANDROID || IOS
 using Plugin.LocalNotification;
+using Plugin.LocalNotification.Core.Models;
 #endif
 
 namespace CircleTools.SecretSanta.App.Platform;
@@ -46,7 +47,7 @@ public sealed class MauiNotificationScheduler : INotificationScheduler
             Description = notification.Body,
             Schedule = new NotificationRequestSchedule
             {
-                NotifyTime = notification.DeliverAt.LocalDateTime,
+                NotifyTime = notification.DeliverAt,
             },
         });
     }
@@ -61,7 +62,7 @@ public sealed class MauiNotificationScheduler : INotificationScheduler
                 r.NotificationId,
                 r.Title ?? string.Empty,
                 r.Description ?? string.Empty,
-                new DateTimeOffset(r.Schedule!.NotifyTime!.Value)))];
+                r.Schedule!.NotifyTime!.Value))];
     }
 
     /// <inheritdoc />

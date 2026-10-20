@@ -127,7 +127,7 @@ services:
 
   # Log store — receives the API's structured logs over OTLP (POST :3100/otlp/v1/logs).
   loki:
-    image: grafana/loki:3.3.2
+    image: grafana/loki:3.7.8
     restart: unless-stopped
     logging: *default-logging
     command: ["-config.file=/etc/loki/loki-config.yaml"]
@@ -144,7 +144,7 @@ services:
 
   # Metrics store — SCRAPES the API's internal /metrics endpoint (see prometheus.yml). 30d retention.
   prometheus:
-    image: prom/prometheus:v3.1.0
+    image: prom/prometheus:v3.15.0
     restart: unless-stopped
     logging: *default-logging
     command:
@@ -161,7 +161,7 @@ services:
   # Admin UI — datasources auto-provisioned (Prometheus + Loki). Reached via Caddy at
   # grafana.circletools.ch, behind Grafana's own admin login.
   grafana:
-    image: grafana/grafana:11.4.0
+    image: grafana/grafana:13.2.4
     restart: unless-stopped
     logging: *default-logging
     environment:
@@ -182,7 +182,7 @@ services:
   # Host metrics (CPU / RAM / disk / filesystem / network / load) — reads the host through read-only
   # mounts; Prometheus scrapes it at node-exporter:9100. Not published.
   node-exporter:
-    image: prom/node-exporter:v1.8.2
+    image: prom/node-exporter:v1.12.1
     restart: unless-stopped
     logging: *default-logging
     command:
@@ -200,7 +200,7 @@ services:
   # Per-container metrics (CPU / memory / network) — so the API vs Postgres vs the observability stack's
   # own footprint is visible on the shared box. Prometheus scrapes it at cadvisor:8080. Not published.
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    image: ghcr.io/google/cadvisor:v0.60.6
     restart: unless-stopped
     logging: *default-logging
     privileged: true

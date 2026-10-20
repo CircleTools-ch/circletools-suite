@@ -13,9 +13,9 @@ namespace CircleTools.SecretSanta.Ui.Test;
 /// The compact language switch on pages opened from a link (2026-10-17): it shows the current language and
 /// switches in place, so a reveal or join link no longer needs a trip to Settings that loses the link.
 /// </summary>
-public sealed class CultureMenuTests : IDisposable
+public sealed class CultureMenuTests : IAsyncDisposable
 {
-    private readonly Bunit.TestContext _ctx = new();
+    private readonly Bunit.BunitContext _ctx = new();
     private readonly RecordingCultureProvider _culture = new("de-CH");
 
     public CultureMenuTests()
@@ -29,8 +29,8 @@ public sealed class CultureMenuTests : IDisposable
     [Fact]
     public async Task ShowsTheCurrentLanguage_AndSwitchesToTheOneChosen()
     {
-        var popover = _ctx.RenderComponent<MudBlazor.MudPopoverProvider>();
-        var cut = _ctx.RenderComponent<CultureMenu>();
+        var popover = _ctx.Render<MudBlazor.MudPopoverProvider>();
+        var cut = _ctx.Render<CultureMenu>();
         Assert.Contains("DE", cut.Find("#culture-menu").TextContent);
 
         await cut.InvokeAsync(() => cut.Find("#culture-menu").Click());
@@ -42,5 +42,5 @@ public sealed class CultureMenuTests : IDisposable
     }
 
     /// <inheritdoc />
-    public void Dispose() => _ctx.Dispose();
+    public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 }

@@ -12,9 +12,9 @@ namespace CircleTools.SecretSanta.Ui.Test;
 /// Component tests for <see cref="AddToCalendarButton"/> (MNF-6, FR-044): the button shows only when a
 /// dated occasion is supplied, and clicking it hands that occasion to the <see cref="ICalendarService"/>.
 /// </summary>
-public sealed class AddToCalendarButtonTests : IDisposable
+public sealed class AddToCalendarButtonTests : IAsyncDisposable
 {
-    private readonly Bunit.TestContext _ctx = new();
+    private readonly Bunit.BunitContext _ctx = new();
     private readonly FakeCalendarService _calendar = new();
 
     public AddToCalendarButtonTests()
@@ -28,7 +28,7 @@ public sealed class AddToCalendarButtonTests : IDisposable
     [Fact]
     public void RendersNothing_WhenNoOccasionIsSupplied()
     {
-        var cut = _ctx.RenderComponent<AddToCalendarButton>(p => p.Add(b => b.CalendarEvent, null));
+        var cut = _ctx.Render<AddToCalendarButton>(p => p.Add(b => b.CalendarEvent, null));
 
         Assert.Empty(cut.FindAll("button"));
     }
@@ -54,9 +54,9 @@ public sealed class AddToCalendarButtonTests : IDisposable
     }
 
     private IRenderedComponent<AddToCalendarButton> Render() =>
-        _ctx.RenderComponent<AddToCalendarButton>(p => p.Add(
+        _ctx.Render<AddToCalendarButton>(p => p.Add(
             b => b.CalendarEvent,
             new CalendarEvent("uid", "Christmas 2026", new DateOnly(2026, 12, 24), Location: "Bern")));
 
-    public void Dispose() => _ctx.Dispose();
+    public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 }

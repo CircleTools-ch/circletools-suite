@@ -27,7 +27,7 @@ namespace CircleTools.Main.Ui.Test.TestSupport;
 /// behaviour of these pages lives in how they react to what the API says, and a hand-written fake
 /// client would test the fake.
 /// </remarks>
-public sealed class AccountTestContext : Bunit.TestContext
+public sealed class AccountTestContext : Bunit.BunitContext
 {
     /// <summary>The stub API both clients talk to.</summary>
     public StubApiHandler Api { get; } = new();
@@ -69,7 +69,7 @@ public sealed class AccountTestContext : Bunit.TestContext
         Services.AddSingleton<AccountSession>();
 
         // bUnit pre-registers placeholder authorization services that throw, to push tests towards
-        // its AddTestAuthorization() fake. These tests want the real thing - the principal comes
+        // its AddAuthorization() fake. These tests want the real thing - the principal comes
         // from a real token through the real provider - so the placeholders are removed first;
         // AddAuthorizationCore only registers what is not already there.
         Services.RemoveAll<IAuthorizationService>();
@@ -97,7 +97,7 @@ public sealed class AccountTestContext : Bunit.TestContext
     /// <returns>The rendered page.</returns>
     public IRenderedComponent<TComponent> RenderPage<TComponent>()
         where TComponent : IComponent =>
-        this.RenderComponent<CascadingAuthenticationState>(parameters => parameters.AddChildContent<TComponent>())
+        this.Render<CascadingAuthenticationState>(parameters => parameters.AddChildContent<TComponent>())
             .FindComponent<TComponent>();
 
     /// <summary>

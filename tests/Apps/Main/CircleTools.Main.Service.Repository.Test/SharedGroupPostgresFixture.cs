@@ -12,8 +12,7 @@ namespace CircleTools.Main.Service.Repository.Test;
 /// </summary>
 public sealed class SharedGroupPostgresFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
-        .WithImage("postgres:17-alpine")
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("shareddb_tests")
         .Build();
 

@@ -34,9 +34,9 @@ public sealed class CirclePageTests
     // ---- the circle list (FR-016) ----
 
     [Fact]
-    public void MyCircles_WithNoCircles_SaysSoRatherThanShowingAnEmptyList()
+    public async Task MyCircles_WithNoCircles_SaysSoRatherThanShowingAnEmptyList()
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         context.SignIn();
         context.Api.RespondJson(HttpMethod.Get, CirclesRoute, Array.Empty<CircleSummaryResponse>());
 
@@ -50,9 +50,9 @@ public sealed class CirclePageTests
     /// distinctly from a failure — and must not offer the create form, which would fail offline.
     /// </summary>
     [Fact]
-    public void MyCircles_WhenOffline_ShowsTheConnectivityNotice_AndHidesTheCreateForm()
+    public async Task MyCircles_WhenOffline_ShowsTheConnectivityNotice_AndHidesTheCreateForm()
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         context.SignIn();
         context.Api.Offline = true;
 
@@ -68,9 +68,9 @@ public sealed class CirclePageTests
     /// (FR-016).
     /// </summary>
     [Fact]
-    public void MyCircles_ShowsTheStoredLabel_NotOneLookedUpForTheViewer()
+    public async Task MyCircles_ShowsTheStoredLabel_NotOneLookedUpForTheViewer()
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         context.SignIn();
         context.Api.RespondJson(
             HttpMethod.Get,
@@ -99,9 +99,9 @@ public sealed class CirclePageTests
     [Theory]
     [InlineData(1, "CirclesPeopleCountOne")]
     [InlineData(4, "CirclesPeopleCount")]
-    public void MyCircles_UsesTheSingularSizeString_OnlyForACircleOfOne(int people, string expectedKey)
+    public async Task MyCircles_UsesTheSingularSizeString_OnlyForACircleOfOne(int people, string expectedKey)
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         context.SignIn();
         context.Api.RespondJson(
             HttpMethod.Get,
@@ -125,9 +125,9 @@ public sealed class CirclePageTests
     /// <em>else</em> can act (FEAT-003).
     /// </summary>
     [Fact]
-    public void MyCircles_BadgesOwnerAndAdmin_ButNotPlainMembership()
+    public async Task MyCircles_BadgesOwnerAndAdmin_ButNotPlainMembership()
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         context.SignIn();
         context.Api.RespondJson(
             HttpMethod.Get,
@@ -141,9 +141,9 @@ public sealed class CirclePageTests
     }
 
     [Fact]
-    public void MyCircles_PrefillsTheLabelForTheCurrentLanguage()
+    public async Task MyCircles_PrefillsTheLabelForTheCurrentLanguage()
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         context.SignIn();
         context.Api.RespondJson(HttpMethod.Get, CirclesRoute, Array.Empty<CircleSummaryResponse>());
 
@@ -155,9 +155,9 @@ public sealed class CirclePageTests
     }
 
     [Fact]
-    public void MyCircles_CreationRefusal_IsShownInTheUsersLanguage()
+    public async Task MyCircles_CreationRefusal_IsShownInTheUsersLanguage()
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         context.SignIn();
         context.Api.RespondJson(HttpMethod.Get, CirclesRoute, Array.Empty<CircleSummaryResponse>());
         context.Api.RespondProblem(
@@ -197,7 +197,7 @@ public sealed class CirclePageTests
     }
 
     private static IRenderedComponent<CircleDetail> RenderDetail(AccountTestContext context, Guid circleId) =>
-        context.RenderComponent<Microsoft.AspNetCore.Components.Authorization.CascadingAuthenticationState>(
+        context.Render<Microsoft.AspNetCore.Components.Authorization.CascadingAuthenticationState>(
                 parameters => parameters.AddChildContent<CircleDetail>(
                     child => child.Add(p => p.CircleId, circleId)))
             .FindComponent<CircleDetail>();
@@ -208,9 +208,9 @@ public sealed class CirclePageTests
     /// sentence, and that is what keeps the invite form from being an enumeration oracle (NFR-005).
     /// </summary>
     [Fact]
-    public void Invite_ConfirmsWithoutSayingWhetherAnythingWasSent()
+    public async Task Invite_ConfirmsWithoutSayingWhetherAnythingWasSent()
     {
-        using var context = DetailContext(out var circleId, "Owner", Person("Anna", "Owner", isYou: true));
+        await using var context = DetailContext(out var circleId, "Owner", Person("Anna", "Owner", isYou: true));
         context.Api.Respond(HttpMethod.Post, $"{CirclesRoute}/{circleId}/invitations", HttpStatusCode.Accepted);
 
         var page = RenderDetail(context, circleId);
@@ -225,9 +225,9 @@ public sealed class CirclePageTests
     /// aiming an invitation at one — the UI half of FR-019's promotion the backend already supported.
     /// </summary>
     [Fact]
-    public void OfflinePerson_OffersInvitingThemToJoin_AndRevealsTheAsThemForm()
+    public async Task OfflinePerson_OffersInvitingThemToJoin_AndRevealsTheAsThemForm()
     {
-        using var context = DetailContext(
+        await using var context = DetailContext(
             out var circleId,
             "Owner",
             Person("Anna", "Owner", isYou: true),
@@ -248,9 +248,9 @@ public sealed class CirclePageTests
     /// <summary>A pending invitation aimed at an offline person says so, so an admin can tell it apart
     /// from an ordinary invitation (FR-019).</summary>
     [Fact]
-    public void PendingInvitation_AimedAtAnOfflinePerson_ShowsWhoItIsFor()
+    public async Task PendingInvitation_AimedAtAnOfflinePerson_ShowsWhoItIsFor()
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         var id = Guid.CreateVersion7();
         context.SignIn();
         context.Api.RespondJson(
@@ -278,9 +278,9 @@ public sealed class CirclePageTests
     /// recipient who they are joining as (FR-019, ADR-0043).
     /// </summary>
     [Fact]
-    public void JoinRequest_ForACircleWithOfflinePeople_AsksWhoYouAreJoiningAs()
+    public async Task JoinRequest_ForACircleWithOfflinePeople_AsksWhoYouAreJoiningAs()
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         context.SignIn();
 
         var circleId = Guid.CreateVersion7();
@@ -307,9 +307,9 @@ public sealed class CirclePageTests
     }
 
     [Fact]
-    public void AMember_SeesNeitherTheInviteFormNorTheDeleteSection()
+    public async Task AMember_SeesNeitherTheInviteFormNorTheDeleteSection()
     {
-        using var context = DetailContext(out var circleId, "Member", Person("Anna", "Member", isYou: true));
+        await using var context = DetailContext(out var circleId, "Member", Person("Anna", "Member", isYou: true));
 
         var page = RenderDetail(context, circleId);
 
@@ -320,9 +320,9 @@ public sealed class CirclePageTests
 
     /// <summary>An admin administers, but deletion and role changes stay with the owner (FR-020).</summary>
     [Fact]
-    public void AnAdmin_CanInviteButCannotDeleteTheCircleOrChangeRoles()
+    public async Task AnAdmin_CanInviteButCannotDeleteTheCircleOrChangeRoles()
     {
-        using var context = DetailContext(
+        await using var context = DetailContext(
             out var circleId,
             "Admin",
             Person("Anna", "Owner"),
@@ -342,9 +342,9 @@ public sealed class CirclePageTests
     /// backwards renders a button the server would refuse, which reads as a broken product.
     /// </summary>
     [Fact]
-    public void AnAdmin_MayRemoveAMemberButNotAnotherAdmin()
+    public async Task AnAdmin_MayRemoveAMemberButNotAnotherAdmin()
     {
-        using var context = DetailContext(
+        await using var context = DetailContext(
             out var circleId,
             "Admin",
             Person("Anna", "Owner"),
@@ -360,9 +360,9 @@ public sealed class CirclePageTests
     }
 
     [Fact]
-    public void TheOwner_IsNeverOfferedAWayToRemoveThemselvesOrBeRemoved()
+    public async Task TheOwner_IsNeverOfferedAWayToRemoveThemselvesOrBeRemoved()
     {
-        using var context = DetailContext(
+        await using var context = DetailContext(
             out var circleId,
             "Owner",
             Person("Anna", "Owner", isYou: true),
@@ -376,9 +376,9 @@ public sealed class CirclePageTests
     }
 
     [Fact]
-    public void AManagedMember_IsMarkedAndIsNeverOfferedARole()
+    public async Task AManagedMember_IsMarkedAndIsNeverOfferedARole()
     {
-        using var context = DetailContext(
+        await using var context = DetailContext(
             out var circleId,
             "Owner",
             Person("Anna", "Owner", isYou: true),
@@ -397,9 +397,9 @@ public sealed class CirclePageTests
     /// FR-022: the threat is the misclick, so the button stays shut until the name is typed back.
     /// </summary>
     [Fact]
-    public void DeleteButton_StaysDisabledUntilTheNameIsTypedBack()
+    public async Task DeleteButton_StaysDisabledUntilTheNameIsTypedBack()
     {
-        using var context = DetailContext(out var circleId, "Owner", Person("Anna", "Owner", isYou: true));
+        await using var context = DetailContext(out var circleId, "Owner", Person("Anna", "Owner", isYou: true));
 
         var page = RenderDetail(context, circleId);
         var button = page.FindAll("button").First(b => b.TextContent.Contains("CircleDeleteSubmit", StringComparison.Ordinal));
@@ -422,9 +422,9 @@ public sealed class CirclePageTests
     /// which one applies rather than a generic conflict (FR-021).
     /// </summary>
     [Fact]
-    public void AnOwnerLeaving_IsToldWhichWayOutTheyHave()
+    public async Task AnOwnerLeaving_IsToldWhichWayOutTheyHave()
     {
-        using var context = DetailContext(
+        await using var context = DetailContext(
             out var circleId,
             "Owner",
             Person("Anna", "Owner", isYou: true),
@@ -448,9 +448,9 @@ public sealed class CirclePageTests
     /// confused with the row above it.
     /// </summary>
     [Fact]
-    public void Removing_AsksFirst_AndNamesThePerson()
+    public async Task Removing_AsksFirst_AndNamesThePerson()
     {
-        using var context = DetailContext(
+        await using var context = DetailContext(
             out var circleId,
             "Owner",
             Person("Anna", "Owner", isYou: true),
@@ -468,9 +468,9 @@ public sealed class CirclePageTests
     /// the page must not leak the difference either.
     /// </summary>
     [Fact]
-    public void ACircleTheCallerIsNotIn_ReadsAsNoSuchCircle()
+    public async Task ACircleTheCallerIsNotIn_ReadsAsNoSuchCircle()
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         var circleId = Guid.CreateVersion7();
         context.SignIn();
         context.Api.RespondProblem(
@@ -487,9 +487,9 @@ public sealed class CirclePageTests
     // ---- responding to an invitation (FR-018) ----
 
     [Fact]
-    public void JoinRequests_WithNothingWaiting_SaysSo()
+    public async Task JoinRequests_WithNothingWaiting_SaysSo()
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         context.SignIn();
         context.Api.RespondJson(HttpMethod.Get, "api/v1/invitations", Array.Empty<JoinRequestResponse>());
 
@@ -499,9 +499,9 @@ public sealed class CirclePageTests
     }
 
     [Fact]
-    public void JoinRequests_NamesTheCircleAndWhoInvitedYou()
+    public async Task JoinRequests_NamesTheCircleAndWhoInvitedYou()
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         context.SignIn();
         context.Api.RespondJson(
             HttpMethod.Get,
@@ -528,9 +528,9 @@ public sealed class CirclePageTests
     /// stays, and the user's own Secret-Santa groups, members and completed draws are untouched.
     /// </summary>
     [Fact]
-    public void LeaveConfirmation_SaysWhatLeavingDoesNotTake()
+    public async Task LeaveConfirmation_SaysWhatLeavingDoesNotTake()
     {
-        using var context = DetailContext(
+        await using var context = DetailContext(
             out var circleId,
             "Member",
             Person("Anna", "Owner"),
@@ -551,9 +551,9 @@ public sealed class CirclePageTests
     /// recreate.
     /// </summary>
     [Fact]
-    public void DeleteConfirmation_NamesTheCircle_CountsWhoLosesAccess_AndNamesEveryManagedMember()
+    public async Task DeleteConfirmation_NamesTheCircle_CountsWhoLosesAccess_AndNamesEveryManagedMember()
     {
-        using var context = DetailContext(
+        await using var context = DetailContext(
             out var circleId,
             "Owner",
             Person("Anna", "Owner", isYou: true),
@@ -585,9 +585,9 @@ public sealed class CirclePageTests
     /// naming them is left out rather than rendered empty.
     /// </summary>
     [Fact]
-    public void DeleteConfirmation_WithNoManagedMembers_LeavesThatSentenceOut()
+    public async Task DeleteConfirmation_WithNoManagedMembers_LeavesThatSentenceOut()
     {
-        using var context = DetailContext(out var circleId, "Owner", Person("Anna", "Owner", isYou: true));
+        await using var context = DetailContext(out var circleId, "Owner", Person("Anna", "Owner", isYou: true));
 
         var danger = RenderDetail(context, circleId).Find(".circletools-danger").TextContent;
 
@@ -603,9 +603,9 @@ public sealed class CirclePageTests
     /// a probe — and it means the page must say "no longer valid" plainly rather than guess why.
     /// </summary>
     [Fact]
-    public void InvitationLanding_WhenTheInvitationIsNoLongerValid_SaysSoPlainly_WithoutSayingWhy()
+    public async Task InvitationLanding_WhenTheInvitationIsNoLongerValid_SaysSoPlainly_WithoutSayingWhy()
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         context.Api.Respond(HttpMethod.Get, $"api/v1/invitations/{Token}", HttpStatusCode.NotFound);
 
         var page = RenderLanding(context);
@@ -620,9 +620,9 @@ public sealed class CirclePageTests
     /// account-existence oracle — the leak ADR-0018 paid real UX to avoid.
     /// </summary>
     [Fact]
-    public void InvitationLanding_ToSomeoneNotSignedIn_OffersBothWaysIn_WithoutSayingWhichApplies()
+    public async Task InvitationLanding_ToSomeoneNotSignedIn_OffersBothWaysIn_WithoutSayingWhichApplies()
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         context.Api.RespondJson(
             HttpMethod.Get,
             $"api/v1/invitations/{Token}",
@@ -647,9 +647,9 @@ public sealed class CirclePageTests
 
     /// <summary>Declining from the link needs no account, and says so once it is done.</summary>
     [Fact]
-    public void InvitationLanding_Declining_NeedsNoAccount_AndConfirmsPlainly()
+    public async Task InvitationLanding_Declining_NeedsNoAccount_AndConfirmsPlainly()
     {
-        using var context = new AccountTestContext();
+        await using var context = new AccountTestContext();
         context.Api.RespondJson(
             HttpMethod.Get,
             $"api/v1/invitations/{Token}",
@@ -666,7 +666,7 @@ public sealed class CirclePageTests
     private const string Token = "s3cr3t-from-the-mail";
 
     private static IRenderedComponent<InvitationLanding> RenderLanding(AccountTestContext context) =>
-        context.RenderComponent<Microsoft.AspNetCore.Components.Authorization.CascadingAuthenticationState>(
+        context.Render<Microsoft.AspNetCore.Components.Authorization.CascadingAuthenticationState>(
                 parameters => parameters.AddChildContent<InvitationLanding>(
                     child => child.Add(p => p.Token, Token)))
             .FindComponent<InvitationLanding>();

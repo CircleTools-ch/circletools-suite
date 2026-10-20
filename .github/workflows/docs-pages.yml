@@ -25,13 +25,13 @@ jobs:
     name: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         # Full history: Nerdbank.GitVersioning (ADR-0047) computes the version from git height.
         with:
           fetch-depth: 0
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v5
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
           cache: true
@@ -52,7 +52,7 @@ jobs:
       # Uploads the rendered site as the Pages artifact. This needs no Pages settings, so the build stays
       # green before the owner enables Pages; the artifact is simply unused when the deploy job is skipped.
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: docfx/_site
 
@@ -70,4 +70,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

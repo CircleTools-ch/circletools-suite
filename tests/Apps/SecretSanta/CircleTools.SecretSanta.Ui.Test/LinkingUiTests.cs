@@ -87,10 +87,10 @@ public sealed class LinkResolutionApplierTests
 }
 
 /// <summary>Component tests for the signed-in assignment view (FR-029).</summary>
-public sealed class MyAssignmentsPageTests : IDisposable
+public sealed class MyAssignmentsPageTests : IAsyncDisposable
 {
     private const string RecipientName = "Recipient-Zoe";
-    private readonly Bunit.TestContext _ctx = new();
+    private readonly Bunit.BunitContext _ctx = new();
 
     public MyAssignmentsPageTests()
     {
@@ -104,7 +104,7 @@ public sealed class MyAssignmentsPageTests : IDisposable
         // MyAssignments now offers "Add to calendar" (MNF-6), which builds the reopen link from this.
         _ctx.Services.AddSingleton(new CircleTools.SecretSanta.Core.Reveal.RevealLinkOptions("https://secretsanta.circletools.ch"));
         _ctx.Services.AddSingleton<CircleTools.Ui.Abstractions.ICalendarService>(new TestSupport.FakeCalendarService());
-        _ctx.AddTestAuthorization().SetAuthorized("member");
+        _ctx.AddAuthorization().SetAuthorized("member");
     }
 
     [Fact]
@@ -117,7 +117,7 @@ public sealed class MyAssignmentsPageTests : IDisposable
         };
         _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.Linking.ILinkingApi>(api);
 
-        var cut = _ctx.RenderComponent<MyAssignments>();
+        var cut = _ctx.Render<MyAssignments>();
 
         // Before revealing, the recipient must not appear anywhere in the markup.
         Assert.DoesNotContain(RecipientName, cut.Markup);
@@ -145,7 +145,7 @@ public sealed class MyAssignmentsPageTests : IDisposable
         };
         _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.Linking.ILinkingApi>(api);
 
-        var cut = _ctx.RenderComponent<MyAssignments>();
+        var cut = _ctx.Render<MyAssignments>();
 
         Assert.DoesNotContain("PastGroup", cut.Markup);
         Assert.Contains("FutureGroup", cut.Markup);
@@ -153,20 +153,20 @@ public sealed class MyAssignmentsPageTests : IDisposable
     }
 
     /// <inheritdoc />
-    public void Dispose() => _ctx.Dispose();
+    public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 }
 
 /// <summary>Component tests for the signed-in wishlist page (FR-030): past occasions get no slot.</summary>
-public sealed class MyWishlistsPageTests : IDisposable
+public sealed class MyWishlistsPageTests : IAsyncDisposable
 {
-    private readonly Bunit.TestContext _ctx = new();
+    private readonly Bunit.BunitContext _ctx = new();
 
     public MyWishlistsPageTests()
     {
         _ctx.Services.AddMudServices();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.Services.AddSingleton<IStringLocalizer<AppStrings>>(new PassThroughStringLocalizer<AppStrings>());
-        _ctx.AddTestAuthorization().SetAuthorized("member");
+        _ctx.AddAuthorization().SetAuthorized("member");
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public sealed class MyWishlistsPageTests : IDisposable
         };
         _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.Linking.ILinkingApi>(api);
 
-        var cut = _ctx.RenderComponent<MyWishlists>();
+        var cut = _ctx.Render<MyWishlists>();
 
         Assert.DoesNotContain("PastGroup", cut.Markup);
         Assert.Contains("FutureGroup", cut.Markup);
@@ -207,8 +207,8 @@ public sealed class MyWishlistsPageTests : IDisposable
             Wishlists = new MyWishlistsResponse([new MyWishlistResponse(groupId, "Family", eventId, "Christmas", ["Kite", "Book"])]),
         };
         _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.Linking.ILinkingApi>(api);
-        var snackbars = _ctx.RenderComponent<MudBlazor.MudSnackbarProvider>();
-        var cut = _ctx.RenderComponent<MyWishlists>();
+        var snackbars = _ctx.Render<MudBlazor.MudSnackbarProvider>();
+        var cut = _ctx.Render<MyWishlists>();
 
         await cut.InvokeAsync(() => cut.FindAll("button.mud-icon-button")[0].Click());
         cut.WaitForAssertion(() => Assert.Equal(["Book"], Assert.Single(api.WishlistUpdates).Items));
@@ -221,7 +221,7 @@ public sealed class MyWishlistsPageTests : IDisposable
     }
 
     /// <inheritdoc />
-    public void Dispose() => _ctx.Dispose();
+    public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 }
 
 /// <summary>
@@ -229,9 +229,9 @@ public sealed class MyWishlistsPageTests : IDisposable
 /// address must not silently "send a request" (the server matches verified addresses only) — it says
 /// verify first and makes no server call.
 /// </summary>
-public sealed class MembersPageLinkGuardTests : IDisposable
+public sealed class MembersPageLinkGuardTests : IAsyncDisposable
 {
-    private readonly Bunit.TestContext _ctx = new();
+    private readonly Bunit.BunitContext _ctx = new();
 
     public MembersPageLinkGuardTests()
     {
@@ -255,11 +255,11 @@ public sealed class MembersPageLinkGuardTests : IDisposable
         _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.Linking.ILinkingApi>(api);
 
         // Signed in, address NOT verified (no email_verified claim).
-        var auth = _ctx.AddTestAuthorization();
+        var auth = _ctx.AddAuthorization();
         auth.SetAuthorized("Adrian");
         auth.SetClaims(new Claim(ClaimTypes.Email, "adrian@test.ch"));
 
-        var cut = _ctx.RenderComponent<Members>(p => p.Add(m => m.GroupId, groupId));
+        var cut = _ctx.Render<Members>(p => p.Add(m => m.GroupId, groupId));
 
         ClickButton(cut, "MemberLink");                          // open the link box
         TypeEmail(cut, "adrian@test.ch");   // our own address
@@ -296,14 +296,14 @@ public sealed class MembersPageLinkGuardTests : IDisposable
             return;
         }
 
-        _popover ??= _ctx.RenderComponent<MudBlazor.MudPopoverProvider>();
+        _popover ??= _ctx.Render<MudBlazor.MudPopoverProvider>();
         cut.InvokeAsync(() => cut.FindAll("button").First(b => b.GetAttribute("aria-label") == "MoreActionsFor").Click()).GetAwaiter().GetResult();
         _popover.WaitForAssertion(() => Assert.Contains(_popover.FindAll(".mud-menu-item"), i => i.TextContent.Trim() == text));
         _popover.InvokeAsync(() => _popover.FindAll(".mud-menu-item").First(i => i.TextContent.Trim() == text).Click()).GetAwaiter().GetResult();
     }
 
     /// <inheritdoc />
-    public void Dispose() => _ctx.Dispose();
+    public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 }
 
 /// <summary>
@@ -311,9 +311,9 @@ public sealed class MembersPageLinkGuardTests : IDisposable
 /// the self-link is offered only while my account backs no member of the group, and an address already
 /// linked here is reported as an error rather than a silent "request sent".
 /// </summary>
-public sealed class MembersPageSelfLinkTests : IDisposable
+public sealed class MembersPageSelfLinkTests : IAsyncDisposable
 {
-    private readonly Bunit.TestContext _ctx = new();
+    private readonly Bunit.BunitContext _ctx = new();
     private readonly Guid _myUserId = Guid.NewGuid();
 
     public MembersPageSelfLinkTests()
@@ -333,7 +333,7 @@ public sealed class MembersPageSelfLinkTests : IDisposable
         var member = new MemberDto(Guid.NewGuid(), "Anna");
         SignInWithGroup(groupId, member, out var api);
 
-        var cut = _ctx.RenderComponent<Members>(p => p.Add(m => m.GroupId, groupId));
+        var cut = _ctx.Render<Members>(p => p.Add(m => m.GroupId, groupId));
 
         ClickButton(cut, "MemberLinkWithMyAccount");
 
@@ -351,10 +351,10 @@ public sealed class MembersPageSelfLinkTests : IDisposable
         var member = new MemberDto(Guid.NewGuid(), "Anna", _myUserId);
         SignInWithGroup(groupId, member, out _);
 
-        var cut = _ctx.RenderComponent<Members>(p => p.Add(m => m.GroupId, groupId));
+        var cut = _ctx.Render<Members>(p => p.Add(m => m.GroupId, groupId));
 
         // The per-member actions live in the row's overflow menu: open it and inspect what it offers.
-        _popover ??= _ctx.RenderComponent<MudBlazor.MudPopoverProvider>();
+        _popover ??= _ctx.Render<MudBlazor.MudPopoverProvider>();
         cut.FindAll("button").First(b => b.GetAttribute("aria-label") == "MoreActionsFor").Click();
         _popover.WaitForAssertion(() => Assert.Contains(_popover.FindAll(".mud-menu-item"), i => i.TextContent.Trim() == "MemberUnlink"));
         Assert.DoesNotContain(_popover.FindAll(".mud-menu-item"), i => i.TextContent.Trim() == "MemberLinkWithMyAccount");
@@ -368,7 +368,7 @@ public sealed class MembersPageSelfLinkTests : IDisposable
         SignInWithGroup(groupId, member, out var api);
         api.SendOutcome = MemberLinkOutcome.AlreadyLinkedInGroup;
 
-        var cut = _ctx.RenderComponent<Members>(p => p.Add(m => m.GroupId, groupId));
+        var cut = _ctx.Render<Members>(p => p.Add(m => m.GroupId, groupId));
 
         ClickButton(cut, "MemberLink");
         TypeEmail(cut, "someone-else@test.ch");
@@ -387,7 +387,7 @@ public sealed class MembersPageSelfLinkTests : IDisposable
         api = new FakeLinkingApi();
         _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.Linking.ILinkingApi>(api);
 
-        var auth = _ctx.AddTestAuthorization();
+        var auth = _ctx.AddAuthorization();
         auth.SetAuthorized("Adrian");
         // A verified address and the account id the "my account" checks read (ClaimTypes.NameIdentifier).
         auth.SetClaims(
@@ -422,14 +422,14 @@ public sealed class MembersPageSelfLinkTests : IDisposable
             return;
         }
 
-        _popover ??= _ctx.RenderComponent<MudBlazor.MudPopoverProvider>();
+        _popover ??= _ctx.Render<MudBlazor.MudPopoverProvider>();
         cut.InvokeAsync(() => cut.FindAll("button").First(b => b.GetAttribute("aria-label") == "MoreActionsFor").Click()).GetAwaiter().GetResult();
         _popover.WaitForAssertion(() => Assert.Contains(_popover.FindAll(".mud-menu-item"), i => i.TextContent.Trim() == text));
         _popover.InvokeAsync(() => _popover.FindAll(".mud-menu-item").First(i => i.TextContent.Trim() == text).Click()).GetAwaiter().GetResult();
     }
 
     /// <inheritdoc />
-    public void Dispose() => _ctx.Dispose();
+    public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 }
 
 /// <summary>An <see cref="ISender"/> that answers <see cref="GetGroupQuery"/> with one fixed group.</summary>
@@ -525,9 +525,9 @@ public sealed class AssignmentPublisherTests
 /// pulls another admin's roster edit into the local store, the open Members page must refresh itself on
 /// <see cref="ISyncSignals.SyncCompleted"/> — not wait for a manual (or force) refresh.
 /// </summary>
-public sealed class MembersPageSyncRefreshTests : IDisposable
+public sealed class MembersPageSyncRefreshTests : IAsyncDisposable
 {
-    private readonly Bunit.TestContext _ctx = new();
+    private readonly Bunit.BunitContext _ctx = new();
 
     public MembersPageSyncRefreshTests()
     {
@@ -551,9 +551,9 @@ public sealed class MembersPageSyncRefreshTests : IDisposable
         _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.Linking.ILinkingApi>(new FakeLinkingApi());
 
         // Account-free shared-by-link co-organizer (the reported scenario is signed out).
-        _ctx.AddTestAuthorization().SetNotAuthorized();
+        _ctx.AddAuthorization().SetNotAuthorized();
 
-        var cut = _ctx.RenderComponent<Members>(p => p.Add(m => m.GroupId, groupId));
+        var cut = _ctx.Render<Members>(p => p.Add(m => m.GroupId, groupId));
         Assert.Contains("Anna", cut.Markup);
         Assert.DoesNotContain("Bruno", cut.Markup);
 
@@ -567,7 +567,7 @@ public sealed class MembersPageSyncRefreshTests : IDisposable
     }
 
     /// <inheritdoc />
-    public void Dispose() => _ctx.Dispose();
+    public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 }
 
 // Like GroupSender, but the answered group can be swapped mid-test to model a background pull.

@@ -22,16 +22,14 @@ public sealed class MailApiFactory : WebApplicationFactory<Program>, IAsyncLifet
     private const int MailpitSmtpPort = 1025;
     private const int MailpitHttpPort = 8025;
 
-    private readonly PostgreSqlContainer _database = new PostgreSqlBuilder()
-        .WithImage("postgres:17-alpine")
+    private readonly PostgreSqlContainer _database = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("maindb_mail_tests")
         .Build();
 
-    private readonly IContainer _mailpit = new ContainerBuilder()
-        .WithImage("axllent/mailpit")
+    private readonly IContainer _mailpit = new ContainerBuilder("axllent/mailpit")
         .WithPortBinding(MailpitSmtpPort, assignRandomHostPort: true)
         .WithPortBinding(MailpitHttpPort, assignRandomHostPort: true)
-        .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(MailpitHttpPort))
+        .WithWaitStrategy(Wait.ForUnixContainer().UntilInternalTcpPortIsAvailable(MailpitHttpPort))
         .Build();
 
     private HttpClient? _mailpitApi;

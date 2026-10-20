@@ -29,9 +29,9 @@ public sealed class AccountPageTests
     private static readonly string[] _unknownProse = ["Something the client has no key for."];
 
     [Fact]
-    public void SignUp_ShowsTheSameConfirmationWhateverTheAddress()
+    public async Task SignUp_ShowsTheSameConfirmationWhateverTheAddress()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.Api.Respond(HttpMethod.Post, $"{Account}/register", HttpStatusCode.Accepted);
 
         var cut = ctx.RenderPage<Register>();
@@ -46,11 +46,11 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void SignUp_SaysWhyThePasswordWasRefused_InTheUsersLanguage()
+    public async Task SignUp_SaysWhyThePasswordWasRefused_InTheUsersLanguage()
     {
         // The API answers with a code; the screen must turn it into a localized sentence rather
         // than show the code or Identity's English prose (NFR-003, ADR-0027).
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.Api.RespondJson(
             HttpMethod.Post,
             $"{Account}/register",
@@ -72,11 +72,11 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void SignUp_ExplainsABreachedPassword_RatherThanJustRefusingIt()
+    public async Task SignUp_ExplainsABreachedPassword_RatherThanJustRefusingIt()
     {
         // FR-007 requires the rule to be explained. A bare "validation failed" would leave someone
         // retrying a 16-character password they consider strong, with no idea what is wrong.
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.Api.RespondJson(
             HttpMethod.Post,
             $"{Account}/register",
@@ -96,11 +96,11 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void SignUp_PassesThroughAMessageItHasNoTranslationFor()
+    public async Task SignUp_PassesThroughAMessageItHasNoTranslationFor()
     {
         // Not every endpoint answers in codes, and a message the client cannot translate is still
         // better than silence. This is the fallback the mixed contract depends on.
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.Api.RespondJson(
             HttpMethod.Post,
             $"{Account}/register",
@@ -120,9 +120,9 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void ForgotPassword_ShowsTheSameConfirmationForAnyAddress()
+    public async Task ForgotPassword_ShowsTheSameConfirmationForAnyAddress()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.Api.Respond(HttpMethod.Post, $"{Account}/forgot-password", HttpStatusCode.Accepted);
 
         var cut = ctx.RenderPage<ForgotPassword>();
@@ -133,10 +133,10 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void CancelledPasskeySignIn_LeavesThePageWithNoError()
+    public async Task CancelledPasskeySignIn_LeavesThePageWithNoError()
     {
         // The stub returns null, which is what a dismissed system prompt produces.
-        using var ctx = new AccountTestContext(new StubPasskeyCeremony(result: null));
+        await using var ctx = new AccountTestContext(new StubPasskeyCeremony(result: null));
         ctx.Api.RespondJson(HttpMethod.Post, $"{Account}/login/passkey/options", new { challenge = "abc" });
 
         var cut = ctx.RenderPage<Login>();
@@ -150,9 +150,9 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void BrokenPasskeyCeremony_DoesSayWhatWentWrong()
+    public async Task BrokenPasskeyCeremony_DoesSayWhatWentWrong()
     {
-        using var ctx = new AccountTestContext(new StubPasskeyCeremony(throws: true));
+        await using var ctx = new AccountTestContext(new StubPasskeyCeremony(throws: true));
         ctx.Api.RespondJson(HttpMethod.Post, $"{Account}/login/passkey/options", new { challenge = "abc" });
 
         var cut = ctx.RenderPage<Login>();
@@ -163,9 +163,9 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void VerificationBanner_AppearsOnlyWhileTheAddressIsUnproven()
+    public async Task VerificationBanner_AppearsOnlyWhileTheAddressIsUnproven()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.SignIn(emailVerified: false);
         ctx.Api.Respond(HttpMethod.Post, $"{Account}/resend-verification", HttpStatusCode.Accepted);
 
@@ -178,9 +178,9 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void VerificationBanner_IsAbsentForAVerifiedAccount()
+    public async Task VerificationBanner_IsAbsentForAVerifiedAccount()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.SignIn(emailVerified: true);
 
         var cut = ctx.RenderPage<VerificationBanner>();
@@ -189,11 +189,11 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void VerifyEmail_PassesTheTokenThroughExactlyAsItArrived()
+    public async Task VerifyEmail_PassesTheTokenThroughExactlyAsItArrived()
     {
         const string token = "CfDJ8Abc-_123";
 
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.Api.Respond(HttpMethod.Post, $"{Account}/verify-email", HttpStatusCode.NoContent);
         ctx.NavigateTo($"verify-email?userId={Guid.CreateVersion7()}&token={token}");
 
@@ -203,9 +203,9 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void VerifyEmail_WithAnIncompleteLink_ExplainsRatherThanCallingTheApi()
+    public async Task VerifyEmail_WithAnIncompleteLink_ExplainsRatherThanCallingTheApi()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.NavigateTo("verify-email?userId=abc");
 
         var cut = ctx.RenderPage<VerifyEmail>();
@@ -215,9 +215,9 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void ConfirmEmailChange_ArrivingSignedOut_SaysSoInsteadOfShowingA401()
+    public async Task ConfirmEmailChange_ArrivingSignedOut_SaysSoInsteadOfShowingA401()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.NavigateTo(
             $"confirm-email-change?userId={Guid.CreateVersion7()}&newEmail=new%40example.test&token=abc");
 
@@ -229,9 +229,9 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void ConfirmEmailChange_AsTheWrongAccount_SaysWhichProblemItIs()
+    public async Task ConfirmEmailChange_AsTheWrongAccount_SaysWhichProblemItIs()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.SignIn();
         ctx.NavigateTo(
             $"confirm-email-change?userId={Guid.CreateVersion7()}&newEmail=new%40example.test&token=abc");
@@ -245,9 +245,9 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void DeleteAccount_RequiresThePasswordBeforeTheButtonDoesAnything()
+    public async Task DeleteAccount_RequiresThePasswordBeforeTheButtonDoesAnything()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.SignIn();
 
         var cut = ctx.RenderPage<AccountData>();
@@ -264,9 +264,9 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void DeleteAccount_OnSuccess_SaysTheAccountIsGoneAndDropsTheSession()
+    public async Task DeleteAccount_OnSuccess_SaysTheAccountIsGoneAndDropsTheSession()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.SignIn();
         ctx.Api.Respond(HttpMethod.Post, $"{Account}/delete", HttpStatusCode.NoContent);
 
@@ -278,10 +278,10 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void DeleteAccount_WhenNoSharedGroupsAreOwned_OffersNoDisposition()
+    public async Task DeleteAccount_WhenNoSharedGroupsAreOwned_OffersNoDisposition()
     {
         // The unmatched shared/owned route answers 404 → the client reports zero → the section stays away.
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.SignIn();
 
         var cut = ctx.RenderPage<AccountData>();
@@ -291,10 +291,10 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void DeleteAccount_WhenSharedGroupsAreOwned_OffersHandOffOrDelete()
+    public async Task DeleteAccount_WhenSharedGroupsAreOwned_OffersHandOffOrDelete()
     {
         // FR-043 / ADR-0058: an owner with shared-by-link groups is asked what becomes of them.
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         ctx.SignIn();
         ctx.Api.RespondJson(
             HttpMethod.Get,
@@ -310,9 +310,9 @@ public sealed class AccountPageTests
     }
 
     [Fact]
-    public void Export_HandsTheArchiveToThePlatformToSave()
+    public async Task Export_HandsTheArchiveToThePlatformToSave()
     {
-        using var ctx = new AccountTestContext();
+        await using var ctx = new AccountTestContext();
         var userId = ctx.SignIn();
 
         ctx.Api.RespondJson(
@@ -338,6 +338,7 @@ public sealed class AccountPageTests
         Assert.Contains("anna@example.test", saved.Content, StringComparison.Ordinal);
     }
 
-    private static void Fill(IRenderedFragment cut, string selector, string value) =>
+    private static void Fill<TComponent>(IRenderedComponent<TComponent> cut, string selector, string value)
+        where TComponent : Microsoft.AspNetCore.Components.IComponent =>
         cut.Find(selector).Change(value);
 }

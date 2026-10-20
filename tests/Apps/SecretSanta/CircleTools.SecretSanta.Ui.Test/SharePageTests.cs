@@ -18,11 +18,11 @@ namespace CircleTools.SecretSanta.Ui.Test;
 /// button is offered only where the platform has a share sheet, and it hands the reveal link to the
 /// <see cref="IShareService"/>; Copy stays available regardless.
 /// </summary>
-public sealed class SharePageTests : IDisposable
+public sealed class SharePageTests : IAsyncDisposable
 {
     private const string RevealUrl = "https://secretsanta.example/r#for=Al&v=1&d=blob";
 
-    private readonly Bunit.TestContext _ctx = new();
+    private readonly Bunit.BunitContext _ctx = new();
     private readonly FakeShareService _share = new();
 
     public SharePageTests()
@@ -51,7 +51,7 @@ public sealed class SharePageTests : IDisposable
     }
 
     private IRenderedComponent<Share> RenderShare() =>
-        _ctx.RenderComponent<Share>(p => p
+        _ctx.Render<Share>(p => p
             .Add(s => s.GroupId, Guid.NewGuid())
             .Add(s => s.EventId, Guid.NewGuid()));
 
@@ -74,7 +74,7 @@ public sealed class SharePageTests : IDisposable
         var handout = _ctx.Services.GetRequiredService<HandoutProgressService>();
         await handout.SetDoneAsync(groupId, eventId, [RevealUrl], HandoutProgressService.MemberKey(RevealUrl), done: true);
 
-        var cut = _ctx.RenderComponent<Share>(p => p.Add(s => s.GroupId, groupId).Add(s => s.EventId, eventId));
+        var cut = _ctx.Render<Share>(p => p.Add(s => s.GroupId, groupId).Add(s => s.EventId, eventId));
 
         cut.WaitForAssertion(() => Assert.Contains("HandedOut", cut.Markup));
     }
@@ -132,7 +132,7 @@ public sealed class SharePageTests : IDisposable
     }
 
     /// <inheritdoc />
-    public void Dispose() => _ctx.Dispose();
+    public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 
     /// <summary>Records share requests and reports a configurable "can share" so the gate can be exercised.</summary>
     private sealed class FakeShareService : IShareService

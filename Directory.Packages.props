@@ -19,122 +19,126 @@
 
   <!-- Testing (used by *.Test projects). xUnit v2 per the generated templates. -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.4" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
+    <PackageVersion Include="coverlet.collector" Version="10.1.0" />
   </ItemGroup>
 
   <!-- Blazor component tests (bUnit) — used by *.Ui.Test projects. -->
   <ItemGroup>
-    <PackageVersion Include="bunit" Version="1.40.0" />
+    <PackageVersion Include="bunit" Version="2.12.5" />
   </ItemGroup>
 
   <!-- Architecture tests (enforce dependency direction) — xUnit v2 variant. -->
   <ItemGroup>
-    <PackageVersion Include="TngTech.ArchUnitNET.xUnit" Version="0.13.3" />
+    <PackageVersion Include="TngTech.ArchUnitNET.xUnit" Version="0.13.4" />
   </ItemGroup>
 
   <!-- Integration tests against a real Postgres (TP-002). Requires a container runtime. -->
   <ItemGroup>
-    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.6.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="4.16.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.13" />
   </ItemGroup>
 
   <!-- Browser-driving end-to-end tests (WebAuthn ceremony via a CDP virtual authenticator,
        arc42 D4; ADR-0045). Drives real Chromium against the live Aspire stack. -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Playwright" Version="1.55.0" />
+    <PackageVersion Include="Microsoft.Playwright" Version="1.63.0" />
   </ItemGroup>
 
   <!-- Application layer building blocks (hand-rolled CQRS, ADR-0006). -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.13" />
   </ItemGroup>
 
   <!-- Concrete DI + logging (used by tests to build a real service provider). -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.13" />
   </ItemGroup>
 
   <!-- Identity — ASP.NET Core Identity model & stores. ADR-0009, ADR-0021, FEAT-002. -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.Identity.Stores" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Identity.Stores" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.13" />
     <!-- Access-token issuance (ADR-0021). The API host adds JwtBearer for validation. -->
-    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.19.2" />
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.23.0" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
   </ItemGroup>
 
   <!-- Outbound mail — SMTP adapter behind IMailSender. ADR-0023. -->
   <ItemGroup>
-    <PackageVersion Include="MailKit" Version="4.17.0" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.10" />
+    <PackageVersion Include="MailKit" Version="4.18.1" />
+    <!-- Transitive via MailKit → MimeKit, which floors it at 10.0.0 (GHSA-846f-f764-76mx high,
+         GHSA-2fmv-rv2c-59x7 moderate). Pinned here (transitive pinning is on) to the patched servicing
+         release; drop once MimeKit's own floor is past the advisories. -->
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.13" />
     <!-- Binds an options class to a configuration section (services.Configure<T>(section)).
          Reaches the Main host transitively via Identity/EF; the Circles repository references
          neither, so it takes the dependency directly. -->
-    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.13" />
   </ItemGroup>
 
   <!-- Persistence — EF Core for Postgres (server). ADR-0007, ADR-0008. -->
   <ItemGroup>
-    <!-- Kept on the same 10.0.10 servicing band as ASP.NET Core Identity, which references
-         EF Core 10.0.10 — a lower pin here fails the build with CS1705. -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10" />
-    <!-- Npgsql 10.0.0 depends on EF Core Relational 10.0.0 while EF Core itself is on 10.0.10.
+    <!-- Kept on the same 10.0.13 servicing band as ASP.NET Core Identity, which references
+         EF Core 10.0.13 — a lower pin here fails the build with CS1705. -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13" />
+    <!-- Npgsql 10.0.x depends on an older EF Core Relational 10.0.x than the EF Core pinned here.
          Pinned (transitive pinning is on) so the two agree; without it, a project that references
-         only Npgsql and EF Core binds Relational 10.0.0 as primary and MSB3277 fires. -->
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
-    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+         only Npgsql and EF Core binds the older Relational as primary and MSB3277 fires. -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
   </ItemGroup>
 
   <!-- API — Minimal APIs, URL-segment versioning, OpenAPI. ADR-0010. -->
   <ItemGroup>
-    <PackageVersion Include="Asp.Versioning.Http" Version="10.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
+    <PackageVersion Include="Asp.Versioning.Http" Version="10.2.3" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.13" />
   </ItemGroup>
 
   <!-- Blazor WebAssembly client + Razor Class Library. ADR-0005. -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.13" />
     <!-- AuthorizeView / CascadingAuthenticationState against a custom AuthenticationStateProvider.
          The token model is bearer-in-WASM (ADR-0021), so none of the hosted-Blazor auth packages
          apply — only the component-level authorization primitives are needed. -->
-    <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.13" />
   </ItemGroup>
 
   <!-- Localization — RESX + IStringLocalizer, ADR-0011 (in-framework abstractions). -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Localization" Version="10.0.13" />
   </ItemGroup>
 
   <!-- UI component library — Material Design for Blazor (ADR-0040, supersedes ADR-0024's Bootstrap).
        Rendered by Ui.Shared, so it reaches both WASM web hosts and the MAUI Blazor Hybrid head. -->
   <ItemGroup>
-    <PackageVersion Include="MudBlazor" Version="9.8.0" />
+    <PackageVersion Include="MudBlazor" Version="9.11.0" />
   </ItemGroup>
 
   <!-- QR codes for reveal links (MNF-5). PngByteQRCode is pure managed (no System.Drawing), so it runs
        identically in the WASM web head and the MAUI Blazor Hybrid webview with no platform seam. Scoped
        to SecretSanta.Ui — the only app that shares reveal links today. -->
   <ItemGroup>
-    <PackageVersion Include="QRCoder" Version="1.8.0" />
+    <PackageVersion Include="QRCoder" Version="1.8.1" />
   </ItemGroup>
 
   <!-- Secret-Santa (local-first): JS interop for browser localStorage; MAUI Blazor Hybrid head. -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.JSInterop" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Maui.Controls" Version="10.0.20" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.20" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.JSInterop" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.Maui.Controls" Version="10.0.110" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="10.0.110" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.13" />
     <!-- Device-local notifications (MNF-8, ADR-0060). Android/iOS only; the Windows head no-ops. -->
-    <PackageVersion Include="Plugin.LocalNotification" Version="12.0.0" />
+    <PackageVersion Include="Plugin.LocalNotification" Version="14.1.2" />
     <!-- Native passkeys on the mobile heads (ADR-0066). Android Credential Manager binding, aligned with
          the MAUI-managed AndroidX graph. The PlayServicesAuth companion (the Google provider for API
          28–33) is deliberately NOT referenced: its 1.5.x line pins an older AndroidX graph that collides
@@ -147,28 +151,28 @@
 
   <!-- Aspire orchestration (AppHost). -->
   <ItemGroup>
-    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.4.6" />
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="13.6.2" />
   </ItemGroup>
 
   <!-- Automatic versioning from git history (ADR-0047). Referenced repo-wide by
        Directory.Build.props (except container builds), so every assembly is stamped from version.json
        + git height. PrivateAssets=all at the reference site: build-time only, never a runtime dep. -->
   <ItemGroup>
-    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.7.115" />
+    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.10.94" />
   </ItemGroup>
 
   <!-- ServiceDefaults — resilience, service discovery, OpenTelemetry. ADR-0012. -->
   <ItemGroup>
-    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.6.0" />
-    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.6.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.11.0" />
+    <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="10.11.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
     <!-- Prometheus scraping endpoint for production metrics (ADR-0051). Ships as beta; its dependency
-         floor is below the 1.15.x SDK pinned here, so it composes with the exporters above. -->
-    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.18.0-beta.1" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
+         floor is at or below the 1.20.x SDK pinned here, so it composes with the exporters above. -->
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.20.1-beta.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.20.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.20.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.20.0" />
   </ItemGroup>
 
   <!--

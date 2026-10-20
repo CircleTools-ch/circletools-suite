@@ -195,7 +195,7 @@ stays on the box. Scope today is **logs + metrics** (no traces/alerting yet — 
 | **Loki** (`grafana/loki`) | Stores the API's logs, ingested via **OTLP** (`api` → `http://loki:3100/otlp`), 30-day retention | Grafana only (internal) |
 | **Grafana** (`grafana/grafana`) | The admin view; datasources **and** the overview dashboard auto-provisioned | `https://grafana.circletools.ch`, Grafana admin login |
 | **node_exporter** (`prom/node-exporter`) | Host metrics — CPU / RAM / disk / filesystem / network / load | Prometheus only (internal) |
-| **cAdvisor** (`gcr.io/cadvisor/cadvisor`) | Per-container CPU / memory (API vs Postgres vs the stack itself) | Prometheus only (internal) |
+| **cAdvisor** (`ghcr.io/google/cadvisor`) | Per-container CPU / memory (API vs Postgres vs the stack itself) | Prometheus only (internal) |
 
 **Dashboard.** Grafana provisions **"CircleTools — Service & Host"**
 ([`circletools-overview.json`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy/grafana/provisioning/dashboards))

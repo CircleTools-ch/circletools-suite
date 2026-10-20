@@ -32,5 +32,9 @@ Across both tracks, the **[launch-readiness assessment](launch-readiness.md)** (
 point-in-time verdict on whether the suite can go live — what is production-grade already and the
 operational, legal and pre-data items that still gate a first deploy.
 
+The **[production-release plan](production-release-plan.md)** (2026-10-20) takes it from there to a
+public 1.0 in both app stores: the Play closed-test clock, the Apple setup, dependency updates, the full
+review and the store listings — as parallel tracks, in order.
+
 Both tracks are gated for *execution* on the [brand & domain](../process/naming.md); the current
 day-to-day focus is local development via .NET Aspire, see [arc42 ch. 7](../arc42/07-deployment-view.md).

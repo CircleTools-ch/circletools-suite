@@ -21,8 +21,7 @@ public sealed class RateLimitedApiFactory : WebApplicationFactory<Program>
     /// <summary>Requests permitted per window in these tests.</summary>
     public const int PermitLimit = 3;
 
-    private readonly PostgreSqlContainer _database = new PostgreSqlBuilder()
-        .WithImage("postgres:17-alpine")
+    private readonly PostgreSqlContainer _database = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("maindb_ratelimit_tests")
         .Build();
 

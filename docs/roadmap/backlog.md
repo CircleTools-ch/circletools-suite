@@ -3,6 +3,38 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Production release 1.0 — Secret-Santa (2026-10-20)
+
+Adrian's pre-release list (update everything, full review, both store listings, Play tester gate) plus the
+items missing from it, sequenced in the **[production-release plan](../deployment/production-release-plan.md)**.
+
+- **PR-1 · Start the Play closed test now (P1, owner).** 12 testers × 14 days + up to 7 days review puts
+  production access at mid-to-late November at best. Recruit ~15 family/friends; no paid tester services.
+- **PR-2 · Apple App Store record, DSA trader status, privacy labels, review demo account (P1, owner).**
+- **PR-3 · Dependency & toolchain updates (P1).** 44 package updates found 2026-10-20; risky ones are MAUI
+  10.0.20 → 10.0.110, MudBlazor 9.8 → 9.11, Plugin.LocalNotification 12 → 14. Table in the plan.
+- **PR-4 · Full project review (P1)** — incl. open R1/R5 from the
+  [2026-10-20 device test](../brainstorming/2026-10-20-secret-santa-release-device-test.md).
+- **PR-5 · Email capacity for December (P1).** Brevo free tier is 300 emails/day (ADR-0037).
+- **PR-6 · Store listings & screenshots for both stores, DE/EN/FR (P2, after the UI is stable).**
+- **PR-7 · Support page/FAQ, alerting to the owner, rollback runbook, FR native read, legal review (P2).**
+
+Found during the PR-3 dependency update (2026-10-20) — browser pass at 412×915 on MudBlazor 9.11, console
+clean; none caused by the update unless stated:
+
+- **PR-8 · Date-picker calendar clipped on phones (P2).** In the *Add event* dialog and on *Details*, the
+  open calendar is cut off after the third week row (`.mud-picker-calendar-transition` 216 px tall, content
+  432 px) — the 24th can't be tapped. Identical on MudBlazor 9.8.0, so pre-existing. Typing the date works.
+- **PR-9 · MudBlazor's own validation text is not localized (P3).** A date typed in the wrong format shows
+  "Not a valid date time" in English in every UI language. Also: the accepted format follows the
+  formatting region (ADR-0056), so `24.12.2026` is rejected on an en-GB browser — consider accepting
+  `.`/`-` separators too.
+- **PR-10 · Update banner stacks on a language switch (P3).** With "A new version is available" showing,
+  switching language adds a second banner in the new language instead of replacing the first.
+- **PR-11 · Three SecretSanta.Ui tests failed once under full-suite parallel load (P3).** Passed in four
+  other runs (alone and in the full suite); names not captured. Likely the timing-based autosave tests
+  (`PastThePause`); watch CI and capture names on the next failure.
+
 ## Browser test pass before the Pixel test — Secret-Santa + Main (2026-10-17)
 
 Every feature driven in a browser at phone width (412×915) against the local Aspire stack on the working

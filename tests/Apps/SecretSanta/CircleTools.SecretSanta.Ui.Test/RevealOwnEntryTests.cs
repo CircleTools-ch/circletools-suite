@@ -17,11 +17,11 @@ namespace CircleTools.SecretSanta.Ui.Test;
 /// shown only when the server offers the entry for the link's reveal token, autosaved, honest when a save
 /// fails; every other link keeps the "tell the organizer" hint.
 /// </summary>
-public sealed class RevealOwnEntryTests : IDisposable
+public sealed class RevealOwnEntryTests : IAsyncDisposable
 {
     private const string Token = "rt-dario";
 
-    private readonly Bunit.TestContext _ctx = new();
+    private readonly Bunit.BunitContext _ctx = new();
     private readonly NoOpSharedGroupApi _api = new();
 
     public RevealOwnEntryTests()
@@ -107,7 +107,7 @@ public sealed class RevealOwnEntryTests : IDisposable
     public void LeavingAChangedField_OffersUndo_WhichSavesTheEarlierWishlistAndNote()
     {
         _api.SeedRevealEntry(Token, new RevealEntryView("no nuts", ["Lego"]));
-        var snackbars = _ctx.RenderComponent<MudBlazor.MudSnackbarProvider>();
+        var snackbars = _ctx.Render<MudBlazor.MudSnackbarProvider>();
         var cut = OpenAndReveal(live: true);
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("#reveal-own-wishlist")));
 
@@ -159,7 +159,7 @@ public sealed class RevealOwnEntryTests : IDisposable
         var fragment = url[url.IndexOf('#')..] + (live ? $"&rt={Token}" : string.Empty);
         _ctx.Services.GetRequiredService<NavigationManager>().NavigateTo("r" + fragment);
 
-        return _ctx.RenderComponent<Reveal>();
+        return _ctx.Render<Reveal>();
     }
 
     // Input/blur inside the renderer's dispatcher: each keystroke re-renders, so an element found outside it
@@ -184,5 +184,5 @@ public sealed class RevealOwnEntryTests : IDisposable
         cut.Find($"#{id}");
 
     /// <inheritdoc />
-    public void Dispose() => _ctx.Dispose();
+    public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 }

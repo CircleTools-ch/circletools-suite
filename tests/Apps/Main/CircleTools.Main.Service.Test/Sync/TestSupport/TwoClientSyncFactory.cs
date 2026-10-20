@@ -28,8 +28,7 @@ namespace CircleTools.Main.Service.Test.Sync.TestSupport;
 /// </remarks>
 public sealed class TwoClientSyncFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _database = new PostgreSqlBuilder()
-        .WithImage("postgres:17-alpine")
+    private readonly PostgreSqlContainer _database = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("maindb_sync_tests")
         .Build();
 

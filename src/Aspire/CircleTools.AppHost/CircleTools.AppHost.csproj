@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+<Project Sdk="Aspire.AppHost.Sdk/13.6.2">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,6 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UserSecretsId>dce9e719-99ba-4322-9816-3676d788349d</UserSecretsId>
+    <!-- Aspire 13.6 warns (ASPIRE010) when the AppHost does not use the Aspire CLI bundle. We start the
+         AppHost with plain `dotnet run` (CLAUDE.md, CI E2E) and need no Aspire CLI install, so the
+         package-provided orchestration stays in use and the notice is silenced. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);ASPIRE010</MSBuildWarningsAsMessages>
   </PropertyGroup>
 
   <ItemGroup>

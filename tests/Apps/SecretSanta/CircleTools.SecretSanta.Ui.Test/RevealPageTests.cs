@@ -15,13 +15,13 @@ namespace CircleTools.SecretSanta.Ui.Test;
 /// Component tests for the reveal page (FEAT-001 / ADR-0014): it decodes the fragment client-side
 /// and keeps the giftee behind a spoiler gate until the reveal button is pressed.
 /// </summary>
-public sealed class RevealPageTests : IDisposable
+public sealed class RevealPageTests : IAsyncDisposable
 {
     private const string RecipientName = "Recipient-Zoe";
 
     // Where a short link keeps the slice it fetched (ADR-0082).
     private readonly TestSupport.FakeKeyValueStore _store = new();
-    private readonly Bunit.TestContext _ctx = new();
+    private readonly Bunit.BunitContext _ctx = new();
     private readonly FakeHapticFeedback _haptics = new();
     private readonly NoOpSharedGroupApi _revealApi = new();
 
@@ -63,7 +63,7 @@ public sealed class RevealPageTests : IDisposable
             RevealPayload.CurrentVersion, RecipientName, ["Book"], 25m, "CHF", null, null, null);
         NavigateToRevealLink(BuildFragment(payload));
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
 
         // Before revealing, the giftee must not be present anywhere in the rendered markup.
         Assert.DoesNotContain(RecipientName, cut.Markup);
@@ -84,7 +84,7 @@ public sealed class RevealPageTests : IDisposable
         _revealApi.SeedRevealSlice("rt-token", System.Text.Json.JsonSerializer.Serialize(live, RevealJsonContext.Default.RevealPayload));
         NavigateToRevealLink(BuildFragment(snapshot) + "&rt=rt-token");
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
         // The freshness indicator says the details are current (PassThrough localizer echoes the key).
         Assert.Contains("RevealLiveHint", cut.Markup);
 
@@ -103,7 +103,7 @@ public sealed class RevealPageTests : IDisposable
             RevealPayload.CurrentVersion, RecipientName, ["Drone https://www.shop.example/drone", "Socks"], 50m, "CHF", null, null, null);
         NavigateToRevealLink(BuildFragment(payload));
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
         cut.Find("button").Click();
 
         var link = cut.Find("a.ct-wishlist-link");
@@ -122,12 +122,12 @@ public sealed class RevealPageTests : IDisposable
         _revealApi.SeedRevealSlice("short-token", System.Text.Json.JsonSerializer.Serialize(live, RevealJsonContext.Default.RevealPayload));
         NavigateToRevealLink("#for=Anna&rt=short-token");
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
         cut.Find("button").Click();
         Assert.Contains("Live-Max", cut.Markup);
 
         _revealApi.RevealSlicesUnreachable = true;
-        var again = _ctx.RenderComponent<Reveal>();
+        var again = _ctx.Render<Reveal>();
         again.Find("button").Click();
         Assert.Contains("Live-Max", again.Markup);
     }
@@ -137,7 +137,7 @@ public sealed class RevealPageTests : IDisposable
     {
         NavigateToRevealLink("#for=Anna&rt=expired-token");
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
 
         Assert.Contains("RevealLinkGone", cut.Markup);
         Assert.DoesNotContain("RevealNeedsConnection", cut.Markup);
@@ -149,7 +149,7 @@ public sealed class RevealPageTests : IDisposable
         _revealApi.RevealSlicesUnreachable = true;
         NavigateToRevealLink("#for=Anna&rt=never-fetched");
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
 
         Assert.Contains("RevealNeedsConnection", cut.Markup);
         Assert.DoesNotContain("RevealMalformed", cut.Markup);
@@ -164,7 +164,7 @@ public sealed class RevealPageTests : IDisposable
         var snapshot = new RevealPayload(RevealPayload.CurrentVersion, "Snapshot-Zoe", ["Old scarf"], null, null, null, null, null);
         NavigateToRevealLink(BuildFragment(snapshot) + "&rt=rt-token");
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
         Assert.Contains("RevealSnapshotHint", cut.Markup);
 
         cut.Find("button").Click();
@@ -180,7 +180,7 @@ public sealed class RevealPageTests : IDisposable
             GroupName: "Familie Muster", EventName: "Weihnachten 2026");
         NavigateToRevealLink(BuildFragment(payload));
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
 
         Assert.Equal("Familie Muster · Weihnachten 2026", cut.Find("#reveal-context").TextContent.Trim());
         Assert.DoesNotContain(RecipientName, cut.Markup); // the context line never spoils the giftee
@@ -192,7 +192,7 @@ public sealed class RevealPageTests : IDisposable
         var payload = new RevealPayload(RevealPayload.CurrentVersion, RecipientName, [], null, null, null, null, null);
         NavigateToRevealLink(BuildFragment(payload));
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
 
         Assert.Empty(cut.FindAll("#reveal-context"));
     }
@@ -204,7 +204,7 @@ public sealed class RevealPageTests : IDisposable
         var payload = new RevealPayload(RevealPayload.CurrentVersion, RecipientName, ["Book"], null, null, null, null, null);
         NavigateToRevealLink(BuildFragment(payload));
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
 
         Assert.DoesNotContain("RevealLiveHint", cut.Markup);
         Assert.DoesNotContain("RevealSnapshotHint", cut.Markup);
@@ -217,7 +217,7 @@ public sealed class RevealPageTests : IDisposable
             RevealPayload.CurrentVersion, RecipientName, ["Book"], 25m, "CHF", null, null, null);
         NavigateToRevealLink(BuildFragment(payload));
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
         Assert.Equal(0, _haptics.Taps); // no buzz merely on render
 
         cut.Find("button").Click();
@@ -234,7 +234,7 @@ public sealed class RevealPageTests : IDisposable
             RevealPayload.CurrentVersion, RecipientName, ["Book"], 30m, "CHF", null, null, null, BudgetMin: 10m);
         NavigateToRevealLink(BuildFragment(payload));
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
 
         // The budget is shown before the reveal (it is not spoiler-sensitive).
         Assert.Contains(BudgetDisplay.Format(10m, 30m, "CHF"), cut.Markup); // the one budget format (Q28)
@@ -247,7 +247,7 @@ public sealed class RevealPageTests : IDisposable
             RevealPayload.CurrentVersion, RecipientName, ["Book"], 30m, "CHF", null, null, null);
         NavigateToRevealLink(BuildFragment(payload));
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
 
         Assert.Contains(BudgetDisplay.Format(null, 30m, "CHF"), cut.Markup); // "up to CHF 30"
         Assert.DoesNotContain("–", cut.Markup); // no range dash for a max-only budget
@@ -263,7 +263,7 @@ public sealed class RevealPageTests : IDisposable
             RevealPayload.CurrentVersion, RecipientName, ["Book"], 30m, "CHF", null, null, null, GiftNote: note);
         NavigateToRevealLink(BuildFragment(payload));
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
         Assert.DoesNotContain(note, cut.Markup); // hidden before reveal
 
         cut.Find("button").Click();
@@ -276,12 +276,12 @@ public sealed class RevealPageTests : IDisposable
     {
         NavigateToRevealLink("#for=nobody"); // missing the required payload token
 
-        var cut = _ctx.RenderComponent<Reveal>();
+        var cut = _ctx.Render<Reveal>();
 
         Assert.Contains("RevealMalformed", cut.Markup);
         Assert.Empty(cut.FindAll("button"));
     }
 
     /// <inheritdoc />
-    public void Dispose() => _ctx.Dispose();
+    public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 }

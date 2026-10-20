@@ -18,11 +18,11 @@ namespace CircleTools.SecretSanta.Ui.Test;
 /// member's wishlist and moving to the next field within the typing pause showed "Saved ✓" but stored
 /// nothing, and the page kept showing (and would save over) text a background sync had replaced.
 /// </summary>
-public sealed class EventWishlistsPageTests : IDisposable
+public sealed class EventWishlistsPageTests : IAsyncDisposable
 {
     private static readonly TimeSpan PastThePause = TimeSpan.FromSeconds(3);
 
-    private readonly Bunit.TestContext _ctx = new();
+    private readonly Bunit.BunitContext _ctx = new();
     private readonly WishlistSender _sender = new();
     private readonly FakeSyncSignals _signals = new();
 
@@ -86,12 +86,12 @@ public sealed class EventWishlistsPageTests : IDisposable
     }
 
     [Fact]
-    public void LeavingThePageWithinThePause_StillSavesTheEdit()
+    public async Task LeavingThePageWithinThePause_StillSavesTheEdit()
     {
         var cut = Render();
 
         Type(cut, 0, "Book");
-        _ctx.DisposeComponents();
+        await _ctx.DisposeComponentsAsync();
 
         Assert.Equal(["Book"], _sender.Stored(WishlistSender.Anna));
     }
@@ -124,7 +124,7 @@ public sealed class EventWishlistsPageTests : IDisposable
     public void LeavingAChangedField_OffersUndo_WhichRestoresAndSavesTheEarlierText()
     {
         _sender.SetFromElsewhere(WishlistSender.Anna, ["Scarf"]);
-        var snackbars = _ctx.RenderComponent<MudBlazor.MudSnackbarProvider>();
+        var snackbars = _ctx.Render<MudBlazor.MudSnackbarProvider>();
         var cut = Render();
 
         Type(cut, 0, "Scarf\nBook");
@@ -141,7 +141,7 @@ public sealed class EventWishlistsPageTests : IDisposable
     [Fact]
     public void LeavingAFieldWithoutChangingIt_OffersNoUndo()
     {
-        var snackbars = _ctx.RenderComponent<MudBlazor.MudSnackbarProvider>();
+        var snackbars = _ctx.Render<MudBlazor.MudSnackbarProvider>();
         var cut = Render();
 
         Blur(cut, 0);
@@ -151,7 +151,7 @@ public sealed class EventWishlistsPageTests : IDisposable
 
     private IRenderedComponent<EventWishlists> Render()
     {
-        var cut = _ctx.RenderComponent<EventWishlists>(p => p
+        var cut = _ctx.Render<EventWishlists>(p => p
             .Add(c => c.GroupId, WishlistSender.GroupId)
             .Add(c => c.EventId, WishlistSender.EventId));
         cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("textarea").Count));
@@ -180,7 +180,7 @@ public sealed class EventWishlistsPageTests : IDisposable
         cut.FindAll(".mud-card")[index].QuerySelector("[role=status]")?.TextContent.Trim();
 
     /// <inheritdoc />
-    public void Dispose() => _ctx.Dispose();
+    public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 }
 
 /// <summary>An organizer's two-member group with one event, whose wishlists the page reads and writes.</summary>
