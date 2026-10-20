@@ -111,8 +111,11 @@ Everything in the table above is bumped, plus what the bump surfaced:
   Secret-Santa 9/9) against the Aspire 13.6 stack, NBGV still stamps `0.1.<height>+<sha>`. Browser pass
   (create → members → event → draw → share/QR → reveal, EN/DE/FR, console clean) on MudBlazor 9.11 —
   findings PR-8…PR-11 in the [backlog](../roadmap/backlog.md), none introduced by the update.
-- **Still open:** `global.json` SDK pin (latest 10.0.402; local machines need it installed first), local
-  MAUI workload update (`dotnet workload update`), the Android device pass (incl. reminders on
+- **SDK:** `global.json` pinned to **10.0.402** (rollForward `latestFeature`); the Docker build image
+  `mcr.microsoft.com/dotnet/sdk:10.0` already ships 10.0.402. Full solution build and all non-E2E test
+  projects re-run green on it. Workloads are Visual Studio-managed (android 36.1.118, ios/maccatalyst
+  26.5, maui-windows 10.0.110) — update them through the VS installer, not `dotnet workload update`.
+- **Still open:** the Android device pass (incl. reminders on
   LocalNotification 14), the first iOS build on the new MAUI band, and a production deploy of the new
   observability images (check Grafana dashboards after the 11 → 13 migration).
 
