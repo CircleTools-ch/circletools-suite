@@ -35,6 +35,10 @@ public static class UndoLastEdit
             options.Action = localizer["Undo"];
             options.ActionColor = Color.Primary;
             options.VisibleStateDuration = VisibleMilliseconds;
+
+            // MudBlazor keeps a snackbar with an action open until it is closed by hand unless this is set, so the
+            // offer sat over the app bar for minutes (R13, 2026-10-20 device test).
+            options.RequireInteraction = false;
             options.CloseAfterNavigation = false;
             options.OnClick = async _ => await undo();
         }, SnackbarKey);

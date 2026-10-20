@@ -121,6 +121,13 @@ follow-ups (QR code, add-to-calendar, share-all — see
 - **New risks:** a wrong fingerprint in `assetlinks.json` silently falls back to the browser/chooser
   (annoyance, not data risk). Mitigate by verifying with Google's Statement List tester after signing.
 
+### Amendment (2026-10-20) — join links open the app too
+
+From the [2026-10-20 release device test](../brainstorming/2026-10-20-secret-santa-release-device-test.md) (R10): the app claimed `/r`, `/groups` and the account e-mail
+paths but not `/join`, so a join link opened in the browser and a participant with the app installed joined
+there instead of in the app. The Android intent filters and the iOS `apple-app-site-association` now include
+`/join` as well. The link is forwarded like the others; the join token stays in the fragment.
+
 ## Pros and cons of the options
 
 ### 1. Web-only

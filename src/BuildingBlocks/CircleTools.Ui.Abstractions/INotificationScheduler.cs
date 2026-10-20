@@ -30,7 +30,9 @@ public enum NotificationAccess
 }
 
 /// <summary>One local notification to deliver at a future time.</summary>
-/// <param name="Id">A per-reconcile id, unique within the scheduled set.</param>
+/// <param name="Id">
+/// A stable id for the reminder it stands for, so a reconcile can tell an unchanged reminder from a new one.
+/// </param>
 /// <param name="Title">The notification title (localized; never contains an assignment — NFR-002).</param>
 /// <param name="Body">The notification body (localized; never contains an assignment).</param>
 /// <param name="DeliverAt">When to deliver it (local time). Past times are never scheduled.</param>
@@ -74,8 +76,18 @@ public interface INotificationScheduler
     /// <returns>A task that completes once it is scheduled.</returns>
     ValueTask ScheduleAsync(ScheduledNotification notification, CancellationToken cancellationToken = default);
 
-    /// <summary>Cancels every pending notification this app scheduled (the reconcile clears then reschedules).</summary>
+    /// <summary>Lists the notifications this app scheduled that the OS still holds for delivery.</summary>
     /// <param name="cancellationToken">Cancels the operation.</param>
-    /// <returns>A task that completes once all pending notifications are cancelled.</returns>
-    ValueTask CancelAllAsync(CancellationToken cancellationToken = default);
+    /// <returns>The scheduled notifications, as far as the platform reports them.</returns>
+    ValueTask<IReadOnlyList<ScheduledNotification>> GetPendingAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Cancels scheduled notifications by id. Only ever called for notifications still due in the future: on
+    /// Android cancelling an id also removes it from the shade, so a reminder already shown must never be
+    /// passed here (R12, 2026-10-20 device test).
+    /// </summary>
+    /// <param name="ids">The ids to cancel.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>A task that completes once they are cancelled.</returns>
+    ValueTask CancelAsync(IReadOnlyCollection<int> ids, CancellationToken cancellationToken = default);
 }

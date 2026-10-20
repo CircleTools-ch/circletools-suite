@@ -9,9 +9,10 @@ namespace CircleTools.SecretSanta.Ui;
 
 /// <summary>
 /// Turns the local occasions and the user's chosen reminder kinds into scheduled device notifications
-/// (MNF-8, FR-046, ADR-0060). It reconciles the whole schedule — cancel all, then reschedule — on app
-/// start and after any local change, so a date change, a completed draw, a filled wishlist or a deleted
-/// event never leaves a stale reminder. A no-op on the web (the scheduler reports unsupported there).
+/// (MNF-8, FR-046, ADR-0060). It reconciles the schedule on app start and after any local change, so a date
+/// change, a completed draw, a filled wishlist or a deleted event never leaves a stale reminder — cancelling
+/// only future reminders that changed, never one already shown (R12). A no-op on the web (the scheduler
+/// reports unsupported there).
 /// </summary>
 /// <remarks>
 /// A notification body is built from the event name and status only; it never contains an assignment —
@@ -24,6 +25,10 @@ namespace CircleTools.SecretSanta.Ui;
 /// <param name="localizer">Localized notification titles and bodies.</param>
 /// <param name="time">The clock, for "now" when deciding which reminders are still in the future.</param>
 /// <param name="autoSync">The sync service, whose LocalChanged event drives a reschedule after any edit.</param>
+/// <param name="foreground">
+/// Whether the app is visible: coming back (e.g. from the system settings) applies reminders the user asked for
+/// while notifications were blocked (R15).
+/// </param>
 public sealed class ReminderScheduler(
     ISender sender,
     AuthenticationStateProvider auth,
@@ -31,7 +36,8 @@ public sealed class ReminderScheduler(
     NotificationPreferences preferences,
     IStringLocalizer<AppStrings> localizer,
     TimeProvider time,
-    AutoSyncService autoSync) : IReminderRescheduler, IDisposable
+    AutoSyncService autoSync,
+    IAppForeground foreground) : IReminderRescheduler, IDisposable
 {
     private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(750);
 
@@ -53,7 +59,51 @@ public sealed class ReminderScheduler(
         _initialized = true;
         autoSync.LocalChanged += RequestReconcile;
         autoSync.SyncCompleted += RequestReconcile; // a pulled change (co-organizer's edit) reschedules too
+        foreground.Changed += OnForegroundChanged;
+        await ApplyWantedIfAllowedAsync();
         await ReconcileAsync();
+    }
+
+    /// <summary>
+    /// Switches on the reminder kinds the user asked for while notifications were blocked, once they are allowed
+    /// (R15, 2026-10-20 device test) — e.g. "Remind me" after a draw, then allowing notifications in the system
+    /// settings. A no-op while they are still blocked or nothing is waiting.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns><see langword="true"/> when at least one kind was switched on.</returns>
+    public async Task<bool> ApplyWantedIfAllowedAsync(CancellationToken cancellationToken = default)
+    {
+        if (!await scheduler.IsSupportedAsync(cancellationToken)
+            || (await preferences.GetWantedAsync(cancellationToken)).Count == 0
+            || await scheduler.GetPermissionAsync(cancellationToken) != NotificationAccess.Granted)
+        {
+            return false;
+        }
+
+        return (await preferences.ApplyWantedAsync(cancellationToken)).Count > 0;
+    }
+
+    private void OnForegroundChanged(bool isForeground)
+    {
+        if (isForeground)
+        {
+            _ = ApplyOnResumeAsync();
+        }
+    }
+
+    private async Task ApplyOnResumeAsync()
+    {
+        try
+        {
+            if (await ApplyWantedIfAllowedAsync())
+            {
+                RequestReconcile();
+            }
+        }
+        catch
+        {
+            // Reminders are a convenience; the next resume tries again (NFR-001).
+        }
     }
 
     /// <summary>Requests a reconcile soon, coalescing a burst of changes into one pass.</summary>
@@ -95,24 +145,27 @@ public sealed class ReminderScheduler(
         }
 
         var enabled = await preferences.GetEnabledAsync(cancellationToken);
-        await scheduler.CancelAllAsync(cancellationToken);
-        if (enabled.Count == 0)
+        var now = time.GetUtcNow();
+        IReadOnlyList<ScheduledNotification> wanted = [];
+        if (enabled.Count > 0)
         {
-            return;
+            var inputs = await BuildInputsAsync(enabled, cancellationToken);
+            var settings = await preferences.GetSettingsAsync(cancellationToken);
+
+            // The device's time-zone rules for each target date, so a winter reminder planned in summer keeps its
+            // local time (Q9).
+            var planned = ReminderPlanner.Plan(inputs, enabled, now, settings, time.LocalTimeZone);
+            wanted = [.. planned.Select(r => new ScheduledNotification(
+                ReminderScheduleDiff.IdFor(r), Title(r), Body(r), r.When))];
         }
 
-        var inputs = await BuildInputsAsync(enabled, cancellationToken);
-        var settings = await preferences.GetSettingsAsync(cancellationToken);
-
-        // The device's time-zone rules for each target date, so a winter reminder planned in summer keeps its
-        // local time (Q9).
-        var planned = ReminderPlanner.Plan(inputs, enabled, time.GetUtcNow(), settings, time.LocalTimeZone);
-
-        var id = 1;
-        foreach (var reminder in planned)
+        // Only future reminders that changed or went away are cancelled; one already on screen stays (R12).
+        var pending = await scheduler.GetPendingAsync(cancellationToken);
+        var changes = ReminderScheduleDiff.Compute(pending, wanted, now);
+        await scheduler.CancelAsync(changes.Cancel, cancellationToken);
+        foreach (var notification in changes.Schedule)
         {
-            await scheduler.ScheduleAsync(
-                new ScheduledNotification(id++, Title(reminder), Body(reminder), reminder.When), cancellationToken);
+            await scheduler.ScheduleAsync(notification, cancellationToken);
         }
     }
 
@@ -186,6 +239,7 @@ public sealed class ReminderScheduler(
     {
         autoSync.LocalChanged -= RequestReconcile;
         autoSync.SyncCompleted -= RequestReconcile;
+        foreground.Changed -= OnForegroundChanged;
         _debounce?.Cancel();
         _debounce?.Dispose();
     }

@@ -366,42 +366,57 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
             .Select(a => (long?)a.DrawVersion)
             .MaxAsync(cancellationToken).ConfigureAwait(false);
 
-        if (highestExisting is { } existing && existing >= drawVersion)
+        if (highestExisting is { } existing && existing > drawVersion)
         {
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
             return;
         }
 
-        // A re-run replaces this event's prior rows atomically (other events are untouched). The caller was
-        // authorized as the group's organizer (ADR-0080), so rows another account left behind go too — they
-        // would otherwise collide on the giver key.
+        var rows = assignments.Select(row => new AssignmentRow
+        {
+            GroupId = groupId,
+            EventId = eventId,
+            EventName = eventName,
+            GiverAccountId = row.GiverAccountId,
+            OrganizerAccountId = organizerAccountId,
+            GroupName = groupName,
+            RecipientMemberId = row.RecipientMemberId,
+            RecipientName = row.RecipientName,
+            RecipientWishlistSnapshot = Serialize(row.RecipientWishlistSnapshot),
+            RecipientGiftNote = row.RecipientGiftNote,
+            BudgetAmount = budget?.Amount,
+            BudgetCurrency = budget?.Currency,
+            BudgetMinAmount = budget?.MinAmount,
+            EventDate = eventDetails?.Date,
+            EventLocation = eventDetails?.Location,
+            EventDescription = eventDetails?.Description,
+            DrawVersion = drawVersion,
+        }).ToList();
+
+        // The organizer's client re-publishes the current draw every sync cycle. The same draw with the same
+        // content is a no-op; the same draw with changed content (a wishlist, gift note, budget, date or place
+        // edited after the draw, or a rename) replaces the rows, so a linked giver never reads the draw-time
+        // copy (R1, 2026-10-20 device test).
+        if (highestExisting == drawVersion)
+        {
+            var current = await context.Assignments.AsNoTracking()
+                .Where(a => a.GroupId == groupId && a.EventId == eventId)
+                .ToListAsync(cancellationToken).ConfigureAwait(false);
+            if (SameRows(current, rows))
+            {
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+                return;
+            }
+        }
+
+        // A re-run or a changed re-publish replaces this event's prior rows atomically (other events are
+        // untouched). The caller was authorized as the group's organizer (ADR-0080), so rows another account
+        // left behind go too — they would otherwise collide on the giver key.
         await context.Assignments
             .Where(a => a.GroupId == groupId && a.EventId == eventId)
             .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
 
-        foreach (var row in assignments)
-        {
-            context.Assignments.Add(new AssignmentRow
-            {
-                GroupId = groupId,
-                EventId = eventId,
-                EventName = eventName,
-                GiverAccountId = row.GiverAccountId,
-                OrganizerAccountId = organizerAccountId,
-                GroupName = groupName,
-                RecipientMemberId = row.RecipientMemberId,
-                RecipientName = row.RecipientName,
-                RecipientWishlistSnapshot = Serialize(row.RecipientWishlistSnapshot),
-                RecipientGiftNote = row.RecipientGiftNote,
-                BudgetAmount = budget?.Amount,
-                BudgetCurrency = budget?.Currency,
-                BudgetMinAmount = budget?.MinAmount,
-                EventDate = eventDetails?.Date,
-                EventLocation = eventDetails?.Location,
-                EventDescription = eventDetails?.Description,
-                DrawVersion = drawVersion,
-            });
-        }
+        context.Assignments.AddRange(rows);
 
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
@@ -681,6 +696,36 @@ public sealed class LinkingStore(LinkingDbContext context, TimeProvider timeProv
             UserId = userId,
             CreatedAt = now,
         });
+
+    // Whether the stored rows of an event already hold exactly what a publish carries (giver for giver), so a
+    // re-publish of the current draw can be skipped. DateTimeOffset and decimal compare by value, so a date or
+    // amount read back from the database equals the one sent.
+    private static bool SameRows(List<AssignmentRow> current, List<AssignmentRow> incoming)
+    {
+        if (current.Count != incoming.Count)
+        {
+            return false;
+        }
+
+        var byGiver = current.ToDictionary(r => r.GiverAccountId);
+        return incoming.All(row => byGiver.TryGetValue(row.GiverAccountId, out var stored) && SameRow(stored, row));
+    }
+
+    private static bool SameRow(AssignmentRow a, AssignmentRow b) =>
+        a.OrganizerAccountId == b.OrganizerAccountId
+        && a.DrawVersion == b.DrawVersion
+        && a.GroupName == b.GroupName
+        && a.EventName == b.EventName
+        && a.RecipientMemberId == b.RecipientMemberId
+        && a.RecipientName == b.RecipientName
+        && a.RecipientWishlistSnapshot == b.RecipientWishlistSnapshot
+        && a.RecipientGiftNote == b.RecipientGiftNote
+        && a.BudgetAmount == b.BudgetAmount
+        && a.BudgetCurrency == b.BudgetCurrency
+        && a.BudgetMinAmount == b.BudgetMinAmount
+        && a.EventDate == b.EventDate
+        && a.EventLocation == b.EventLocation
+        && a.EventDescription == b.EventDescription;
 
     private static string Serialize(IReadOnlyList<string> items) => JsonSerializer.Serialize(items);
 

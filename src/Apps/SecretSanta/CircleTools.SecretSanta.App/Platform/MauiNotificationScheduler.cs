@@ -52,9 +52,27 @@ public sealed class MauiNotificationScheduler : INotificationScheduler
     }
 
     /// <inheritdoc />
-    public ValueTask CancelAllAsync(CancellationToken cancellationToken = default)
+    public async ValueTask<IReadOnlyList<ScheduledNotification>> GetPendingAsync(CancellationToken cancellationToken = default)
     {
-        LocalNotificationCenter.Current.CancelAll();
+        var pending = await LocalNotificationCenter.Current.GetPendingNotificationList();
+        return [.. pending
+            .Where(r => r.Schedule?.NotifyTime is not null)
+            .Select(r => new ScheduledNotification(
+                r.NotificationId,
+                r.Title ?? string.Empty,
+                r.Description ?? string.Empty,
+                new DateTimeOffset(r.Schedule!.NotifyTime!.Value)))];
+    }
+
+    /// <inheritdoc />
+    public ValueTask CancelAsync(IReadOnlyCollection<int> ids, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(ids);
+        if (ids.Count > 0)
+        {
+            LocalNotificationCenter.Current.Cancel([.. ids]);
+        }
+
         return ValueTask.CompletedTask;
     }
 #else
@@ -78,7 +96,11 @@ public sealed class MauiNotificationScheduler : INotificationScheduler
         ValueTask.CompletedTask;
 
     /// <inheritdoc />
-    public ValueTask CancelAllAsync(CancellationToken cancellationToken = default) =>
+    public ValueTask<IReadOnlyList<ScheduledNotification>> GetPendingAsync(CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult<IReadOnlyList<ScheduledNotification>>([]);
+
+    /// <inheritdoc />
+    public ValueTask CancelAsync(IReadOnlyCollection<int> ids, CancellationToken cancellationToken = default) =>
         ValueTask.CompletedTask;
 #endif
 }

@@ -13,33 +13,91 @@ public sealed class NotificationPreferences(IKeyValueStore store)
 {
     private const string Key = "secretsanta.notifications";
 
+    // Kinds the user asked for while notifications were blocked (Q8, R15): applied once they are allowed.
+    private const string WantedKey = "secretsanta.notifications.wanted";
+
     /// <summary>The reminder kinds currently switched on (empty by default).</summary>
     /// <param name="cancellationToken">Cancels the read.</param>
     /// <returns>The enabled kinds.</returns>
-    public async ValueTask<IReadOnlySet<ReminderKind>> GetEnabledAsync(CancellationToken cancellationToken = default)
+    public ValueTask<IReadOnlySet<ReminderKind>> GetEnabledAsync(CancellationToken cancellationToken = default) =>
+        ReadKindsAsync(Key, cancellationToken);
+
+    /// <summary>
+    /// The reminder kinds the user asked for while notifications were blocked — kept on this device so the wish
+    /// survives leaving the page (or the app) for the system settings (R15, 2026-10-20 device test).
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    /// <returns>The wanted kinds.</returns>
+    public ValueTask<IReadOnlySet<ReminderKind>> GetWantedAsync(CancellationToken cancellationToken = default) =>
+        ReadKindsAsync(WantedKey, cancellationToken);
+
+    /// <summary>Remembers that the user asked for a reminder kind while notifications were blocked.</summary>
+    /// <param name="kind">The kind asked for.</param>
+    /// <param name="cancellationToken">Cancels the write.</param>
+    /// <returns>A task that completes when the wish is stored (or silently skipped).</returns>
+    public async ValueTask AddWantedAsync(ReminderKind kind, CancellationToken cancellationToken = default)
+    {
+        var wanted = new HashSet<ReminderKind>(await GetWantedAsync(cancellationToken)) { kind };
+        await WriteKindsAsync(WantedKey, wanted, cancellationToken);
+    }
+
+    /// <summary>
+    /// Switches on every kind the user asked for while notifications were blocked, and forgets the wishes. Call
+    /// only once notifications are allowed.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The kinds that were switched on (empty when there was nothing to apply).</returns>
+    public async ValueTask<IReadOnlySet<ReminderKind>> ApplyWantedAsync(CancellationToken cancellationToken = default)
+    {
+        var wanted = await GetWantedAsync(cancellationToken);
+        if (wanted.Count == 0)
+        {
+            return wanted;
+        }
+
+        var enabled = new HashSet<ReminderKind>(await GetEnabledAsync(cancellationToken));
+        enabled.UnionWith(wanted);
+        await WriteKindsAsync(Key, enabled, cancellationToken);
+        await WriteKindsAsync(WantedKey, [], cancellationToken);
+        return wanted;
+    }
+
+    private async ValueTask<IReadOnlySet<ReminderKind>> ReadKindsAsync(string key, CancellationToken cancellationToken)
     {
         try
         {
-            var raw = await store.GetAsync(StorageScope.Durable, Key, cancellationToken);
+            var raw = await store.GetAsync(StorageScope.Durable, key, cancellationToken);
             if (string.IsNullOrEmpty(raw))
             {
                 return new HashSet<ReminderKind>();
             }
 
-            var enabled = new HashSet<ReminderKind>();
+            var kinds = new HashSet<ReminderKind>();
             foreach (var token in raw.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
                 if (Enum.TryParse<ReminderKind>(token, out var kind))
                 {
-                    enabled.Add(kind);
+                    kinds.Add(kind);
                 }
             }
 
-            return enabled;
+            return kinds;
         }
         catch
         {
             return new HashSet<ReminderKind>();
+        }
+    }
+
+    private async ValueTask WriteKindsAsync(string key, IEnumerable<ReminderKind> kinds, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await store.SetAsync(StorageScope.Durable, key, string.Join(',', kinds), cancellationToken);
+        }
+        catch
+        {
+            // Best-effort: a failed write just means the choice is not remembered next launch.
         }
     }
 
@@ -67,13 +125,13 @@ public sealed class NotificationPreferences(IKeyValueStore store)
             current.Remove(kind);
         }
 
-        try
+        await WriteKindsAsync(Key, current, cancellationToken);
+
+        // A decision made now replaces a wish left from a blocked attempt.
+        var wanted = await GetWantedAsync(cancellationToken);
+        if (wanted.Contains(kind))
         {
-            await store.SetAsync(StorageScope.Durable, Key, string.Join(',', current), cancellationToken);
-        }
-        catch
-        {
-            // Best-effort: a failed write just means the toggle is not remembered next launch.
+            await WriteKindsAsync(WantedKey, wanted.Where(k => k != kind), cancellationToken);
         }
     }
 

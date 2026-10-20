@@ -113,6 +113,73 @@ public sealed class AssignmentReadTests(MailApiFactory factory)
     }
 
     [Fact]
+    public async Task ARePublishOfTheSameDraw_WithChangedContent_ReachesTheLinkedGiver()
+    {
+        // R1 (2026-10-20 device test): the organizer's client re-publishes the current draw every sync cycle.
+        // A wishlist, gift note, budget or event detail edited after the draw must replace the draw-time copy.
+        var organizer = await CircleTestAccounts.SignUpAsync(factory, "Organizer");
+        var member = await CircleTestAccounts.SignUpAsync(factory, "Member");
+        var groupId = Guid.NewGuid();
+        var recipientMemberId = Guid.NewGuid();
+
+        var memberAccountId = await LinkingScenario.LinkMemberAsync(factory, organizer, member, groupId, Guid.NewGuid());
+
+        await PublishDrawAsync(organizer, groupId, memberAccountId, recipientMemberId, ["Lego"], "", 30m, "Grandma's");
+        await PublishDrawAsync(organizer, groupId, memberAccountId, recipientMemberId, ["Lego", "Socks"], "No nuts", 40m, "Uncle's");
+
+        var response = await LinkingScenario.GetMyAssignmentAsync(member, groupId);
+        var pairing = (await response.Content.ReadFromJsonAsync<MyAssignmentResponse>())!;
+
+        Assert.Equal(["Lego", "Socks"], pairing.RecipientWishlist);
+        Assert.Equal("No nuts", pairing.RecipientGiftNote);
+        Assert.Equal(40m, pairing.Budget!.Amount);
+        Assert.Equal("Uncle's", pairing.Event!.Location);
+    }
+
+    [Fact]
+    public async Task ARePublishOfTheSameDraw_WithUnchangedContent_KeepsThePairing()
+    {
+        var organizer = await CircleTestAccounts.SignUpAsync(factory, "Organizer");
+        var member = await CircleTestAccounts.SignUpAsync(factory, "Member");
+        var groupId = Guid.NewGuid();
+        var recipientMemberId = Guid.NewGuid();
+
+        var memberAccountId = await LinkingScenario.LinkMemberAsync(factory, organizer, member, groupId, Guid.NewGuid());
+
+        await PublishDrawAsync(organizer, groupId, memberAccountId, recipientMemberId, ["Lego"], "No nuts", 30m, "Grandma's");
+        await PublishDrawAsync(organizer, groupId, memberAccountId, recipientMemberId, ["Lego"], "No nuts", 30m, "Grandma's");
+
+        var response = await LinkingScenario.GetMyAssignmentAsync(member, groupId);
+        var pairing = (await response.Content.ReadFromJsonAsync<MyAssignmentResponse>())!;
+
+        Assert.Equal("Carol", pairing.RecipientName);
+        Assert.Equal(["Lego"], pairing.RecipientWishlist);
+        Assert.Equal("No nuts", pairing.RecipientGiftNote);
+    }
+
+    [Fact]
+    public async Task AStalePublish_ForAnOlderDrawVersion_IsIgnored_EvenAfterTheCurrentDrawWasRePublished()
+    {
+        var organizer = await CircleTestAccounts.SignUpAsync(factory, "Organizer");
+        var member = await CircleTestAccounts.SignUpAsync(factory, "Member");
+        var groupId = Guid.NewGuid();
+
+        var memberAccountId = await LinkingScenario.LinkMemberAsync(factory, organizer, member, groupId, Guid.NewGuid());
+
+        await LinkingScenario.PublishAsync(organizer, groupId, drawVersion: 2,
+            new PublishedAssignment(memberAccountId, Guid.NewGuid(), "Current", ["Old"]));
+        await LinkingScenario.PublishAsync(organizer, groupId, drawVersion: 2,
+            new PublishedAssignment(memberAccountId, Guid.NewGuid(), "Current", ["New"]));
+        await LinkingScenario.PublishAsync(organizer, groupId, drawVersion: 1,
+            new PublishedAssignment(memberAccountId, Guid.NewGuid(), "Stale", []));
+
+        var response = await LinkingScenario.GetMyAssignmentAsync(member, groupId);
+        var pairing = (await response.Content.ReadFromJsonAsync<MyAssignmentResponse>())!;
+        Assert.Equal("Current", pairing.RecipientName);
+        Assert.Equal(["New"], pairing.RecipientWishlist);
+    }
+
+    [Fact]
     public async Task AStalePublish_ForAnOlderDrawVersion_DoesNotOverwriteTheCurrentPairing()
     {
         var organizer = await CircleTestAccounts.SignUpAsync(factory, "Organizer");
@@ -130,5 +197,29 @@ public sealed class AssignmentReadTests(MailApiFactory factory)
         var response = await LinkingScenario.GetMyAssignmentAsync(member, groupId);
         var pairing = (await response.Content.ReadFromJsonAsync<MyAssignmentResponse>())!;
         Assert.Equal("Current", pairing.RecipientName);
+    }
+
+    private static async Task PublishDrawAsync(
+        CircleTestAccount organizer,
+        Guid groupId,
+        Guid giverAccountId,
+        Guid recipientMemberId,
+        IReadOnlyList<string> wishlist,
+        string giftNote,
+        decimal budget,
+        string location)
+    {
+        var publish = await organizer.Client.PostAsJsonAsync(
+            $"/api/v1/groups/{groupId}/assignments/publish",
+            new PublishAssignmentsRequest(
+                groupId,
+                "December",
+                groupId,
+                "December event",
+                DrawVersion: 1,
+                new BudgetDto(budget, "CHF"),
+                new EventDetailsDto(new DateTimeOffset(2026, 12, 24, 18, 0, 0, TimeSpan.Zero), location, string.Empty),
+                [new PublishedAssignment(giverAccountId, recipientMemberId, "Carol", [.. wishlist], RecipientGiftNote: giftNote)]));
+        publish.EnsureSuccessStatusCode();
     }
 }

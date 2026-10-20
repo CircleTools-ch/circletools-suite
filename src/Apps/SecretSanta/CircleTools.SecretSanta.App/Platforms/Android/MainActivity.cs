@@ -29,6 +29,16 @@ namespace CircleTools.SecretSanta.App;
     DataHost = "secretsanta.circletools.ch",
     DataPathPrefix = "/groups",
     AutoVerify = true)]
+// Join links (ADR-0058, ADR-0080): https://secretsanta.circletools.ch/join#t=… opens the in-app join page, so a
+// participant with the app installed joins in the app and not in a browser tab (R10, 2026-10-20 device test).
+// Forwarded generically by DeepLinkService; the token stays in the fragment.
+[IntentFilter(
+    new[] { Intent.ActionView },
+    Categories = new[] { Intent.CategoryDefault, Intent.CategoryBrowsable },
+    DataScheme = "https",
+    DataHost = "secretsanta.circletools.ch",
+    DataPathPrefix = "/join",
+    AutoVerify = true)]
 // Account email links (FR-007/FR-009, ADR-0053): the transactional links the Main service mails live on
 // this app's own origin (secretsanta.circletools.ch, per the "secretsanta" source app). Claim them so a
 // user who registered or changed their email IN the app confirms it IN the app (the matching in-app

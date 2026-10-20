@@ -217,6 +217,19 @@ and only while signed in:
 `AutoSyncService` adds `IsSyncing`, `LastSyncedAt`, `SyncStarted` and `StatusChanged` for this. Still no
 manual "Sync now" in normal use: the retry appears only when something went wrong.
 
+### Amendment (2026-10-20) — a shared group stays shared when imported; joined groups are not offered
+
+From the [2026-10-20 release device test](../brainstorming/2026-10-20-secret-santa-release-device-test.md) (R11): the import uploaded every ticked group to the account
+store. A group *shared by link* while signed out thereby became a private *My account* group — its join and
+management links disappeared and the people who had joined lost it. Now:
+
+- A ticked **shared-by-link** group is claimed through its management link, as *Sharing & sync → Keep in my
+  account* does, so it becomes *My account · shared* and its join link keeps working
+  ([ADR-0081](0081-signed-in-sharing-stays-in-the-account.md)). Plain local groups still go through the
+  account store.
+- A group this device only **joined** by link is the organizer's and is **not listed** in the prompt.
+- As a safety net the account-store claim (`SyncService.ClaimAsync`) skips shared-by-link groups.
+
 ## Pros and cons of the options
 
 ### 1. Keep the manual model

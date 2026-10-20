@@ -192,10 +192,12 @@ public sealed class SyncService(ILocalSyncStore local, ISyncApi api)
             // Only a local group no account has can be claimed; anything already scoped (or not held
             // here) is left exactly as it is. Nor is a shared group whose admin an account claimed — it
             // lives in the shared-group store — or one marked "My account" for a different account
-            // (ADR-0078).
+            // (ADR-0078). Nor a group shared by link: uploading it to the account store would make it a private
+            // copy and strand the people who joined; it is claimed through its management link instead (R11).
             if (index < 0
                 || records[index].AccountScope is not null
                 || records[index].AdminAccount is not null
+                || records[index].Mode == StorageMode.SharedByLink
                 || (records[index].PendingClaimAccount is { } marked && marked != accountId))
             {
                 continue;

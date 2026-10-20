@@ -30,6 +30,10 @@ public sealed class BrowserNotificationScheduler : INotificationScheduler
         ValueTask.CompletedTask;
 
     /// <inheritdoc />
-    public ValueTask CancelAllAsync(CancellationToken cancellationToken = default) =>
+    public ValueTask<IReadOnlyList<ScheduledNotification>> GetPendingAsync(CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult<IReadOnlyList<ScheduledNotification>>([]);
+
+    /// <inheritdoc />
+    public ValueTask CancelAsync(IReadOnlyCollection<int> ids, CancellationToken cancellationToken = default) =>
         ValueTask.CompletedTask;
 }

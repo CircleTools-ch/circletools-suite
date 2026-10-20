@@ -119,6 +119,26 @@ or a sibling seam; nothing here forecloses it.
 - **New risks:** background scheduling reliability varies by Android OEM (battery optimisation may delay a
   notification) — accepted for a reminder (a nudge, not a guarantee); confirmed on the Pixel.
 
+### Amendment (2026-10-20) — a reconcile never touches a reminder already shown
+
+From the [2026-10-20 release device test](../brainstorming/2026-10-20-secret-santa-release-device-test.md) (R12): the coordinator had drifted from the decision above. It
+cancelled **all** notifications on every reconcile and rescheduled them with a running number, and a
+reconcile runs after every sync. On Android cancelling an id also removes the notification from the shade,
+so a reminder vanished about two minutes after it arrived. Now, as originally decided:
+
+- Each reminder has a **stable id** derived from (kind, occasion, delivery time).
+- The seam lists what is still pending (`GetPendingAsync`) and cancels by id (`CancelAsync`); the
+  cancel-all method is gone.
+- A reconcile cancels only reminders that are **still due in the future** and no longer planned (or planned
+  differently), and schedules only new or changed ones. An unchanged schedule causes no OS calls; a reminder
+  whose time has passed is never cancelled, so it stays in the shade until the user dismisses it.
+- The comparison is a pure, unit-tested helper (`ReminderScheduleDiff`).
+
+Same test (R15): a reminder asked for while notifications are blocked — a switch in *Settings*, or "Remind me"
+after a draw — is now **stored** as a wish on the device, not only kept by the open page. When the app starts
+or returns to the foreground with notifications allowed, the reminder scheduler switches the wished kinds on
+and forgets the wishes; changing that kind's switch later replaces the wish.
+
 ## Pros and cons of the options
 
 ### Axis 1 — Device-local only (chosen)

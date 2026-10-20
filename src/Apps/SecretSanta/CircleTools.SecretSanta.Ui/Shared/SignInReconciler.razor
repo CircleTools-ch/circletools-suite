@@ -2,6 +2,7 @@
 @inject IDialogService Dialog
 @inject ClaimableGroupsService Claimable
 @inject SyncService Sync
+@inject SharedSyncService Shared
 @inject AutoSyncService AutoSync
 @inject KeptLocalGroups KeptLocal
 @inject SignInReconciliation Reconciliation
@@ -70,9 +71,10 @@
         try
         {
             // Only groups the user has not already decided about: one they kept local at an earlier
-            // sign-in, or created as "On this device" while signed in, is not asked about again.
+            // sign-in, or created as "On this device" while signed in, is not asked about again. A group only
+            // joined by link is the organizer's and is never offered (R11).
             var kept = await KeptLocal.GetAsync();
-            groups = [.. (await Claimable.GetAccountFreeAsync()).Where(g => !kept.Contains(g.Id))];
+            groups = SignInImportPlan.ToAsk(await Claimable.GetAccountFreeAsync(), kept);
         }
         catch (StorageUnavailableException)
         {
@@ -91,9 +93,17 @@
             return false;
         }
 
-        if (answer.Import.Count > 0)
+        // A plain local group goes up through the account store; one shared by link is claimed through its
+        // management link, so it stays shared and its join link keeps working (R11, ADR-0081).
+        var (toAccountStore, sharedToClaim) = SignInImportPlan.Split(groups, answer.Import);
+        if (toAccountStore.Count > 0)
         {
-            await Sync.ClaimAsync(accountId, answer.Import);
+            await Sync.ClaimAsync(accountId, toAccountStore);
+        }
+
+        foreach (var groupId in sharedToClaim)
+        {
+            await Shared.ClaimAdminToAccountAsync(accountId, groupId);
         }
 
         // Unticked: kept on this device, remembered so the next sign-in does not ask again. They stay

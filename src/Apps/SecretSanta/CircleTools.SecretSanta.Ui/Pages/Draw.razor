@@ -209,6 +209,8 @@ else
 
         if (!await notifications.RequestPermissionAsync())
         {
+            // Keep the wish: once notifications are allowed, the reminder scheduler switches it on (R15).
+            await prefs.AddWantedAsync(ReminderKind.EventTomorrow);
             if (await Dialogs.ShowConfirmSheetAsync(L["NotificationsBlocked"], L["OpenSystemSettings"], L["Cancel"], Color.Primary))
             {
                 await notifications.OpenSettingsAsync();

@@ -357,6 +357,27 @@ public sealed class SyncServiceTests
     }
 
     [Fact]
+    public async Task Claim_SkipsAGroupSharedByLink_SoItIsNotTurnedIntoAPrivateAccountCopy()
+    {
+        // R11 (2026-10-20 device test): the sign-in import uploaded a shared-by-link group to the account store,
+        // which dropped its join link. Such a group is claimed through its management link instead.
+        var account = Guid.NewGuid();
+        var (service, local, api) = NewService();
+        var shared = SyncTestData.GroupWith("Shared", "A");
+        await SeedAsync(
+            local,
+            new SyncedGroupRecord(shared, 1, AccountScope: null, Dirty: false) { Mode = StorageMode.SharedByLink });
+
+        var outcome = await service.ClaimAsync(account, [shared.Id], default);
+
+        Assert.Equal(0, outcome.Claimed);
+        Assert.Empty(api.Claimed);
+        var record = Assert.Single(await local.LoadGroupsAsync(default));
+        Assert.Equal(StorageMode.SharedByLink, record.Mode);
+        Assert.Null(record.AccountScope);
+    }
+
+    [Fact]
     public async Task Claim_StopsAtTheFirstFailure_ArrivedGroupsStayClaimed_TheRestStayLocal()
     {
         var account = Guid.NewGuid();

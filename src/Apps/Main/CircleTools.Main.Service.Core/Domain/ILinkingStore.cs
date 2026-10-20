@@ -231,8 +231,9 @@ public interface ILinkingStore
 
     /// <summary>
     /// Publishes the assignment projection for one event's linked members, replacing any prior draw's rows
-    /// for that event so a linked member never reads a stale pairing (FR-029, ADR-0042). Authorized to the
-    /// organizer of the group.
+    /// for that event so a linked member never reads a stale pairing (FR-029, ADR-0042). An older draw version
+    /// is ignored; the current draw version replaces the rows only when their content changed (a wishlist, gift
+    /// note, budget or event detail edited after the draw). Authorized to the organizer of the group.
     /// </summary>
     Task PublishAssignmentsAsync(
         Guid groupId,

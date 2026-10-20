@@ -19,6 +19,38 @@ public sealed class NotificationPreferencesTests
     }
 
     [Fact]
+    public async Task AWishMadeWhileBlocked_IsSwitchedOnOnlyWhenApplied_AndThenForgotten()
+    {
+        // R15 (2026-10-20 device test): "Remind me" after a draw with notifications blocked must survive the trip
+        // to the system settings and apply once they are allowed — and only the kind asked for.
+        var store = new InMemoryKeyValueStore();
+        await new NotificationPreferences(store).AddWantedAsync(ReminderKind.EventTomorrow);
+
+        var prefs = new NotificationPreferences(store); // a later page or app start
+        Assert.Empty(await prefs.GetEnabledAsync());
+        Assert.Equal([ReminderKind.EventTomorrow], await prefs.GetWantedAsync());
+
+        Assert.Equal([ReminderKind.EventTomorrow], await prefs.ApplyWantedAsync());
+        Assert.Equal([ReminderKind.EventTomorrow], await prefs.GetEnabledAsync());
+        Assert.Empty(await prefs.GetWantedAsync());
+        Assert.Empty(await prefs.ApplyWantedAsync());
+    }
+
+    [Fact]
+    public async Task ADecisionMadeLater_ReplacesAWishForTheSameKind()
+    {
+        var prefs = new NotificationPreferences(new InMemoryKeyValueStore());
+        await prefs.AddWantedAsync(ReminderKind.EventTomorrow);
+        await prefs.AddWantedAsync(ReminderKind.DrawNotDone);
+
+        await prefs.SetEnabledAsync(ReminderKind.EventTomorrow, false);
+
+        Assert.Equal([ReminderKind.DrawNotDone], await prefs.GetWantedAsync());
+        Assert.Equal([ReminderKind.DrawNotDone], await prefs.ApplyWantedAsync());
+        Assert.Equal([ReminderKind.DrawNotDone], await prefs.GetEnabledAsync());
+    }
+
+    [Fact]
     public async Task EnablingAndDisabling_RoundTrips()
     {
         var prefs = new NotificationPreferences(new InMemoryKeyValueStore());

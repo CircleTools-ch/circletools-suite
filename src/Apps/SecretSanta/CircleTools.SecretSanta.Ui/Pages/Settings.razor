@@ -144,7 +144,9 @@
     private NotificationAccess _permission = NotificationAccess.Unknown;
 
     // Kinds the user switched on while notifications were blocked: applied once they are allowed (Q8).
-    private readonly HashSet<ReminderKind> _wanted = [];
+    // Kinds asked for while notifications were blocked; stored, so the wish survives a trip to the system
+    // settings even when this page is gone (R15).
+    private IReadOnlySet<ReminderKind> _wanted = new HashSet<ReminderKind>();
     private int _switchEpoch;
     private IAppForeground? _foreground;
     private StorageMode _defaultMode = StorageMode.OnThisDevice;
@@ -156,6 +158,7 @@
     {
         _notificationsSupported = await Notifications.IsSupportedAsync();
         _enabled = new HashSet<ReminderKind>(await NotificationPrefs.GetEnabledAsync());
+        _wanted = await NotificationPrefs.GetWantedAsync();
         _settings = await NotificationPrefs.GetSettingsAsync();
         if (_notificationsSupported)
         {
@@ -184,21 +187,23 @@
         if (enabled && !await Notifications.RequestPermissionAsync())
         {
             // Refused (or blocked for good): the switch stays off, the note explains it, and the choice is kept
-            // so it applies once notifications are allowed (Q8).
-            _wanted.Add(kind);
+            // so it applies once notifications are allowed (Q8, R15).
+            await NotificationPrefs.AddWantedAsync(kind);
+            _wanted = await NotificationPrefs.GetWantedAsync();
             _permission = NotificationAccess.Denied;
             _switchEpoch++;
             return;
         }
 
-        _wanted.Remove(kind);
         if (enabled)
         {
             _permission = NotificationAccess.Granted;
         }
 
+        // Also drops a wish for this kind left from a blocked attempt.
         await NotificationPrefs.SetEnabledAsync(kind, enabled);
         _enabled = new HashSet<ReminderKind>(await NotificationPrefs.GetEnabledAsync());
+        _wanted = await NotificationPrefs.GetWantedAsync();
         await Reminders.ReconcileAsync();
     }
 
@@ -229,18 +234,15 @@
         _ = InvokeAsync(async () =>
         {
             _permission = await Notifications.GetPermissionAsync();
-            if (_permission == NotificationAccess.Granted && _wanted.Count > 0)
+            if (_permission == NotificationAccess.Granted && (await NotificationPrefs.ApplyWantedAsync()).Count > 0)
             {
-                foreach (var kind in _wanted)
-                {
-                    await NotificationPrefs.SetEnabledAsync(kind, true);
-                }
-
-                _wanted.Clear();
-                _enabled = new HashSet<ReminderKind>(await NotificationPrefs.GetEnabledAsync());
                 _switchEpoch++;
                 await Reminders.ReconcileAsync();
             }
+
+            // Re-read either way: the app-wide reminder scheduler may have applied the wish first.
+            _enabled = new HashSet<ReminderKind>(await NotificationPrefs.GetEnabledAsync());
+            _wanted = await NotificationPrefs.GetWantedAsync();
 
             StateHasChanged();
         });
