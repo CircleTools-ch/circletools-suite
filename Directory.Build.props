@@ -30,6 +30,11 @@
 
     <!-- Reproducible restore -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- The MAUI workload drops its own copies of the MAUI packages into <dotnet>/library-packs, which
+         the SDK silently adds as a restore source. Those nupkgs lack nuget.org's repository signature,
+         so their content hash differs from the nuget.org one in packages.lock.json (NU1403 on CI as soon
+         as our MAUI version matches the workload's). Restore from nuget.org only, as nuget.config intends. -->
+    <DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
 
     <!-- Shared assembly metadata (brand: "CircleTools" — We Are Like Family) -->
     <Product>CircleTools</Product>
