@@ -188,19 +188,26 @@ jobs:
       - name: Restore MAUI workloads
         run: dotnet workload restore "$APP"
 
-      # The iOS workload requires EXACTLY the Xcode major.minor it was built against (workload 27.1.x →
-      # Xcode 27.1), not just "any 27.x". The workload version follows the SDK pinned in global.json, so
-      # a hard-coded Xcode pin broke on every SDK bump; derive it from the restored workload instead. If
-      # the image lacks that Xcode, setup-xcode fails here with a clear message — then move `runs-on` to
-      # an image that has it (ADR-0065 hosted-image-lag risk).
-      - name: Read Xcode version required by the iOS workload
+      # The iOS SDK pack requires EXACTLY the Xcode major.minor it was built against (pack 27.1.x →
+      # Xcode 27.1), not just "any 27.x". The pack version follows the SDK pinned in global.json, so a
+      # hard-coded Xcode pin broke on every SDK bump; derive it from the restored pack instead. Read the
+      # packs folder, not `dotnet workload list`: restore installs `maui-ios`, and the `ios` workload it
+      # pulls in is not listed. On a fresh runner the restore is the only source of packs, so the newest
+      # net10.0 pack is the one the build uses. If the image lacks that Xcode, setup-xcode fails here
+      # with a clear message — then move `runs-on` to an image that has it (ADR-0065 hosted-image-lag risk).
+      - name: Read Xcode version required by the iOS SDK pack
         id: xcode
         run: |
           set -euo pipefail
-          IOS_WORKLOAD="$(dotnet workload list | awk '$1 == "ios" { print $2 }')"
-          XCODE="$(echo "$IOS_WORKLOAD" | cut -d. -f1,2)"
-          [ -n "$XCODE" ] || { echo "::error::iOS workload not found in 'dotnet workload list'"; exit 1; }
-          echo "iOS workload $IOS_WORKLOAD requires Xcode $XCODE"
+          shopt -s nullglob
+          DOTNET_DIR="${DOTNET_ROOT:-$(dirname "$(readlink -f "$(command -v dotnet)")")}"
+          echo "iOS SDK packs in $DOTNET_DIR/packs:"
+          for d in "$DOTNET_DIR"/packs/Microsoft.iOS.Sdk.net*/*/; do echo "  $d"; done
+          PACK="$(for d in "$DOTNET_DIR"/packs/Microsoft.iOS.Sdk.net10.0_*/*/; do basename "$d"; done \
+            | sort -V | tail -n1)"
+          [ -n "$PACK" ] || { echo "::error::No Microsoft.iOS.Sdk.net10.0 pack under $DOTNET_DIR/packs"; exit 1; }
+          XCODE="$(echo "$PACK" | cut -d. -f1,2)"
+          echo "iOS SDK pack $PACK requires Xcode $XCODE"
           echo "version=$XCODE" >> "$GITHUB_OUTPUT"
 
       - name: Select Xcode
