@@ -85,6 +85,13 @@ public sealed class SessionRefresher(
         await refreshTokens.RenewAsync(session.RefreshToken, cancellationToken);
         auth.NotifyChanged();
 
+        // Also covers a session started before the account was remembered with it (offline cold start).
+        var accountId = (await auth.GetAuthenticationStateAsync()).User.UserId();
+        if (accountId != Guid.Empty)
+        {
+            await refreshTokens.RememberAccountAsync(accountId, cancellationToken);
+        }
+
         return session.AccessToken;
     }
 

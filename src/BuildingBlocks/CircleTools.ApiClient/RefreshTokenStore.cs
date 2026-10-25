@@ -69,9 +69,39 @@ public sealed class RefreshTokenStore(IKeyValueStore store, RefreshTokenStoreOpt
     }
 
     /// <inheritdoc />
+    public async ValueTask RememberAccountAsync(Guid accountId, CancellationToken cancellationToken = default)
+    {
+        // Next to the token, in its scope: a session-only sign-in must not leave the account behind for good.
+        var durable = await store.GetAsync(StorageScope.Durable, options.StorageKey, cancellationToken);
+        var (target, other) = string.IsNullOrEmpty(durable)
+            ? (StorageScope.Session, StorageScope.Durable)
+            : (StorageScope.Durable, StorageScope.Session);
+
+        await store.RemoveAsync(other, AccountKey, cancellationToken);
+        _ = await store.SetAsync(target, AccountKey, accountId.ToString(), cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<Guid?> ReadAccountAsync(CancellationToken cancellationToken = default)
+    {
+        if (await ReadAsync(cancellationToken) is null)
+        {
+            return null;
+        }
+
+        var value = await store.GetAsync(StorageScope.Durable, AccountKey, cancellationToken)
+            ?? await store.GetAsync(StorageScope.Session, AccountKey, cancellationToken);
+        return Guid.TryParse(value, out var id) && id != Guid.Empty ? id : null;
+    }
+
+    /// <inheritdoc />
     public async ValueTask ClearAsync(CancellationToken cancellationToken = default)
     {
         await store.RemoveAsync(StorageScope.Durable, options.StorageKey, cancellationToken);
         await store.RemoveAsync(StorageScope.Session, options.StorageKey, cancellationToken);
+        await store.RemoveAsync(StorageScope.Durable, AccountKey, cancellationToken);
+        await store.RemoveAsync(StorageScope.Session, AccountKey, cancellationToken);
     }
+
+    private string AccountKey => options.StorageKey + ".account";
 }

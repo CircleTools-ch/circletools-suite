@@ -34,13 +34,16 @@ else
             <MudCard Elevation="1">
                 <MudCardContent>
                     <MudText Typo="Typo.subtitle1" GutterBottom="true"><strong>@editor.MemberName</strong></MudText>
-                    @* A joined member keeps their own wishlist (ADR-0080): shown, not editable here. *@
+                    @* A joined member keeps their own wishlist (ADR-0080): shown, not editable here — filled and with a
+                       lock, so it does not look like the editable fields around it (S24 device test, 2026-10-25). *@
                     @* Saved as you type and when leaving the field, like "My wishlists" — no Save button (Q29).
                        Every keystroke reaches the model (no MudBlazor DebounceInterval): that debounce held the
                        value back, so leaving the field within the pause saved the old text and the edit was lost
                        behind a "Saved ✓" (2026-10-17 browser pass). The pause is the page's own timer instead. *@
                     <MudTextField T="string" Value="editor.Text" ValueChanged="value => OnEditorChanged(editor, value)"
-                                  Label="@L["WishlistLabel"]" Variant="Variant.Outlined"
+                                  Label="@L["WishlistLabel"]" Variant="@(editor.OwnedByMember ? Variant.Filled : Variant.Outlined)"
+                                  Adornment="@(editor.OwnedByMember ? Adornment.End : Adornment.None)"
+                                  AdornmentIcon="@Icons.Material.Outlined.Lock"
                                   Margin="Margin.Dense" Lines="3" ReadOnly="editor.OwnedByMember" Immediate="true"
                                   OnBlur="() => FlushAsync(editor)"
                                   HelperText="@(editor.OwnedByMember ? L["MemberKeepsOwnEntry", editor.MemberName].Value : null)" />

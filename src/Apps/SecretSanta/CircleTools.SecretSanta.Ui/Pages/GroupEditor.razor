@@ -516,13 +516,16 @@ else
     }
 
     // A menu item that opens a sheet starts it only after the menu has closed: the item's handler returns at
-    // once, so the menu is gone before the sheet slides in rather than staying open behind it (Q12).
+    // once, so the menu is gone before the sheet slides in rather than staying open behind it (Q12). Running outside
+    // the item's event handler, it renders itself when done: freeing a spot left "Connected" on screen until the
+    // next sync otherwise (S24 device test, 2026-10-25).
     private void AfterMenu(Func<Task> action) => _ = InvokeAsync(async () =>
     {
         await Task.Yield();
         try
         {
             await action();
+            StateHasChanged();
         }
         catch (Exception ex)
         {

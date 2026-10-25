@@ -169,9 +169,21 @@ public class MainActivity : MauiAppCompatActivity
         {
             if (view is not null && insets is not null)
             {
+                // Pad by how far the content actually reaches under the keyboard, not by "keyboard minus navigation
+                // bar": whether the content already stops above the navigation bar depends on the Android version
+                // (edge to edge on 15+, not on a Galaxy S24 with Android 14), and the guess left the WebView a
+                // navigation bar too tall there, so the system panned it and a dialog's title went under the status
+                // bar (S24 device test, 2026-10-25).
                 var ime = insets.GetInsets(AndroidX.Core.View.WindowInsetsCompat.Type.Ime())?.Bottom ?? 0;
-                var navigation = insets.GetInsets(AndroidX.Core.View.WindowInsetsCompat.Type.NavigationBars())?.Bottom ?? 0;
-                var bottom = Math.Max(0, ime - navigation);
+                var bottom = 0;
+                if (ime > 0)
+                {
+                    var location = new int[2];
+                    view.GetLocationInWindow(location);
+                    var keyboardTop = (view.RootView ?? view).Height - ime;
+                    bottom = Math.Max(0, location[1] + view.Height - keyboardTop);
+                }
+
                 if (view.PaddingBottom != bottom)
                 {
                     view.SetPadding(view.PaddingLeft, view.PaddingTop, view.PaddingRight, bottom);

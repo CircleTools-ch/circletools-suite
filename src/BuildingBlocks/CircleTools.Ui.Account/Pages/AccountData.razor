@@ -3,6 +3,8 @@
 @inject AccountApiClient Api
 @inject AccountSession Session
 @inject IFileSaver Files
+@inject AuthenticationStateProvider Auth
+@inject IEnumerable<IAccountDeletedHandler> DeletedHandlers
 
 <PageTitle>@L["DataTitle"]</PageTitle>
 
@@ -142,6 +144,7 @@ else
         _deleting = true;
         _deleteError = null;
         _deleteDetails = null;
+        var accountId = (await Auth.GetAuthenticationStateAsync()).User.UserId();
 
         var result = await Api.DeleteAccountAsync(new DeleteAccountRequest(_password, _deleteSharedGroups));
 
@@ -162,6 +165,21 @@ else
         // Set before clearing: the redirect guard above reads this, and clearing publishes the new
         // authentication state before this component gets a chance to re-render.
         _deleted = true;
+
+        // What this device kept for the account (an app's groups) is settled before the session goes: the account's
+        // groups would otherwise stay hidden on the device for good, shown to no one (2026-10-25 test). Best effort —
+        // the account is already gone, and the page must still say so.
+        foreach (var handler in DeletedHandlers)
+        {
+            try
+            {
+                await handler.OnAccountDeletedAsync(accountId);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Nothing to undo; the device keeps what it had.
+            }
+        }
 
         // The server revoked the sessions along with the account, so there is nothing to log out of.
         await Session.ForgetAsync();

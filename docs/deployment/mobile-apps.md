@@ -112,7 +112,10 @@ need the one-time beta review; we don't need them to reach our own iPad.
 
 1. **Register the App ID** for `ch.circletools.secretsanta` with the **Associated Domains** capability
    (Track B step 4 — needed for Universal Links and passkeys), and **create the App Store Connect app
-   record** (step 6).
+   record** (step 6). Then fill **TestFlight → Test Information** for the record (Beta App
+   Description, Feedback Email, primary locale): `apple-actions/upload-testflight-build@v5` checks it
+   before uploading and fails the job with *"Refusing to upload: TestFlight Test Information is not
+   ready"* if it is missing.
 2. **Produce the signing assets and set the 6 iOS secrets** (Track B step 5): a distribution `.p12`, an
    App Store provisioning profile, and an App Store Connect API key →
    `IOS_DIST_CERT_P12_BASE64`, `IOS_DIST_CERT_PASSWORD`, `IOS_PROVISIONING_PROFILE_BASE64`,

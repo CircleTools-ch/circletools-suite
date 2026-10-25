@@ -48,8 +48,12 @@
    in the shells). Below that width the last screenful of content would otherwise sit behind the 56px
    bar; this reserves room for it plus the iOS safe-area inset. */
 @media (max-width: 959.98px) {
+    /* !important because the shells also put MudBlazor's py-4 on the same container, whose spacing utilities
+       are !important themselves: without it the clearance lost to py-4's 16px and the last ~90px of every
+       page sat behind the bar (S24 device test, 2026-10-25). The keyboard rule below is more specific and
+       still wins while typing. */
     .ct-has-bottomnav {
-        padding-bottom: calc(64px + env(safe-area-inset-bottom));
+        padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important;
     }
 }
 
@@ -250,6 +254,25 @@ input[type="date"]::-webkit-clear-button {
 
 .ct-main-fill > .ct-page {
     flex: 1 0 auto;
+}
+
+/* With a FAB on the page, the room it needs is reserved below the legal footer rather than inside the page:
+   the page grows to push the footer down, so a spacer inside it never moved the footer out from under the FAB,
+   and with a large system font the wrapped footer links ended up behind it (S24 device test, 2026-10-25).
+   The FAB sits 80px above the viewport's bottom edge (plus the inset) and is 48px tall. */
+.ct-main-fill:has(.ct-fab) .ct-fab-spacer {
+    display: none;
+}
+
+.ct-main-fill:has(.ct-fab) > .ct-legal-footer {
+    padding-bottom: 120px !important;
+}
+
+@media (max-width: 959.98px) {
+    /* The bottom-nav clearance (64px + inset) already lifts the footer; only the rest is added. */
+    .ct-main-fill.ct-has-bottomnav:has(.ct-fab) > .ct-legal-footer {
+        padding-bottom: 88px !important;
+    }
 }
 
 /* An empty native date input shows the browser's raw format mask ("dd.mm.yyyy" / "tt.mm.jjjj") under the

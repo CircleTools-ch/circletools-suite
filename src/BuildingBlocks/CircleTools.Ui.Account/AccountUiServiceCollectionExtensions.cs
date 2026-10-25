@@ -57,6 +57,7 @@ public static class AccountUiServiceCollectionExtensions
         services.AddScoped<ISessionRefresher, SessionRefresher>();
         services.AddScoped<AccountApiClient>();
         services.AddScoped<AccountSession>();
+        services.AddScoped<SessionAccount>();
 
         // The default is the direct-online writer (ADR-0035): a profile edit is a PUT, which is the
         // whole behaviour for a host with no offline story. TryAdd so a host that works offline can

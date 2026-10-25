@@ -344,11 +344,15 @@
   <data name="JoinNotFoundTitle" xml:space="preserve"><value>This link doesn't work</value></data>
   <data name="JoinNotFoundBody" xml:space="preserve"><value>The group may have been removed, or the link is out of date.</value></data>
   <data name="JoinAlreadyClaimedError" xml:space="preserve"><value>Someone already joined as that person. Pick another name.</value></data>
+  <data name="JoinAlreadyInTitle" xml:space="preserve"><value>You're already in this group</value></data>
+  <data name="JoinAlreadyInAs" xml:space="preserve"><value>You take part as {0}.</value></data>
+  <data name="JoinAlreadyOrganizing" xml:space="preserve"><value>You organize this group.</value></data>
+  <data name="JoinOpenGroup" xml:space="preserve"><value>Open group</value></data>
   <data name="JoinFailedError" xml:space="preserve"><value>Couldn't join right now. Please try again.</value></data>
   <data name="YouAreMember" xml:space="preserve"><value>You joined as {0}.</value></data>
   <data name="MemberClaimedBadge" xml:space="preserve"><value>Joined</value></data>
   <data name="ReleaseMember" xml:space="preserve"><value>Free this spot</value></data>
-  <data name="ReleaseMemberConfirm" xml:space="preserve"><value>Free {0}’s spot? Access ends until {0} takes part again. What was written stays in the group.</value></data>
+  <data name="ReleaseMemberConfirm" xml:space="preserve"><value>Free {0}’s spot? {0} loses access, and the spot is free again — for {0} or someone else. What was written stays in the group.</value></data>
   <data name="ReleaseMemberConfirmYes" xml:space="preserve"><value>Free the spot</value></data>
   <data name="Someone" xml:space="preserve"><value>Someone</value></data>
   <data name="ClaimAdminConfirm" xml:space="preserve"><value>Keep this group in your account? It then syncs to all your devices and only you manage it — the management link stops working. The join link keeps working.</value></data>

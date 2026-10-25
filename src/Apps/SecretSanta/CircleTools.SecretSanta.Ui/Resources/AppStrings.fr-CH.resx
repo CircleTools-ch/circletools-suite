@@ -289,11 +289,15 @@
   <data name="JoinNotFoundTitle" xml:space="preserve"><value>Ce lien ne fonctionne pas</value></data>
   <data name="JoinNotFoundBody" xml:space="preserve"><value>Le groupe a peut-être été supprimé ou le lien est périmé.</value></data>
   <data name="JoinAlreadyClaimedError" xml:space="preserve"><value>Quelqu'un a déjà rejoint en tant que cette personne. Choisissez un autre nom.</value></data>
+  <data name="JoinAlreadyInTitle" xml:space="preserve"><value>Vous faites déjà partie de ce groupe</value></data>
+  <data name="JoinAlreadyInAs" xml:space="preserve"><value>Vous participez en tant que {0}.</value></data>
+  <data name="JoinAlreadyOrganizing" xml:space="preserve"><value>Vous organisez ce groupe.</value></data>
+  <data name="JoinOpenGroup" xml:space="preserve"><value>Ouvrir le groupe</value></data>
   <data name="JoinFailedError" xml:space="preserve"><value>Impossible de rejoindre pour le moment. Veuillez réessayer.</value></data>
   <data name="YouAreMember" xml:space="preserve"><value>Vous avez rejoint en tant que {0}.</value></data>
   <data name="MemberClaimedBadge" xml:space="preserve"><value>A rejoint</value></data>
   <data name="ReleaseMember" xml:space="preserve"><value>Libérer la place</value></data>
-  <data name="ReleaseMemberConfirm" xml:space="preserve"><value>Libérer la place de {0} ? L’accès prend fin jusqu’à ce que {0} participe à nouveau. Ce qui a été écrit reste dans le groupe.</value></data>
+  <data name="ReleaseMemberConfirm" xml:space="preserve"><value>Libérer la place de {0} ? {0} perd l’accès, et la place est de nouveau libre – pour {0} ou quelqu’un d’autre. Ce qui a été écrit reste dans le groupe.</value></data>
   <data name="ReleaseMemberConfirmYes" xml:space="preserve"><value>Libérer la place</value></data>
   <data name="Someone" xml:space="preserve"><value>Quelqu'un</value></data>
   <data name="ClaimAdminConfirm" xml:space="preserve"><value>Garder ce groupe dans votre compte ? Il est alors synchronisé sur tous vos appareils et vous seul·e le gérez – le lien de gestion ne fonctionne plus. Le lien d'invitation continue de fonctionner.</value></data>
@@ -494,8 +498,8 @@
   <data name="MyWishlistsUnsaved" xml:space="preserve"><value>Pas encore enregistré – enregistré en quittant le champ</value></data>
   <data name="MyWishlistsAddPending" xml:space="preserve"><value>Appuyez sur Entrée ou « Ajouter » pour ajouter ce souhait</value></data>
   <data name="PlaceOnlineTitle" xml:space="preserve"><value>En ligne</value></data>
-  <data name="PlaceOnlineHint" xml:space="preserve"><value>Gardé dans votre compte sur tous vos appareils. D’autres peuvent rejoindre avec un lien et voient alors leur propre tirage.</value></data>
-  <data name="PlaceOnlineSignedOutHint" xml:space="preserve"><value>Enregistré en ligne, sans inscription : cet appareil garde le lien d’organisation. D’autres peuvent rejoindre avec un lien et voient alors leur propre tirage.</value></data>
+  <data name="PlaceOnlineHint" xml:space="preserve"><value>Gardé dans votre compte sur tous vos appareils. D’autres peuvent rejoindre avec un lien et voient alors leur propre attribution.</value></data>
+  <data name="PlaceOnlineSignedOutHint" xml:space="preserve"><value>Enregistré en ligne, sans inscription : cet appareil garde le lien d’organisation. D’autres peuvent rejoindre avec un lien et voient alors leur propre attribution.</value></data>
   <data name="ModeChipOnline" xml:space="preserve"><value>En ligne</value></data>
   <data name="ChipTakingPart" xml:space="preserve"><value>Vous participez</value></data>
   <data name="SharingSubtitleOnline" xml:space="preserve"><value>En ligne</value></data>

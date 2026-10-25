@@ -88,6 +88,35 @@ public sealed class RefreshTokenStoreTests
         Assert.Null(backing.Peek(StorageScope.Session, Key));
     }
 
+    [Theory]
+    [InlineData(true, StorageScope.Durable)]
+    [InlineData(false, StorageScope.Session)]
+    public async Task TheAccount_IsRememberedInTheTokensScope(bool staySignedIn, StorageScope scope)
+    {
+        var (store, backing) = NewStore();
+        var account = Guid.NewGuid();
+        await store.SaveAsync("token", staySignedIn);
+
+        await store.RememberAccountAsync(account);
+
+        Assert.Equal(account, await store.ReadAccountAsync());
+        Assert.Equal(account.ToString(), backing.Peek(scope, Key + ".account"));
+        Assert.Null(backing.Peek(Other(scope), Key + ".account"));
+    }
+
+    [Fact]
+    public async Task TheAccount_GoesWithTheToken()
+    {
+        var (store, _) = NewStore();
+        await store.SaveAsync("token", staySignedIn: true);
+        await store.RememberAccountAsync(Guid.NewGuid());
+
+        await store.ClearAsync();
+
+        // No remembered session, no account to show data for.
+        Assert.Null(await store.ReadAccountAsync());
+    }
+
     private static StorageScope Other(StorageScope scope) =>
         scope == StorageScope.Durable ? StorageScope.Session : StorageScope.Durable;
 

@@ -126,7 +126,7 @@ else if (_groups.Count == 0 && _takingPart.Count > 0)
 {
     @* Taking part and organizing nothing yet: the section above is the page; creating stays one tap away. *@
 }
-else if (_groups.Count == 0)
+else if (ShowsEmptyState)
 {
     @* First run (UX-003): say what the app does and nudge to the create field. Signed in it is the same card
        (Q23), without the account sell. *@
@@ -255,18 +255,26 @@ else
 <AppStoreLinks />
 
 @* Create a group via a FAB on phones (like adding members); the inline field owns it on wide.
-   The spacer reserves scroll room so the FAB never traps the last group card's controls. *@
-<MudHidden Breakpoint="Breakpoint.MdAndUp">
-    <div class="ct-fab-spacer"></div>
-    <div class="ct-fab">
-        @* Extended FAB (icon + label): the "+" alone reads the same on every screen, so the label says
-           what it creates here — a group (UX-council #3). *@
-        <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Label="@L["CreateGroup"]"
-                aria-label="@L["CreateGroup"]" OnClick="CreateViaFabAsync" />
-    </div>
-</MudHidden>
+   The spacer reserves scroll room so the FAB never traps the last group card's controls. The first-run card has
+   its own labelled create button, so the FAB stays away there: two create buttons, and the FAB covered the card's
+   sign-in link on a phone (S24 device test, 2026-10-25). *@
+@if (!ShowsEmptyState)
+{
+    <MudHidden Breakpoint="Breakpoint.MdAndUp">
+        <div class="ct-fab-spacer"></div>
+        <div class="ct-fab">
+            @* Extended FAB (icon + label): the "+" alone reads the same on every screen, so the label says
+               what it creates here — a group (UX-council #3). *@
+            <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Label="@L["CreateGroup"]"
+                    aria-label="@L["CreateGroup"]" OnClick="CreateViaFabAsync" />
+        </div>
+    </MudHidden>
+}
 
 @code {
+    // The first-run card: nothing organized, nothing taken part in.
+    private bool ShowsEmptyState => _groups is { Count: 0 } && _takingPart.Count == 0;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthStateTask { get; set; }
 
@@ -623,13 +631,16 @@ else
     }
 
     // A menu item that opens a sheet starts it only after the menu has closed: the item's handler returns at
-    // once, so the menu is gone before the sheet slides in rather than staying open behind it (Q12).
+    // once, so the menu is gone before the sheet slides in rather than staying open behind it (Q12). Running outside
+    // the item's event handler, it renders itself when done: freeing a spot left "Connected" on screen until the
+    // next sync otherwise (S24 device test, 2026-10-25).
     private void AfterMenu(Func<Task> action) => _ = InvokeAsync(async () =>
     {
         await Task.Yield();
         try
         {
             await action();
+            StateHasChanged();
         }
         catch (Exception ex)
         {

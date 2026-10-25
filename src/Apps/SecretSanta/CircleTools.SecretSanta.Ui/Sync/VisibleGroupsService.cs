@@ -4,19 +4,19 @@ using CircleTools.SecretSanta.Core.Application;
 using CircleTools.SecretSanta.LocalStore.Online;
 using CircleTools.Ui.Abstractions;
 using CircleTools.Ui.Account.Auth;
-using Microsoft.AspNetCore.Components.Authorization;
 
 namespace CircleTools.SecretSanta.Ui;
 
 /// <summary>
 /// The groups every group-listing surface shows (ADR-0086): groups on this device, groups held through a link or a
 /// device key, and — while signed in — the signed-in account's online groups. A group that belongs to a
-/// <em>different</em> account still cached on this device is never shown.
+/// <em>different</em> account still cached on this device is never shown. A session waiting for the server (an
+/// offline cold start) counts as signed in to its account: offline is not signed out.
 /// </summary>
 /// <param name="sender">The application dispatcher, for the group summaries.</param>
 /// <param name="store">This device's group records.</param>
-/// <param name="auth">The authentication state, for the signed-in account.</param>
-public sealed class VisibleGroupsService(ISender sender, IGroupRecordStore store, AuthenticationStateProvider auth)
+/// <param name="session">The account whose data this device shows.</param>
+public sealed class VisibleGroupsService(ISender sender, IGroupRecordStore store, SessionAccount session)
 {
     /// <summary>The groups this device organizes (or holds on this device only) that are visible now.</summary>
     /// <param name="cancellationToken">Cancels the read.</param>
@@ -70,9 +70,5 @@ public sealed class VisibleGroupsService(ISender sender, IGroupRecordStore store
         }
     }
 
-    private async Task<Guid?> SignedInAsync()
-    {
-        var id = (await auth.GetAuthenticationStateAsync()).User.UserId();
-        return id == Guid.Empty ? null : id;
-    }
+    private async Task<Guid?> SignedInAsync() => await session.CurrentAsync();
 }

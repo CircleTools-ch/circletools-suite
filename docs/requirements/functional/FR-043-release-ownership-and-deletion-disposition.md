@@ -33,6 +33,11 @@ says how many and asks what becomes of them —
 Either way every other role the account held (participant, invitation) is removed; what it wrote stays in those
 groups.
 
+On the device the account was deleted from, nothing it made is lost: a group the account organized stays there as a
+group on this device, and a group it only took part in leaves the device with the account (added 2026-10-25 after
+the [S24 device test](../../brainstorming/2026-10-25-secret-santa-s24-local-device-test.md), F12 — before, those groups
+stayed on the device hidden for good).
+
 ## Rationale
 
 Ownership must never be a trap in either direction: signing up should not cost a group its participants, and
@@ -56,6 +61,10 @@ Then the screen says they organize one online group and offers to keep it online
 Given the user deletes the account keeping its groups online
 When someone opens a group's join link afterwards
 Then the group is still there
+
+Given the user deletes the account on a device holding a group it organized and one it took part in
+When the deletion is done
+Then the organized group is listed on that device as a group on this device, and the other is gone
 ```
 
 ## Dependencies & related

@@ -20,11 +20,14 @@ public static class ApiErrorText
     /// The password-policy codes come from ASP.NET Core Identity, except <c>BreachedPassword</c>,
     /// which is the suite's own validator (ADR-0027). Only codes the configured policy can actually
     /// produce are listed: FR-007 turns the composition rules off, so <c>PasswordRequiresDigit</c>
-    /// and its siblings can never arrive.
+    /// and its siblings can never arrive. <c>PasswordRequiresUniqueChars</c> can: the policy keeps one unique
+    /// character, which only an empty password misses — it comes with <c>PasswordTooShort</c> and says the
+    /// same, so it maps to the same sentence (shown raw on the 2026-10-25 device test).
     /// </remarks>
     private static readonly Dictionary<string, string> _localizableCodes = new(StringComparer.Ordinal)
     {
         ["PasswordTooShort"] = "PasswordErrorTooShort",
+        ["PasswordRequiresUniqueChars"] = "PasswordErrorTooShort",
         ["BreachedPassword"] = "PasswordErrorBreached",
         ["InvalidToken"] = "PasswordErrorInvalidToken",
     };
@@ -78,6 +81,7 @@ public static class ApiErrorText
                 .SelectMany(e => e.Value)
                 .Select(message => _localizableCodes.TryGetValue(message, out var key)
                     ? localizer[key].Value
-                    : message)];
+                    : message)
+                .Distinct()];
     }
 }

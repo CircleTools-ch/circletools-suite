@@ -1,6 +1,7 @@
 using CircleTools.Application;
 using CircleTools.Localization;
 using CircleTools.Ui.Abstractions;
+using CircleTools.Ui.Account;
 using CircleTools.Ui.Account.Api;
 using CircleTools.Ui.Shared;
 using Microsoft.Extensions.DependencyInjection;
@@ -64,6 +65,7 @@ public static class SecretSantaUiServiceCollectionExtensions
         // resolved to the same instance — so a page depends on the notification, not the whole engine.
         services.AddScoped<ISyncSignals>(sp => sp.GetRequiredService<AutoSyncService>());
         services.AddScoped<VisibleGroupsService>();
+        services.AddScoped<IAccountDeletedHandler, GroupsOnAccountDeleted>();
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AutoSyncBehavior<,>));
 
         // Group bookmarks (FR-033, ADR-0041): a per-account UI preference synced through the sync store

@@ -33,12 +33,14 @@ namespace CircleTools.SecretSanta.Ui;
 /// <param name="coordinator">The account part of a sync (profile, preferences).</param>
 /// <param name="onlineGroups">The online-group sync, run signed in or out (ADR-0086).</param>
 /// <param name="auth">The current principal, read for the signed-in account id.</param>
+/// <param name="session">Renews a session the server could not be reached for at startup, on every trigger.</param>
 /// <param name="connectivity">The connectivity seam, subscribed for the reconnect trigger.</param>
 /// <param name="time">The clock, for when the last cycle completed (the app bar's sync indicator).</param>
 public sealed class AutoSyncService(
     SyncCoordinator coordinator,
     OnlineGroupSync onlineGroups,
     AuthenticationStateProvider auth,
+    AccountSession session,
     IConnectivity connectivity,
     TimeProvider time) : IDisposable, ISyncSignals
 {
@@ -168,6 +170,17 @@ public sealed class AutoSyncService(
             do
             {
                 _resyncRequested = false;
+
+                // A device that started offline has a remembered session but no access token: renew it now that a
+                // trigger fired (reconnect, start, change), so the account cycle below can run.
+                try
+                {
+                    await session.ResumeAsync();
+                }
+                catch
+                {
+                    // Swallowed by design: still waiting for the server; retried on the next trigger.
+                }
 
                 // Online groups reconcile signed in OR out — a link or device key needs no account (ADR-0086).
                 try

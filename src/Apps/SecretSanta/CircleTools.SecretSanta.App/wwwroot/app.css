@@ -93,3 +93,17 @@ h1:focus {
 .mud-dialog-container.mud-dialog-bottomcenter {
     padding-bottom: calc(32px + env(safe-area-inset-bottom));
 }
+
+/* A centred dialog is centred in the whole WebView, status bar included, and MudBlazor caps its height at
+   100dvh minus one app bar. A tall one (the create-group sheet with the keyboard open) then reached up under
+   the status bar and its title was cut off (S24 device test, 2026-10-25). Centre it between the insets and cap
+   it by them too; the dialog scrolls inside. */
+.mud-dialog-container.mud-dialog-center {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+
+.mud-dialog-container.mud-dialog-center .mud-dialog {
+    max-height: calc(100dvh - var(--mud-appbar-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+}

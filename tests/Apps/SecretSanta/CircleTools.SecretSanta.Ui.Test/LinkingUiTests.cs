@@ -124,6 +124,30 @@ public sealed class MembersPageParticipantTests : IAsyncDisposable
         Assert.DoesNotContain("MemberLink", items);
     }
 
+    [Fact]
+    public async Task FreeingASpot_ShowsTheMemberAsFree_RightAway()
+    {
+        Use(OnlineRecords.Organized(_groupId, roles:
+        [
+            new GroupRoleView("owner", "account", null, false, "created"),
+            new GroupRoleView("participant", "deviceKey", _anna, false, "joinLink"),
+        ]));
+        _ctx.AddAuthorization().SetAuthorized("Adrian");
+        _api.View = new OrganizerGroupView(_groupId, 1, 1, System.Text.Json.JsonDocument.Parse("{}").RootElement, false,
+            [new GroupRoleView("owner", "account", null, false, "created")], [], [OnlinePermissions.ManageParticipants], new GroupLinks(null, null));
+        var dialogs = _ctx.Render<MudBlazor.MudDialogProvider>();
+
+        var cut = Render();
+        Assert.Contains("MemberConnectedBadge", cut.Markup);
+        PickFromMenu(cut, "ReleaseMember");
+        dialogs.WaitForAssertion(() => Assert.Contains(dialogs.FindAll("button"), b => b.TextContent.Trim() == "ReleaseMemberConfirmYes"));
+        await dialogs.InvokeAsync(() => dialogs.FindAll("button").First(b => b.TextContent.Trim() == "ReleaseMemberConfirmYes").Click());
+
+        // The action runs after the menu closes, outside the click handler; it still has to re-render the roster.
+        cut.WaitForAssertion(() => Assert.DoesNotContain("MemberConnectedBadge", cut.Markup));
+        Assert.Equal((_groupId, _anna), Assert.Single(_api.Released));
+    }
+
     /// <inheritdoc />
     public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 

@@ -86,6 +86,25 @@ offline story that no longer works the same way.
 - **New risks:** if the product later handles materially more sensitive data than gift assignments,
   this decision should be revisited — the BFF option does not become wrong, only expensive.
 
+## Amendment (2026-10-25, Proposed) — offline is not signed out
+
+From the [2026-10-25 Galaxy S24 device test](../brainstorming/2026-10-25-secret-santa-s24-local-device-test.md)
+(F5): the access token lives in memory only, so an app started **without a reachable server** has a refresh
+token but nothing to read a principal from. It looked signed out, and because the account's groups are shown
+only to their account (ADR-0086), every group owned or taken part in through the account disappeared from the
+phone until the next start with a network. Nothing re-tried the session when the network came back.
+
+- **The account a session belongs to is remembered next to the refresh token**, in the same scope, and cleared
+  with it (`IRefreshTokenStore.RememberAccountAsync` / `ReadAccountAsync`). It is written when a session
+  starts and on every successful refresh. It is **display state, not a credential**: it opens no API call — every
+  request still needs a renewed access token — and it only lets the device keep showing what it already holds
+  for that account (`SessionAccount`).
+- **A waiting session is renewed on every sync trigger** (start, change, reconnect, resume, the foreground poll)
+  through `AccountSession.ResumeAsync`, not only once before the first render. A refused refresh still ends the
+  session and forgets the account with the token (unchanged: "rejected is the end of the session").
+- The header stays signed out while the session waits; the groups show. Telling the person that the session
+  is waiting for the network is left open.
+
 ## Pros and cons of the options
 
 ### 1. Bearer token in WASM (chosen)

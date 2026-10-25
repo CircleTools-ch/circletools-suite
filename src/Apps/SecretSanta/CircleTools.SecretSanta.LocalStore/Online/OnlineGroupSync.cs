@@ -85,6 +85,32 @@ public sealed class OnlineGroupSync(IGroupRecordStore store, IOnlineGroupApi api
         return ApiResult.Ok();
     }
 
+    /// <summary>
+    /// The account was deleted (FR-043): its groups can no longer be reached from this device. A group it organized
+    /// stays here as a device group, so nothing typed is lost (the deletion page promises that data on the person's own
+    /// devices stays untouched); a group it only took part in leaves the device with the account.
+    /// </summary>
+    /// <param name="accountId">The deleted account.</param>
+    /// <param name="cancellationToken">Cancels the work.</param>
+    /// <returns>A task.</returns>
+    public async Task ForgetAccountAsync(Guid accountId, CancellationToken cancellationToken = default)
+    {
+        var held = (await store.LoadAsync(cancellationToken)).Records
+            .Where(r => r.Access is { Principal: AccessPrincipal.Account } access && access.AccountId == accountId)
+            .ToList();
+        foreach (var record in held)
+        {
+            if (record.Document is not null)
+            {
+                await LoseAccessAsync(record.Id, cancellationToken);
+            }
+            else
+            {
+                await RemoveLocallyAsync(record.Id, cancellationToken);
+            }
+        }
+    }
+
     // ---------------------------------------------------------------- sync
 
     /// <summary>

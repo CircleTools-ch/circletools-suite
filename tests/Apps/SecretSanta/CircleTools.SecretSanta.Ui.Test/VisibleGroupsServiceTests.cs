@@ -1,9 +1,11 @@
 using System.Security.Claims;
+using CircleTools.ApiClient;
 using CircleTools.Application;
 using CircleTools.SecretSanta.Contracts;
 using CircleTools.SecretSanta.Core.Persistence;
 using CircleTools.SecretSanta.LocalStore.Online;
 using CircleTools.Ui.Abstractions;
+using CircleTools.Ui.Account.Auth;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace CircleTools.SecretSanta.Ui.Test;
@@ -40,13 +42,22 @@ public sealed class VisibleGroupsServiceTests
     }
 
     [Fact]
+    public async Task ASessionWaitingForTheServer_StillShowsItsAccountsGroups()
+    {
+        // Offline cold start: a remembered refresh token for Account, but no access token yet (ADR-0021).
+        var visible = await (await BuildAsync(Guid.Empty, waitingSessionOf: Account)).GetVisibleAsync();
+
+        Assert.Equal([DeviceId, MineId, LinkId], visible.Select(g => g.Id).Order());
+    }
+
+    [Fact]
     public async Task GroupsTakenPart_AreListedApart_ForTheirAccountOnly()
     {
         Assert.Equal("Wichteln", Assert.Single(await (await BuildAsync(Account)).GetTakingPartAsync()).GroupName);
         Assert.Empty(await (await BuildAsync(OtherAccount)).GetTakingPartAsync());
     }
 
-    private static async Task<VisibleGroupsService> BuildAsync(Guid signedInAs)
+    private static async Task<VisibleGroupsService> BuildAsync(Guid signedInAs, Guid? waitingSessionOf = null)
     {
         IReadOnlyList<GroupSummaryDto> summaries =
         [
@@ -71,7 +82,15 @@ public sealed class VisibleGroupsServiceTests
             ],
         });
 
-        return new VisibleGroupsService(new StubSender(summaries), store, new StubAuth(signedInAs));
+        var refreshTokens = new RefreshTokenStore(new MemoryKeyValueStore(), new RefreshTokenStoreOptions("test.refresh"));
+        if (waitingSessionOf is { } waiting)
+        {
+            await refreshTokens.SaveAsync("refresh", staySignedIn: true);
+            await refreshTokens.RememberAccountAsync(waiting);
+        }
+
+        var session = new SessionAccount(new InMemoryAccessTokenStore(TimeProvider.System), refreshTokens, new StubAuth(signedInAs));
+        return new VisibleGroupsService(new StubSender(summaries), store, session);
     }
 
     private static GroupRecord Online(Guid id, OnlineAccess access) =>

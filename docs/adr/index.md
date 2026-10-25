@@ -29,7 +29,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0018](0018-circle-and-sharing-model.md) | Circle & sharing model (canonical `Circle`, user-chosen label) | Accepted | 2026-07-27 |
 | [0019](0019-member-user-linking.md) | Member↔User linking (optional `UserId`) | Superseded by [0086](0086-one-way-to-be-in-a-group.md) | 2026-07-27 |
 | [0020](0020-server-side-assignment-privacy.md) | Server-side assignment storage & privacy (plaintext + authz) | Accepted | 2026-07-27 |
-| [0021](0021-web-auth-token-model.md) | Web auth token model (bearer in WASM) | Accepted | 2026-07-27 |
+| [0021](0021-web-auth-token-model.md) | Web auth token model (bearer in WASM); amendment 2026-10-25 (Proposed): offline is not signed out — the session's account is remembered as display state, a waiting session is renewed on every sync trigger | Accepted | 2026-07-27 |
 | [0022](0022-account-deletion-and-data-export.md) | Account deletion & data export (immediate delete, export mirrors visibility) | Accepted | 2026-07-27 |
 | [0023](0023-local-dev-infrastructure-in-apphost.md) | Local dev infrastructure in the AppHost (containers behind provider-agnostic seams) | Accepted | 2026-07-27 |
 | [0024](0024-ui-styling-and-theming.md) | UI styling & theming (Bootstrap 5 + thin suite theme) | Superseded by [0040](0040-ui-component-library-mudblazor.md) | 2026-07-28 |

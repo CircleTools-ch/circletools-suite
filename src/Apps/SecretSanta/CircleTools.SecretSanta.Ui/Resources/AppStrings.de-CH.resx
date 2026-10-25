@@ -289,11 +289,15 @@
   <data name="JoinNotFoundTitle" xml:space="preserve"><value>Dieser Link funktioniert nicht</value></data>
   <data name="JoinNotFoundBody" xml:space="preserve"><value>Die Gruppe wurde möglicherweise entfernt oder der Link ist veraltet.</value></data>
   <data name="JoinAlreadyClaimedError" xml:space="preserve"><value>Jemand ist bereits als diese Person beigetreten. Wähle einen anderen Namen.</value></data>
+  <data name="JoinAlreadyInTitle" xml:space="preserve"><value>Du bist schon dabei</value></data>
+  <data name="JoinAlreadyInAs" xml:space="preserve"><value>Du machst hier als {0} mit.</value></data>
+  <data name="JoinAlreadyOrganizing" xml:space="preserve"><value>Du organisierst diese Gruppe.</value></data>
+  <data name="JoinOpenGroup" xml:space="preserve"><value>Gruppe öffnen</value></data>
   <data name="JoinFailedError" xml:space="preserve"><value>Beitritt momentan nicht möglich. Bitte versuche es erneut.</value></data>
   <data name="YouAreMember" xml:space="preserve"><value>Du bist als {0} beigetreten.</value></data>
   <data name="MemberClaimedBadge" xml:space="preserve"><value>Beigetreten</value></data>
   <data name="ReleaseMember" xml:space="preserve"><value>Platz freigeben</value></data>
-  <data name="ReleaseMemberConfirm" xml:space="preserve"><value>Den Platz von {0} freigeben? Der Zugriff endet, bis {0} wieder mitmacht. Was eingetragen wurde, bleibt in der Gruppe.</value></data>
+  <data name="ReleaseMemberConfirm" xml:space="preserve"><value>Den Platz von {0} freigeben? {0} verliert den Zugriff, und der Platz ist wieder frei – für {0} oder jemand anderen. Was eingetragen wurde, bleibt in der Gruppe.</value></data>
   <data name="ReleaseMemberConfirmYes" xml:space="preserve"><value>Platz freigeben</value></data>
   <data name="Someone" xml:space="preserve"><value>Jemand</value></data>
   <data name="ClaimAdminConfirm" xml:space="preserve"><value>Diese Gruppe in deinem Konto behalten? Dann ist sie auf all deinen Geräten und nur du verwaltest sie – der Verwaltungs-Link funktioniert nicht mehr. Der Beitritts-Link funktioniert weiter.</value></data>

@@ -21,6 +21,7 @@ public sealed class AccountPageTests
 
     // What the API actually sends for a password-policy failure: codes, not prose (ADR-0027).
     private static readonly string[] _tooShort = ["PasswordTooShort"];
+    private static readonly string[] _empty = ["PasswordTooShort", "PasswordRequiresUniqueChars"];
     private static readonly string[] _breached = ["BreachedPassword"];
     private static readonly string[] _unknownProse = ["Something the client has no key for."];
 
@@ -64,6 +65,29 @@ public sealed class AccountPageTests
             Assert.Contains("ErrorValidation", alert.TextContent, StringComparison.Ordinal);
             Assert.Contains("PasswordErrorTooShort", alert.TextContent, StringComparison.Ordinal);
             Assert.DoesNotContain("PasswordTooShort<", alert.TextContent, StringComparison.Ordinal);
+        });
+    }
+
+    [Fact]
+    public async Task SignUp_AnEmptyPassword_IsTooShort_Once_WithNoRawCode()
+    {
+        // An empty password also fails the one-unique-character rule; both codes say the same thing (2026-10-25).
+        await using var ctx = new AccountTestContext();
+        ctx.Api.RespondJson(
+            HttpMethod.Post,
+            $"{Account}/register",
+            new { title = "Validation failed", errors = new { password = _empty } },
+            HttpStatusCode.BadRequest);
+
+        var cut = ctx.RenderPage<Register>();
+        Fill(cut, "#register-email", "anna@example.test");
+        cut.Find("form").Submit();
+
+        cut.WaitForAssertion(() =>
+        {
+            var alert = cut.Find("[role=alert]");
+            Assert.Single(System.Text.RegularExpressions.Regex.Matches(alert.TextContent, "PasswordErrorTooShort"));
+            Assert.DoesNotContain("PasswordRequiresUniqueChars", alert.TextContent, StringComparison.Ordinal);
         });
     }
 

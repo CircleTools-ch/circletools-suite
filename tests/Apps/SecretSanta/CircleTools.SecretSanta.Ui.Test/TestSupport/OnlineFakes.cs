@@ -30,7 +30,11 @@ public sealed class FakeOnlineGroupApi : IOnlineGroupApi
     public Task<ApiResult<GroupLinks>> CreateAsync(CreateOnlineGroupRequest request, CancellationToken cancellationToken = default) => Fail<GroupLinks>();
 
     /// <inheritdoc />
-    public Task<ApiResult<OrganizerGroupView>> GetAsync(Guid groupId, OnlineCredentials credentials, CancellationToken cancellationToken = default) => Fail<OrganizerGroupView>();
+    public Task<ApiResult<OrganizerGroupView>> GetAsync(Guid groupId, OnlineCredentials credentials, CancellationToken cancellationToken = default) =>
+        View is { } view ? Task.FromResult(ApiResult.Ok(view)) : Fail<OrganizerGroupView>();
+
+    /// <summary>Gets or sets what reading the group answers, or <see langword="null"/> for offline.</summary>
+    public OrganizerGroupView? View { get; set; }
 
     /// <inheritdoc />
     public Task<ApiResult<PushOnlineGroupResponse>> PushAsync(Guid groupId, PushOnlineGroupRequest request, OnlineCredentials credentials, CancellationToken cancellationToken = default) => Fail<PushOnlineGroupResponse>();
@@ -77,8 +81,12 @@ public sealed class FakeOnlineGroupApi : IOnlineGroupApi
     /// <inheritdoc />
     public Task<ApiResult> LeaveAsync(Guid groupId, OnlineCredentials credentials, CancellationToken cancellationToken = default) => Fail();
 
+    /// <summary>Gets or sets what the join link shows, or <see langword="null"/> for offline.</summary>
+    public JoinPreview? Preview { get; set; }
+
     /// <inheritdoc />
-    public Task<ApiResult<JoinPreview>> PreviewJoinAsync(string joinToken, CancellationToken cancellationToken = default) => Fail<JoinPreview>();
+    public Task<ApiResult<JoinPreview>> PreviewJoinAsync(string joinToken, CancellationToken cancellationToken = default) =>
+        Preview is { } preview ? Task.FromResult(ApiResult.Ok(preview)) : Fail<JoinPreview>();
 
     /// <inheritdoc />
     public Task<ApiResult<JoinResponse>> JoinAsync(string joinToken, JoinRequest request, CancellationToken cancellationToken = default) => Fail<JoinResponse>();

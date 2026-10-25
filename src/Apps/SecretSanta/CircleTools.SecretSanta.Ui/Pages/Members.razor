@@ -86,7 +86,10 @@ else
                             <MudTextField @bind-Value="_editGiftNote" Label="@L["GiftNoteLabel"]"
                                           HelperText="@(_connected.KeepsOwnEntry(member.Id) ? L["MemberKeepsOwnEntry", member.Name] : L["GiftNoteHint"])"
                                           ReadOnly="@_connected.KeepsOwnEntry(member.Id)"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2"
+                                          Variant="@(_connected.KeepsOwnEntry(member.Id) ? Variant.Filled : Variant.Outlined)"
+                                          Adornment="@(_connected.KeepsOwnEntry(member.Id) ? Adornment.End : Adornment.None)"
+                                          AdornmentIcon="@Icons.Material.Outlined.Lock"
+                                          Margin="Margin.Dense" Lines="2"
                                           MaxLength="Member.MaxGiftNoteLength" Counter="Member.MaxGiftNoteLength" />
                             <div class="d-flex gap-1">
                                 <MudButton Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled"
@@ -468,13 +471,16 @@ else
     }
 
     // A menu item that opens a sheet starts it only after the menu has closed: the item's handler returns at
-    // once, so the menu is gone before the sheet slides in rather than staying open behind it (Q12).
+    // once, so the menu is gone before the sheet slides in rather than staying open behind it (Q12). Running outside
+    // the item's event handler, it renders itself when done: freeing a spot left "Connected" on screen until the
+    // next sync otherwise (S24 device test, 2026-10-25).
     private void AfterMenu(Func<Task> action) => _ = InvokeAsync(async () =>
     {
         await Task.Yield();
         try
         {
             await action();
+            StateHasChanged();
         }
         catch (Exception ex)
         {

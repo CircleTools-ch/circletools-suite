@@ -62,6 +62,20 @@ public sealed class AccountSession(
         return true;
     }
 
+    /// <summary>
+    /// Renews a session that is waiting for the server — remembered, but not restored because the server could not
+    /// be reached at startup. Does nothing while a session is live or when none is remembered.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="RestoreAsync"/> runs once, before the first render. A device that started offline would otherwise
+    /// stay signed out until the next restart, its account groups hidden and its edits not synced; the app calls this
+    /// on every sync trigger (reconnect included) so the session comes back with the network.
+    /// </remarks>
+    /// <param name="cancellationToken">Cancels the renewal.</param>
+    /// <returns><see langword="true"/> if a session is live afterwards.</returns>
+    public async ValueTask<bool> ResumeAsync(CancellationToken cancellationToken = default) =>
+        tokens.AccessToken is not null || await RestoreAsync(cancellationToken);
+
     /// <summary>Signs in with email and password (FR-008).</summary>
     /// <param name="email">The account's address.</param>
     /// <param name="password">The account's password.</param>
@@ -198,6 +212,7 @@ public sealed class AccountSession(
         tokens.SetToken(session.AccessToken, TimeSpan.FromSeconds(session.ExpiresIn));
         await refreshTokens.SaveAsync(session.RefreshToken, staySignedIn, cancellationToken);
         auth.NotifyChanged();
+        await RememberAccountAsync(cancellationToken);
         await ApplyAccountLanguageAsync(cancellationToken);
     }
 
@@ -213,6 +228,16 @@ public sealed class AccountSession(
 
         await AdoptAsync(session, staySignedIn, cancellationToken);
         return result;
+    }
+
+    // Which account the stored session belongs to, so its data stays visible after an offline cold start.
+    private async ValueTask RememberAccountAsync(CancellationToken cancellationToken)
+    {
+        var accountId = (await auth.GetAuthenticationStateAsync()).User.UserId();
+        if (accountId != Guid.Empty)
+        {
+            await refreshTokens.RememberAccountAsync(accountId, cancellationToken);
+        }
     }
 
     /// <summary>
