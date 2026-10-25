@@ -3,7 +3,7 @@ using CircleTools.Circles.Core.Domain;
 using CircleTools.Circles.Repository;
 using CircleTools.Identity;
 using CircleTools.Main.Service.Repository;
-using CircleTools.Main.Service.Repository.Linking;
+using CircleTools.SecretSanta.Service.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,13 +11,13 @@ namespace CircleTools.Main.Service.Test;
 
 /// <summary>
 /// Count-logic tests for the business-metrics collector (FEAT-022, TP-022): the <see cref="BusinessCountReader"/>
-/// must count rows across the four contexts and derive <em>draws</em> as distinct draw tuples, not rows.
+/// must count rows across the three contexts and read <em>events</em> and <em>draws</em> out of the online groups' documents.
 /// </summary>
 [Collection(BusinessMetricsDatabase.CollectionName)]
 public sealed class BusinessMetricsCollectorTests(BusinessMetricsPostgresFixture fixture)
 {
     [Fact]
-    public async Task ReadAsync_CountsAcrossContexts_AndDerivesDistinctDraws()
+    public async Task ReadAsync_CountsAcrossContexts_AndCountsEventsAndDrawsInTheDocuments()
     {
         await using var provider = fixture.CreateProvider();
 
@@ -28,8 +28,7 @@ public sealed class BusinessMetricsCollectorTests(BusinessMetricsPostgresFixture
             var services = seedScope.ServiceProvider;
             var main = services.GetRequiredService<MainDbContext>();
             var circles = services.GetRequiredService<CirclesDbContext>();
-            var shared = services.GetRequiredService<SharedGroupDbContext>();
-            var linking = services.GetRequiredService<LinkingDbContext>();
+            var secretSanta = services.GetRequiredService<SecretSantaDbContext>();
 
             // Accounts: two confirmed, one not.
             main.Users.Add(NewUser("a@x.test", confirmed: true));
@@ -46,21 +45,10 @@ public sealed class BusinessMetricsCollectorTests(BusinessMetricsPostgresFixture
             circles.Circles.Add(circle);
             await circles.SaveChangesAsync();
 
-            // Two shared-by-link groups.
-            shared.Groups.Add(NewSharedGroup(now));
-            shared.Groups.Add(NewSharedGroup(now));
-            await shared.SaveChangesAsync();
-
-            // Two events.
-            linking.GroupEvents.Add(NewEvent());
-            linking.GroupEvents.Add(NewEvent());
-            // Three assignment rows across two distinct (GroupId, EventId, DrawVersion) tuples => draws == 2.
-            var groupId = Guid.CreateVersion7();
-            var eventId = Guid.CreateVersion7();
-            linking.Assignments.Add(NewAssignment(groupId, eventId, giver: Guid.CreateVersion7(), drawVersion: 1));
-            linking.Assignments.Add(NewAssignment(groupId, eventId, giver: Guid.CreateVersion7(), drawVersion: 1));
-            linking.Assignments.Add(NewAssignment(groupId, eventId, giver: Guid.CreateVersion7(), drawVersion: 2));
-            await linking.SaveChangesAsync();
+            // Two online groups: one with two events (drawn twice, and not yet), one with none.
+            secretSanta.Groups.Add(NewOnlineGroup(now, """{"events":[{"draws":[{},{}]},{"draws":[]}]}"""));
+            secretSanta.Groups.Add(NewOnlineGroup(now, """{"events":[]}"""));
+            await secretSanta.SaveChangesAsync();
         }
 
         await using var scope = provider.CreateAsyncScope();
@@ -68,17 +56,16 @@ public sealed class BusinessMetricsCollectorTests(BusinessMetricsPostgresFixture
         var counts = await BusinessCountReader.ReadAsync(
             sp.GetRequiredService<MainDbContext>(),
             sp.GetRequiredService<CirclesDbContext>(),
-            sp.GetRequiredService<SharedGroupDbContext>(),
-            sp.GetRequiredService<LinkingDbContext>(),
+            sp.GetRequiredService<SecretSantaDbContext>(),
             CancellationToken.None);
 
         Assert.Equal(2, counts.AccountsConfirmed);
         Assert.Equal(1, counts.AccountsUnconfirmed);
         Assert.Equal(1, counts.CircleGroups);
-        Assert.Equal(2, counts.SharedGroups);
+        Assert.Equal(2, counts.OnlineGroups);
         Assert.Equal(2, counts.Events);
         Assert.Equal(2, counts.Members);
-        Assert.Equal(2, counts.Draws); // 3 rows → 2 distinct draw tuples
+        Assert.Equal(2, counts.Draws);
     }
 
     private static CircleToolsUser NewUser(string email, bool confirmed) => new()
@@ -95,38 +82,16 @@ public sealed class BusinessMetricsCollectorTests(BusinessMetricsPostgresFixture
         SecurityStamp = Guid.CreateVersion7().ToString(),
     };
 
-    private static SharedGroupRow NewSharedGroup(DateTimeOffset now) => new()
+    // Only the document's shape matters to the counts; the body is never read back into the app here.
+    private static GroupRow NewOnlineGroup(DateTimeOffset now, string body) => new()
     {
         GroupId = Guid.CreateVersion7(),
-        Body = "{}",
         Version = 1,
-        ServerModifiedAt = now,
+        SchemaVersion = 1,
+        Body = body,
         CreatedAt = now,
+        UpdatedAt = now,
         LastActivityAt = now,
-    };
-
-    private static GroupEventRow NewEvent() => new()
-    {
-        GroupId = Guid.CreateVersion7(),
-        EventId = Guid.CreateVersion7(),
-        OrganizerAccountId = Guid.CreateVersion7(),
-        GroupName = "Group",
-        EventName = "Event",
-    };
-
-    private static AssignmentRow NewAssignment(Guid groupId, Guid eventId, Guid giver, long drawVersion) => new()
-    {
-        GroupId = groupId,
-        EventId = eventId,
-        EventName = "Event",
-        GiverAccountId = giver,
-        OrganizerAccountId = Guid.CreateVersion7(),
-        GroupName = "Group",
-        RecipientMemberId = Guid.CreateVersion7(),
-        RecipientName = "Recipient",
-        RecipientWishlistSnapshot = "[]",
-        RecipientGiftNote = string.Empty,
-        DrawVersion = drawVersion,
     };
 }
 
@@ -156,7 +121,7 @@ public sealed class BusinessMetricsInstrumentTests
             AccountsConfirmed: 2,
             AccountsUnconfirmed: 1,
             CircleGroups: 3,
-            SharedGroups: 4,
+            OnlineGroups: 4,
             Events: 5,
             Members: 6,
             Draws: 7));
@@ -197,7 +162,7 @@ public sealed class BusinessMetricsInstrumentTests
         Assert.Equal(2, Tagged(measurements, "circletools.business.accounts", "confirmed", true));
         Assert.Equal(1, Tagged(measurements, "circletools.business.accounts", "confirmed", false));
         Assert.Equal(3, Tagged(measurements, "circletools.business.groups", "kind", "circle"));
-        Assert.Equal(4, Tagged(measurements, "circletools.business.groups", "kind", "shared"));
+        Assert.Equal(4, Tagged(measurements, "circletools.business.groups", "kind", "online"));
         Assert.Equal(5, Scalar(measurements, "circletools.business.events"));
         Assert.Equal(6, Scalar(measurements, "circletools.business.members"));
         Assert.Equal(7, Scalar(measurements, "circletools.business.draws"));

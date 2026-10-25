@@ -41,13 +41,11 @@ public sealed class SharePageTests : IAsyncDisposable
         _ctx.Services.AddSingleton<ISyncSignals>(new FakeSyncSignals());
         // The share page now offers the guided hand-out (MNF-7), which persists progress via this service.
         _ctx.Services.AddSingleton<HandoutProgressService>();
-        // Live reveal links (ADR-0068): the page reads reveal tokens from the local store and publishes
-        // slices. With an empty store and an unreachable API it exercises only the local-only path.
-        _ctx.Services.AddSingleton<ILocalSyncStore>(new EmptyLocalSyncStore());
-        _ctx.Services.AddSingleton<NoOpSharedGroupApi>();
-        _ctx.Services.AddSingleton<ISharedGroupApi>(sp => sp.GetRequiredService<NoOpSharedGroupApi>());
-        _ctx.Services.AddSingleton<ISharedGroupAccountApi>(sp => sp.GetRequiredService<NoOpSharedGroupApi>());
-        _ctx.Services.AddSingleton<RevealSlicePublisher>();
+        // Reveal tokens (ADR-0086): the page asks the group store for them; with nothing on this device and an
+        // unreachable API it exercises only the snapshot-link path.
+        var keyValues = new ShareStubKeyValueStore();
+        var store = new CircleTools.SecretSanta.LocalStore.Online.GroupRecordStore(keyValues);
+        _ctx.Services.AddSingleton(new CircleTools.SecretSanta.LocalStore.Online.OnlineGroupSync(store, new FakeOnlineGroupApi()));
     }
 
     private IRenderedComponent<Share> RenderShare() =>

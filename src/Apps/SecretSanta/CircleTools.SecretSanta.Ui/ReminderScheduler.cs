@@ -1,4 +1,5 @@
 using CircleTools.Application;
+using CircleTools.SecretSanta.LocalStore.Online;
 using CircleTools.SecretSanta.Core.Application;
 using CircleTools.Ui.Abstractions;
 using CircleTools.Ui.Account.Auth;
@@ -29,6 +30,7 @@ namespace CircleTools.SecretSanta.Ui;
 /// Whether the app is visible: coming back (e.g. from the system settings) applies reminders the user asked for
 /// while notifications were blocked (R15).
 /// </param>
+/// <param name="records">This device's group records, for which member is the signed-in person (ADR-0086).</param>
 public sealed class ReminderScheduler(
     ISender sender,
     AuthenticationStateProvider auth,
@@ -37,7 +39,8 @@ public sealed class ReminderScheduler(
     IStringLocalizer<AppStrings> localizer,
     TimeProvider time,
     AutoSyncService autoSync,
-    IAppForeground foreground) : IReminderRescheduler, IDisposable
+    IAppForeground foreground,
+    IGroupRecordStore records) : IReminderRescheduler, IDisposable
 {
     private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(750);
 
@@ -184,9 +187,10 @@ public sealed class ReminderScheduler(
                 continue;
             }
 
+            // Who "I" am in a group is this device's role there (ADR-0086): the member its own view is about.
             var myMemberId = myId == Guid.Empty
                 ? (Guid?)null
-                : group.Members.FirstOrDefault(m => m.UserId == myId)?.Id;
+                : (await records.LoadAsync(cancellationToken)).Records.FirstOrDefault(r => r.Id == group.Id)?.View?.MemberId;
 
             foreach (var occasion in group.Events)
             {

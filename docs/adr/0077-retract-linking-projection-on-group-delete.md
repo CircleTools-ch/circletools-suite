@@ -1,11 +1,13 @@
 ---
-status: Accepted
+status: Superseded by ADR-0086
 date: 2026-10-14
 deciders: [Adrian]
 tags: [privacy, sync, linking, secret-santa, account]
 ---
 
 # ADR-0077 — Deleting a group retracts its server-side linking projection; device-only groups do not self-link
+
+> **Superseded by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** There is no linking projection any more; deleting an online group deletes its one server copy.
 
 ## Context and problem statement
 

@@ -30,15 +30,11 @@ public sealed record EventDetailsDto(DateTimeOffset? Date, string Location, stri
 /// <summary>A group member (shared-roster identity). Wishlists are per event (ADR-0042).</summary>
 /// <param name="Id">The member identity.</param>
 /// <param name="Name">The member name.</param>
-/// <param name="UserId">
-/// The account this member is linked to, or <see langword="null"/> when unlinked. Lets list and
-/// editor screens show link state without a second lookup.
-/// </param>
 /// <param name="GiftNote">
 /// The member's stable gift note — allergies, dietary/lifestyle needs, or things not to buy — shown to
 /// their giver on the reveal (FR-037). Empty when unset.
 /// </param>
-public sealed record MemberDto(Guid Id, string Name, Guid? UserId = null, string GiftNote = "");
+public sealed record MemberDto(Guid Id, string Name, string GiftNote = "");
 
 /// <summary>
 /// An exclusion between two members. When <paramref name="Mutual"/> is <see langword="false"/> it is

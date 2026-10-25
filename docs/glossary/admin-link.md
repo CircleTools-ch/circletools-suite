@@ -1,10 +1,12 @@
 ---
 term: Admin link
 contexts: [Secret-Santa]
-status: Draft
+status: Superseded
 ---
 
 # Admin link
+
+> **Replaced by [Organizer link](organizer-link.md)** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md)). Same idea — organize a group without an account — now the owner principal of an [online group](online-group.md), carrying the group id (`/admin#g=…&t=…`). The entry below describes the old shared-by-link model and is kept for history.
 
 ## Definition
 

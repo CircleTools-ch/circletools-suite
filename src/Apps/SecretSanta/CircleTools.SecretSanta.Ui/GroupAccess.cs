@@ -1,15 +1,14 @@
-using CircleTools.SecretSanta.LocalStore;
+using CircleTools.SecretSanta.LocalStore.Online;
 using CircleTools.Ui.Abstractions;
 
 namespace CircleTools.SecretSanta.Ui;
 
 /// <summary>
-/// What this device may do with a group (ADR-0058): a device that joined through a join link is a
-/// participant. It sees the group and its own assignment, but only the organizer changes the group, and
-/// it never sees the other people's reveal links. Pages ask here instead of reading the sync record.
+/// What this device may do with a group (ADR-0086): it may change the document only where the server granted the
+/// write permission (or the group is on this device only). Pages ask here instead of reading the group record.
 /// </summary>
-/// <param name="local">The local store holding the group's sync record.</param>
-public sealed class GroupAccess(ILocalSyncStore local)
+/// <param name="store">This device's group records.</param>
+public sealed class GroupAccess(IGroupRecordStore store)
 {
     /// <summary>
     /// Reads a group's access through an optional <see cref="GroupAccess"/>: a host (or component test)
@@ -26,7 +25,7 @@ public sealed class GroupAccess(ILocalSyncStore local)
             : Task.FromResult(GroupAccessInfo.Organizer);
     }
 
-    /// <summary>Reads whether this device holds the group only as a join-link participant.</summary>
+    /// <summary>Reads whether this device may change the group's document.</summary>
     /// <param name="groupId">The group.</param>
     /// <param name="cancellationToken">Cancels the read.</param>
     /// <returns>The participant facts, or a regular (editable) access when the record can't be read.</returns>
@@ -34,10 +33,10 @@ public sealed class GroupAccess(ILocalSyncStore local)
     {
         try
         {
-            var record = (await local.LoadGroupsAsync(cancellationToken)).FirstOrDefault(r => r.State.Id == groupId);
-            return record is null || !record.IsJoinOnly()
+            var record = (await store.LoadAsync(cancellationToken)).Records.FirstOrDefault(r => r.Id == groupId);
+            return record is null || record.CanEditDocument
                 ? GroupAccessInfo.Organizer
-                : new GroupAccessInfo(ReadOnly: true, record.ClaimedMemberId);
+                : new GroupAccessInfo(ReadOnly: true, record.Access?.MemberId);
         }
         catch (StorageUnavailableException)
         {

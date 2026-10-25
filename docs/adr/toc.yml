@@ -168,5 +168,11 @@
   href: 0083-links-in-wishlist-items.md
 - name: 0084 Own entry from the reveal link
   href: 0084-own-entry-from-the-reveal-link.md
+- name: 0085 One place for what a member keeps themselves
+  href: 0085-one-place-for-a-members-own-entry.md
+- name: 0086 One way to be in a group
+  href: 0086-one-way-to-be-in-a-group.md
+- name: 0087 Production data is kept
+  href: 0087-production-data-is-kept.md
 - name: Template
   href: _template-adr.md

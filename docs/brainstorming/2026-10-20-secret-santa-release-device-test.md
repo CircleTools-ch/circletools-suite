@@ -154,6 +154,50 @@ WebAuthn 2/2 pass.
 **Not covered:** change password (the step was blocked by the assistant's permission guard — needs a manual
 run); iOS; R1 re-check (after the server deploy); joining inside the app (blocked by R10).
 
+### Part 3 — re-check of the fixes on the release build (2026-10-21)
+
+Same setup as part 1: Pixel 9 Pro with Play build **0.1.126** (account A, German, dark mode) over `adb`, and
+Playwright at 412×915 as account B against production. The web app showed "A new version is available" and was
+reloaded first. Notifications were granted on the phone for R12/R15 with Adrian's go-ahead and revoked again
+afterwards.
+
+**Automated suites:** 12 unit/component/architecture projects pass (1,100 tests); E2E SecretSanta 9/9 and
+WebAuthn 2/2 pass. `EnumerationTimingTests.ResendVerification_…` failed once in the full parallel run (2.26 ms
+apart on ~121 ms) and passed 3/3 in isolation, so it's timer jitter under load. It is flaky.
+
+| Fix | Re-check | Result |
+|---|---|---|
+| R1 | "Socken" (the item stuck in part 1) now on A's *Meine Zuteilungen*; Ben added "QA-1021 Schal" in the browser → organizer's *Wunschlisten* → A's *Meine Zuteilungen* | ✅ (latency not measured: the reveal collapses on resume, so the polling check could not see it) |
+| R10 | `VIEW https://secretsanta.circletools.ch/join#t=…` opens the app's join page ("Du bist eingeladen zu QA-1020 Familie"), not the browser; domain `verified` | ✅ |
+| R11 | Signed-out *Shared by link* group *QA-1021-Link* → sign in as B → import prompt names only it → "Bring into my account" → *My account · shared* with join link | ✅ |
+| R12 | Could not be checked: the reminder never reached the shade (see R17), so there was nothing for a reconcile to remove | ⚠️ not verified |
+| R13 | "Änderung gespeichert · Rückgängig" gone after ≤ 8 s | ✅ |
+| R14 | Granting the permission switched on only "Vor dem Anlass" | ✅ not reproduced |
+| R15 | Draw *R15-Test* → "Erinnere mich" while blocked → "Einstellungen öffnen" → grant → resume: "Vor dem Anlass · 1 Tag vorher" on, the other two off | ✅ |
+
+Also verified: organizer → participant sync (place changed on the phone shown in B's browser after 31 s);
+browser console without errors or warnings.
+
+**New functional bug:**
+
+| ID | Finding | Evidence |
+|----|---------|----------|
+| R16 | **An organizer's own wishlist from *Meine Wunschlisten* never reaches a giver who joined by link, and isn't in the group either.** A (organizer, member "Adri") has "Kaffee" (Weihnachten 2026) and "QA-Buch" (Erinnerungstest) on *Meine Wunschlisten*, shown as saved. The group's *Wunschlisten* page shows Adri's row empty, and Ben (B, joined by link, gives to Adri in *Erinnerungstest*) sees "No wishlist yet". The self-owned wishlist (FR-030) is stored in `member_wishlists` and only merged by `LinkingStore.ComposeAsync`, which is the read path for account-linked givers' *My assignments*. Givers in a *Mein Konto · geteilt* group read from their group copy, which never gets it. | phone + browser; `LinkingStore.cs:652` |
+| R17 | **A reminder whose alarm arrives late is silently dropped.** "Vor dem Anlass · 1 Tag vorher" at 15:30 for *R15-Test* (22.10.2026) was registered as `RTC_WAKEUP origWhen=2026-10-21 15:29:59.999 window=+12m21s` (inexact, U11). Android delivered it about 15:36 (`dumpsys alarm`: `ScheduledAlarmReceiver`, 3 wakeups, last ≈ −12.5 min at 15:48), but no notification was posted: no record in `dumpsys notification`, and the channel's `mLastNotificationUpdateTimeMs` is still 2026-10-20 11:30 (part 2). That part-2 reminder arrived 22 s after its time and was shown. **Cause (confirmed by decompiling Plugin.LocalNotification 14.1.2 / .Core 1.1.2):** `ScheduledAlarmReceiver.SendNotification` shows a notification only when `AndroidScheduleOptions.IsValidNotifyTime` holds, i.e. `NotifyTime >= now − AllowedDelay`, and `AllowedDelay` defaults to **1 minute**. Otherwise it logs "NotifyTime is earlier than (DateTime.Now - Allowed Delay), notification ignored" and drops it. Without `SCHEDULE_EXACT_ALARM` (manifest, by design), `ScheduleMode.Default` falls back to inexact `AlarmManager.set()`, whose window here was +12 min to +1 h. So any reminder delivered more than a minute late is lost. | phone; `MauiNotificationScheduler.ScheduleAsync` (no `Android.AllowedDelay` set) |
+
+**Still open from parts 1–2 (seen again, not re-triaged):** R2 (the reminder dropdown on *Details* and "v0.1.126"
+in *Einstellungen* sit under the bottom nav), R4 ("tell the organizer what you would like" on Ben's reveal page),
+R7 (the after-draw dialog text and "Jetzt nicht" aren't in the accessibility tree), R8 (*Testq* and *UI-Test
+Familie* on A's *Meine Zuteilungen*/*Meine Wunschlisten*), U1 (join share text), U11 (alarm window up to +1 h),
+U12 (*My wishlists* "a link already sent keeps showing the old list"), U13 ("open the whole group with a link").
+The *Erinnern um* field still reports its old value ("11:30") to accessibility after a change, similar to R6.
+
+**Test data added:** *QA-1021-Link* (account B, *My account · shared*, empty); *QA-1021-R15* on the phone (on
+this device, members Adri/Rita/NRolf, event *R15-Test* 22.10.2026, drawn); Ben's "QA-1021 Schal" and A's
+"QA-Buch" wishes; *Erinnerungstest* place changed to "QA-1021-Ort". B stays signed in in the Playwright profile.
+Phone restored: notifications denied again (`USER_SET|USER_FIXED`), "Vor dem Anlass" off (no alarms left); *Erinnern um*
+stays at 15:30 (was 11:30).
+
 ### Not covered in part 1
 
 - T4 lead time and time of day in *Einstellungen*, and actual delivery (incl. Q9 DST) — the controls only
@@ -242,6 +286,18 @@ Proposed scores; Adrian decides in triage.
 - [x] R15 fixed (2026-10-20). After the release, re-check on the Pixel: draw → "Erinnere mich" with
       notifications blocked → allow them in the system settings → back in the app "Vor dem Anlass" is on.
 - [ ] Triage R2–R9 and U1–U17; move the selected items into the backlog.
+- [x] Part 3 (2026-10-21, build 0.1.126): R1, R10, R11, R13, R15 verified on the Pixel/browser; R14 not reproduced.
+- [x] R17 fixed (2026-10-21, [ADR-0060](../adr/0060-local-notification-scheduling-and-permission.md) amendment):
+      the cause was confirmed by decompiling the plugin. A reminder is now shown until the end of its day
+      (`ScheduledNotification.ShowUntil` → `AllowedDelay`), and the alarm uses `InexactAllowWhileIdle`; still no
+      exact-alarm permission (U11 stays open).
+- [ ] After the next release, on the Pixel: a reminder that fires late appears (R17), and stays in the shade
+      after the next sync (R12).
+- [ ] R16: decide [ADR-0085](../adr/0085-one-place-for-a-members-own-entry.md) (Proposed, rewritten
+      2026-10-22: one member-entry table for every route, merged by the server into whichever store holds the
+      group). This affects every linked member, not only the organizer.
+- [x] Flaky `EnumerationTimingTests` (2026-10-21): moved to its own xUnit collection that runs with nothing in
+      parallel (`TimingApi`, `DisableParallelization`); the thresholds are unchanged.
 - [ ] Change password: run manually before the release.
 - [ ] Part 2 test data: QA-1020 renamed *QA-1020 Familie* with a second event *Erinnerungstest* (21.10.2026,
       place "Wirklich-Offline"), Ben rejoined; QA-Lokal stays in the Playwright browser (on this device). The

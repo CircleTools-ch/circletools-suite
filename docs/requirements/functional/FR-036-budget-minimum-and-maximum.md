@@ -21,7 +21,7 @@ same budget, in the same currency:
 - The **minimum** is optional. When set it must satisfy `0 ≤ minimum ≤ maximum`. A blank, zero or
   negative minimum means "no minimum" — a bare maximum, exactly as before.
 - The budget shows as a **range** ("10–30 CHF") wherever it is displayed — the public
-  [Reveal link](../../glossary/reveal-link.md) and a linked member's own assignment — when a minimum is
+  [Reveal link](../../glossary/reveal-link.md) and a participant's own assignment — when a minimum is
   set, and as the bare maximum ("30 CHF") when it is not.
 - The minimum travels in the existing self-contained reveal payload
   ([ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md)) as one **additive, optional** field
@@ -47,7 +47,7 @@ addition that closes a complaint no competitor addresses.
 Given an event with no budget
 When the organizer sets a maximum of 30 CHF and a minimum of 10 CHF and saves
 Then the event's budget is 10–30 CHF
-And each reveal link and the linked member's assignment show "10–30 CHF"
+And each reveal link and the participant's assignment show "10–30 CHF"
 
 Given an event with a maximum of 30 CHF and no minimum
 When a reveal link is generated

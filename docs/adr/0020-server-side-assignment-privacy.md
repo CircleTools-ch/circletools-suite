@@ -7,6 +7,8 @@ tags: [architecture, privacy, security, secret-santa, sync]
 
 # ADR-0020 — Server-side assignment storage & privacy
 
+> **Amended by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** The published `linking.assignments` rows are gone: a participant's pairing is derived from the group document on read. The authorization rules here (own pairing only, deny not filter, at most one pairing in a non-organizer response) carry over unchanged.
+
 ## Context and problem statement
 
 This is the one v2 decision that **removes a guarantee** instead of adding one.

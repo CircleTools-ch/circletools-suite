@@ -7,6 +7,8 @@ tags: [secret-santa, privacy, sharing, sync, reveal]
 
 # ADR-0068 — Live reveal links for backend-backed groups (fresh wishlist & event details)
 
+> **Amended by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** Reveal slices are no longer published; a reveal token names (group, event, giver) and the page is derived on read.
+
 ## Context and problem statement
 
 A Secret-Santa [reveal link](../glossary/reveal-link.md) is a **self-contained offline snapshot**: the

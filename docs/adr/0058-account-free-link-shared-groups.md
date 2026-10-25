@@ -7,6 +7,8 @@ tags: [architecture, privacy, sync, secret-santa, sharing, mobile]
 
 # ADR-0058 — Account-free, backend-stored, link-shared groups (a third storage tier)
 
+> **Amended by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** *Shared by link*, *My account* and *My account · shared* are one place, *online*; the join link is a setting. The admin link stays as the organizer link (account-free owner).
+
 ## Context and problem statement
 
 Today a Secret-Santa [Group](../glossary/group.md) has **two** storage modes, and the docs treat them

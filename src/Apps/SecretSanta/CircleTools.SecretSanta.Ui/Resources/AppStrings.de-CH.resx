@@ -167,7 +167,6 @@
   <data name="FromCircleOpenGroup" xml:space="preserve"><value>Gruppe öffnen</value></data>
   <data name="FromCirclePeopleCountSingular" xml:space="preserve"><value>{0} Person</value></data>
   <data name="FromCirclePeopleCountPlural" xml:space="preserve"><value>{0} Personen</value></data>
-  <data name="MyAssignmentsTitle" xml:space="preserve"><value>Meine Zuteilungen</value></data>
   <data name="MyAssignmentsLead" xml:space="preserve"><value>Wen du in jeder Gruppe beschenkst, an der du teilnimmst.</value></data>
   <data name="MyAssignmentsOperatorPrivacyNote" xml:space="preserve"><value>Gut zu wissen: Damit du deine Zuteilung auf allen deinen Geräten siehst, wird sie auf unserem Server gespeichert und nur deinem Konto angezeigt. Der Betreiber hat technisch Zugriff darauf.</value></data>
   <data name="MyAssignmentsNone" xml:space="preserve"><value>Du hast noch keine Zuteilungen. Sie erscheinen, sobald eine Organisatorin eine Gruppe ausgelost hat, in der du verknüpft bist.</value></data>
@@ -200,18 +199,17 @@
   <data name="MemberLinkedTitle" xml:space="preserve"><value>Dieses Mitglied ist mit einem Konto verknüpft.</value></data>
   <data name="MemberLinkedBadge" xml:space="preserve"><value>verknüpft</value></data>
   <data name="MemberUnlink" xml:space="preserve"><value>Verknüpfung lösen</value></data>
-  <data name="MemberLink" xml:space="preserve"><value>Verknüpfen…</value></data>
+  <data name="MemberLink" xml:space="preserve"><value>Per E-Mail einladen…</value></data>
   <data name="MemberLinkEmailLabel" xml:space="preserve"><value>E-Mail-Adresse zum Einladen</value></data>
-  <data name="MemberLinkSend" xml:space="preserve"><value>Anfrage senden</value></data>
-  <data name="MemberLinkSelfLinked" xml:space="preserve"><value>Mit deinem Konto verknüpft.</value></data>
+  <data name="MemberLinkSend" xml:space="preserve"><value>Einladung senden</value></data>
+  <data name="MemberLinkSelfLinked" xml:space="preserve"><value>Das bist jetzt du.</value></data>
   <data name="MemberLinkVerifyEmailFirst" xml:space="preserve"><value>Bestätige zuerst deine E-Mail-Adresse, danach kannst du dich hier verknüpfen.</value></data>
-  <data name="MemberLinkRequestSent" xml:space="preserve"><value>Anfrage gesendet. Falls diese Adresse ein Konto hat, erscheint sie dort.</value></data>
+  <data name="MemberLinkRequestSent" xml:space="preserve"><value>Einladung gesendet. Hat die Adresse ein Konto, erscheint die Einladung dort in der App.</value></data>
   <data name="MemberLinkFailed" xml:space="preserve"><value>Das konnte nicht abgeschlossen werden. Bitte versuche es erneut.</value></data>
-  <data name="MemberLinkWithMyAccount" xml:space="preserve"><value>Mit meinem Konto verknüpfen</value></data>
-  <data name="MemberLinkAlreadyInGroup" xml:space="preserve"><value>Diese Adresse ist bereits mit einem Mitglied dieser Gruppe verknüpft.</value></data>
+  <data name="MemberLinkWithMyAccount" xml:space="preserve"><value>Das bin ich</value></data>
+  <data name="MemberLinkAlreadyInGroup" xml:space="preserve"><value>Dieses Konto macht bei dieser Gruppe schon mit.</value></data>
   <data name="MemberUnlinked" xml:space="preserve"><value>Verknüpfung gelöst. Mitglied und Wunschliste bleiben erhalten.</value></data>
   <data name="NavMyLinks" xml:space="preserve"><value>Verknüpfungsanfragen</value></data>
-  <data name="NavMyAssignments" xml:space="preserve"><value>Meine Zuteilungen</value></data>
   <data name="NavMyWishlists" xml:space="preserve"><value>Meine Wunschlisten</value></data>
   <data name="NavLanguageDeviceNote" xml:space="preserve"><value>Dies ändert die Sprache nur auf diesem Gerät. Deine Kontosprache verwaltest du in deinem</value></data>
   <data name="NavLanguageProfileLink" xml:space="preserve"><value>Profil.</value></data>
@@ -239,7 +237,6 @@
   <data name="ConfirmRemoveEvent" xml:space="preserve"><value>Anlass «{0}» entfernen? Auslosung und Wunschlisten gehen verloren.</value></data>
   <data name="CreateFromCircleAction" xml:space="preserve"><value>Mitglieder aus einem Kreis übernehmen</value></data>
   <data name="AllGroups" xml:space="preserve"><value>Alle Gruppen</value></data>
-  <data name="ReconcileTitle" xml:space="preserve"><value>Gruppen in dein Konto übernehmen?</value></data>
   <data name="ReconcileImport" xml:space="preserve"><value>Ins Konto übernehmen</value></data>
   <data name="EventOverview" xml:space="preserve"><value>Übersicht</value></data>
   <data name="HubWishlistCount" xml:space="preserve"><value>{0} von {1}</value></data>
@@ -253,7 +250,6 @@
   <data name="ModeLocalWebWarning" xml:space="preserve"><value>Im Browser wird das nur in diesem Browser gespeichert – wenn du die Browserdaten löschst, ist es weg. Du kannst es unter Einstellungen → Deine Daten sichern.</value></data>
   <data name="ModeSharedTitle" xml:space="preserve"><value>Über Link geteilt</value></data>
   <data name="ModeSharedHint" xml:space="preserve"><value>Online gespeichert, damit andere die ganze Gruppe per Link öffnen können. Ohne Konto.</value></data>
-  <data name="ModeAccountTitle" xml:space="preserve"><value>Mein Konto</value></data>
   <data name="ModeAccountHint" xml:space="preserve"><value>Über alle Geräte synchronisiert, auf denen du angemeldet bist.</value></data>
   <data name="ModeAccountSignInHint" xml:space="preserve"><value>Melde dich an, um diese Gruppe mit deinem Konto zu synchronisieren.</value></data>
   <data name="ModeChipShared" xml:space="preserve"><value>Über Link geteilt</value></data>
@@ -297,7 +293,7 @@
   <data name="YouAreMember" xml:space="preserve"><value>Du bist als {0} beigetreten.</value></data>
   <data name="MemberClaimedBadge" xml:space="preserve"><value>Beigetreten</value></data>
   <data name="ReleaseMember" xml:space="preserve"><value>Platz freigeben</value></data>
-  <data name="ReleaseMemberConfirm" xml:space="preserve"><value>{0}s Platz freigeben? Die Person verliert den Zugriff, bis sie über den Beitritts-Link erneut beitritt.</value></data>
+  <data name="ReleaseMemberConfirm" xml:space="preserve"><value>Den Platz von {0} freigeben? Der Zugriff endet, bis {0} wieder mitmacht. Was eingetragen wurde, bleibt in der Gruppe.</value></data>
   <data name="ReleaseMemberConfirmYes" xml:space="preserve"><value>Platz freigeben</value></data>
   <data name="Someone" xml:space="preserve"><value>Jemand</value></data>
   <data name="ClaimAdminConfirm" xml:space="preserve"><value>Diese Gruppe in deinem Konto behalten? Dann ist sie auf all deinen Geräten und nur du verwaltest sie – der Verwaltungs-Link funktioniert nicht mehr. Der Beitritts-Link funktioniert weiter.</value></data>
@@ -330,7 +326,7 @@
   <data name="ReminderWishlistTitle" xml:space="preserve"><value>Wunschliste ergänzen</value></data>
   <data name="ReminderWishlistBody" xml:space="preserve"><value>Deine Wunschliste für {0} ist noch leer.</value></data>
   <data name="DataSectionTitle" xml:space="preserve"><value>Deine Daten</value></data>
-  <data name="DataStoredExplainer" xml:space="preserve"><value>Deine Gruppen werden nur in diesem Browser auf diesem Gerät gespeichert – es gibt kein Konto, und ohne Anmeldung wird nichts an einen Server gesendet. Wenn du die Browserdaten löschst oder die App in einem privaten Fenster öffnest, sind sie weg.</value></data>
+  <data name="DataStoredExplainer" xml:space="preserve"><value>Gruppen «Auf diesem Gerät» gibt es nur in diesem Browser – wenn du die Browserdaten löschst oder die App in einem privaten Fenster öffnest, sind sie weg. Online-Gruppen liegen auf dem Server; dieser Browser hält den Link dazu.</value></data>
   <data name="DataPersistedYes" xml:space="preserve"><value>Dieser Browser hat zugesagt, deine Daten zu behalten und sie nicht zu löschen, um Speicher freizugeben.</value></data>
   <data name="DataPersistedNo" xml:space="preserve"><value>Dieser Browser kann deine Daten löschen, wenn der Speicher knapp wird. Lade zur Sicherheit ein Backup herunter oder melde dich an, um zu synchronisieren.</value></data>
   <data name="DataExportAction" xml:space="preserve"><value>Backup herunterladen</value></data>
@@ -369,11 +365,9 @@
   <data name="Mud_MudChip_Close" xml:space="preserve"><value>Entfernen</value></data>
   <data name="Mud_MudSnackbar_Close" xml:space="preserve"><value>Schliessen</value></data>
   <data name="Mud_MudNavGroup_ToggleExpand" xml:space="preserve"><value>{0} auf- oder zuklappen</value></data>
-  <data name="MoveToAccountConfirm" xml:space="preserve"><value>Diese Gruppe in dein Konto verschieben? Sie wird auf dem Server gespeichert und auf allen Geräten synchronisiert, auf denen du angemeldet bist.</value></data>
   <data name="MoveToAccountConfirmYes" xml:space="preserve"><value>In mein Konto verschieben</value></data>
   <data name="AccountToLocalConfirm" xml:space="preserve"><value>Diese Gruppe nur noch auf diesem Gerät behalten? Sie wird aus deinem Konto und vom Server entfernt und verschwindet von deinen anderen Geräten.</value></data>
   <data name="AccountToLocalConfirmYes" xml:space="preserve"><value>Nur auf diesem Gerät</value></data>
-  <data name="KeptAsLocalCopySingular" xml:space="preserve"><value>«{0}» wurde auf einem anderen Gerät aus deinem Konto genommen. Deine nicht synchronisierten Änderungen bleiben hier als eigene Kopie erhalten.</value></data>
   <data name="ParticipantReadOnlyNote" xml:space="preserve"><value>Du bist dieser Gruppe per Link beigetreten. Nur die organisierende Person kann sie ändern.</value></data>
   <data name="YourAssignment" xml:space="preserve"><value>Deine Zuteilung</value></data>
   <data name="YourAssignmentHint" xml:space="preserve"><value>Sieh nach, wen du beschenkst</value></data>
@@ -402,23 +396,20 @@
   <data name="HandoutEveryoneInApp" xml:space="preserve"><value>Alle sehen ihre Zuteilung in der App – es gibt keine Links zu verteilen.</value></data>
   <data name="MemberConnectedBadge" xml:space="preserve"><value>Verbunden</value></data>
   <data name="MemberConnectedJoined" xml:space="preserve"><value>Mit dem Beitritts-Link dabei: sieht die Zuteilung in der App und pflegt Wunschliste und Hinweis selbst.</value></data>
-  <data name="MemberConnectedLinked" xml:space="preserve"><value>Mit einem Konto verbunden: sieht die Zuteilung in der App.</value></data>
+  <data name="MemberConnectedLinked" xml:space="preserve"><value>Macht mit: sieht die eigene Zuteilung in der App und pflegt Wunschliste und Hinweis selbst.</value></data>
   <data name="MemberKeepsOwnEntry" xml:space="preserve"><value>{0} pflegt das selbst.</value></data>
   <data name="ChangeSaved" xml:space="preserve"><value>Änderung gespeichert.</value></data>
   <data name="Undo" xml:space="preserve"><value>Rückgängig</value></data>
   <data name="RevealOwnEntryTitle" xml:space="preserve"><value>Deine Wunschliste</value></data>
-  <data name="RevealOwnEntryDelay" xml:space="preserve"><value>Dein Wichtel sieht Änderungen, sobald die App der organisierenden Person das nächste Mal synchronisiert.</value></data>
   <data name="TakeOverEntry" xml:space="preserve"><value>Wunschliste selbst bearbeiten</value></data>
   <data name="TakeOverEntryConfirm" xml:space="preserve"><value>{0}s Wunschliste und Hinweis selbst bearbeiten? Was {0} eingetragen hat, bleibt – und {0} kann es über den eigenen Wichtel-Link weiterhin ändern.</value></data>
   <data name="TakeOverEntryConfirmYes" xml:space="preserve"><value>Selbst bearbeiten</value></data>
-  <data name="ShareSelfInApp" xml:space="preserve"><value>Das bist du – deine Zuteilung findest du unter «Meine Zuteilungen».</value></data>
+  <data name="ShareSelfInApp" xml:space="preserve"><value>Das bist du – deine Zuteilung findest du in der Gruppe unter «Meine Zuteilung».</value></data>
   <data name="ShareConnectedInApp" xml:space="preserve"><value>Sieht die Zuteilung in der App.</value></data>
   <data name="ShareLinkAnyway" xml:space="preserve"><value>Link trotzdem teilen</value></data>
   <data name="MyJoinedGroupsTitle" xml:space="preserve"><value>Gruppen, denen du beigetreten bist</value></data>
   <data name="EditMyEntry" xml:space="preserve"><value>Bearbeiten</value></data>
-  <data name="ModeAccountSharedTitle" xml:space="preserve"><value>Mein Konto · geteilt</value></data>
   <data name="ModeAccountSharedHint" xml:space="preserve"><value>Über deine Geräte synchronisiert, und andere treten mit einem Link bei.</value></data>
-  <data name="ModeAccountSignInNeeded" xml:space="preserve"><value>Mein Konto (Anmeldung nötig)</value></data>
   <data name="ModeChipAccountShared" xml:space="preserve"><value>Konto · geteilt</value></data>
   <data name="SharingSubtitleAccountShared" xml:space="preserve"><value>In deinem Konto, andere treten mit einem Link bei</value></data>
   <data name="StorageWhereTitle" xml:space="preserve"><value>Wo soll diese Gruppe gespeichert werden?</value></data>
@@ -432,7 +423,6 @@
   <data name="ReleaseToLinkActionHint" xml:space="preserve"><value>Zum gemeinsamen Organisieren: Die Gruppe verlässt dein Konto und erhält einen Verwaltungs-Link, den du weitergeben kannst.</value></data>
   <data name="LinkNotInAccountNote" xml:space="preserve"><value>Diese Gruppe ist noch nicht in deinem Konto und deshalb nicht auf deinen anderen Geräten.</value></data>
   <data name="KeepInAccount" xml:space="preserve"><value>In meinem Konto behalten</value></data>
-  <data name="ReconcileLead" xml:space="preserve"><value>Diese Gruppen hast du ohne Anmeldung erstellt. Angehakte kommen in dein Konto und werden auf deine Geräte synchronisiert.</value></data>
   <data name="ReconcileUntickedNote" xml:space="preserve"><value>Nicht angehakte Gruppen bleiben nur auf diesem Gerät. Du kannst sie später unter «Teilen &amp; Sync» übernehmen.</value></data>
   <data name="ReconcileLater" xml:space="preserve"><value>Später</value></data>
   <data name="ReconcileKeepAll" xml:space="preserve"><value>Auf diesem Gerät behalten</value></data>
@@ -468,9 +458,8 @@
   <data name="SyncRetry" xml:space="preserve"><value>Jetzt erneut versuchen</value></data>
   <data name="NavAllGroups" xml:space="preserve"><value>Alle Gruppen</value></data>
   <data name="NavRecentlyOpened" xml:space="preserve"><value>Zuletzt geöffnet</value></data>
-  <data name="DataStoredExplainerSignedIn" xml:space="preserve"><value>Gruppen in «Mein Konto» werden mit deinem Konto synchronisiert und bleiben erhalten, auch wenn die Browserdaten gelöscht werden. Gruppen «Auf diesem Gerät» gibt es nur in diesem Browser – sichere sie oder übernimm sie in dein Konto.</value></data>
+  <data name="DataStoredExplainerSignedIn" xml:space="preserve"><value>Online-Gruppen liegen in deinem Konto und bleiben erhalten, auch wenn die Browserdaten gelöscht werden. Gruppen «Auf diesem Gerät» gibt es nur in diesem Browser – sichere sie oder stelle sie online.</value></data>
   <data name="FromCircleManageOnWeb" xml:space="preserve"><value>circletools.ch öffnen</value></data>
-  <data name="EmptyStateMemberHint" xml:space="preserve"><value>Du machst schon in der Gruppe von jemand anderem mit – deine Zuteilung und Wunschliste findest du unter «Meine Zuteilungen».</value></data>
   <data name="BudgetUpTo" xml:space="preserve"><value>bis {0}</value></data>
   <data name="ExclusionsNoRecipient" xml:space="preserve"><value>Mit diesen Ausschlüssen kann {0} niemanden mehr beschenken.</value></data>
   <data name="ExclusionsNoGiver" xml:space="preserve"><value>Mit diesen Ausschlüssen kann niemand {0} beschenken.</value></data>
@@ -504,4 +493,41 @@
   <data name="DataPersistedNoSignedIn" xml:space="preserve"><value>Dieser Browser kann Daten löschen, wenn der Speicher knapp wird. Gruppen in deinem Konto sind sicher – sichere die, die nur auf diesem Gerät gespeichert sind.</value></data>
   <data name="MyWishlistsUnsaved" xml:space="preserve"><value>Noch nicht gespeichert – wird beim Verlassen des Felds gespeichert</value></data>
   <data name="MyWishlistsAddPending" xml:space="preserve"><value>Mit Enter oder «Hinzufügen» übernehmen</value></data>
+  <data name="PlaceOnlineTitle" xml:space="preserve"><value>Online</value></data>
+  <data name="PlaceOnlineHint" xml:space="preserve"><value>In deinem Konto auf all deinen Geräten. Andere können per Link beitreten und sehen dann ihre eigene Zuteilung.</value></data>
+  <data name="PlaceOnlineSignedOutHint" xml:space="preserve"><value>Online gespeichert, ohne Anmeldung: Dieses Gerät behält den Organisations-Link. Andere können per Link beitreten und sehen dann ihre eigene Zuteilung.</value></data>
+  <data name="ModeChipOnline" xml:space="preserve"><value>Online</value></data>
+  <data name="ChipTakingPart" xml:space="preserve"><value>Du machst mit</value></data>
+  <data name="SharingSubtitleOnline" xml:space="preserve"><value>Online</value></data>
+  <data name="SharingSubtitleOnlineJoin" xml:space="preserve"><value>Online · andere treten per Link bei</value></data>
+  <data name="MakeOnlineConfirm" xml:space="preserve"><value>Diese Gruppe online stellen? Sie liegt dann in deinem Konto auf all deinen Geräten, und du kannst andere per Link dazuholen.</value></data>
+  <data name="MakeOnlineSignedOutConfirm" xml:space="preserve"><value>Diese Gruppe ohne Konto online stellen? Dieses Gerät behält den Verwaltungs-Link. Du kannst andere per Link dazuholen und dich später anmelden, um sie in deinem Konto zu behalten.</value></data>
+  <data name="MakeOnlineConfirmYes" xml:space="preserve"><value>Online stellen</value></data>
+  <data name="KeepOnDeviceConfirm" xml:space="preserve"><value>Diese Gruppe nur auf diesem Gerät behalten? Die Online-Kopie wird gelöscht, sie verschwindet von deinen anderen Geräten, und alle, die beigetreten sind, verlieren sie. Deine Kopie bleibt hier.</value></data>
+  <data name="KeepOnDeviceConfirmYes" xml:space="preserve"><value>Auf diesem Gerät behalten</value></data>
+  <data name="JoinLinkSwitch" xml:space="preserve"><value>Andere können per Link beitreten</value></data>
+  <data name="RotateJoinLink" xml:space="preserve"><value>Neuer Beitritts-Link</value></data>
+  <data name="RotateJoinConfirm" xml:space="preserve"><value>Einen neuen Beitritts-Link erstellen? Der bisherige funktioniert dann nicht mehr. Wer schon beigetreten ist, behält die Gruppe.</value></data>
+  <data name="RotateJoinConfirmYes" xml:space="preserve"><value>Neuen Link erstellen</value></data>
+  <data name="InvitationsTitle" xml:space="preserve"><value>Einladungen</value></data>
+  <data name="InvitationText" xml:space="preserve"><value>Du bist zu «{0}» eingeladen, als {1}.</value></data>
+  <data name="InvitationAccept" xml:space="preserve"><value>Mitmachen</value></data>
+  <data name="InvitationDecline" xml:space="preserve"><value>Ablehnen</value></data>
+  <data name="InvitationAccepted" xml:space="preserve"><value>Du machst bei «{0}» mit.</value></data>
+  <data name="InvitationFailed" xml:space="preserve"><value>Das hat nicht geklappt. Prüfe deine Verbindung und versuche es nochmals.</value></data>
+  <data name="TakingPartTitle" xml:space="preserve"><value>Gruppen, bei denen du mitmachst</value></data>
+  <data name="TakingPartAs" xml:space="preserve"><value>Als {0}</value></data>
+  <data name="OrganizedTitle" xml:space="preserve"><value>Gruppen, die du organisierst</value></data>
+  <data name="ParticipantNoDraw" xml:space="preserve"><value>Die Namen sind noch nicht gezogen.</value></data>
+  <data name="YourWishlistFor" xml:space="preserve"><value>Deine Wunschliste für {0}</value></data>
+  <data name="YourAssignmentFor" xml:space="preserve"><value>Wen du beschenkst – {0}</value></data>
+  <data name="ParticipantNotFound" xml:space="preserve"><value>Du machst bei dieser Gruppe nicht mehr mit.</value></data>
+  <data name="MemberInvitedBadge" xml:space="preserve"><value>Eingeladen</value></data>
+  <data name="MembersOnlineHint" xml:space="preserve"><value>Damit Leute selbst mitmachen können, stelle die Gruppe unter «Teilen &amp; Sync» online.</value></data>
+  <data name="JoinNewNameLabel" xml:space="preserve"><value>Nicht auf der Liste? Dein Name</value></data>
+  <data name="JoinNewNameHint" xml:space="preserve"><value>Du wirst unter diesem Namen zur Gruppe hinzugefügt.</value></data>
+  <data name="MyAssignmentRow" xml:space="preserve"><value>Meine Zuteilung</value></data>
+  <data name="MyAssignmentRowHint" xml:space="preserve"><value>Wen du beschenkst, für jeden Anlass</value></data>
+  <data name="ParticipantOrganizerHint" xml:space="preserve"><value>Deine eigene Wunschliste und deinen Hinweis bearbeitest du bei den Wunschlisten des Anlasses – wie die der anderen.</value></data>
+  <data name="RevealOwnEntryLive" xml:space="preserve"><value>Dein Wichtel sieht deine Änderungen sofort.</value></data>
 </root>

@@ -1,18 +1,22 @@
 @page "/join"
 @using System.Security.Claims
-@using System.Text.Json
-@using CircleTools.Main.Contracts
-@using CircleTools.SecretSanta.Core.Persistence
-@using CircleTools.SecretSanta.LocalStore
+@using CircleTools.ApiClient
+@using CircleTools.SecretSanta.Contracts
+@using CircleTools.SecretSanta.LocalStore.Online
 @using CircleTools.Ui.Account.Auth
 @using Microsoft.AspNetCore.Components.Authorization
-@inject ISharedGroupApi Api
-@inject SharedSyncService Shared
-@inject ILocalSyncStore Local
+@inject IOnlineGroupApi Api
+@inject OnlineGroupSync Online
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider Auth
 @inject PendingJoinLink Pending
 @inject IStringLocalizer<AppStrings> L
+
+@*
+    Taking part through a join link (ADR-0086, FR-041): pick who you are — or add yourself under a new name — and
+    whether to take part with your account (all your devices) or this device only. Either way you become the same
+    kind of participant: you see your own assignment and keep your own wishlist and gift note.
+*@
 
 <PageTitle>@L["JoinTitle"]</PageTitle>
 
@@ -20,7 +24,7 @@
 {
     <MudText>@L["Loading"]</MudText>
 }
-else if (_group is null)
+else if (_preview is null)
 {
     <div class="d-flex flex-column align-center text-center gap-3 pa-6" id="join-notfound">
         <MudIcon Icon="@Icons.Material.Filled.LinkOff" Color="Color.Error" Size="Size.Large" />
@@ -31,7 +35,7 @@ else if (_group is null)
 else
 {
     <MudText Typo="Typo.overline">@L["JoinInvitedTo"]</MudText>
-    <MudText Typo="Typo.h4" GutterBottom="true">@_group.Name</MudText>
+    <MudText Typo="Typo.h4" GutterBottom="true">@_preview.GroupName</MudText>
 
     <MudPaper Outlined="true" Class="pa-4 mt-2" id="join-panel">
         <MudText Typo="Typo.h6" GutterBottom="true">@L["JoinWhoAreYou"]</MudText>
@@ -39,35 +43,37 @@ else
 
         @if (AllTaken)
         {
-            @* Nobody left to be (Q6): say so, instead of a list of greyed-out names and a dead Continue. *@
+            @* Nobody left to be (Q6): say so; adding oneself under a new name still works. *@
             <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3" id="join-all-taken">@L["JoinAllTaken"]</MudAlert>
         }
 
-        <MudRadioGroup T="Guid" @bind-Value="_selectedMemberId">
-            @foreach (var member in _group.Members.Where(m => !m.IsArchived))
+        <MudRadioGroup T="Guid" Value="_selectedMemberId" ValueChanged="Pick">
+            @foreach (var member in _preview.Members)
             {
-                var reason = _taken.TryGetValue(member.Id, out var r) ? r : (TakenReason?)null;
                 <div class="d-flex align-center">
-                    <MudRadio T="Guid" Value="@member.Id" Color="Color.Primary" Dense="true" Disabled="@(reason is not null)">
+                    <MudRadio T="Guid" Value="@member.MemberId" Color="Color.Primary" Dense="true" Disabled="@member.Taken">
                         @member.Name
                     </MudRadio>
-                    @if (reason is { } why)
+                    @if (member.Taken)
                     {
-                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text">@TakenText(why)</MudChip>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text">@L["JoinAlreadyTaken"]</MudChip>
                     }
                 </div>
             }
         </MudRadioGroup>
 
+        <MudTextField T="string" Value="_newName" ValueChanged="TypeNewName" Immediate="true" Class="mt-2" id="join-new-name"
+                      Label="@L["JoinNewNameLabel"]" HelperText="@L["JoinNewNameHint"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+
         <MudDivider Class="my-4" />
 
         <MudText Typo="Typo.subtitle2" GutterBottom="true">@L["JoinRememberTitle"]</MudText>
-        <MudRadioGroup T="PersonClaimKind" @bind-Value="_kind">
-            <MudRadio T="PersonClaimKind" Value="@PersonClaimKind.Device" Color="Color.Primary" Dense="true">
+        <MudRadioGroup T="bool" @bind-Value="_withAccount">
+            <MudRadio T="bool" Value="false" Color="Color.Primary" Dense="true">
                 <span class="ct-mode-title">@L["JoinRememberDevice"]</span>
                 <span class="ct-mode-hint">@L["JoinRememberDeviceHint"]</span>
             </MudRadio>
-            <MudRadio T="PersonClaimKind" Value="@PersonClaimKind.Account" Color="Color.Primary" Dense="true" Disabled="@(!_signedIn)">
+            <MudRadio T="bool" Value="true" Color="Color.Primary" Dense="true" Disabled="@(!_signedIn)">
                 <span class="ct-mode-title">@L["JoinRememberAccount"]</span>
                 <span class="ct-mode-hint">
                     @if (_signedIn)
@@ -81,6 +87,7 @@ else
                 </span>
             </MudRadio>
         </MudRadioGroup>
+
         @if (!_signedIn)
         {
             @* Signing in returns here with the invitation intact (Q7). *@
@@ -94,7 +101,7 @@ else
         }
 
         <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="mt-4" id="join-continue"
-                   OnClick="ContinueAsync" Disabled="@(_busy || _selectedMemberId == Guid.Empty)">
+                   OnClick="ContinueAsync" Disabled="@(_busy || !CanContinue)">
             @L["JoinContinue"]
         </MudButton>
     </MudPaper>
@@ -104,67 +111,67 @@ else
     private bool _loaded;
     private bool _busy;
     private bool _signedIn;
+    private Guid? _accountId;
     private string? _email;
     private string? _token;
-    private GroupState? _group;
-    private Dictionary<Guid, TakenReason> _taken = [];
+    private JoinPreview? _preview;
     private Guid _selectedMemberId;
-    private PersonClaimKind _kind = PersonClaimKind.Device;
+    private string _newName = string.Empty;
+    private bool _withAccount;
     private string? _error;
 
-    private bool AllTaken => _group is not null && _group.Members.Where(m => !m.IsArchived).All(m => _taken.ContainsKey(m.Id));
+    private bool AllTaken => _preview is not null && _preview.Members.All(m => m.Taken);
+
+    private bool CanContinue => _selectedMemberId != Guid.Empty || !string.IsNullOrWhiteSpace(_newName);
 
     protected override async Task OnInitializedAsync()
     {
         var state = await Auth.GetAuthenticationStateAsync();
-        _signedIn = state.User.UserId() != Guid.Empty;
+        var id = state.User.UserId();
+        _signedIn = id != Guid.Empty;
+        _accountId = _signedIn ? id : null;
         _email = state.User.FindFirst(ClaimTypes.Email)?.Value;
 
-        // Signed in, the durable choice is the sensible default: the group then follows the account to its
-        // other devices (Q7). Signed out, only this device is possible.
-        _kind = _signedIn ? PersonClaimKind.Account : PersonClaimKind.Device;
+        // Signed in, the durable choice is the sensible default: the group then follows the account to its other
+        // devices (Q7). Signed out, only this device is possible.
+        _withAccount = _signedIn;
 
         // Back from signing in to join: the token was parked, not carried in the URL.
         _token = ReadToken() ?? Pending.Token;
         Pending.Token = null;
-        if (!string.IsNullOrEmpty(_token))
-        {
-            var view = await Api.GetAsync(_token);
-            if (view.IsSuccess && view.Value is not null)
-            {
-                _group = view.Value.Body.Deserialize(SyncJsonContext.Default.GroupState);
-                await LoadTakenAsync(view.Value);
-            }
-        }
-
+        await LoadPreviewAsync();
         _loaded = true;
     }
 
-    // Who can't be chosen, and why (Q6). A current server says it in the view; an older one only knows the
-    // claimed members.
-    private async Task LoadTakenAsync(SharedGroupView view)
+    private async Task LoadPreviewAsync()
     {
-        if (view.TakenMembers is { } taken)
+        if (string.IsNullOrEmpty(_token))
         {
-            _taken = taken.ToDictionary(t => t.MemberId, t => t.Reason);
             return;
         }
 
-        var claims = await Api.GetClaimsAsync(_token!);
-        _taken = claims is { IsSuccess: true, Value: not null }
-            ? claims.Value.MemberIds.ToDictionary(id => id, _ => TakenReason.Joined)
-            : [];
+        var preview = await Api.PreviewJoinAsync(_token);
+        _preview = preview.IsSuccess ? preview.Value : null;
     }
 
-    private string TakenText(TakenReason reason) => reason switch
+    // Picking a member and typing a new name are alternatives: choosing one clears the other.
+    private void Pick(Guid memberId)
     {
-        TakenReason.Organizer => L["JoinTakenOrganizer"],
-        TakenReason.Linked => L["JoinTakenLinked"],
-        _ => L["JoinAlreadyTaken"],
-    };
+        _selectedMemberId = memberId;
+        _newName = string.Empty;
+    }
 
-    // The token rides the link fragment ("the link is the secret"), so it never reaches the server as a
-    // query string: .../join#t=<token>.
+    private void TypeNewName(string name)
+    {
+        _newName = name;
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            _selectedMemberId = Guid.Empty;
+        }
+    }
+
+    // The token rides the link fragment ("the link is the secret"), so it never reaches the server as a query
+    // string: .../join#t=<token>.
     private string? ReadToken()
     {
         var fragment = new Uri(Navigation.Uri).Fragment.TrimStart('#');
@@ -188,7 +195,7 @@ else
 
     private async Task ContinueAsync()
     {
-        if (_token is null || _selectedMemberId == Guid.Empty)
+        if (_token is null || !CanContinue)
         {
             return;
         }
@@ -197,35 +204,26 @@ else
         _error = null;
         try
         {
-            var deviceHandle = (await Local.LoadStateAsync()).DeviceId;
-            Guid? accountId = null;
-            if (_kind == PersonClaimKind.Account)
+            var request = _selectedMemberId != Guid.Empty
+                ? new JoinRequest(_selectedMemberId, null, _withAccount && _signedIn)
+                : new JoinRequest(null, _newName.Trim(), _withAccount && _signedIn);
+            var result = await Online.JoinAsync(_token, request, _accountId);
+            if (result.IsSuccess)
             {
-                var state = await Auth.GetAuthenticationStateAsync();
-                var id = state.User.UserId();
-                accountId = id == Guid.Empty ? null : id;
+                Navigation.NavigateTo($"groups/{result.Value!.GroupId}/me");
+                return;
             }
 
-            var result = await Shared.JoinAsync(_token, _selectedMemberId, _kind, deviceHandle, accountId);
-            switch (result.Status)
+            if (result.Error!.Failure == ApiFailure.Conflict)
             {
-                case JoinStatus.Joined:
-                    Navigation.NavigateTo($"groups/{result.GroupId}");
-                    break;
-                case JoinStatus.AlreadyClaimed:
-                    _error = L["JoinAlreadyClaimedError"];
-                    // Refresh who is taken so the member greys out.
-                    var view = await Api.GetAsync(_token);
-                    if (view.IsSuccess && view.Value is not null)
-                    {
-                        await LoadTakenAsync(view.Value);
-                    }
-
-                    _selectedMemberId = Guid.Empty;
-                    break;
-                default:
-                    _error = L["JoinFailedError"];
-                    break;
+                // Taken meanwhile, or that name is already on the list: refresh so it greys out.
+                _error = L["JoinAlreadyClaimedError"];
+                _selectedMemberId = Guid.Empty;
+                await LoadPreviewAsync();
+            }
+            else
+            {
+                _error = L["JoinFailedError"];
             }
         }
         finally

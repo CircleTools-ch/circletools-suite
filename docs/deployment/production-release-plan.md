@@ -122,7 +122,8 @@ Everything in the table above is bumped, plus what the bump surfaced:
 ## Track 4 — Full project review
 
 - **Known open defects first.** From the 2026-10-20 device test: **R1** (linked givers' *My assignments*
-  frozen at draw time — `LinkingStore.PublishAssignmentsAsync` drops same-version re-publishes), **R5**
+  frozen at draw time) — *gone with ADR-0086: views are derived from the one document on read; re-check on the
+  Pixel*, **R5**
   (password readable in the Android accessibility tree), plus the open BTP-3…BTP-9 items in the
   [backlog](../roadmap/backlog.md).
 - **Code:** layering/architecture tests, dead code, TODOs, error handling paths, `Ui.Shared` test gaps.

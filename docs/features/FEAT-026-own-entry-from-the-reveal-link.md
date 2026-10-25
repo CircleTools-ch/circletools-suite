@@ -10,6 +10,8 @@ related: [UC-SS-006, FR-050, FR-030, NFR-002, NFR-009, ADR-0068, ADR-0080, ADR-0
 
 # FEAT-026 — Own wishlist and gift note from the reveal link (live-link groups)
 
+> **Amended by [FEAT-027](FEAT-027-one-way-to-be-in-a-group.md)** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md), 2026-10-25). The entry from the reveal link is now the member entry, offered only for members without a participant. This spec is kept as the record of what was built then.
+
 ## Problem & goals
 
 - **Problem:** the reveal page told every recipient "tell the organizer what you would like" — for anyone

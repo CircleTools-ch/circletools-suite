@@ -1,11 +1,13 @@
 ---
-status: Accepted
+status: Superseded by ADR-0086
 date: 2026-07-27
 deciders: [Adrian]
 tags: [architecture, sync, identity, offline, ux]
 ---
 
 # ADR-0017 — Anonymous → account claim
+
+> **Superseded by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** There is no claim of local groups into an account any more: a group is put online, and an account can take over a group its organizer link owns. Groups kept on a device stay there.
 
 ## Context and problem statement
 

@@ -1,11 +1,7 @@
 @page "/groups/{GroupId:guid}/events/{EventId:guid}/wishlists"
-@using CircleTools.Main.Contracts
-@using CircleTools.SecretSanta.LocalStore
 @inject ISender Sender
 @inject IStringLocalizer<AppStrings> L
 @inject IServiceProvider Services
-@inject ILocalSyncStore Local
-@inject SharedSyncService Shared
 @inject ISyncSignals SyncSignals
 @inject ISnackbar Snackbar
 @implements IAsyncDisposable
@@ -14,39 +10,11 @@
 
 <EventBackNav GroupId="GroupId" EventId="EventId" />
 
-<MudText Typo="Typo.h4" GutterBottom="true">@(_participant ? L["MyEntryTitle"] : L["WishlistsTitle"])</MudText>
+<MudText Typo="Typo.h4" GutterBottom="true">@L["WishlistsTitle"]</MudText>
 
 @if (_event is null)
 {
     <MudText>@(_loaded ? L["EventNotFound"] : L["Loading"])</MudText>
-}
-else if (_participant)
-{
-    @* A joined participant edits only their own entry (ADR-0080, Q5): their wishlist for this event and their
-       gift note. Other people's wishes are not on this device; their recipient's are on "Your assignment". *@
-    <MudText Class="mud-text-secondary mb-4">@L["MyEntryLead"]</MudText>
-    <MudCard Elevation="1" id="my-entry">
-        <MudCardContent>
-            <MudText Typo="Typo.subtitle1" GutterBottom="true"><strong>@_myName</strong></MudText>
-            <MudTextField T="string" Value="_myWishlist" ValueChanged="OnMyWishlistChanged" Label="@L["WishlistLabel"]"
-                          Variant="Variant.Outlined" Margin="Margin.Dense" Lines="4" Immediate="true"
-                          OnBlur="FlushMineAsync" id="my-wishlist" />
-            <MudTextField T="string" Value="_myGiftNote" ValueChanged="OnMyGiftNoteChanged" Label="@L["MyGiftNoteLabel"]"
-                          HelperText="@L["MyGiftNoteHelp"]" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2"
-                          MaxLength="500" Immediate="true" OnBlur="FlushMineAsync" Class="mt-3" id="my-gift-note" />
-            @if (_myStatus is { } status)
-            {
-                <MudText Typo="Typo.body2" Class="mt-2" Color="@(status == SaveStatus.Sent ? Color.Success : Color.Default)" role="status">
-                    @(status switch
-                    {
-                        SaveStatus.Saving => L["Saving"],
-                        SaveStatus.Sent => L["Saved"],
-                        _ => L["SavedOfflinePending"],
-                    })
-                </MudText>
-            }
-        </MudCardContent>
-    </MudCard>
 }
 else if (_readOnly)
 {
@@ -134,13 +102,6 @@ else
         Failed,
     }
 
-    private enum SaveStatus
-    {
-        Saving,
-        Sent,
-        Pending,
-    }
-
     // One save at a time. Each save rewrites the whole group in local storage (load → change → store), so two
     // overlapping saves — one member's blur and the next member's autosave — could otherwise write over each
     // other with a stale copy of the group.
@@ -149,29 +110,17 @@ else
     private EventDto? _event;
     private bool _loaded;
     private bool _disposed;
-    // A join-link participant may not change the group (ADR-0058) …
+    // Only a device that may write the document edits wishlists (ADR-0086); someone taking part edits their own
+    // on their group page instead.
     private bool _readOnly;
-    // … except their own entry, when this device knows which member it joined as (ADR-0080).
-    private bool _participant;
-    private Guid _me;
-    private string _myName = string.Empty;
-    private string _myWishlist = string.Empty;
-    private string _myGiftNote = string.Empty;
-    private string _mySavedWishlist = string.Empty;
-    private string _mySavedGiftNote = string.Empty;
-    private CancellationTokenSource? _myPending;
-    private (string Wishlist, string GiftNote)? _myBaseline;
-    private SaveStatus? _myStatus;
     private List<WishlistEditor> _editors = [];
-
-    private bool MyEntryHasUnsavedText => _myWishlist != _mySavedWishlist || _myGiftNote != _mySavedGiftNote;
 
     protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
 
     // A background sync (ADR-0044) may have pulled newer wishlists — a co-organizer's or another device's edit,
-    // or a participant's own entry — into the local store. Reload so the page does not keep showing (and then
+    // or a member's own entry merged in by the server (ADR-0086) — into the local store. Reload so the page does not keep showing (and then
     // save over) the old text. A field with unsaved typing keeps what was typed; it is saved as usual.
     private void OnSyncCompleted() => _ = InvokeAsync(async () =>
     {
@@ -190,23 +139,6 @@ else
         _readOnly = access.ReadOnly;
         _event = await Sender.Send(new GetEventQuery(GroupId, EventId));
         _loaded = true;
-
-        _participant = access is { ReadOnly: true, ClaimedMemberId: not null };
-        if (_participant && _event is not null)
-        {
-            _me = access.ClaimedMemberId!.Value;
-            var record = (await Local.LoadGroupsAsync()).FirstOrDefault(r => r.State.Id == GroupId);
-            var entry = record is null ? null : ParticipantEntries.Read(record.State, _me);
-            _myName = record?.State.Members.FirstOrDefault(m => m.Id == _me)?.Name ?? string.Empty;
-            if (!MyEntryHasUnsavedText)
-            {
-                _myGiftNote = _mySavedGiftNote = entry?.GiftNote ?? string.Empty;
-                _myWishlist = _mySavedWishlist =
-                    string.Join('\n', entry?.Wishlists.FirstOrDefault(w => w.EventId == EventId)?.Items ?? []);
-            }
-
-            return;
-        }
 
         var group = await Sender.Send(new GetGroupQuery(GroupId));
         var connected = group is null ? ConnectedMembers.None : await ConnectedMembers.ForAsync(Services, group);
@@ -244,26 +176,6 @@ else
         editor.Text = value ?? string.Empty;
         editor.Status = EditorStatus.Saving;
         editor.Pending = Restart(editor.Pending, token => SaveAfterPauseAsync(() => SaveAsync(editor), token));
-    }
-
-    private void OnMyWishlistChanged(string value)
-    {
-        _myBaseline ??= (_myWishlist, _myGiftNote);
-        _myWishlist = value ?? string.Empty;
-        OnMyEntryChanged();
-    }
-
-    private void OnMyGiftNoteChanged(string value)
-    {
-        _myBaseline ??= (_myWishlist, _myGiftNote);
-        _myGiftNote = value ?? string.Empty;
-        OnMyEntryChanged();
-    }
-
-    private void OnMyEntryChanged()
-    {
-        _myStatus = SaveStatus.Saving;
-        _myPending = Restart(_myPending, token => SaveAfterPauseAsync(SaveMineAsync, token));
     }
 
     // Cancels the waiting autosave and starts a new one, so only the last pause in a burst of typing saves.
@@ -319,30 +231,6 @@ else
         await RefreshAsync();
     }
 
-    private async Task FlushMineAsync()
-    {
-        _myPending?.Cancel();
-        if (MyEntryHasUnsavedText || _myStatus == SaveStatus.Saving)
-        {
-            await SaveMineAsync();
-        }
-
-        var before = _myBaseline;
-        _myBaseline = null;
-        if (before is { } previous && previous != (_myWishlist, _myGiftNote) && !MyEntryHasUnsavedText)
-        {
-            UndoLastEdit.Offer(Snackbar, L, () => UndoMineAsync(previous));
-        }
-    }
-
-    private async Task UndoMineAsync((string Wishlist, string GiftNote) previous)
-    {
-        _myPending?.Cancel();
-        (_myWishlist, _myGiftNote) = previous;
-        await SaveMineAsync();
-        await RefreshAsync();
-    }
-
     // The undo runs from the snackbar, which outlives this page: re-render only while the page is still shown.
     private Task RefreshAsync() => _disposed ? Task.CompletedTask : InvokeAsync(StateHasChanged);
 
@@ -383,54 +271,11 @@ else
         }
     }
 
-    // Saves the whole own entry: the gift note and this event's wishlist, keeping the wishlists of the other
-    // events as they are.
-    private async Task SaveMineAsync()
-    {
-        await _saveLock.WaitAsync();
-        try
-        {
-            var record = (await Local.LoadGroupsAsync()).FirstOrDefault(r => r.State.Id == GroupId);
-            if (record is null)
-            {
-                return;
-            }
-
-            var wishlistText = _myWishlist;
-            var giftNote = _myGiftNote;
-            var current = ParticipantEntries.Read(record.State, _me);
-            var wishlists = current.Wishlists.Where(w => w.EventId != EventId)
-                .Append(new ParticipantWishlist(EventId, ParseWishlist(wishlistText)))
-                .ToList();
-
-            _myStatus = SaveStatus.Saving;
-            if (!_disposed)
-            {
-                StateHasChanged();
-            }
-
-            var sent = await Shared.WriteOwnEntryAsync(GroupId, new ParticipantEntry(giftNote, wishlists));
-            _mySavedWishlist = wishlistText;
-            _mySavedGiftNote = giftNote;
-            _myStatus = MyEntryHasUnsavedText ? SaveStatus.Saving : sent ? SaveStatus.Sent : SaveStatus.Pending;
-        }
-        finally
-        {
-            _saveLock.Release();
-        }
-    }
-
     // Navigating away within the typing pause must not drop the edit: save whatever is still unsaved.
     public async ValueTask DisposeAsync()
     {
         SyncSignals.SyncCompleted -= OnSyncCompleted;
         _disposed = true;
-
-        _myPending?.Cancel();
-        if (_participant && MyEntryHasUnsavedText)
-        {
-            await SaveMineAsync();
-        }
 
         foreach (var editor in _editors)
         {

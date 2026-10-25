@@ -24,26 +24,27 @@ behind a concrete trigger.
 ## 8.3 Synchronization
 
 **Local-first**: the device stays authoritative and usable offline; the server is a relay and backup,
-never a gatekeeper ([NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md)). Sync is
-**opt-in and per-group**: a group stored **on the device** (the default) never touches the server,
-while a group reaches the server either **synced to a signed-in [User](../glossary/user.md)** or
-**shared by link** — an account-free group the server holds keyed by an unguessable **share token** and
-reconciled with every device holding an admin or join link
-([ADR-0058](../adr/0058-account-free-link-shared-groups.md)). The earlier "without an account there is
-no server" holds only for on-this-device groups.
+never a gatekeeper ([NFR-001](../requirements/non-functional/NFR-001-local-first-offline.md)). A group is kept in
+one of two [places](../glossary/place.md) ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md)): **on this device** (the default), where it never touches the
+server, or **online**, as one copy in the Secret-Santa group store that its owner and participants reach from
+their own devices.
 
-The mechanism ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md)): the **aggregate is the sync
-unit** (never merged field-by-field, which would break its invariants); each carries a **version
-token**; deletes leave **tombstones** so they propagate instead of resurrecting; changes travel as a
-**delta pull/push** against a client cursor, triggered **on app start and on change**. Conflicts
-resolve **last-write-wins per aggregate** by server-recorded time, behind a named **escalation hook**
-that detects genuine divergent-edit collisions and emits telemetry — so a conflict UI can be added
-later without re-architecting. The accepted cost is that two devices editing the same aggregate
-offline will silently lose the earlier edit.
+**Online groups** have their own sync. An organizer's device pushes its unsent edits — carrying the version they
+were based on — and then reads the group back; a participant's device sends its pending own entry and then reads
+its own view; a signed-in device also discovers the account's groups and invitations. The rule is
+**last-write-wins per group** ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md)); members' own entries are
+stored apart and merged into the document on every write, so a push never overwrites them, and every view is
+derived from the one document when it is read. Because the base version is on the wire, the server can later
+refuse a stale push without a protocol change.
 
-Anonymous local data meets an account through an explicit **claim**: the user chooses **per group**
-what to take into the account on first sign-in, and local data is kept as a cache afterwards
-([ADR-0017](../adr/0017-anonymous-to-account-claim.md)).
+**The account sync** carries the per-account documents (profile, UI preferences) between a user's devices
+([ADR-0016](../adr/0016-sync-and-conflict-resolution.md), [ADR-0041](../adr/0041-sync-secret-santa-ui-preferences.md)):
+the document is the unit; each carries a version; deletes leave **tombstones**; changes travel as a **delta
+pull/push** against a client cursor. Conflicts resolve last-write-wins by server time behind an **escalation
+hook** that counts collisions, so a conflict UI can be added later.
+
+There is no claim any more: a group goes online when the user puts it there, and an account can **take over** a
+group its organizer link owns.
 
 ## 8.4 Identity & authentication
 
@@ -276,8 +277,8 @@ aggregate: a circle is the standing set of people, a group is one gift exchange.
 The dependency points **one way**: a Secret-Santa group may be created *from* a circle, copying its
 people in as [Members](../glossary/member.md) and freezing that set when the draw runs, but the
 Secret-Santa domain holds at most a circle identifier and never references the Circles context. A
-`Member` may carry an optional `UserId` ([ADR-0019](../adr/0019-member-user-linking.md)); unlinked
-members stay first-class and keep their reveal links.
+`Member` carries no account at all: who takes part as a member is a role assignment in the group store
+([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md)), and members without a participant stay first-class and keep their reveal links.
 
 **Authorization is the cross-cutting part** ([NFR-006](../requirements/non-functional/NFR-006-circle-authorization.md)).
 A circle is the first data in the suite that belongs to *other people*, so every circle endpoint

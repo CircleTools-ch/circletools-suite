@@ -1,6 +1,7 @@
 @page "/settings"
 @using Microsoft.Extensions.DependencyInjection
 @using CircleTools.SecretSanta.LocalStore
+@using CircleTools.SecretSanta.LocalStore.Online
 @inject IStringLocalizer<AppStrings> L
 @inject IStringLocalizer<SharedStrings> LS
 @inject ThemeState Theme
@@ -46,9 +47,8 @@
         </AuthorizeView>
     </div>
 
-    @* Default storage for new groups (FR-048, ADR-0071): a device-local preference that seeds the create
-       picker and the phone "+" FAB. Changeable per group later in Sharing & sync. "My account" is
-       disabled while signed out. *@
+    @* Default place for new groups (FR-048, ADR-0071, ADR-0086): a device-local preference that seeds the create
+       picker and the phone "+" FAB. Changeable per group later in Sharing & sync. *@
     <div>
         <MudText Typo="Typo.subtitle1" GutterBottom="true">@L["SettingsDefaultStorageTitle"]</MudText>
         <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["SettingsDefaultStorageHint"]</MudText>
@@ -149,7 +149,7 @@
     private IReadOnlySet<ReminderKind> _wanted = new HashSet<ReminderKind>();
     private int _switchEpoch;
     private IAppForeground? _foreground;
-    private StorageMode _defaultMode = StorageMode.OnThisDevice;
+    private GroupPlace _defaultMode = GroupPlace.Device;
     private bool _signedIn;
 
     protected override void OnInitialized() => Theme.Changed += OnChanged;
@@ -173,11 +173,11 @@
         _signedIn = AuthState is not null && (await AuthState).User.UserId() != Guid.Empty;
     }
 
-    // Remember the chosen default storage mode for new groups (FR-048). Device-local, best-effort.
-    private async Task OnDefaultModeChangedAsync(StorageMode mode)
+    // Remember the chosen default place for new groups (FR-048). Device-local, best-effort.
+    private async Task OnDefaultModeChangedAsync(GroupPlace place)
     {
-        _defaultMode = mode;
-        await StoragePrefs.SetDefaultAsync(mode);
+        _defaultMode = place;
+        await StoragePrefs.SetDefaultAsync(place);
     }
 
     // Turning a reminder on for the first time is where we ask the OS for notification permission; if it is

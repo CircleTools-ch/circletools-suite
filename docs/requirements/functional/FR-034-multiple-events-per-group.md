@@ -25,9 +25,10 @@ re-entering the people each time (ADR-0042).
 - A group **always has at least one event.** Creating a group creates a default event; the last
   remaining event cannot be removed.
 - Adding or removing a member (a change to the **shared** roster) **voids the draw of every event** —
-  a draw belongs to the exact roster it was generated for. Renaming or linking a member does not.
+  a draw belongs to the exact roster it was generated for. Renaming a member, or someone taking part as one,
+  does not.
 - Wishlists are **per event**: a member's Christmas list is not their birthday list. The organizer
-  sets any member's wishlist per event; a linked member owns and edits **their own** wishlist per
+  sets any member's wishlist per event; a [participant](../../glossary/participant.md) owns and edits **their own** wishlist per
   event ([FR-030](FR-030-edit-my-wishlist.md)), and reads **their own** assignment per event
   ([FR-029](FR-029-see-my-assignment.md)).
 - [Reveal links](../../glossary/reveal-link.md) are generated **per event** and carry that event's
@@ -64,11 +65,11 @@ Given a group with two events
 When a member is added to or removed from the shared roster
 Then the draw of every event is voided
 
-Given a member linked in a group with two events
+Given a participant in a group with two events
 When they view their wishlists
 Then they can set a separate wishlist for each event
 
-Given a member linked in a drawn event
+Given a participant in a drawn event
 When they read their assignment
 Then they see one assignment per drawn event they are in
 

@@ -22,8 +22,10 @@ a short, free-text note the assigned giver sees — allergies, dietary or lifest
   constraint (a nut allergy) is set once, never re-typed. This distinguishes it from the wishlist, which
   is per event ([ADR-0042](../../adr/0042-events-as-first-class-entities.md)), and from an
   [Exclusion](../../glossary/exclusion.md), which constrains **who draws whom**.
-- **Organizer-authored** in v1 (it is roster data). A linked member self-authoring their own note (as
-  they can their wishlist, [FR-030](FR-030-edit-my-wishlist.md)) is a parked extension.
+- **Organizer-authored** by default (it is roster data). In an online group a participant keeps their own
+  note, as they keep their wishlist ([FR-030](FR-030-edit-my-wishlist.md)), and a member without a participant
+  can write it from their reveal link ([FR-050](FR-050-edit-own-entry-from-reveal-link.md)) — their
+  [member entry](../../glossary/member-entry.md) (ADR-0086).
 - **Optional and capped.** Empty or whitespace means "no note". The length is bounded (500 characters)
   so the encoded reveal link stays within its size budget
   ([ADR-0014](../../adr/0014-reveal-link-encoding-and-privacy.md)); an over-long note is rejected.
@@ -68,8 +70,8 @@ Given a note longer than the 500-character cap
 When the organizer saves
 Then it is rejected and nothing is stored
 
-Given the giver is a linked member reading their my-assignments
-When the organizer has published the draw
+Given the giver is a participant reading their participant page
+When the event has been drawn
 Then the giver sees the recipient's gift note (and the budget range, FR-036) on their own device
 
 Given a member is archived after a draw

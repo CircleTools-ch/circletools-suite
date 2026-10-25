@@ -19,10 +19,12 @@ see.** Two properties, stated once for every aggregate that syncs:
 - **Convergence.** Once every device has completed one sync cycle with no further edits, all of them
   hold the same set of aggregates at the same versions. A delete does not resurrect; a
   [tombstone](../../glossary/tombstone.md) that has been seen does not re-delete a later re-creation.
-- **Data safety.** No local data is removed as a side effect of an account action. Signing in,
-  [claiming](../../glossary/claim.md), un-claiming, signing out and deleting the account all leave the
-  device's copy intact. The **only** thing that removes local data is the user deleting the group, on
-  purpose, and its tombstone.
+- **Data safety.** No local data is removed as a side effect of an account action. Signing in, signing
+  out, putting a group online, keeping it on this device and deleting the account all leave the device's
+  copy of a group it organizes intact. What removes a group from a device is the user deleting it on
+  purpose — or, for a group the device only takes part in or reaches through the account, losing the role
+  in it (deleted, left, freed, handed over), since the device never held more than that role's view.
+  *(Amended 2026-10-25 for [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md): claim and un-claim are gone; online groups have their own sync.)*
 
 The single accepted exception is **last-write-wins**: when the same aggregate genuinely changed on
 both sides since the client's cursor, the version with the earlier server-recorded time is discarded

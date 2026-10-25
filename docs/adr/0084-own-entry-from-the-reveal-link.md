@@ -7,6 +7,8 @@ tags: [architecture, privacy, security, sharing, secret-santa]
 
 # ADR-0084 — The reveal link lets its holder keep their own wishlist and gift note (live-link groups)
 
+> **Amended by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** The reveal-link entry is a member entry like a participant's, only for a member without a participant.
+
 ## Context and problem statement
 
 The reveal page ends with *"You will receive a gift too: tell the organizer what you would like, so your

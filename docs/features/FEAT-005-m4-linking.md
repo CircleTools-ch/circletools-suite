@@ -1,7 +1,7 @@
 ---
 id: FEAT-005
 title: M4 — Linking
-status: Done
+status: Superseded
 owner: Adrian
 target-milestone: M4 (v2 — linking)
 bounded-context: SecretSanta
@@ -9,6 +9,8 @@ related: [UC-SS-009, UC-SS-010, UC-SS-011, UC-SS-012, FR-027, FR-028, FR-029, FR
 ---
 
 # FEAT-005 — M4 — Linking
+
+> **Superseded by [FEAT-027](FEAT-027-one-way-to-be-in-a-group.md)** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md), 2026-10-25). Member linking, the linking store, My assignments and My wishlists were replaced by participants and the participant page. This spec is kept as the record of what was built then.
 
 ## Problem & goals
 

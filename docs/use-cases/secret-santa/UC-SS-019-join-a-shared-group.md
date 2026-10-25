@@ -1,107 +1,69 @@
 ---
 id: UC-SS-019
-title: Join a shared-by-link group via the join link
+title: Take part through the join link
 app: Secret-Santa
 actors: [Participant]
 status: Approved
 priority: Should
-related: [FR-041, FR-039, NFR-002, UC-SS-018, UC-SS-020, ADR-0058, ADR-0019, ADR-0043]
+related: [FR-041, FR-039, NFR-002, UC-SS-018, UC-SS-020, ADR-0086]
 ---
 
-# UC-SS-019 — Join a shared-by-link group via the join link
+# UC-SS-019 — Take part through the join link
+
+> **Rewritten 2026-10-25 for [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)** ([FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)). The previous version described the four-kind storage model and member linking; it is in the git history.
 
 ## Summary / goal
 
-A person opens a [join link](../../glossary/join-link.md) and joins a
-[Shared-by-link group](../../glossary/shared-by-link-group.md) — **with or without an account** — so
-they can see the group and their **own** [Assignment](../../glossary/assignment.md) once it is drawn,
-and keep their own [Wishlist](../../glossary/wishlist.md) / [Gift note](../../glossary/gift-note.md) up
-to date. Joining is a [person claim](../../glossary/person-claim.md): the joiner says **which
-[Member](../../glossary/member.md) they are** and **how they want to be remembered**.
+A person opens a group's join link, says who they are, and from then on sees their own pairing and keeps their own wishlist — with an account or on this device only.
 
 ## Primary actor & stakeholders
 
-- **Primary actor:** Participant (the joiner).
-- **Stakeholders:** the organizer/admin (wants everyone in without a forced sign-up); other participants
-  (their spots must not be taken by someone else — first-claim-locks); the operator (account-free join
-  is an account-free write path, bounded by anti-abuse limits).
+- **Primary actor:** a person in the group.
+- **Stakeholders & interests:** the organizer — that people pick their own member; the others — that nobody takes their spot.
 
 ## Preconditions
 
-- The group is in **Shared by link** mode and the joiner has opened a valid join link.
+- The group is online and its join link is on.
 
 ## Postconditions
 
-- **Success:** the joiner is bound to exactly one member (by an account, or by this device); that member
-  is **locked** to them; they see the group and, once drawn, their own assignment.
-- **Failure:** no binding is created; the joiner is told why (e.g. the member was already claimed).
+- **Success:** the person is a participant of their member and their participant page is open.
+- **Failure:** nothing changes.
 
 ## Trigger
 
-The joiner opens the join link (deep-links into the app on Android, or the web app otherwise).
+The person opens the join link.
 
 ## Main success scenario
 
-1. The join link opens onto a short **"Who are you in this group?"** step showing the roster.
-2. The joiner **claims an existing member** (e.g. "I'm Chloé").
-3. The app asks **"How should we remember you?"** — **create/sign in to an account**, or **just this
-   device**.
-4. The joiner picks one; the app **locks** that member to the chosen account or device (a
-   [person claim](../../glossary/person-claim.md)).
-5. The joiner sees the group; once the draw has run, they see **their own** assignment and can edit
-   their own wishlist / gift note.
+1. The system shows the group's name and the members whose spot is free (taken ones marked).
+2. The person picks themselves, or enters a new name.
+3. The person chooses *just this device* or *with my account*.
+4. The system makes them a participant of that member and opens their participant page.
 
 ## Extensions / alternate flows
 
-- **2a. The joiner is not yet on the roster** → they choose **Add me as a new person**, entering a name;
-  a new member is created and claimed to them.
-- **3a. Account chosen** → the member is linked to the [User](../../glossary/user.md) (member↔user
-  linking, [ADR-0019](../../adr/0019-member-user-linking.md); invitee-chosen promotion,
-  [ADR-0043](../../adr/0043-invitee-chosen-managed-member-promotion.md)) and travels to their other
-  signed-in devices.
-- **3b. Just this device chosen** → the claim is device-local; nothing syncs beyond this device. If the
-  joiner later switches devices, an admin must **free** the member so they can rejoin
-  ([UC-SS-020](UC-SS-020-release-a-claimed-person.md)).
-- **2b. The chosen member is already claimed** → the claim is **refused** (first claim wins and locks);
-  the joiner is told to pick another member or ask an admin to free it.
-- **1a. The admin has since claimed admin to an account** → the join link **still works**; only the
-  admin capability changed ([UC-SS-018](UC-SS-018-share-and-manage-as-admin.md)).
-- **1b. The join link's token was regenerated / the group was made local** → the link no longer resolves;
-  the joiner is told to ask the organizer for the current link.
+- **2a.** Their member is taken → they ask the organizer to free the spot (UC-SS-020).
+- **3a.** *With my account* while signed out → the system offers to sign in first and returns here.
+- **1a.** The link was turned off or replaced → the page says it no longer works.
 
 ## Exceptions
 
-- **Backend unreachable** → the join cannot complete (it needs the server); the joiner is told to retry,
-  and no partial binding is left behind.
+- **Offline** → the page can't load; the person tries again online.
 
 ## Non-functional notes
 
-- **Privacy — trust-bounded:** because the join link is a single shared secret, a holder could claim a
-  member other than themselves and see that member's assignment. This is accepted under the family/friend
-  **trust context**, bounded by **first-claim-locks** and admin release
-  ([NFR-002](../../requirements/non-functional/NFR-002-assignment-privacy.md),
-  [ADR-0058](../../adr/0058-account-free-link-shared-groups.md)); a joiner only ever sees the assignment
-  of the member they hold, never the full mapping.
-- **Offline/local-first:** once joined on a device, reading the group follows the normal
-  [sync](../../glossary/sync.md) model; the *initial* join needs the server.
-- **Localization:** the join steps, the identity/persistence choices and their helper text are DE/EN/FR
-  ([NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)).
+- **Offline/local-first:** the participant page then works offline with the last view.
+- **Localization:** the page in the person's language.
+- **Privacy:** the join page lists names but no pairings (NFR-002).
+- **Performance:** —
 
 ## Open questions
 
-- A device-only joiner has the weakest identity; should the app nudge them to add an account before the
-  draw so a device change doesn't need an admin? Suggest a gentle prompt; confirm in the feature spec.
+- None.
 
 ## Traceability
 
-- Requirements: [FR-041](../../requirements/functional/FR-041-join-link-and-person-claim.md)
-  (join link & person claim), [FR-039](../../requirements/functional/FR-039-shared-by-link-storage-and-sync.md)
-  (shared-by-link storage & sync)
-- Related use cases: [UC-SS-018](UC-SS-018-share-and-manage-as-admin.md),
-  [UC-SS-020](UC-SS-020-release-a-claimed-person.md)
-- Governing ADR: [ADR-0058](../../adr/0058-account-free-link-shared-groups.md),
-  [ADR-0019](../../adr/0019-member-user-linking.md),
-  [ADR-0043](../../adr/0043-invitee-chosen-managed-member-promotion.md)
-- Feature spec: [FEAT-013](../../features/FEAT-013-account-free-link-shared-groups.md)
-- Glossary: [Join link](../../glossary/join-link.md), [Person claim](../../glossary/person-claim.md),
-  [Member](../../glossary/member.md), [Assignment](../../glossary/assignment.md)
+- Requirements: [FR-041](../../requirements/functional/FR-041-join-link-and-person-claim.md), [FR-039](../../requirements/functional/FR-039-shared-by-link-storage-and-sync.md), [NFR-002](../../requirements/non-functional/NFR-002-assignment-privacy.md)
+- Feature spec: [FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)
+- Glossary terms: [Join link](../../glossary/join-link.md), [Participant](../../glossary/participant.md), [Device key](../../glossary/device-key.md)

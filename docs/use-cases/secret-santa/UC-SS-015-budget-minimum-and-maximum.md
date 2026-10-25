@@ -31,7 +31,7 @@ the exchange expects a gift worth *at least* a floor as well as *at most* the li
 ## Postconditions
 
 - **Success:** the event's budget carries a maximum and, optionally, a minimum (`0 ≤ min ≤ max`, one
-  currency). The range shows on every reveal link and on a linked member's own assignment.
+  currency). The range shows on every reveal link and on a participant's own assignment.
 - **Failure:** nothing is saved; the organizer is told why (e.g. the minimum exceeds the maximum).
 
 ## Trigger

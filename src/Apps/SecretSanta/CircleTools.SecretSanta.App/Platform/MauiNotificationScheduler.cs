@@ -2,6 +2,7 @@ using CircleTools.Ui.Abstractions;
 #if ANDROID || IOS
 using Plugin.LocalNotification;
 using Plugin.LocalNotification.Core.Models;
+using Plugin.LocalNotification.Core.Models.AndroidOption;
 #endif
 
 namespace CircleTools.SecretSanta.App.Platform;
@@ -48,6 +49,16 @@ public sealed class MauiNotificationScheduler : INotificationScheduler
             Schedule = new NotificationRequestSchedule
             {
                 NotifyTime = notification.DeliverAt,
+                Android = new AndroidScheduleOptions
+                {
+                    // No exact-alarm permission (ADR-0060), so Android may fire this late; allow-while-idle keeps
+                    // Doze from holding it back for hours.
+                    ScheduleMode = AndroidScheduleMode.InexactAllowWhileIdle,
+
+                    // The plugin drops an alarm that fires more than AllowedDelay (default 1 minute) late — a
+                    // reminder 6 minutes late vanished without a trace (R17). Show it until its day is over.
+                    AllowedDelay = notification.ShowUntil - notification.DeliverAt,
+                },
             },
         });
     }

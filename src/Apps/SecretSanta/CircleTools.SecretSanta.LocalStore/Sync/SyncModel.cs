@@ -1,18 +1,12 @@
-using CircleTools.Main.Contracts;
-using CircleTools.SecretSanta.Core.Persistence;
-
 namespace CircleTools.SecretSanta.LocalStore;
 
 /// <summary>
-/// The aggregate kinds that cross the M3 sync wire (FEAT-004). Platform stores every kind as an
-/// opaque document, so the string is the only thing that distinguishes a group from a profile on
-/// either side (ADR-0016, ADR-0033).
+/// The aggregate kinds that cross the account sync wire (FEAT-004). Platform stores every kind as an opaque
+/// document, so the string is the only thing that distinguishes them (ADR-0016, ADR-0033). Groups do not travel
+/// here: online groups live in the Secret-Santa group store (ADR-0086).
 /// </summary>
 public static class SyncKinds
 {
-    /// <summary>A Secret-Santa group aggregate.</summary>
-    public const string Group = "group";
-
     /// <summary>The per-account profile document (display name, preferred language).</summary>
     public const string Profile = "profile";
 
@@ -22,8 +16,8 @@ public static class SyncKinds
 
 /// <summary>
 /// The pristine, syncable body of the per-account Secret-Santa UI preferences document (ADR-0041):
-/// the groups the user has pinned for quick access. Like <see cref="GroupState"/> it carries no sync
-/// metadata — the version, account scope and dirty flag wrap it in <see cref="SyncedPreferencesRecord"/>
+/// the groups the user has pinned for quick access. It carries no sync metadata — the version, account
+/// scope and dirty flag wrap it in <see cref="SyncedPreferencesRecord"/>
 /// in the local store, and only this body crosses the wire as the opaque aggregate the server echoes to
 /// the account's other devices.
 /// </summary>
@@ -32,9 +26,8 @@ public sealed record PreferencesState(IReadOnlyList<Guid> PinnedGroupIds);
 
 /// <summary>
 /// The per-account UI preferences together with the sync metadata the client needs to reconcile it
-/// (ADR-0041), mirroring <see cref="SyncedGroupRecord"/>. Preferences are a device-agnostic account
-/// preference, so — unlike a group — the document exists only while signed in and is always scoped to an
-/// account; there is no account-free preferences document.
+/// (ADR-0041). Preferences are a device-agnostic account preference, so the document exists only while
+/// signed in and is always scoped to an account; there is no account-free preferences document.
 /// </summary>
 /// <param name="State">The pristine preferences body.</param>
 /// <param name="Version">The per-document version, bumped on every local edit — the client's half of last-write-wins.</param>
@@ -47,210 +40,8 @@ public sealed record SyncedPreferencesRecord(
     bool Dirty);
 
 /// <summary>
-/// Where a group's data lives — the per-group storage mode a user chooses (ADR-0058, FEAT-013).
-/// Client-side state: like the account scope it wraps the domain memento in
-/// <see cref="SyncedGroupRecord"/> and is never part of the <see cref="GroupState"/> the domain
-/// produces (the <c>SyncLayeringTests</c> fitness function keeps sync/storage metadata out of the
-/// memento).
-/// </summary>
-public enum StorageMode
-{
-    /// <summary>Local-only, offline, account-free — the default. Sharing is per-person reveal links only (NFR-001).</summary>
-    OnThisDevice = 0,
-
-    /// <summary>Stored on the server keyed by a share token, no account; reachable by an admin or join link (ADR-0058).</summary>
-    SharedByLink = 1,
-
-    /// <summary>Synced to the signed-in account across that user's devices.</summary>
-    Account = 2,
-}
-
-/// <summary>
-/// The share tokens this device holds for a <see cref="StorageMode.SharedByLink"/> group (ADR-0058):
-/// the admin-capability token (present only for a holder of the admin link) and/or the join token.
-/// Client-side metadata carried on <see cref="SyncedGroupRecord"/> — never in the domain memento.
-/// </summary>
-/// <param name="AdminToken">The admin-capability token, or <see langword="null"/> if this device holds only the join link.</param>
-/// <param name="JoinToken">The join (participant) token, or <see langword="null"/>.</param>
-/// <param name="CreatorKey">
-/// The creator secret this device minted when it first shared the group (ADR-0058 security note): it is
-/// what a lost-response retry of the create re-presents to recover the links, and it is what proves this
-/// device is the creator rather than merely someone who learned the group id from a join link. Minted and
-/// persisted before the first create call so a retry reuses it; kept on the record thereafter. Present
-/// only for the device that created the share.
-/// </param>
-/// <param name="RevealTokens">
-/// The per-giver reveal tokens this device minted for the group's live reveal links (ADR-0068, FEAT-020),
-/// keyed by (event, giver). Present only for a device that can publish reveal slices (a
-/// <see cref="StorageMode.SharedByLink"/> admin-link holder or a <see cref="StorageMode.Account"/>
-/// owner). Additive and optional: a record written before this field decodes it as <see langword="null"/>.
-/// </param>
-/// <param name="ParticipantKey">
-/// The participant key the server issued when this device claimed a member through the join link
-/// (ADR-0080): it proves the claim on reads and own-entry writes, so the server includes this member's
-/// pairing. Additive: <see langword="null"/> for an admin-link holder, a device that joined before keys
-/// existed (exchanged once on the next sync) or a device that knows the group only through its account.
-/// </param>
-public sealed record SharedGroupTokens(
-    string? AdminToken,
-    string? JoinToken,
-    string? CreatorKey = null,
-    IReadOnlyList<RevealTokenRef>? RevealTokens = null,
-    string? ParticipantKey = null);
-
-/// <summary>
-/// A stable per-giver reveal token (ADR-0068, FEAT-020): the token addressing one giver's live reveal
-/// slice on the server, carried on a backend-backed reveal link as <c>rt=</c>. Reveal links are per event,
-/// so the token is keyed by both the event and the giving member; it stays stable across re-draws (the
-/// slice content changes, the link does not).
-/// </summary>
-/// <param name="EventId">The event whose draw this reveal token belongs to.</param>
-/// <param name="MemberId">The giving member the reveal link is for.</param>
-/// <param name="Token">The unguessable reveal token.</param>
-public sealed record RevealTokenRef(Guid EventId, Guid MemberId, string Token);
-
-/// <summary>
-/// A persisted group together with the sync metadata the client needs to reconcile it (FEAT-004).
-/// </summary>
-/// <remarks>
-/// The domain memento — <see cref="GroupState"/> — is kept pristine on purpose: the
-/// <see cref="CircleTools.SecretSanta.Core.Domain.Group"/> aggregate gains nothing from sync, so the
-/// version, the account scope and the dirty flag wrap it here in the LocalStore adapter rather than
-/// living inside the memento the domain produces (ADR-0016; the <c>SyncLayeringTests</c> fitness
-/// function makes this a build-time rule).
-/// </remarks>
-/// <param name="State">The pristine domain memento.</param>
-/// <param name="Version">
-/// The per-aggregate version, bumped on every local edit. It is the client's half of last-write-wins:
-/// the number the server compares against what it holds.
-/// </param>
-/// <param name="AccountScope">
-/// The account this group is claimed into, or <see langword="null"/> for an account-free, local-only
-/// group. Only a scoped group is ever pushed, and only to the account whose id this is — a group
-/// claimed to one account is never sent to another that later signs in on the same device (FR-024).
-/// </param>
-/// <param name="Dirty">
-/// Whether the local copy holds an edit not yet accepted by the server. Set on every local write,
-/// cleared once a cycle has pushed the copy the flag was set for.
-/// </param>
-/// <param name="Mode">
-/// The group's storage mode (ADR-0058): on this device (default), shared by link, or account-synced.
-/// Additive since schema v3; an older record without it loads as <see cref="StorageMode.OnThisDevice"/>.
-/// </param>
-/// <param name="Tokens">
-/// For a <see cref="StorageMode.SharedByLink"/> group, the share tokens this device holds; otherwise
-/// <see langword="null"/>. Additive since schema v3.
-/// </param>
-/// <param name="ClaimedMemberId">
-/// For a group this device <em>joined</em> via a join link (ADR-0058), the member this device claimed
-/// ("this is me"), so the app can show that person their own assignment. <see langword="null"/> for an
-/// organizer-owned or unjoined group. Additive since schema v3.
-/// </param>
-/// <param name="PendingClaimAccount">
-/// For a group marked <see cref="StorageMode.Account"/> that is not claimed yet, the account it was marked
-/// for — so it is hidden while signed out, never shown to or claimed into another account, and claimed into
-/// this one on its next cycle (ADR-0078). Cleared once claimed or when the intent is reset. Additive.
-/// </param>
-/// <param name="AdminAccount">
-/// For a shared-by-link group whose admin was claimed into an account (ADR-0058, <see cref="Mode"/> =
-/// <see cref="StorageMode.Account"/>, synced by the owner path), that account. It is never
-/// <see cref="AccountScope"/>: the group lives in the shared-group store, not the account sync store
-/// (ADR-0078). Cleared on release-to-link. Additive.
-/// </param>
-/// <param name="JoinedAccount">
-/// For a group joined through the join link <em>with an account</em> ("keep it on my account"), that account
-/// (ADR-0080): the claim is proven by its sign-in on any of its devices, so the group is shown only while it
-/// is signed in. <see langword="null"/> for a device-only join and for every other kind. Additive.
-/// </param>
-/// <param name="PendingEntry">
-/// For a joined group, the participant's own entry (gift note, per-event wishlists) edited on this device and
-/// not yet accepted by the server (ADR-0080); sent on the next reconcile, then cleared. Additive.
-/// </param>
-public sealed record SyncedGroupRecord(
-    GroupState State,
-    long Version,
-    Guid? AccountScope,
-    bool Dirty,
-    StorageMode Mode = StorageMode.OnThisDevice,
-    SharedGroupTokens? Tokens = null,
-    Guid? ClaimedMemberId = null,
-    Guid? PendingClaimAccount = null,
-    Guid? AdminAccount = null,
-    Guid? JoinedAccount = null,
-    ParticipantEntry? PendingEntry = null);
-
-/// <summary>
-/// The questions every reader asks about a <see cref="SyncedGroupRecord"/>'s kind, answered in one place
-/// (ADR-0078 Amendment 3). "My account" has two kinds that live in different server stores, and telling
-/// them apart by <see cref="SyncedGroupRecord.Mode"/> alone sent account-store groups down the shared-group
-/// owner path.
-/// </summary>
-public static class SyncedGroupRecordKind
-{
-    /// <summary>
-    /// Whether the record is a shared-by-link group whose admin an account claimed (ADR-0058): it lives in
-    /// the shared-group store and is read, written and published by its owner's bearer. A legacy record
-    /// written before <see cref="SyncedGroupRecord.AdminAccount"/> existed is recognised by the tokens a
-    /// claim-admin keeps, until the owned-group merge back-fills its account.
-    /// </summary>
-    /// <param name="record">The record.</param>
-    /// <returns><see langword="true"/> for an admin-claimed shared group.</returns>
-    public static bool IsAdminClaimedShared(this SyncedGroupRecord record)
-    {
-        ArgumentNullException.ThrowIfNull(record);
-        return record.AccountScope is null
-            && (record.AdminAccount is not null
-                || (record.Mode == StorageMode.Account && record.PendingClaimAccount is null && record.Tokens is not null));
-    }
-
-    /// <summary>
-    /// The storage mode to show for the record: an account-store group (it has an
-    /// <see cref="SyncedGroupRecord.AccountScope"/>) is "My account" whatever an older record's
-    /// <see cref="SyncedGroupRecord.Mode"/> says.
-    /// </summary>
-    /// <param name="record">The record.</param>
-    /// <returns>The mode the group is really in.</returns>
-    public static StorageMode EffectiveMode(this SyncedGroupRecord record)
-    {
-        ArgumentNullException.ThrowIfNull(record);
-        return record.AccountScope is not null ? StorageMode.Account : record.Mode;
-    }
-
-    /// <summary>
-    /// Whether this device holds the group only as a join-link participant (ADR-0058): it may see the
-    /// group, but only the organizer changes it. Such a device has no way to send a group edit.
-    /// </summary>
-    /// <param name="record">The record.</param>
-    /// <returns><see langword="true"/> for a join-only shared group.</returns>
-    public static bool IsJoinOnly(this SyncedGroupRecord record)
-    {
-        ArgumentNullException.ThrowIfNull(record);
-        return record.Mode == StorageMode.SharedByLink && record.Tokens?.AdminToken is null;
-    }
-}
-
-/// <summary>
-/// The whole persisted group collection under the local-store key, carrying a schema version so an
-/// older on-disk shape can be recognised and migrated in place (FEAT-004).
-/// </summary>
-/// <param name="SchemaVersion">The storage schema version this document was written with.</param>
-/// <param name="Records">The groups and their sync metadata.</param>
-public sealed record SyncGroupDocument(int SchemaVersion, IReadOnlyList<SyncedGroupRecord> Records)
-{
-    /// <summary>
-    /// The current storage schema version. Version 1 was the bare <c>List&lt;GroupState&gt;</c> array
-    /// (no wrapper, no sync metadata); version 2 wrapped each in a <see cref="SyncedGroupRecord"/>;
-    /// version 3 adds the per-group <see cref="StorageMode"/> and its share tokens (ADR-0058) as
-    /// additive record fields — a v2 document loads unchanged, every group defaulting to
-    /// <see cref="StorageMode.OnThisDevice"/> with no tokens. A load also recognises the v1 array and
-    /// lifts each element — no user loses a group.
-    /// </summary>
-    public const int CurrentSchemaVersion = 3;
-}
-
-/// <summary>
 /// The account's profile preferences held locally, so an edit made offline survives a reload and can
-/// be pushed on reconnect (FEAT-004, ADR-0035). Unlike a group this is not a sync-store aggregate: the
+/// be pushed on reconnect (FEAT-004, ADR-0035). This is not a sync-store aggregate: the
 /// authoritative profile lives on the Main service's <c>/account/profile</c> endpoint (which drives the
 /// JWT locale and the Main app), and <see cref="Dirty"/> marks an offline edit waiting to be
 /// <c>PUT</c>-flushed there on the next sync trigger.
@@ -271,61 +62,24 @@ public sealed record SyncedProfileRecord(
     string Language,
     bool Dirty);
 
-/// <summary>
-/// A deletion made locally and not yet pushed (FEAT-004). Travels to the server as a tombstone so the
-/// delete propagates to the account's other devices; it carries no body.
-/// </summary>
-/// <param name="AccountId">
-/// The account the deleted group was claimed into. A pending tombstone is only ever pushed to this
-/// account — the same cross-account rule the dirty groups follow (FR-024).
-/// </param>
-/// <param name="Kind">The aggregate kind the deletion applies to.</param>
-/// <param name="Id">The deleted aggregate's identity.</param>
-/// <param name="Version">The version at deletion, so a later higher-version re-creation is not re-deleted.</param>
-public sealed record PendingTombstone(Guid AccountId, string Kind, Guid Id, long Version);
-
 /// <summary>The cursor a device has reached on one account — the highest server sequence it has applied.</summary>
 /// <param name="AccountId">The account this cursor belongs to.</param>
 /// <param name="Cursor">The highest per-account sequence already applied on this device.</param>
 public sealed record AccountSyncCursor(Guid AccountId, long Cursor);
 
 /// <summary>
-/// A queued owner delete of a "My account" group's online copy in the shared-group store (ADR-0078).
-/// </summary>
-/// <param name="GroupId">The deleted group.</param>
-/// <param name="AccountId">
-/// The account that owns it, so only a sync of that account sends the delete; <see langword="null"/> for a
-/// legacy record with no account recorded, which any signed-in account may send (the server refuses a
-/// non-owner).
-/// </param>
-public sealed record PendingOwnedDelete(Guid GroupId, Guid? AccountId);
-
-/// <summary>
-/// The device-level sync state: the stable device id, a per-account cursor, and the deletions still
-/// waiting to be pushed (FEAT-004). Persisted alongside the groups but under its own key.
+/// The device-level sync state: the stable device id and a per-account cursor (FEAT-004). Persisted under its
+/// own key. An older document's group fields (pending tombstones, retractions, owned deletes) are ignored on
+/// load: groups left the account sync (ADR-0086).
 /// </summary>
 /// <param name="DeviceId">
 /// This device's stable identifier, minted once and kept across accounts. It distinguishes this
 /// device's cursor and writes from the account's other devices, and drives tombstone retention.
 /// </param>
 /// <param name="Cursors">The cursor reached on each account this device has synced.</param>
-/// <param name="Tombstones">Deletions queued for their next push, each bound to its account.</param>
-/// <param name="Retractions">
-/// Deleted groups whose linking projection (event registry, assignments, member-links) the server may
-/// still hold, queued until a signed-in sync retracts them (ADR-0077). Additive: an older state document
-/// without the field loads with none queued.
-/// </param>
-/// <param name="OwnedDeletes">
-/// Deleted "My account" groups whose online copy in the shared-group store only their owner can delete,
-/// queued until a signed-in sync of that account sends the delete (ADR-0078). Until then the owned-group
-/// discovery skips them, so a deleted group does not come back. Additive.
-/// </param>
 public sealed record SyncState(
     string DeviceId,
-    IReadOnlyList<AccountSyncCursor> Cursors,
-    IReadOnlyList<PendingTombstone> Tombstones,
-    IReadOnlyList<Guid>? Retractions = null,
-    IReadOnlyList<PendingOwnedDelete>? OwnedDeletes = null)
+    IReadOnlyList<AccountSyncCursor> Cursors)
 {
     /// <summary>The cursor reached on <paramref name="accountId"/>, or zero if never synced there.</summary>
     /// <param name="accountId">The account whose cursor is wanted.</param>

@@ -65,8 +65,8 @@ From the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-san
 - [ ] Sharing a link sends a message with context: a greeting with the person's name, the group and
       occasion, date, place and budget (one budget format), "only you see who you got", and the link on its
       own last line — DE/EN/FR.
-- [ ] For a group whose live reveal slices were just published (shared by link, or an account-owned shared
-      group), the link is short: `…/r#for=<name>&rt=<token>`. Otherwise the long link is handed out as before.
+- [ ] For an online group the link is short: `…/r#for=<name>&rt=<token>`; the server answers it from the
+      group's current state (ADR-0086). For a group kept on this device the long link is handed out as before.
 
 ## Dependencies & related
 

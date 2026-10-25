@@ -1,22 +1,18 @@
 @page "/"
 @using CircleTools.SecretSanta.Contracts
 @using CircleTools.SecretSanta.LocalStore
-@using CircleTools.SecretSanta.LocalStore.Linking
+@using CircleTools.SecretSanta.LocalStore.Online
 @inject ISender Sender
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
 @inject VisibleGroupsService VisibleGroups
-@inject ILinkingApi Linking
-@inject LinkResolutionApplier Resolutions
 @inject BookmarkService Bookmarks
 @inject AutoSyncService AutoSync
-@inject SharedSyncService SharedSync
-@inject SyncService Sync
+@inject OnlineGroupSync Online
+@inject IGroupRecordStore Records
 @inject IHapticFeedback Haptics
 @inject IDialogService Dialogs
 @inject StorageModePreferences StoragePrefs
-@inject ClaimableGroupsService Claimable
-@inject KeptLocalGroups KeptLocal
 @inject ISnackbar Snackbar
 @inject CreateFromCircleService Circles
 @inject GroupRemoval Removal
@@ -50,12 +46,10 @@
                 @L["CreateGroup"]
             </MudButton>
         </div>
-        @* Compact storage affordance (ADR-0073): show how the group will be stored — the default from
-           onboarding/Settings, same icon as the list — with a "Change" for this group, instead of an
-           always-open radio picker. The default is the single source of truth; this just surfaces it. *@
-        <StorageModeField Value="_createMode" ValueChanged="@(m => _createMode = m)"
-                          AccountEnabled="@(_accountId != Guid.Empty)" Expanded="_explainStorage"
-                          SignInRequested="SignInToCreate" />
+        @* Compact place affordance (ADR-0073, ADR-0086): show where the group will be kept — the default from
+           Settings, same icon as the list — with a "Change" for this group, instead of an always-open picker. *@
+        <StorageModeField Value="_createPlace" ValueChanged="@(p => _createPlace = p)"
+                          AccountEnabled="@(_accountId != Guid.Empty)" Expanded="_explainStorage" />
         @* Circles are a secondary way into "Create group" (FR-027), offered only when the account has a circle
            with two or more people — for everyone else the old list-page button was a dead end (T1, Q36). *@
         @if (_hasCircle)
@@ -66,15 +60,76 @@
     </MudPaper>
 </MudHidden>
 
+@* Invitations waiting for the signed-in account's answer (ADR-0086): accepting makes the group appear below. *@
+@if (_invitations.Count > 0)
+{
+    <MudText Typo="Typo.overline" Class="d-block mb-1">@L["InvitationsTitle"]</MudText>
+    <MudStack Spacing="2" Class="mb-4" id="invitations">
+        @foreach (var invitation in _invitations)
+        {
+            <MudCard Elevation="1">
+                <MudCardContent Class="py-2">
+                    <MudText Typo="Typo.body1">@L["InvitationText", invitation.GroupName, invitation.MemberName ?? string.Empty]</MudText>
+                    <div class="d-flex gap-2 mt-2">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" Disabled="_busy"
+                                   OnClick="() => AnswerAsync(invitation, accept: true)">@L["InvitationAccept"]</MudButton>
+                        <MudButton Variant="Variant.Text" Size="Size.Small" Disabled="_busy"
+                                   OnClick="() => AnswerAsync(invitation, accept: false)">@L["InvitationDecline"]</MudButton>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        }
+    </MudStack>
+}
+
+@* Groups this device takes part in without organizing them (ADR-0086, decision D3): opening one shows the
+   person's own assignment and lets them keep their own wishlist and gift note. *@
+@if (_takingPart.Count > 0)
+{
+    <MudText Typo="Typo.overline" Class="d-block mb-1">@L["TakingPartTitle"]</MudText>
+    <MudStack Spacing="2" Class="mb-4" id="taking-part">
+        @foreach (var view in _takingPart)
+        {
+            <MudCard Elevation="1">
+                <MudCardContent Class="py-2 pr-1">
+                    <div class="d-flex align-center gap-1">
+                        <div class="ct-openable flex-grow-1" role="button" tabindex="0" style="min-width:0;"
+                             aria-label="@L["OpenNamed", view.GroupName]"
+                             @onclick="() => OpenTakingPart(view.GroupId)" @onkeydown="@(e => OpenTakingPartOnEnter(e, view.GroupId))">
+                            <MudText Typo="Typo.subtitle1"><strong>@view.GroupName</strong></MudText>
+                            <div class="d-flex align-center gap-1 mud-text-secondary">
+                                <MudIcon Icon="@StorageModeDisplay.Icon(StorageKind.TakingPart)" Size="Size.Small" aria-hidden="true" />
+                                <MudText Typo="Typo.body2">@L["TakingPartAs", view.MemberName]</MudText>
+                            </div>
+                        </div>
+                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
+                                 AriaLabel="@L["MoreActionsFor", view.GroupName]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                            <MudMenuItem Icon="@Icons.Material.Filled.Logout" IconColor="Color.Error"
+                                         OnClick="() => AfterMenu(() => AskDeleteAsync(view.GroupId, view.GroupName))">@L["LeaveGroup"]</MudMenuItem>
+                        </MudMenu>
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        }
+    </MudStack>
+    @if (_groups is { Count: > 0 })
+    {
+        <MudText Typo="Typo.overline" Class="d-block mb-1">@L["OrganizedTitle"]</MudText>
+    }
+}
+
 @if (_groups is null)
 {
     <MudText>@L["Loading"]</MudText>
 }
+else if (_groups.Count == 0 && _takingPart.Count > 0)
+{
+    @* Taking part and organizing nothing yet: the section above is the page; creating stays one tap away. *@
+}
 else if (_groups.Count == 0)
 {
     @* First run (UX-003): say what the app does and nudge to the create field. Signed in it is the same card
-       (Q23) — without the account sell, and with a pointer to "My assignments" when the account takes part in
-       someone else's group. *@
+       (Q23), without the account sell. *@
     <AuthorizeView>
         <Authorized>
             <MudPaper Elevation="0" Outlined="true" Class="pa-6 mt-2" id="empty-state">
@@ -86,13 +141,6 @@ else if (_groups.Count == 0)
                         <MudButton OnClick="CreateViaFabAsync" Variant="Variant.Filled" Color="Color.Primary"
                                    Size="Size.Large" StartIcon="@Icons.Material.Filled.Add">@L["EmptyStateCreateGroup"]</MudButton>
                     </MudHidden>
-                    @if (_isLinkedMember)
-                    {
-                        <MudDivider Class="my-2" Style="width:100%;" />
-                        <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="max-width:34rem;">@L["EmptyStateMemberHint"]</MudText>
-                        <MudButton Href="my-assignments" Variant="Variant.Text" Color="Color.Primary"
-                                   StartIcon="@Icons.Material.Filled.AssignmentInd">@L["NavMyAssignments"]</MudButton>
-                    }
                 </div>
             </MudPaper>
         </Authorized>
@@ -156,9 +204,8 @@ else
                             </div>
                             <div class="d-flex align-center flex-wrap gap-x-3 mud-text-secondary" style="column-gap:12px;">
                                 <MudText Typo="Typo.body2">@L["GroupCardCounts", group.MemberCount, group.EventCount]</MudText>
-                                @* Per-group storage indicator (FR-048): where this group lives — device / link /
-                                   cloud — now with its label, not an unexplained icon. Mode is read from the sync
-                                   record (ClaimableGroups), not the domain summary. *@
+                                @* Per-group place indicator (FR-048, ADR-0086): on this device or online, with its
+                                   label. Read from the group record, not the domain summary. *@
                                 @if (_modeByGroup.TryGetValue(group.Id, out var mode))
                                 {
                                     <span class="d-inline-flex align-center gap-1">
@@ -180,30 +227,20 @@ else
                             </Authorized>
                         </AuthorizeView>
                         @* The group's actions (Q34): rename, pin, sharing, use as a template — and, set apart at the
-                           end, delete. A joined group is left, not deleted: it stays the organizer's (ADR-0080, Q1). *@
+                           end, delete. *@
                         <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
                                  AriaLabel="@L["MoreActionsFor", group.Name]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                            @if (_describedById.GetValueOrDefault(group.Id) is { IsJoinOnly: true })
+                            <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => AfterMenu(() => RenameAsync(group.Id, group.Name))">@L["Rename"]</MudMenuItem>
+                            @if (_accountId != Guid.Empty)
                             {
-                                <MudMenuItem Icon="@Icons.Material.Filled.Share" OnClick="@(() => Navigation.NavigateTo($"groups/{group.Id}/sharing"))">@L["SharingRow"]</MudMenuItem>
-                                <MudDivider Class="my-1" />
-                                <MudMenuItem Icon="@Icons.Material.Filled.Logout" IconColor="Color.Error"
-                                             OnClick="() => AfterMenu(() => AskDeleteAsync(group.Id, group.Name))">@L["LeaveGroup"]</MudMenuItem>
+                                <MudMenuItem Icon="@(_pinned.Contains(group.Id) ? Icons.Material.Filled.StarBorder : Icons.Material.Filled.Star)"
+                                             OnClick="() => TogglePinAsync(group.Id)">@(_pinned.Contains(group.Id) ? L["UnpinGroup"] : L["PinGroup"])</MudMenuItem>
                             }
-                            else
-                            {
-                                <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => AfterMenu(() => RenameAsync(group.Id, group.Name))">@L["Rename"]</MudMenuItem>
-                                @if (_accountId != Guid.Empty)
-                                {
-                                    <MudMenuItem Icon="@(_pinned.Contains(group.Id) ? Icons.Material.Filled.StarBorder : Icons.Material.Filled.Star)"
-                                                 OnClick="() => TogglePinAsync(group.Id)">@(_pinned.Contains(group.Id) ? L["UnpinGroup"] : L["PinGroup"])</MudMenuItem>
-                                }
-                                <MudMenuItem Icon="@Icons.Material.Filled.Share" OnClick="@(() => Navigation.NavigateTo($"groups/{group.Id}/sharing"))">@L["SharingRow"]</MudMenuItem>
-                                <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" OnClick="() => AfterMenu(() => UseAsTemplateAsync(group.Id, group.Name))">@L["UseAsTemplate"]</MudMenuItem>
-                                <MudDivider Class="my-1" />
-                                <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error"
-                                             OnClick="() => AfterMenu(() => AskDeleteAsync(group.Id, group.Name))">@L["Delete"]</MudMenuItem>
-                            }
+                            <MudMenuItem Icon="@Icons.Material.Filled.Share" OnClick="@(() => Navigation.NavigateTo($"groups/{group.Id}/sharing"))">@L["SharingRow"]</MudMenuItem>
+                            <MudMenuItem Icon="@Icons.Material.Filled.ContentCopy" OnClick="() => AfterMenu(() => UseAsTemplateAsync(group.Id, group.Name))">@L["UseAsTemplate"]</MudMenuItem>
+                            <MudDivider Class="my-1" />
+                            <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error"
+                                         OnClick="() => AfterMenu(() => AskDeleteAsync(group.Id, group.Name))">@L["Delete"]</MudMenuItem>
                         </MudMenu>
                     </div>
                 </MudCardContent>
@@ -237,10 +274,6 @@ else
     // The first group a device creates gets the storage options explained (ADR-0071 amendment).
     private bool _explainStorage;
 
-    // "?create=account": back from signing in to create a "My account" group.
-    [SupplyParameterFromQuery(Name = "create")]
-    public string? CreateIntent { get; set; }
-
     // "?template=<id>": the group page's "Use as template" (Q34) — create flows live here.
     [SupplyParameterFromQuery(Name = "template")]
     public Guid? TemplateGroupId { get; set; }
@@ -252,18 +285,18 @@ else
     private string _displayName = string.Empty;
     private string _newName = string.Empty;
     // The create picker / phone FAB seed from the user's device-local default (FR-048), re-seeded when the
-    // account changes and clamped for the current sign-in state.
-    private StorageMode _createMode = StorageMode.OnThisDevice;
+    // account changes.
+    private GroupPlace _createPlace = GroupPlace.Device;
     private bool _busy;
     // Surfaces a create failure instead of letting the exception escape the event handler (which tears
     // down the Blazor render and freezes the page). Carries the exception detail so a device-only failure
     // (e.g. the iOS write path) is diagnosable from the screen rather than needing attached logs.
     private string? _createError;
-    private Dictionary<Guid, ClaimableGroup> _describedById = [];
+    // Groups taken part in and invitations waiting for an answer (ADR-0086).
+    private IReadOnlyList<ParticipantView> _takingPart = [];
+    private IReadOnlyList<MyGroup> _invitations = [];
     // The account has a circle with 2+ people, so "Take members from a circle" is worth offering (T1).
     private bool _hasCircle;
-    // The account is a member of someone else's group: the empty state points at "My assignments" (Q23).
-    private bool _isLinkedMember;
 
     protected override void OnInitialized()
     {
@@ -294,30 +327,24 @@ else
 
         if (changed)
         {
-            // Seed the create picker / phone FAB from the user's default storage mode (FR-048), re-seeded
-            // when the account changes (e.g. after signing in from the onboarding) so the chosen default
-            // takes effect. Clamp "My account" to "On this device" while signed out — no account to attach
-            // to yet; the group auto-claims into the account on the next sync after sign-in (ADR-0017).
-            _createMode = ClampForAccount(await StoragePrefs.GetDefaultAsync());
+            // Seed the create picker / phone FAB from the user's default place (FR-048), re-seeded when the account
+            // changes so the chosen default takes effect.
+            _createPlace = await StoragePrefs.GetDefaultAsync();
             await LoadAsync();
             _ = RefreshAccountHintsAsync();
         }
     }
 
-    // Best-effort, after the list is shown: whether to offer circles and the "My assignments" pointer. Offline
-    // or failing, both stay hidden.
+    // Best-effort, after the list is shown: whether to offer circles. Offline or failing, it stays hidden.
     private async Task RefreshAccountHintsAsync()
     {
         var hasCircle = false;
-        var isMember = false;
         if (_accountId != Guid.Empty)
         {
             try
             {
                 var circles = await Circles.GetCirclesAsync();
                 hasCircle = circles.IsSuccess && circles.Value!.Any(c => c.PeopleCount >= 2);
-                var memberships = await Linking.GetMyMembershipsAsync();
-                isMember = memberships.IsSuccess && memberships.Value!.Memberships.Count > 0;
             }
             catch
             {
@@ -325,17 +352,12 @@ else
             }
         }
 
-        (_hasCircle, _isLinkedMember) = (hasCircle, isMember);
+        _hasCircle = hasCircle;
         await InvokeAsync(StateHasChanged);
     }
 
-    // "My account" needs a live session; without one, fall back to "On this device" (auto-claims later).
-    private StorageMode ClampForAccount(StorageMode mode) =>
-        mode == StorageMode.Account && _accountId == Guid.Empty ? StorageMode.OnThisDevice : mode;
-
     // No first-run storage dialog (ADR-0071 amendment, Q24): the choice is explained in "Create group" the
-    // first time. Back from signing in to create a "My account" group (?create=account), reopen the create
-    // dialog with that choice.
+    // first time.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
@@ -353,14 +375,6 @@ else
                 await UseAsTemplateAsync(templateId, source.Name);
             }
 
-            return;
-        }
-
-        if (CreateIntent == "account" && _accountId != Guid.Empty)
-        {
-            Navigation.NavigateTo(string.Empty, replace: true);
-            _createMode = StorageMode.Account;
-            await CreateViaFabAsync();
             return;
         }
 
@@ -382,26 +396,22 @@ else
 
     private async Task LoadAsync()
     {
-        // Signed in: every group (all synced). Signed out: only account-free groups — account data is
-        // hidden from the offline view but kept on the device (ADR-0044).
+        // Signed in: device groups, link-held groups and this account's online groups. Signed out: no account's
+        // groups — they stay on the device but hidden (ADR-0044, ADR-0086).
         _groups = await VisibleGroups.GetVisibleAsync();
 
-        // Each group's storage mode for the per-group list icon (FR-048), read from the sync record. A
-        // storage failure just drops the icons; the list still renders. A group claimed into the account
-        // is authoritative by its AccountScope (IsAccountFree == false); the Mode field is only set to
-        // Account on the shared-by-link→account transitions, so a normally-claimed group still carries
-        // Mode=OnThisDevice. Derive the shown mode from the account scope first so an account-synced group
-        // reads as "My account", not "device-only".
+        _takingPart = await VisibleGroups.GetTakingPartAsync();
+        _invitations = await VisibleGroups.GetInvitationsAsync();
+
+        // Each group's place for the per-group list chip (FR-048), read from the group record. A storage failure
+        // just drops the chips; the list still renders.
         try
         {
-            var described = await Claimable.GetAllAsync();
-            _modeByGroup = described.ToDictionary(g => g.Id, StorageModeDisplay.KindOf);
-            _describedById = described.ToDictionary(g => g.Id);
+            _modeByGroup = (await Records.LoadAsync()).Records.ToDictionary(r => r.Id, StorageModeDisplay.KindOf);
         }
         catch (StorageUnavailableException)
         {
             _modeByGroup = new Dictionary<Guid, StorageKind>();
-            _describedById = new Dictionary<Guid, ClaimableGroup>();
         }
 
         // Pinned groups are a per-account preference (FR-033); empty when signed out. A storage failure
@@ -443,12 +453,8 @@ else
         }
     }
 
-    // "My account" picked while signed out: sign in, then come back to create (ADR-0071 amendment).
-    private void SignInToCreate() =>
-        Navigation.NavigateTo("account/login?returnUrl=" + Uri.EscapeDataString("?create=account"));
-
-    // The inline field (wide screens) creates from the bound value + the compact storage field's mode.
-    private Task CreateAsync() => CreateNamedAsync(_newName, _createMode);
+    // The inline field (wide screens) creates from the bound value + the compact place field.
+    private Task CreateAsync() => CreateNamedAsync(_newName, _createPlace);
 
     // The phone FAB opens the "New group" sheet (name + storage mode, ADR-0073), pre-selecting the
     // default, then creates with the name and mode the user confirmed there.
@@ -457,14 +463,10 @@ else
     private async Task UseAsTemplateAsync(Guid sourceId, string sourceName)
     {
         var result = await Dialogs.ShowNewGroupDialogAsync(
-            _createMode, _accountId != Guid.Empty, _explainStorage, initialName: L["TemplateNewName", sourceName], fromTemplate: true);
-        if (result is { SignIn: true })
+            _createPlace, _accountId != Guid.Empty, _explainStorage, initialName: L["TemplateNewName", sourceName], fromTemplate: true);
+        if (result is { } created)
         {
-            SignInToCreate();
-        }
-        else if (result is { } created)
-        {
-            await CreateNamedAsync(created.Name, created.Mode, name => Sender.Send(new CopyGroupCommand(sourceId, name)));
+            await CreateNamedAsync(created.Name, created.Place, name => Sender.Send(new CopyGroupCommand(sourceId, name)));
         }
     }
 
@@ -481,22 +483,18 @@ else
 
     private async Task CreateViaFabAsync()
     {
-        var result = await Dialogs.ShowNewGroupDialogAsync(_createMode, _accountId != Guid.Empty, _explainStorage, _hasCircle);
-        if (result is { SignIn: true })
-        {
-            SignInToCreate();
-        }
-        else if (result is { FromCircle: true })
+        var result = await Dialogs.ShowNewGroupDialogAsync(_createPlace, _accountId != Guid.Empty, _explainStorage, _hasCircle);
+        if (result is { FromCircle: true })
         {
             Navigation.NavigateTo("groups/from-circle");
         }
         else if (result is { } created)
         {
-            await CreateNamedAsync(created.Name, created.Mode);
+            await CreateNamedAsync(created.Name, created.Place);
         }
     }
 
-    private async Task CreateNamedAsync(string rawName, StorageMode chosenMode, Func<string, Task<Guid>>? create = null)
+    private async Task CreateNamedAsync(string rawName, GroupPlace place, Func<string, Task<Guid>>? create = null)
     {
         if (_busy || string.IsNullOrWhiteSpace(rawName))
         {
@@ -509,47 +507,32 @@ else
         {
             var name = rawName.Trim();
             var id = create is null ? await Sender.Send(new CreateGroupCommand(name)) : await create(name);
-            var mode = ClampForAccount(chosenMode);
 
-            // The organizer is a member of the group they create. Signed in, add them; for a group that
-            // leaves the device (shared by link, my account) also link their own account so their
-            // membership, wishlist and (once drawn) assignment are theirs on the My* screens (FR-032).
-            // "On this device" is private (ADR-0073): a self-link would put the group's name, events and the
-            // organizer's assignment on the server, so it is not made automatically (ADR-0077) — the
-            // organizer can still link explicitly from Members. Signed out there is no identity to add.
-            if (_accountId != Guid.Empty && !string.IsNullOrWhiteSpace(_displayName))
-            {
-                await AddSelfAsync(id, name, _displayName.Trim(), link: mode != StorageMode.OnThisDevice);
-            }
+            // The organizer is a member of the group they create (FR-032). Signed out there is no name to add.
+            var ownMember = _accountId != Guid.Empty && !string.IsNullOrWhiteSpace(_displayName)
+                ? await AddSelfAsync(id, _displayName.Trim())
+                : null;
 
-            // Apply the chosen storage mode (FR-038/ADR-0073): the picker value on wide screens, or the
-            // seeded default on the phone FAB. "Shared by link" uploads and mints its links now (ADR-0058);
-            // "My account" marks the group for the account so the next sync cycle claims it (and it is NOT
-            // just left as a plain local group, which now stays local); "On this device" stays local.
-            // Account while signed out is clamped to local.
-            // Signed in, a shared group stays in the account (ADR-0081): shared and claimed in one step, so it
-            // syncs to all the organizer's devices and keeps its join link. Signed out it is account-free.
-            if (mode == StorageMode.SharedByLink && _accountId != Guid.Empty)
+            // Online (ADR-0086): one upload makes it online — owned by the account while signed in, by a
+            // management link this device keeps while signed out. Signed in, the organizer's own member is then
+            // connected to their account, so the overview on their other devices shows it. Best-effort offline:
+            // the group stays on this device, and the person can put it online later from Sharing & sync.
+            if (place == GroupPlace.Online)
             {
-                await SharedSync.ShareOwnedAsync(_accountId, id);
-            }
-            else if (mode == StorageMode.SharedByLink)
-            {
-                await SharedSync.ShareByLinkAsync(id);
-            }
-            else if (mode == StorageMode.OnThisDevice && _accountId != Guid.Empty)
-            {
-                // Chosen "On this device" while signed in: an explicit decision, so the sign-in
-                // reconciliation must not later ask to import it as if it were made while signed out.
-                await KeptLocal.AddAsync([id]);
-            }
-            else if (mode == StorageMode.Account)
-            {
-                await Sync.MarkForAccountAsync(_accountId, id);
+                var account = _accountId == Guid.Empty ? (Guid?)null : _accountId;
+                var online = await Online.MakeOnlineAsync(id, account, joinEnabled: false);
+                if (online.IsSuccess && account is not null && ownMember is { } memberId)
+                {
+                    await Online.AddParticipantAsync(id, new AddParticipantRequest(memberId, ParticipantRoute.OwnMember));
+                }
+                else if (!online.IsSuccess)
+                {
+                    Snackbar.Add(L["StorageModeChangeFailed"], Severity.Warning);
+                }
             }
 
             _newName = string.Empty;
-            await StoragePrefs.MarkOnboardedAsync(); // the storage choice has been explained once
+            await StoragePrefs.MarkOnboardedAsync(); // the place choice has been explained once
             _explainStorage = false;
             Open(id);
         }
@@ -566,46 +549,59 @@ else
         }
     }
 
-    // Add the organizer as the first member and, when asked, link their own account. Best-effort: the
-    // self-link needs the server, so an unreachable server just leaves them an unlinked member — still in
-    // the group, with the link applying on a later "Sync now". Applying the resolution here sets
-    // Member.UserId at once so the roster shows the link immediately rather than only after the next sync.
-    private async Task AddSelfAsync(Guid groupId, string groupName, string displayName, bool link)
+    // Add the organizer as the first member; a copy of a group they were already in (Q34) keeps that member.
+    private async Task<Guid?> AddSelfAsync(Guid groupId, string displayName)
     {
         try
         {
-            var memberId = await Sender.Send(new AddMemberCommand(groupId, displayName));
-            if (!link)
-            {
-                return;
-            }
-
-            var selfLink = await Linking.SelfLinkAsync(new SelfLinkRequest(groupId, groupName, memberId, displayName));
-            if (selfLink.IsSuccess)
-            {
-                await Resolutions.ApplyPendingAsync();
-            }
+            return await Sender.Send(new AddMemberCommand(groupId, displayName));
         }
         catch (CircleTools.SecretSanta.Core.Domain.DuplicateMemberNameException)
         {
-            // Already in the group (a copy of a group they were in, Q34): link that member instead.
-            if (link && (await Sender.Send(new GetGroupQuery(groupId)))?.Members
-                    .FirstOrDefault(m => string.Equals(m.Name.Trim(), displayName, StringComparison.OrdinalIgnoreCase)) is { } existing)
-            {
-                var selfLink = await Linking.SelfLinkAsync(new SelfLinkRequest(groupId, groupName, existing.Id, displayName));
-                if (selfLink.IsSuccess)
-                {
-                    await Resolutions.ApplyPendingAsync();
-                }
-            }
+            return (await Sender.Send(new GetGroupQuery(groupId)))?.Members
+                .FirstOrDefault(m => string.Equals(m.Name.Trim(), displayName, StringComparison.OrdinalIgnoreCase))?.Id;
         }
         catch (InvalidOperationException)
         {
-            // Not worth surfacing at create.
+            return null; // Not worth surfacing at create.
         }
     }
 
-    // Confirm a delete (or a leave, for a joined group) in a bottom sheet (FEAT-008 W4), then reload (Q34: the
+    // Accept or decline an invitation; an accepted group appears under "Groups you take part in".
+    private async Task AnswerAsync(MyGroup invitation, bool accept)
+    {
+        _busy = true;
+        try
+        {
+            var answered = await Online.AnswerInvitationAsync(invitation.GroupId, accept, _accountId);
+            if (!answered.IsSuccess)
+            {
+                Snackbar.Add(L["InvitationFailed"], Severity.Warning);
+            }
+            else if (accept)
+            {
+                Snackbar.Add(L["InvitationAccepted", invitation.GroupName], Severity.Success);
+            }
+        }
+        finally
+        {
+            _busy = false;
+        }
+
+        await LoadAsync();
+    }
+
+    private void OpenTakingPart(Guid id) => Navigation.NavigateTo($"groups/{id}/me");
+
+    private void OpenTakingPartOnEnter(KeyboardEventArgs args, Guid id)
+    {
+        if (args.Key is "Enter" or " ")
+        {
+            OpenTakingPart(id);
+        }
+    }
+
+    // Confirm a delete (or a leave, for a group taken part in) in a bottom sheet (FEAT-008 W4), then reload (Q34: the
     // same flow serves the group page's menu).
     private async Task AskDeleteAsync(Guid id, string name)
     {

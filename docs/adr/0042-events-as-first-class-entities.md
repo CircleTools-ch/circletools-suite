@@ -7,6 +7,8 @@ tags: [architecture, domain, secret-santa, ddd, sync]
 
 # ADR-0042 — Events as first-class entities within a Secret-Santa group
 
+> **Amended by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** There is no linking store keyed by event; per-event views are derived from the document.
+
 ## Context and problem statement
 
 Today a [Group](../glossary/group.md) models **one** gift exchange: a single optional

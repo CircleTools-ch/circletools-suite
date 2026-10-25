@@ -1,87 +1,74 @@
 ---
 id: NFR-009
-title: Account-free backend writes are abuse-resistant
+title: Writes without an account are abuse-resistant
 type: non-functional
-status: Approved
+status: Implemented
 priority: Must
 source: FR-039, FR-040
 verification: test
-related: [FR-039, FR-040, NFR-010, ADR-0058, ADR-0050]
+related: [FR-039, FR-040, FR-041, FR-050, NFR-010, ADR-0086, ADR-0050]
 ---
 
-# NFR-009 — Account-free backend writes are abuse-resistant
+# NFR-009 — Writes without an account are abuse-resistant
+
+> **Rewritten 2026-10-25 for [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)** ([FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)): one way to be in a group. The previous version described the four-kind storage model (on this device, shared by link, my account, my account · shared) and is in the git history.
 
 ## Description
 
-The [shared-by-link](../../glossary/shared-by-link-group.md) storage mode adds the system's first
-**account-free write path to the server**: anyone can create a group and, holding a link, push changes
-to it, with **no identity to hold accountable** ([ADR-0058](../../adr/0058-account-free-link-shared-groups.md)).
-That path must be resistant to spam, storage exhaustion, and enumeration:
+Online groups can be created and changed **without an account** — by the [organizer link](../../glossary/organizer-link.md),
+a [device key](../../glossary/device-key.md) or a reveal link ([ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)). Those writes have no identity behind them and must
+resist spam, storage exhaustion and guessing:
 
-- **Unguessable [share tokens](../../glossary/share-token.md).** A token carries **≥128 bits** of
-  cryptographic entropy, so admin/join links cannot be guessed or brute-forced; a wrong token is
-  indistinguishable from a non-existent one (no oracle).
-- **Rate limiting.** Group **creation** and **writes** are rate-limited per client/IP so the endpoint
-  cannot be used to mass-create or mass-mutate groups.
-- **Bounded size.** Each shared group aggregate is size-capped — a bounded number of members and
-  occasions, and bounded per-field lengths (wishlist entries, gift notes, names) — and oversized or
-  malformed payloads are **rejected**, not stored.
+- **Unguessable secrets.** Organizer tokens, join tokens, device keys and reveal tokens carry **≥128 bits** of
+  entropy and are stored only as hashes. A wrong secret gets the same answer as a group that does not exist.
+- **Rate limiting.** Every route usable without an account is limited per IP (120 requests a minute by default,
+  `RateLimiting:SharedWritePermitLimit`).
+- **Bounded size.** A group's document is refused above **256 KiB** or **200 members**
+  (`SharedGroups:MaxBodyBytes`, `SharedGroups:MaxMembers`); a member's own entry is bounded per field (gift note
+  500 characters, bounded wishlists). Oversized or malformed input is refused, not stored.
 - **No amplification.** A single request cannot fan out into unbounded server work or storage.
 
-This complements retention/expiry ([NFR-010](NFR-010-shared-group-retention-lifecycle.md)) and does not
-weaken the on-this-device default, which touches no server at all
-([NFR-001](NFR-001-local-first-offline.md)).
+This complements retention ([NFR-010](NFR-010-shared-group-retention-lifecycle.md)) and does not touch groups on
+this device, which never reach a server ([NFR-001](NFR-001-local-first-offline.md)).
 
 ## Rationale
 
-Every other write path in the product is gated by an authenticated account. Opening an account-free
-write path is what makes the middle tier valuable, but it is also a spam and cost surface an operator at
-hobby scale cannot babysit. Entropy, rate limits and hard size caps are the cheap, testable controls
-that keep the surface bounded without adding accounts.
+Organizing and taking part without an account are part of the product's promise, and they open a write path a
+hobby-scale operator cannot watch around the clock. Entropy, rate limits and hard size caps are cheap, testable
+controls that keep it bounded.
 
 ## Acceptance criteria
 
 ```gherkin
-Given a share token
+Given a secret issued for an online group
 When it is inspected
-Then it carries at least 128 bits of entropy and reveals nothing about the group
+Then it carries at least 128 bits of entropy and is stored only as a hash
 
-Given a wrong or expired share token
+Given a wrong organizer token, device key or reveal token
 When it is used
-Then the response is indistinguishable from a token that never existed (no enumeration oracle)
+Then the answer is the same as for a group that does not exist
 
-Given repeated group-creation requests from one client beyond the configured limit
-When the limit is exceeded
-Then further creations are throttled or rejected
+Given one IP sending more requests than the limit within a minute
+When it sends one more to a route usable without an account
+Then the request is refused with 429
 
-Given a write that exceeds the per-group size caps (members, occasions, or field lengths)
-When it is submitted
-Then it is rejected and nothing is stored
+Given a document with more than 200 members or over 256 KiB
+When it is created or pushed
+Then it is refused and nothing is stored
 ```
 
 ## Quality attribute *(NFR only)*
 
-- **Attribute:** security / abuse-resistance.
-- **Metric & target:**
-  - share-token entropy **≥ 128 bits**; **zero** successful guesses in fuzz/enumeration tests;
-  - group-create and write requests **rate-limited** to a configured ceiling per client/IP (0 breaches
-    of the ceiling in load tests);
-  - **100%** of over-cap payloads rejected before storage; per-group storage bounded to the configured
-    maximum.
-- **Measurement approach:** unit/property tests on token generation entropy; API tests asserting equal
-  responses for wrong vs. non-existent tokens; integration tests driving create/write past the limits
-  and asserting throttling and rejection; a size-cap test matrix. Secrets/token generation follows
-  [ADR-0050](../../adr/0050-secrets-management.md).
+- **Attribute:** security / availability.
+- **Metric & target:** ≥128-bit secrets; per-IP limit enforced on every account-free route; zero documents stored
+  above the size limits.
+- **Measurement approach:** integration tests (limits refused on create and push, rate limit answered with 429);
+  review of the token factory.
 
 ## Dependencies & related
 
-- Derived from: [FR-039](../functional/FR-039-shared-by-link-storage-and-sync.md),
-  [FR-040](../functional/FR-040-admin-link-capability.md)
-- Related: [NFR-010](NFR-010-shared-group-retention-lifecycle.md) (retention/expiry),
-  [NFR-001](NFR-001-local-first-offline.md) (the default path stays server-free)
-- Governing ADR: [ADR-0058](../../adr/0058-account-free-link-shared-groups.md),
-  [ADR-0050](../../adr/0050-secrets-management.md) (token generation)
-- Verified by: [FEAT-013](../../features/FEAT-013-account-free-link-shared-groups.md) /
-  [TP-013](../../features/TP-013-account-free-link-shared-groups.md)
-- Glossary: [Share token](../../glossary/share-token.md),
-  [Shared-by-link group](../../glossary/shared-by-link-group.md)
+- Related: [FR-039](../functional/FR-039-shared-by-link-storage-and-sync.md), [FR-040](../functional/FR-040-admin-link-capability.md),
+  [FR-041](../functional/FR-041-join-link-and-person-claim.md), [FR-050](../functional/FR-050-edit-own-entry-from-reveal-link.md),
+  [NFR-010](NFR-010-shared-group-retention-lifecycle.md)
+- Governing ADRs: [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md), [ADR-0050](../../adr/0050-secrets-management.md)
+- Implemented by: [FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)

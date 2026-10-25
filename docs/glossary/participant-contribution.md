@@ -1,10 +1,12 @@
 ---
 term: Participant contribution
 contexts: [Secret-Santa]
-status: Draft
+status: Superseded
 ---
 
 # Participant contribution
+
+> **Replaced by [Member entry](member-entry.md)** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md)): one copy in the group store, merged into the document on every write. The entry below is kept for history.
 
 ## Definition
 

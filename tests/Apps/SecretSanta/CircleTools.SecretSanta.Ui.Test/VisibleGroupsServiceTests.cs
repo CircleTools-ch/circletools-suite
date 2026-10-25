@@ -1,132 +1,81 @@
 using System.Security.Claims;
 using CircleTools.Application;
 using CircleTools.SecretSanta.Contracts;
-using CircleTools.SecretSanta.Core.Application;
 using CircleTools.SecretSanta.Core.Persistence;
-using CircleTools.SecretSanta.LocalStore;
+using CircleTools.SecretSanta.LocalStore.Online;
+using CircleTools.Ui.Abstractions;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace CircleTools.SecretSanta.Ui.Test;
 
 /// <summary>
-/// The account-scoped visibility rule of <see cref="VisibleGroupsService"/> (ADR-0044): signed in shows
-/// the account-free groups plus that account's own, signed out shows only the account-free ones — account
-/// groups are hidden from the offline view (kept on the device, not deleted).
+/// The visibility rule of <see cref="VisibleGroupsService"/> (ADR-0044, ADR-0086): groups on this device and groups
+/// held by a link or device key always show; an account's online groups show only while that account is signed in
+/// (kept on the device, never shown to another account). Groups taken part in are listed apart.
 /// </summary>
 public sealed class VisibleGroupsServiceTests
 {
-    private static readonly Guid AccountFreeId = Guid.Parse("11111111-1111-1111-1111-111111111111");
-    private static readonly Guid AccountScopedId = Guid.Parse("22222222-2222-2222-2222-222222222222");
-    private static readonly Guid Account = Guid.Parse("33333333-3333-3333-3333-333333333333");
-    private static readonly Guid OtherAccount = Guid.Parse("44444444-4444-4444-4444-444444444444");
-    private static readonly Guid PendingId = Guid.Parse("55555555-5555-5555-5555-555555555555");
-    private static readonly Guid AdminClaimedId = Guid.Parse("66666666-6666-6666-6666-666666666666");
-    private static readonly Guid LegacyId = Guid.Parse("77777777-7777-7777-7777-777777777777");
+    private static readonly Guid DeviceId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly Guid MineId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    private static readonly Guid OthersId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+    private static readonly Guid LinkId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+    private static readonly Guid TakingPartId = Guid.Parse("55555555-5555-5555-5555-555555555555");
+    private static readonly Guid Account = Guid.Parse("66666666-6666-6666-6666-666666666666");
+    private static readonly Guid OtherAccount = Guid.Parse("77777777-7777-7777-7777-777777777777");
 
     [Fact]
-    public async Task SignedOut_HidesAccountScopedGroups()
+    public async Task SignedOut_ShowsDeviceAndLinkGroups_NotAccountGroups()
     {
-        var service = Build(signedInAs: Guid.Empty);
+        var visible = await (await BuildAsync(Guid.Empty)).GetVisibleAsync();
 
-        var visible = await service.GetVisibleAsync();
-
-        Assert.Equal([AccountFreeId], visible.Select(g => g.Id));
+        Assert.Equal([DeviceId, LinkId], visible.Select(g => g.Id).Order());
     }
 
     [Fact]
-    public async Task SignedIn_ShowsAccountFreeAndOwnAccountGroups()
+    public async Task SignedIn_AddsThatAccountsGroups_NeverAnotherAccounts()
     {
-        var service = Build(signedInAs: Account);
+        var visible = await (await BuildAsync(Account)).GetVisibleAsync();
 
-        var visible = await service.GetVisibleAsync();
-
-        Assert.Equal([AccountFreeId, AccountScopedId], visible.Select(g => g.Id));
+        Assert.Equal([DeviceId, MineId, LinkId], visible.Select(g => g.Id).Order());
     }
 
     [Fact]
-    public async Task SignedIn_HidesAnotherAccountsGroupCachedOnThisDevice()
+    public async Task GroupsTakenPart_AreListedApart_ForTheirAccountOnly()
     {
-        // 2026-10-14 review: a group claimed into a different account (shared device / earlier sign-in)
-        // must not show up for the account signed in now.
-        var service = Build(signedInAs: OtherAccount);
-
-        var visible = await service.GetVisibleAsync();
-
-        Assert.Equal([AccountFreeId], visible.Select(g => g.Id));
+        Assert.Equal("Wichteln", Assert.Single(await (await BuildAsync(Account)).GetTakingPartAsync()).GroupName);
+        Assert.Empty(await (await BuildAsync(OtherAccount)).GetTakingPartAsync());
     }
 
-    [Fact]
-    public async Task SignedOut_HidesMyAccountGroupsThatHaveNoAccountScope()
-    {
-        // ADR-0078 (iPad, 0.1.113): a group marked "My account" but not claimed yet, an admin-claimed shared
-        // group, and a legacy "My account" record showed - with the My account icon - while signed out.
-        var service = BuildWithMyAccountKinds(signedInAs: Guid.Empty);
-
-        var visible = await service.GetVisibleAsync();
-
-        Assert.Equal([AccountFreeId], visible.Select(g => g.Id));
-    }
-
-    [Fact]
-    public async Task SignedIn_ShowsOwnMyAccountGroupsOfEveryKind_AndTheUnattributedLegacyOne()
-    {
-        var service = BuildWithMyAccountKinds(signedInAs: Account);
-
-        var visible = await service.GetVisibleAsync();
-
-        Assert.Equal([AccountFreeId, PendingId, AdminClaimedId, LegacyId], visible.Select(g => g.Id));
-    }
-
-    [Fact]
-    public async Task SignedIn_HidesAnotherAccountsMyAccountGroups()
-    {
-        var service = BuildWithMyAccountKinds(signedInAs: OtherAccount);
-
-        var visible = await service.GetVisibleAsync();
-
-        // The legacy record has no account recorded, so it cannot be told apart yet (ADR-0078).
-        Assert.Equal([AccountFreeId, LegacyId], visible.Select(g => g.Id));
-    }
-
-    private static VisibleGroupsService BuildWithMyAccountKinds(Guid signedInAs)
+    private static async Task<VisibleGroupsService> BuildAsync(Guid signedInAs)
     {
         IReadOnlyList<GroupSummaryDto> summaries =
         [
-            new(AccountFreeId, "Offline", 0, 0, false, false),
-            new(PendingId, "Pending", 0, 0, false, false),
-            new(AdminClaimedId, "Admin", 0, 0, false, false),
-            new(LegacyId, "Legacy", 0, 0, false, false),
+            new(DeviceId, "Device", 0, 0, false, false),
+            new(MineId, "Mine", 0, 0, false, false),
+            new(OthersId, "Others", 0, 0, false, false),
+            new(LinkId, "Link", 0, 0, false, false),
         ];
 
-        IReadOnlyList<SyncedGroupRecord> records =
-        [
-            new(State(AccountFreeId), Version: 1, AccountScope: null, Dirty: false),
-            new(State(PendingId), 1, null, false, StorageMode.Account, PendingClaimAccount: Account),
-            new(State(AdminClaimedId), 1, null, false, StorageMode.Account, AdminAccount: Account),
-            new(State(LegacyId), 1, null, false, StorageMode.Account),
-        ];
+        var store = new GroupRecordStore(new MemoryKeyValueStore());
+        await store.SaveAsync(GroupRecordsDocument.Empty with
+        {
+            Records =
+            [
+                new GroupRecord(DeviceId, GroupPlace.Device, State(DeviceId), null, 0, false),
+                Online(MineId, new OnlineAccess(AccessPrincipal.Account, "owner", [], AccountId: Account)),
+                Online(OthersId, new OnlineAccess(AccessPrincipal.Account, "owner", [], AccountId: OtherAccount)),
+                Online(LinkId, new OnlineAccess(AccessPrincipal.OrganizerLink, "owner", [], Secret: "token")),
+                new GroupRecord(TakingPartId, GroupPlace.Online, null,
+                    new ParticipantView(TakingPartId, "Wichteln", 1, Guid.NewGuid(), "Ben", null, [], []), 1, false,
+                    new OnlineAccess(AccessPrincipal.Account, "participant", [], AccountId: Account)),
+            ],
+        });
 
-        var claimable = new ClaimableGroupsService(new StubLocalSyncStore(records));
-        return new VisibleGroupsService(new StubSender(summaries), claimable, new StubAuth(signedInAs));
+        return new VisibleGroupsService(new StubSender(summaries), store, new StubAuth(signedInAs));
     }
 
-    private static VisibleGroupsService Build(Guid signedInAs)
-    {
-        IReadOnlyList<GroupSummaryDto> summaries =
-        [
-            new(AccountFreeId, "Offline", 0, 0, false, false),
-            new(AccountScopedId, "Synced", 0, 0, false, false),
-        ];
-
-        IReadOnlyList<SyncedGroupRecord> records =
-        [
-            new(State(AccountFreeId), Version: 1, AccountScope: null, Dirty: false),
-            new(State(AccountScopedId), Version: 1, AccountScope: Account, Dirty: false),
-        ];
-
-        var claimable = new ClaimableGroupsService(new StubLocalSyncStore(records));
-        return new VisibleGroupsService(new StubSender(summaries), claimable, new StubAuth(signedInAs));
-    }
+    private static GroupRecord Online(Guid id, OnlineAccess access) =>
+        new(id, GroupPlace.Online, State(id), null, 1, false, access);
 
     private static GroupState State(Guid id) => new(id, "G", null, null, [], [], []);
 
@@ -153,30 +102,23 @@ public sealed class VisibleGroupsServiceTests
         }
     }
 
-    private sealed class StubLocalSyncStore(IReadOnlyList<SyncedGroupRecord> records) : ILocalSyncStore
+    private sealed class MemoryKeyValueStore : IKeyValueStore
     {
-        public Task<IReadOnlyList<SyncedGroupRecord>> LoadGroupsAsync(CancellationToken cancellationToken = default) =>
-            Task.FromResult(records);
+        private readonly Dictionary<string, string> _values = [];
 
-        public Task SaveGroupsAsync(IReadOnlyList<SyncedGroupRecord> records, CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
+        public ValueTask<string?> GetAsync(StorageScope scope, string key, CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(_values.TryGetValue(key, out var value) ? value : null);
 
-        public Task<SyncState> LoadStateAsync(CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
+        public ValueTask<bool> SetAsync(StorageScope scope, string key, string value, CancellationToken cancellationToken = default)
+        {
+            _values[key] = value;
+            return ValueTask.FromResult(true);
+        }
 
-        public Task SaveStateAsync(SyncState state, CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
-
-        public Task<SyncedProfileRecord?> LoadProfileAsync(CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
-
-        public Task SaveProfileAsync(SyncedProfileRecord profile, CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
-
-        public Task<SyncedPreferencesRecord?> LoadPreferencesAsync(CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
-
-        public Task SavePreferencesAsync(SyncedPreferencesRecord preferences, CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
+        public ValueTask RemoveAsync(StorageScope scope, string key, CancellationToken cancellationToken = default)
+        {
+            _values.Remove(key);
+            return ValueTask.CompletedTask;
+        }
     }
 }

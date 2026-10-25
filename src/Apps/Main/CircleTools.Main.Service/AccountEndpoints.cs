@@ -85,6 +85,7 @@ public static class AccountEndpoints
         group.MapPost("/export", ExportAsync).WithName("ExportData").RequireAuthorization();
         group.MapPost("/delete", DeleteAccountAsync).WithName("DeleteAccount")
             .RequireAuthorization().RequireRateLimiting(SensitiveRateLimitPolicy);
+        group.MapGet("/owned-groups", GetOwnedGroupCountAsync).WithName("GetOwnedGroupCount").RequireAuthorization();
 
         group.MapPost("/change-email", ChangeEmailAsync).WithName("ChangeEmail")
             .RequireConstantTime().RequireAuthorization().RequireRateLimiting(SensitiveRateLimitPolicy);
@@ -913,6 +914,20 @@ public static class AccountEndpoints
     /// delete and not the other way round.
     /// </para>
     /// </remarks>
+    // FR-043: the delete screen offers a disposition for the online groups the account owns.
+    private static async Task<IResult> GetOwnedGroupCountAsync(
+        ClaimsPrincipal principal,
+        CircleTools.SecretSanta.Service.Core.Groups.GroupService onlineGroups,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetUserId(principal, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        return Results.Ok(new OwnedGroupCount(await onlineGroups.CountOwnedAsync(userId, cancellationToken).ConfigureAwait(false)));
+    }
+
     private static async Task<IResult> DeleteAccountAsync(
         [FromBody] DeleteAccountRequest request,
         ClaimsPrincipal principal,
@@ -920,7 +935,7 @@ public static class AccountEndpoints
         SessionService sessions,
         IEnumerable<IAccountDeletionGuard> guards,
         IEnumerable<IAccountDeletionCleanup> cleanups,
-        ISharedGroupStore sharedGroups,
+        CircleTools.SecretSanta.Service.Core.Groups.GroupService onlineGroups,
         IOutbox outbox,
         TimeProvider clock,
         CancellationToken cancellationToken)
@@ -967,12 +982,12 @@ public static class AccountEndpoints
         // is recoverable. The reverse order could leave live tokens for a deleted account.
         await sessions.RevokeAllAsync(user.Id, cancellationToken).ConfigureAwait(false);
 
-        // The owner's shared-group disposition (FR-043): by default the SharedGroupAccountCleanup below
-        // hands owned groups back to shared-by-link so joiners keep access. If the user chose to delete
-        // them too, remove them first — the cleanup then finds nothing left to hand off.
+        // The owner's online-group disposition (FR-043): by default the group store's cleanup below hands
+        // owned groups over to an organizer link so participants keep access. If the user chose to delete
+        // them too, remove them first — the cleanup then finds nothing left to hand over.
         if (request.DeleteSharedGroups)
         {
-            await sharedGroups.DeleteAllOwnedAsync(user.Id, cancellationToken).ConfigureAwait(false);
+            await onlineGroups.CleanUpAccountAsync(user.Id, deleteOwnedGroups: true, cancellationToken).ConfigureAwait(false);
         }
 
         // Then the other contexts, while the account still exists to be cleaned up after.

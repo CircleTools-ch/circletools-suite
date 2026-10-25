@@ -20,9 +20,10 @@ On confirmation and **recent re-authentication**, the system:
 
 - deletes the account, its credentials, its [Passkeys](../../glossary/passkey.md), and every session
   and refresh token;
-- removes the `UserId` link from any Secret-Santa [Members](../../glossary/member.md) that pointed at
-  the account, **leaving the member itself in place**
-  ([ADR-0019](../../adr/0019-member-user-linking.md));
+- removes every role the account held in Secret-Santa [online groups](../../glossary/online-group.md) —
+  as a [participant](../../glossary/participant.md) or an invitation — **leaving the member and what it wrote in
+  place**, and hands over or deletes the groups it owns as the user chose
+  ([FR-043](FR-043-release-ownership-and-deletion-disposition.md), [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md));
 - **does not rewrite completed [Draws](../../glossary/draw.md)** — history stands and already-sent
   [reveal links](../../glossary/reveal-link.md) keep working;
 - **does not delete local data on the user's devices**, which stays usable account-free.

@@ -146,16 +146,17 @@ until this chapter confirmed them; they are now **fixed**:
 
 | Context | Owns | Lives in | Status |
 |---------|------|----------|--------|
-| **Secret-Santa** | [Group](../glossary/group.md), [Member](../glossary/member.md), [Exclusion](../glossary/exclusion.md), [Draw](../glossary/draw.md), [Assignment](../glossary/assignment.md), [Wishlist](../glossary/wishlist.md), [Budget](../glossary/budget.md), [Event details](../glossary/event-details.md), [Reveal link](../glossary/reveal-link.md) | `CircleTools.SecretSanta.*` | shipped (FEAT-001) |
+| **Secret-Santa** | [Group](../glossary/group.md), [Member](../glossary/member.md), [Exclusion](../glossary/exclusion.md), [Draw](../glossary/draw.md), [Assignment](../glossary/assignment.md), [Wishlist](../glossary/wishlist.md), [Budget](../glossary/budget.md), [Event details](../glossary/event-details.md), [Reveal link](../glossary/reveal-link.md); online: [Online group](../glossary/online-group.md), [Role assignment](../glossary/role-assignment.md), [Participant](../glossary/participant.md), [Member entry](../glossary/member-entry.md) | `CircleTools.SecretSanta.*` — client: `Core`/`LocalStore`/`Ui`/`WebApp`/`App`; server: `Service.Core` (use cases, role → permission table, views derived on read), `Service.Repository` (schema `secretsanta`), `Service` (endpoints), hosted by the Main service | shipped (FEAT-001); online groups [ADR-0086](../adr/0086-one-way-to-be-in-a-group.md) ([FEAT-027](../features/FEAT-027-one-way-to-be-in-a-group.md)) |
 | **Identity** | [User](../glossary/user.md), [Passkey](../glossary/passkey.md) — credentials, profile, account lifecycle | `CircleTools.Identity` + the Main service host; the client half in `CircleTools.Main.Ui` (`Auth/`, `Api/`) over `CircleTools.ApiClient` | **M1** ([FEAT-002](../features/FEAT-002-m1-identity.md)) |
 | **Circles** | [Circle](../glossary/circle.md), [Circle membership](../glossary/circle-membership.md), [Invitation](../glossary/invitation.md), [Managed member](../glossary/managed-member.md) | `CircleTools.Circles.Contracts/.Core/.Repository`, hosted by the Main service; the client half in `CircleTools.Main.Ui` | **M2** ([FEAT-003](../features/FEAT-003-m2-circles.md)) |
-| **Platform** | [Sync](../glossary/sync.md) — local↔server reconciliation | `CircleTools.Infrastructure` + per-app `LocalStore` | **M3** ([FEAT-004](../features/FEAT-004-m3-sync-and-claim.md), Done) — syncs the Secret-Santa `Group` and profile preferences; **not** the `Circle` ([ADR-0033](../adr/0033-which-aggregates-sync.md)) |
+| **Platform** | [Sync](../glossary/sync.md) — the account sync of per-account documents | `CircleTools.Infrastructure` + the Main service's `sync` schema + per-app `LocalStore` | **M3** ([FEAT-004](../features/FEAT-004-m3-sync-and-claim.md), Done) — since [ADR-0086](../adr/0086-one-way-to-be-in-a-group.md) profile and preferences only; online groups have the Secret-Santa group store; **not** the `Circle` ([ADR-0033](../adr/0033-which-aggregates-sync.md)) |
 
 **Neither Secret-Santa nor Circles depends on Identity, and Secret-Santa does not depend on Circles.**
-Both cross-context links are the same shape: a [Member](../glossary/member.md) carries an **optional
-`UserId`**, and a [circle membership](../glossary/circle-membership.md) carries a `UserId` — an
-**identifier, not a reference to a user**, with no foreign key behind it
-([ADR-0019](../adr/0019-member-user-linking.md)). The contexts therefore stay independently
+Both cross-context links are the same shape: a Secret-Santa [role assignment](../glossary/role-assignment.md)
+carries an `AccountId`, and a [circle membership](../glossary/circle-membership.md) carries a `UserId` — an
+**identifier, not a reference to a user**, with no foreign key behind it. The group's domain document carries no
+account at all ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md)); the Main host supplies the Secret-Santa server with its few platform ports (token
+secrets, account lookup, outbox) as adapters. The contexts therefore stay independently
 deployable, and Secret-Santa keeps working with no account and no circle at all. A group created
 *from* a circle (M4) holds at most a circle identifier, and must tolerate that identifier resolving to
 nothing after the circle is deleted

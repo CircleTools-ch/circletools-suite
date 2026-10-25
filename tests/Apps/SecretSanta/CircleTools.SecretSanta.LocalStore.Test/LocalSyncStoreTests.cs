@@ -1,96 +1,14 @@
-using System.Text.Json;
-using CircleTools.SecretSanta.Core.Persistence;
 using CircleTools.SecretSanta.LocalStore.Test.TestSupport;
 using CircleTools.Ui.Abstractions;
 
 namespace CircleTools.SecretSanta.LocalStore.Test;
 
 /// <summary>
-/// Tests for <see cref="LocalSyncStore"/> — the persistence gateway and the in-place migration of the
-/// pre-sync storage shape (FEAT-004). No group may be lost when a device that stored groups before M3
-/// signs in for the first time.
+/// Tests for <see cref="LocalSyncStore"/> — the persistence gateway of the account sync (FEAT-004): the device
+/// state, the profile and the preferences. A refused write is raised, never swallowed.
 /// </summary>
 public sealed class LocalSyncStoreTests
 {
-    [Fact]
-    public async Task LoadGroups_MigratesLegacyArray_AsAccountFreeVersionOneRecords()
-    {
-        var store = new InMemoryKeyValueStore();
-        // The pre-sync shape: a bare array of GroupState under the same key.
-        var legacy = new List<GroupState> { SyncTestData.GroupWith("Family", "Alice"), SyncTestData.GroupWith("Friends", "Bob") };
-        var legacyJson = JsonSerializer.Serialize(legacy, GroupStateJsonContext.Default.ListGroupState);
-        await store.SetAsync(StorageScope.Durable, LocalSyncStore.GroupsKey, legacyJson, default);
-        var local = new LocalSyncStore(store);
-
-        var records = await local.LoadGroupsAsync(default);
-
-        Assert.Equal(2, records.Count);
-        Assert.All(records, r => Assert.Equal(1, r.Version));
-        Assert.All(records, r => Assert.Null(r.AccountScope));
-        Assert.All(records, r => Assert.False(r.Dirty));
-        Assert.Contains(records, r => r.State.Name == "Family");
-    }
-
-    [Fact]
-    public async Task SaveThenLoadGroups_RoundTripsRecordsInTheNewShape()
-    {
-        var store = new InMemoryKeyValueStore();
-        var local = new LocalSyncStore(store);
-        var account = Guid.NewGuid();
-        var records = new List<SyncedGroupRecord>
-        {
-            new(SyncTestData.GroupWith("A", "x"), Version: 4, AccountScope: account, Dirty: true),
-        };
-
-        await local.SaveGroupsAsync(records, default);
-        var loaded = await local.LoadGroupsAsync(default);
-
-        var record = Assert.Single(loaded);
-        Assert.Equal(4, record.Version);
-        Assert.Equal(account, record.AccountScope);
-        Assert.True(record.Dirty);
-    }
-
-    [Fact]
-    public async Task LoadGroups_FromSchemaV2Document_DefaultsStorageModeAndTokens()
-    {
-        var store = new InMemoryKeyValueStore();
-        // A schema-v2 document: records carry no mode/tokens fields, which postdate v2 (ADR-0058).
-        var stateJson = JsonSerializer.Serialize(SyncTestData.GroupWith("Family", "Alice"), SyncJsonContext.Default.GroupState);
-        var v2 = $$"""{"schemaVersion":2,"records":[{"state":{{stateJson}},"version":2,"accountScope":null,"dirty":true}]}""";
-        await store.SetAsync(StorageScope.Durable, LocalSyncStore.GroupsKey, v2, default);
-        var local = new LocalSyncStore(store);
-
-        var records = await local.LoadGroupsAsync(default);
-
-        var record = Assert.Single(records);
-        Assert.Equal("Family", record.State.Name);
-        Assert.Equal(2, record.Version);
-        Assert.True(record.Dirty);
-        Assert.Equal(StorageMode.OnThisDevice, record.Mode);
-        Assert.Null(record.Tokens);
-    }
-
-    [Fact]
-    public async Task SaveThenLoadGroups_RoundTripsStorageModeAndTokens()
-    {
-        var store = new InMemoryKeyValueStore();
-        var local = new LocalSyncStore(store);
-        var records = new List<SyncedGroupRecord>
-        {
-            new(SyncTestData.GroupWith("Shared", "x"), Version: 2, AccountScope: null, Dirty: false,
-                Mode: StorageMode.SharedByLink, Tokens: new SharedGroupTokens("admin-tok", "join-tok")),
-        };
-
-        await local.SaveGroupsAsync(records, default);
-        var loaded = await local.LoadGroupsAsync(default);
-
-        var record = Assert.Single(loaded);
-        Assert.Equal(StorageMode.SharedByLink, record.Mode);
-        Assert.Equal("admin-tok", record.Tokens?.AdminToken);
-        Assert.Equal("join-tok", record.Tokens?.JoinToken);
-    }
-
     [Fact]
     public async Task LoadState_MintsAStableDeviceId_WhenNoneStored()
     {
@@ -105,13 +23,25 @@ public sealed class LocalSyncStoreTests
     }
 
     [Fact]
-    public async Task SaveGroups_WhenStorageRefusesTheWrite_Throws()
+    public async Task SaveState_WhenStorageRefusesTheWrite_Throws()
     {
         var store = new InMemoryKeyValueStore { RefuseWrites = true };
         var local = new LocalSyncStore(store);
 
         await Assert.ThrowsAsync<StorageUnavailableException>(
-            () => local.SaveGroupsAsync([new SyncedGroupRecord(SyncTestData.GroupWith("A"), 1, null, true)], default));
+            () => local.SaveStateAsync(new SyncState("device", []), default));
+    }
+
+    [Fact]
+    public async Task LoadState_IgnoresTheGroupFieldsOfAnOlderDocument()
+    {
+        var store = new InMemoryKeyValueStore();
+        await store.SetAsync(StorageScope.Durable, LocalSyncStore.StateKey,
+            """{ "deviceId": "d1", "cursors": [], "tombstones": [{ "accountId": "11111111-1111-1111-1111-111111111111", "kind": "group", "id": "22222222-2222-2222-2222-222222222222", "version": 1 }], "retractions": [] }""");
+
+        var state = await new LocalSyncStore(store).LoadStateAsync(default);
+
+        Assert.Equal("d1", state.DeviceId);
     }
 
     [Fact]

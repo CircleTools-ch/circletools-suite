@@ -16,10 +16,12 @@ using CircleTools.Main.Contracts;
 using CircleTools.Main.Service.Core;
 using CircleTools.Main.Service.Core.Domain;
 using CircleTools.Main.Service.Repository;
-using CircleTools.Main.Service.Repository.Linking;
 using CircleTools.Circles.Core;
 using CircleTools.Circles.Core.Domain;
 using CircleTools.Circles.Repository;
+using CircleTools.SecretSanta.Service;
+using CircleTools.SecretSanta.Service.Core.Groups;
+using CircleTools.SecretSanta.Service.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,18 +55,18 @@ builder.Services.AddMainRepository(mainConnectionString);
 // the account-scoped store that carries a claimed group between a user's devices (ADR-0016/0033).
 builder.Services.AddSyncRepository(mainConnectionString);
 
-// Linking (FEAT-005). A fourth context and schema — the one server-side, per-caller-authorized store
-// ADR-0020 sanctioned (member-links, the assignment projection, self-owned wishlists). It sits beside
-// the opaque sync store, and is the only place the host understands the Secret-Santa schema.
-builder.Services.AddLinkingRepository(mainConnectionString);
-
-// Shared-by-link groups (FEAT-013). A fifth context and schema — the account-free, token-keyed store
-// that holds a group reachable by an admin or join link, with no account behind it (ADR-0058). Its
-// write path is anonymous, so it is rate-limited and size-capped (NFR-009/010).
-builder.Services.AddSharedGroupsRepository(mainConnectionString);
-builder.Services.Configure<SharedGroupLimits>(builder.Configuration.GetSection(SharedGroupLimits.SectionName));
+// The Secret-Santa group store (ADR-0086, FEAT-027): one store for every online group, its role assignments,
+// members' own entries and reveal tokens; every view derived from the document on read. Its own module and
+// schema; the host supplies the platform ports.
+builder.Services.AddSecretSantaGroupStore(mainConnectionString);
+builder.Services.AddSingleton<IGroupSecrets, SecretSantaGroupSecrets>();
+builder.Services.AddScoped<IGroupAccounts, SecretSantaGroupAccounts>();
+builder.Services.AddScoped<IGroupNotifications, SecretSantaGroupNotifications>();
+builder.Services.AddSingleton<IShareTokenFactory, RandomShareTokenFactory>();
+builder.Services.AddSingleton<IShareTokenCipher, AesGcmShareTokenCipher>();
+builder.Services.Configure<GroupLimits>(builder.Configuration.GetSection(GroupLimits.SectionName));
 builder.Services.Configure<SharedGroupSecurityOptions>(builder.Configuration.GetSection(SharedGroupSecurityOptions.SectionName));
-builder.Services.AddHostedService<SharedGroupRetentionService>();
+builder.Services.AddHostedService<GroupRetentionService>();
 
 // Circles (FEAT-003). Its own DbContext and its own schema inside the same database — a modular
 // monolith with a visible seam, not a second database (ADR-0003).
@@ -72,7 +74,7 @@ builder.Services.AddCirclesCore();
 builder.Services.AddCirclesRepository(mainConnectionString);
 builder.Services.AddCirclesRetention(builder.Configuration);
 
-// Business metrics (FEAT-022): a background collector that counts across the four counted contexts on a
+// Business metrics (FEAT-022): a background collector that counts across the three counted contexts on a
 // timer and exports PII-free gauges on the CircleTools.Business meter for Prometheus/Grafana (ADR-0051).
 // This host is the only project that can resolve every context the collector counts. The meter holder is
 // a singleton the hosted collector depends on, so it is constructed (and its gauges registered) on start.
@@ -92,14 +94,10 @@ builder.Services.AddScoped<IInvitationMailer, OutboxInvitationMailer>();
 builder.Services.AddScoped<IAccountDeletionGuard, SoleOwnerCircleGuard>();
 builder.Services.AddScoped<IAccountDeletionCleanup, CircleMembershipCleanup>();
 
-// The linking context's half of account deletion (FR-015): a second cleanup that unlinks every member
-// the departing account backed, so no group is left with a dangling UserId. The delete flow resolves
-// the whole set of cleanups and runs each.
-builder.Services.AddScoped<IAccountDeletionCleanup, LinkingAccountCleanup>();
-
-// The shared-group context's half of account deletion (FR-043): hand each owned shared-by-link group
-// back to shared-by-link so its join-link participants keep access (ADR-0058, the default disposition).
-builder.Services.AddScoped<IAccountDeletionCleanup, SharedGroupAccountCleanup>();
+// The Secret-Santa group store's half of account deletion (FR-043): owned online groups are handed over to an
+// organizer link, so their participants keep access; every other role the account held goes. The delete flow
+// resolves the whole set of cleanups and runs each.
+builder.Services.AddScoped<IAccountDeletionCleanup, SecretSantaGroupAccountCleanup>();
 
 // Identity, sessions and bearer-token validation — ADR-0009, ADR-0021.
 // AddDefaultTokenProviders must be applied here: it lives in the ASP.NET Core framework
@@ -225,10 +223,10 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
             }));
 
-    // The account-free shared-group write path (FEAT-013, NFR-009): a per-IP fixed window on the
-    // anonymous create/push/rotate routes, so the token store cannot be flooded by a client with no
-    // account behind it. Separate, more generous ceiling than the sensitive-address policy above.
-    options.AddPolicy(SharedGroupEndpoints.AccountFreeRateLimitPolicy, context =>
+    // The Secret-Santa routes usable without an account (ADR-0086, NFR-009): a per-IP fixed window, so the group
+    // store cannot be flooded by a client with no account behind it. A more generous ceiling than the
+    // sensitive-address policy above. The setting keeps its name from the retired shared-group store.
+    options.AddPolicy(GroupEndpoints.AccountFreeRateLimitPolicy, context =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
@@ -311,7 +309,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// Apply pending migrations for the five contexts (independent histories, one database). Automatic in
+// Apply pending migrations for the four contexts (independent histories, one database). Automatic in
 // Development; elsewhere it is an *explicit* release step, never silent (ADR-0036 runbook): run the
 // image with the `--migrate` argument as a one-shot job that migrates and exits, or set
 // `Database:ApplyMigrationsOnStartup=true` on the running host. The API container starts with neither,
@@ -326,8 +324,7 @@ if (app.Environment.IsDevelopment()
     services.GetRequiredService<MainDbContext>().Database.Migrate();
     services.GetRequiredService<SyncDbContext>().Database.Migrate();
     services.GetRequiredService<CirclesDbContext>().Database.Migrate();
-    services.GetRequiredService<LinkingDbContext>().Database.Migrate();
-    services.GetRequiredService<SharedGroupDbContext>().Database.Migrate();
+    services.GetRequiredService<SecretSantaDbContext>().Database.Migrate();
 
     if (runMigrateAndExit)
     {
@@ -383,36 +380,11 @@ var sync = app
 
 sync.MapSyncEndpoints();
 
-// Shared-by-link groups (FEAT-013): the account-free, token-authorized store. Not bearer-authorized —
-// the share token is the credential (ADR-0058); guessing is defeated by token entropy (NFR-009).
-var shared = app
-    .MapGroup("/api/v{version:apiVersion}/shared")
-    .WithApiVersionSet(versionSet)
-    .MapToApiVersion(new ApiVersion(1, 0));
-
-shared.MapSharedGroupEndpoints();
-
-// Linking (FEAT-005): member-links, the group-scoped assignment/wishlist/publish routes, and the two
-// cross-group overviews. All bearer-authorized and per-caller-scoped on this same host.
-app.MapGroup("/api/v{version:apiVersion}/member-links")
+// The Secret-Santa group store (ADR-0086). Mixed authorization: the bearer, the organizer link or a device key —
+// each route resolves the caller's role and asks for a permission; account-free routes are rate-limited (NFR-009).
+app.MapGroup("/api/v{version:apiVersion}/secretsanta")
     .WithApiVersionSet(versionSet).MapToApiVersion(new ApiVersion(1, 0))
-    .MapMemberLinkEndpoints();
-
-app.MapGroup("/api/v{version:apiVersion}/groups")
-    .WithApiVersionSet(versionSet).MapToApiVersion(new ApiVersion(1, 0))
-    .MapGroupLinkingEndpoints();
-
-app.MapGroup("/api/v{version:apiVersion}/my-assignments")
-    .WithApiVersionSet(versionSet).MapToApiVersion(new ApiVersion(1, 0))
-    .MapMyAssignmentsEndpoint();
-
-app.MapGroup("/api/v{version:apiVersion}/my-wishlists")
-    .WithApiVersionSet(versionSet).MapToApiVersion(new ApiVersion(1, 0))
-    .MapMyWishlistsEndpoint();
-
-app.MapGroup("/api/v{version:apiVersion}/my-memberships")
-    .WithApiVersionSet(versionSet).MapToApiVersion(new ApiVersion(1, 0))
-    .MapMyMembershipsEndpoint();
+    .MapSecretSantaGroupEndpoints(GroupEndpoints.AccountFreeRateLimitPolicy);
 
 app.MapDefaultEndpoints();
 

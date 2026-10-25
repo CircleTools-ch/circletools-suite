@@ -28,7 +28,7 @@ preference** and **sync across the user's devices**.
 - Pinning is a **signed-in** feature. An account-free device has no account to sync a preference to,
   so the pin control is not shown while signed out; the group list is otherwise unchanged.
 - The navigation lists only pins whose group is **still held on this device**. A pin that names a
-  group not present here (never claimed on this device, or since deleted) is **omitted** rather than
+  group not present here (never on this device, or since deleted) is **omitted** rather than
   shown as a dead link; the pin is retained in case the group later arrives.
 
 ## Rationale
@@ -40,7 +40,7 @@ shortcut a user sets up on their phone is there on their laptop too — which is
 should mean for someone who signed in precisely so their data travels with them.
 
 Pins are deliberately **not** part of the group itself: an account-free group can be pinned, and the
-same claimed group could be pinned differently by two organizers, so a pin is the *viewer's*
+same online group could be pinned differently by two organizers, so a pin is the *viewer's*
 preference, not a property of the group. That is why they are stored as a per-account preference
 document rather than on the aggregate ([ADR-0041](../../adr/0041-sync-secret-santa-ui-preferences.md)).
 
@@ -77,7 +77,7 @@ Then that pin is omitted rather than shown as a broken link
 
 - Source: stakeholder feedback (2026-08-14) — "bookmark a group in the main menu (quick access)".
 - Related: [FR-023](FR-023-sync-across-devices.md) (the sync cycle pins ride),
-  [FR-025](FR-025-claim-local-groups.md) (a device holds a group only once claimed),
+  [FR-023](FR-023-sync-across-devices.md) (a device holds the account's online groups),
   [NFR-001](../non-functional/NFR-001-local-first-offline.md),
   [NFR-008](../non-functional/NFR-008-sync-convergence-and-data-safety.md)
 - Governing ADRs: [ADR-0041](../../adr/0041-sync-secret-santa-ui-preferences.md) (preferences document

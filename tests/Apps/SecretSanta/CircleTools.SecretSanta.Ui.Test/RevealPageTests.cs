@@ -23,7 +23,7 @@ public sealed class RevealPageTests : IAsyncDisposable
     private readonly TestSupport.FakeKeyValueStore _store = new();
     private readonly Bunit.BunitContext _ctx = new();
     private readonly FakeHapticFeedback _haptics = new();
-    private readonly NoOpSharedGroupApi _revealApi = new();
+    private readonly FakeOnlineGroupApi _revealApi = new();
 
     public RevealPageTests()
     {
@@ -40,7 +40,7 @@ public sealed class RevealPageTests : IAsyncDisposable
         _ctx.Services.AddSingleton<CircleTools.Ui.Abstractions.ICalendarService>(new TestSupport.FakeCalendarService());
         // Live reveal (ADR-0068): the page resolves the shared-group port to try a live slice for a
         // backend-backed (rt=) link. These local-only links carry no rt=, so it is never called.
-        _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.ISharedGroupApi>(_revealApi);
+        _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.Online.IOnlineGroupApi>(_revealApi);
     }
 
     private void NavigateToRevealLink(string fragment)

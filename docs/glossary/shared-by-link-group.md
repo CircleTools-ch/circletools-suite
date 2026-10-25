@@ -1,10 +1,12 @@
 ---
 term: Shared-by-link group
 contexts: [Secret-Santa, Platform]
-status: Draft
+status: Superseded
 ---
 
 # Shared-by-link group
+
+> **Replaced by [Online group](online-group.md)** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md)). There is one kind of online group, owned by an account or by an [organizer link](organizer-link.md); "shared by link" and "My account" are no longer separate kinds. The entry below is kept for history.
 
 ## Definition
 

@@ -10,6 +10,8 @@ related: [UC-MAIN-015, UC-MAIN-016, UC-SS-007, UC-SS-008, FR-012, FR-023, FR-024
 
 # FEAT-004 — M3 — Sync & Claim
 
+> **Amended by [FEAT-027](FEAT-027-one-way-to-be-in-a-group.md)** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md), 2026-10-25). The account sync remains for profile and preferences; group sync, claim and un-claim were replaced by online groups. This spec is kept as the record of what was built then.
+
 ## Problem & goals
 
 - **Problem:** M1 gave a user a name and a password; M2 gave them a circle. Nothing they actually make

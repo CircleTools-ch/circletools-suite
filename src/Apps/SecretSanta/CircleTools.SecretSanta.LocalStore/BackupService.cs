@@ -9,14 +9,14 @@ namespace CircleTools.SecretSanta.LocalStore;
 /// Exports and re-imports the whole set of locally held groups as a single portable JSON file.
 /// </summary>
 /// <remarks>
-/// The web head keeps a group only in browser storage (<see cref="GroupRepository"/>), which the
+/// The web head keeps a group only in browser storage (<see cref="Online.GroupRecordStore"/>), which the
 /// browser can evict under storage pressure or a user can clear with one "clear browsing data" click.
 /// A downloadable backup is the local-first answer to "where is my data and how do I keep it": it makes
 /// the data tangible, portable to another browser or device, and recoverable after a wipe — without a
 /// server or an account (NFR-001). The backup reuses the same <see cref="GroupState"/> memento the store
 /// already persists, so a file made by one version reads back through the ordinary load-time migrations.
 /// </remarks>
-/// <param name="groups">The group repository — whatever store the host has wired (local or syncing).</param>
+/// <param name="groups">The group repository the host has wired.</param>
 public sealed class BackupService(IGroupRepository groups)
 {
     /// <summary>The <c>format</c> marker written into every backup, so an unrelated file is rejected.</summary>

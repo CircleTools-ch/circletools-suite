@@ -55,13 +55,13 @@ The user opens **Profile → Data & account** and chooses **Export my data** or 
 
 1. User selects **Delete my account**.
 2. System explains **precisely what will and will not be deleted** — in particular that local device
-   data stays, and that groups other people own will keep the members the user was linked to.
+   data stays, and that groups other people own keep the members the user took part as.
 3. User confirms by re-authenticating (password or passkey).
 4. System deletes the account, its credentials and passkeys, and revokes every session and refresh
    token.
-5. System removes the `UserId` link from any Secret-Santa [Members](../../glossary/member.md) that
-   pointed at this account, leaving the member itself in place
-   ([ADR-0019](../../adr/0019-member-user-linking.md)).
+5. System removes every role the account held in Secret-Santa online groups — as a
+   [participant](../../glossary/participant.md) or an invitation — leaving each member and what it wrote in place
+   ([ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)).
 6. System confirms deletion by email to the (now removed) address.
 
 ## Extensions / alternate flows
@@ -70,23 +70,18 @@ The user opens **Profile → Data & account** and chooses **Export my data** or 
   another admin or accept that the circle is deleted with them. This interaction is defined by the
   circle roles in [ADR-0018](../../adr/0018-circle-and-sharing-model.md) and its UI lands in **M2** —
   but M1 must not ship a deletion that silently orphans a circle.
-- **Deletion 2b. The user owns [Shared-by-link groups](../../glossary/shared-by-link-group.md)** →
-  before deletion, each account-owned Secret-Santa group is routed through a **per-group disposition**
-  ([ADR-0058](../../adr/0058-account-free-link-shared-groups.md),
-  [FR-043](../../requirements/functional/FR-043-release-ownership-and-deletion-disposition.md)),
-  mirroring the sole-circle-owner rule in 2a so deletion never silently strands other participants:
-  - **Hand off as shared by link** — runs *release-admin*: the group stays online and an
-    [admin link](../../glossary/admin-link.md) is minted for whoever continues to organize it, so
-    everyone keeps access. **This is the default when the group has other joined people.**
-  - **Keep on this device** — the local copy survives (the general deletion rule); the online copy is
-    removed. The default when the owner is effectively the only participant.
-  - **Delete the online copy** — the explicit destructive choice.
+- **Deletion 2b. The user owns [online groups](../../glossary/online-group.md)** → the deletion screen says how
+  many and asks what becomes of them
+  ([FR-043](../../requirements/functional/FR-043-release-ownership-and-deletion-disposition.md), [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)),
+  mirroring the sole-circle-owner rule in 2a so deletion never silently strands the people taking part:
+  - **Keep them online** *(default)* — each group is handed over to a fresh
+    [organizer link](../../glossary/organizer-link.md), so its participants keep access.
+  - **Delete them too** — their online copies are deleted.
 
-  The deletion confirmation (step 2, deletion flow) **enumerates the owned shared groups and their
-  chosen disposition**, not just "your data will be deleted."
+  A device that still holds such a group keeps its own copy either way.
 - **Deletion 5a. Completed draws referencing the user** → a finished
   [Draw](../../glossary/draw.md) is history and is **not** rewritten. The organizer's group keeps the
-  member record (a name in someone else's list); only the account link disappears
+  member record (a name in someone else's list); only the account's role in the group disappears
   ([ADR-0018](../../adr/0018-circle-and-sharing-model.md), snapshot-at-draw).
 - **Deletion 3a. User cancels at the confirmation** → nothing happens.
 - **Export 3a. The archive is large** → generated asynchronously and delivered by link; the user is

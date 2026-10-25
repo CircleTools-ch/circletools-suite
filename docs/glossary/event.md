@@ -20,7 +20,7 @@ shows a generic label for it); a user names an event when they create a second o
 ## Bounded context(s)
 
 - **Secret-Santa:** an entity of the `Group` aggregate, never a stand-alone aggregate — it lives and
-  syncs inside its group (ADR-0042, ADR-0033). The organizer manages events; a linked member sees and
+  syncs inside its group (ADR-0042, ADR-0033). The organizer manages events; a [participant](participant.md) sees and
   writes their own wishlist and reads their own assignment **per event**.
 
 ## Synonyms / do-not-use

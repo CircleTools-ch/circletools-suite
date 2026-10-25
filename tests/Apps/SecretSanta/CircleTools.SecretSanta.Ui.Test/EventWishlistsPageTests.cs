@@ -36,12 +36,7 @@ public sealed class EventWishlistsPageTests : IAsyncDisposable
         // The page renders EventBackNav, which records recency (R2-5) via RecentAccessService over storage.
         _ctx.Services.AddSingleton<IKeyValueStore>(new WishlistStubKeyValueStore());
         _ctx.Services.AddSingleton<RecentAccessService>();
-        // An organizer's local-only group: no joined participants, nothing on the server.
-        _ctx.Services.AddSingleton<ILocalSyncStore>(new EmptyLocalSyncStore());
-        _ctx.Services.AddSingleton<NoOpSharedGroupApi>();
-        _ctx.Services.AddSingleton<ISharedGroupApi>(sp => sp.GetRequiredService<NoOpSharedGroupApi>());
-        _ctx.Services.AddSingleton<ISharedGroupAccountApi>(sp => sp.GetRequiredService<NoOpSharedGroupApi>());
-        _ctx.Services.AddSingleton<SharedSyncService>();
+        // An organizer's group on this device: nobody takes part, nothing on the server.
     }
 
     [Fact]

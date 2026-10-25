@@ -110,8 +110,9 @@ Close the tunnel (Ctrl-C) when you're done.
 
 - This grant is deliberately broad because the sole grantee is the trusted operator (ADR-0020). If a
   **less-trusted** person ever needs access, replace `pg_read_all_data` with per-schema `SELECT` on
-  **masked views** that omit the sensitive columns (`linking.assignments`, the `shared.groups` /
-  `shared.reveal_slices` and `sync.aggregates` JSON bodies, `circles.invitations.email`, and the
-  `AspNetUsers` email/hash columns) — the ADR-0075 follow-up.
+  **masked views** that omit the sensitive columns (the `secretsanta.groups` and `secretsanta.member_entries`
+  JSON bodies, the `sync.aggregates` JSON bodies, `circles.invitations.email`, and the `AspNetUsers`
+  email/hash columns) — the ADR-0075 follow-up. (Before ADR-0086 the list named `linking.assignments` and the
+  `shared` schema; both are gone.)
 - For a deep dive that must not touch live data at all, restore a backup into a throwaway local database
   (`deploy/restore.sh`) and inspect that instead.

@@ -1,7 +1,7 @@
 ---
 id: FEAT-024
 title: Participants in shared groups — secrecy, own entry, organizer-only publish
-status: Done
+status: Superseded
 owner: Adrian
 target-milestone: Next release (blocker)
 bounded-context: SecretSanta (client) + Main (shared-group and linking API)
@@ -9,6 +9,8 @@ related: [ADR-0058, ADR-0080, ADR-0061, ADR-0042, NFR-002, FEAT-013, FEAT-005, T
 ---
 
 # FEAT-024 — Participants in shared groups — secrecy, own entry, organizer-only publish
+
+> **Superseded by [FEAT-027](FEAT-027-one-way-to-be-in-a-group.md)** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md), 2026-10-25). Participants, their own entry and the organizer-only document became the participant role and the member entry of the group store. This spec is kept as the record of what was built then.
 
 ## Problem & goals
 

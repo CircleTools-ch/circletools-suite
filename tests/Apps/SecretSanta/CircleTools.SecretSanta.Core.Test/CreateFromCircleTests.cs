@@ -5,15 +5,15 @@ using CircleTools.SecretSanta.Core.Test.TestSupport;
 namespace CircleTools.SecretSanta.Core.Test;
 
 /// <summary>
-/// Tests for composing a new group from a circle snapshot (FR-027). The mapping is the unit under
-/// test: accounted person → linked member; managed member / no account → unlinked; the origin id is
-/// recorded; and when two chosen people resolve to the same account exactly one is linked and the
-/// rest are reported so the UI can tell the user.
+/// Tests for composing a new group from a circle snapshot (FR-027). The mapping is the unit under test: every
+/// chosen person becomes a member with its origin recorded; an accounted person's account is paired with the
+/// member for the caller to make a participant, and never written into the group (ADR-0086); when two chosen
+/// people resolve to the same account exactly one is paired and the rest are reported.
 /// </summary>
 public sealed class CreateFromCircleTests
 {
     [Fact]
-    public async Task CreatesOneMemberPerChosenPerson_LinkedWhereAccounted_UnlinkedOtherwise()
+    public async Task CreatesOneMemberPerChosenPerson_AndPairsTheAccountedOnesWithTheirAccount()
     {
         var repository = new InMemoryGroupRepository();
         var aliceUser = Guid.NewGuid();
@@ -32,18 +32,18 @@ public sealed class CreateFromCircleTests
         Assert.Empty(result.BroughtInUnlinkedNames);
 
         var alice = group.Members.Single(m => m.Name == "Alice");
-        Assert.Equal(aliceUser, alice.UserId);
         Assert.Equal(alicePerson, alice.OriginCirclePersonId);
-        Assert.True(alice.IsLinked);
+        Assert.Equal(new CircleMemberAccount(alice.Id, aliceUser), Assert.Single(result.Accounts));
 
         var bob = group.Members.Single(m => m.Name == "Bob (managed)");
-        Assert.Null(bob.UserId);
         Assert.Equal(bobPerson, bob.OriginCirclePersonId);
-        Assert.False(bob.IsLinked);
+
+        // The document carries no account: a restored copy knows the origin only.
+        Assert.DoesNotContain(aliceUser.ToString(), CircleTools.SecretSanta.Core.Persistence.GroupDocument.Serialize(group.ToState()), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public async Task TwoPeopleResolvingToTheSameAccount_LinkOnlyOne_AndTheUserIsInformed()
+    public async Task TwoPeopleResolvingToTheSameAccount_PairOnlyOne_AndTheUserIsInformed()
     {
         var repository = new InMemoryGroupRepository();
         var sharedUser = Guid.NewGuid();
@@ -55,15 +55,14 @@ public sealed class CreateFromCircleTests
             new CirclePersonInput(Guid.NewGuid(), "Alice's second entry", sharedUser));
 
         var group = await repository.GetAsync(result.GroupId, default);
-        var linked = group!.Members.Where(m => m.IsLinked).ToList();
+        var paired = Assert.Single(result.Accounts);
 
-        Assert.Single(linked);
-        Assert.Equal("Alice", linked[0].Name);
+        Assert.Equal("Alice", group!.FindMember(paired.MemberId)!.Name);
         Assert.Equal(["Alice's second entry"], result.BroughtInUnlinkedNames);
     }
 
     [Fact]
-    public async Task TheNewGroup_IsAccountScopedAndCarriesNoDrawUntilRun()
+    public async Task TheNewGroup_CarriesNoDrawUntilRun()
     {
         var repository = new InMemoryGroupRepository();
 

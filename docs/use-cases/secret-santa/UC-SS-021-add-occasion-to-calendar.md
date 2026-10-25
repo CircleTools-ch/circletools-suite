@@ -65,7 +65,7 @@ The person taps **Add to calendar** on an occasion that has a date.
 5. The person reviews the pre-filled details, picks a calendar if prompted, and **saves**.
 6. Later, tapping the calendar entry's link **reopens the app at that occasion** — on Android the installed
    app opens (offline, via the App Link), on the web the app route opens in the browser. This works the same
-   for a local, shared-by-link, or account group, because the device already holds that group.
+   for a group on this device or online, because the device already holds that group.
 
 ## Extensions / alternate flows
 

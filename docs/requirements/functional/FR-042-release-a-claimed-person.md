@@ -1,76 +1,54 @@
 ---
 id: FR-042
-title: An admin can release a claimed person so they can be claimed again
+title: The organizer can free a participant's spot so the member can be taken again
 type: functional
-status: Approved
+status: Implemented
 priority: Should
 source: UC-SS-020
 verification: test
-related: [UC-SS-020, FR-041, NFR-002, ADR-0058]
+related: [UC-SS-020, FR-041, NFR-002, ADR-0086, FEAT-027]
 ---
 
-# FR-042 — An admin can release a claimed person so they can be claimed again
+# FR-042 — The organizer can free a participant's spot so the member can be taken again
+
+> **Rewritten 2026-10-25 for [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)** ([FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)): one way to be in a group. The previous version described the four-kind storage model (on this device, shared by link, my account, my account · shared) and is in the git history.
 
 ## Description
 
-In a [shared-by-link group](../../glossary/shared-by-link-group.md), a
-[person claim](../../glossary/person-claim.md) **locks** the [Member](../../glossary/member.md) it binds
-([FR-041](FR-041-join-link-and-person-claim.md)). An **admin can release** a claimed member, which
-unbinds it (from the account or device that held it) and makes it **claimable again** through the
-[join link](../../glossary/join-link.md) ([ADR-0058](../../adr/0058-account-free-link-shared-groups.md)).
+From a member's row on the members page, an organizer can **free the spot** of a member who has a
+[participant](../../glossary/participant.md) — or withdraw an invitation still waiting for an answer. After confirming:
 
-Release is the **single recovery mechanism** for every "wrong person / lost access / changed device"
-situation:
+- the participant's role goes: their device or account no longer reads the group;
+- what they wrote — their [member entry](../../glossary/member-entry.md) — stays in the group, and the organizer can edit it
+  from then on;
+- the member is free again, so the person can take part anew (for example from a new phone) through the join link.
 
-- a participant **replaces or loses the device** that held a device-only claim;
-- someone **claimed the wrong member** (or an account-linked person needs re-assigning);
-- an admin needs to **re-open a spot**.
-
-Release:
-
-- is an **admin-only** action, available from the members screen of a shared-by-link group;
-- **does not delete the member** — the roster, wishlist, gift note and any drawn assignment stay; only
-  the *claim binding* is removed;
-- takes effect immediately, after which the member reads as **not claimed** and the join link may claim
-  it afresh.
-
-There is no self-service release — a device that has lost access cannot free itself, by design (that is
-what makes the lock meaningful), so recovery always runs through an admin.
+A participant can also **leave** a group themselves, with the same effect.
 
 ## Rationale
 
-First-claim-locks ([FR-041](FR-041-join-link-and-person-claim.md)) is what keeps the draw non-spoiling
-under a single shared secret, but a permanent lock with no escape would strand anyone who changes phone
-or mis-taps. Making **one** admin-controlled release the sole recovery path keeps the model simple (a
-single mechanism covers lost device, new device, and mis-claim) and keeps control with the organizer, so
-a locked spot can only be reopened by someone trusted with the group.
+A device gets lost and a person picks the wrong name; without a way back, the member would be stuck. Freeing the
+spot is the organizer's recovery tool, and keeping what was written means nobody loses their wishlist.
 
 ## Acceptance criteria
 
 ```gherkin
-Given a member claimed on a device that the participant no longer has
-When an admin releases that member
-Then the member reads as not claimed and can be claimed again from the join link
-And the member's wishlist, gift note and any drawn assignment are unchanged
+Given a member with a participant
+When the organizer frees the spot and confirms
+Then the participant can no longer read the group, and the member shows no participant
 
-Given a member claimed to an account
-When an admin releases that member
-Then the account no longer resolves to that member and the spot is open again
+Given the freed member had written a wishlist
+When the organizer opens the event's wishlists
+Then the wishlist is still there and the organizer can edit it
 
-Given a non-admin holding only the join link
-When they attempt to release a claimed member
-Then the action is not available to them
-
-Given an admin releases a member and someone re-claims it
-Then only the new claimant sees that member's assignment; the previous holder no longer does
+Given the spot was freed
+When a person opens the join link
+Then the member can be picked again
 ```
 
 ## Dependencies & related
 
 - Derived from: [UC-SS-020](../../use-cases/secret-santa/UC-SS-020-release-a-claimed-person.md)
-- Related: [FR-041](FR-041-join-link-and-person-claim.md) (the claim + lock this reverses),
-  [NFR-002](../non-functional/NFR-002-assignment-privacy.md) (re-claim moves who can read the assignment)
-- Governing ADR: [ADR-0058](../../adr/0058-account-free-link-shared-groups.md)
-- Implemented by: [FEAT-013](../../features/FEAT-013-account-free-link-shared-groups.md)
-- Glossary: [Person claim](../../glossary/person-claim.md), [Member](../../glossary/member.md),
-  [Join link](../../glossary/join-link.md), [Shared-by-link group](../../glossary/shared-by-link-group.md)
+- Related: [FR-041](FR-041-join-link-and-person-claim.md), [NFR-002](../non-functional/NFR-002-assignment-privacy.md)
+- Governing ADR: [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)
+- Implemented by: [FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)

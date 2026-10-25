@@ -13,7 +13,7 @@ related: [NFR-001, NFR-003, ADR-0009, ADR-0016, ADR-0017, ADR-0021]
 ## Summary / goal
 
 A [User](../../glossary/user.md) signs in on a device so the suite can act as them —
-[syncing](../../glossary/sync.md) their claimed data and showing what is shared with them. Signing in
+[syncing](../../glossary/sync.md) their online groups and preferences and showing what is shared with them. Signing in
 is **additive**: it never becomes a precondition for using an app.
 
 ## Primary actor & stakeholders
@@ -55,12 +55,11 @@ The user chooses **Sign in** in the Main shell, or the app finds no valid sessio
   that [ADR-0018](../../adr/0018-circle-and-sharing-model.md) rules out elsewhere.
 - **3b. Forgotten password** → [UC-MAIN-007](UC-MAIN-007-reset-password.md).
 - **3c. Email not yet verified** → sign-in **succeeds**, but nothing account-scoped works — no sync,
-  no claiming, no circle — and the shell shows a persistent prompt to verify
+  no online groups, no circle — and the shell shows a persistent prompt to verify
   ([UC-MAIN-001](UC-MAIN-001-create-account.md), decided 2026-07-27).
-- **6a. First sign-in on a device holding anonymous groups** → the user is asked which
-  [Groups](../../glossary/group.md) to take into the account, per
-  [ADR-0017](../../adr/0017-anonymous-to-account-claim.md) — opt-in, default none, and unclaimed
-  groups stay local and are not nagged about. The screen is specified in **M3**.
+- **6a. First sign-in on a device holding groups kept on this device** → they stay on this device and are not
+  nagged about; the user can put any of them online later ([ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)). A group this device organizes through an
+  organizer link offers to move into the account.
 - **Page reload (web)** → the in-memory access token is gone by design; the client silently refreshes
   using the stored refresh token. If that fails, the user is signed out cleanly rather than left in a
   half-authenticated state.

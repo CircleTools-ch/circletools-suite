@@ -1,10 +1,12 @@
 ---
 term: Person claim
 contexts: [Secret-Santa]
-status: Draft
+status: Superseded
 ---
 
 # Person claim
+
+> **Replaced by [Participant](participant.md)** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md)). Picking yourself through the join link creates a participant, the same as an invitation, a circle or "This is me". The entry below is kept for history.
 
 ## Definition
 

@@ -1,7 +1,6 @@
 using System.Text.Json;
 using CircleTools.Circles.Repository;
 using CircleTools.Main.Service.Repository;
-using CircleTools.Main.Service.Repository.Linking;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
@@ -46,10 +45,9 @@ public sealed class MailApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         using var scope = Services.CreateScope();
         await scope.ServiceProvider.GetRequiredService<MainDbContext>().Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<CirclesDbContext>().Database.MigrateAsync();
-        await scope.ServiceProvider.GetRequiredService<LinkingDbContext>().Database.MigrateAsync();
         // The organizer check on the linking publish asks the sync store who holds a group (ADR-0080).
         await scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.MigrateAsync();
-        await scope.ServiceProvider.GetRequiredService<SharedGroupDbContext>().Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<CircleTools.SecretSanta.Service.Repository.SecretSantaDbContext>().Database.MigrateAsync();
     }
 
     async Task IAsyncLifetime.DisposeAsync()
@@ -70,6 +68,8 @@ public sealed class MailApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         // These tests share one source address and would otherwise trip the NFR-005 rate limit.
         // The limiter has its own dedicated coverage in RateLimitingTests.
         builder.UseSetting("RateLimiting:SensitivePermitLimit", "100000");
+        // The account-free group routes share one per-IP window; every test here comes from the same address.
+        builder.UseSetting("RateLimiting:SharedWritePermitLimit", "100000");
 
         // Likewise the application-level invitation limits: InvitationTimingTests sends dozens of
         // invitations from one inviter, and repeats one recipient address deliberately. Their real

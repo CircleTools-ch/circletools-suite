@@ -7,7 +7,7 @@
 @using CircleTools.SecretSanta.Core.Reveal
 @using CircleTools.SecretSanta.LocalStore
 @inject RevealLinkCodec Codec
-@inject ISharedGroupApi RevealApi
+@inject CircleTools.SecretSanta.LocalStore.Online.IOnlineGroupApi RevealApi
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
 @inject IHapticFeedback Haptics
@@ -328,10 +328,10 @@ else if (_payload is not null)
     {
         try
         {
-            var result = await RevealApi.GetRevealSliceAsync(revealToken);
+            // The page is derived from the group's document on read (ADR-0086), so it is always current.
+            var result = await RevealApi.GetRevealAsync(revealToken);
             _notFound = result.Error?.Failure == CircleTools.ApiClient.ApiFailure.NotFound;
-            if (result is { IsSuccess: true, Value: { } view }
-                && view.Body.Deserialize(RevealJsonContext.Default.RevealPayload) is { } fresh)
+            if (result is { IsSuccess: true, Value: { } fresh })
             {
                 _payload = fresh;
                 return true;

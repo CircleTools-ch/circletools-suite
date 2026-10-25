@@ -168,9 +168,10 @@ the decision for each ID. Work packages in implementation order; each lists the 
   *My assignments*; no price. A first version with a "·" convention and prices was dropped on review as
   confusing. The save status now follows every change. Unit + component tests green.
 - **WP-10 · Release & verification of WP-1…WP-8 (open).**
-  - **Deploy order:** server first (migrations `AddParticipantKeysAndEntries`, `AddSessionDevice`,
-    `AddRevealSliceKey`), then the apps. Keyed reveal slices only stay stable once no old app version
-    publishes for a group.
+  - **Deploy order:** server first, then the apps. *Updated 2026-10-25 (FEAT-027):* the server's migrations
+    are now `AddSessionDevice`, the `secretsanta` schema (`InitialGroupStore`), `RetireOldGroupStores` (drops the
+    `linking` and `shared` schemas — test data only, decision D2) and `DropGroupSync`; old app builds stop working
+    against it, so the Pixel gets the new build in the same step.
   - **Pixel check** of what only shows on a device: Q11 keyboard/scroll (`ViewportBehavior`), Q17 tap
     fall-through, reminders (WP-3), the app's `CircleTools-App` User-Agent in *Signed-in devices*, a second
     reveal link arriving while one is open. Needs a debug build on the phone (replaces the Play install).
@@ -215,7 +216,9 @@ browser against production). All findings are fixed in `7bb52d1`. The decisions 
   unreleased build is needed: a debug build against the local stack
   ([device testing](../deployment/device-testing.md)), which requires removing the Play Store install
   first and wipes the phone's local data.
-- **SYNC-3 · Decide: deleting a Shared-by-link group as its admin.** Today it is local-only. The online copy
+- **SYNC-3 · Decide: deleting a Shared-by-link group as its admin.** ✅ **Settled by ADR-0086 (2026-10-22):** the
+  owner's delete deletes the online copy for everyone, and the confirmation says so; a device that only organizes
+  keeps or leaves its own copy. *Original note:* Today it is local-only. The online copy
   stays for join-link holders and co-admins until it expires (NFR-010), while "Make local" does delete it.
   Should one admin's delete remove the group for everyone, as for an admin-claimed group (ADR-0078
   Amendment 1)? Until decided, the delete confirmation for such a group keeps the plain wording. Owner:

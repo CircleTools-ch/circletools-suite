@@ -13,6 +13,7 @@
 # but ships no encryption/retention/verify of its own. See docs/deployment/backups.md.
 #
 # Usage:   ./backup.sh            (installed as a systemd timer on the VM; see backups.md)
+#          BACKUP_TAG=predeploy ./backup.sh   (the deploy pipeline, before migrating; kept apart, last 20)
 # Config:  read from deploy/.env  (POSTGRES_USER, RESTIC_REPOSITORY, RESTIC_PASSWORD, AWS_* -- template
 #          in .env.example). Retention overridable via BACKUP_KEEP_* env vars.
 set -euo pipefail
@@ -25,6 +26,11 @@ ENV_FILE="${ENV_FILE:-$SCRIPT_DIR/.env}"
 KEEP_DAILY="${BACKUP_KEEP_DAILY:-7}"
 KEEP_WEEKLY="${BACKUP_KEEP_WEEKLY:-5}"
 KEEP_MONTHLY="${BACKUP_KEEP_MONTHLY:-6}"
+KEEP_PREDEPLOY="${BACKUP_KEEP_PREDEPLOY:-20}"
+
+# "nightly" (the systemd timer) or "predeploy" (the deploy pipeline, right before migrating — ADR-0087).
+TAG="${BACKUP_TAG:-nightly}"
+case "$TAG" in nightly|predeploy) ;; *) printf 'unknown BACKUP_TAG: %s\n' "$TAG" >&2; exit 1 ;; esac
 
 log() { printf '%s  %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"; }
 die() { printf '%s  ERROR: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >&2; exit 1; }
@@ -55,12 +61,19 @@ log "dumping maindb and streaming into restic"
 # -Fc: custom format (compressed, supports selective/parallel restore). Streaming stdout -> restic stdin
 # keeps the plaintext dump off the host disk; `set -o pipefail` fails the run if pg_dump errors mid-stream.
 compose exec -T postgres pg_dump -U "$POSTGRES_USER" -d maindb -Fc \
-  | restic backup --stdin --stdin-filename maindb.dump --tag nightly --host circletools
+  | restic backup --stdin --stdin-filename maindb.dump --tag "$TAG" --host circletools
 
-log "pruning snapshots (keep daily=$KEEP_DAILY weekly=$KEEP_WEEKLY monthly=$KEEP_MONTHLY)"
-restic forget --host circletools --tag nightly \
-  --keep-daily "$KEEP_DAILY" --keep-weekly "$KEEP_WEEKLY" --keep-monthly "$KEEP_MONTHLY" \
-  --prune
+# Each tag has its own retention, so a pre-deploy snapshot is never pruned by the nightly policy (and the
+# nightly run never replaces the last clean state before a deployment — ADR-0087).
+if [ "$TAG" = "predeploy" ]; then
+  log "pruning pre-deploy snapshots (keep last=$KEEP_PREDEPLOY)"
+  restic forget --host circletools --tag predeploy --keep-last "$KEEP_PREDEPLOY" --prune
+else
+  log "pruning snapshots (keep daily=$KEEP_DAILY weekly=$KEEP_WEEKLY monthly=$KEEP_MONTHLY)"
+  restic forget --host circletools --tag "$TAG" \
+    --keep-daily "$KEEP_DAILY" --keep-weekly "$KEEP_WEEKLY" --keep-monthly "$KEEP_MONTHLY" \
+    --prune
+fi
 
 log "verifying repository integrity"
 restic check

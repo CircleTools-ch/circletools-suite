@@ -3,8 +3,9 @@ using CircleTools.SharedKernel;
 namespace CircleTools.SecretSanta.Core.Domain;
 
 /// <summary>
-/// A member of a Secret-Santa group — identity within the shared roster (a name, an optional account
-/// link, an optional circle origin). What a member <em>wants</em> is not held here: wishlists are
+/// A member of a Secret-Santa group — identity within the shared roster (a name, an optional circle origin).
+/// Who a member is as a person — an account or a device that took part — is not held here: it is a role
+/// assignment in the online group store (ADR-0086), so the document never carries account ids. What a member <em>wants</em> is not held here: wishlists are
 /// per-<see cref="Event"/> (ADR-0042), because a member's list for one occasion is not their list for
 /// another. What a member's giver should <em>know</em> — allergies, dietary needs, "please don't get
 /// me…" (the <see cref="GiftNote"/>, FR-037) — <strong>is</strong> held here, because unlike a wishlist
@@ -16,12 +17,11 @@ public sealed class Member : Entity
     /// <summary>The maximum length of a <see cref="GiftNote"/>, bounding the encoded reveal link (ADR-0014).</summary>
     public const int MaxGiftNoteLength = 500;
 
-    private Member(Guid id, string name, string giftNote, Guid? userId, Guid? originCirclePersonId, bool isArchived)
+    private Member(Guid id, string name, string giftNote, Guid? originCirclePersonId, bool isArchived)
     {
         Id = id;
         Name = name;
         GiftNote = giftNote;
-        UserId = userId;
         OriginCirclePersonId = originCirclePersonId;
         IsArchived = isArchived;
     }
@@ -47,18 +47,6 @@ public sealed class Member : Entity
     public bool IsArchived { get; private set; }
 
     /// <summary>
-    /// Gets the account this member is linked to, or <see langword="null"/> when the member is not
-    /// linked. The domain stores an <em>identifier, not a user</em>: it never navigates to Identity
-    /// and never learns anything about the account behind the id (ADR-0019). Whether a linked member
-    /// owns their wishlist or may see their assignment is resolved from this link state in the
-    /// application layer, not represented as extra domain state.
-    /// </summary>
-    public Guid? UserId { get; private set; }
-
-    /// <summary>Gets a value indicating whether this member is linked to an account.</summary>
-    public bool IsLinked => UserId is not null;
-
-    /// <summary>
     /// Gets the circle person this member was copied from when the group was created from a circle,
     /// or <see langword="null"/> otherwise. It is recorded at create time and <em>read
     /// defensively</em>: the domain never dereferences it into the circle, so a deleted circle can
@@ -68,13 +56,13 @@ public sealed class Member : Entity
     public Guid? OriginCirclePersonId { get; private set; }
 
     internal static Member Create(string name) =>
-        new(GuidV7.New(), NormalizeName(name), giftNote: string.Empty, userId: null, originCirclePersonId: null, isArchived: false);
+        new(GuidV7.New(), NormalizeName(name), giftNote: string.Empty, originCirclePersonId: null, isArchived: false);
 
-    internal static Member CreateFromCircle(string name, Guid? userId, Guid? originCirclePersonId) =>
-        new(GuidV7.New(), NormalizeName(name), giftNote: string.Empty, userId, originCirclePersonId, isArchived: false);
+    internal static Member CreateFromCircle(string name, Guid? originCirclePersonId) =>
+        new(GuidV7.New(), NormalizeName(name), giftNote: string.Empty, originCirclePersonId, isArchived: false);
 
-    internal static Member Restore(Guid id, string name, string? giftNote, Guid? userId, Guid? originCirclePersonId, bool isArchived) =>
-        new(id, name, NormalizeGiftNote(giftNote), userId, originCirclePersonId, isArchived);
+    internal static Member Restore(Guid id, string name, string? giftNote, Guid? originCirclePersonId, bool isArchived) =>
+        new(id, name, NormalizeGiftNote(giftNote), originCirclePersonId, isArchived);
 
     internal void Rename(string name) => Name = NormalizeName(name);
 
@@ -83,10 +71,6 @@ public sealed class Member : Entity
 
     /// <summary>Archives the member: kept for history, but removed from the active roster (ADR-0052).</summary>
     internal void Archive() => IsArchived = true;
-
-    internal void Link(Guid userId) => UserId = userId;
-
-    internal void Unlink() => UserId = null;
 
     private static string NormalizeName(string name)
     {

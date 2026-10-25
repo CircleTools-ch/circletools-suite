@@ -46,7 +46,7 @@ namespace CircleTools.Main.Service.Test.Api;
 /// measuring their difference instead does not work.
 /// </para>
 /// </remarks>
-[Collection(AccountApi.CollectionName)]
+[Collection(TimingApi.CollectionName)]
 public sealed class EnumerationTimingTests(AccountApiFactory factory)
 {
     /// <summary>Samples taken per path, after the warm-up round.</summary>

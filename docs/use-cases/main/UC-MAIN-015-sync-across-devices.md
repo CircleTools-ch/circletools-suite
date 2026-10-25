@@ -13,8 +13,9 @@ related: [FR-023, NFR-001, NFR-008, ADR-0016, ADR-0020]
 ## Summary / goal
 
 A signed-in [User](../../glossary/user.md) works on their phone and their laptop and finds the same
-data on both: the Secret-Santa [Groups](../../glossary/group.md) they took into their account, and
-their profile preferences. [Sync](../../glossary/sync.md) is what makes the account worth having —
+data on both: the Secret-Santa [online groups](../../glossary/online-group.md) they organize or take part in, and
+their profile and preferences. *(Amended 2026-10-25 for [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md): online groups have their own sync; the account
+sync carries profile and preferences; there is no claim.)* [Sync](../../glossary/sync.md) is what makes the account worth having —
 before it, an account only granted a name and a password.
 
 ## Primary actor & stakeholders
@@ -30,8 +31,8 @@ before it, an account only granted a name and a password.
 
 - The actor is signed in ([UC-MAIN-002](UC-MAIN-002-sign-in-with-password.md) or
   [UC-MAIN-004](UC-MAIN-004-sign-in-with-passkey.md)).
-- At least one group has been taken into the account
-  ([UC-SS-007](../secret-santa/UC-SS-007-claim-local-groups.md)), or the profile has been edited.
+- The account has at least one online group or invitation
+  ([UC-SS-017](../secret-santa/UC-SS-017-choose-and-switch-storage-mode.md)), or the profile has been edited.
 
 ## Postconditions
 
@@ -47,29 +48,23 @@ The app starts, the actor changes something, or connectivity returns.
 ## Main success scenario
 
 1. The app starts with the actor signed in.
-2. System **pulls** everything that changed on the server since the cursor it last recorded, and
-   **pushes** every local aggregate whose version is ahead of the server's.
-3. System applies the incoming aggregates to local storage as whole aggregates, and advances the
+2. System asks the server which online groups the account has a role in, and which invitations wait.
+3. For each online group, System pushes this device's unsent edits (or the person's pending entry), then reads the
+   group back: the whole document for a group the account organizes, the own view for one it takes part in.
+4. System runs the account sync for profile and preferences: push what is dirty, pull what is newer, advance the
    cursor.
-4. The actor's groups and preferences are the same here as on the device they last used.
-5. The actor edits a group. System saves locally first, then pushes; the change reaches the other
-   device on its next sync.
+5. The actor's groups, invitations and preferences are the same here as on the device they last used.
+6. The actor edits a group. System saves locally first, then pushes; the change reaches the other device on its
+   next sync.
 
 ## Extensions / alternate flows
 
-- **1a. First sign-in on a device with anonymous local data** → the claim runs first
-  ([UC-SS-007](../secret-santa/UC-SS-007-claim-local-groups.md)); nothing is uploaded before the actor
-  has chosen.
-- **2a. A group was deleted on the other device** → a tombstone arrives and the group is removed here
-  too. Deleting must propagate, or the group reappears on the next sync from the device that still
-  has it.
-- **2b. A group was removed from the account on the other device** (not deleted —
-  [UC-SS-008](../secret-santa/UC-SS-008-remove-group-from-account.md)) → it stops syncing and the
-  **local copy stays**. This is deliberately not the same signal as 2a: "take it out of my account"
-  must never be a remote wipe of the other device.
-- **3a. The same aggregate changed on both sides since the cursor** → last-write-wins by
-  server-recorded time; the losing version is discarded and the collision is reported as telemetry
-  ([UC-MAIN-016](UC-MAIN-016-work-offline-and-reconcile.md) covers this properly).
+- **1a. Sign-in on a device holding groups on this device** → they stay on this device; nothing is uploaded unless
+  the actor puts a group online ([UC-SS-017](../secret-santa/UC-SS-017-choose-and-switch-storage-mode.md)).
+- **2a. The account no longer has a role in a group** (deleted on the other device, left, freed, handed over) → the
+  group disappears from this device.
+- **3a. Two organizers edited the same group** → the later push wins in full; members' own entries are kept either
+  way ([UC-MAIN-016](UC-MAIN-016-work-offline-and-reconcile.md)).
 - **5a. The push fails** (offline, server error) → the edit stays local and queued; the device shows
   *not synced* and retries on the next trigger.
 - **6. The actor signs out** → syncing stops. The local copy remains and the app keeps working
@@ -80,12 +75,12 @@ The app starts, the actor changes something, or connectivity returns.
 - **The access token expired mid-sync** → refreshed transparently
   ([ADR-0021](../../adr/0021-web-auth-token-model.md)); the sync resumes. A failed refresh signs the
   actor out and stops syncing — it does not touch local data.
-- **The server rejects an aggregate** (schema too new, payload too large) → that aggregate is skipped
-  and reported; the rest of the sync completes. One bad group must not block the others.
+- **The server rejects a group's push** (schema too new, too large) → that group keeps its unsent edits; the
+  others sync. One bad group must not block the others.
 - **The device clock is wrong** → irrelevant to the outcome: ordering uses **server-recorded** time,
   never device time.
-- **The account is deleted** ([UC-MAIN-006](UC-MAIN-006-delete-account-and-export-data.md)) → the
-  server copies go with it; the local copies on every device survive as account-free data.
+- **The account is deleted** ([UC-MAIN-006](UC-MAIN-006-delete-account-and-export-data.md)) → its online groups
+  are handed over or deleted as chosen, and its roles elsewhere go; groups kept on a device are untouched.
 
 ## Non-functional notes
 
@@ -94,12 +89,9 @@ The app starts, the actor changes something, or connectivity returns.
   ([ADR-0016](../../adr/0016-sync-and-conflict-resolution.md)).
 - **Localization:** sync status and its failures are ordinary UI strings in DE/EN/FR
   ([NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)).
-- **Privacy:** this is the point at which a claimed group — **including its
-  [Draw](../../glossary/draw.md) and therefore its [Assignments](../../glossary/assignment.md)** —
-  first leaves the device. That is the amended
-  [NFR-002](../../requirements/non-functional/NFR-002-assignment-privacy.md) and
-  [ADR-0020](../../adr/0020-server-side-assignment-privacy.md) taking effect, and the claim screen
-  says so before it happens.
+- **Privacy:** a group leaves the device — **including its [Draw](../../glossary/draw.md)** — only when it is put
+  online, which says so before it happens; a participant's device receives only their own view
+  ([NFR-002](../../requirements/non-functional/NFR-002-assignment-privacy.md)).
 - **Performance:** a sync with nothing to do transfers no aggregate bodies; a family-scale account
   converges within one cycle of a few seconds
   ([NFR-008](../../requirements/non-functional/NFR-008-sync-convergence-and-data-safety.md)).
@@ -131,8 +123,7 @@ The app starts, the actor changes something, or connectivity returns.
   [ADR-0008](../../adr/0008-entity-id-strategy.md) (client-minted ids, so an offline creation needs no
   server)
 - Related use cases: [UC-MAIN-016](UC-MAIN-016-work-offline-and-reconcile.md),
-  [UC-SS-007](../secret-santa/UC-SS-007-claim-local-groups.md),
-  [UC-SS-008](../secret-santa/UC-SS-008-remove-group-from-account.md),
+  [UC-SS-017](../secret-santa/UC-SS-017-choose-and-switch-storage-mode.md),
   [UC-MAIN-005](UC-MAIN-005-manage-profile.md) (the preference that could not be changed offline until
   now)
 - Glossary: [Sync](../../glossary/sync.md), [Tombstone](../../glossary/tombstone.md),

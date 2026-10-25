@@ -1,20 +1,21 @@
 # Database schema (PostgreSQL)
 
-The backend is **one PostgreSQL database** whose tables are partitioned into **five schemas**, one per
+The backend is **one PostgreSQL database** whose tables are partitioned into **four schemas**, one per
 bounded context, each with its own EF Core `DbContext` and its own `__EFMigrationsHistory` table so the
 migration sets stay independent ([ADR-0003](../adr/0003-modular-monolith-with-aspire.md)):
-`public` (Identity + tokens + outbox), `circles`, `sync`, `linking`, and `shared`.
+`public` (Identity + tokens + outbox), `circles`, `sync`, and `secretsanta`. The `linking` and `shared` schemas
+were dropped with [ADR-0086](../adr/0086-one-way-to-be-in-a-group.md) (migration `RetireOldGroupStores`).
 
 A deliberate rule cuts across all of them: **no foreign key references `AspNetUsers` from another
 context** ([ADR-0019](../adr/0019-member-user-linking.md)). An account is held as a **value** (a bare
 `uuid`), and account deletion is a host-orchestrated cleanup, not a database cascade — so a circle or a
-shared group survives the deletion of any one account. The diagrams below therefore show foreign keys
+online group survives the deletion of any one account. The diagrams below therefore show foreign keys
 *within* an aggregate only; account ids and cross-context group/member ids are value references, drawn as
 dashed links and called out in prose.
 
-The diagrams reflect the schema as of **2026-09-15**, including the pre-launch hardening in
-[ADR-0061](../adr/0061-share-token-and-creator-key-at-rest-protection.md) (share tokens/creator key at
-rest) and [ADR-0062](../adr/0062-email-address-hashing-keyed-hmac.md) (email hashing). Only the defining
+The diagrams reflect the schema as of **2026-10-25**, including the at-rest protection of link secrets
+([ADR-0061](../adr/0061-share-token-and-creator-key-at-rest-protection.md)) and email hashing
+([ADR-0062](../adr/0062-email-address-hashing-keyed-hmac.md)). Only the defining
 columns are shown; the full column set lives in the entity types.
 
 ## `public` — Identity, tokens & outbox (Main context)
@@ -120,10 +121,10 @@ erDiagram
 
 ## `sync` — account-scoped opaque sync store
 
-The generic sync tier ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md),
-[ADR-0033](../adr/0033-which-aggregates-sync.md)): each aggregate is an **opaque `jsonb` body** the
-server never interprets, keyed by `(AccountId, AggregateId)`, with a server sequence for ordering. No
-foreign keys — every id is a value.
+The account sync ([ADR-0016](../adr/0016-sync-and-conflict-resolution.md),
+[ADR-0033](../adr/0033-which-aggregates-sync.md)): each per-account document — profile and UI preferences since
+ADR-0086 — is an **opaque `jsonb` body** the server never interprets, keyed by `(AccountId, AggregateId)`, with a
+server sequence for ordering. `markers` hold tombstones only. No foreign keys — every id is a value.
 
 ```mermaid
 erDiagram
@@ -154,105 +155,71 @@ erDiagram
     }
 ```
 
-## `linking` — the ADR-0020 per-caller assignment surface
+## `secretsanta` — the Secret-Santa group store
 
-The one server-side store that understands the Secret-Santa shape
-([ADR-0020](../adr/0020-server-side-assignment-privacy.md),
-[ADR-0042](../adr/0042-events-as-first-class-entities.md), FEAT-005). No foreign keys: `GroupId`,
-`EventId`, member ids and account ids are all values into the opaque group document. `member_links`
-carries a **partial unique index** on `(GroupId, TargetAccountId) WHERE State = 'Linked'` — the database
-invariant behind "one account backs at most one member per group". Budget money is `numeric(10,2)`.
+One store for every [online group](../glossary/online-group.md)
+([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md), FEAT-027). The group's document is `jsonb` that the server
+reads through the domain's `GroupDocument` format, so it can merge members' own entries and derive every view on
+read. Who may do what is in `role_assignments`: one owner (account or organizer link) and the participants
+(account or device key), optionally as one member.
 
-```mermaid
-erDiagram
-    member_links {
-        uuid Id PK
-        uuid GroupId "value; UQ(GroupId,TargetAccountId) when Linked"
-        uuid MemberId "value"
-        uuid OrganizerAccountId "account value"
-        uuid TargetAccountId "account value, nullable"
-        varchar State "enum as string"
-        timestamptz ExpiresAt
-    }
-    assignments {
-        uuid GroupId PK
-        uuid EventId PK
-        uuid GiverAccountId PK "account value"
-        varchar RecipientName
-        jsonb RecipientWishlistSnapshot
-        numeric BudgetAmount "numeric(10,2), nullable"
-        numeric BudgetMinAmount "numeric(10,2), nullable"
-        varchar BudgetCurrency "char(3), nullable"
-        bigint DrawVersion
-    }
-    member_wishlists {
-        uuid GroupId PK
-        uuid EventId PK
-        uuid MemberAccountId PK "account value"
-        jsonb Items
-        bigint Version
-    }
-    group_events {
-        uuid GroupId PK
-        uuid EventId PK
-        uuid OrganizerAccountId "account value"
-        timestamptz Date "nullable"
-    }
-    resolutions {
-        uuid Id PK
-        uuid OrganizerAccountId "account value"
-        varchar Kind "enum as string"
-        uuid UserId "account value, nullable"
-        timestamptz CreatedAt
-    }
-```
-
-## `shared` — account-free, link-shared groups
-
-The third storage tier ([ADR-0058](../adr/0058-account-free-link-shared-groups.md), FEAT-013): a group
-lives here addressed by **share tokens**, with an optional owning account (`OwnerAccountId`, a value,
-null while account-free). Per [ADR-0061](../adr/0061-share-token-and-creator-key-at-rest-protection.md),
-a token is looked up by the **SHA-256 hash** stored in `tokens.Token` (the primary key) and kept
-recoverable for the resume-share path as **AES-256-GCM** ciphertext in `TokenCipher`; the creator key is
-stored only as its **SHA-256 hash**. `member_claims.AccountId` and `groups.OwnerAccountId` are indexed
-for account-deletion cleanup.
+Secrets — organizer tokens, device keys, join tokens, reveal tokens — are stored as their **SHA-256 hash** (the
+lookup key) and, where a device must be shown the link again, as **AES-256-GCM** ciphertext
+([ADR-0061](../adr/0061-share-token-and-creator-key-at-rest-protection.md)). Writes to a group lock its `groups`
+row (`SELECT … FOR UPDATE`), so an entry written during a push is never lost. No foreign keys: every table refers
+to the group by `GroupId` value, and the store deletes a group's rows together in one transaction.
 
 ```mermaid
 erDiagram
     groups {
         uuid GroupId PK
-        jsonb Body "opaque group document"
+        jsonb Body "the GroupDocument, member entries merged in"
         bigint Version
-        varchar CreatorKey "SHA-256 hash, nullable"
-        uuid OwnerAccountId "account value, nullable, indexed"
-        varchar AdminClaimedByName "nullable"
-        timestamptz LastActivityAt "retention sweep"
+        int SchemaVersion
+        bool JoinEnabled
+        varchar CreatorKeyHash "nullable"
+        uuid UpdatedBy "role assignment value, nullable"
+        timestamptz LastActivityAt "indexed; retention sweep"
     }
-    tokens {
-        varchar Token PK "SHA-256 hash of the link token"
-        varchar TokenCipher "AES-256-GCM of the token"
+    role_assignments {
+        uuid Id PK
         uuid GroupId "value, indexed"
-        varchar Capability "enum as string"
-        bool Active
-        bool RetiredByClaim
-        timestamptz CreatedAt
+        varchar Role "owner | participant"
+        varchar PrincipalKind "account | organizerLink | deviceKey"
+        uuid AccountId "account value, nullable; UQ(GroupId,AccountId)"
+        uuid MemberId "nullable; UQ(GroupId,MemberId)"
+        varchar SecretHash "nullable; UQ"
+        varchar SecretCipher "organizer link only, nullable"
+        varchar State "invited | active"
+        varchar Route "created | joinLink | invitation | circle | ownMember | takeOver"
+        timestamptz ExpiresAt "invitations, nullable"
     }
-    member_claims {
+    join_links {
+        varchar TokenHash PK
+        varchar TokenCipher
+        uuid GroupId "value, indexed"
+        bool Active "a replaced link stays inactive"
+    }
+    member_entries {
         uuid GroupId PK
         uuid MemberId PK
-        varchar ClaimKind "enum as string"
-        varchar DeviceHandle "nullable"
-        uuid AccountId "account value, nullable, indexed"
-        timestamptz ClaimedAt
+        varchar GiftNote "500, nullable"
+        jsonb Wishlists "per event"
+        varchar KeptBy "participant | revealLink"
+        bigint Version
+    }
+    reveal_tokens {
+        varchar TokenHash PK
+        varchar TokenCipher
+        uuid GroupId "value; UQ(GroupId,EventId,GiverMemberId)"
+        uuid EventId
+        uuid GiverMemberId
     }
 ```
-
-> The `groups` ⇄ `tokens` ⇄ `member_claims` link is by `GroupId` **value** (indexed), not a foreign key —
-> the three tables are cleaned up together in one transaction by the store, not by a database cascade.
 
 ## Regenerating
 
 These are inline Mermaid diagrams (no pre-render step). Keep them in step with the EF Core entity
-configurations under `src/Apps/Main/CircleTools.Main.Service.Repository` and
-`src/BuildingBlocks/CircleTools.Circles.Repository`; a schema change should update the matching diagram in
+configurations under `src/Apps/Main/CircleTools.Main.Service.Repository`,
+`src/Apps/SecretSanta/CircleTools.SecretSanta.Service.Repository` and `src/BuildingBlocks/CircleTools.Circles.Repository`; a schema change should update the matching diagram in
 the same PR.

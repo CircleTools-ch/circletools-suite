@@ -39,10 +39,17 @@ internal static class SharingLinks
         """;
 
     /// <summary>Clicks the Copy button on the given link card and returns the URL the app copied.</summary>
-    public static async Task<string> CopyLinkAsync(IPage page, string cardSelector)
+    public static Task<string> CopyLinkAsync(IPage page, string cardSelector) =>
+        CopyLinkAsync(page, page.Locator(cardSelector), cardSelector);
+
+    /// <summary>Clicks the Copy button on the reveal-link card for <paramref name="member"/> on the share page.</summary>
+    public static Task<string> CopyRevealLinkAsync(IPage page, string member) =>
+        CopyLinkAsync(page, page.Locator(".mud-card").Filter(new LocatorFilterOptions { HasText = $"For: {member}" }), member);
+
+    private static async Task<string> CopyLinkAsync(IPage page, ILocator card, string what)
     {
-        var card = page.Locator(cardSelector);
         await card.WaitForAsync(new LocatorWaitForOptions { Timeout = 20_000 });
+        await page.EvaluateAsync("() => { window.__copiedText = null; }");
 
         await card.GetByRole(AriaRole.Button, new LocatorGetByRoleOptions { Name = "Copy", Exact = true }).ClickAsync();
 
@@ -51,7 +58,7 @@ internal static class SharingLinks
         await page.WaitForFunctionAsync("() => !!window.__copiedText", null, new PageWaitForFunctionOptions { Timeout = 5_000 });
 
         var url = await page.EvaluateAsync<string>("() => window.__copiedText");
-        Assert.False(string.IsNullOrEmpty(url), $"Could not read the share link copied from '{cardSelector}'.");
+        Assert.False(string.IsNullOrEmpty(url), $"Could not read the link copied from '{what}'.");
         return url;
     }
 }

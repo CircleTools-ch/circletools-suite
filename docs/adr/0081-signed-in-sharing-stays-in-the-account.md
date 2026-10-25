@@ -7,6 +7,8 @@ tags: [architecture, sync, sharing, secret-santa, ux]
 
 # ADR-0081 — A signed-in organizer's shared group stays in their account
 
+> **Amended by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** An owned online group is simply an online group owned by an account; its join link is a setting.
+
 ## Context and problem statement
 
 [ADR-0058](0058-account-free-link-shared-groups.md) gives a group one of three storage modes — *On this

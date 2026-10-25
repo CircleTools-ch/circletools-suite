@@ -1,24 +1,23 @@
-@using CircleTools.SecretSanta.LocalStore
+@using CircleTools.SecretSanta.LocalStore.Online
 @inject IStringLocalizer<AppStrings> L
 
 @*
-    Storage-mode affordance for group creation (ADR-0073, ADR-0071 amendment, ADR-0081). Compact: it shows HOW
-    the group will be stored — the same icon the list uses — with a "Change" menu to override the mode for
-    this one group. The first time a device creates a group it is Expanded instead: every option with its
-    one-line explanation, so the choice is explained where it is made (there is no first-run dialog any more).
-    Signed out, "My account" is offered as "sign-in needed" and raises SignInRequested.
+    The place affordance for group creation (ADR-0086, ADR-0071 amendment). Compact: it shows WHERE the group
+    will be kept — the same icon the list uses — with a "Change" menu to override it for this one group. The first
+    time a device creates a group it is Expanded instead: both options with their one-line explanation, so the
+    choice is explained where it is made.
 *@
 
 @if (Expanded)
 {
     <MudText Typo="Typo.body2" Class="mb-1"><strong>@L["StorageWhereTitle"]</strong></MudText>
-    <MudRadioGroup T="StorageMode" Value="Value" ValueChanged="SetAsync" Class="ct-mode-picker" id="storage-expanded">
-        @foreach (var mode in StorageModeDisplay.Choices(AccountEnabled))
+    <MudRadioGroup T="GroupPlace" Value="Value" ValueChanged="SetAsync" Class="ct-mode-picker" id="storage-expanded">
+        @foreach (var place in StorageModeDisplay.Choices)
         {
-            <MudRadio T="StorageMode" Value="@mode" Color="Color.Primary" Dense="true">
+            <MudRadio T="GroupPlace" Value="@place" Color="Color.Primary" Dense="true">
                 <div class="ct-mode-opt">
-                    <span class="ct-mode-title">@Title(mode)</span>
-                    <span class="ct-mode-hint">@L[StorageModeDisplay.ChoiceHintKey(mode, AccountEnabled)]</span>
+                    <span class="ct-mode-title">@L[StorageModeDisplay.LabelKey(place)]</span>
+                    <span class="ct-mode-hint">@L[StorageModeDisplay.HintKey(place, AccountEnabled)]</span>
                 </div>
             </MudRadio>
         }
@@ -28,25 +27,25 @@
 else
 {
     <div class="d-flex align-center flex-wrap gap-1">
-        <MudIcon Icon="@StorageModeDisplay.ChoiceIcon(Value, AccountEnabled)" Size="Size.Small" Class="mud-text-secondary" aria-hidden="true" />
-        <MudText Typo="Typo.body2">@L["StorageStoredAs"]: <strong>@L[StorageModeDisplay.ChoiceLabelKey(Value, AccountEnabled)]</strong></MudText>
+        <MudIcon Icon="@StorageModeDisplay.Icon(Value)" Size="Size.Small" Class="mud-text-secondary" aria-hidden="true" />
+        <MudText Typo="Typo.body2">@L["StorageStoredAs"]: <strong>@L[StorageModeDisplay.LabelKey(Value)]</strong></MudText>
         @* Each option says what it means in one line (as Settings does) and the current one is checked
            (UX review U3). The menu opens upward, so the dialog's Create button stays visible below it. *@
         <MudMenu Label="@L["StorageChange"]" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
                  EndIcon="@Icons.Material.Filled.ArrowDropDown"
                  AnchorOrigin="Origin.TopLeft" TransformOrigin="Origin.BottomLeft">
-            @foreach (var mode in StorageModeDisplay.Choices(AccountEnabled))
+            @foreach (var place in StorageModeDisplay.Choices)
             {
-                <MudMenuItem OnClick="@(() => SetAsync(mode))"
-                             aria-checked="@(mode == Value ? "true" : "false")" role="menuitemradio">
+                <MudMenuItem OnClick="@(() => SetAsync(place))"
+                             aria-checked="@(place == Value ? "true" : "false")" role="menuitemradio">
                     <div class="d-flex align-start gap-3" style="max-width:20rem; white-space:normal;">
-                        <MudIcon Icon="@StorageModeDisplay.ChoiceIcon(mode, AccountEnabled)" Size="Size.Small" Class="mt-1" />
+                        <MudIcon Icon="@StorageModeDisplay.Icon(place)" Size="Size.Small" Class="mt-1" />
                         <div class="flex-grow-1">
-                            <MudText Typo="Typo.body1">@Title(mode)</MudText>
-                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@L[StorageModeDisplay.ChoiceHintKey(mode, AccountEnabled)]</MudText>
+                            <MudText Typo="Typo.body1">@L[StorageModeDisplay.LabelKey(place)]</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">@L[StorageModeDisplay.HintKey(place, AccountEnabled)]</MudText>
                         </div>
                         <MudIcon Icon="@Icons.Material.Filled.Check" Size="Size.Small" Color="Color.Primary"
-                                 Class="mt-1" Style="@(mode == Value ? null : "visibility:hidden;")" aria-hidden="true" />
+                                 Class="mt-1" Style="@(place == Value ? null : "visibility:hidden;")" aria-hidden="true" />
                     </div>
                 </MudMenuItem>
             }
@@ -55,28 +54,17 @@ else
 }
 
 @code {
-    /// <summary>The selected storage mode.</summary>
-    [Parameter] public StorageMode Value { get; set; }
+    /// <summary>The selected place.</summary>
+    [Parameter] public GroupPlace Value { get; set; }
 
     /// <summary>Raised when the selection changes.</summary>
-    [Parameter] public EventCallback<StorageMode> ValueChanged { get; set; }
+    [Parameter] public EventCallback<GroupPlace> ValueChanged { get; set; }
 
-    /// <summary>Whether a session is live: "My account" is selectable, and the shared choice is account-owned.</summary>
+    /// <summary>Whether someone is signed in (it changes what "online" means).</summary>
     [Parameter] public bool AccountEnabled { get; set; } = true;
 
-    /// <summary>Show every option with its explanation (the first group a device creates).</summary>
+    /// <summary>Show both options with their explanation (the first group a device creates).</summary>
     [Parameter] public bool Expanded { get; set; }
 
-    /// <summary>Raised when a signed-out person picks "My account": they need to sign in first.</summary>
-    [Parameter] public EventCallback SignInRequested { get; set; }
-
-    private string Title(StorageMode mode) =>
-        mode == StorageMode.Account && !AccountEnabled
-            ? L["ModeAccountSignInNeeded"]
-            : L[StorageModeDisplay.ChoiceLabelKey(mode, AccountEnabled)];
-
-    private Task SetAsync(StorageMode mode) =>
-        mode == StorageMode.Account && !AccountEnabled
-            ? SignInRequested.InvokeAsync()
-            : ValueChanged.InvokeAsync(mode);
+    private Task SetAsync(GroupPlace place) => ValueChanged.InvokeAsync(place);
 }

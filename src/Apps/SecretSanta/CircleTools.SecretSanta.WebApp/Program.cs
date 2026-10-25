@@ -68,31 +68,19 @@ builder.Services.AddKeyedScoped<HttpClient>(AccountApiClients.Authorized, (sp, _
     return new HttpClient(handler) { BaseAddress = apiBaseUrl };
 });
 
-// Application + Secret-Santa module + the M3 client sync engine over the local store (FEAT-004). The
-// engine works identically offline; SyncService only ever runs for a signed-in account, so the
-// account-free product is unchanged (NFR-001).
+// Application + Secret-Santa module + this device's groups and their online sync (ADR-0086), and the account
+// sync of the per-account documents (FEAT-004), which only ever runs for a signed-in account (NFR-001).
 builder.Services.AddApplication();
 builder.Services.AddSecretSantaCore();
 builder.Services.AddSecretSantaSyncEngine();
+builder.Services.AddSecretSantaOnlineGroups();
+builder.Services.AddScoped<CircleTools.SecretSanta.LocalStore.Online.IOnlineGroupApi>(sp =>
+    new CircleTools.SecretSanta.LocalStore.Online.HttpOnlineGroupApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized)));
 
-// The delta-exchange port over the account's authorized client (ADR-0021). Only claim / un-claim and
-// a running sync cycle ever reach for it, and only once signed in.
+// The delta-exchange port over the account's authorized client (ADR-0021). Only a running sync cycle ever
+// reaches for it, and only once signed in.
 builder.Services.AddScoped<ISyncApi>(sp =>
     new HttpSyncApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized)));
-
-// The shared-by-link surface over the ANONYMOUS client (FEAT-013, ADR-0058): a shared group is
-// addressed by a share token, never a bearer, so it must work signed out and must not attach a token.
-builder.Services.AddScoped<ISharedGroupApi>(sp =>
-    new HttpSharedGroupApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Anonymous)));
-
-// Claim-admin / release-admin require identity, so they go over the AUTHORIZED client (FEAT-013).
-builder.Services.AddScoped<ISharedGroupAccountApi>(sp =>
-    new HttpSharedGroupAccountApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized)));
-
-// The M4 linking surface over the same authorized client (FEAT-005): member-links, the assignment
-// projection and self-owned wishlists. Inert for account-free users and unlinked members (NFR-001).
-builder.Services.AddScoped<ILinkingApi>(sp =>
-    new HttpLinkingApi(sp.GetRequiredKeyedService<HttpClient>(AccountApiClients.Authorized)));
 
 // The read-only circle directory for the create-from-circle picker (FEAT-005): an authorized read of
 // the caller's circles on the Main API (NFR-006). No circle data is written locally (ADR-0033).

@@ -1,64 +1,77 @@
 using CircleTools.SecretSanta.Contracts;
-using CircleTools.SecretSanta.LocalStore;
+using CircleTools.SecretSanta.LocalStore.Online;
+using CircleTools.Ui.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CircleTools.SecretSanta.Ui;
 
 /// <summary>
-/// The members of a group who are <strong>connected</strong> — they see their own assignment in the app,
-/// either because their member is linked to an account or because they joined through the join link
-/// (Q20, Q30, ADR-0080). They need no reveal link from the organizer, and while they are joined they keep
-/// their own wishlist and gift note.
+/// The members of an online group who are <strong>connected</strong> to a person (ADR-0086): they take part (any
+/// route — join link, invitation, circle, the organizer's own member) and see their own assignment in the app, or
+/// were invited and haven't answered yet. They need no reveal link. Members who keep their own entry have read-only
+/// gift notes and wishlists for the organizer.
 /// </summary>
-/// <param name="Linked">Members linked to an account.</param>
-/// <param name="Joined">Members someone claimed through the join link.</param>
-/// <param name="SelfMaintained">
-/// Members who keep their own wishlist and gift note on the server — joined, or edited from their reveal link
-/// (ADR-0084) — so the organizer's copy of those fields is read-only.
-/// </param>
-public sealed record ConnectedMembers(IReadOnlySet<Guid> Linked, IReadOnlySet<Guid> Joined, IReadOnlySet<Guid> SelfMaintained)
+/// <param name="Active">Members a person takes part as.</param>
+/// <param name="Invited">Members an invitation is waiting for.</param>
+/// <param name="SelfMaintained">Members who keep their own wishlist and gift note.</param>
+/// <param name="Mine">The member the signed-in organizer is, if any.</param>
+public sealed record ConnectedMembers(
+    IReadOnlySet<Guid> Active,
+    IReadOnlySet<Guid> Invited,
+    IReadOnlySet<Guid> SelfMaintained,
+    Guid? Mine = null)
 {
     /// <summary>Gets nobody connected.</summary>
     public static ConnectedMembers None { get; } = new(new HashSet<Guid>(), new HashSet<Guid>(), new HashSet<Guid>());
 
     /// <summary>Whether the member keeps their own wishlist and gift note, so the organizer may not edit them.</summary>
     /// <param name="memberId">The member.</param>
-    /// <returns><see langword="true"/> when joined or self-maintained.</returns>
-    public bool KeepsOwnEntry(Guid memberId) => Joined.Contains(memberId) || SelfMaintained.Contains(memberId);
+    /// <returns><see langword="true"/> when self-maintained.</returns>
+    public bool KeepsOwnEntry(Guid memberId) => SelfMaintained.Contains(memberId);
 
-    /// <summary>Whether the member sees their assignment in the app.</summary>
+    /// <summary>Whether a person takes part as the member (sees the assignment in the app).</summary>
     /// <param name="memberId">The member.</param>
-    /// <returns><see langword="true"/> when linked or joined.</returns>
-    public bool Contains(Guid memberId) => Linked.Contains(memberId) || Joined.Contains(memberId);
+    /// <returns><see langword="true"/> when connected.</returns>
+    public bool Contains(Guid memberId) => Active.Contains(memberId);
 
-    /// <summary>
-    /// Reads who is connected in a group: linked members from the group, joined members from the server for a
-    /// shared group this device organizes. A host without the sync engine (a component test) reads linked only.
-    /// </summary>
+    /// <summary>Whether the member has a person, or an invitation waiting — no one else can be brought in as them.</summary>
+    /// <param name="memberId">The member.</param>
+    /// <returns><see langword="true"/> when taken.</returns>
+    public bool IsTaken(Guid memberId) => Active.Contains(memberId) || Invited.Contains(memberId);
+
+    /// <summary>Reads who is connected in a group from this device's record of it (as of the last sync).</summary>
     /// <param name="services">The page's service provider.</param>
     /// <param name="group">The group.</param>
-    /// <returns>The connected members; joined ones are empty when the server can't be reached.</returns>
+    /// <returns>The connected members; nobody for a device group or a host without the record store.</returns>
     public static async Task<ConnectedMembers> ForAsync(IServiceProvider services, GroupDto group)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(group);
 
-        var linked = group.Members.Where(m => m.UserId is not null).Select(m => m.Id).ToHashSet();
-        if (services.GetService<ILocalSyncStore>() is not { } local || services.GetService<SharedSyncService>() is not { } shared)
+        if (services.GetService<IGroupRecordStore>() is not { } store)
         {
-            return new ConnectedMembers(linked, new HashSet<Guid>(), new HashSet<Guid>());
+            return None;
         }
 
-        var record = (await local.LoadGroupsAsync()).FirstOrDefault(r => r.State.Id == group.Id);
-        var organizesShared = record is not null
-            && !record.IsJoinOnly()
-            && (record is { Mode: StorageMode.SharedByLink } || record.IsAdminClaimedShared());
-        if (!organizesShared)
+        GroupRecord? record;
+        try
         {
-            return new ConnectedMembers(linked, new HashSet<Guid>(), new HashSet<Guid>());
+            record = (await store.LoadAsync()).Records.FirstOrDefault(r => r.Id == group.Id);
+        }
+        catch (StorageUnavailableException)
+        {
+            return None;
         }
 
-        var claims = await shared.GetMemberClaimsAsync(group.Id);
-        return new ConnectedMembers(linked, claims.MemberIds.ToHashSet(), (claims.SelfMaintained ?? []).ToHashSet());
+        if (record is not { Place: GroupPlace.Online })
+        {
+            return None;
+        }
+
+        var roles = record.Roles ?? [];
+        var active = roles.Where(r => r is { MemberId: not null, Invited: false }).Select(r => r.MemberId!.Value).ToHashSet();
+        var invited = roles.Where(r => r is { MemberId: not null, Invited: true }).Select(r => r.MemberId!.Value).ToHashSet();
+        var mine = roles.FirstOrDefault(r => r.Role == "owner" && r.MemberId is not null)?.MemberId;
+        return new ConnectedMembers(active, invited, (record.SelfMaintained ?? []).ToHashSet(), mine);
     }
 }

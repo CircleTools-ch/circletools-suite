@@ -60,7 +60,8 @@ From the [2026-10-16 two-account test](../../brainstorming/2026-10-16-secret-san
       has a circle with two or more people. Without circles, the circle page links to the web instead of
       naming an app that does not exist on the phone.
 - [ ] Signed in with no groups, the list shows the same welcome card as signed out, without the account sell,
-      plus a pointer to *My assignments* when the account takes part in someone else's group.
+      plus the groups the account takes part in and its invitations, when there are any (amended for
+      ADR-0086: *My assignments* folded into the group list).
 
 ## Dependencies & related
 

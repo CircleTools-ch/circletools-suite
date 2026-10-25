@@ -15,16 +15,15 @@ public sealed class SyncPayloadTests(TwoClientSyncFactory factory)
     {
         var account = await factory.RegisterAccountAsync();
 
-        // One device establishes a claimed group and syncs it up.
+        // One device pins a group and syncs its preferences up.
         var author = account.NewDevice();
-        var groupId = await author.CreateGroupAsync("Family", "Ada");
-        await author.ClaimAsync(groupId);
+        await author.PinAsync(Guid.NewGuid());
         await author.SyncAsync();
 
         // A reader catches up, so its cursor is current and it has nothing pending.
         RecordingSyncApi? recorder = null;
         var reader = account.NewDevice(api => recorder = new RecordingSyncApi(api));
-        await reader.SyncAsync(); // first cycle pulls the group and advances the cursor
+        await reader.SyncAsync(); // first cycle pulls the preferences and advances the cursor
 
         // The next cycle is the no-op: nothing dirty, cursor current.
         await reader.SyncAsync();
@@ -35,6 +34,5 @@ public sealed class SyncPayloadTests(TwoClientSyncFactory factory)
         Assert.Empty(recorder.LastRequest.Tombstones);
         Assert.Empty(recorder.LastResponse!.Changes);
         Assert.Empty(recorder.LastResponse.Tombstones);
-        Assert.Empty(recorder.LastResponse.Unclaimed);
     }
 }

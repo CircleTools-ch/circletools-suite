@@ -1,14 +1,14 @@
-using CircleTools.SecretSanta.LocalStore;
+using CircleTools.SecretSanta.LocalStore.Online;
 using CircleTools.Ui.Abstractions;
 
 namespace CircleTools.SecretSanta.Ui;
 
 /// <summary>
-/// Stores the device-local <strong>default storage mode</strong> for new groups (FR-048, ADR-0071) and
+/// Stores the device-local <strong>default place</strong> for new groups (FR-048, ADR-0071, ADR-0086) and
 /// whether the one-time storage onboarding has been shown. Like the other Secret-Santa device
 /// preferences (reminders, recency) this lives in the plain local <see cref="IKeyValueStore"/> — a
 /// per-device choice, never synced: a signed-out user needs a default too, and the groups themselves
-/// still sync by their own <see cref="StorageMode"/>. Best-effort: a read/write failure reads as
+/// keep their own place. Best-effort: a read/write failure reads as
 /// "default = On this device" rather than surfacing an error.
 /// </summary>
 /// <param name="store">The device-local key/value store.</param>
@@ -17,34 +17,33 @@ public sealed class StorageModePreferences(IKeyValueStore store)
     private const string DefaultModeKey = "secretsanta.storage.default";
     private const string OnboardedKey = "secretsanta.storage.onboarded";
 
-    /// <summary>The default storage mode for new groups — <see cref="StorageMode.OnThisDevice"/> until
-    /// the user changes it, so local-first (NFR-001) holds for anyone who does nothing.</summary>
+    /// <summary>The default place for new groups — <see cref="GroupPlace.Device"/> until the user changes it, so
+    /// local-first (NFR-001) holds for anyone who does nothing. A default stored by the older three-mode picker
+    /// ("SharedByLink", "Account") reads as online.</summary>
     /// <param name="cancellationToken">Cancels the read.</param>
-    /// <returns>The remembered default, or <see cref="StorageMode.OnThisDevice"/>.</returns>
-    public async ValueTask<StorageMode> GetDefaultAsync(CancellationToken cancellationToken = default)
+    /// <returns>The remembered default, or <see cref="GroupPlace.Device"/>.</returns>
+    public async ValueTask<GroupPlace> GetDefaultAsync(CancellationToken cancellationToken = default)
     {
         try
         {
             var raw = await store.GetAsync(StorageScope.Durable, DefaultModeKey, cancellationToken);
-            return Enum.TryParse<StorageMode>(raw, out var mode) && Enum.IsDefined(mode)
-                ? mode
-                : StorageMode.OnThisDevice;
+            return raw is "Online" or "SharedByLink" or "Account" ? GroupPlace.Online : GroupPlace.Device;
         }
         catch
         {
-            return StorageMode.OnThisDevice;
+            return GroupPlace.Device;
         }
     }
 
-    /// <summary>Remembers the default storage mode for new groups.</summary>
-    /// <param name="mode">The mode to make the default.</param>
+    /// <summary>Remembers the default place for new groups.</summary>
+    /// <param name="place">The place to make the default.</param>
     /// <param name="cancellationToken">Cancels the write.</param>
     /// <returns>A task that completes when the choice is stored (or silently skipped).</returns>
-    public async ValueTask SetDefaultAsync(StorageMode mode, CancellationToken cancellationToken = default)
+    public async ValueTask SetDefaultAsync(GroupPlace place, CancellationToken cancellationToken = default)
     {
         try
         {
-            await store.SetAsync(StorageScope.Durable, DefaultModeKey, mode.ToString(), cancellationToken);
+            await store.SetAsync(StorageScope.Durable, DefaultModeKey, place.ToString(), cancellationToken);
         }
         catch
         {

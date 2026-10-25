@@ -29,20 +29,19 @@ public sealed class SyncAggregate
     public DateTimeOffset ServerModifiedAt { get; set; }
 }
 
-/// <summary>Whether a marker records a deletion or a removal-from-account.</summary>
+/// <summary>What a marker records.</summary>
+/// <remarks>
+/// Only deletions remain. The un-claim marker went with group sync (ADR-0086); the column keeps its type so a
+/// later marker kind is an addition.
+/// </remarks>
 public enum SyncMarkerType
 {
     /// <summary>The aggregate was deleted; it must disappear on every device (FR-024).</summary>
     Tombstone,
-
-    /// <summary>The group left the account; devices drop the account scope but keep the local copy (FR-026).</summary>
-    Unclaim,
 }
 
 /// <summary>
-/// A tombstone or un-claim marker: the record that an aggregate is gone (or has left the account)
-/// so the fact can propagate. Carries no body — the two dispositions must never be the same signal
-/// (FEAT-004).
+/// A tombstone: the record that an aggregate is gone, so the fact can propagate. Carries no body (FEAT-004).
 /// </summary>
 public sealed class SyncMarker
 {
@@ -61,7 +60,7 @@ public sealed class SyncMarker
     /// <summary>The per-account monotonic sequence assigned when the marker was written.</summary>
     public long ServerSeq { get; set; }
 
-    /// <summary>Whether this is a deletion or a removal-from-account.</summary>
+    /// <summary>What the marker records.</summary>
     public SyncMarkerType MarkerType { get; set; }
 }
 

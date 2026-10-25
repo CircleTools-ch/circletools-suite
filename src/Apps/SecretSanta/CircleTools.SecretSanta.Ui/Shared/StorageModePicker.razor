@@ -1,24 +1,22 @@
-@using CircleTools.SecretSanta.LocalStore
+@using CircleTools.SecretSanta.LocalStore.Online
 @inject IStringLocalizer<AppStrings> L
 
 @*
-    The three-way storage-mode chooser (ADR-0058, FR-038, ADR-0081), each with a one-line explanation. Used in
-    Sharing & sync and Settings. Signed out: On this device / Shared by link / My account (disabled — no
-    account to sync to). Signed in: On this device / My account / My account · shared, where the shared choice
-    is a group owned by the account that others join with a link.
+    The place chooser (ADR-0086, FR-038): on this device, or online — each with a one-line explanation. Online
+    means "in your account" while signed in and "organized by a link this device keeps" while signed out, so both
+    choices are always available. Used in Settings for the default place of new groups.
 *@
 
-<MudRadioGroup T="StorageMode" Value="Value" ValueChanged="OnChangedAsync" Class="ct-mode-picker">
-    @foreach (var mode in StorageModeDisplay.Choices(AccountEnabled))
+<MudRadioGroup T="GroupPlace" Value="Value" ValueChanged="OnChangedAsync" Class="ct-mode-picker">
+    @foreach (var place in StorageModeDisplay.Choices)
     {
-        var enabled = mode != StorageMode.Account || AccountEnabled;
-        <MudRadio T="StorageMode" Value="@mode" Color="Color.Primary" Dense="true" Disabled="@(!enabled)" id="@Id(mode)">
+        <MudRadio T="GroupPlace" Value="@place" Color="Color.Primary" Dense="true" id="@Id(place)">
             <div class="ct-mode-opt">
-                <span class="ct-mode-title">@L[StorageModeDisplay.ChoiceLabelKey(mode, AccountEnabled)]</span>
-                <span class="ct-mode-hint">@L[StorageModeDisplay.ChoiceHintKey(mode, AccountEnabled)]</span>
+                <span class="ct-mode-title">@L[StorageModeDisplay.LabelKey(place)]</span>
+                <span class="ct-mode-hint">@L[StorageModeDisplay.HintKey(place, AccountEnabled)]</span>
                 @* On the web head "this device" is browser storage, which can be cleared (FEAT-017). Say so
                    where the user chooses it; the installed app stores natively, so the caveat is web-only. *@
-                @if (mode == StorageMode.OnThisDevice && OperatingSystem.IsBrowser())
+                @if (place == GroupPlace.Device && OperatingSystem.IsBrowser())
                 {
                     <MudText Typo="Typo.caption" Color="Color.Warning" Class="d-block mt-1">@L["ModeLocalWebWarning"]</MudText>
                 }
@@ -28,24 +26,19 @@
 </MudRadioGroup>
 
 @code {
-    /// <summary>The selected storage mode.</summary>
+    /// <summary>The selected place.</summary>
     [Parameter]
-    public StorageMode Value { get; set; }
+    public GroupPlace Value { get; set; }
 
     /// <summary>Raised when the selection changes.</summary>
     [Parameter]
-    public EventCallback<StorageMode> ValueChanged { get; set; }
+    public EventCallback<GroupPlace> ValueChanged { get; set; }
 
-    /// <summary>Whether a session is live: "My account" is selectable, and the shared choice is account-owned.</summary>
+    /// <summary>Whether someone is signed in (it changes what "online" means).</summary>
     [Parameter]
     public bool AccountEnabled { get; set; } = true;
 
-    private static string Id(StorageMode mode) => mode switch
-    {
-        StorageMode.SharedByLink => "mode-shared",
-        StorageMode.Account => "mode-account",
-        _ => "mode-local",
-    };
+    private static string Id(GroupPlace place) => place == GroupPlace.Online ? "mode-online" : "mode-local";
 
-    private Task OnChangedAsync(StorageMode mode) => ValueChanged.InvokeAsync(mode);
+    private Task OnChangedAsync(GroupPlace place) => ValueChanged.InvokeAsync(place);
 }

@@ -1,10 +1,9 @@
-@using CircleTools.SecretSanta.LocalStore
+@using CircleTools.SecretSanta.LocalStore.Online
 @inject IStringLocalizer<AppStrings> L
 
 @*
-    The phone "+" create flow (ADR-0073): a small sheet that collects the group name AND shows how it will
-    be stored (StorageModeField), so the storage mode is visible and changeable right where the group is
-    named — instead of a name-only sheet that silently used the default. Resolve with
+    The phone "+" create flow (ADR-0073, ADR-0086): a small sheet that collects the group name AND shows where it
+    will be kept (StorageModeField), so the place is visible and changeable right where the group is named. Resolve with
     NewGroupDialogExtensions.ShowNewGroupDialogAsync.
 *@
 
@@ -20,8 +19,8 @@
         <MudTextField @ref="_field" @bind-Value="_name" Immediate="true" OnKeyDown="OnKeyDown" AutoFocus="true"
                       Label="@L["NewGroupPlaceholder"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
         <div class="mt-3">
-            <StorageModeField Value="_mode" ValueChanged="@(m => _mode = m)" AccountEnabled="AccountEnabled"
-                              Expanded="ExplainStorage" SignInRequested="SignInFirst" />
+            <StorageModeField Value="_place" ValueChanged="@(p => _place = p)" AccountEnabled="AccountEnabled"
+                              Expanded="ExplainStorage" />
         </div>
         @* A secondary way in, only when the account has a circle with 2+ people (T1). *@
         @if (OfferCircle)
@@ -41,10 +40,10 @@
     [CascadingParameter]
     private IMudDialogInstance Dialog { get; set; } = default!;
 
-    /// <summary>The initially selected storage mode (the current default).</summary>
-    [Parameter] public StorageMode Mode { get; set; }
+    /// <summary>The initially selected place (the current default).</summary>
+    [Parameter] public GroupPlace Place { get; set; }
 
-    /// <summary>Whether "My account" is selectable (a session is live).</summary>
+    /// <summary>Whether someone is signed in (it changes what "online" means).</summary>
     [Parameter] public bool AccountEnabled { get; set; }
 
     /// <summary>Show the storage options expanded with their explanations (the device's first group).</summary>
@@ -61,11 +60,11 @@
 
     private MudTextField<string> _field = default!;
     private string _name = string.Empty;
-    private StorageMode _mode;
+    private GroupPlace _place;
 
     protected override void OnInitialized()
     {
-        _mode = Mode;
+        _place = Place;
         _name = InitialName ?? string.Empty;
     }
 
@@ -84,16 +83,13 @@
     {
         if (!string.IsNullOrWhiteSpace(_name))
         {
-            Dialog.Close(DialogResult.Ok(new NewGroupResult(_name.Trim(), _mode)));
+            Dialog.Close(DialogResult.Ok(new NewGroupResult(_name.Trim(), _place)));
         }
     }
 
     private void Cancel() => Dialog.Cancel();
 
-    private void FromCircle() => Dialog.Close(DialogResult.Ok(new NewGroupResult(_name.Trim(), _mode, FromCircle: true)));
-
-    // "My account" while signed out: sign in first; the groups page reopens this dialog afterwards.
-    private void SignInFirst() => Dialog.Close(DialogResult.Ok(new NewGroupResult(_name.Trim(), StorageMode.Account, SignIn: true)));
+    private void FromCircle() => Dialog.Close(DialogResult.Ok(new NewGroupResult(_name.Trim(), _place, FromCircle: true)));
 
     private void OnKeyDown(KeyboardEventArgs args)
     {

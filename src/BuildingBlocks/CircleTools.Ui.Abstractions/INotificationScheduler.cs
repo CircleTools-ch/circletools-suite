@@ -36,7 +36,16 @@ public enum NotificationAccess
 /// <param name="Title">The notification title (localized; never contains an assignment — NFR-002).</param>
 /// <param name="Body">The notification body (localized; never contains an assignment).</param>
 /// <param name="DeliverAt">When to deliver it (local time). Past times are never scheduled.</param>
-public sealed record ScheduledNotification(int Id, string Title, string Body, DateTimeOffset DeliverAt);
+public sealed record ScheduledNotification(int Id, string Title, string Body, DateTimeOffset DeliverAt)
+{
+    /// <summary>
+    /// The latest moment a late delivery is still shown: the end of the day it was meant for, in the offset of
+    /// <see cref="DeliverAt"/>. The OS may fire a reminder late (an inexact alarm, battery saving); a late one is
+    /// still worth showing that day, but not on a later day, where "the event is tomorrow" would be wrong
+    /// (R17, 2026-10-21 device test; ADR-0060).
+    /// </summary>
+    public DateTimeOffset ShowUntil => new DateTimeOffset(DeliverAt.Date, DeliverAt.Offset).AddDays(1);
+}
 
 /// <summary>
 /// Schedules device-local notifications (MNF-8, ADR-0060). One of the platform seams (ADR-0028): the MAUI

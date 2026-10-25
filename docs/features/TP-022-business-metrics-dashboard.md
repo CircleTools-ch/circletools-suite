@@ -35,10 +35,10 @@ metric-hygiene check as heavily as the count-correctness checks.
 | Requirement / AC | Test case | Level | Automated? |
 |------------------|-----------|-------|------------|
 | Accounts counted | Seed N users (some `EmailConfirmed`), collect → `accounts{confirmed=true}`=k, `{false}`=N−k | Integration | ✅ |
-| Groups counted by kind | Seed a circles rows + b shared groups → `groups{kind=circle}`=a, `{kind=shared}`=b | Integration | ✅ |
-| Events counted | Seed e `group_events` → `events`=e | Integration | ✅ |
+| Groups counted by kind | Seed a circles rows + b online groups → `groups{kind=circle}`=a, `{kind=online}`=b | Integration | ✅ |
+| Events counted | Seed online groups whose documents hold e events → `events`=e | Integration | ✅ |
 | Members counted | Seed m `circle_memberships` → `members`=m | Integration | ✅ |
-| **Draws derived** | Seed assignments for 2 groups × 2 draw versions → `draws`=4 (distinct tuples), not the row count | Unit + Integration | ✅ |
+| **Draws counted** | Seed online groups whose events hold d draws → `draws`=d | Integration | ✅ |
 | Empty DB | Collect against an empty schema → all gauges = 0, no exception | Integration | ✅ |
 | Best-effort on failure | DB made unreachable mid-run → previous snapshot kept, error logged, host survives | Integration | ✅ |
 | Off the scrape path | Gauge callback reads the snapshot only (no DbContext resolved in the callback) | Unit | ✅ |
@@ -49,9 +49,9 @@ metric-hygiene check as heavily as the count-correctness checks.
 
 ## Test data & environments
 
-- **Integration:** Testcontainers Postgres 17 with all four migration sets applied (as the repository
-  integration tests already do); a seeding helper inserts users, circles, shared groups, `group_events`,
-  `circle_memberships`, and `assignments` with controlled `DrawVersion`s.
+- **Integration:** Testcontainers Postgres 17 with the three counted migration sets applied (as the repository
+  integration tests already do); the test inserts users, circles, `circle_memberships`, and online groups whose
+  documents hold a known number of events and draws (amended 2026-10-25, ADR-0086).
 - **Manual:** AppHost `https-observability` launch profile (`Observability:DevStack=true`) — the same
   Loki/Prometheus/Grafana config as production via bind mounts; drive the Secret-Santa web app to create a
   group, add an event, run a draw, and register an account, then watch the panels.

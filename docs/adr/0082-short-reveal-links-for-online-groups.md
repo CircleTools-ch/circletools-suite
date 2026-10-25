@@ -7,6 +7,8 @@ tags: [secret-santa, reveal, sharing, privacy]
 
 # ADR-0082 — Short reveal links for online groups
 
+> **Amended by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** Short reveal links apply to every online group; the page is derived on read.
+
 ## Context and problem statement
 
 A reveal link carries the whole assignment as an encoded snapshot in its fragment (`#for=…&v=…&d=…`,

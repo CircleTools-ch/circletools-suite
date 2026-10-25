@@ -19,7 +19,7 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-005](functional/FR-005-generate-reveal-links.md) | Generate self-contained reveal links | Functional | Must | Implemented |
 | [FR-006](functional/FR-006-reveal-page-decode.md) | Reveal page decodes a link client-side | Functional | Must | Implemented |
 | [NFR-001](non-functional/NFR-001-local-first-offline.md) | Local-first and fully offline (no account or backend) | Non-functional | Must | Implemented |
-| [NFR-002](non-functional/NFR-002-assignment-privacy.md) | Assignment privacy — the link is the secret | Non-functional | Must | Implemented |
+| [NFR-002](non-functional/NFR-002-assignment-privacy.md) | Assignment privacy — each person learns only their own pairing | Non-functional | Must | Implemented |
 | [NFR-003](non-functional/NFR-003-multilingual-de-en-fr.md) | Multilingual DE/EN/FR with de-CH default | Non-functional | Must | Implemented |
 | [FR-007](functional/FR-007-create-suite-account.md) | Create a suite account with email verification | Functional | Must | Implemented |
 | [FR-008](functional/FR-008-sign-in-with-password.md) | Sign in with email and password | Functional | Must | Implemented |
@@ -41,37 +41,37 @@ from [use cases](../use-cases/index.md) and [brainstorming](../brainstorming/ind
 | [FR-022](functional/FR-022-delete-circle.md) | Delete a circle | Functional | Must | Implemented |
 | [NFR-006](non-functional/NFR-006-circle-authorization.md) | Circle data authorization | Non-functional | Must | Implemented |
 | [NFR-007](non-functional/NFR-007-store-distributability.md) | Store distributability & platform compliance | Non-functional | Must | Approved |
-| [FR-023](functional/FR-023-sync-across-devices.md) | Sync account-scoped data across a user's devices | Functional | Must | Implemented |
-| [FR-024](functional/FR-024-offline-editing-and-reconciliation.md) | Offline editing and reconciliation for signed-in users | Functional | Must | Implemented |
-| [FR-025](functional/FR-025-claim-local-groups.md) | Claim local groups into the account | Functional | Must | Implemented |
-| [FR-026](functional/FR-026-remove-group-from-account.md) | Remove a group from the account | Functional | Should | Implemented |
+| [FR-023](functional/FR-023-sync-across-devices.md) | An account's groups and preferences reach all its devices | Functional | Must | Implemented |
+| [FR-024](functional/FR-024-offline-editing-and-reconciliation.md) | Edits made offline are kept and sent when the connection returns | Functional | Must | Implemented |
+| [FR-025](functional/FR-025-claim-local-groups.md) | Claim local groups into the account | Functional | Must | Superseded |
+| [FR-026](functional/FR-026-remove-group-from-account.md) | Remove a group from the account | Functional | Should | Superseded |
 | [NFR-008](non-functional/NFR-008-sync-convergence-and-data-safety.md) | Sync convergence & data safety | Non-functional | Must | Implemented |
-| [FR-027](functional/FR-027-create-group-from-circle.md) | Create a group from a circle | Functional | Must | Implemented |
-| [FR-028](functional/FR-028-link-member-to-account.md) | Link a member to an account | Functional | Must | Implemented |
-| [FR-029](functional/FR-029-see-my-assignment.md) | See my assignment while signed in | Functional | Must | Implemented |
-| [FR-030](functional/FR-030-edit-my-wishlist.md) | Edit my own wishlist | Functional | Should | Implemented |
+| [FR-027](functional/FR-027-create-group-from-circle.md) | Create a group from a circle, with its people taking part | Functional | Must | Implemented |
+| [FR-028](functional/FR-028-link-member-to-account.md) | Invite a person by email to take part as a member | Functional | Must | Implemented |
+| [FR-029](functional/FR-029-see-my-assignment.md) | See my own assignment in the app | Functional | Must | Implemented |
+| [FR-030](functional/FR-030-edit-my-wishlist.md) | Keep my own wishlist and gift note | Functional | Should | Implemented |
 | [FR-031](functional/FR-031-single-sign-on-across-apps.md) | Start a session from a signed-in sibling app (cross-app SSO) | Functional | Should | Implemented |
-| [FR-032](functional/FR-032-add-organizer-as-member.md) | Add the organizer as the first member on group creation | Functional | Should | Implemented |
+| [FR-032](functional/FR-032-add-organizer-as-member.md) | The signed-in organizer is a member of the group they create | Functional | Should | Implemented |
 | [FR-033](functional/FR-033-bookmark-groups.md) | Bookmark groups for quick access (synced across devices) | Functional | Could | Implemented |
 | [FR-034](functional/FR-034-multiple-events-per-group.md) | Multiple events (occasions) per group, sharing one roster | Functional | Should | Implemented |
 | [FR-035](functional/FR-035-carry-forward-new-occasion.md) | Carry forward wishlists, budget and prior draw when creating an event | Functional | Should | Implemented |
 | [FR-036](functional/FR-036-budget-minimum-and-maximum.md) | Gift budget supports an optional minimum as well as a maximum | Functional | Could | Implemented |
 | [FR-037](functional/FR-037-member-gift-note.md) | A member has a stable gift note (allergies / dietary / do-not-gift) shown to their giver | Functional | Could | Implemented |
-| [FR-038](functional/FR-038-per-group-storage-mode.md) | A group has one of three storage modes, chosen at creation and switchable | Functional | Must | Approved |
-| [FR-039](functional/FR-039-shared-by-link-storage-and-sync.md) | A shared-by-link group is stored on the server by share token and synced to link-holders | Functional | Must | Approved |
-| [FR-040](functional/FR-040-admin-link-capability.md) | An admin link grants a shared, account-free, revocable admin capability | Functional | Must | Approved |
-| [FR-041](functional/FR-041-join-link-and-person-claim.md) | A join link lets a person join a shared group and claim which member they are | Functional | Must | Approved |
-| [FR-042](functional/FR-042-release-a-claimed-person.md) | An admin can release a claimed person so they can be claimed again | Functional | Should | Approved |
-| [FR-043](functional/FR-043-release-ownership-and-deletion-disposition.md) | Release a group to shared-by-link, and dispose of owned groups on account deletion | Functional | Must | Approved |
-| [NFR-009](non-functional/NFR-009-account-free-write-abuse-resistance.md) | Account-free backend writes are abuse-resistant | Non-functional | Must | Approved |
-| [NFR-010](non-functional/NFR-010-shared-group-retention-lifecycle.md) | Shared-by-link groups have a defined retention & deletion lifecycle | Non-functional | Must | Approved |
+| [FR-038](functional/FR-038-per-group-storage-mode.md) | A group is kept on this device or online, chosen at creation and changeable | Functional | Must | Implemented |
+| [FR-039](functional/FR-039-shared-by-link-storage-and-sync.md) | An online group is kept once on the server, and every role reads its own view of it | Functional | Must | Implemented |
+| [FR-040](functional/FR-040-admin-link-capability.md) | The organizer link lets devices organize an online group without an account | Functional | Must | Implemented |
+| [FR-041](functional/FR-041-join-link-and-person-claim.md) | A join link lets a person take part in an online group as one member | Functional | Must | Implemented |
+| [FR-042](functional/FR-042-release-a-claimed-person.md) | The organizer can free a participant's spot so the member can be taken again | Functional | Should | Implemented |
+| [FR-043](functional/FR-043-release-ownership-and-deletion-disposition.md) | Ownership can move between an account and an organizer link, and account deletion asks about owned groups | Functional | Must | Implemented |
+| [NFR-009](non-functional/NFR-009-account-free-write-abuse-resistance.md) | Writes without an account are abuse-resistant | Non-functional | Must | Implemented |
+| [NFR-010](non-functional/NFR-010-shared-group-retention-lifecycle.md) | Online groups without an account owner have a defined lifecycle | Non-functional | Must | Implemented |
 | [FR-044](functional/FR-044-add-event-to-device-calendar.md) | Add an event to the device calendar (pre-filled, all-day, system-UI) | Functional | Could | Implemented |
 | [FR-045](functional/FR-045-guided-hand-out-of-reveal-links.md) | Guided hand-out of reveal links (one per recipient, tracks who's done) | Functional | Could | Implemented |
 | [FR-046](functional/FR-046-device-local-occasion-reminders.md) | Device-local occasion reminders (draw due / tomorrow / empty wishlist; opt-in, off by default) | Functional | Could | Implemented |
 | [FR-047](functional/FR-047-account-deletion-farewell-email.md) | Account-deletion farewell email (one link-less confirmation after successful deletion, DE/EN/FR, source-app branded) | Functional | Should | Implemented |
-| [FR-048](functional/FR-048-default-storage-mode-for-new-groups.md) | A user-level default storage mode seeds new groups, set at first run and in Settings (device-local; refines FR-038's fixed pre-selection; seeds the phone FAB; per-group storage icon in the list) | Functional | Should | Approved |
+| [FR-048](functional/FR-048-default-storage-mode-for-new-groups.md) | A default place seeds new groups, set at first run and in Settings | Functional | Should | Implemented |
 | [FR-049](functional/FR-049-change-password.md) | Change password while signed in (current + new password, policy and breach check; ends the other sessions; link-less notice email); "Sign out on all devices" (ADR-0079) | Functional | Must | Implemented |
-| [FR-050](functional/FR-050-edit-own-entry-from-reveal-link.md) | Edit my own wishlist and gift note from my reveal link (live-link groups; autosaved; organizer's copy read-only — ADR-0084) | Functional | Should | Implemented |
+| [FR-050](functional/FR-050-edit-own-entry-from-reveal-link.md) | Keep my own wishlist and gift note from my reveal link | Functional | Should | Implemented |
 | [NFR-011](non-functional/NFR-011-local-data-durability-and-portability.md) | Local data is durable and portable on the web (persistence request + backup/restore) | Non-functional | Should | Implemented |
 
 _Add a row per requirement._
@@ -126,6 +126,11 @@ _Add a row per requirement._
   at [milestone 8](../roadmap/roadmap.md); governed by
   [ADR-0030](../adr/0030-mobile-store-publisher-identity.md) and
   [ADR-0031](../adr/0031-ios-build-host.md).
+- **One way to be in a group** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md),
+  [FEAT-027](../features/FEAT-027-one-way-to-be-in-a-group.md), 2026-10-25) rewrote **FR-023, FR-024, FR-027..030,
+  FR-032, FR-038..043, FR-048, FR-050, NFR-002, NFR-009 and NFR-010** for two places (on this device, online), one
+  group store and one participant model. The slice notes above describe them as first written; the files describe
+  them as they are. FR-025 and FR-026 stay superseded.
 
 ## Reading the statuses
 

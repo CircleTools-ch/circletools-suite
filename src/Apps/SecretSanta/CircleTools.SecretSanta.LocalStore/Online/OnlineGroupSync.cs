@@ -1,0 +1,627 @@
+using System.Text.Json;
+using CircleTools.ApiClient;
+using CircleTools.SecretSanta.Contracts;
+using CircleTools.SecretSanta.Core.Persistence;
+
+namespace CircleTools.SecretSanta.LocalStore.Online;
+
+/// <summary>
+/// Keeps this device's online groups in step with the Secret-Santa group store (ADR-0086, FEAT-027) — one service
+/// for every role:
+/// <list type="bullet">
+/// <item>a group this device <strong>organizes</strong>: a dirty copy is pushed first, then the server copy is read
+/// (members' own entries merged in, roles, links, permissions) — push before pull, so an offline edit is never
+/// overwritten by a pull (review finding C4);</item>
+/// <item>a group this device <strong>takes part in</strong>: a pending own entry is sent, then the participant view
+/// is read;</item>
+/// <item>signed in, the account's groups are discovered on the server, so they appear on every device.</item>
+/// </list>
+/// Every call is best-effort: an unreachable server leaves local state as it was, to be retried (NFR-008).
+/// </summary>
+/// <param name="store">This device's group records.</param>
+/// <param name="api">The group store's API.</param>
+public sealed class OnlineGroupSync(IGroupRecordStore store, IOnlineGroupApi api)
+{
+    // ---------------------------------------------------------------- place
+
+    /// <summary>
+    /// Makes a device group online. Signed in, the account owns it; signed out, an organizer link does, kept on this
+    /// device.
+    /// </summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="signedInAccount">The signed-in account, if any.</param>
+    /// <param name="joinEnabled">Whether to turn the join link on right away.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome.</returns>
+    public async Task<ApiResult> MakeOnlineAsync(Guid groupId, Guid? signedInAccount, bool joinEnabled, CancellationToken cancellationToken = default)
+    {
+        var record = await FindAsync(groupId, cancellationToken);
+        if (record is not { Place: GroupPlace.Device, Document: { } document })
+        {
+            return ApiResult.Failed(new ApiError(ApiFailure.Conflict, "The group is not on this device only."));
+        }
+
+        // The creator key is minted and kept before the call, so a retry after a lost response re-presents it and
+        // gets the same links back instead of a conflict.
+        var creatorKey = signedInAccount is null ? Guid.NewGuid().ToString("N") : null;
+        var created = await api.CreateAsync(
+            new CreateOnlineGroupRequest(GroupDocument.CurrentSchemaVersion, Element(document), creatorKey, joinEnabled), cancellationToken);
+        if (!created.IsSuccess)
+        {
+            return ApiResult.Failed(created.Error!);
+        }
+
+        var access = signedInAccount is { } account
+            ? new OnlineAccess(AccessPrincipal.Account, "owner", [], AccountId: account, JoinToken: created.Value!.JoinToken)
+            : new OnlineAccess(AccessPrincipal.OrganizerLink, "owner", [], Secret: created.Value!.OrganizerToken, CreatorKey: creatorKey, JoinToken: created.Value.JoinToken);
+        await UpdateAsync(groupId, r => r with { Place = GroupPlace.Online, ServerVersion = 1, Dirty = false, Access = access }, cancellationToken);
+
+        await SyncGroupAsync(groupId, cancellationToken);
+        return ApiResult.Ok();
+    }
+
+    /// <summary>
+    /// Keeps the group only on this device: the online copy is deleted (everyone else loses access) and the local
+    /// document stays.
+    /// </summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome.</returns>
+    public async Task<ApiResult> KeepOnDeviceAsync(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        var record = await FindAsync(groupId, cancellationToken);
+        if (record is not { Place: GroupPlace.Online, Document: not null, Access: { } access } || !access.Can(OnlinePermissions.DeleteGroup))
+        {
+            return ApiResult.Failed(new ApiError(ApiFailure.Forbidden));
+        }
+
+        var deleted = await api.DeleteAsync(groupId, access.Credentials, cancellationToken);
+        if (!deleted.IsSuccess && deleted.Error!.Failure != ApiFailure.NotFound)
+        {
+            return deleted;
+        }
+
+        await UpdateAsync(groupId, r => r with { Place = GroupPlace.Device, View = null, Access = null, ServerVersion = 0, Dirty = false, SelfMaintained = null, Roles = null }, cancellationToken);
+        return ApiResult.Ok();
+    }
+
+    // ---------------------------------------------------------------- sync
+
+    /// <summary>
+    /// One sync cycle: queued removals, then (signed in) discovery of the account's groups, then every online group
+    /// visible on this device.
+    /// </summary>
+    /// <param name="signedInAccount">The signed-in account, if any.</param>
+    /// <param name="cancellationToken">Cancels the cycle.</param>
+    /// <returns>A task.</returns>
+    public async Task SyncAsync(Guid? signedInAccount, CancellationToken cancellationToken = default)
+    {
+        await SendRemovalsAsync(signedInAccount, cancellationToken);
+
+        if (signedInAccount is { } account)
+        {
+            await DiscoverAsync(account, cancellationToken);
+        }
+
+        var document = await store.LoadAsync(cancellationToken);
+        foreach (var record in document.Records.Where(r => r.Place == GroupPlace.Online && r.IsVisibleTo(signedInAccount)).ToList())
+        {
+            await SyncGroupAsync(record.Id, cancellationToken);
+        }
+    }
+
+    /// <summary>Syncs one online group, in whatever role this device holds there.</summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>A task.</returns>
+    public async Task SyncGroupAsync(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        var record = await FindAsync(groupId, cancellationToken);
+        if (record is not { Place: GroupPlace.Online, Access: { } access })
+        {
+            return;
+        }
+
+        if (record.Document is not null)
+        {
+            await SyncOrganizedAsync(record, access, cancellationToken);
+        }
+        else
+        {
+            await SyncTakingPartAsync(record, access, cancellationToken);
+        }
+    }
+
+    private async Task SyncOrganizedAsync(GroupRecord record, OnlineAccess access, CancellationToken cancellationToken)
+    {
+        if (record.Dirty && access.Can(OnlinePermissions.WriteDocument))
+        {
+            var pushed = await api.PushAsync(
+                record.Id,
+                new PushOnlineGroupRequest(record.ServerVersion, GroupDocument.CurrentSchemaVersion, Element(record.Document!)),
+                access.Credentials,
+                cancellationToken);
+            if (pushed.IsSuccess)
+            {
+                var answer = pushed.Value!;
+                await UpdateAsync(
+                    record.Id,
+                    current => SameDocument(current.Document, record.Document)
+                        ? current with { Document = answer.Rewritten ? Read(answer.Document) ?? current.Document : current.Document, ServerVersion = answer.Version, Dirty = false }
+                        : current with { ServerVersion = answer.Version },
+                    cancellationToken);
+            }
+            else if (pushed.Error!.Failure == ApiFailure.NotFound)
+            {
+                await LoseAccessAsync(record.Id, cancellationToken);
+                return;
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        var read = await api.GetAsync(record.Id, access.Credentials, cancellationToken);
+        if (!read.IsSuccess)
+        {
+            if (read.Error!.Failure == ApiFailure.NotFound)
+            {
+                await LoseAccessAsync(record.Id, cancellationToken);
+            }
+
+            return;
+        }
+
+        var view = read.Value!;
+        await UpdateAsync(
+            record.Id,
+            current =>
+            {
+                var adopt = !current.Dirty && view.Version > current.ServerVersion;
+                return current with
+                {
+                    Document = adopt ? Read(view.Document) ?? current.Document : current.Document,
+                    ServerVersion = adopt ? view.Version : current.ServerVersion,
+                    SelfMaintained = view.SelfMaintained,
+                    Roles = view.Roles,
+                    Access = current.Access! with
+                    {
+                        Permissions = view.Permissions,
+                        Role = OwnRole(view, current.Access!) ?? current.Access!.Role,
+                        Secret = current.Access!.Principal == AccessPrincipal.OrganizerLink ? view.Links.OrganizerToken ?? current.Access!.Secret : current.Access!.Secret,
+                        JoinToken = view.Links.JoinToken,
+                    },
+                };
+            },
+            cancellationToken);
+
+        // An organizer who is also in the roster sees their own assignment like any participant (ADR-0086).
+        if (view.Permissions.Contains(OnlinePermissions.ReadOwnView))
+        {
+            var own = await api.GetParticipantViewAsync(record.Id, access.Credentials, cancellationToken);
+            if (own.IsSuccess)
+            {
+                await UpdateAsync(record.Id, r => r with { View = own.Value }, cancellationToken);
+            }
+        }
+    }
+
+    private async Task SyncTakingPartAsync(GroupRecord record, OnlineAccess access, CancellationToken cancellationToken)
+    {
+        if (record.PendingEntry is { } entry)
+        {
+            var written = await api.WriteOwnEntryAsync(record.Id, entry, access.Credentials, cancellationToken);
+            if (written.IsSuccess || written.Error!.Failure is ApiFailure.Validation)
+            {
+                // Accepted, or refused for good (out of bounds): either way it is no longer pending.
+                await UpdateAsync(record.Id, r => SameEntry(r.PendingEntry, entry) ? r with { PendingEntry = null } : r, cancellationToken);
+            }
+        }
+
+        var read = await api.GetParticipantViewAsync(record.Id, access.Credentials, cancellationToken);
+        if (read.IsSuccess)
+        {
+            var view = read.Value!;
+            await UpdateAsync(
+                record.Id,
+                r => r with { View = view, ServerVersion = view.Version, Access = r.Access! with { Permissions = view.Permissions, MemberId = view.MemberId } },
+                cancellationToken);
+        }
+        else if (read.Error!.Failure == ApiFailure.NotFound)
+        {
+            // Released, or the group was deleted: nothing of it is this device's any more.
+            await RemoveLocallyAsync(record.Id, cancellationToken);
+        }
+    }
+
+    // A group this device organized is gone from the server (deleted elsewhere, or ownership moved): the document
+    // stays here as a device group, so nothing the organizer typed is lost.
+    private Task LoseAccessAsync(Guid groupId, CancellationToken cancellationToken) =>
+        UpdateAsync(groupId, r => r with { Place = GroupPlace.Device, View = null, Access = null, ServerVersion = 0, Dirty = false, SelfMaintained = null, Roles = null }, cancellationToken);
+
+    private async Task DiscoverAsync(Guid account, CancellationToken cancellationToken)
+    {
+        var mine = await api.GetMyGroupsAsync(cancellationToken);
+        if (!mine.IsSuccess)
+        {
+            return;
+        }
+
+        var groups = mine.Value!.Groups;
+        var document = await store.LoadAsync(cancellationToken);
+        var records = document.Records.ToList();
+
+        // Groups this account held here but no longer has a role in (released, deleted, handed over) go.
+        var active = groups.Where(g => !g.Invited).ToDictionary(g => g.GroupId);
+        records.RemoveAll(r => r is { Place: GroupPlace.Online, Access.Principal: AccessPrincipal.Account }
+            && r.Access.AccountId == account
+            && !active.ContainsKey(r.Id));
+
+        foreach (var group in active.Values.Where(g => records.All(r => r.Id != g.GroupId)))
+        {
+            var access = new OnlineAccess(AccessPrincipal.Account, group.Role, group.Permissions, AccountId: account, MemberId: group.MemberId);
+            var organizes = access.Can(OnlinePermissions.ReadDocument);
+            records.Add(new GroupRecord(group.GroupId, GroupPlace.Online, null, null, 0, Dirty: false, Access: access) with
+            {
+                // A placeholder until the group's own sync fills it: organizers get the document, participants the view.
+                Document = organizes ? EmptyDocument(group) : null,
+            });
+        }
+
+        await store.SaveAsync(
+            document with { Records = records, Invitations = [.. groups.Where(g => g.Invited)] },
+            cancellationToken);
+    }
+
+    // The document is read right after discovery; until then an empty roster with the right id and name stands in,
+    // and a version of 0 makes the first read adopt the server copy.
+    private static GroupState EmptyDocument(MyGroup group) =>
+        new(group.GroupId, group.GroupName, null, null, [], [], [], Events: []);
+
+    private async Task SendRemovalsAsync(Guid? signedInAccount, CancellationToken cancellationToken)
+    {
+        var document = await store.LoadAsync(cancellationToken);
+        var sent = new List<PendingRemoval>();
+        foreach (var removal in document.Removals.Where(r => r.Access.IsVisibleTo(signedInAccount)))
+        {
+            var result = removal.Leave
+                ? await api.LeaveAsync(removal.GroupId, removal.Access.Credentials, cancellationToken)
+                : await api.DeleteAsync(removal.GroupId, removal.Access.Credentials, cancellationToken);
+            if (result.IsSuccess || result.Error!.Failure == ApiFailure.NotFound)
+            {
+                sent.Add(removal);
+            }
+        }
+
+        if (sent.Count > 0)
+        {
+            var latest = await store.LoadAsync(cancellationToken);
+            await store.SaveAsync(latest with { Removals = [.. latest.Removals.Where(r => !sent.Contains(r))] }, cancellationToken);
+        }
+    }
+
+    // ---------------------------------------------------------------- taking part
+
+    /// <summary>Takes part through a join link and adds the group to this device.</summary>
+    /// <param name="joinToken">The join token.</param>
+    /// <param name="request">Which member, and whether with the account.</param>
+    /// <param name="signedInAccount">The signed-in account, required for a join with the account.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome and the answer.</returns>
+    public async Task<ApiResult<JoinResponse>> JoinAsync(string joinToken, JoinRequest request, Guid? signedInAccount, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var joined = await api.JoinAsync(joinToken, request, cancellationToken);
+        if (!joined.IsSuccess)
+        {
+            return joined;
+        }
+
+        var answer = joined.Value!;
+        var access = request.WithAccount
+            ? new OnlineAccess(AccessPrincipal.Account, "participant", [], AccountId: signedInAccount, MemberId: answer.MemberId)
+            : new OnlineAccess(AccessPrincipal.DeviceKey, "participant", [], MemberId: answer.MemberId, Secret: answer.DeviceKey);
+
+        var document = await store.LoadAsync(cancellationToken);
+        await store.SaveAsync(
+            document with
+            {
+                Records = [.. document.Records.Where(r => r.Id != answer.GroupId),
+                    new GroupRecord(answer.GroupId, GroupPlace.Online, null, null, 0, Dirty: false, Access: access)],
+            },
+            cancellationToken);
+
+        await SyncGroupAsync(answer.GroupId, cancellationToken);
+        return joined;
+    }
+
+    /// <summary>Writes this device's own entry in a group it takes part in: kept locally, sent now if possible.</summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="entry">The entry.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>A task.</returns>
+    public async Task WriteOwnEntryAsync(Guid groupId, OwnEntryRequest entry, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        await UpdateAsync(groupId, r => r.Access?.Can(OnlinePermissions.WriteOwnEntry) == true ? r with { PendingEntry = entry } : r, cancellationToken);
+        await SyncGroupAsync(groupId, cancellationToken);
+    }
+
+    /// <summary>Leaves a group: removed here at once, the server is told now or on the next sync.</summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="signedInAccount">The signed-in account, if any.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>A task.</returns>
+    public async Task LeaveAsync(Guid groupId, Guid? signedInAccount, CancellationToken cancellationToken = default)
+    {
+        var document = await store.LoadAsync(cancellationToken);
+        var record = document.Records.FirstOrDefault(r => r.Id == groupId);
+        if (record is not { Access: { } access } || !access.Can(OnlinePermissions.Leave))
+        {
+            return;
+        }
+
+        await store.SaveAsync(
+            document with
+            {
+                Records = [.. document.Records.Where(r => r.Id != groupId)],
+                Removals = [.. document.Removals.Where(r => r.GroupId != groupId), new PendingRemoval(groupId, access, Leave: true)],
+            },
+            cancellationToken);
+        await SendRemovalsAsync(signedInAccount, cancellationToken);
+    }
+
+    /// <summary>Answers an email invitation, then syncs so an accepted group appears.</summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="accept">Accept or decline.</param>
+    /// <param name="signedInAccount">The signed-in account.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome.</returns>
+    public async Task<ApiResult> AnswerInvitationAsync(Guid groupId, bool accept, Guid signedInAccount, CancellationToken cancellationToken = default)
+    {
+        var answered = await api.AnswerInvitationAsync(groupId, accept, cancellationToken);
+        if (answered.IsSuccess)
+        {
+            await DiscoverAsync(signedInAccount, cancellationToken);
+            await SyncGroupAsync(groupId, cancellationToken);
+        }
+
+        return answered;
+    }
+
+    // ---------------------------------------------------------------- organizer actions
+
+    /// <summary>Turns the join link on or off (optionally replacing it) and keeps the link on the record.</summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="enabled">On or off.</param>
+    /// <param name="rotate">Whether to replace it.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome and the links.</returns>
+    public async Task<ApiResult<GroupLinks>> SetJoinLinkAsync(Guid groupId, bool enabled, bool rotate = false, CancellationToken cancellationToken = default)
+    {
+        var access = (await FindAsync(groupId, cancellationToken))?.Access;
+        if (access is null)
+        {
+            return ApiResult.Failed<GroupLinks>(new ApiError(ApiFailure.NotFound));
+        }
+
+        var links = await api.SetJoinLinkAsync(groupId, new JoinLinkRequest(enabled, rotate), access.Credentials, cancellationToken);
+        if (links.IsSuccess)
+        {
+            await UpdateAsync(groupId, r => r with { Access = r.Access! with { JoinToken = links.Value!.JoinToken } }, cancellationToken);
+        }
+
+        return links;
+    }
+
+    /// <summary>
+    /// Opens a management link on this device (co-organizing without an account, ADR-0086 decision D1): the group
+    /// is read with the link's token and kept here, organized by that link.
+    /// </summary>
+    /// <param name="groupId">The group the link names.</param>
+    /// <param name="organizerToken">The link's token.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>Whether the link works and the group is now on this device.</returns>
+    public async Task<bool> AdoptOrganizerLinkAsync(Guid groupId, string organizerToken, CancellationToken cancellationToken = default)
+    {
+        var credentials = new OnlineCredentials(OrganizerToken: organizerToken);
+        var read = await api.GetAsync(groupId, credentials, cancellationToken);
+        if (!read.IsSuccess || Read(read.Value!.Document) is not { } document)
+        {
+            return false;
+        }
+
+        var view = read.Value;
+        var access = new OnlineAccess(AccessPrincipal.OrganizerLink, "owner", view.Permissions, Secret: organizerToken, JoinToken: view.Links.JoinToken);
+        var stored = await store.LoadAsync(cancellationToken);
+        await store.SaveAsync(
+            stored with
+            {
+                Records = [.. stored.Records.Where(r => r.Id != groupId),
+                    new GroupRecord(groupId, GroupPlace.Online, document, null, view.Version, Dirty: false, access, SelfMaintained: view.SelfMaintained, Roles: view.Roles)],
+            },
+            cancellationToken);
+        return true;
+    }
+
+    /// <summary>Replaces the management link of a group organized by its link; this device keeps the new one.</summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome and the links.</returns>
+    public async Task<ApiResult<GroupLinks>> RotateOrganizerLinkAsync(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        var access = (await FindAsync(groupId, cancellationToken))?.Access;
+        if (access is not { Principal: AccessPrincipal.OrganizerLink })
+        {
+            return ApiResult.Failed<GroupLinks>(new ApiError(ApiFailure.Conflict));
+        }
+
+        var links = await api.RotateOrganizerLinkAsync(groupId, access.Credentials, cancellationToken);
+        if (links.IsSuccess && links.Value!.OrganizerToken is { } token)
+        {
+            await UpdateAsync(groupId, r => r with { Access = r.Access! with { Secret = token } }, cancellationToken);
+        }
+
+        return links;
+    }
+
+    /// <summary>The signed-in account takes over a group this device organizes by its link.</summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="signedInAccount">The account.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome.</returns>
+    public async Task<ApiResult> TakeOverAsync(Guid groupId, Guid signedInAccount, CancellationToken cancellationToken = default)
+    {
+        var access = (await FindAsync(groupId, cancellationToken))?.Access;
+        if (access is not { Principal: AccessPrincipal.OrganizerLink, Secret: { } token })
+        {
+            return ApiResult.Failed(new ApiError(ApiFailure.Conflict));
+        }
+
+        var taken = await api.TakeOverAsync(groupId, token, cancellationToken);
+        if (taken.IsSuccess)
+        {
+            await UpdateAsync(
+                groupId,
+                r => r with { Access = r.Access! with { Principal = AccessPrincipal.Account, AccountId = signedInAccount, Secret = null, CreatorKey = null } },
+                cancellationToken);
+            await SyncGroupAsync(groupId, cancellationToken);
+        }
+
+        return taken;
+    }
+
+    /// <summary>The owning account hands the group back to an organizer link, which this device keeps.</summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome.</returns>
+    public async Task<ApiResult> HandOverAsync(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        var handed = await api.HandOverAsync(groupId, cancellationToken);
+        if (!handed.IsSuccess)
+        {
+            return ApiResult.Failed(handed.Error!);
+        }
+
+        await UpdateAsync(
+            groupId,
+            r => r with { Access = r.Access! with { Principal = AccessPrincipal.OrganizerLink, AccountId = null, Secret = handed.Value!.OrganizerToken } },
+            cancellationToken);
+        await SyncGroupAsync(groupId, cancellationToken);
+        return ApiResult.Ok();
+    }
+
+    /// <summary>Brings a person in as a member, then re-reads who has a role.</summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="request">Who and how.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome.</returns>
+    public async Task<ApiResult> AddParticipantAsync(Guid groupId, AddParticipantRequest request, CancellationToken cancellationToken = default)
+    {
+        var access = (await FindAsync(groupId, cancellationToken))?.Access;
+        if (access is null)
+        {
+            return ApiResult.Failed(new ApiError(ApiFailure.NotFound));
+        }
+
+        // The participant points at a member of the server copy, so a member just added here is pushed first.
+        await SyncGroupAsync(groupId, cancellationToken);
+        var added = await api.AddParticipantAsync(groupId, request, access.Credentials, cancellationToken);
+        if (added.IsSuccess)
+        {
+            await SyncGroupAsync(groupId, cancellationToken);
+        }
+
+        return added;
+    }
+
+    /// <summary>Releases a participant (or withdraws an invitation), then re-reads who has a role.</summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="memberId">The member.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The outcome.</returns>
+    public async Task<ApiResult> ReleaseAsync(Guid groupId, Guid memberId, CancellationToken cancellationToken = default)
+    {
+        var access = (await FindAsync(groupId, cancellationToken))?.Access;
+        if (access is null)
+        {
+            return ApiResult.Failed(new ApiError(ApiFailure.NotFound));
+        }
+
+        var released = await api.ReleaseAsync(groupId, memberId, access.Credentials, cancellationToken);
+        if (released.IsSuccess)
+        {
+            await SyncGroupAsync(groupId, cancellationToken);
+        }
+
+        return released;
+    }
+
+    /// <summary>The reveal tokens for the group's current draws, to build short reveal links (ADR-0082).</summary>
+    /// <param name="groupId">The group.</param>
+    /// <param name="cancellationToken">Cancels the call.</param>
+    /// <returns>The tokens, or a failure (offline: the share page falls back to snapshot links).</returns>
+    public async Task<ApiResult<IReadOnlyList<RevealTokenView>>> GetRevealTokensAsync(Guid groupId, CancellationToken cancellationToken = default)
+    {
+        var record = await FindAsync(groupId, cancellationToken);
+        if (record is not { Place: GroupPlace.Online, Access: { } access })
+        {
+            return ApiResult.Failed<IReadOnlyList<RevealTokenView>>(new ApiError(ApiFailure.NotFound));
+        }
+
+        // The tokens point at the server copy, so an unsent edit (a fresh draw) is pushed first.
+        await SyncGroupAsync(groupId, cancellationToken);
+        return await api.GetRevealTokensAsync(groupId, access.Credentials, cancellationToken);
+    }
+
+    // ---------------------------------------------------------------- helpers
+
+    private async Task<GroupRecord?> FindAsync(Guid groupId, CancellationToken cancellationToken) =>
+        (await store.LoadAsync(cancellationToken)).Records.FirstOrDefault(r => r.Id == groupId);
+
+    // Reads the latest document right before writing, so a change made in between (a local edit) is not lost.
+    private async Task UpdateAsync(Guid groupId, Func<GroupRecord, GroupRecord> change, CancellationToken cancellationToken)
+    {
+        var document = await store.LoadAsync(cancellationToken);
+        var records = document.Records.ToList();
+        var index = records.FindIndex(r => r.Id == groupId);
+        if (index < 0)
+        {
+            return;
+        }
+
+        records[index] = change(records[index]);
+        await store.SaveAsync(document with { Records = records }, cancellationToken);
+    }
+
+    private async Task RemoveLocallyAsync(Guid groupId, CancellationToken cancellationToken)
+    {
+        var document = await store.LoadAsync(cancellationToken);
+        await store.SaveAsync(document with { Records = [.. document.Records.Where(r => r.Id != groupId)] }, cancellationToken);
+    }
+
+    private static string? OwnRole(OrganizerGroupView view, OnlineAccess access) =>
+        access.Principal == AccessPrincipal.OrganizerLink
+            ? view.Roles.FirstOrDefault(r => r.Principal == "organizerLink")?.Role
+            : null;
+
+    // Records come back from storage as new instances, so "unchanged since the push" compares content, not references.
+    private static bool SameDocument(GroupState? a, GroupState? b) =>
+        a is not null && b is not null && GroupDocument.Serialize(a) == GroupDocument.Serialize(b);
+
+    // An entry written again while the first one was on its way stays pending; the one sent is cleared.
+    private static bool SameEntry(OwnEntryRequest? a, OwnEntryRequest b) =>
+        a is not null
+        && JsonSerializer.Serialize(a, OnlineJsonContext.Default.OwnEntryRequest) == JsonSerializer.Serialize(b, OnlineJsonContext.Default.OwnEntryRequest);
+
+    private static JsonElement Element(GroupState document)
+    {
+        using var parsed = JsonDocument.Parse(GroupDocument.Serialize(document));
+        return parsed.RootElement.Clone();
+    }
+
+    private static GroupState? Read(JsonElement element) =>
+        GroupDocument.TryDeserialize(element.GetRawText(), out var document) ? document : null;
+}

@@ -1,10 +1,12 @@
 ---
 term: Participant key
 contexts: [Secret-Santa]
-status: Draft
+status: Superseded
 ---
 
 # Participant key
+
+> **Replaced by [Device key](device-key.md)** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md)). The entry below is kept for history.
 
 ## Definition
 

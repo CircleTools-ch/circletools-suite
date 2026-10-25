@@ -17,7 +17,7 @@ public sealed class SecretSantaLayeringTests
         .LoadAssemblies(
             typeof(CircleTools.SecretSanta.Contracts.RevealPayload).Assembly,
             typeof(CircleTools.SecretSanta.Core.Domain.Group).Assembly,
-            typeof(CircleTools.SecretSanta.LocalStore.GroupRepository).Assembly,
+            typeof(CircleTools.SecretSanta.LocalStore.SyncService).Assembly,
             typeof(CircleTools.SecretSanta.Ui.AppStrings).Assembly,
             typeof(CircleTools.Identity.CircleToolsUser).Assembly,
             typeof(CircleTools.Circles.Contracts.InviteRequest).Assembly,

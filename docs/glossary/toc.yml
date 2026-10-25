@@ -14,6 +14,8 @@
   href: circle-membership.md
 - name: Claim
   href: claim.md
+- name: Device key
+  href: device-key.md
 - name: Draw
   href: draw.md
 - name: Event
@@ -34,27 +36,43 @@
   href: managed-member.md
 - name: Member
   href: member.md
-- name: Passkey
-  href: passkey.md
+- name: Member entry
+  href: member-entry.md
+- name: Online group
+  href: online-group.md
+- name: Organizer
+  href: organizer.md
+- name: Organizer link
+  href: organizer-link.md
+- name: Owner
+  href: owner.md
+- name: Participant
+  href: participant.md
 - name: Participant contribution
   href: participant-contribution.md
 - name: Participant key
   href: participant-key.md
+- name: Passkey
+  href: passkey.md
 - name: Person claim
   href: person-claim.md
+- name: Place
+  href: place.md
 - name: Reveal link
   href: reveal-link.md
+- name: Role assignment
+  href: role-assignment.md
 - name: Share token
   href: share-token.md
 - name: Shared-by-link group
   href: shared-by-link-group.md
 - name: Sync
   href: sync.md
+- name: Template
+  href: _template-glossary-entry.md
 - name: Tombstone
   href: tombstone.md
 - name: User
   href: user.md
 - name: Wishlist
   href: wishlist.md
-- name: Template
-  href: _template-glossary-entry.md

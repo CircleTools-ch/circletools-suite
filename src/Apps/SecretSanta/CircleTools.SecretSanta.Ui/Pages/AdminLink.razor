@@ -1,9 +1,14 @@
 @page "/admin"
-@using CircleTools.SecretSanta.LocalStore
-@inject ISharedGroupApi Api
-@inject SharedSyncService Shared
+@using CircleTools.SecretSanta.LocalStore.Online
+@inject OnlineGroupSync Online
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
+
+@*
+    Opening a management link (ADR-0086, decision D1): /admin#g=<group>&t=<token>. A working link puts the group on
+    this device, organized by that link, and opens it. A link that was replaced, or whose group an account took
+    over, no longer works; it says so without telling the holder anything else.
+*@
 
 <PageTitle>@L["AdminLink"]</PageTitle>
 
@@ -11,18 +16,9 @@
 {
     <MudText>@L["Loading"]</MudText>
 }
-else if (_retiredByName is not null)
-{
-    <div class="d-flex flex-column align-center text-center gap-3 pa-6" id="admin-retired">
-        <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Error" Size="Size.Large" />
-        <MudText Typo="Typo.h6">@L["AdminRetiredTitle"]</MudText>
-        <MudText Class="mud-text-secondary">@L["AdminRetiredBody", _retiredByName]</MudText>
-        <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["AdminRetiredJoinHint"]</MudText>
-    </div>
-}
 else
 {
-    @* Unresolvable token (wrong or deleted). Successful adoption redirects, so this only shows on failure. *@
+    @* Successful adoption redirects, so this only shows on failure. *@
     <div class="d-flex flex-column align-center text-center gap-3 pa-6" id="admin-notfound">
         <MudIcon Icon="@Icons.Material.Filled.LinkOff" Color="Color.Error" Size="Size.Large" />
         <MudText Typo="Typo.h6">@L["JoinNotFoundTitle"]</MudText>
@@ -32,49 +28,34 @@ else
 
 @code {
     private bool _resolved;
-    private string? _retiredByName;
 
     protected override async Task OnInitializedAsync()
     {
-        var token = ReadToken();
-        if (!string.IsNullOrEmpty(token))
+        var fragment = ReadFragment();
+        if (fragment.TryGetValue("g", out var group) && Guid.TryParse(group, out var groupId)
+            && fragment.TryGetValue("t", out var token) && !string.IsNullOrEmpty(token)
+            && await Online.AdoptOrganizerLinkAsync(groupId, token))
         {
-            var view = await Api.GetAsync(token);
-            if (view is { IsSuccess: true, Value: not null })
-            {
-                if (view.Value.AdminRetired)
-                {
-                    // An account has claimed admin — tell the holder who took over.
-                    _retiredByName = view.Value.AdminClaimedByName ?? L["Someone"];
-                }
-                else
-                {
-                    // A live admin link: adopt it on this device (co-organizer) and open the group.
-                    var groupId = await Shared.AdoptAdminAsync(token);
-                    if (groupId is { } id)
-                    {
-                        Navigation.NavigateTo($"groups/{id}");
-                        return;
-                    }
-                }
-            }
+            Navigation.NavigateTo($"groups/{groupId}");
+            return;
         }
 
         _resolved = true;
     }
 
-    private string? ReadToken()
+    // The link's parts ride the fragment ("the link is the secret"), so they never reach a server log.
+    private Dictionary<string, string> ReadFragment()
     {
-        var fragment = new Uri(Navigation.Uri).Fragment.TrimStart('#');
-        foreach (var pair in fragment.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        var parts = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var pair in new Uri(Navigation.Uri).Fragment.TrimStart('#').Split('&', StringSplitOptions.RemoveEmptyEntries))
         {
             var kv = pair.Split('=', 2);
-            if (kv.Length == 2 && kv[0] == "t")
+            if (kv.Length == 2)
             {
-                return Uri.UnescapeDataString(kv[1]);
+                parts[kv[0]] = Uri.UnescapeDataString(kv[1]);
             }
         }
 
-        return null;
+        return parts;
     }
 }

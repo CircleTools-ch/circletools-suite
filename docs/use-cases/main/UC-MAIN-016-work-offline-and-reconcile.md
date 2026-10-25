@@ -91,7 +91,7 @@ queued changes exist.
   ([NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)) and must read as
   reassurance ("saved on this device") rather than alarm.
 - **Privacy:** unchanged from
-  [UC-MAIN-015](UC-MAIN-015-sync-across-devices.md) — offline changes to a claimed group reach the
+  [UC-MAIN-015](UC-MAIN-015-sync-across-devices.md) — offline changes to an online group reach the
   server when the connection does.
 - **Performance:** an offline edit is as fast as an account-free one; there is no waiting on a
   network call in the write path.

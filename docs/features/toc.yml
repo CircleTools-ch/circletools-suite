@@ -100,6 +100,10 @@
   href: FEAT-026-own-entry-from-the-reveal-link.md
 - name: TP-026 Own entry from the reveal link test plan
   href: TP-026-own-entry-from-the-reveal-link.md
+- name: FEAT-027 One way to be in a group
+  href: FEAT-027-one-way-to-be-in-a-group.md
+- name: TP-027 One way to be in a group test plan
+  href: TP-027-one-way-to-be-in-a-group.md
 - name: Templates
   items:
     - name: Feature spec template

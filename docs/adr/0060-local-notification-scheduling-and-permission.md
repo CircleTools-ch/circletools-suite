@@ -139,6 +139,25 @@ after a draw — is now **stored** as a wish on the device, not only kept by the
 or returns to the foreground with notifications allowed, the reminder scheduler switches the wished kinds on
 and forgets the wishes; changing that kind's switch later replaces the wish.
 
+### Amendment (2026-10-21) — a late reminder is still shown on its day
+
+From the [re-check on the release build](../brainstorming/2026-10-20-secret-santa-release-device-test.md)
+(part 3, R17): a reminder for 15:30 was fired by Android at about 15:36 and never appeared. Plugin.LocalNotification
+shows a notification only if the alarm fires at most `AndroidScheduleOptions.AllowedDelay` after its time,
+and that defaults to **one minute**; anything later is dropped without a trace. Because the app deliberately
+holds no exact-alarm permission (`SCHEDULE_EXACT_ALARM` is restricted on Google Play), Android fires the
+alarm inexactly, here 12 minutes to an hour late. "A nudge, not a guarantee" (above) assumed a late nudge, not
+a lost one.
+
+- Every reminder is now shown **until the end of the day it was meant for**
+  (`ScheduledNotification.ShowUntil`, in the reminder's own local offset), and never on a later day, where
+  "the event is tomorrow" would be wrong. The MAUI head passes that window as `AllowedDelay`.
+- The alarm uses **`InexactAllowWhileIdle`** (`setAndAllowWhileIdle`), so Doze can't hold it back for hours.
+  It stays inexact, and the app still asks for no exact-alarm permission.
+- Reminders scheduled by an older build keep the one-minute window until they fire or are replanned. The
+  reconcile can't tell them apart, because the pending list doesn't report the window. Accepted: lead times
+  are days, so few are affected.
+
 ## Pros and cons of the options
 
 ### Axis 1 — Device-local only (chosen)

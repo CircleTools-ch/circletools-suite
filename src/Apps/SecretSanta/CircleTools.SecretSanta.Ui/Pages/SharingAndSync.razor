@@ -1,12 +1,12 @@
 @page "/groups/{GroupId:guid}/sharing"
 @using CircleTools.SecretSanta.Core.Application
 @using CircleTools.SecretSanta.Core.Reveal
-@using CircleTools.SecretSanta.LocalStore
+@using CircleTools.SecretSanta.LocalStore.Online
 @using CircleTools.Ui.Account.Auth
 @using Microsoft.AspNetCore.Components.Authorization
 @inject ISender Sender
-@inject ILocalSyncStore Local
-@inject SharedSyncService Shared
+@inject IGroupRecordStore Records
+@inject OnlineGroupSync Online
 @inject RevealLinkOptions RevealOptions
 @inject IDialogService Dialogs
 @inject IShareService ShareService
@@ -14,9 +14,15 @@
 @inject AuthenticationStateProvider Auth
 @inject ISnackbar Snackbar
 @inject IStringLocalizer<AppStrings> L
-@inject SyncService Sync
 @inject AutoSyncService AutoSync
+@inject GroupRemoval Removal
 @inject NavigationManager Navigation
+
+@*
+    Where a group lives and who can get in (ADR-0086): on this device or online; for an online group, the join link
+    as an on/off setting, and who organizes it — an account, or a management link this device keeps. What a device
+    may do here follows the permissions the server reported, never a role name.
+*@
 
 <PageTitle>@L["SharingTitle"]</PageTitle>
 
@@ -24,21 +30,19 @@
 
 <MudText Typo="Typo.h4" GutterBottom="true">@L["SharingTitle"]</MudText>
 
-@if (_loaded && _groupName is null)
-{
-    <MudText>@L["GroupNotFound"]</MudText>
-}
-else if (!_loaded)
+@if (!_loaded)
 {
     <MudText>@L["Loading"]</MudText>
 }
-else if (_joinOnly)
+else if (_record is null)
 {
-    @* A participant doesn't choose where the group lives or manage its links: those belong to the organizer.
-       Turning the group into a local copy would make them its organizer, with everyone's reveal links
-       (ADR-0080, Q1). What they can do is leave. *@
+    <MudText>@L["GroupNotFound"]</MudText>
+}
+else if (_record.Document is null)
+{
+    @* Someone taking part doesn't choose where the group lives or manage its links; they can leave. *@
     <MudAlert Severity="Severity.Info" Class="mb-3" id="participant-sharing">
-        @(_claimedName is { } name ? L["YouAreMember", name] : L["ParticipantReadOnlyNote"])
+        @(_record.View?.MemberName is { } name ? L["YouAreMember", name] : L["ParticipantReadOnlyNote"])
     </MudAlert>
     <MudText Class="mud-text-secondary mb-4">@L["ParticipantSharingLead"]</MudText>
     <MudButton Variant="Variant.Outlined" Color="Color.Error" StartIcon="@Icons.Material.Filled.Logout"
@@ -49,8 +53,8 @@ else
     <MudText Class="mud-text-secondary mb-4">@L["SharingLead"]</MudText>
 
     <div class="mb-2"><MudText Typo="Typo.overline">@L["StorageModeLabel"]</MudText></div>
-    <MudPaper Elevation="0" Outlined="true" Class="pa-3 mb-2" Style="@(_busy ? "opacity:0.6;pointer-events:none" : null)">
-        <StorageModePicker Value="_mode" ValueChanged="OnModeChosenAsync" AccountEnabled="_signedIn" />
+    <MudPaper Elevation="0" Outlined="true" Class="pa-3 mb-2" Style="@(_busy || !CanChangePlace ? "opacity:0.6;pointer-events:none" : null)">
+        <StorageModePicker Value="_record.Place" ValueChanged="OnPlaceChosenAsync" AccountEnabled="_signedIn" />
     </MudPaper>
     @if (_busy)
     {
@@ -60,17 +64,14 @@ else
         </div>
     }
 
-    @if (_kind == StorageKind.Account)
+    @if (_record is { Place: GroupPlace.Online, Access: { } access })
     {
-        <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true" id="account-owned">@L["AccountOwnedNote"]</MudAlert>
-    }
+        @if (access.Principal == AccessPrincipal.Account)
+        {
+            <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true" id="account-owned">@L["AccountOwnedNote"]</MudAlert>
+        }
 
-    @* In the account and shared (ADR-0081): the join link invites people, from any of the owner's devices
-       (ADR-0078 Amendment 3); handing it over without an account is an explicit, secondary action (Q15). *@
-    @if (_kind == StorageKind.AccountShared)
-    {
-        <MudAlert Severity="Severity.Success" Class="mb-3" Dense="true" id="account-owned">@L["AccountSharedNote"]</MudAlert>
-        @if (_tokens?.JoinToken is { } ownerJoinToken)
+        @if (access.Can(OnlinePermissions.ManageLinks))
         {
             <MudCard Elevation="1" Class="mb-3" id="join-link-card">
                 <MudCardContent class="pb-2">
@@ -79,63 +80,54 @@ else
                         <MudText Typo="Typo.subtitle1"><strong>@L["JoinLink"]</strong></MudText>
                     </div>
                     <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["JoinLinkHint"]</MudText>
-                    @LinkActions(JoinUrl(ownerJoinToken), L["JoinLink"])
+                    <MudSwitch T="bool" Value="@(access.JoinToken is not null)" ValueChanged="SetJoinLinkAsync" Disabled="_busy"
+                               Color="Color.Primary" Label="@L["JoinLinkSwitch"]" id="join-link-switch" />
+                    @if (access.JoinToken is { } joinToken)
+                    {
+                        @LinkActions(JoinUrl(joinToken), L["JoinLink"])
+                        <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.Autorenew" Class="mt-1"
+                                   OnClick="RotateJoinLinkAsync" Disabled="_busy" id="rotate-join">@L["RotateJoinLink"]</MudButton>
+                    }
                 </MudCardContent>
             </MudCard>
         }
 
-        <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyOff"
-                   OnClick="ReleaseToLinkAsync" Disabled="_busy" id="release-to-link">@L["ReleaseToLinkAction"]</MudButton>
-        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mb-3">@L["ReleaseToLinkActionHint"]</MudText>
-    }
-
-    @if (_kind == StorageKind.Link && _tokens is not null)
-    {
-        <MudText Class="mud-text-secondary mb-3">@L["SharingSharedLead"]</MudText>
-
-        @* Signed in with a group that has no owner: offer to keep it in the account (ADR-0081). *@
-        @if (_signedIn && _tokens.AdminToken is not null)
+        @if (access.Principal == AccessPrincipal.OrganizerLink)
         {
-            <MudAlert Severity="Severity.Info" Class="mb-3" Dense="true" id="keep-in-account">
-                <div class="d-flex flex-wrap align-center gap-2">
-                    <span>@L["LinkNotInAccountNote"]</span>
-                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-                               OnClick="KeepInAccountAsync" Disabled="_busy">@L["KeepInAccount"]</MudButton>
-                </div>
-            </MudAlert>
-        }
-
-        @if (_tokens.AdminToken is { } adminToken)
-        {
-            <MudCard Elevation="1" Class="mb-3" id="admin-link-card">
-                <MudCardContent class="pb-2">
-                    <div class="d-flex align-center gap-2 mb-1">
-                        <MudIcon Icon="@Icons.Material.Filled.Shield" Color="Color.Error" />
-                        <MudText Typo="Typo.subtitle1"><strong>@L["AdminLink"]</strong></MudText>
+            @* Organized without an account (ADR-0086, decision D1): signed in, offer to keep it in the account. *@
+            @if (_signedIn)
+            {
+                <MudAlert Severity="Severity.Info" Class="mb-3" Dense="true" id="keep-in-account">
+                    <div class="d-flex flex-wrap align-center gap-2">
+                        <span>@L["LinkNotInAccountNote"]</span>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                   OnClick="TakeOverAsync" Disabled="_busy">@L["KeepInAccount"]</MudButton>
                     </div>
-                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["AdminLinkHint"]</MudText>
-                    @LinkActions(AdminUrl(adminToken), L["AdminLink"])
-                    <MudDivider Class="my-2" />
-                    <div class="d-flex flex-wrap gap-2">
+                </MudAlert>
+            }
+
+            @if (access.Secret is { } organizerToken)
+            {
+                <MudCard Elevation="1" Class="mb-3" id="admin-link-card">
+                    <MudCardContent class="pb-2">
+                        <div class="d-flex align-center gap-2 mb-1">
+                            <MudIcon Icon="@Icons.Material.Filled.Shield" Color="Color.Error" />
+                            <MudText Typo="Typo.subtitle1"><strong>@L["AdminLink"]</strong></MudText>
+                        </div>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["AdminLinkHint"]</MudText>
+                        @LinkActions(AdminUrl(organizerToken), L["AdminLink"])
+                        <MudDivider Class="my-2" />
                         <MudButton Variant="Variant.Outlined" Size="Size.Small" StartIcon="@Icons.Material.Filled.Autorenew"
-                                   OnClick="RotateAsync" id="rotate-admin">@L["DisableRegenerate"]</MudButton>
-                    </div>
-                </MudCardContent>
-            </MudCard>
+                                   OnClick="RotateOrganizerLinkAsync" Disabled="_busy" id="rotate-admin">@L["DisableRegenerate"]</MudButton>
+                    </MudCardContent>
+                </MudCard>
+            }
         }
-
-        @if (_tokens.JoinToken is { } joinToken)
+        else if (access.Can(OnlinePermissions.ManageRoles))
         {
-            <MudCard Elevation="1" Class="mb-3" id="join-link-card">
-                <MudCardContent class="pb-2">
-                    <div class="d-flex align-center gap-2 mb-1">
-                        <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Color="Color.Primary" />
-                        <MudText Typo="Typo.subtitle1"><strong>@L["JoinLink"]</strong></MudText>
-                    </div>
-                    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@L["JoinLinkHint"]</MudText>
-                    @LinkActions(JoinUrl(joinToken), L["JoinLink"])
-                </MudCardContent>
-            </MudCard>
+            <MudButton Variant="Variant.Text" Size="Size.Small" StartIcon="@Icons.Material.Filled.KeyOff"
+                       OnClick="HandOverAsync" Disabled="_busy" id="release-to-link">@L["ReleaseToLinkAction"]</MudButton>
+            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mb-3">@L["ReleaseToLinkActionHint"]</MudText>
         }
     }
 }
@@ -149,18 +141,13 @@ else
     private bool _busy;
     private bool _signedIn;
     private Guid _accountId;
-    private string? _groupName;
-    private StorageMode _mode;
-    private SharedGroupTokens? _tokens;
-    // Set when the group is synced into the account through the account sync store (as opposed to a
-    // shared-by-link group whose admin was claimed into the account, which keeps its join token).
-    private Guid? _accountScope;
-    private Guid? _adminAccount;
-    // This device only joined the group with its join link (ADR-0058): the participant view (ADR-0080).
-    private bool _joinOnly;
-    private StorageKind _kind;
-    private string? _claimedName;
+    private GroupRecord? _record;
     private string? _copiedUrl;
+    private bool _canShare;
+
+    // Leaving a device group needs nothing; making an online group local needs the delete permission.
+    private bool CanChangePlace => _record is { Place: GroupPlace.Device }
+        || _record?.Access?.Can(OnlinePermissions.DeleteGroup) == true;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -172,274 +159,95 @@ else
 
     private async Task LoadAsync()
     {
-        var group = await Sender.Send(new GetGroupQuery(GroupId));
-        _groupName = group?.Name;
-
-        var record = (await Local.LoadGroupsAsync()).FirstOrDefault(r => r.State.Id == GroupId);
-        _mode = record?.Mode ?? StorageMode.OnThisDevice;
-        _tokens = record?.Tokens;
-        _accountScope = record?.AccountScope;
-        _adminAccount = record?.AdminAccount;
-        _joinOnly = record is not null && record.IsJoinOnly();
-        _kind = record is null ? StorageKind.Device : StorageModeDisplay.KindOf(record);
-        _claimedName = record?.ClaimedMemberId is { } me ? record.State.Members.FirstOrDefault(m => m.Id == me)?.Name : null;
-        // A group synced into the account reads as "My account" even if its stored intent predates the
-        // Mode field being set on claim (ADR-0073 follow-up 3) — the same rule the groups list uses.
-        if (_accountScope is not null)
-        {
-            _mode = StorageMode.Account;
-        }
-
-        // The picker's value (ADR-0081): signed in, "shared" is the account-owned shared group, and a link-only
-        // group shows as shared too (with an offer to keep it in the account).
-        _mode = _kind switch
-        {
-            StorageKind.AccountShared => _signedIn ? StorageMode.SharedByLink : StorageMode.Account,
-            StorageKind.Link => StorageMode.SharedByLink,
-            StorageKind.Account => StorageMode.Account,
-            _ => StorageMode.OnThisDevice,
-        };
-
+        _record = (await Records.LoadAsync()).Records.FirstOrDefault(r => r.Id == GroupId);
         _loaded = true;
-    }
-
-    // Leaving releases this participant's claim on the server, so the organizer sees them as not joined, and
-    // removes the group from this device (ADR-0080, Q1). It needs the server, so it is refused offline.
-    private async Task LeaveAsync()
-    {
-        if (_groupName is null
-            || !await Dialogs.ShowConfirmSheetAsync(L["LeaveGroupConfirm", _groupName], L["LeaveGroupConfirmYes"], L["Cancel"]))
-        {
-            return;
-        }
-
-        _busy = true;
-        var left = await Shared.LeaveAsync(GroupId);
-        _busy = false;
-        if (!left)
-        {
-            Snackbar.Add(L["LeaveGroupOffline"], Severity.Warning);
-            return;
-        }
-
-        AutoSync.RequestSync();
-        Snackbar.Add(L["LeftGroup", _groupName], Severity.Success);
-        Navigation.NavigateTo(string.Empty);
     }
 
     private string Base => RevealOptions.BaseUrl.TrimEnd('/');
 
-    private string AdminUrl(string token) => $"{Base}/admin#t={token}";
+    private string AdminUrl(string token) => $"{Base}/admin#g={GroupId}&t={token}";
 
     private string JoinUrl(string token) => $"{Base}/join#t={token}";
 
-    private async Task OnModeChosenAsync(StorageMode mode)
+    private async Task OnPlaceChosenAsync(GroupPlace place)
     {
-        if (mode == _mode || _busy)
+        if (_record is null || place == _record.Place || _busy)
         {
             return;
         }
 
-        if (_signedIn)
+        if (place == GroupPlace.Online)
         {
-            await OnSignedInChoiceAsync(mode);
-            return;
-        }
-
-        // Signed out (ADR-0058): On this device ⇄ Shared by link, account-free.
-        if (mode == StorageMode.SharedByLink && _kind == StorageKind.Device)
-        {
-            if (await Dialogs.ShowConfirmSheetAsync(L["ShareByLinkConfirm"], L["ShareByLinkConfirmYes"], L["Cancel"], Color.Primary))
+            var question = _signedIn ? L["MakeOnlineConfirm"] : L["MakeOnlineSignedOutConfirm"];
+            if (await Dialogs.ShowConfirmSheetAsync(question, L["MakeOnlineConfirmYes"], L["Cancel"], Color.Primary))
             {
-                await RunAsync(async () => await Shared.ShareByLinkAsync(GroupId) is not null);
+                await RunAsync(async () => (await Online.MakeOnlineAsync(GroupId, _signedIn ? _accountId : null, joinEnabled: false)).IsSuccess);
             }
-
-            return;
         }
-
-        if (mode == StorageMode.OnThisDevice && _kind == StorageKind.Link)
+        else if (await Dialogs.ShowConfirmSheetAsync(L["KeepOnDeviceConfirm"], L["KeepOnDeviceConfirmYes"], L["Cancel"]))
         {
-            await MakeLocalAsync();
-            return;
+            await RunAsync(async () => (await Online.KeepOnDeviceAsync(GroupId)).IsSuccess);
         }
 
-        // Any other combination is not offered (e.g. My account while signed out — the option is disabled).
-        // Reload so the picker never shows a mode the group is not in.
         await LoadAsync();
     }
 
-    // Signed in (ADR-0081), the choices are On this device / My account / My account · shared — the last one
-    // carried by StorageMode.SharedByLink: a group owned by the account that others join with a link.
-    private async Task OnSignedInChoiceAsync(StorageMode mode)
+    private Task SetJoinLinkAsync(bool enabled) =>
+        RunAsync(async () => (await Online.SetJoinLinkAsync(GroupId, enabled)).IsSuccess);
+
+    private async Task RotateJoinLinkAsync()
     {
-        switch (mode, _kind)
+        if (await Dialogs.ShowConfirmSheetAsync(L["RotateJoinConfirm"], L["RotateJoinConfirmYes"], L["Cancel"], Color.Primary))
         {
-            // Invite people from a local group: shared and claimed into the account in one step.
-            case (StorageMode.SharedByLink, StorageKind.Device):
-                if (await Dialogs.ShowConfirmSheetAsync(L["InviteConfirm"], L["InviteConfirmYes"], L["Cancel"], Color.Primary))
-                {
-                    await RunAsync(() => Shared.ShareOwnedAsync(_accountId, GroupId));
-                }
-
-                return;
-
-            // Invite people from a My-account group: it leaves the account store and comes back owned and shared.
-            case (StorageMode.SharedByLink, StorageKind.Account):
-                if (await Dialogs.ShowConfirmSheetAsync(L["InviteConfirm"], L["InviteConfirmYes"], L["Cancel"], Color.Primary))
-                {
-                    await RunAsync(async () =>
-                    {
-                        if (!await LeaveAccountAsync())
-                        {
-                            return false;
-                        }
-
-                        var shared = await Shared.ShareOwnedAsync(_accountId, GroupId);
-                        AutoSync.RequestSync();
-                        return shared;
-                    });
-                }
-
-                return;
-
-            // A link-only group this device can manage: keep it in the account (claim admin). Also the answer
-            // when such a group is moved to "My account".
-            case (StorageMode.SharedByLink or StorageMode.Account, StorageKind.Link) when _tokens?.AdminToken is not null:
-                await KeepInAccountAsync();
-                return;
-
-            // On this device → My account: record the intent; the next sync cycle claims (uploads) it, which also
-            // works offline (ADR-0073). Kick a sync so a connected device does it right away.
-            case (StorageMode.Account, StorageKind.Device):
-                if (await Dialogs.ShowConfirmSheetAsync(L["MoveToAccountConfirm"], L["MoveToAccountConfirmYes"], L["Cancel"], Color.Primary))
-                {
-                    await RunAsync(async () =>
-                    {
-                        await Sync.MarkForAccountAsync(_accountId, GroupId);
-                        AutoSync.RequestSync();
-                        return true;
-                    });
-                }
-
-                return;
-
-            // Stop sharing: the online copy goes, joined people lose it, the group goes back to the account store.
-            case (StorageMode.Account, StorageKind.AccountShared):
-                if (await Dialogs.ShowConfirmSheetAsync(L["StopSharingConfirm"], L["StopSharingConfirmYes"], L["Cancel"]))
-                {
-                    await RunAsync(async () =>
-                    {
-                        if (!await Shared.StopSharingAsync(GroupId))
-                        {
-                            return false;
-                        }
-
-                        await Sync.MarkForAccountAsync(_accountId, GroupId);
-                        AutoSync.RequestSync();
-                        return true;
-                    });
-                }
-
-                return;
-
-            case (StorageMode.OnThisDevice, StorageKind.Link):
-                await MakeLocalAsync();
-                return;
-
-            // My account (either kind) → On this device (UX review B9): the group leaves the account and the server;
-            // this device keeps its copy and the account's other devices drop it.
-            case (StorageMode.OnThisDevice, StorageKind.Account or StorageKind.AccountShared):
-                var question = _kind == StorageKind.AccountShared ? L["AccountSharedToLocalConfirm"] : L["AccountToLocalConfirm"];
-                if (await Dialogs.ShowConfirmSheetAsync(question, L["AccountToLocalConfirmYes"], L["Cancel"]))
-                {
-                    await RunAsync(async () => _kind == StorageKind.AccountShared
-                        ? await Shared.StopSharingAsync(GroupId)
-                        : await LeaveAccountAsync());
-                }
-
-                return;
-
-            default:
-                await LoadAsync();
-                return;
+            await RunAsync(async () => (await Online.SetJoinLinkAsync(GroupId, enabled: true, rotate: true)).IsSuccess);
         }
     }
 
-    private async Task MakeLocalAsync()
+    // A group organized by its management link, while signed in: keep it in the account (the link stops working).
+    private async Task TakeOverAsync()
     {
-        if (await Dialogs.ShowConfirmSheetAsync(L["MakeLocalConfirm"], L["MakeLocalConfirmYes"], L["Cancel"]))
+        if (await Dialogs.ShowConfirmSheetAsync(L["ClaimAdminConfirm"], L["ClaimAdminConfirmYes"], L["Cancel"], Color.Primary))
+        {
+            await RunAsync(async () => (await Online.TakeOverAsync(GroupId, _accountId)).IsSuccess);
+        }
+    }
+
+    // Hand an account-owned group over to a management link, so co-organizers can use it (ADR-0058, Q15).
+    private async Task HandOverAsync()
+    {
+        if (await Dialogs.ShowConfirmSheetAsync(L["ReleaseToLinkConfirm"], L["ReleaseToLinkConfirmYes"], L["Cancel"], Color.Primary))
+        {
+            await RunAsync(async () => (await Online.HandOverAsync(GroupId)).IsSuccess);
+        }
+    }
+
+    private async Task RotateOrganizerLinkAsync()
+    {
+        if (await Dialogs.ShowConfirmSheetAsync(L["RotateAdminConfirm"], L["RotateAdminConfirmYes"], L["Cancel"], Color.Primary))
         {
             await RunAsync(async () =>
             {
-                await Shared.MakeLocalAsync(GroupId);
-                return true;
+                var rotated = await Online.RotateOrganizerLinkAsync(GroupId);
+                return rotated.IsSuccess;
             });
         }
     }
 
-    // A link-only group (admin token, no owner) while signed in: claim it into the account (ADR-0058, ADR-0081).
-    private async Task KeepInAccountAsync()
+    private async Task LeaveAsync()
     {
-        if (await Dialogs.ShowConfirmSheetAsync(L["ClaimAdminConfirm"], L["ClaimAdminConfirmYes"], L["Cancel"], Color.Primary))
+        if (await Removal.AskAndRemoveAsync(GroupId, _record?.View?.GroupName ?? string.Empty))
         {
-            await RunAsync(() => Shared.ClaimAdminToAccountAsync(_accountId, GroupId));
+            Navigation.NavigateTo(string.Empty);
         }
     }
 
-    // Hand an owned shared group over to links without an account, so co-organizers can use a management link
-    // (ADR-0058 release-admin; worded per Q15).
-    private async Task ReleaseToLinkAsync()
-    {
-        if (await Dialogs.ShowConfirmSheetAsync(L["ReleaseToLinkConfirm"], L["ReleaseToLinkConfirmYes"], L["Cancel"], Color.Primary))
-        {
-            await RunAsync(() => Shared.ReleaseToLinkAsync(GroupId));
-        }
-    }
-
-    // A "My account" group that is a shared group whose admin the account claimed (ADR-0058), as opposed to
-    // one synced (or waiting to be synced) through the account store. Recorded since ADR-0078; a legacy
-    // record falls back to the tokens a claim-admin keeps on the device that made it.
-    private bool IsAdminClaimedShared => _accountScope is null && (_adminAccount is not null || _tokens is not null);
-
-    // Removes the group from the account and keeps the local copy (FR-038). A group marked "My account" but
-    // not yet uploaded (created offline) has nothing on the server, so only its intent is reset.
-    private async Task<bool> LeaveAccountAsync()
-    {
-        if (_accountScope is not null)
-        {
-            var outcome = await Sync.UnclaimAsync(_accountId, GroupId);
-            return outcome.Status == SyncStatus.Synced;
-        }
-
-        var records = (await Local.LoadGroupsAsync()).ToList();
-        var index = records.FindIndex(r => r.State.Id == GroupId);
-        if (index < 0)
-        {
-            return false;
-        }
-
-        records[index] = records[index] with { Mode = StorageMode.OnThisDevice, PendingClaimAccount = null };
-        await Local.SaveGroupsAsync(records);
-        return true;
-    }
-
-    private async Task RotateAsync()
-    {
-        if (await Dialogs.ShowConfirmSheetAsync(L["RotateAdminConfirm"], L["RotateAdminConfirmYes"], L["Cancel"], Color.Primary))
-        {
-            await RunAsync(async () => await Shared.RotateAdminAsync(GroupId) is not null);
-        }
-    }
-
-    // Runs a storage-mode transition with a visible busy state and a success/failure snackbar. The
-    // shared-sync engine turns an unreachable or erroring server into a false/null result rather than
-    // an exception (see SharedSyncService), so a silent revert used to look like "nothing happened":
-    // here we surface it. Whatever the outcome, we reload so the picker reflects what actually persisted.
+    // Runs a change with a visible busy state and a success/failure snackbar: an unreachable server is a failed
+    // result, not an exception, so a silent revert would look like "nothing happened". Reloads afterwards so the
+    // page shows what actually persisted.
     private async Task RunAsync(Func<Task<bool>> action)
     {
         _busy = true;
         StateHasChanged();
-
         var succeeded = false;
         try
         {
@@ -454,6 +262,11 @@ else
             _busy = false;
             await LoadAsync();
             StateHasChanged();
+        }
+
+        if (succeeded)
+        {
+            AutoSync.RequestSync();
         }
 
         Snackbar.Add(
@@ -476,8 +289,6 @@ else
                        StartIcon="@Icons.Material.Filled.QrCode2" OnClick="() => ShowQrAsync(label, url)">@L["ShowQr"]</MudButton>
         </div>
     </div>;
-
-    private bool _canShare;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

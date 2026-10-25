@@ -17,6 +17,9 @@
   <Folder Name="/src/Apps/SecretSanta/">
     <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.Contracts/CircleTools.SecretSanta.Contracts.csproj" />
     <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.Core/CircleTools.SecretSanta.Core.csproj" />
+    <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.Service.Core/CircleTools.SecretSanta.Service.Core.csproj" />
+    <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.Service.Repository/CircleTools.SecretSanta.Service.Repository.csproj" />
+    <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.Service/CircleTools.SecretSanta.Service.csproj" />
     <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.LocalStore/CircleTools.SecretSanta.LocalStore.csproj" />
     <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.Ui/CircleTools.SecretSanta.Ui.csproj" />
     <Project Path="src/Apps/SecretSanta/CircleTools.SecretSanta.WebApp/CircleTools.SecretSanta.WebApp.csproj" />
@@ -61,6 +64,7 @@
   </Folder>
   <Folder Name="/tests/Apps/SecretSanta/">
     <Project Path="tests/Apps/SecretSanta/CircleTools.SecretSanta.Core.Test/CircleTools.SecretSanta.Core.Test.csproj" />
+    <Project Path="tests/Apps/SecretSanta/CircleTools.SecretSanta.Service.Core.Test/CircleTools.SecretSanta.Service.Core.Test.csproj" />
     <Project Path="tests/Apps/SecretSanta/CircleTools.SecretSanta.LocalStore.Test/CircleTools.SecretSanta.LocalStore.Test.csproj" />
     <Project Path="tests/Apps/SecretSanta/CircleTools.SecretSanta.Ui.Test/CircleTools.SecretSanta.Ui.Test.csproj" />
   </Folder>

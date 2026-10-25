@@ -1,11 +1,10 @@
 @page "/groups/{GroupId:guid}/members"
 @using CircleTools.SecretSanta.Contracts
 @using CircleTools.SecretSanta.Core.Domain
-@using CircleTools.SecretSanta.LocalStore
-@using CircleTools.SecretSanta.LocalStore.Linking
-@using Microsoft.Extensions.DependencyInjection
+@using CircleTools.SecretSanta.LocalStore.Online
 @inject ISender Sender
-@inject ILinkingApi Linking
+@inject IGroupRecordStore Records
+@inject OnlineGroupSync Online
 @inject IServiceProvider Services
 @inject IStringLocalizer<AppStrings> L
 @inject IDialogService Dialogs
@@ -46,6 +45,11 @@ else
             </MudCardContent>
         </MudCard>
     </MudHidden>
+}
+
+@if (!_readOnly && !_online)
+{
+    <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3" id="members-online-hint">@L["MembersOnlineHint"]</MudText>
 }
 
 @if (_error is not null && _editingId is null)
@@ -96,14 +100,19 @@ else
                         <div class="d-flex justify-space-between align-center gap-2">
                             <div class="d-flex align-center flex-wrap gap-2" style="min-width:0;">
                                 <MudText Typo="Typo.subtitle1"><strong>@member.Name</strong></MudText>
-                                @* One badge for "sees the assignment in the app" (Q30), however they got there; the
-                                   tooltip says how. Members without it need a reveal link. *@
+                                @* One badge for "takes part — sees the assignment in the app" (Q30), however they got there;
+                                   an invitation still waiting shows as such. Members without either need a reveal link. *@
                                 @if (_connected.Contains(member.Id))
                                 {
-                                    <MudTooltip Text="@(_connected.Joined.Contains(member.Id) ? L["MemberConnectedJoined"] : L["MemberConnectedLinked"])">
+                                    <MudTooltip Text="@L["MemberConnectedLinked"]">
                                         <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text"
                                                  Icon="@Icons.Material.Filled.PhoneIphone">@L["MemberConnectedBadge"]</MudChip>
                                     </MudTooltip>
+                                }
+                                else if (_connected.Invited.Contains(member.Id))
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text"
+                                             Icon="@Icons.Material.Filled.MailOutline">@L["MemberInvitedBadge"]</MudChip>
                                 }
                                 @if (!string.IsNullOrWhiteSpace(member.GiftNote))
                                 {
@@ -120,35 +129,26 @@ else
                                 <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default"
                                          AriaLabel="@L["MoreActionsFor", member.Name]" AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
                                     <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => BeginEdit(member)">@L["Edit"]</MudMenuItem>
-                                    <AuthorizeView>
-                                        @if (member.UserId is not null)
+                                    @* Bringing people in needs an online group this device may manage participants of
+                                       (ADR-0086). Inviting, the organizer's own member and freeing a spot are all the same
+                                       participant underneath. *@
+                                    @if (_canManagePeople)
+                                    {
+                                        @if (_connected.IsTaken(member.Id))
                                         {
-                                            <MudMenuItem Icon="@Icons.Material.Filled.LinkOff" Disabled="@_linkBusy"
-                                                         OnClick="() => UnlinkAsync(member.Id)">@L["MemberUnlink"]</MudMenuItem>
+                                            <MudMenuItem Icon="@Icons.Material.Filled.PersonOff" Disabled="@_linkBusy"
+                                                         OnClick="() => AfterMenu(() => ReleaseMemberAsync(member.Id, member.Name))">@L["ReleaseMember"]</MudMenuItem>
                                         }
                                         else
                                         {
-                                            @* The one-click self-link is the simplest way to become this member: no
-                                               address, no email confirmation, and - because one account backs at most
-                                               one member per group - offered only while none of my members is me yet. *@
-                                            @if (!_iAmLinkedInGroup)
+                                            @if (_signedIn && _connected.Mine is null)
                                             {
                                                 <MudMenuItem Icon="@Icons.Material.Filled.AccountCircle" Disabled="@_linkBusy"
-                                                             OnClick="() => LinkWithMyAccountAsync(member)">@L["MemberLinkWithMyAccount"]</MudMenuItem>
+                                                             OnClick="() => ThisIsMeAsync(member)">@L["MemberLinkWithMyAccount"]</MudMenuItem>
                                             }
-                                            <MudMenuItem Icon="@Icons.Material.Filled.Link"
+                                            <MudMenuItem Icon="@Icons.Material.Filled.MailOutline"
                                                          OnClick="() => BeginLink(member.Id)">@L["MemberLink"]</MudMenuItem>
                                         }
-                                    </AuthorizeView>
-                                    @if (_isSharedAdmin && _claimedMembers.Contains(member.Id))
-                                    {
-                                        <MudMenuItem Icon="@Icons.Material.Filled.PersonOff" OnClick="() => AfterMenu(() => ReleaseMemberAsync(member.Id, member.Name))">@L["ReleaseMember"]</MudMenuItem>
-                                    }
-                                    else if (_canTakeOverEntries && _connected.SelfMaintained.Contains(member.Id))
-                                    {
-                                        @* Someone who keeps their wishlist from their reveal link has no spot to free (ADR-0084); the
-                                           organizer can still take the fields back. *@
-                                        <MudMenuItem Icon="@Icons.Material.Filled.EditNote" OnClick="() => AfterMenu(() => TakeOverEntryAsync(member.Id, member.Name))">@L["TakeOverEntry"]</MudMenuItem>
                                     }
                                     <MudMenuItem Icon="@Icons.Material.Filled.Delete" IconColor="Color.Error" OnClick="() => AfterMenu(() => AskRemoveAsync(member.Id, member.Name))">@L["Remove"]</MudMenuItem>
                                 </MudMenu>
@@ -211,15 +211,15 @@ else
     private Task<AuthenticationState>? AuthState { get; set; }
 
     private IReadOnlyList<MemberDto>? _members;
-    private bool _isSharedAdmin;
 
-    // A join-link participant sees the roster but only the organizer changes it (ADR-0058).
+    // A participant sees the roster but only the organizer changes it.
     private bool _readOnly;
-    private HashSet<Guid> _claimedMembers = [];
 
-    // Whether this device may hand a self-maintained entry back to the organizer (ADR-0084): the admin-link
-    // holder of a Shared-by-link group, or the owner of a My account · shared group.
-    private bool _canTakeOverEntries;
+    // The group is online, and this device may bring people in and free spots (ADR-0086).
+    private bool _online;
+    private bool _canManagePeople;
+    private bool _signedIn;
+
     private ConnectedMembers _connected = ConnectedMembers.None;
     private string _newName = string.Empty;
     private string? _error;
@@ -228,20 +228,12 @@ else
     private string _editName = string.Empty;
     private string _editGiftNote = string.Empty;
     private bool _hasCurrentDraw;
-    private string _groupName = string.Empty;
 
     private Guid? _linkingMemberId;
     private string _linkEmail = string.Empty;
     private bool _linkBusy;
     private Guid? _linkMessageId;
     private string? _linkMessage;
-    private Guid _myUserId;
-
-    // My account already backs a member of this group. One account backs at most one member per group, so
-    // once it does the "Link with my account" affordance disappears everywhere — only inviting an address remains.
-    private bool _iAmLinkedInGroup =>
-        _myUserId != Guid.Empty && (_members?.Any(m => m.UserId == _myUserId) ?? false);
-
     protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
 
     protected override async Task OnParametersSetAsync() => await LoadAsync();
@@ -259,80 +251,40 @@ else
 
     private async Task LoadAsync()
     {
-        if (AuthState is not null)
-        {
-            _myUserId = (await AuthState).User.UserId();
-        }
-
+        _signedIn = AuthState is not null && (await AuthState).User.UserId() != Guid.Empty;
         _readOnly = (await GroupAccess.ForAsync(Services, GroupId)).ReadOnly;
 
         var group = await Sender.Send(new GetGroupQuery(GroupId));
         _members = group?.Members ?? [];
         _hasCurrentDraw = group?.Events.Any(e => e.HasCurrentDraw) ?? false;
-        _groupName = group?.Name ?? string.Empty;
 
-        // For a shared-by-link group this device administers, load which members are claimed so the
-        // admin can see who has joined and free a spot (ADR-0058, the sole recovery path). Resolved
-        // defensively: a host without the sync engine (or a component test) simply omits the feature.
-        var local = Services.GetService<ILocalSyncStore>();
-        var sharedSync = Services.GetService<SharedSyncService>();
-        if (local is not null && sharedSync is not null)
-        {
-            var record = (await local.LoadGroupsAsync()).FirstOrDefault(r => r.State.Id == GroupId);
-            _isSharedAdmin = record is { Mode: StorageMode.SharedByLink, Tokens.AdminToken: not null };
-            _claimedMembers = _isSharedAdmin ? [.. await sharedSync.GetClaimedMembersAsync(GroupId)] : [];
-            _canTakeOverEntries = _isSharedAdmin || (record?.IsAdminClaimedShared() ?? false);
-        }
-
+        var record = (await Records.LoadAsync()).Records.FirstOrDefault(r => r.Id == GroupId);
+        _online = record is { Place: GroupPlace.Online };
+        _canManagePeople = record?.Access?.Can(OnlinePermissions.ManageParticipants) == true;
         _connected = group is null ? ConnectedMembers.None : await ConnectedMembers.ForAsync(Services, group);
     }
 
+    // Frees a spot or withdraws an invitation (FR-042); what the person wrote stays in the group.
     private async Task ReleaseMemberAsync(Guid memberId, string name)
     {
-        if (Services.GetService<SharedSyncService>() is { } sharedSync
-            && await Dialogs.ShowConfirmSheetAsync(L["ReleaseMemberConfirm", name], L["ReleaseMemberConfirmYes"], L["Cancel"], Color.Primary))
+        if (await Dialogs.ShowConfirmSheetAsync(L["ReleaseMemberConfirm", name], L["ReleaseMemberConfirmYes"], L["Cancel"], Color.Primary))
         {
-            await sharedSync.ReleasePersonAsync(GroupId, memberId);
+            _linkBusy = true;
+            var released = await Online.ReleaseAsync(GroupId, memberId);
+            _linkBusy = false;
+            _linkMessageId = memberId;
+            _linkMessage = released.IsSuccess ? null : L["MemberLinkFailed"].Value;
             await LoadAsync();
         }
     }
 
-    // Hands a reveal-link holder's own entry back to the organizer (ADR-0084): the server drops the entry, so
-    // the fields are editable here again. What they wrote stays in the group.
-    private async Task TakeOverEntryAsync(Guid memberId, string name)
+    // The organizer's own member (FR-032): connected to their account, so it shows on their other devices too.
+    private async Task ThisIsMeAsync(MemberDto member)
     {
-        if (Services.GetService<SharedSyncService>() is { } sharedSync
-            && await Dialogs.ShowConfirmSheetAsync(L["TakeOverEntryConfirm", name], L["TakeOverEntryConfirmYes"], L["Cancel"], Color.Primary))
-        {
-            await sharedSync.ReleasePersonAsync(GroupId, memberId);
-            await LoadAsync();
-        }
-    }
-
-    // The simple self-link: no address and no email confirmation. Establish it on the server (which takes
-    // the account from the bearer token), then set Member.UserId locally so the roster reflects it at once;
-    // the local edit rides the ordinary auto-sync, and the server's own resolution re-applies idempotently.
-    private async Task LinkWithMyAccountAsync(MemberDto member)
-    {
-        if (_linkBusy || _iAmLinkedInGroup)
-        {
-            return;
-        }
-
         _linkBusy = true;
         _linkMessageId = member.Id;
-        var result = await Linking.SelfLinkAsync(new SelfLinkRequest(GroupId, _groupName, member.Id, member.Name));
-
-        if (result.IsSuccess)
-        {
-            await Sender.Send(new LinkMemberCommand(GroupId, member.Id, _myUserId));
-            _linkMessage = L["MemberLinkSelfLinked"];
-        }
-        else
-        {
-            _linkMessage = L["MemberLinkFailed"];
-        }
-
+        var result = await Online.AddParticipantAsync(GroupId, new AddParticipantRequest(member.Id, ParticipantRoute.OwnMember));
+        _linkMessage = result.IsSuccess ? L["MemberLinkSelfLinked"] : L["MemberLinkFailed"];
         _linkBusy = false;
         await LoadAsync();
     }
@@ -371,44 +323,16 @@ else
         }
 
         _linkBusy = true;
-        var result = await Linking.SendMemberLinkAsync(
-            new SendMemberLinkRequest(GroupId, _groupName, member.Id, member.Name, email));
+        var result = await Online.AddParticipantAsync(GroupId, new AddParticipantRequest(member.Id, ParticipantRoute.Invitation, email));
         _linkBusy = false;
         _linkingMemberId = null;
         _linkMessageId = member.Id;
 
-        // "Request sent" whether or not the address has an account (NFR-005). A self-link says so and
-        // will apply on the next sync. A duplicate — the address already backs a member of this group —
-        // is refused at send time with an explicit error (ADR-0044).
+        // "Invitation sent" whether or not the address has an account (NFR-005); only an account already in the
+        // group is refused, with an explicit message.
         _linkMessage = result.IsSuccess
-            ? result.Value!.Outcome switch
-            {
-                MemberLinkOutcome.SelfLinked => L["MemberLinkSelfLinked"],
-                MemberLinkOutcome.AlreadyLinkedInGroup => L["MemberLinkAlreadyInGroup"],
-                _ => L["MemberLinkRequestSent"],
-            }
-            : L["MemberLinkFailed"];
-    }
-
-    private async Task UnlinkAsync(Guid memberId)
-    {
-        _linkBusy = true;
-        _linkMessageId = memberId;
-
-        // Tell the server (it clears the account's rows and emits the unlink resolution), then clear the
-        // link locally now so the roster reflects it immediately; the resolution re-applies idempotently.
-        var result = await Linking.UnlinkMemberAsync(GroupId, memberId);
-        if (result.IsSuccess)
-        {
-            await Sender.Send(new UnlinkMemberCommand(GroupId, memberId));
-            _linkMessage = L["MemberUnlinked"];
-        }
-        else
-        {
-            _linkMessage = L["MemberLinkFailed"];
-        }
-
-        _linkBusy = false;
+            ? L["MemberLinkRequestSent"]
+            : result.Error!.Failure == CircleTools.ApiClient.ApiFailure.Conflict ? L["MemberLinkAlreadyInGroup"] : L["MemberLinkFailed"];
         await LoadAsync();
     }
 

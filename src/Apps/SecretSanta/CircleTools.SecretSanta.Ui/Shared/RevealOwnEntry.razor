@@ -1,6 +1,6 @@
-@using CircleTools.Main.Contracts
-@using CircleTools.SecretSanta.LocalStore
-@inject ISharedGroupApi Api
+@using CircleTools.SecretSanta.Contracts
+@using CircleTools.SecretSanta.LocalStore.Online
+@inject IOnlineGroupApi Api
 @inject IStringLocalizer<AppStrings> L
 @inject ISnackbar Snackbar
 @implements IAsyncDisposable
@@ -39,7 +39,7 @@
                 })
             </MudText>
         }
-        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">@L["RevealOwnEntryDelay"]</MudText>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2">@L["RevealOwnEntryLive"]</MudText>
     </MudPaper>
 }
 
@@ -197,7 +197,7 @@
             var items = wishlist.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             _status = SaveStatus.Saving;
 
-            var result = await Api.WriteRevealEntryAsync(RevealToken, new RevealEntryWrite(giftNote, items));
+            var result = await Api.WriteRevealEntryAsync(RevealToken, new RevealEntry(giftNote, items));
             if (result.IsSuccess)
             {
                 _savedWishlist = wishlist;

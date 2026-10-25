@@ -4,6 +4,9 @@ using CircleTools.Circles.Contracts;
 using CircleTools.SecretSanta.Contracts;
 using CircleTools.SecretSanta.Core.Application;
 using CircleTools.SecretSanta.LocalStore.Linking;
+using CircleTools.SecretSanta.LocalStore.Online;
+using CircleTools.Ui.Account.Auth;
+using Microsoft.AspNetCore.Components.Authorization;
 
 namespace CircleTools.SecretSanta.Ui;
 
@@ -15,8 +18,13 @@ namespace CircleTools.SecretSanta.Ui;
 /// </summary>
 /// <param name="circles">The read-only circle directory on the Main API.</param>
 /// <param name="sender">The command dispatcher.</param>
-/// <param name="linking">The linking surface client, to register the account-backed links server-side.</param>
-public sealed class CreateFromCircleService(ICircleDirectoryApi circles, ISender sender, ILinkingApi linking)
+/// <param name="online">Puts the new group online and brings the circle's people in as participants (ADR-0086).</param>
+/// <param name="auth">The signed-in organizer.</param>
+public sealed class CreateFromCircleService(
+    ICircleDirectoryApi circles,
+    ISender sender,
+    OnlineGroupSync online,
+    AuthenticationStateProvider auth)
 {
     /// <summary>Lists the circles the caller belongs to, for the chooser.</summary>
     public Task<ApiResult<IReadOnlyList<CircleSummaryResponse>>> GetCirclesAsync(CancellationToken cancellationToken = default) =>
@@ -43,20 +51,22 @@ public sealed class CreateFromCircleService(ICircleDirectoryApi circles, ISender
         var people = chosen.Select(ToInput).ToList();
         var result = await sender.Send(new CreateGroupFromCircleCommand(groupName, people), cancellationToken);
 
-        // The command set Member.UserId locally; register each of those links server-side so the linked
-        // person owns their wishlist and their reads are authorized. Re-read the group to learn the
-        // member ids the command minted. The link is registered against the shared circle, which the
-        // server verifies (FR-027, ADR-0018).
-        var group = await sender.Send(new GetGroupQuery(result.GroupId), cancellationToken);
-        if (group is not null)
+        // A group made from a circle is for the people in it, so it goes online at once (ADR-0086), owned by the
+        // signed-in organizer. Everyone in the circle with an account takes part right away — verified against the
+        // shared circle by the server (FR-027, ADR-0018); the organizer's own member is theirs. Best-effort: offline,
+        // the group stays on this device and can be put online later.
+        var me = (await auth.GetAuthenticationStateAsync()).User.UserId();
+        if (me == Guid.Empty || !(await online.MakeOnlineAsync(result.GroupId, me, joinEnabled: false, cancellationToken)).IsSuccess)
         {
-            foreach (var member in group.Members.Where(m => m.UserId is not null))
-            {
-                await linking.RegisterCircleLinkAsync(
-                    new RegisterCircleLinkRequest(
-                        result.GroupId, groupName, member.Id, member.Name, circleId, member.UserId!.Value),
-                    cancellationToken);
-            }
+            return result;
+        }
+
+        foreach (var account in result.Accounts)
+        {
+            var request = account.AccountId == me
+                ? new AddParticipantRequest(account.MemberId, ParticipantRoute.OwnMember)
+                : new AddParticipantRequest(account.MemberId, ParticipantRoute.Circle, CircleId: circleId, AccountId: account.AccountId);
+            await online.AddParticipantAsync(result.GroupId, request, cancellationToken);
         }
 
         return result;

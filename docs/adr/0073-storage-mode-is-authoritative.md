@@ -7,6 +7,8 @@ tags: [storage, sync, ux, secret-santa, account]
 
 # ADR-0073 — Per-group storage mode is authoritative (On this device stays local when signed in)
 
+> **Amended by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** There are two places, *on this device* and *online*.
+
 ## Context and problem statement
 
 [FR-038](../requirements/functional/FR-038-per-group-storage-mode.md) /

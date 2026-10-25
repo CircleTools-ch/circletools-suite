@@ -1,4 +1,5 @@
 using CircleTools.SecretSanta.LocalStore;
+using CircleTools.SecretSanta.LocalStore.Online;
 using CircleTools.Ui.Abstractions;
 using CircleTools.Ui.Account.Auth;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -29,20 +30,14 @@ namespace CircleTools.SecretSanta.Ui;
 /// dispatches commands through <c>ISender</c>, so the after-change trigger cannot feed itself.
 /// </para>
 /// </remarks>
-/// <param name="coordinator">The full account-sync coordinator (profile + links + groups + publish).</param>
-/// <param name="claimable">Reads which local groups are still account-free, for the auto-claim step.</param>
-/// <param name="sync">The sync engine, for claiming account-free groups into the signed-in account.</param>
-/// <param name="sharedSync">The shared-by-link engine, reconciling token-addressed groups signed in or out (FEAT-013).</param>
-/// <param name="revealSlices">Publishes backend-backed groups' live reveal slices after each reconcile (ADR-0068, FEAT-020).</param>
+/// <param name="coordinator">The account part of a sync (profile, preferences).</param>
+/// <param name="onlineGroups">The online-group sync, run signed in or out (ADR-0086).</param>
 /// <param name="auth">The current principal, read for the signed-in account id.</param>
 /// <param name="connectivity">The connectivity seam, subscribed for the reconnect trigger.</param>
 /// <param name="time">The clock, for when the last cycle completed (the app bar's sync indicator).</param>
 public sealed class AutoSyncService(
     SyncCoordinator coordinator,
-    ClaimableGroupsService claimable,
-    SyncService sync,
-    SharedSyncService sharedSync,
-    RevealSlicePublisher revealSlices,
+    OnlineGroupSync onlineGroups,
     AuthenticationStateProvider auth,
     IConnectivity connectivity,
     TimeProvider time) : IDisposable, ISyncSignals
@@ -101,13 +96,6 @@ public sealed class AutoSyncService(
     /// signed out never reaches <see cref="SyncCompleted"/>. Subscribers marshal onto the render context.
     /// </summary>
     public event Action? LocalChanged;
-
-    /// <summary>
-    /// Raised when a cycle kept groups as "On this device" copies because another device moved them out of
-    /// the account while this device held unsynced edits (ADR-0073 Amendment 2). Carries the group names, so
-    /// the shell tells the user once. Fired off the render context.
-    /// </summary>
-    public event Action<IReadOnlyList<string>>? KeptAsLocalCopy;
 
     /// <summary>
     /// Starts listening for reconnects and, if a session is already live, runs the app-start sync.
@@ -181,8 +169,7 @@ public sealed class AutoSyncService(
             {
                 _resyncRequested = false;
 
-                // Shared-by-link groups reconcile signed in OR out — they are addressed by a share
-                // token, not scoped to an account (FEAT-013). Runs first, always.
+                // Online groups reconcile signed in OR out — a link or device key needs no account (ADR-0086).
                 try
                 {
                     await RunSharedCycleAsync();
@@ -216,81 +203,24 @@ public sealed class AutoSyncService(
         SyncCompleted?.Invoke();
     }
 
-    // Reconcile every shared-by-link group this device holds — signed in or out. Each is a single
-    // aggregate addressed by its own token; the engine pulls a newer server copy or pushes a dirty
-    // local edit (FEAT-013). A group whose online copy is gone falls back to on-this-device inside the
-    // engine, so the set naturally shrinks.
+    // Every online group this device holds, signed in or out (ADR-0086): organizers push then pull, participants
+    // send their entry then read their view; signed in, the account's groups are discovered too. A group whose
+    // online copy is gone becomes a device group (organizer) or disappears (participant) inside the sync.
     private async Task RunSharedCycleAsync()
     {
-        // Account-store groups (AccountScope) sync through the account cycle, not here (ADR-0078 Amendment 3).
-        var shared = (await claimable.GetAllAsync())
-            .Where(g => g.AccountScope is null && g.Mode is StorageMode.SharedByLink or StorageMode.Account)
-            .Select(g => g.Id)
-            .ToList();
-
-        foreach (var id in shared)
-        {
-            await sharedSync.SyncGroupAsync(id);
-            // After reconciling, re-publish the group's reveal slices so an already-sent reveal link
-            // reflects the latest wishlist/event (ADR-0068). Best-effort and a no-op for a group this
-            // device cannot publish (join-only), so it is safe to call for every shared group.
-            await revealSlices.PublishAsync(id);
-        }
+        var accountId = await CurrentAccountAsync();
+        await onlineGroups.SyncAsync(accountId == Guid.Empty ? null : accountId);
     }
 
-    // One cycle for a signed-in account: first adopt any still-account-free groups into the account
-    // (created offline before sign-in and imported, or created while signed in but offline so the
-    // inline claim could not reach the server), then run the full sync. Claiming is idempotent and a
-    // no-op when there is nothing account-free, so a signed-in device converges on "everything synced"
-    // without the user ever managing it (ADR-0044). The reconciler's Discard path runs before this, so
-    // groups the user chose to discard are already gone and never claimed.
+    // The account part of a cycle: the profile and the per-account documents (preferences). Its outcome is the
+    // shell's passive status line.
     private async Task RunCycleAsync(Guid accountId)
     {
-        // Discover any groups this account claimed admin of on another device (D2), so they appear and
-        // are manageable here too — and attribute any already-held ones to this account. Signed-in only
-        // (this cycle), so the bearer is present.
-        // Send the owner deletes of "My account" groups deleted on this device first, so discovery below
-        // does not see them on the server (it also skips any still queued) — ADR-0078.
-        await sharedSync.SendOwnedDeletesAsync(accountId);
-        var ownedListed = await sharedSync.MergeOwnedAsync(accountId);
-
-        // Groups this account joined on another device ("keep it on my account") come to this one too (ADR-0080).
-        await sharedSync.DiscoverJoinedAsync(accountId);
-
-        // Auto-claim only the groups the user has marked "My account" for this account and that are not yet
-        // account-scoped (FR-038, ADR-0073). A group left "On this device" stays local even while signed in
-        // — its mode is honoured, not silently synced. Shared-by-link groups live in the token-keyed store
-        // and are never M3-claimed, nor is a shared group whose admin an account claimed (ADR-0078). A
-        // legacy "My account" record with no account recorded is claimed only once the owned list above was
-        // read, so an admin-claimed shared group among them has been recognised and is not uploaded twice.
-        var awaitingClaim = (await claimable.GetAwaitingClaimAsync(accountId, includeUnattributed: ownedListed))
-            .Select(g => g.Id)
-            .ToList();
-        if (awaitingClaim.Count > 0)
-        {
-            await sync.ClaimAsync(accountId, awaitingClaim);
-        }
-
-        // Keep the group cycle's outcome so the shell can show it in its passive status line — the same
-        // status the removed manual button used to surface.
-        var heldBefore = (await claimable.GetAllAsync()).Select(g => g.Id).ToHashSet();
         var outcome = await coordinator.SyncNowAsync(accountId);
         LastStatus = outcome.Status;
         if (outcome.IsSuccess)
         {
             LastSyncedAt = time.GetUtcNow();
-        }
-
-        // A group the account cycle just dropped may have moved out of the account store into the shared
-        // store as this account's own shared group ("Invite people", ADR-0081). Discovery ran before the drop
-        // saw it as already held; look again so it comes back in this cycle, not the next one.
-        if ((await claimable.GetAllAsync()).Count(g => heldBefore.Contains(g.Id)) < heldBefore.Count)
-        {
-            await sharedSync.MergeOwnedAsync(accountId);
-        }
-        if (outcome.KeptAsLocalCopy is { Count: > 0 } kept)
-        {
-            KeptAsLocalCopy?.Invoke(kept);
         }
     }
 

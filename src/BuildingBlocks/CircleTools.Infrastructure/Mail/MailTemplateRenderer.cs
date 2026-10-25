@@ -282,40 +282,41 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
         var memberDisplayName = root.GetProperty("memberDisplayName").GetString();
         var inviter = root.GetProperty("inviterDisplayName").GetString();
         var brand = ResolveBranding(SourceApp(root));
-        var link = $"{brand.BaseUrl}/my-links";
+        // The invitation waits in the group list, under "Invitations" (ADR-0086).
+        var link = $"{brand.BaseUrl}/";
 
         var model = language switch
         {
             "de" => new MailModel(
-                $"{inviter} möchte dich mit «{groupName}» verbinden",
-                "Du wirst mit einer Wichtel-Gruppe verbunden",
+                $"{inviter} lädt dich zu «{groupName}» ein",
+                "Du bist zu einer Wichtel-Gruppe eingeladen",
                 [
-                    $"{inviter} möchte dich als «{memberDisplayName}» mit dem Wichtel-Anlass «{groupName}» verbinden. So besitzt du deine eigene Wunschliste und siehst nur deine eigene Zuteilung.",
-                    "Die Anfrage wartet in der App auf dich.",
+                    $"{inviter} lädt dich als «{memberDisplayName}» zur Wichtel-Gruppe «{groupName}» ein. Machst du mit, siehst du nur deine eigene Zuteilung und führst deine eigene Wunschliste.",
+                    "Die Einladung wartet in der App auf dich.",
                 ],
-                "Anfrage öffnen",
+                "Einladung öffnen",
                 link,
-                "Du erhältst diese E-Mail, weil ein Organisator diese Adresse mit einer Gruppe verbunden hat. Die Anfrage läuft von selbst ab, wenn du nichts tust."),
+                "Du erhältst diese E-Mail, weil jemand, der die Gruppe organisiert, diese Adresse eingeladen hat. Die Einladung läuft von selbst ab, wenn du nichts tust."),
             "fr" => new MailModel(
-                $"{inviter} souhaite vous associer à «{groupName}»",
-                "Vous êtes relié à un groupe Père Noël secret",
+                $"{inviter} vous invite à «{groupName}»",
+                "Vous êtes invité à un groupe Père Noël secret",
                 [
-                    $"{inviter} souhaite vous associer en tant que «{memberDisplayName}» à l'événement «{groupName}». Vous posséderez ainsi votre propre liste de souhaits et ne verrez que votre propre attribution.",
-                    "La demande vous attend dans l'application.",
+                    $"{inviter} vous invite en tant que «{memberDisplayName}» au groupe Père Noël secret «{groupName}». Si vous participez, vous ne voyez que votre propre attribution et tenez votre propre liste de souhaits.",
+                    "L'invitation vous attend dans l'application.",
                 ],
-                "Ouvrir la demande",
+                "Ouvrir l'invitation",
                 link,
-                "Vous recevez ceci car un organisateur a relié cette adresse à un groupe. La demande expire d'elle-même si vous ne faites rien."),
+                "Vous recevez ceci car une personne qui organise le groupe a invité cette adresse. L'invitation expire d'elle-même si vous ne faites rien."),
             _ => new MailModel(
-                $"{inviter} wants to link you to “{groupName}”",
-                "You're being linked to a Secret Santa group",
+                $"{inviter} invites you to “{groupName}”",
+                "You're invited to a Secret Santa group",
                 [
-                    $"{inviter} wants to link you as “{memberDisplayName}” to the Secret-Santa event “{groupName}”. You'll then own your own wishlist and see only your own assignment.",
-                    "The request is waiting for you in the app.",
+                    $"{inviter} invites you as “{memberDisplayName}” to the Secret-Santa group “{groupName}”. If you take part, you see only your own assignment and keep your own wishlist.",
+                    "The invitation is waiting for you in the app.",
                 ],
-                "Open request",
+                "Open invitation",
                 link,
-                "You received this because an organiser linked this address to a group. The request expires on its own if you do nothing."),
+                "You received this because someone organizing the group invited this address. The invitation expires on its own if you do nothing."),
         };
 
         return Compose(email, brand, language, model);

@@ -46,11 +46,8 @@ public static class SecretSantaUiServiceCollectionExtensions
         services.Replace(ServiceDescriptor.Scoped<IProfileWriter>(sp => sp.GetRequiredService<OfflineProfileWriter>()));
         services.AddScoped<SyncCoordinator>();
 
-        // M4 linking (FEAT-005): the resolution applier and assignment publisher the SyncCoordinator
-        // runs, and the create-from-circle service the picker uses. The host must still register the
-        // ILinkingApi and ICircleDirectoryApi ports over its authorized HttpClient.
-        services.AddScoped<LinkResolutionApplier>();
-        services.AddScoped<AssignmentPublisher>();
+        // Create-from-circle (FR-027): the host registers the ICircleDirectoryApi port over its authorized
+        // HttpClient.
         services.AddScoped<CreateFromCircleService>();
 
         // The invitation a signed-out invitee is signing in for, so sign-in returns to it (Q7).
@@ -63,9 +60,6 @@ public static class SecretSantaUiServiceCollectionExtensions
         // reconnect trigger.
         services.AddScoped<AutoSyncService>();
         services.AddScoped<GroupRemoval>();
-        // Live reveal links for backend-backed groups (ADR-0068, FEAT-020): publishes the per-giver
-        // reveal slices, run from the shared reconcile cycle and when the share screen opens.
-        services.AddScoped<RevealSlicePublisher>();
         // Expose only the "a sync landed" signal to pages that refresh on it (FEAT-013 co-admin edits),
         // resolved to the same instance — so a page depends on the notification, not the whole engine.
         services.AddScoped<ISyncSignals>(sp => sp.GetRequiredService<AutoSyncService>());
@@ -78,7 +72,6 @@ public static class SecretSantaUiServiceCollectionExtensions
         services.AddScoped<RecentAccessService>();
         services.AddScoped<HandoutProgressService>();
         services.AddScoped<GroupAccess>();
-        services.AddScoped<SignInReconciliation>();
 
         // Resume and foreground-poll sync triggers (ADR-0044 amendment 2026-10-15). A head that cannot tell
         // foreground from background gets the always-foreground default.
@@ -88,8 +81,6 @@ public static class SecretSantaUiServiceCollectionExtensions
         // Device-local default storage mode for new groups + the one-time onboarding flag (FR-048,
         // ADR-0071). Per-device, never synced — a signed-out user needs a default too.
         services.AddScoped<StorageModePreferences>();
-        // Groups the user explicitly kept on this device, so the sign-in prompt does not re-ask (ADR-0044).
-        services.AddScoped<KeptLocalGroups>();
         services.AddScoped<ReminderScheduler>();
         services.AddScoped<IReminderRescheduler>(sp => sp.GetRequiredService<ReminderScheduler>());
 

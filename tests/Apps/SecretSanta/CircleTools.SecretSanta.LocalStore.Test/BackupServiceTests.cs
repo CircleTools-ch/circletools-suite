@@ -1,18 +1,19 @@
 using System.Text.Json;
 using CircleTools.SecretSanta.Core.Domain;
 using CircleTools.SecretSanta.Core.Persistence;
+using CircleTools.SecretSanta.LocalStore.Online;
 using CircleTools.SecretSanta.LocalStore.Test.TestSupport;
 
 namespace CircleTools.SecretSanta.LocalStore.Test;
 
 /// <summary>
 /// Tests for <see cref="BackupService"/> — the portable export/import of the locally held groups
-/// (FEAT-017). Exercised over the real <see cref="GroupRepository"/> so the whole serialize → file →
+/// (FEAT-017). Exercised over the real <see cref="GroupRecordRepository"/> so the whole serialize → file →
 /// deserialize → rehydrate round-trip is covered, not just an in-memory fake.
 /// </summary>
 public sealed class BackupServiceTests
 {
-    private static GroupRepository NewRepository() => new(new InMemoryKeyValueStore());
+    private static GroupRecordRepository NewRepository() => new(new GroupRecordStore(new InMemoryKeyValueStore()));
 
     private static Group CreateGroup(string name, params string[] memberNames)
     {

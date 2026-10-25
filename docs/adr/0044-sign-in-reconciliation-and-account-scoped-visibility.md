@@ -7,6 +7,8 @@ tags: [architecture, sync, offline, secret-santa, ui, account]
 
 # ADR-0044 — Sign-in reconciliation of offline data and account-scoped visibility
 
+> **Amended by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** Sign-in no longer claims groups into the account; it offers to make chosen local groups online.
+
 ## Context and problem statement
 
 The M3 sync model ([FEAT-004](../features/FEAT-004-m3-sync-and-claim.md)) made a signed-in account's

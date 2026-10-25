@@ -24,11 +24,6 @@ public sealed record EventDetailsState(DateTimeOffset? Date, string Location, st
 /// field is only read when migrating a pre-events snapshot (its items become the member's wishlist in
 /// the synthesized default event) and is never written again — new snapshots leave it <see langword="null"/>.
 /// </param>
-/// <param name="UserId">
-/// The account this member is linked to, or <see langword="null"/> when unlinked. Snapshots written
-/// before this field existed deserialize to <see langword="null"/> (unlinked), so no group is lost
-/// by the schema bump.
-/// </param>
 /// <param name="OriginCirclePersonId">
 /// The circle person this member was copied from, or <see langword="null"/>. Recorded at create time
 /// and never dereferenced; older snapshots deserialize to <see langword="null"/>.
@@ -47,7 +42,6 @@ public sealed record MemberState(
     Guid Id,
     string Name,
     IReadOnlyList<string>? Wishlist = null,
-    Guid? UserId = null,
     Guid? OriginCirclePersonId = null,
     bool IsArchived = false,
     string? GiftNote = null);

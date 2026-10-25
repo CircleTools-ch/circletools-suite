@@ -116,12 +116,19 @@ public sealed record ConfirmEmailChangeRequest(string UserId, string NewEmail, s
 /// than trusting a session that may have been left open.
 /// </param>
 /// <param name="DeleteSharedGroups">
-/// The owner's disposition for the shared-by-link groups they manage (FR-043, ADR-0058):
-/// <see langword="false"/> (default) hands them back to shared-by-link so the people who joined keep
-/// access; <see langword="true"/> deletes those online copies too.
+/// The owner's disposition for the online groups they own (FR-043, ADR-0086): <see langword="false"/> (default)
+/// hands them over to an organizer link so the people taking part keep access; <see langword="true"/> deletes
+/// those online copies too.
 /// </param>
 /// <param name="SourceApp">The app the request came from, for the farewell mail's branding (ADR-0064, FR-047).</param>
 public sealed record DeleteAccountRequest(string Password, bool DeleteSharedGroups = false, string? SourceApp = null);
+
+/// <summary>
+/// How many online groups the account owns, so the delete screen can offer their disposition (FR-043,
+/// <c>GET /api/v1/account/owned-groups</c>).
+/// </summary>
+/// <param name="Count">The number of groups.</param>
+public sealed record OwnedGroupCount(int Count);
 
 /// <summary>
 /// The exported copy of a user's data (FR-014). Mirrors what the user can already see in the app.

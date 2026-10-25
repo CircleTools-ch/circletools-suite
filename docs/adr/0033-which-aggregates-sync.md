@@ -7,6 +7,8 @@ tags: [architecture, sync, offline, authorization]
 
 # ADR-0033 — Which aggregates sync (narrowing ADR-0016)
 
+> **Amended by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** Groups no longer sync through the sync store (see ADR-0086); it keeps preferences only.
+
 ## Context and problem statement
 
 [ADR-0016](0016-sync-and-conflict-resolution.md) chose aggregate-granular last-write-wins as the sync

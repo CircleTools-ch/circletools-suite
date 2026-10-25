@@ -1,4 +1,3 @@
-using CircleTools.Main.Contracts;
 using CircleTools.SecretSanta.Contracts;
 using CircleTools.SecretSanta.Core.Reveal;
 using CircleTools.SecretSanta.Ui.Pages;
@@ -22,7 +21,7 @@ public sealed class RevealOwnEntryTests : IAsyncDisposable
     private const string Token = "rt-dario";
 
     private readonly Bunit.BunitContext _ctx = new();
-    private readonly NoOpSharedGroupApi _api = new();
+    private readonly FakeOnlineGroupApi _api = new();
 
     public RevealOwnEntryTests()
     {
@@ -33,13 +32,13 @@ public sealed class RevealOwnEntryTests : IAsyncDisposable
         _ctx.Services.AddSingleton<IHapticFeedback>(new FakeHapticFeedback());
         _ctx.Services.AddSingleton<CircleTools.Ui.Abstractions.IKeyValueStore>(new FakeKeyValueStore());
         _ctx.Services.AddSingleton<CircleTools.Ui.Abstractions.ICalendarService>(new FakeCalendarService());
-        _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.ISharedGroupApi>(_api);
+        _ctx.Services.AddSingleton<CircleTools.SecretSanta.LocalStore.Online.IOnlineGroupApi>(_api);
     }
 
     [Fact]
     public void ALiveLink_OffersTheHoldersOwnEntry_InsteadOfTheHint()
     {
-        _api.SeedRevealEntry(Token, new RevealEntryView("no nuts", ["Lego", "Book"]));
+        _api.SeedRevealEntry(Token, new RevealEntry("no nuts", ["Lego", "Book"]));
 
         var cut = OpenAndReveal(live: true);
 
@@ -53,7 +52,7 @@ public sealed class RevealOwnEntryTests : IAsyncDisposable
     public void TheOwnEntry_IsShownBeforeTheReveal_WithoutGivingAwayTheRecipient()
     {
         // It is about the holder, not whom they drew — no spoiler, so it is not behind the reveal button.
-        _api.SeedRevealEntry(Token, new RevealEntryView(null, ["Lego"]));
+        _api.SeedRevealEntry(Token, new RevealEntry(null, ["Lego"]));
 
         var cut = Open(live: true);
 
@@ -66,7 +65,7 @@ public sealed class RevealOwnEntryTests : IAsyncDisposable
     [Fact]
     public void LeavingTheFieldAfterTyping_SavesTheWishlistAndNote_ByTheRevealToken()
     {
-        _api.SeedRevealEntry(Token, new RevealEntryView(null, []));
+        _api.SeedRevealEntry(Token, new RevealEntry(null, []));
         var cut = OpenAndReveal(live: true);
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("#reveal-own-wishlist")));
 
@@ -87,7 +86,7 @@ public sealed class RevealOwnEntryTests : IAsyncDisposable
     [Fact]
     public void AFailedSave_KeepsTheText_SaysSo_AndTheNextChangeRetries()
     {
-        _api.SeedRevealEntry(Token, new RevealEntryView(null, []));
+        _api.SeedRevealEntry(Token, new RevealEntry(null, []));
         var cut = OpenAndReveal(live: true);
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("#reveal-own-wishlist")));
 
@@ -106,7 +105,7 @@ public sealed class RevealOwnEntryTests : IAsyncDisposable
     [Fact]
     public void LeavingAChangedField_OffersUndo_WhichSavesTheEarlierWishlistAndNote()
     {
-        _api.SeedRevealEntry(Token, new RevealEntryView("no nuts", ["Lego"]));
+        _api.SeedRevealEntry(Token, new RevealEntry("no nuts", ["Lego"]));
         var snackbars = _ctx.Render<MudBlazor.MudSnackbarProvider>();
         var cut = OpenAndReveal(live: true);
         cut.WaitForAssertion(() => Assert.NotNull(cut.Find("#reveal-own-wishlist")));

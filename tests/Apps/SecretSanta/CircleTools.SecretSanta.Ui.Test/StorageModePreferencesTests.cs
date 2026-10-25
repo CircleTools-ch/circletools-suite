@@ -1,13 +1,14 @@
-using CircleTools.SecretSanta.LocalStore;
+using CircleTools.SecretSanta.LocalStore.Online;
 using CircleTools.SecretSanta.Ui;
 using CircleTools.Ui.Abstractions;
 
 namespace CircleTools.SecretSanta.Ui.Test;
 
 /// <summary>
-/// Unit tests for <see cref="StorageModePreferences"/> (FR-048, ADR-0071): the default storage mode for
-/// new groups starts at "On this device", round-trips, the one-time onboarding flag toggles, choices
-/// persist across app restarts, and a failing store degrades to a safe default rather than throwing.
+/// Unit tests for <see cref="StorageModePreferences"/> (FR-048, ADR-0071, ADR-0086): the default place for new
+/// groups starts at "On this device", round-trips, a default stored by the older three-mode picker reads as online,
+/// the one-time onboarding flag toggles, choices persist across app restarts, and a failing store degrades to a
+/// safe default rather than throwing.
 /// </summary>
 public sealed class StorageModePreferencesTests
 {
@@ -16,20 +17,30 @@ public sealed class StorageModePreferencesTests
     {
         var prefs = new StorageModePreferences(new InMemoryKeyValueStore());
 
-        Assert.Equal(StorageMode.OnThisDevice, await prefs.GetDefaultAsync());
+        Assert.Equal(GroupPlace.Device, await prefs.GetDefaultAsync());
     }
 
     [Theory]
-    [InlineData(StorageMode.OnThisDevice)]
-    [InlineData(StorageMode.SharedByLink)]
-    [InlineData(StorageMode.Account)]
-    public async Task SettingTheDefault_RoundTrips(StorageMode mode)
+    [InlineData(GroupPlace.Device)]
+    [InlineData(GroupPlace.Online)]
+    public async Task SettingTheDefault_RoundTrips(GroupPlace place)
     {
         var prefs = new StorageModePreferences(new InMemoryKeyValueStore());
 
-        await prefs.SetDefaultAsync(mode);
+        await prefs.SetDefaultAsync(place);
 
-        Assert.Equal(mode, await prefs.GetDefaultAsync());
+        Assert.Equal(place, await prefs.GetDefaultAsync());
+    }
+
+    [Theory]
+    [InlineData("SharedByLink")]
+    [InlineData("Account")]
+    public async Task AnOlderSharedOrAccountDefault_ReadsAsOnline(string stored)
+    {
+        var store = new InMemoryKeyValueStore();
+        await store.SetAsync(StorageScope.Durable, "secretsanta.storage.default", stored);
+
+        Assert.Equal(GroupPlace.Online, await new StorageModePreferences(store).GetDefaultAsync());
     }
 
     [Fact]
@@ -48,12 +59,12 @@ public sealed class StorageModePreferencesTests
     public async Task Choices_Persist_AcrossANewInstance_OnTheSameStore()
     {
         var store = new InMemoryKeyValueStore();
-        await new StorageModePreferences(store).SetDefaultAsync(StorageMode.SharedByLink);
+        await new StorageModePreferences(store).SetDefaultAsync(GroupPlace.Online);
         await new StorageModePreferences(store).MarkOnboardedAsync();
 
         // A fresh instance over the same store (mirrors reopening the app) still sees the choices.
         var reopened = new StorageModePreferences(store);
-        Assert.Equal(StorageMode.SharedByLink, await reopened.GetDefaultAsync());
+        Assert.Equal(GroupPlace.Online, await reopened.GetDefaultAsync());
         Assert.True(await reopened.IsOnboardedAsync());
     }
 
@@ -64,9 +75,9 @@ public sealed class StorageModePreferencesTests
 
         // Reads fall back to the local-first default; the onboarding is treated as done so a broken store
         // never traps the user in a dialog loop. Writes are best-effort and must not throw.
-        Assert.Equal(StorageMode.OnThisDevice, await prefs.GetDefaultAsync());
+        Assert.Equal(GroupPlace.Device, await prefs.GetDefaultAsync());
         Assert.True(await prefs.IsOnboardedAsync());
-        await prefs.SetDefaultAsync(StorageMode.Account);
+        await prefs.SetDefaultAsync(GroupPlace.Online);
         await prefs.MarkOnboardedAsync();
     }
 

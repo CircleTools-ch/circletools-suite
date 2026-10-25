@@ -2,7 +2,7 @@ using System.Diagnostics.Metrics;
 using CircleTools.Circles.Core.Domain;
 using CircleTools.Circles.Repository;
 using CircleTools.Main.Service.Repository;
-using CircleTools.Main.Service.Repository.Linking;
+using CircleTools.SecretSanta.Service.Repository;
 using Microsoft.EntityFrameworkCore;
 
 namespace CircleTools.Main.Service;
@@ -15,18 +15,18 @@ namespace CircleTools.Main.Service;
 /// <param name="AccountsConfirmed">Accounts with a confirmed email (<c>AspNetUsers</c>).</param>
 /// <param name="AccountsUnconfirmed">Accounts whose email is not yet confirmed.</param>
 /// <param name="CircleGroups">Rows in <c>circles.circles</c>.</param>
-/// <param name="SharedGroups">Rows in <c>shared.groups</c> (account-free, link-shared — ADR-0058).</param>
-/// <param name="Events">Rows in <c>linking.group_events</c> (ADR-0042).</param>
+/// <param name="OnlineGroups">Rows in <c>secretsanta.groups</c>: Secret-Santa groups kept online (ADR-0086).</param>
+/// <param name="Events">Events in the online groups' documents (ADR-0042).</param>
 /// <param name="Members">Rows in <c>circles.circle_memberships</c>.</param>
 /// <param name="Draws">
-/// Distinct <c>(GroupId, EventId, DrawVersion)</c> in <c>linking.assignments</c> — server-visible draw
-/// publications. Partial by design: account-free / zero-knowledge draws never reach the server (ADR-0020).
+/// Draws in the online groups' documents. Groups kept on a device never reach the server, so their draws are
+/// not counted (ADR-0086).
 /// </param>
 internal sealed record BusinessCounts(
     long AccountsConfirmed,
     long AccountsUnconfirmed,
     long CircleGroups,
-    long SharedGroups,
+    long OnlineGroups,
     long Events,
     long Members,
     long Draws)
@@ -41,43 +41,50 @@ internal sealed record BusinessCounts(
 /// </summary>
 internal static class BusinessCountReader
 {
+    // Events and draws live in each group's document (jsonb): count the array elements in the database, so no
+    // document — names, wishes, pairings — ever leaves Postgres for this.
+    private const string EventCountSql =
+        $"""
+        SELECT COALESCE(SUM(jsonb_array_length(COALESCE(g."Body"->'events', '[]'::jsonb))), 0)::bigint AS "Value"
+        FROM {SecretSantaDbContext.Schema}.groups g
+        """;
+
+    private const string DrawCountSql =
+        $"""
+        SELECT COUNT(*)::bigint AS "Value"
+        FROM {SecretSantaDbContext.Schema}.groups g
+        CROSS JOIN LATERAL jsonb_array_elements(COALESCE(g."Body"->'events', '[]'::jsonb)) e
+        CROSS JOIN LATERAL jsonb_array_elements(COALESCE(e->'draws', '[]'::jsonb)) d
+        """;
+
     /// <summary>
-    /// Runs the <c>COUNT</c> queries over the four contexts the counts come from. Caller owns the contexts'
-    /// lifetime (a DI scope). Only counts are read — never a name, email, body, or giver→recipient pairing
-    /// (ADR-0012/0020, NFR-004).
+    /// Runs the count queries over the three contexts the counts come from. Caller owns the contexts' lifetime (a
+    /// DI scope). Only counts are read — never a name, email, body, or giver→recipient pairing (ADR-0012/0020,
+    /// NFR-004).
     /// </summary>
     public static async Task<BusinessCounts> ReadAsync(
         MainDbContext main,
         CirclesDbContext circles,
-        SharedGroupDbContext shared,
-        LinkingDbContext linking,
+        SecretSantaDbContext secretSanta,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(main);
         ArgumentNullException.ThrowIfNull(circles);
-        ArgumentNullException.ThrowIfNull(shared);
-        ArgumentNullException.ThrowIfNull(linking);
+        ArgumentNullException.ThrowIfNull(secretSanta);
 
         var accountsConfirmed = await main.Users.CountAsync(u => u.EmailConfirmed, cancellationToken).ConfigureAwait(false);
         var accountsUnconfirmed = await main.Users.CountAsync(u => !u.EmailConfirmed, cancellationToken).ConfigureAwait(false);
         var circleGroups = await circles.Circles.CountAsync(cancellationToken).ConfigureAwait(false);
-        var sharedGroups = await shared.Groups.CountAsync(cancellationToken).ConfigureAwait(false);
-        var events = await linking.GroupEvents.CountAsync(cancellationToken).ConfigureAwait(false);
+        var onlineGroups = await secretSanta.Groups.CountAsync(cancellationToken).ConfigureAwait(false);
         var members = await circles.Set<CircleMembership>().CountAsync(cancellationToken).ConfigureAwait(false);
-
-        // A draw is one publication of assignments for an (event, version); each giver is a row, so count
-        // the distinct tuples rather than the rows. Partial on purpose (see BusinessCounts.Draws).
-        var draws = await linking.Assignments
-            .Select(a => new { a.GroupId, a.EventId, a.DrawVersion })
-            .Distinct()
-            .CountAsync(cancellationToken)
-            .ConfigureAwait(false);
+        var events = await secretSanta.Database.SqlQueryRaw<long>(EventCountSql).SingleAsync(cancellationToken).ConfigureAwait(false);
+        var draws = await secretSanta.Database.SqlQueryRaw<long>(DrawCountSql).SingleAsync(cancellationToken).ConfigureAwait(false);
 
         return new BusinessCounts(
             accountsConfirmed,
             accountsUnconfirmed,
             circleGroups,
-            sharedGroups,
+            onlineGroups,
             events,
             members,
             draws);
@@ -124,16 +131,16 @@ internal sealed class BusinessMetrics : IDisposable
             () => new[]
             {
                 new Measurement<long>(_counts.CircleGroups, new KeyValuePair<string, object?>("kind", "circle")),
-                new Measurement<long>(_counts.SharedGroups, new KeyValuePair<string, object?>("kind", "shared")),
+                new Measurement<long>(_counts.OnlineGroups, new KeyValuePair<string, object?>("kind", "online")),
             },
             unit: "{group}",
-            description: "Groups by server store: circle (circles.circles) and shared (shared.groups).");
+            description: "Groups by server store: circle (circles.circles) and online Secret-Santa groups (secretsanta.groups).");
 
         _meter.CreateObservableGauge(
             "circletools.business.events",
             () => _counts.Events,
             unit: "{event}",
-            description: "Events/occasions (linking.group_events).");
+            description: "Events/occasions in online Secret-Santa groups.");
 
         _meter.CreateObservableGauge(
             "circletools.business.members",
@@ -145,7 +152,7 @@ internal sealed class BusinessMetrics : IDisposable
             "circletools.business.draws",
             () => _counts.Draws,
             unit: "{draw}",
-            description: "Server-visible draw publications (distinct draw versions); partial — see ADR-0020.");
+            description: "Draws in online Secret-Santa groups; groups kept on a device are not counted (ADR-0086).");
     }
 
     /// <summary>Publishes a freshly-collected snapshot for the gauges to report.</summary>
@@ -157,7 +164,7 @@ internal sealed class BusinessMetrics : IDisposable
 
 /// <summary>
 /// Refreshes the <see cref="BusinessMetrics"/> snapshot on a timer (FEAT-022, ADR-0051). Lives in the host
-/// because it is the only project that can resolve all four counted EF contexts; the Repository project
+/// because it is the only project that can resolve all three counted EF contexts; the Repository project
 /// does not reference Circles.
 /// </summary>
 /// <remarks>
@@ -222,8 +229,7 @@ internal sealed class BusinessMetricsCollector : BackgroundService
             var counts = await BusinessCountReader.ReadAsync(
                 services.GetRequiredService<MainDbContext>(),
                 services.GetRequiredService<CirclesDbContext>(),
-                services.GetRequiredService<SharedGroupDbContext>(),
-                services.GetRequiredService<LinkingDbContext>(),
+                services.GetRequiredService<SecretSantaDbContext>(),
                 cancellationToken).ConfigureAwait(false);
 
             _metrics.Publish(counts);

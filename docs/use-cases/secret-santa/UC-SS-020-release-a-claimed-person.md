@@ -1,90 +1,67 @@
 ---
 id: UC-SS-020
-title: Free (release) a claimed person so they can rejoin
+title: Free a participant's spot so the member can be taken again
 app: Secret-Santa
-actors: [Admin]
+actors: [Organizer]
 status: Approved
 priority: Could
-related: [FR-042, FR-041, UC-SS-019, ADR-0058]
+related: [FR-042, FR-041, UC-SS-019, ADR-0086]
 ---
 
-# UC-SS-020 — Free (release) a claimed person so they can rejoin
+# UC-SS-020 — Free a participant's spot so the member can be taken again
+
+> **Rewritten 2026-10-25 for [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)** ([FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)). The previous version described the four-kind storage model and member linking; it is in the git history.
 
 ## Summary / goal
 
-In a [Shared-by-link group](../../glossary/shared-by-link-group.md), a
-[Member](../../glossary/member.md) that has been claimed is **locked** and cannot be claimed again
-([person claim](../../glossary/person-claim.md), first-claim-locks). An admin can **free** a claimed
-member — the **single recovery path** for a new or lost device, or a mis-claim — after which the
-[join link](../../glossary/join-link.md) can claim that member afresh.
+The organizer frees a member whose participant lost their device or picked the wrong name, so the right person can take part.
 
 ## Primary actor & stakeholders
 
-- **Primary actor:** Admin (admin-link holder or the owning account).
-- **Stakeholders:** the person who lost access (got a new phone, or claimed the wrong member) and needs
-  back in; other participants (a release must not disturb their own claims or assignments).
+- **Primary actor:** the organizer.
+- **Stakeholders & interests:** the freed person — that what they wrote stays.
 
 ## Preconditions
 
-- The group is in **Shared by link** (or **My account**) mode and has at least one claimed member.
-- The actor holds the admin capability.
+- The member has a participant or a pending invitation.
 
 ## Postconditions
 
-- **Success:** the chosen member is **unclaimed** (no account or device holds it); it becomes claimable
-  again via the join link. Other members' claims and the [Draw](../../glossary/draw.md) are untouched.
-- **Failure:** nothing changes and the admin is told why.
+- **Success:** the member is free; what the person wrote stays in the group.
+- **Failure:** nothing changes.
 
 ## Trigger
 
-The admin opens the **Members** screen and chooses to free a claimed member.
+The organizer chooses *Free this spot* on a member's row.
 
 ## Main success scenario
 
-1. Admin opens **Members**; each member shows its claim state — **claimed (account)**, **claimed (this
-   device)**, or **open** (not yet claimed).
-2. Admin selects a claimed member and chooses **Free this person**.
-3. The app explains the effect — *"They'll lose access until they rejoin with the join link"* — and asks
-   to confirm.
-4. On confirm, the member is unclaimed; its state returns to **open**.
-5. The freed person opens the join link again and claims that member ([UC-SS-019](UC-SS-019-join-a-shared-group.md)).
+1. The system asks to confirm, saying access ends and what was written stays.
+2. The organizer confirms.
+3. The system removes the participant (or the invitation); the member no longer shows *Connected* or *Invited*.
+4. The person joins again through the join link, or is invited again.
 
 ## Extensions / alternate flows
 
-- **2a. The member is an account claim** → freeing removes the account's binding to *this member*; it
-  does **not** delete the person's account or touch their other groups.
-- **2b. The member is not claimed** → there is nothing to free; the option is not offered.
-- **3a. Admin cancels** → the member stays claimed.
-- **5a. Someone else claims the freed member first** → first claim wins again; the intended person must
-  ask the admin to free it once more (a trust-context edge, accepted).
+- **1a.** The participant leaves the group themselves → same result.
 
 ## Exceptions
 
-- **Backend unreachable** → the release cannot complete; the admin is told to retry and no half-release
-  is left behind.
-- **Actor lost admin (e.g. link regenerated)** → the action is unavailable; only a current admin can
-  free a member.
+- **Offline** → the change is refused until the device is online.
 
 ## Non-functional notes
 
-- **Privacy:** releasing does not expose any assignment; it only clears a binding. The freed member's
-  assignment is unchanged and is shown again only to whoever next claims that member
-  ([NFR-002](../../requirements/non-functional/NFR-002-assignment-privacy.md)).
-- **Localization:** the claim-state labels, the **Free this person** action and its confirmation are
-  DE/EN/FR ([NFR-003](../../requirements/non-functional/NFR-003-multilingual-de-en-fr.md)).
+- **Offline/local-first:** needs a connection.
+- **Localization:** —
+- **Privacy:** the freed device can no longer read the group.
+- **Performance:** —
 
 ## Open questions
 
-- Should freeing be logged/visible to the member who held it (so a device-only person understands why
-  they were signed out)? Minor; decide in the feature spec.
+- None.
 
 ## Traceability
 
-- Requirements: [FR-042](../../requirements/functional/FR-042-release-a-claimed-person.md)
-  (admin release), [FR-041](../../requirements/functional/FR-041-join-link-and-person-claim.md)
-  (person claim & locking)
-- Related use case: [UC-SS-019](UC-SS-019-join-a-shared-group.md)
-- Governing ADR: [ADR-0058](../../adr/0058-account-free-link-shared-groups.md)
-- Feature spec: [FEAT-013](../../features/FEAT-013-account-free-link-shared-groups.md)
-- Glossary: [Person claim](../../glossary/person-claim.md), [Member](../../glossary/member.md),
-  [Join link](../../glossary/join-link.md), [Shared-by-link group](../../glossary/shared-by-link-group.md)
+- Requirements: [FR-042](../../requirements/functional/FR-042-release-a-claimed-person.md), [FR-041](../../requirements/functional/FR-041-join-link-and-person-claim.md)
+- Feature spec: [FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)
+- Glossary terms: [Participant](../../glossary/participant.md), [Member entry](../../glossary/member-entry.md)

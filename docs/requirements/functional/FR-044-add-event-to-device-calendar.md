@@ -32,9 +32,9 @@ date-only, so there is no start/end time), with:
   below;
 - **Deep link** = a link back into the app at the occasion, placed in the iCalendar `URL` property **and**
   repeated in the notes (some calendars do not surface `URL`), built from the **same configured base URL
-  reveal links use**. The exact link is **per surface**: the organizer and my-assignments surfaces use the
+  reveal links use**. The exact link is **per surface**: the organizer and participant surfaces use the
   app's own event route `{origin}/groups/{groupId}/events/{eventId}` (the `EventHub` route), which works for
-  **all three storage modes** (local, shared-by-link, account) because the device that added the entry
+  **both places** (on this device, online) because the device that added the entry
   already holds that group; the **reveal page** uses the **reveal link itself**, because a raw-link holder
   need not have the group and their own link is what reopens their view (offline, ADR-0014). On Android the
   event route reuses the existing App Link / deep-link machinery
@@ -90,7 +90,7 @@ Then the calendar entry's URL is my reveal link (which reopens my assignment off
 
 Given the installed Android app and a calendar entry carrying the app's event deep link
 When I tap that link in my calendar
-Then the app opens at that occasion (offline), for a local, shared-by-link, or account group alike
+Then the app opens at that occasion (offline), for a group on this device or online alike
 
 Given the pre-filled calendar UI is shown
 When I do not confirm it (I dismiss/cancel)

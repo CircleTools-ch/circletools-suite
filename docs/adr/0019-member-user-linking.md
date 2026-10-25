@@ -1,11 +1,13 @@
 ---
-status: Accepted
+status: Superseded by ADR-0086
 date: 2026-07-27
 deciders: [Adrian]
 tags: [architecture, domain, secret-santa, identity]
 ---
 
 # ADR-0019 — Member↔User linking
+
+> **Superseded by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** Linked members are replaced by participants: every route into a group creates the same participant role assignment.
 
 ## Context and problem statement
 

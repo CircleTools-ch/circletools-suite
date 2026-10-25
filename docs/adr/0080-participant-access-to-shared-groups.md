@@ -7,6 +7,8 @@ tags: [architecture, privacy, security, sync, secret-santa, sharing]
 
 # ADR-0080 — A participant sees only their own pairing, edits only their own entry, and never publishes
 
+> **Amended by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** Every route into a group (join link, email invitation, circle, own member) creates the same participant role assignment.
+
 ## Context and problem statement
 
 [ADR-0058](0058-account-free-link-shared-groups.md) lets a person **join** a shared-by-link group with

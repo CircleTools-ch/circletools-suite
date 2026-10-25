@@ -86,7 +86,8 @@ The organizer edits a member and fills in (or clears) their gift note.
 
 ## Open questions
 
-- Should a **linked member self-author** their own gift note (as they can their wishlist, FR-030)?
+- ~~Should a linked member self-author their own gift note?~~ Settled by ADR-0086: a participant keeps their own
+  gift note with their wishlist (FR-030), and a member without one can write it from their reveal link (FR-050).
   Deferred; v1 is organizer-authored (the note is roster data). Revisit if asked.
 - Structured **tags** (allergen chips) vs free text? v1 is free text; tags are a parked extension.
 

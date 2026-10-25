@@ -179,7 +179,8 @@ jobs:
         # 1) rsync the compose file + observability config to the VM (so config changes ship with the
         #    deploy — not by hand), 2) pin the deployed IMAGE_TAG in the VM's .env (so a manual
         #    `docker compose` matches the pipeline instead of drifting to a stale :latest), then
-        #    3) migrate as an explicit one-shot and roll the stack forward from the images.
+        #    3) back up the database (ADR-0087: production data is kept — a failed backup stops the rollout
+        #    before anything migrates), 4) migrate as an explicit one-shot and roll the stack forward.
         env:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -203,5 +204,6 @@ jobs:
             "cd /opt/circletools && \
              (grep -q '^IMAGE_TAG=' .env && sed -i 's|^IMAGE_TAG=.*|IMAGE_TAG=$TAG|' .env || echo 'IMAGE_TAG=$TAG' >> .env) && \
              IMAGE_TAG=$TAG docker compose pull && \
+             BACKUP_TAG=predeploy bash backup.sh && \
              IMAGE_TAG=$TAG docker compose run --rm migrator && \
              IMAGE_TAG=$TAG docker compose up -d --remove-orphans"

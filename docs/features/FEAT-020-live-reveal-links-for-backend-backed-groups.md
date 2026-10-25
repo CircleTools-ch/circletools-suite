@@ -1,7 +1,7 @@
 ---
 id: FEAT-020
 title: Live reveal links for backend-backed groups
-status: In progress
+status: Superseded
 owner: Adrian
 target-milestone: Secret-Santa post-MVP
 bounded-context: SecretSanta
@@ -9,6 +9,8 @@ related: [ADR-0068, ADR-0014, ADR-0058, ADR-0016, ADR-0033, ADR-0061, FR-005, FR
 ---
 
 # FEAT-020 — Live reveal links for backend-backed groups
+
+> **Superseded by [FEAT-027](FEAT-027-one-way-to-be-in-a-group.md)** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md), 2026-10-25). Live reveal links now come from the group store's reveal tokens and are derived from the current document on read; no slices are published. This spec is kept as the record of what was built then.
 
 ## Problem & goals
 

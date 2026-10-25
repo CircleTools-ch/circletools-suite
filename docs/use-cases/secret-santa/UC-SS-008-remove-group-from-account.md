@@ -3,12 +3,14 @@ id: UC-SS-008
 title: Take a group back out of my account
 app: Secret-Santa
 actors: [Organizer]
-status: Approved
+status: Superseded
 priority: Should
 related: [FR-026, NFR-002, NFR-008, ADR-0017]
 ---
 
 # UC-SS-008 — Take a group back out of my account
+
+> **Superseded.** Since [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md) a group leaves the server by being kept only on this device (UC-SS-017). The use case below is kept for history.
 
 ## Summary / goal
 

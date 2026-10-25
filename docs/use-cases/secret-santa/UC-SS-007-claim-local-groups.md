@@ -3,12 +3,14 @@ id: UC-SS-007
 title: Take my existing groups into my account
 app: Secret-Santa
 actors: [Organizer]
-status: Approved
+status: Superseded
 priority: Must
 related: [FR-025, NFR-001, NFR-002, NFR-008, ADR-0017, ADR-0020]
 ---
 
 # UC-SS-007 — Take my existing groups into my account
+
+> **Superseded.** There is no claim any more since [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md): a group is put online (UC-SS-017), and an account can keep a group its organizer link owns (UC-SS-018). The use case below is kept for history.
 
 ## Summary / goal
 

@@ -36,8 +36,6 @@ public static class SecretSantaCoreServiceCollectionExtensions
         services.AddScoped<ICommandHandler<CreateGroupCommand, Guid>, CreateGroupCommandHandler>();
         services.AddScoped<ICommandHandler<CopyGroupCommand, Guid>, CopyGroupCommandHandler>();
         services.AddScoped<ICommandHandler<CreateGroupFromCircleCommand, CreateGroupFromCircleResult>, CreateGroupFromCircleCommandHandler>();
-        services.AddScoped<ICommandHandler<LinkMemberCommand>, LinkMemberCommandHandler>();
-        services.AddScoped<ICommandHandler<UnlinkMemberCommand>, UnlinkMemberCommandHandler>();
         services.AddScoped<ICommandHandler<DeleteGroupCommand>, DeleteGroupCommandHandler>();
         services.AddScoped<ICommandHandler<RenameGroupCommand>, RenameGroupCommandHandler>();
         services.AddScoped<ICommandHandler<SetBudgetCommand>, SetBudgetCommandHandler>();

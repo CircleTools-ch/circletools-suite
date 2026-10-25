@@ -18,7 +18,7 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-003](TP-003-m2-circles.md) | Test plan — M2 Circles | Circles | Reviewed |
 | [FEAT-004](FEAT-004-m3-sync-and-claim.md) | M3 — Sync & Claim | Platform | Done |
 | [TP-004](TP-004-m3-sync-and-claim.md) | Test plan — M3 Sync & Claim | Platform | Reviewed |
-| [FEAT-005](FEAT-005-m4-linking.md) | M4 — Linking | SecretSanta | Done |
+| [FEAT-005](FEAT-005-m4-linking.md) | M4 — Linking | SecretSanta | Superseded by FEAT-027 |
 | [TP-005](TP-005-m4-linking.md) | Test plan — M4 Linking | SecretSanta | Reviewed |
 | [FEAT-006](FEAT-006-m5-cross-app-sso.md) | M5 — Cross-app single sign-on | Platform | Done |
 | [TP-006](TP-006-m5-cross-app-sso.md) | Test plan — M5 Cross-app SSO | Platform | Reviewed |
@@ -34,7 +34,7 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-011](TP-011-budget-minimum-and-maximum.md) | Test plan — Budget minimum and maximum | SecretSanta | Reviewed |
 | [FEAT-012](FEAT-012-member-gift-note.md) | Member gift note (allergies / dietary / do-not-gift) | SecretSanta | Done |
 | [TP-012](TP-012-member-gift-note.md) | Test plan — Member gift note | SecretSanta | Reviewed |
-| [FEAT-013](FEAT-013-account-free-link-shared-groups.md) | Account-free, link-shared groups (third storage tier) | SecretSanta | Done |
+| [FEAT-013](FEAT-013-account-free-link-shared-groups.md) | Account-free, link-shared groups (third storage tier) | SecretSanta | Superseded by FEAT-027 |
 | [TP-013](TP-013-account-free-link-shared-groups.md) | Test plan — Account-free, link-shared groups | SecretSanta | Approved |
 | [FEAT-013 Implementation Plan](FEAT-013-implementation-plan.md) | Build plan — Account-free, link-shared groups (phased) | SecretSanta | Complete |
 | [FEAT-014](FEAT-014-add-event-to-calendar.md) | Add an event to the device calendar (one-tap, pre-filled) | SecretSanta | Done |
@@ -47,7 +47,7 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-017](TP-017-local-data-transparency-and-backup.md) | Test plan — Local data transparency & backup | SecretSanta | Reviewed |
 | [FEAT-018](FEAT-018-branded-transactional-emails.md) | Branded HTML transactional emails (per-app co-branding, source-app link origin, farewell mail) | Main | In progress |
 | [FEAT-019](FEAT-019-getting-started-checklist.md) | Getting-started checklist (first-group onboarding: guided empty→drawn sequence on the hub, self-dismissing, skippable) | SecretSanta | Done |
-| [FEAT-020](FEAT-020-live-reveal-links-for-backend-backed-groups.md) | Live reveal links for backend-backed groups (client-published opaque per-giver slice served by reveal token; reveal page shows the current wishlist/event online, falls back to the embedded snapshot offline; local-only unchanged; eventual organizer-published freshness — ADR-0068) | SecretSanta | Draft |
+| [FEAT-020](FEAT-020-live-reveal-links-for-backend-backed-groups.md) | Live reveal links for backend-backed groups (client-published opaque per-giver slice served by reveal token; reveal page shows the current wishlist/event online, falls back to the embedded snapshot offline; local-only unchanged; eventual organizer-published freshness — ADR-0068) | SecretSanta | Superseded by FEAT-027 |
 | [TP-018](TP-018-branded-transactional-emails.md) | Test plan — Branded transactional emails | Main | Draft |
 | [FEAT-021](FEAT-021-storage-default-onboarding-and-list-indicator.md) | Storage default, first-run onboarding & group-list storage indicator (device-local default seeds every create path incl. the phone FAB; one-time skippable onboarding; per-group storage icon — ADR-0071, FR-048) | SecretSanta | In progress |
 | [TP-021](TP-021-storage-default-onboarding-and-list-indicator.md) | Test plan — Storage default, onboarding & list indicator | SecretSanta | Draft |
@@ -55,12 +55,14 @@ design. Each feature has a paired **test plan** (`TP-NNN`).
 | [TP-022](TP-022-business-metrics-dashboard.md) | Test plan — Business-metrics dashboard | Platform | Draft |
 | [FEAT-023](FEAT-023-session-scope-and-change-password.md) | Session scope and change password (sign out ends this device only; "Sign out on all devices"; change password ends the other sessions — ADR-0079) | Identity | In progress |
 | [TP-023](TP-023-session-scope-and-change-password.md) | Test plan — Session scope and change password | Identity | Draft |
-| [FEAT-024](FEAT-024-participants-in-shared-groups.md) | Participants in shared groups (own pairing only, own entry editable, leave group, organizer-only linking publish — ADR-0080) | SecretSanta + Main | Done |
+| [FEAT-024](FEAT-024-participants-in-shared-groups.md) | Participants in shared groups (own pairing only, own entry editable, leave group, organizer-only linking publish — ADR-0080) | SecretSanta + Main | Superseded by FEAT-027 |
 | [TP-024](TP-024-participants-in-shared-groups.md) | Test plan — Participants in shared groups | SecretSanta + Main | Approved |
 | [FEAT-025](FEAT-025-storage-model-and-onboarding.md) | Storage model & onboarding (owned shared groups, create-time storage choice, named import prompt — ADR-0081) | SecretSanta + Main | Done |
 | [TP-025](TP-025-storage-model-and-onboarding.md) | Test plan — Storage model & onboarding | SecretSanta + Main | Approved |
 | [FEAT-026](FEAT-026-own-entry-from-the-reveal-link.md) | Own wishlist and gift note from the reveal link (live-link groups; organizer's copy read-only — ADR-0084) | SecretSanta + Main | Done |
 | [TP-026](TP-026-own-entry-from-the-reveal-link.md) | Test plan — Own entry from the reveal link | SecretSanta + Main | Reviewed |
+| [FEAT-027](FEAT-027-one-way-to-be-in-a-group.md) | One way to be in a group — online group store, participants for every route, derived views (ADR-0086) | SecretSanta + Main | In progress |
+| [TP-027](TP-027-one-way-to-be-in-a-group.md) | Test plan — One way to be in a group | SecretSanta + Main | Draft |
 
 **M1 is closed, not shipped.** FEAT-002 is `Done` in the sense the process means it — the slice is
 built, tested and documented. It cannot reach production until the transactional-email provider and

@@ -8,34 +8,31 @@ status: Draft
 
 ## Definition
 
-A person participating in a [Group](group.md). A member has at least a display name and an optional
-[Wishlist](wishlist.md) of gift ideas; contact details are optional. Members are the givers and
-recipients in a [Draw](draw.md).
+A person in a [Group](group.md)'s roster. A member has a display name, an optional [gift note](gift-note.md) and
+a [wishlist](wishlist.md) per event; members are the givers and recipients in a [Draw](draw.md).
 
-A member may additionally be **linked to a [User](user.md)** by an optional account reference. The
-link is what changes how that person is served, not what they *are*:
+The member is a **name in the roster**, nothing more: the group's document carries no account. In an
+[online group](online-group.md), a person can take part **as** a member — a [participant](participant.md),
+through their account or a device key ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md)). That changes how the person is served, not what the member is:
 
-| | Unlinked member | Linked member |
+| | Member without a participant | Member with a participant |
 |---|---|---|
-| Identity | a name in the group, nothing more | references a suite account |
-| Sees their assignment | by opening their [Reveal link](reveal-link.md) | in the app, signed in on any device |
-| Wishlist | the organizer types it for them | they own and edit it themselves |
+| Sees their assignment | through their [reveal link](reveal-link.md) | in the app, on their participant page |
+| Wishlist and gift note | the organizer types them, or the person uses their reveal link | the person keeps them ([member entry](member-entry.md)) |
 
-Unlinked members stay **first-class** — a group can consist entirely of them, and the whole
-account-free flow keeps working unchanged. Linking is additive.
+Members without a participant stay **first-class** — a group can consist entirely of them, and a group on this
+device always does.
 
 ## Bounded context(s)
 
-- **Secret-Santa:** a participant within one group. The same real person in two groups is two
-  members (membership is per group). A member may hold an optional user reference, but the
-  Secret-Santa domain never depends on the Identity or Circles contexts — it stores an identifier,
-  not a user.
+- **Secret-Santa:** a roster entry within one group. The same real person in two groups is two members. Who a
+  member is as a person lives in the group store's [role assignments](role-assignment.md), never in the domain.
 
 ## Synonyms / do-not-use
 
-- **Synonyms:** participant.
-- **Do NOT use:** "user" as a name for a member — a member *may reference* a [User](user.md), but the
-  two are different concepts and most members have no account at all. Do not use "member" unqualified
+- **Synonyms:** roster entry.
+- **Do NOT use:** "participant" for a member — a [participant](participant.md) is a person taking part *as* a
+  member; "user" — a member never references an account; "linked member". Do not use "member" unqualified
   for someone in a [Circle](circle.md) either; that is a
   [Circle membership](circle-membership.md).
 
@@ -49,7 +46,7 @@ account-free flow keeps working unchanged. Linking is additive.
 
 ## Related terms
 
-- [Group](group.md), [Wishlist](wishlist.md), [Assignment](assignment.md), [Exclusion](exclusion.md), [User](user.md), [Circle](circle.md), [Managed member](managed-member.md)
+- [Group](group.md), [Wishlist](wishlist.md), [Assignment](assignment.md), [Exclusion](exclusion.md), [Participant](participant.md), [Member entry](member-entry.md), [Circle](circle.md), [Managed member](managed-member.md)
 
 ## First appearance
 

@@ -19,10 +19,6 @@ public sealed class AccountPageTests
 {
     private const string Account = "api/v1/account";
 
-    // A minimal, serializable opaque body for the shared-group DTOs.
-    private static readonly System.Text.Json.JsonElement EmptyBody =
-        System.Text.Json.JsonDocument.Parse("{}").RootElement.Clone();
-
     // What the API actually sends for a password-policy failure: codes, not prose (ADR-0027).
     private static readonly string[] _tooShort = ["PasswordTooShort"];
     private static readonly string[] _breached = ["BreachedPassword"];
@@ -293,13 +289,13 @@ public sealed class AccountPageTests
     [Fact]
     public async Task DeleteAccount_WhenSharedGroupsAreOwned_OffersHandOffOrDelete()
     {
-        // FR-043 / ADR-0058: an owner with shared-by-link groups is asked what becomes of them.
+        // FR-043 / ADR-0086: an owner of online groups is asked what becomes of them.
         await using var ctx = new AccountTestContext();
         ctx.SignIn();
         ctx.Api.RespondJson(
             HttpMethod.Get,
-            "api/v1/shared/owned",
-            new OwnedSharedGroups([new OwnedSharedGroup(Guid.CreateVersion7(), 1, EmptyBody)]));
+            "api/v1/account/owned-groups",
+            new OwnedGroupCount(1));
 
         var cut = ctx.RenderPage<AccountData>();
 

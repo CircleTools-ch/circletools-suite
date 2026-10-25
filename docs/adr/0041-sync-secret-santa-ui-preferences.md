@@ -7,6 +7,8 @@ tags: [architecture, sync, offline, secret-santa, ui]
 
 # ADR-0041 — Sync Secret-Santa UI preferences as an opaque sync-store kind (extending ADR-0033)
 
+> **Amended by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** The sync store now holds only this preferences kind.
+
 ## Context and problem statement
 
 Users can now **pin a group** for quick access from the navigation

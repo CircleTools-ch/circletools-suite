@@ -1,0 +1,234 @@
+@page "/groups/{GroupId:guid}/me"
+@using System.Globalization
+@using CircleTools.SecretSanta.Contracts
+@using CircleTools.SecretSanta.Core.Reveal
+@using CircleTools.SecretSanta.LocalStore.Online
+@inject IGroupRecordStore Records
+@inject OnlineGroupSync Online
+@inject ISyncSignals SyncSignals
+@inject GroupRemoval Removal
+@inject NavigationManager Navigation
+@inject IHapticFeedback Haptics
+@inject ISnackbar Snackbar
+@inject RevealLinkOptions RevealOptions
+@inject IStringLocalizer<AppStrings> L
+@implements IDisposable
+
+@*
+    A group this device takes part in (ADR-0086, decision D3) — the one place for "my assignment" and "my wishlist":
+    per event, whom the person gives to (behind the deliberate reveal step, so a shared screen doesn't spoil it),
+    and their own wishlist and gift note, which only they keep. The view comes from the server and holds only the
+    person's own pairing (NFR-002); an edit made offline is kept here and sent on the next sync.
+*@
+
+<PageTitle>@(_view?.GroupName ?? L["Loading"])</PageTitle>
+
+@if (!_loaded)
+{
+    <MudText>@L["Loading"]</MudText>
+}
+else if (_view is null)
+{
+    <MudText>@L["ParticipantNotFound"]</MudText>
+}
+else
+{
+    <div class="d-flex align-center gap-1 mb-1">
+        <MudText Typo="Typo.h4" Class="flex-grow-1">@_view.GroupName</MudText>
+        @if (!_organizes)
+        {
+        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" AriaLabel="@L["MoreActions"]"
+                 AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" id="participant-menu">
+            <MudMenuItem Icon="@Icons.Material.Filled.Logout" IconColor="Color.Error" OnClick="LeaveAsync">@L["LeaveGroup"]</MudMenuItem>
+        </MudMenu>
+        }
+    </div>
+    <MudText Class="mud-text-secondary mb-4" id="joined-as">@L["YouAreMember", _view.MemberName]</MudText>
+
+    <MudStack Spacing="3">
+        @foreach (var occasion in _view.Events)
+        {
+            <MudCard Elevation="1">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">@EventLabel(occasion.EventName)</MudText>
+                    @if (occasion.Date is { } date)
+                    {
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">@date.ToString("d", CultureInfo.CurrentCulture)</MudText>
+                    }
+
+                    @if (occasion.Assignment is not { } pairing)
+                    {
+                        <MudText Class="mud-text-secondary mb-3">@L["ParticipantNoDraw"]</MudText>
+                    }
+                    else
+                    {
+                        @if (pairing.BudgetAmount is { } amount && pairing.BudgetCurrency is { } currency)
+                        {
+                            <MudText Class="mb-1"><strong>@L["RevealBudgetLabel"]:</strong> @BudgetDisplay.Format(pairing.BudgetMin, amount, currency)</MudText>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(pairing.EventLocation))
+                        {
+                            <MudText Class="mb-1"><strong>@L["RevealEventLabel"]:</strong> @pairing.EventLocation</MudText>
+                        }
+                        @if (CalendarFor(occasion, pairing) is { } calendarEvent)
+                        {
+                            <div class="mt-1 mb-2"><AddToCalendarButton CalendarEvent="calendarEvent" /></div>
+                        }
+
+                        @if (_revealed.Contains(occasion.EventId))
+                        {
+                            <MudAlert Severity="Severity.Success" Class="mt-2 mb-3">
+                                <MudText Class="mb-1">@L["RevealRecipientLabel"]:</MudText>
+                                <MudText Typo="Typo.h5" Class="mb-3 participant-recipient">@pairing.RecipientName</MudText>
+                                @if (!string.IsNullOrWhiteSpace(pairing.GiftNote))
+                                {
+                                    <MudText Class="mb-3"><strong>@L["RevealGiftNoteLabel"]:</strong> @pairing.GiftNote</MudText>
+                                }
+                                <MudText Class="mb-1"><strong>@L["RevealWishlistLabel"]:</strong></MudText>
+                                @if (pairing.Wishlist.Count == 0)
+                                {
+                                    <MudText>@L["RevealNoWishlist"]</MudText>
+                                }
+                                else
+                                {
+                                    <WishlistItems Items="pairing.Wishlist" />
+                                }
+                            </MudAlert>
+                        }
+                        else
+                        {
+                            <MudText Class="mud-text-secondary mt-2 mb-2">@L["RevealSpoilerNote"]</MudText>
+                            <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="mb-3 participant-reveal"
+                                       StartIcon="@Icons.Material.Filled.CardGiftcard" OnClick="() => RevealAsync(occasion.EventId)">
+                                @L["RevealButton"]
+                            </MudButton>
+                        }
+                    }
+
+                    @if (!_organizes)
+                    {
+                        <MudTextField T="string" @bind-Value="_wishes[occasion.EventId]" Lines="4" Variant="Variant.Outlined"
+                                      Label="@L["YourWishlistFor", EventLabel(occasion.EventName)]" HelperText="@L["WishlistLabel"]"
+                                      Disabled="!_canEdit" Class="participant-wishlist" />
+                    }
+                </MudCardContent>
+            </MudCard>
+        }
+    </MudStack>
+
+    @* The organizer's own entry is part of the document they edit, so it is edited where everyone's is. *@
+    @if (_organizes)
+    {
+        <MudText Class="mud-text-secondary mt-4">@L["ParticipantOrganizerHint"]</MudText>
+    }
+    else
+    {
+        <MudTextField T="string" @bind-Value="_giftNote" Lines="2" Variant="Variant.Outlined" Class="mt-4"
+                      Label="@L["MyGiftNoteLabel"]" HelperText="@L["MyGiftNoteHelp"]" MaxLength="500" Disabled="!_canEdit" />
+    }
+
+    @if (_canEdit && !_organizes)
+    {
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" OnClick="SaveAsync" Disabled="_saving" id="save-own-entry">@L["Save"]</MudButton>
+    }
+}
+
+@code {
+    /// <summary>The group.</summary>
+    [Parameter]
+    public Guid GroupId { get; set; }
+
+    private bool _loaded;
+    private bool _saving;
+    private bool _canEdit;
+    private bool _organizes;
+    private ParticipantView? _view;
+    private string? _giftNote;
+    private readonly Dictionary<Guid, string> _wishes = [];
+    private readonly HashSet<Guid> _revealed = [];
+
+    protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync(resetEditors: true);
+
+        // Refresh from the server in the background; the page shows what this device held meanwhile.
+        _ = InvokeAsync(async () =>
+        {
+            await Online.SyncGroupAsync(GroupId);
+            await LoadAsync(resetEditors: false);
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose() => SyncSignals.SyncCompleted -= OnSyncCompleted;
+
+    private void OnSyncCompleted() => _ = InvokeAsync(async () =>
+    {
+        await LoadAsync(resetEditors: false);
+        StateHasChanged();
+    });
+
+    // A pending entry (written offline) wins over the server view in the editors, so nothing typed is lost.
+    private async Task LoadAsync(bool resetEditors)
+    {
+        var record = (await Records.LoadAsync()).Records.FirstOrDefault(r => r.Id == GroupId);
+        _view = record?.View;
+        _canEdit = record?.Access?.Can(OnlinePermissions.WriteOwnEntry) == true;
+        _organizes = record?.Document is not null;
+        _loaded = true;
+        if (_view is null || (!resetEditors && _wishes.Count > 0))
+        {
+            return;
+        }
+
+        var pending = record!.PendingEntry;
+        _giftNote = pending?.GiftNote ?? _view.GiftNote;
+        _wishes.Clear();
+        foreach (var occasion in _view.Events)
+        {
+            var items = pending?.Wishlists.FirstOrDefault(w => w.EventId == occasion.EventId)?.Items ?? occasion.Wishlist;
+            _wishes[occasion.EventId] = string.Join('\n', items);
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        var entry = new OwnEntryRequest(
+            string.IsNullOrWhiteSpace(_giftNote) ? null : _giftNote.Trim(),
+            [.. _wishes.Select(w => new OwnWishlist(w.Key, [.. w.Value.Split('\n').Select(i => i.Trim()).Where(i => i.Length > 0)]))]);
+        await Online.WriteOwnEntryAsync(GroupId, entry);
+        var still = (await Records.LoadAsync()).Records.FirstOrDefault(r => r.Id == GroupId)?.PendingEntry;
+        Snackbar.Add(still is null ? L["Saved"] : L["SavedOfflinePending"], still is null ? Severity.Success : Severity.Info);
+        _saving = false;
+    }
+
+    private async Task RevealAsync(Guid eventId)
+    {
+        _revealed.Add(eventId);
+        await Haptics.TapAsync();
+    }
+
+    private async Task LeaveAsync()
+    {
+        if (_view is not null && await Removal.AskAndRemoveAsync(GroupId, _view.GroupName))
+        {
+            Navigation.NavigateTo(string.Empty);
+        }
+    }
+
+    private string EventLabel(string name) => string.IsNullOrWhiteSpace(name) ? L["DefaultEventName"] : name;
+
+    private CalendarEvent? CalendarFor(ParticipantEventView occasion, RevealPayload pairing) => CalendarEventFactory.ForOccasion(
+        GroupId,
+        occasion.EventId,
+        EventLabel(occasion.EventName),
+        occasion.Date,
+        pairing.EventLocation,
+        pairing.EventNotes,
+        pairing.BudgetAmount is { } amount && pairing.BudgetCurrency is { } currency ? new BudgetDto(amount, currency, pairing.BudgetMin) : null,
+        L["RevealBudgetLabel"],
+        RevealOptions.BaseUrl);
+}

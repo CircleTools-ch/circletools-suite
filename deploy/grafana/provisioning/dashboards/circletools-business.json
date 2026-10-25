@@ -25,7 +25,7 @@
       "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(circletools_business_accounts{job=\"api\",confirmed=\"true\"})" } ] },
 
     { "id": 4, "type": "stat", "title": "Groups (all)", "datasource": { "type": "prometheus", "uid": "prometheus" }, "gridPos": { "h": 4, "w": 3, "x": 6, "y": 1 },
-      "description": "circles.circles + shared.groups. Local-only groups never reach the server and are not counted.",
+      "description": "circles.circles + secretsanta.groups (online Secret-Santa groups). Groups kept on a device never reach the server and are not counted.",
       "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "thresholds": { "mode": "absolute", "steps": [ { "color": "blue", "value": null } ] } }, "overrides": [] },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "none", "graphMode": "area", "textMode": "value" },
       "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(circletools_business_groups{job=\"api\"})" } ] },
@@ -35,10 +35,10 @@
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "none", "graphMode": "area", "textMode": "value" },
       "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(circletools_business_groups{job=\"api\",kind=\"circle\"})" } ] },
 
-    { "id": 6, "type": "stat", "title": "Shared groups", "datasource": { "type": "prometheus", "uid": "prometheus" }, "gridPos": { "h": 4, "w": 3, "x": 12, "y": 1 },
+    { "id": 6, "type": "stat", "title": "Online groups", "datasource": { "type": "prometheus", "uid": "prometheus" }, "gridPos": { "h": 4, "w": 3, "x": 12, "y": 1 },
       "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "thresholds": { "mode": "absolute", "steps": [ { "color": "blue", "value": null } ] } }, "overrides": [] },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "none", "graphMode": "area", "textMode": "value" },
-      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(circletools_business_groups{job=\"api\",kind=\"shared\"})" } ] },
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(circletools_business_groups{job=\"api\",kind=\"online\"})" } ] },
 
     { "id": 7, "type": "stat", "title": "Events", "datasource": { "type": "prometheus", "uid": "prometheus" }, "gridPos": { "h": 4, "w": 3, "x": 15, "y": 1 },
       "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "thresholds": { "mode": "absolute", "steps": [ { "color": "blue", "value": null } ] } }, "overrides": [] },
@@ -50,8 +50,8 @@
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "none", "graphMode": "area", "textMode": "value" },
       "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(circletools_business_members{job=\"api\"})" } ] },
 
-    { "id": 9, "type": "stat", "title": "Draws (server-visible)", "datasource": { "type": "prometheus", "uid": "prometheus" }, "gridPos": { "h": 4, "w": 3, "x": 21, "y": 1 },
-      "description": "Distinct server-stored draw publications. Account-free / zero-knowledge draws never reach the server (ADR-0020), so this is a lower bound, not every draw.",
+    { "id": 9, "type": "stat", "title": "Draws (online groups)", "datasource": { "type": "prometheus", "uid": "prometheus" }, "gridPos": { "h": 4, "w": 3, "x": 21, "y": 1 },
+      "description": "Draws in online Secret-Santa groups. Groups kept on a device never reach the server (ADR-0086), so this is a lower bound, not every draw.",
       "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "thresholds": { "mode": "absolute", "steps": [ { "color": "purple", "value": null } ] } }, "overrides": [] },
       "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "none", "graphMode": "area", "textMode": "value" },
       "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(circletools_business_draws{job=\"api\"})" } ] },
@@ -65,19 +65,19 @@
       "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "circletools_business_accounts{job=\"api\"}", "legendFormat": "confirmed={{confirmed}}" } ] },
 
     { "id": 12, "type": "timeseries", "title": "Groups over time", "datasource": { "type": "prometheus", "uid": "prometheus" }, "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
-      "description": "Cumulative group count by server store (circle vs shared-by-link). Local-only groups are not counted.",
+      "description": "Cumulative group count by server store (circle vs online Secret-Santa group). Groups kept on a device are not counted.",
       "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 20, "stacking": { "mode": "normal" } } }, "overrides": [] },
       "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi", "sort": "desc" } },
       "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "circletools_business_groups{job=\"api\"}", "legendFormat": "{{kind}}" } ] },
 
     { "id": 13, "type": "timeseries", "title": "Events, members & draws over time", "datasource": { "type": "prometheus", "uid": "prometheus" }, "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
-      "description": "Cumulative counts. Draws = distinct server-visible draw publications; a lower bound (ADR-0020).",
+      "description": "Cumulative counts. Events and draws in online Secret-Santa groups; a lower bound (ADR-0086).",
       "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
       "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
       "targets": [
         { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(circletools_business_events{job=\"api\"})", "legendFormat": "events" },
         { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(circletools_business_members{job=\"api\"})", "legendFormat": "members" },
-        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(circletools_business_draws{job=\"api\"})", "legendFormat": "draws (server-visible)" }
+        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(circletools_business_draws{job=\"api\"})", "legendFormat": "draws (online groups)" }
       ] }
   ]
 }

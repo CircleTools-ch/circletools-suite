@@ -1,10 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
 using CircleTools.Infrastructure.Outbox;
 using CircleTools.Main.Contracts;
-using CircleTools.Main.Service.Core.Domain;
+using CircleTools.SecretSanta.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CircleTools.Main.Service.Test.Api;
@@ -156,57 +155,42 @@ public sealed class ExportAndDeletionTests(MailApiFactory factory)
     }
 
     [Fact]
-    public async Task Delete_ByDefault_HandsOwnedSharedGroupsBackToSharedByLink()
+    public async Task Delete_ByDefault_HandsOwnedOnlineGroupsOverToAnOrganizerLink()
     {
-        // FR-043 / ADR-0058 default: the owner leaves, but the online group stays so everyone who
-        // joined by link keeps access. It simply becomes owner-less again.
+        // FR-043 / ADR-0086 default: the owner leaves, but the online group stays so everyone taking part
+        // keeps access. An organizer link owns it from now on.
         var (_, client, _) = await SignedInAsync();
-        var (accountId, group) = await OwnedSharedGroupFor(client);
+        var links = await OwnedOnlineGroupFor(client);
+        Assert.Equal(1, (await client.GetFromJsonAsync<OwnedGroupCount>("/api/v1/account/owned-groups"))!.Count);
 
         var deleted = await client.PostAsJsonAsync(
             "/api/v1/account/delete", new DeleteAccountRequest(Password, DeleteSharedGroups: false));
         deleted.EnsureSuccessStatusCode();
 
-        await using var scope = factory.Services.CreateAsyncScope();
-        var store = scope.ServiceProvider.GetRequiredService<ISharedGroupStore>();
-        // The join link still resolves — participants are not stranded — but nobody owns it now.
-        Assert.NotNull(await store.GetAsync(group.JoinToken, ParticipantProof.None));
-        Assert.Empty(await store.ListOwnedAsync(accountId));
+        // The join link still resolves — participants are not stranded.
+        var preview = await factory.CreateClient().GetAsync(new Uri($"/api/v1/secretsanta/join/{links.JoinToken}", UriKind.Relative));
+        Assert.Equal(HttpStatusCode.OK, preview.StatusCode);
     }
 
     [Fact]
-    public async Task Delete_WhenAsked_RemovesOwnedSharedGroupsToo()
+    public async Task Delete_WhenAsked_RemovesOwnedOnlineGroupsToo()
     {
-        // FR-043 / ADR-0058 alternative disposition: the owner chose to take the online copies with them.
+        // FR-043 alternative disposition: the owner chose to take the online copies with them.
         var (_, client, _) = await SignedInAsync();
-        var (accountId, group) = await OwnedSharedGroupFor(client);
+        var links = await OwnedOnlineGroupFor(client);
 
         var deleted = await client.PostAsJsonAsync(
             "/api/v1/account/delete", new DeleteAccountRequest(Password, DeleteSharedGroups: true));
         deleted.EnsureSuccessStatusCode();
 
-        await using var scope = factory.Services.CreateAsyncScope();
-        var store = scope.ServiceProvider.GetRequiredService<ISharedGroupStore>();
         // The online copy is gone: the join link no longer resolves.
-        Assert.Null(await store.GetAsync(group.JoinToken, ParticipantProof.None));
-        Assert.Empty(await store.ListOwnedAsync(accountId));
+        var preview = await factory.CreateClient().GetAsync(new Uri($"/api/v1/secretsanta/join/{links.JoinToken}", UriKind.Relative));
+        Assert.Equal(HttpStatusCode.NotFound, preview.StatusCode);
     }
 
-    /// <summary>Creates a shared-by-link group owned by the signed-in account, for the deletion tests.</summary>
-    private async Task<(Guid AccountId, MintedLinks Links)> OwnedSharedGroupFor(HttpClient client)
-    {
-        var profile = await (await client.GetAsync(new Uri("/api/v1/account/profile", UriKind.Relative)))
-            .Content.ReadFromJsonAsync<ProfileResponse>();
-
-        await using var scope = factory.Services.CreateAsyncScope();
-        var store = scope.ServiceProvider.GetRequiredService<ISharedGroupStore>();
-
-        using var body = JsonDocument.Parse("""{ "name": "Family" }""");
-        var created = await store.CreateAsync(new CreateSharedGroupRequest(Guid.NewGuid(), 1, body.RootElement.Clone(), "creator-key"));
-        var links = created.Links!;
-        await store.ClaimAdminAsync(links.AdminToken, profile!.Id, profile.DisplayName);
-        return (profile.Id, links);
-    }
+    /// <summary>Makes an online group owned by the signed-in account, with its join link on, for the deletion tests.</summary>
+    private static Task<GroupLinks> OwnedOnlineGroupFor(HttpClient client) =>
+        OnlineGroupScenario.CreateAsync(client, OnlineGroupScenario.DrawnGroup().Document, joinEnabled: true);
 
     [Fact]
     public async Task Delete_FreesTheAddressForAFreshSignup()

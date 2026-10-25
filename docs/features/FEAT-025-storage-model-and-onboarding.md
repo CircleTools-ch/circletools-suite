@@ -10,6 +10,8 @@ related: [ADR-0081, ADR-0071, ADR-0044, ADR-0058, ADR-0078, FR-038, FR-048, TP-0
 
 # FEAT-025 — Storage model & onboarding
 
+> **Amended by [FEAT-027](FEAT-027-one-way-to-be-in-a-group.md)** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md), 2026-10-25). The four storage kinds became two places (on this device, online); the onboarding and the default place carry over. This spec is kept as the record of what was built then.
+
 ## Problem & goals
 
 - **Problem:** the [2026-10-16 two-account test](../brainstorming/2026-10-16-secret-santa-two-account-device-test.md)

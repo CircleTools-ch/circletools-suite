@@ -8,40 +8,15 @@ namespace CircleTools.SecretSanta.LocalStore;
 public static class SecretSantaLocalStoreServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers the <see cref="GroupRepository"/> over whatever <see cref="IKeyValueStore"/> the
-    /// host has supplied.
+    /// Registers the account sync of the per-account documents (FEAT-004, ADR-0041): the <see cref="ILocalSyncStore"/>
+    /// holding the profile, the preferences and the device's cursor, and the <see cref="SyncService"/> that runs a
+    /// cycle. Groups do not travel here (ADR-0086).
     /// </summary>
     /// <remarks>
-    /// The store itself is deliberately not registered here. It is the one part that differs
-    /// between a browser and a device, which is why ADR-0025 puts it in the host: a web host
-    /// registers <c>CircleTools.Ui.Web.BrowserKeyValueStore</c>, the MAUI head
-    /// <see cref="FileKeyValueStore"/> via <see cref="AddSecretSantaFileStorage"/>.
-    /// </remarks>
-    /// <param name="services">The service collection to add to.</param>
-    /// <returns>The same service collection, for chaining.</returns>
-    public static IServiceCollection AddSecretSantaGroupRepository(this IServiceCollection services)
-    {
-        ArgumentNullException.ThrowIfNull(services);
-
-        services.AddScoped<IGroupRepository, GroupRepository>();
-        return services;
-    }
-
-    /// <summary>
-    /// Registers the M3 client sync engine (FEAT-004): the syncing <see cref="IGroupRepository"/> over
-    /// the shared <see cref="ILocalSyncStore"/>, and the <see cref="SyncService"/> that runs a cycle.
-    /// </summary>
-    /// <remarks>
-    /// This replaces <see cref="AddSecretSantaGroupRepository"/> — the syncing repository serves the
-    /// same port and works identically offline, additionally keeping the sync metadata a signed-in
-    /// account needs. It migrates the existing local groups in place on first load, so it is safe to
-    /// adopt for account-free users who never sign in: <see cref="SyncService"/> only ever runs for a
-    /// signed-in account, so the account-free product is unchanged by construction.
-    /// <para>
-    /// The host supplies <see cref="ISyncApi"/> — normally <see cref="HttpSyncApi"/> over the account's
-    /// authorized <see cref="HttpClient"/> (ADR-0021) — when it wires sign-in; the engine itself takes
-    /// no dependency on how the token is obtained.
-    /// </para>
+    /// The host supplies <see cref="ISyncApi"/> — normally <see cref="HttpSyncApi"/> over the account's authorized
+    /// <see cref="HttpClient"/> (ADR-0021). The store itself is the host's too: a web host registers
+    /// <c>CircleTools.Ui.Web.BrowserKeyValueStore</c>, the MAUI head <see cref="FileKeyValueStore"/> via
+    /// <see cref="AddSecretSantaFileStorage"/> (ADR-0025).
     /// </remarks>
     /// <param name="services">The service collection to add to.</param>
     /// <returns>The same service collection, for chaining.</returns>
@@ -50,12 +25,23 @@ public static class SecretSantaLocalStoreServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.AddScoped<ILocalSyncStore, LocalSyncStore>();
-        services.AddScoped<IGroupRepository, SyncingGroupRepository>();
         services.AddScoped<SyncService>();
-        services.AddScoped<SharedSyncService>();
-        services.AddScoped<ClaimableGroupsService>();
-        // Portable export/import of the locally held groups (FEAT-017). Storage-agnostic — it works over
-        // whichever repository the host wired — so it is registered here beside the repository it reads.
+        return services;
+    }
+
+    /// <summary>
+    /// Registers this device's groups (ADR-0086, FEAT-027): the group records, the domain repository over them, the
+    /// one sync for every online group, and the portable backup of the groups held here (FEAT-017). The host
+    /// registers <see cref="Online.IOnlineGroupApi"/> over its authorized client.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The service collection.</returns>
+    public static IServiceCollection AddSecretSantaOnlineGroups(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddScoped<Online.IGroupRecordStore, Online.GroupRecordStore>();
+        services.AddScoped<Online.OnlineGroupSync>();
+        services.AddScoped<IGroupRepository, Online.GroupRecordRepository>();
         services.AddScoped<BackupService>();
         return services;
     }

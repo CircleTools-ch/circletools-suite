@@ -76,3 +76,21 @@ public sealed class AccountApi : ICollectionFixture<AccountApiFactory>
     /// <summary>The xUnit collection name.</summary>
     public const string CollectionName = "account-api";
 }
+
+/// <summary>
+/// An account API host of its own for the timing tests, run after every parallel collection has
+/// finished and with nothing beside it.
+/// </summary>
+/// <remarks>
+/// A constant-time route is judged on the fastest sample of each path (NFR-005). Sustained CPU
+/// contention from collections running in parallel lifted every sample of one path a few
+/// milliseconds above the budget and failed a route with no leak (122.90 ms against 120.64 ms, see
+/// the 2026-10-21 device-test re-check). Running alone removes that contention without loosening
+/// the thresholds.
+/// </remarks>
+[CollectionDefinition(CollectionName, DisableParallelization = true)]
+public sealed class TimingApi : ICollectionFixture<AccountApiFactory>
+{
+    /// <summary>The xUnit collection name.</summary>
+    public const string CollectionName = "account-api-timing";
+}

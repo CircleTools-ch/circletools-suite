@@ -295,6 +295,35 @@
       "circletools.secretsanta.contracts": {
         "type": "Project"
       },
+      "circletools.secretsanta.core": {
+        "type": "Project",
+        "dependencies": {
+          "CircleTools.Application": "[1.0.0, )",
+          "CircleTools.SecretSanta.Contracts": "[1.0.0, )",
+          "CircleTools.SharedKernel": "[1.0.0, )"
+        }
+      },
+      "circletools.secretsanta.service": {
+        "type": "Project",
+        "dependencies": {
+          "CircleTools.SecretSanta.Service.Core": "[1.0.0, )"
+        }
+      },
+      "circletools.secretsanta.service.core": {
+        "type": "Project",
+        "dependencies": {
+          "CircleTools.SecretSanta.Contracts": "[1.0.0, )",
+          "CircleTools.SecretSanta.Core": "[1.0.0, )"
+        }
+      },
+      "circletools.secretsanta.service.repository": {
+        "type": "Project",
+        "dependencies": {
+          "CircleTools.SecretSanta.Service.Core": "[1.0.0, )",
+          "Microsoft.EntityFrameworkCore": "[10.0.13, )",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.3, )"
+        }
+      },
       "circletools.servicedefaults": {
         "type": "Project",
         "dependencies": {

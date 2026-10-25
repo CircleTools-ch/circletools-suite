@@ -33,21 +33,21 @@ Use cases describe how actors achieve goals with the system. They are the bridge
 | [UC-MAIN-014](main/UC-MAIN-014-delete-circle.md) | Delete a circle | Main | Approved |
 | [UC-MAIN-015](main/UC-MAIN-015-sync-across-devices.md) | See my data on every device I sign in on | Main | Approved |
 | [UC-MAIN-016](main/UC-MAIN-016-work-offline-and-reconcile.md) | Work offline while signed in, and reconcile when back online | Main | Approved |
-| [UC-SS-007](secret-santa/UC-SS-007-claim-local-groups.md) | Take my existing groups into my account | Secret-Santa | Approved |
-| [UC-SS-008](secret-santa/UC-SS-008-remove-group-from-account.md) | Take a group back out of my account | Secret-Santa | Approved |
+| [UC-SS-007](secret-santa/UC-SS-007-claim-local-groups.md) | Take my existing groups into my account | Secret-Santa | Superseded |
+| [UC-SS-008](secret-santa/UC-SS-008-remove-group-from-account.md) | Take a group back out of my account | Secret-Santa | Superseded |
 | [UC-SS-009](secret-santa/UC-SS-009-create-group-from-circle.md) | Create a group from a circle | Secret-Santa | Approved |
-| [UC-SS-010](secret-santa/UC-SS-010-link-member-to-account.md) | Link a member to an account | Secret-Santa | Approved |
-| [UC-SS-011](secret-santa/UC-SS-011-see-my-assignment.md) | See my assignment while signed in | Secret-Santa | Approved |
-| [UC-SS-012](secret-santa/UC-SS-012-edit-my-wishlist.md) | Edit my own wishlist | Secret-Santa | Approved |
+| [UC-SS-010](secret-santa/UC-SS-010-link-member-to-account.md) | Invite a person by email to take part | Secret-Santa | Approved |
+| [UC-SS-011](secret-santa/UC-SS-011-see-my-assignment.md) | See my assignment in the app | Secret-Santa | Approved |
+| [UC-SS-012](secret-santa/UC-SS-012-edit-my-wishlist.md) | Keep my own wishlist and gift note | Secret-Santa | Approved |
 | [UC-SS-013](secret-santa/UC-SS-013-manage-events.md) | Manage multiple events (occasions) in a group | Secret-Santa | Approved |
 | [UC-MAIN-017](main/UC-MAIN-017-single-sign-on-across-apps.md) | Stay signed in when moving between suite apps | Main | Approved |
 | [UC-SS-014](secret-santa/UC-SS-014-carry-forward-new-occasion.md) | Create a new occasion carrying forward from a previous one | Secret-Santa | Draft |
 | [UC-SS-015](secret-santa/UC-SS-015-budget-minimum-and-maximum.md) | Set a minimum as well as a maximum gift budget | Secret-Santa | Reviewed |
 | [UC-SS-016](secret-santa/UC-SS-016-member-gift-note.md) | Give a member a gift note (allergies, dietary, do-not-gift) their giver sees | Secret-Santa | Reviewed |
-| [UC-SS-017](secret-santa/UC-SS-017-choose-and-switch-storage-mode.md) | Choose a group's storage mode at creation and switch it later | Secret-Santa | Approved |
-| [UC-SS-018](secret-santa/UC-SS-018-share-and-manage-as-admin.md) | Share and manage a shared-by-link group as an admin | Secret-Santa | Approved |
-| [UC-SS-019](secret-santa/UC-SS-019-join-a-shared-group.md) | Join a shared-by-link group via the join link | Secret-Santa | Approved |
-| [UC-SS-020](secret-santa/UC-SS-020-release-a-claimed-person.md) | Free (release) a claimed person so they can rejoin | Secret-Santa | Approved |
+| [UC-SS-017](secret-santa/UC-SS-017-choose-and-switch-storage-mode.md) | Choose where a group is kept, and change it later | Secret-Santa | Approved |
+| [UC-SS-018](secret-santa/UC-SS-018-share-and-manage-as-admin.md) | Organize an online group without an account | Secret-Santa | Approved |
+| [UC-SS-019](secret-santa/UC-SS-019-join-a-shared-group.md) | Take part through the join link | Secret-Santa | Approved |
+| [UC-SS-020](secret-santa/UC-SS-020-release-a-claimed-person.md) | Free a participant's spot so the member can be taken again | Secret-Santa | Approved |
 | [UC-SS-021](secret-santa/UC-SS-021-add-occasion-to-calendar.md) | Add an occasion to my phone calendar | Secret-Santa | Approved |
 | [UC-SS-022](secret-santa/UC-SS-022-hand-out-reveal-links.md) | Hand out reveal links without forgetting anyone | Secret-Santa | Approved |
 | [UC-SS-023](secret-santa/UC-SS-023-be-reminded-about-my-occasions.md) | Be reminded about my occasions (device-local notifications) | Secret-Santa | Approved |
@@ -74,6 +74,9 @@ _Add a row per use case._
   [NFR-002](../requirements/non-functional/NFR-002-assignment-privacy.md)'s amended account-mode half
   first becomes visible to a user — the claim screen is the moment a completed
   [Draw](../glossary/draw.md) leaves the device.
+- **One way to be in a group** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md), 2026-10-25) rewrote **UC-SS-009..012
+  and UC-SS-017..020** for two places and one participant model and superseded UC-SS-007..008; the slice notes
+  below describe them as first written.
 - **UC-SS-009..012** — **M4 — Linking**: create a group from a circle, link a member to an account,
   see my assignment while signed in, edit my own wishlist. This is the slice where the M1–M3
   foundations (accounts, circles, sync) turn into product value: a linked member sees their own

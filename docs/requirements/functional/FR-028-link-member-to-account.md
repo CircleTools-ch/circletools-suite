@@ -1,130 +1,63 @@
 ---
 id: FR-028
-title: Link a member to an account
+title: Invite a person by email to take part as a member
 type: functional
 status: Implemented
 priority: Must
 source: UC-SS-010
 verification: test
-related: [UC-SS-010, UC-SS-009, UC-SS-011, UC-SS-012, FR-018, FR-015, NFR-002, NFR-005, ADR-0019, ADR-0020, ADR-0018, FEAT-005]
+related: [UC-SS-010, UC-SS-011, UC-SS-012, FR-041, FR-042, NFR-002, NFR-005, ADR-0086, FEAT-027]
 ---
 
-# FR-028 — Link a member to an account
+# FR-028 — Invite a person by email to take part as a member
+
+> **Rewritten 2026-10-25 for [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)** ([FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)): one way to be in a group. The previous version described the four-kind storage model (on this device, shared by link, my account, my account · shared) and is in the git history.
 
 ## Description
 
-An organizer must be able to link an individual [Member](../../glossary/member.md) of a
-[Group](../../glossary/group.md) to a suite [User](../../glossary/user.md), and to unlink one.
+From a member's row in an online group, the organizer can **invite an email address** to take part as that member:
 
-- **Establishing a link requires the account holder's consent.** The organizer enters the person's
-  email address; the system sends a **link request** and reports only *"request sent"*, **never**
-  whether the address has an account
-  ([NFR-005](../non-functional/NFR-005-account-enumeration-resistance.md)). The member shows as
-  **link pending** until the request is accepted, declined, or expires. The link is established
-  **only on acceptance**.
-- A **self-link** — the signed-in organizer linking their **own** account to a member — is
-  auto-accepted; no second confirmation is needed.
-- On linking, the member gains an **optional user reference**
-  ([ADR-0019](../../adr/0019-member-user-linking.md)); wishlist ownership moves to that user
-  ([FR-030](FR-030-edit-my-wishlist.md)); and, once the draw has run, that user may read **only their
-  own** assignment ([FR-029](FR-029-see-my-assignment.md)). **The link confers no organizer rights.**
-- **One user may back at most one member per group.** A request that would link a user already linked
-  to another member in the same group is refused (enforced in the application layer — the domain holds
-  only an identifier).
-- A [managed member](../../glossary/managed-member.md) **cannot** be linked directly; they must first
-  be **promoted** in the circle ([FR-019](FR-019-manage-managed-members.md)), which supplies the user
-  reference.
-- **Unlinking** reverts the member to unlinked behaviour: wishlist ownership returns to the organizer,
-  the user loses in-app read access to the assignment, and **the member and their wishlist content are
-  not deleted**.
-- **Account deletion cascades to a graceful unlink.** When a linked user deletes their account
-  ([FR-015](FR-015-delete-account.md)), every member referencing it is unlinked; the member, its name
-  and its wishlist survive, and the group does not break.
+- The invitation shows on the member as *Invited* and expires after 30 days if nobody answers.
+- If the address belongs to an account, the invitation appears in that account's group list under
+  *Invitations*, with *Take part* and *Decline*, and an email points there.
+- Accepting makes the account a [participant](../../glossary/participant.md) of the member; the group then appears among the
+  groups the account takes part in, on all its devices. Declining removes the invitation.
+- The answer to the organizer is the same whether or not the address has an account
+  ([NFR-005](../non-functional/NFR-005-account-enumeration-resistance.md)), except when that account already takes part in
+  the group, which is reported.
+- The organizer can withdraw the invitation (free the spot, [FR-042](FR-042-release-a-claimed-person.md)).
+
+Inviting is one of four routes to a participant ([FR-041](FR-041-join-link-and-person-claim.md)).
 
 ## Rationale
 
-Linking is what turns "a name in a group" into "a person who sees their own assignment and owns their
-own wishlist" ([ADR-0019](../../adr/0019-member-user-linking.md)). It must stay **additive**: unlinked
-members remain first-class and mixed groups are the normal case, so the account-free product is never
-weakened ([NFR-001](../non-functional/NFR-001-local-first-offline.md)).
-
-Consent is not optional politeness. A link both **asserts an identity** ("this member is that person")
-and **grants a privacy capability** (read access to an assignment once drawn), so it cannot be imposed
-unilaterally. Routing it through a request the recipient resolves also keeps the
-enumeration-resistance promise: the organizer learns nothing about whether an address has an account
-([NFR-005](../non-functional/NFR-005-account-enumeration-resistance.md), decision D5).
-
-The duplicate-link guard exists because a person cannot give a gift to themselves twice; the deletion
-cascade exists because a dangling account reference must degrade to unlinked rather than break a group
-that other people depend on.
+The organizer often knows people's addresses but not whether they have an account; an invitation lets a person
+take part without the organizer sending them a link.
 
 ## Acceptance criteria
 
 ```gherkin
-Given an organizer viewing an unlinked member
-When they send a link request to an email address
-Then the response is "request sent"
-And it does not reveal whether that address has an account
-And the member is shown as link pending
+Given an online group and a member without a participant
+When the organizer invites an address that has an account
+Then the member shows "Invited" and the account sees the invitation in its group list
 
-Given a link request to a real account
-When the recipient accepts it
-Then the member becomes linked to that user
-And wishlist ownership moves to that user
+Given the invited account takes part
+When it opens the group
+Then it sees its own participant page for that member
 
-Given a link request
-When the recipient declines it or it expires
-Then the member stays unlinked
-And the organizer is not told which of the two occurred
+Given an address without an account
+When the organizer invites it
+Then the organizer sees the same answer as for an address with an account
 
-Given a signed-in organizer linking their own account to a member
-When they confirm
-Then the link is established without a separate acceptance step
-
-Given a user already linked to a member in a group
-When a request would link them to a second member in the same group
-Then it is refused
-
-Given a managed member
-When an organizer attempts to link them to an account directly
-Then it is refused
-And the promotion path is offered instead
-
-Given a linked member
-When the organizer unlinks them
-Then the member reverts to unlinked
-And its wishlist content is retained under the organizer
-And the previously linked user can no longer read that assignment
-
-Given a member linked to a user
-When that user deletes their account
-Then the member is unlinked
-And the member, its name and its wishlist survive
-And the group opens without error
-
-Given a mixed group of linked and unlinked members
-When reveal links are generated
-Then the unlinked members receive reveal links exactly as before
+Given an invitation nobody answered for 30 days
+When the invitee looks for it
+Then it is gone
 ```
 
 ## Dependencies & related
 
 - Derived from: [UC-SS-010](../../use-cases/secret-santa/UC-SS-010-link-member-to-account.md)
-- Related: [FR-027](FR-027-create-group-from-circle.md) (establishes the same link implicitly),
-  [FR-029](FR-029-see-my-assignment.md) and [FR-030](FR-030-edit-my-wishlist.md) (what the link
-  unlocks), [FR-018](FR-018-respond-to-circle-invitation.md) (the invitation-acceptance pattern this
-  mirrors), [FR-015](FR-015-delete-account.md) (the deletion cascade),
-  [NFR-002](../non-functional/NFR-002-assignment-privacy.md),
+- Related: [FR-041](FR-041-join-link-and-person-claim.md), [FR-042](FR-042-release-a-claimed-person.md),
   [NFR-005](../non-functional/NFR-005-account-enumeration-resistance.md)
-- Governing ADRs: [ADR-0019](../../adr/0019-member-user-linking.md) (optional `UserId`, unlink,
-  duplicate-link guard, deletion cascade), [ADR-0020](../../adr/0020-server-side-assignment-privacy.md)
-  (what the link grants), [ADR-0018](../../adr/0018-circle-and-sharing-model.md) (managed-member
-  promotion)
-- Implemented by: [FEAT-005](../../features/FEAT-005-m4-linking.md) *(M4 — linking; `Done`)*, verified by [TP-005](../../features/TP-005-m4-linking.md)
-- ~~Open for the feature spec: whether the link request **reuses the M2
-  [Invitation](../../glossary/invitation.md) infrastructure** (rate limits, expiry, revoke) or gets a
-  member-link variant of it.~~ **Settled in [FEAT-005](../../features/FEAT-005-m4-linking.md):** it
-  **reuses** the invitation machinery (outbox mail, expiry, revoke, constant-time account lookup) as a
-  member-link variant scoped to a member rather than a circle join — not a parallel system.
-- Glossary: [Member](../../glossary/member.md), [User](../../glossary/user.md),
-  [Wishlist](../../glossary/wishlist.md), [Assignment](../../glossary/assignment.md)
+- Governing ADR: [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)
+- Implemented by: [FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)

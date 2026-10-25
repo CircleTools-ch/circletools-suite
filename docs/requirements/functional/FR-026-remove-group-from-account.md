@@ -11,6 +11,8 @@ related: [UC-SS-008, UC-SS-007, UC-MAIN-015, FR-023, FR-025, FR-024, FR-015, NFR
 
 # FR-026 — Remove a group from the account
 
+> **Further superseded by [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md).** Since ADR-0086, a group leaves the server by being kept only on this device ([FR-038](FR-038-per-group-storage-mode.md)); there is no separate removal from the account.
+>
 > **Retired by [ADR-0044](../../adr/0044-sign-in-reconciliation-and-account-scoped-visibility.md).**
 > Under the account-scoped-visibility model a signed-in device shows only account groups, so a
 > per-group "remove from account but keep local" (un-claim) affordance no longer fits the UX: signing

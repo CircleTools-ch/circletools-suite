@@ -73,10 +73,14 @@ Prometheus as `circletools_business_*`). Tags are a **closed, low-cardinality se
 | Instrument | Source (see §Data) | Tags | Notes |
 |------------|--------------------|------|-------|
 | `circletools.business.accounts` | `public.AspNetUsers` | `confirmed` = `true`/`false` | Growth of the gauge = accounts created over time |
-| `circletools.business.groups` | `circles.circles` + `shared.groups` | `kind` = `circle`/`shared` | Two distinct server group stores; no single "groups" table |
-| `circletools.business.events` | `linking.group_events` | — | `GroupEventRow` has no `CreatedAt`; the gauge's series gives the trend |
+| `circletools.business.groups` | `circles.circles` + `secretsanta.groups` | `kind` = `circle`/`online` | Two distinct server group stores; no single "groups" table |
+| `circletools.business.events` | events in the `secretsanta.groups` documents | — | Counted in Postgres (`jsonb_array_length`); the gauge's series gives the trend |
 | `circletools.business.members` | `circles.circle_memberships` | — | Cross-account circle memberships |
-| `circletools.business.draws` | distinct `(GroupId, EventId, DrawVersion)` in `linking.assignments` | — | **Derived & partial** — see risks |
+| `circletools.business.draws` | draws in the `secretsanta.groups` documents | — | **Online groups only** — see risks |
+
+> **Amended 2026-10-25 (ADR-0086, FEAT-027 phase 4).** The shared-group and linking stores were retired. Groups,
+> events and draws now come from the one Secret-Santa group store; the `kind` tag is `online` instead of
+> `shared`.
 
 ### Where the code lives
 
@@ -112,9 +116,9 @@ Prometheus as `circletools_business_*`). Tags are a **closed, low-cardinality se
 
 ## Data & migration considerations
 
-- **Postgres (server):** read-only. `COUNT(*)` on `AspNetUsers`, `circles.circles`, `shared.groups`,
-  `group_events`, `circle_memberships`, and a `COUNT(DISTINCT (GroupId, EventId, DrawVersion))` on
-  `assignments`. No schema change, **no migration**. The queries touch small tables and run once per
+- **Postgres (server):** read-only. `COUNT(*)` on `AspNetUsers`, `circles.circles`, `secretsanta.groups` and
+  `circle_memberships`; events and draws are counted inside the group documents (`jsonb_array_length` and
+  `jsonb_array_elements`), so no document leaves the database. No schema change, **no migration**. The queries touch small tables and run once per
   interval; cost is negligible at this scale and must stay off the scrape path (see design).
 - **SQLite / local:** none — this is server-only.
 - **Sync impact:** none.
@@ -144,13 +148,11 @@ exposes `circletools_business_*`.
 
 ## Risks & open questions
 
-- **"Draws" is derived and partial.** There is no first-class draw table server-side, and account-free /
-  zero-knowledge draws (ADR-0020) may never reach the server at all — so this counts **server-visible draw
-  publications** (distinct draw versions in `assignments`), not all draws. The panel must label it as such
-  so the number is not over-read.
+- **"Draws" covers online groups only.** A group kept on a device never reaches the server, so its draws are
+  not counted. The panel is labelled "online groups" so the number is not over-read.
 - **`events` / `draws` have no `CreatedAt`.** Handled by charting the cumulative gauge's time series rather
   than a created-at histogram; acceptable for a growth view.
-- **Two group stores.** `circles.circles` and `shared.groups` are distinct; the `kind` tag keeps them
+- **Two group stores.** `circles.circles` and `secretsanta.groups` are distinct; the `kind` tag keeps them
   separate rather than inventing a misleading unified total. A summed "all groups" panel can add them in
   Grafana.
 - **Cardinality discipline.** Tags are a fixed enum only; a reviewer must never add a per-id/per-user tag

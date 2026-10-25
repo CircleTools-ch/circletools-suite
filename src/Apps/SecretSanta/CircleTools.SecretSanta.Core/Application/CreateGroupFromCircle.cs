@@ -13,9 +13,9 @@ namespace CircleTools.SecretSanta.Core.Application;
 /// </param>
 /// <param name="Name">The person's display name.</param>
 /// <param name="UserId">
-/// The account backing this person, or <see langword="null"/> when the person has no account (a
-/// managed member, or an unaccounted person). A person with an account becomes a <em>linked</em>
-/// member; everyone else is brought in unlinked.
+/// The account backing this person, or <see langword="null"/> when the person has no account (a managed
+/// member, or an unaccounted person). It is not written into the group: the result pairs it with the new
+/// member, so the caller can make that account a participant (ADR-0086).
 /// </param>
 public sealed record CirclePersonInput(
     Guid CirclePersonId,
@@ -23,24 +23,31 @@ public sealed record CirclePersonInput(
     Guid? UserId);
 
 /// <summary>
-/// Command to compose a brand-new group from a snapshot of circle people. The copy is taken at
-/// create time and never tracks the circle afterwards (FR-027); the group is account-scoped from
-/// birth and rides the normal sync/claim cycle with no separate claim step.
+/// Command to compose a brand-new group from a snapshot of circle people. The copy is taken at create time
+/// and never tracks the circle afterwards (FR-027).
 /// </summary>
 /// <param name="Name">A non-empty group name.</param>
 /// <param name="People">The chosen circle people, in display order.</param>
 public sealed record CreateGroupFromCircleCommand(string Name, IReadOnlyList<CirclePersonInput> People)
     : ICommand<CreateGroupFromCircleResult>;
 
+/// <summary>A new member whose circle person has an account (ADR-0086): the caller makes that account a participant.</summary>
+/// <param name="MemberId">The new member.</param>
+/// <param name="AccountId">The account behind the circle person.</param>
+public sealed record CircleMemberAccount(Guid MemberId, Guid AccountId);
+
 /// <summary>Outcome of <see cref="CreateGroupFromCircleCommand"/>.</summary>
 /// <param name="GroupId">The identity of the created group.</param>
 /// <param name="BroughtInUnlinkedNames">
-/// The names of people who <em>had</em> an account but were brought in <strong>unlinked</strong>
-/// because another chosen person already resolved to that same account — one user backs at most one
-/// member per group. Surfaced so the UI can tell the user why (the duplicate-account notice). Empty
-/// in the common case.
+/// The names of people who <em>had</em> an account but come in without it, because another chosen person
+/// already resolved to that same account — one account is at most one member per group. Surfaced so the UI
+/// can tell the user why (the duplicate-account notice). Empty in the common case.
 /// </param>
-public sealed record CreateGroupFromCircleResult(Guid GroupId, IReadOnlyList<string> BroughtInUnlinkedNames);
+/// <param name="Accounts">The members whose account takes part, one per account.</param>
+public sealed record CreateGroupFromCircleResult(
+    Guid GroupId,
+    IReadOnlyList<string> BroughtInUnlinkedNames,
+    IReadOnlyList<CircleMemberAccount> Accounts);
 
 /// <summary>Handles <see cref="CreateGroupFromCircleCommand"/>.</summary>
 /// <param name="repository">The group repository port.</param>
@@ -56,31 +63,31 @@ public sealed class CreateGroupFromCircleCommandHandler(IGroupRepository reposit
 
         var group = Group.Create(command.Name);
 
-        // One user backs at most one member per group. When two chosen people resolve to the same
-        // account, the first keeps the link and the rest come in unlinked and are reported, so the
-        // decision is made once here rather than surfacing later as a domain exception at accept.
-        var linkedUsers = new HashSet<Guid>();
+        // One account is at most one member per group. When two chosen people resolve to the same account,
+        // the first keeps it and the rest come in without it and are reported, so the decision is made once
+        // here rather than surfacing later as a refused participant.
+        var accounts = new List<CircleMemberAccount>();
         var broughtInUnlinked = new List<string>();
 
         foreach (var person in command.People)
         {
-            Guid? link = null;
-            if (person.UserId is { } userId)
+            var memberId = group.AddMemberFromCircle(person.Name, person.CirclePersonId);
+            if (person.UserId is not { } userId)
             {
-                if (linkedUsers.Add(userId))
-                {
-                    link = userId;
-                }
-                else
-                {
-                    broughtInUnlinked.Add(person.Name);
-                }
+                continue;
             }
 
-            group.AddMemberFromCircle(person.Name, link, person.CirclePersonId);
+            if (accounts.Any(a => a.AccountId == userId))
+            {
+                broughtInUnlinked.Add(person.Name);
+            }
+            else
+            {
+                accounts.Add(new CircleMemberAccount(memberId, userId));
+            }
         }
 
         await repository.SaveAsync(group, cancellationToken);
-        return new CreateGroupFromCircleResult(group.Id, broughtInUnlinked);
+        return new CreateGroupFromCircleResult(group.Id, broughtInUnlinked, accounts);
     }
 }

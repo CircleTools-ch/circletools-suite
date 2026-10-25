@@ -7,6 +7,8 @@ tags: [architecture, sync, offline, persistence, client]
 
 # ADR-0016 — Local↔server sync & conflict resolution
 
+> **Amended by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** Groups leave the sync store; it keeps per-account documents (UI preferences). Online groups sync through the Secret-Santa group store, still last-write-wins per document, with the base version on every push.
+
 ## Context and problem statement
 
 v2 gives the suite a [User](../glossary/user.md) account and cross-device

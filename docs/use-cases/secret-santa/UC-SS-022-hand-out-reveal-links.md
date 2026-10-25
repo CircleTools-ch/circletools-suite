@@ -94,7 +94,7 @@ The Organizer taps **Hand out links** on the Share screen of a drawn event.
   ([NFR-002](../../requirements/non-functional/NFR-002-assignment-privacy.md)). "Share all" therefore
   means "guide me through sharing each, one by one", not "send them all together".
 - **Where it earns its place:** the value is greatest for the **account-free** and
-  [shared-by-link](../../glossary/shared-by-link-group.md) modes, where a link is the only channel to a
+  [online](../../glossary/online-group.md) groups, where a link is the only channel to a
   participant. In account / linked-member groups the participant sees their own assignment in-app
   ([UC-SS-011](UC-SS-011-see-my-assignment.md)), so hand-out matters less there.
 - **Offline/local-first:** the links are generated on the device and the handed-out state is stored on
@@ -120,7 +120,7 @@ The Organizer taps **Hand out links** on the Share screen of a drawn event.
   [TP-015](../../features/TP-015-guided-hand-out-of-reveal-links.md)
 - Related use cases: [UC-SS-005](UC-SS-005-share-reveal-links.md) (generate & share the links this pass
   hands out), [UC-SS-006](UC-SS-006-open-reveal-link.md) (what the recipient opens),
-  [UC-SS-018](UC-SS-018-share-and-manage-as-admin.md) (the shared-by-link mode where hand-out matters
+  [UC-SS-018](UC-SS-018-share-and-manage-as-admin.md) (the online group where hand-out matters
   most)
 - Governing ADR: [ADR-0028](../../adr/0028-browser-platform-adapters-block.md) (the `IShareService`
   platform seam the pass reuses — no new ADR)

@@ -1,10 +1,12 @@
 ---
 term: Claim
 contexts: [Platform, Secret-Santa]
-status: Draft
+status: Superseded
 ---
 
 # Claim
+
+> **Retired** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md)). Groups no longer move into an account by a claim: a group is put [online](place.md), and an account can **take over** a group its organizer link owns ([Owner](owner.md)). The account sync carries profile and preferences only ([Sync](sync.md)). The entry below is kept for history.
 
 ## Definition
 

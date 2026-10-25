@@ -1,6 +1,6 @@
 @page "/groups/{GroupId:guid}/events/{EventId:guid}/share"
 @using CircleTools.SecretSanta.Core.Reveal
-@using CircleTools.SecretSanta.LocalStore
+@using CircleTools.SecretSanta.LocalStore.Online
 @using CircleTools.Ui.Account.Auth
 @using Microsoft.AspNetCore.Components.Authorization
 @inject ISender Sender
@@ -12,8 +12,7 @@
 @inject IStringLocalizer<AppStrings> L
 @inject ISyncSignals SyncSignals
 @inject HandoutProgressService Handout
-@inject ILocalSyncStore Local
-@inject RevealSlicePublisher RevealPublisher
+@inject OnlineGroupSync Online
 @implements IDisposable
 
 <PageTitle>@L["ShareTitle"]</PageTitle>
@@ -184,31 +183,25 @@ else
             return;
         }
 
-        // Ensure this backend-backed group's reveal slices are published and its per-giver reveal tokens
-        // exist, so each link can carry rt= (ADR-0068). Best-effort and a no-op for a local-only or
-        // join-only group.
-        var published = await RevealPublisher.PublishAsync(GroupId);
+        // An online group's reveal tokens (ADR-0086): the server mints them on first ask and derives each page
+        // from the document on read, so a short token-only link (ADR-0082) is always current. Offline, or for a
+        // group on this device only, the links carry the snapshot as before.
+        var tokens = await Online.GetRevealTokensAsync(GroupId);
+        var revealTokens = tokens.IsSuccess
+            ? tokens.Value!.Where(t => t.EventId == EventId).ToDictionary(t => t.GiverMemberId, t => t.Token)
+            : [];
 
-        var revealTokens = (await Local.LoadGroupsAsync())
-            .FirstOrDefault(r => r.State.Id == GroupId)?.Tokens?.RevealTokens?
-            .Where(t => t.EventId == EventId)
-            .ToDictionary(t => t.MemberId, t => t.Token) ?? [];
-
-        // For a backend-backed group whose slices are on the server, hand out the short token-only link
-        // (ADR-0082); if publishing failed just now, append the token to the long link so it still fetches the
-        // live slice with the d= snapshot as fallback. Local-only links are unchanged.
         var baseLinks = await Sender.Send(new GetRevealLinksQuery(GroupId, EventId));
         _occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));
         _groupName = (await Sender.Send(new GetGroupQuery(GroupId)))?.Name ?? string.Empty;
         _links = [.. baseLinks.Select(l => revealTokens.TryGetValue(l.GiverMemberId, out var rt)
-            ? l with { Url = published ? RevealLinkBuilder.ShortUrl(l.Url, l.ForLabel, rt) : $"{l.Url}&rt={Uri.EscapeDataString(rt)}" }
+            ? l with { Url = RevealLinkBuilder.ShortUrl(l.Url, l.ForLabel, rt) }
             : l)];
 
         if (await Sender.Send(new GetGroupQuery(GroupId)) is { } group)
         {
             _connected = await ConnectedMembers.ForAsync(Services, group);
-            var me = AuthState is null ? Guid.Empty : (await AuthState).User.UserId();
-            _myMemberId = me == Guid.Empty ? null : group.Members.FirstOrDefault(m => m.UserId == me)?.Id;
+            _myMemberId = _connected.Mine;
         }
 
         var occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));

@@ -1,77 +1,64 @@
 ---
 id: FR-040
-title: An admin link grants a shared, account-free, revocable admin capability
+title: The organizer link lets devices organize an online group without an account
 type: functional
-status: Approved
+status: Implemented
 priority: Must
 source: UC-SS-018
 verification: test
-related: [UC-SS-018, FR-038, FR-039, FR-041, FR-043, NFR-009, ADR-0058, ADR-0017]
+related: [UC-SS-018, FR-038, FR-039, FR-041, FR-043, NFR-009, ADR-0086, FEAT-027]
 ---
 
-# FR-040 — An admin link grants a shared, account-free, revocable admin capability
+# FR-040 — The organizer link lets devices organize an online group without an account
+
+> **Rewritten 2026-10-25 for [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)** ([FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)): one way to be in a group. The previous version described the four-kind storage model (on this device, shared by link, my account, my account · shared) and is in the git history.
 
 ## Description
 
-A [shared-by-link group](../../glossary/shared-by-link-group.md) has an
-[admin link](../../glossary/admin-link.md) that grants the **admin (organizer) capability** — manage
-members and exclusions, set the budget, run and redo the [Draw](../../glossary/draw.md), and manage
-sharing ([ADR-0058](../../adr/0058-account-free-link-shared-groups.md)). It behaves as follows:
+An [online group](../../glossary/online-group.md) created without an account is owned by its
+[organizer link](../../glossary/organizer-link.md) (decision D1 of ADR-0086):
 
-- **It is a shared capability, not a single seat.** More than one co-organizer can hold the admin link
-  at the same time; anyone holding it can act as admin.
-- **It works only while no account owns the group.** In *Shared by link* mode the admin link is live; the
-  moment an account **[claims admin](../../glossary/claim.md)** ([FR-043](FR-043-release-ownership-and-deletion-disposition.md)),
-  the admin link is **retired** and a holder opening it sees *"&lt;name&gt; has claimed the admin role for
-  this group."* Only the *admin* capability locks — the [join link](../../glossary/join-link.md) is
-  unaffected and keeps working.
-- **An admin can disable and regenerate it.** Disabling mints a fresh
-  [share token](../../glossary/share-token.md) for the admin link; the old token stops resolving
-  immediately (the "someone I didn't mean to has it" escape).
-- **It is delivered through the existing share seam** — native share sheet where available, Copy on every
-  platform, and a QR code on every platform.
-- **Its account-free write path is bounded** by anti-abuse rules
-  ([NFR-009](../non-functional/NFR-009-account-free-write-abuse-resistance.md)).
+- The link carries the group id and an unguessable token (`/admin#g=…&t=…`). Every device that opens it becomes an
+  organizer of the group — which is also how organizers share the work.
+- The device that created the group keeps the link and shows it in *Sharing & sync*, with Copy, QR code and
+  share actions.
+- The owner can **replace** it with a fresh link; the old one stops working at once.
+- When an account **takes over** the group ([FR-043](FR-043-release-ownership-and-deletion-disposition.md)), the
+  organizer link stops working. The [join link](../../glossary/join-link.md) is unaffected by either.
+- The server stores the token only as a hash (and an encrypted copy, so the owner's devices can show the link
+  again); the token travels in a request header, never in a URL path.
 
 ## Rationale
 
-Running a group with other people should not require anyone to sign up, and it should not create a
-single point of failure: a shared, revocable admin link lets a couple of family members co-organize,
-and lets a mis-shared link be rotated away. Tying "the admin link only works while no account owns the
-group" to the claim-admin transition gives a single, unambiguous owner the moment anyone decides to take
-real ownership — no two people both believing they run the draw.
+Organizing without signing up is part of the product's promise (decision D1). A link the organizers share keeps
+that working while making it one more kind of owner in the same role model, rather than a separate store.
 
 ## Acceptance criteria
 
 ```gherkin
-Given a shared-by-link group with an admin link
-When two different people open that link
-Then both can manage members, exclusions, budget and the draw
+Given a signed-out user puts a group online
+When the group is created online
+Then an organizer link owns it and Sharing & sync shows the link
 
-Given an admin holding the admin link
-When they choose "disable & create a new admin link"
-Then a new link works and the previous link no longer resolves
+Given a second device opens the organizer link
+When the link is valid
+Then that device lands in the group as an organizer, and its edits reach the first device
 
-Given a shared-by-link group with an active admin link
-When someone signs in and claims admin
-Then the admin link is retired, a holder opening it sees "<name> has claimed the admin role for this group", and the join link still works
+Given the owner replaces the organizer link
+When the old link is opened
+Then it no longer gives access
 
-Given the admin link management screen
-When an admin shares the link
-Then Share (where available), Copy, and Show QR are all offered
+Given an account takes the group over
+When the old organizer link is opened
+Then it no longer gives access, and the join link still works
 ```
 
 ## Dependencies & related
 
 - Derived from: [UC-SS-018](../../use-cases/secret-santa/UC-SS-018-share-and-manage-as-admin.md)
-- Related: [FR-038](FR-038-per-group-storage-mode.md) (modes),
-  [FR-039](FR-039-shared-by-link-storage-and-sync.md) (storage),
-  [FR-041](FR-041-join-link-and-person-claim.md) (join link, unaffected by claim-admin),
-  [FR-043](FR-043-release-ownership-and-deletion-disposition.md) (claim-admin / release-admin),
+- Related: [FR-038](FR-038-per-group-storage-mode.md), [FR-039](FR-039-shared-by-link-storage-and-sync.md),
+  [FR-043](FR-043-release-ownership-and-deletion-disposition.md),
   [NFR-009](../non-functional/NFR-009-account-free-write-abuse-resistance.md)
-- Governing ADR: [ADR-0058](../../adr/0058-account-free-link-shared-groups.md); claim reuses
-  [ADR-0017](../../adr/0017-anonymous-to-account-claim.md)
-- Implemented by: [FEAT-013](../../features/FEAT-013-account-free-link-shared-groups.md)
-- Glossary: [Admin link](../../glossary/admin-link.md), [Share token](../../glossary/share-token.md),
-  [Claim](../../glossary/claim.md), [Shared-by-link group](../../glossary/shared-by-link-group.md),
-  [Join link](../../glossary/join-link.md)
+- Governing ADR: [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)
+- Implemented by: [FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)
+- Glossary: [Organizer link](../../glossary/organizer-link.md), [Owner](../../glossary/owner.md)

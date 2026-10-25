@@ -1,21 +1,15 @@
 using System.Text.Json;
-using CircleTools.SecretSanta.Core.Persistence;
 using CircleTools.Ui.Abstractions;
 
 namespace CircleTools.SecretSanta.LocalStore;
 
 /// <summary>
-/// <see cref="ILocalSyncStore"/> over an <see cref="IKeyValueStore"/> (FEAT-004). Groups live under
-/// the same key <see cref="GroupRepository"/> has always used, so signing in migrates the existing
-/// data in place rather than starting a second, parallel store.
+/// <see cref="ILocalSyncStore"/> over an <see cref="IKeyValueStore"/> (FEAT-004).
 /// </summary>
 /// <param name="store">The underlying key-value store.</param>
 public sealed class LocalSyncStore(IKeyValueStore store) : ILocalSyncStore
 {
-    /// <summary>The key holding the group collection — the same one the pre-sync store used (migrated in place).</summary>
-    public const string GroupsKey = GroupRepository.StorageKey;
-
-    /// <summary>The key holding the device sync state (device id, cursors, pending tombstones).</summary>
+    /// <summary>The key holding the device sync state (device id, cursors).</summary>
     public const string StateKey = "circletools.secretsanta.sync.state";
 
     /// <summary>The key holding the per-account profile document (display name, language, sync metadata).</summary>
@@ -23,44 +17,6 @@ public sealed class LocalSyncStore(IKeyValueStore store) : ILocalSyncStore
 
     /// <summary>The key holding the per-account UI preferences document (pinned groups, sync metadata).</summary>
     public const string PreferencesKey = "circletools.secretsanta.sync.preferences";
-
-    /// <inheritdoc />
-    public async Task<IReadOnlyList<SyncedGroupRecord>> LoadGroupsAsync(CancellationToken cancellationToken = default)
-    {
-        var json = await store.GetAsync(StorageScope.Durable, GroupsKey, cancellationToken);
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return [];
-        }
-
-        using var document = JsonDocument.Parse(json);
-
-        // Schema v1 was a bare array of GroupState; schema v2 is a wrapper object. A device that
-        // stored groups before M3 has the array, and is lifted into records here (version 1, no
-        // account scope, not dirty) so nothing is lost and nothing is spuriously queued for push.
-        if (document.RootElement.ValueKind == JsonValueKind.Array)
-        {
-            var legacy = document.RootElement.Deserialize(GroupStateJsonContext.Default.ListGroupState) ?? [];
-            return legacy
-                .Select(state => new SyncedGroupRecord(state, Version: 1, AccountScope: null, Dirty: false))
-                .ToList();
-        }
-
-        var parsed = document.RootElement.Deserialize(SyncJsonContext.Default.SyncGroupDocument);
-        return parsed?.Records ?? [];
-    }
-
-    /// <inheritdoc />
-    public async Task SaveGroupsAsync(
-        IReadOnlyList<SyncedGroupRecord> records,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(records);
-
-        var document = new SyncGroupDocument(SyncGroupDocument.CurrentSchemaVersion, records);
-        var json = JsonSerializer.Serialize(document, SyncJsonContext.Default.SyncGroupDocument);
-        await WriteOrThrowAsync(GroupsKey, json, "The groups could not be saved", cancellationToken);
-    }
 
     /// <inheritdoc />
     public async Task<SyncState> LoadStateAsync(CancellationToken cancellationToken = default)
@@ -75,7 +31,7 @@ public sealed class LocalSyncStore(IKeyValueStore store) : ILocalSyncStore
             }
         }
 
-        return new SyncState(Guid.NewGuid().ToString("N"), [], []);
+        return new SyncState(Guid.NewGuid().ToString("N"), []);
     }
 
     /// <inheritdoc />

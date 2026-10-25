@@ -36,10 +36,6 @@ public sealed record SyncRequest(
 /// </param>
 /// <param name="Changes">Aggregates created or updated on other devices, each with its full body.</param>
 /// <param name="Tombstones">Deletions to apply locally (id + version, no body).</param>
-/// <param name="Unclaimed">
-/// Groups removed from the account elsewhere. The device drops the account scope but keeps its local
-/// copy — an un-claim marker is not a tombstone (FR-026).
-/// </param>
 /// <param name="Collisions">
 /// One descriptor per aggregate whose pushed body lost last-write-wins and was discarded in full
 /// (ADR-0016). Kind and id only — never content (ADR-0012/0020). The client is not asked to resolve
@@ -49,7 +45,6 @@ public sealed record SyncResponse(
     long Cursor,
     IReadOnlyList<SyncChange> Changes,
     IReadOnlyList<SyncTombstone> Tombstones,
-    IReadOnlyList<SyncUnclaimed> Unclaimed,
     IReadOnlyList<SyncCollision> Collisions);
 
 /// <summary>
@@ -66,18 +61,6 @@ public sealed record SyncResponse(
 /// </param>
 public sealed record SyncChange(string Kind, Guid Id, long Version, JsonElement Body);
 
-/// <summary>
-/// The first upload of a not-yet-account-scoped group (FR-025, <c>POST /api/v1/sync/groups/{id}/claim</c>).
-/// The id is on the route; the body and version travel here. Because the id is client-minted
-/// (ADR-0008), re-sending a group that already arrived <em>updates</em> it rather than duplicating it,
-/// which is what makes a partly-failed multi-group claim safe to retry.
-/// </summary>
-/// <param name="Version">The per-aggregate version the client holds for the group being claimed.</param>
-/// <param name="Body">
-/// The group's full body as opaque JSON — the same shape a <see cref="SyncChange"/> carries. Platform
-/// stores it without deserializing it (ADR-0016, ADR-0033).
-/// </param>
-public sealed record ClaimGroupRequest(long Version, JsonElement Body);
 
 /// <summary>A deletion travelling as a tombstone: the aggregate is gone everywhere (FR-024).</summary>
 /// <param name="Kind">The aggregate kind the deletion applies to.</param>
@@ -85,12 +68,6 @@ public sealed record ClaimGroupRequest(long Version, JsonElement Body);
 /// <param name="Version">The version at deletion, so a later re-creation is not re-deleted.</param>
 public sealed record SyncTombstone(string Kind, Guid Id, long Version);
 
-/// <summary>
-/// A group removed from the account on another device. Distinct from a tombstone: the local copy is
-/// kept and becomes account-free again (FR-026).
-/// </summary>
-/// <param name="Id">The un-claimed group's identity.</param>
-public sealed record SyncUnclaimed(Guid Id);
 
 /// <summary>
 /// A last-write-wins discard: the pushed body was older than the stored one by server time and was

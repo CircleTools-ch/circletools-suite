@@ -7,6 +7,8 @@ tags: [ux, storage, sync, onboarding, secret-santa, privacy]
 
 # ADR-0071 — Default storage mode for new groups + first-run onboarding
 
+> **Amended by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** The default place is *on this device* or *online*.
+
 ## Context and problem statement
 
 [FR-038](../requirements/functional/FR-038-per-group-storage-mode.md) /

@@ -1,81 +1,74 @@
 ---
 id: FR-039
-title: A shared-by-link group is stored on the server by share token and synced to link-holders
+title: An online group is kept once on the server, and every role reads its own view of it
 type: functional
-status: Approved
+status: Implemented
 priority: Must
 source: UC-SS-017
 verification: test
-related: [UC-SS-017, UC-SS-019, FR-038, FR-040, FR-041, NFR-002, NFR-009, NFR-010, ADR-0058, ADR-0016, ADR-0033]
+related: [UC-SS-017, UC-SS-019, FR-038, FR-040, FR-041, NFR-002, NFR-009, NFR-010, ADR-0086, ADR-0016, FEAT-027]
 ---
 
-# FR-039 — A shared-by-link group is stored on the server by share token and synced to link-holders
+# FR-039 — An online group is kept once on the server, and every role reads its own view of it
+
+> **Rewritten 2026-10-25 for [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)** ([FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)): one way to be in a group. The previous version described the four-kind storage model (on this device, shared by link, my account, my account · shared) and is in the git history.
 
 ## Description
 
-In **Shared by link** mode, the whole [Group](../../glossary/group.md) aggregate — roster, exclusions,
-budget, occasions, and each occasion's [Draw](../../glossary/draw.md) and
-[Assignments](../../glossary/assignment.md) — is stored on the server, keyed by an unguessable
-[share token](../../glossary/share-token.md) rather than by a [User](../../glossary/user.md) account
-([ADR-0058](../../adr/0058-account-free-link-shared-groups.md)). Holding a link that carries the token is
-the credential (the *"the link is the secret"* model scaled to a whole group).
+An [online group](../../glossary/online-group.md) has **one copy** on the server, in the Secret-Santa group store. Who may do
+what is a list of [role assignments](../../glossary/role-assignment.md): one [owner](../../glossary/owner.md) — an account or the
+[organizer link](../../glossary/organizer-link.md) — and any number of [participants](../../glossary/participant.md), each held by an
+account or a [device key](../../glossary/device-key.md).
 
-- **The aggregate is the unit of [sync](../../glossary/sync.md)** and is reconciled between the server
-  and **every device holding an admin or join link** — not merged field-by-field
-  ([ADR-0016](../../adr/0016-sync-and-conflict-resolution.md),
-  [ADR-0033](../../adr/0033-which-aggregates-sync.md)).
-- **Conflict resolution is last-write-wins per aggregate**, exactly as for account sync; the difference
-  is that the concurrent "writers" are several link-holders rather than one user's devices.
-- **A device with a link works offline** and reconciles when connectivity returns, keeping the
-  local-first behaviour.
-- **Assignments now live on the server** for this mode, which is the amendment to
-  [NFR-002](../non-functional/NFR-002-assignment-privacy.md): secrecy becomes **trust-bounded**
-  (see [FR-041](FR-041-join-link-and-person-claim.md) — a participant sees only the person they claimed).
-- **The account-free write path is bounded** by anti-abuse and retention rules
-  ([NFR-009](../non-functional/NFR-009-account-free-write-abuse-resistance.md),
-  [NFR-010](../non-functional/NFR-010-shared-group-retention-lifecycle.md)).
+- **Organizers** read and write the whole document. A push carries the version it was based on; the rule is last
+  write wins per group ([ADR-0016](../../adr/0016-sync-and-conflict-resolution.md)). A device pushes its unsent
+  edits before it reads.
+- **Participants** read only their own view: per event, whom they give to and that person's wishlist and gift
+  note — never the whole draw ([NFR-002](../non-functional/NFR-002-assignment-privacy.md)).
+- **What members keep themselves** — the [member entry](../../glossary/member-entry.md) — is stored apart and merged into the
+  document on every write, so the organizer's copy, the participant's view and every reveal page show the same
+  text, and an organizer's older copy never overwrites it.
+- **Reveal pages** are computed from the current document when they are read, so they always show the latest
+  wishlist, budget and date.
+- A request without a role in the group gets the same "not found" as a group that does not exist.
 
 ## Rationale
 
-The middle tier exists so co-organizers and participants can act on a group without an account, and to
-survive across a user's devices without sign-in. Reusing the existing aggregate-sync machinery (the
-sync unit, version tokens, tombstones, last-write-wins) keeps this a small, coherent extension rather
-than a parallel stack — the only genuinely new element is *what authorizes* a pull/push (a share token,
-not a user identity).
+One copy of each kind of information, in one place, read through one access model, replaces three stores that
+had to be kept in step (the shared-group store, the account sync and the linking projection). Deriving every view
+on read means nothing published can go stale.
 
 ## Acceptance criteria
 
 ```gherkin
-Given a group switched to "Shared by link" mode
-When it is stored on the server
-Then it is addressed by an unguessable share token and no user account owns it
+Given an online group and its owner
+When the owner's device reads the group
+Then it receives the whole document, its version and who has which role
 
-Given two devices each holding a link to the same shared-by-link group
-When one device edits the roster while offline and then reconnects
-Then the change syncs to the other device, last-write-wins per aggregate
+Given an organizer device with an unsent edit
+When it syncs
+Then the edit is pushed before the group is read back
 
-Given a shared-by-link group whose draw has run
-When a link-holder opens the group
-Then the aggregate (including the draw) is available from the server, subject to the person-claim privacy rules
+Given a participant
+When their device reads the group
+Then it receives only their own view: their pairing per event and that recipient's wishlist and gift note
 
-Given a shared-by-link group
-When the network is inspected during account-free use
-Then the group is reachable only with a valid share token, never by guessing an id
+Given a participant writes their wishlist
+When the owner reads the group next
+Then the document holds the participant's wishlist, and a push from an older copy does not overwrite it
+
+Given a caller without a role in the group
+When it reads the group
+Then the answer is "not found", the same as for a group that does not exist
 ```
 
 ## Dependencies & related
 
 - Derived from: [UC-SS-017](../../use-cases/secret-santa/UC-SS-017-choose-and-switch-storage-mode.md),
   [UC-SS-019](../../use-cases/secret-santa/UC-SS-019-join-a-shared-group.md)
-- Related: [FR-038](FR-038-per-group-storage-mode.md) (mode selection),
-  [FR-040](FR-040-admin-link-capability.md), [FR-041](FR-041-join-link-and-person-claim.md),
-  [NFR-002](../non-functional/NFR-002-assignment-privacy.md) (amended — assignments on the server),
+- Related: [FR-038](FR-038-per-group-storage-mode.md), [FR-040](FR-040-admin-link-capability.md),
+  [FR-041](FR-041-join-link-and-person-claim.md), [NFR-002](../non-functional/NFR-002-assignment-privacy.md),
   [NFR-009](../non-functional/NFR-009-account-free-write-abuse-resistance.md),
   [NFR-010](../non-functional/NFR-010-shared-group-retention-lifecycle.md)
-- Governing ADR: [ADR-0058](../../adr/0058-account-free-link-shared-groups.md); reuses
-  [ADR-0016](../../adr/0016-sync-and-conflict-resolution.md) and
-  [ADR-0033](../../adr/0033-which-aggregates-sync.md) (aggregate is the sync unit)
-- Implemented by: [FEAT-013](../../features/FEAT-013-account-free-link-shared-groups.md)
-- Glossary: [Shared-by-link group](../../glossary/shared-by-link-group.md),
-  [Share token](../../glossary/share-token.md), [Sync](../../glossary/sync.md),
-  [Group](../../glossary/group.md), [Assignment](../../glossary/assignment.md)
+- Governing ADR: [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)
+- Implemented by: [FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)

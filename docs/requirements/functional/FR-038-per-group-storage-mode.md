@@ -1,103 +1,77 @@
 ---
 id: FR-038
-title: A group has one of three storage modes, chosen at creation and switchable
+title: A group is kept on this device or online, chosen at creation and changeable
 type: functional
-status: Approved
+status: Implemented
 priority: Must
 source: UC-SS-017
 verification: test
-related: [UC-SS-017, FR-039, FR-040, FR-041, FR-043, FR-048, NFR-001, ADR-0058, ADR-0015, ADR-0017, ADR-0071]
+related: [UC-SS-017, FR-039, FR-040, FR-041, FR-043, FR-048, NFR-001, ADR-0086, ADR-0015, FEAT-027]
 ---
 
-# FR-038 — A group has one of three storage modes, chosen at creation and switchable
+# FR-038 — A group is kept on this device or online, chosen at creation and changeable
+
+> **Rewritten 2026-10-25 for [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)** ([FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)): one way to be in a group. The previous version described the four-kind storage model (on this device, shared by link, my account, my account · shared) and is in the git history.
 
 ## Description
 
-Every [Group](../../glossary/group.md) is in **exactly one** of three storage modes, and the mode is a
-first-class, per-group choice ([ADR-0058](../../adr/0058-account-free-link-shared-groups.md)):
+Every [Group](../../glossary/group.md) is kept in exactly one [place](../../glossary/place.md):
 
-- **On this device** *(default)* — the group lives only in local storage / a local file
-  ([ADR-0015](../../adr/0015-mvp-client-offline-storage.md)); nothing crosses to the server; sharing is
-  via per-person [reveal links](../../glossary/reveal-link.md) only.
-- **Shared by link** — the group lives on the server keyed by a [share token](../../glossary/share-token.md)
-  with **no account**, reachable by an [admin link](../../glossary/admin-link.md) and a
-  [join link](../../glossary/join-link.md) (see [FR-039](FR-039-shared-by-link-storage-and-sync.md)).
-- **My account** — the group is owned by the signed-in [User](../../glossary/user.md) and synced across
-  their devices (today's account sync).
+- **On this device** *(the default)* — the group lives only in the device's local storage
+  ([ADR-0015](../../adr/0015-mvp-client-offline-storage.md)). Nothing reaches the server; people get their pairing
+  through [reveal links](../../glossary/reveal-link.md).
+- **Online** — the group is an [online group](../../glossary/online-group.md): one copy on the server
+  ([FR-039](FR-039-shared-by-link-storage-and-sync.md)), organized by its [owner](../../glossary/owner.md) and reached by its
+  [participants](../../glossary/participant.md) from their own devices. Signed in, the account owns it; signed out, the device
+  keeps the [organizer link](../../glossary/organizer-link.md) ([FR-040](FR-040-admin-link-capability.md)).
 
 Rules:
 
-- **The choice is offered at group creation, with the user's default storage mode pre-selected.** That
-  default starts as *On this device* and is refined by
-  [FR-048](FR-048-default-storage-mode-for-new-groups.md) /
-  [ADR-0071](../../adr/0071-default-storage-mode-and-first-run-onboarding.md) (a set-once, device-local
-  default that also seeds the phone quick-create). Anyone who simply creates a group — and never changes
-  the default — stays local, so [NFR-001](../non-functional/NFR-001-local-first-offline.md) holds for
-  anyone who does nothing; a user who already wants an account or a shared link can pick it up front.
-- **The mode is changeable anytime** from the group's **Sharing & sync** settings.
-- **Every switch is preceded by a short, plain-language consequence** — a one-line before → after, never
-  legalese — and the switch is confirmed before it happens.
-- **All transitions are supported and reversible:**
-  - *On this device → Shared by link* — uploads the aggregate, mints a share token and links.
-  - *On this device / Shared by link → My account* — signs in and [claims](../../glossary/claim.md) the
-    group into the account (retires the admin link; the join link keeps working —
-    [FR-040](FR-040-admin-link-capability.md)).
-  - *My account → Shared by link* (**release-admin**, [FR-043](FR-043-release-ownership-and-deletion-disposition.md))
-    — re-keys the server copy from the account to a fresh share token and mints an admin link; the
-    account stops owning it.
-  - *Shared by link / My account → On this device* (**downgrade**) — the server copy is **removed** and
-    shared links stop working; the **local copy is kept**. This mirrors today's *unclaim* — a delete of
-    the server copy, **not** a [tombstone](../../glossary/tombstone.md) that would delete it everywhere.
+- **The place is chosen when the group is created**, with the user's default place pre-selected
+  ([FR-048](FR-048-default-storage-mode-for-new-groups.md)).
+- **It can be changed any time** in the group's *Sharing & sync*:
+  - *on this device → online* uploads the group and makes this account (or a new organizer link) its owner;
+  - *online → on this device* deletes the online copy — its links stop working and its participants lose
+    access — and keeps the device's copy. Only the owner can do this.
+- **Each change says what it does** in one plain line and happens only after confirmation.
 
 ## Rationale
 
-The jump from private-offline to shared-collaborative used to also be a jump to *sign up*. Three
-explicit per-group modes let a group grow from local, to link-shared without an account, to
-account-synced — matching how families actually use it (one group local, another shared) — while
-keeping the account-free, local-first default intact. Making every switch reversible and prefaced with
-a plain consequence keeps it low-anxiety, so ownership is never a trap
-([ADR-0058](../../adr/0058-account-free-link-shared-groups.md)).
+A group grows from private to shared without a second model: the same group, kept in one more place. Two places
+instead of four kinds (on this device, shared by link, my account, my account · shared) leave one way to be in a
+group and one store to reason about (ADR-0086), and the default stays local for anyone who does nothing
+(NFR-001).
 
 ## Acceptance criteria
 
 ```gherkin
-Given a user creates a new group and does not change the storage option
+Given a user creates a group without changing the place
 When the group is created
-Then it is in "On this device" mode and nothing is sent to the server
+Then it is kept on this device and nothing is sent to the server
 
-Given the create-group screen
+Given the create-group field
 When it is shown
-Then all three modes are offered with a one-line explanation, and "On this device" is pre-selected
+Then both places are offered with a one-line explanation, and the default place is selected
 
-Given a group in "On this device" mode
-When the user switches it to "Shared by link" and confirms the consequence prompt
-Then the aggregate is uploaded, a share token and links are created, and the mode is "Shared by link"
+Given a group on this device and a signed-in user
+When the user puts it online and confirms
+Then the group is uploaded, the account owns it, and its place is "online"
 
-Given a group in "My account" mode
-When the owner chooses "release to shared by link" and confirms
-Then the server copy is re-keyed to a fresh share token, an admin link is minted, and the account no longer owns it
+Given a group on this device and no signed-in user
+When the user puts it online and confirms
+Then the group is uploaded, an organizer link owns it, and this device keeps the link
 
-Given a group in "Shared by link" or "My account" mode
-When the user downgrades it to "On this device" and confirms
-Then the server copy is removed and its shared links stop working, and the local copy remains on the device
-
-Given any mode switch
-When the user initiates it
-Then a short plain-language before → after consequence is shown and the switch happens only on confirmation
+Given an online group this device owns
+When the owner keeps it only on this device and confirms
+Then the online copy is deleted, its links stop working, and the device's copy remains
 ```
 
 ## Dependencies & related
 
 - Derived from: [UC-SS-017](../../use-cases/secret-santa/UC-SS-017-choose-and-switch-storage-mode.md)
-- Related: [FR-039](FR-039-shared-by-link-storage-and-sync.md) (shared-by-link storage),
-  [FR-040](FR-040-admin-link-capability.md) (admin link lifecycle),
-  [FR-041](FR-041-join-link-and-person-claim.md) (join link),
-  [FR-043](FR-043-release-ownership-and-deletion-disposition.md) (release-admin & deletion disposition),
-  [NFR-001](../non-functional/NFR-001-local-first-offline.md) (default preserved)
-- Governing ADR: [ADR-0058](../../adr/0058-account-free-link-shared-groups.md); reuses
-  [ADR-0015](../../adr/0015-mvp-client-offline-storage.md) (local store) and
-  [ADR-0017](../../adr/0017-anonymous-to-account-claim.md) (claim shape)
-- Implemented by: [FEAT-013](../../features/FEAT-013-account-free-link-shared-groups.md)
-- Glossary: [Group](../../glossary/group.md), [Shared-by-link group](../../glossary/shared-by-link-group.md),
-  [Share token](../../glossary/share-token.md), [Admin link](../../glossary/admin-link.md),
-  [Join link](../../glossary/join-link.md), [Claim](../../glossary/claim.md)
+- Related: [FR-039](FR-039-shared-by-link-storage-and-sync.md), [FR-040](FR-040-admin-link-capability.md),
+  [FR-043](FR-043-release-ownership-and-deletion-disposition.md), [FR-048](FR-048-default-storage-mode-for-new-groups.md),
+  [NFR-001](../non-functional/NFR-001-local-first-offline.md)
+- Governing ADR: [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md)
+- Implemented by: [FEAT-027](../../features/FEAT-027-one-way-to-be-in-a-group.md)
+- Glossary: [Place](../../glossary/place.md), [Online group](../../glossary/online-group.md), [Owner](../../glossary/owner.md)

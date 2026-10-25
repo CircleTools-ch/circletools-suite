@@ -1,10 +1,12 @@
 ---
 term: Share token
 contexts: [Platform, Secret-Santa]
-status: Draft
+status: Superseded
 ---
 
 # Share token
+
+> **Retired** ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md)). Online groups are addressed by their group id; the secrets that grant access are the [organizer link](organizer-link.md)'s token, the [join link](join-link.md)'s token and [device keys](device-key.md), each stored hashed. The entry below is kept for history.
 
 ## Definition
 

@@ -1,11 +1,11 @@
 @page "/groups/{GroupId:guid}"
-@using CircleTools.SecretSanta.LocalStore
+@using CircleTools.SecretSanta.LocalStore.Online
 @inject ISender Sender
 @inject NavigationManager Navigation
 @inject IStringLocalizer<AppStrings> L
 @inject TimeProvider Time
 @inject IDialogService Dialogs
-@inject ILocalSyncStore Local
+@inject IGroupRecordStore Records
 @inject ISyncSignals SyncSignals
 @inject IServiceProvider Services
 @inject GroupRemoval Removal
@@ -32,24 +32,12 @@ else
 {
     <div class="d-flex align-center gap-1 mb-4">
         <MudText Typo="Typo.h4">@_group.Name</MudText>
-        @* Storage-mode chip (ADR-0058): a glanceable "which mode is this group in?", tapping through to
-           Sharing & sync. Only shown once escalated beyond the private default, so a local group stays
-           uncluttered. *@
-        @if (_mode == StorageMode.SharedByLink)
-        {
-            <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text"
-                     Icon="@Icons.Material.Filled.Link" OnClick="GoToSharing" id="mode-chip">@L["ModeChipShared"]</MudChip>
-        }
-        else if (_kind == StorageKind.AccountShared)
-        {
-            @* In the account and shared with a join link (ADR-0081). *@
-            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text"
-                     Icon="@StorageModeDisplay.Icon(StorageKind.AccountShared)" OnClick="GoToSharing" id="mode-chip">@L["ModeChipAccountShared"]</MudChip>
-        }
-        else if (_mode == StorageMode.Account)
+        @* Place chip (ADR-0086): a glanceable "is this group online?", tapping through to Sharing & sync. Only
+           shown for an online group, so a local group stays uncluttered. *@
+        @if (_kind == StorageKind.Online)
         {
             <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text"
-                     Icon="@Icons.Material.Filled.CloudDone" OnClick="GoToSharing" id="mode-chip">@L["ModeChipAccount"]</MudChip>
+                     Icon="@StorageModeDisplay.Icon(StorageKind.Online)" OnClick="GoToSharing" id="mode-chip">@L["ModeChipOnline"]</MudChip>
         }
         @* The rename field is tucked into an overflow menu (opens a rename sheet) so the hub leads with
            the occasions, not a text box. *@
@@ -82,15 +70,6 @@ else
             </MudMenu>
         }
     </div>
-
-    @* When this device joined via a join link (ADR-0058), confirm which member it claimed — the
-       participant's "this is me". *@
-    @if (_claimedMemberName is not null)
-    {
-        <MudAlert Severity="Severity.Info" Class="mb-4" Dense="true" id="joined-as">
-            @L["YouAreMember", _claimedMemberName]
-        </MudAlert>
-    }
 
     @* Getting-started checklist (FEAT-019, OB-8): guides the empty→drawn sequence — add members → add an
        event → draw names — and supersedes the one-line first-run hint. The component self-hides once the
@@ -228,6 +207,22 @@ else
        occasion, so they sit below the events as their own destinations rather than as tabs. *@
     <MudDivider Class="my-6" />
     <MudStack Spacing="2">
+        @* The organizer who is also in the roster sees their own assignment like any participant (ADR-0086). *@
+        @if (_hasOwnView)
+        {
+            <MudPaper Outlined="true" Class="ct-hub-row" role="button" tabindex="0" id="my-assignment-row"
+                      aria-label="@L["MyAssignmentRow"]"
+                      @onclick="@(() => Go($"groups/{GroupId}/me"))" @onkeydown="@(e => GoOnEnter(e, $"groups/{GroupId}/me"))">
+                <div class="d-flex align-center gap-3 pa-3">
+                    <MudIcon Icon="@Icons.Material.Filled.CardGiftcard" Color="Color.Primary" />
+                    <div class="flex-grow-1">
+                        <MudText Typo="Typo.subtitle1">@L["MyAssignmentRow"]</MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary">@L["MyAssignmentRowHint"]</MudText>
+                    </div>
+                    <MudIcon Icon="@Icons.Material.Filled.ChevronRight" />
+                </div>
+            </MudPaper>
+        }
         <MudPaper Outlined="true" Class="ct-hub-row" role="button" tabindex="0" id="members-row"
                   aria-label="@($"{L["NavMembers"]}, {_group.Members.Count}")"
                   @onclick="@(() => Go($"groups/{GroupId}/members"))" @onkeydown="@(e => GoOnEnter(e, $"groups/{GroupId}/members"))">
@@ -276,10 +271,10 @@ else
 
     private GroupDto? _group;
     private bool _loaded;
-    private StorageMode _mode;
+    private bool _joinLinkOn;
+    private bool _hasOwnView;
     private StorageKind _kind;
     private bool _readOnly;
-    private string? _claimedMemberName;
     private string _newEventName = string.Empty;
     private Guid? _editingId;
     private string _editName = string.Empty;
@@ -314,19 +309,13 @@ else
         _group = await Sender.Send(new GetGroupQuery(GroupId));
         _loaded = true;
 
-        // The storage mode lives in the sync record, not the domain group (ADR-0016) — read it here for
-        // the chip and the Sharing & sync row's subtitle.
-        // An account group reads as "My account" whatever an older record stored (ADR-0078 Amendment 3).
-        var record = (await Local.LoadGroupsAsync()).FirstOrDefault(r => r.State.Id == GroupId);
-        _mode = record?.EffectiveMode() ?? StorageMode.OnThisDevice;
+        // The place lives in the group record, not the domain group (ADR-0086) — read it here for the chip and the
+        // Sharing & sync row's subtitle.
+        var record = (await Records.LoadAsync()).Records.FirstOrDefault(r => r.Id == GroupId);
         _kind = record is null ? StorageKind.Device : StorageModeDisplay.KindOf(record);
+        _joinLinkOn = record?.Access?.JoinToken is not null;
+        _hasOwnView = record?.View is not null;
         _readOnly = (await GroupAccess.ForAsync(Services, GroupId)).ReadOnly;
-
-        // If this device joined the group as a participant, resolve the claimed member's name for the
-        // "this is me" banner.
-        _claimedMemberName = record?.ClaimedMemberId is { } claimedId && _group is not null
-            ? _group.Members.FirstOrDefault(m => m.Id == claimedId)?.Name
-            : null;
     }
 
     // "Weihnachten 2026" / "Christmas 2026" / "Noël 2026" — the localized default gift-exchange occasion
@@ -375,14 +364,11 @@ else
 
     private void GoToSharing() => Navigation.NavigateTo($"groups/{GroupId}/sharing");
 
-    private string SharingSubtitle() => _mode switch
+    private string SharingSubtitle() => _kind switch
     {
-        StorageMode.SharedByLink => L["SharingSubtitleShared"],
-        StorageMode.Account when _kind == StorageKind.AccountShared => L["SharingSubtitleAccountShared"],
-        StorageMode.Account => L["SharingSubtitleAccount"],
+        StorageKind.Online => _joinLinkOn ? L["SharingSubtitleOnlineJoin"] : L["SharingSubtitleOnline"],
         _ => L["SharingSubtitleLocal"],
     };
-
     // Rename the group from a bottom sheet pre-filled with the current name (ADR-0055 group level),
     // instead of an always-visible text field on the hub.
     private bool _isPinned;

@@ -833,6 +833,8 @@
           "CircleTools.Main.Service.Core": "[1.0.0, )",
           "CircleTools.Main.Service.Repository": "[1.0.0, )",
           "CircleTools.SecretSanta.Contracts": "[1.0.0, )",
+          "CircleTools.SecretSanta.Service": "[1.0.0, )",
+          "CircleTools.SecretSanta.Service.Repository": "[1.0.0, )",
           "CircleTools.ServiceDefaults": "[1.0.0, )",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[10.0.13, )",
           "Microsoft.AspNetCore.OpenApi": "[10.0.13, )"
@@ -876,6 +878,27 @@
           "CircleTools.Main.Contracts": "[1.0.0, )",
           "CircleTools.SecretSanta.Core": "[1.0.0, )",
           "CircleTools.Ui.Abstractions": "[1.0.0, )"
+        }
+      },
+      "circletools.secretsanta.service": {
+        "type": "Project",
+        "dependencies": {
+          "CircleTools.SecretSanta.Service.Core": "[1.0.0, )"
+        }
+      },
+      "circletools.secretsanta.service.core": {
+        "type": "Project",
+        "dependencies": {
+          "CircleTools.SecretSanta.Contracts": "[1.0.0, )",
+          "CircleTools.SecretSanta.Core": "[1.0.0, )"
+        }
+      },
+      "circletools.secretsanta.service.repository": {
+        "type": "Project",
+        "dependencies": {
+          "CircleTools.SecretSanta.Service.Core": "[1.0.0, )",
+          "Microsoft.EntityFrameworkCore": "[10.0.13, )",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "[10.0.3, )"
         }
       },
       "circletools.servicedefaults": {

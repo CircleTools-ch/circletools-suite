@@ -105,10 +105,10 @@
   <data name="ExportDownload" xml:space="preserve"><value>Télécharger</value></data>
   <data name="DeleteTitle" xml:space="preserve"><value>Supprimer votre compte</value></data>
   <data name="DeleteLead" xml:space="preserve"><value>Cela supprime votre compte et tout ce qui y est associé sur nos serveurs. L'opération est immédiate et irréversible. Les données sur vos propres appareils ne sont pas touchées.</value></data>
-  <data name="DeleteSharedGroupsTitle" xml:space="preserve"><value>Groupes que vous partagez par lien</value></data>
-  <data name="DeleteSharedGroupsLead" xml:space="preserve"><value>Vous gérez {0} groupe(s) que d'autres ont rejoint par lien. Choisissez ce qu'il advient d'eux.</value></data>
-  <data name="DeleteSharedGroupsHandOff" xml:space="preserve"><value>Les garder en ligne pour que tous ceux qui ont rejoint conservent l'accès (un nouveau lien admin est créé)</value></data>
-  <data name="DeleteSharedGroupsRemove" xml:space="preserve"><value>Supprimer aussi ces copies en ligne</value></data>
+  <data name="DeleteSharedGroupsTitle" xml:space="preserve"><value>Vos groupes en ligne</value></data>
+  <data name="DeleteSharedGroupsLead" xml:space="preserve"><value>Vous organisez {0} groupe(s) en ligne. Choisissez ce qu’il en advient.</value></data>
+  <data name="DeleteSharedGroupsHandOff" xml:space="preserve"><value>Les garder en ligne pour que tous les participants conservent l’accès (chaque groupe reçoit un lien de gestion)</value></data>
+  <data name="DeleteSharedGroupsRemove" xml:space="preserve"><value>Supprimer aussi ces groupes en ligne</value></data>
   <data name="DeletePasswordPrompt" xml:space="preserve"><value>Saisissez votre mot de passe pour confirmer.</value></data>
   <data name="DeleteSubmit" xml:space="preserve"><value>Supprimer mon compte</value></data>
   <data name="DeleteDoneTitle" xml:space="preserve"><value>Votre compte a été supprimé</value></data>

@@ -24,6 +24,9 @@
     <ProjectReference Include="..\..\src\Apps\SecretSanta\CircleTools.SecretSanta.Core\CircleTools.SecretSanta.Core.csproj" />
     <ProjectReference Include="..\..\src\Apps\SecretSanta\CircleTools.SecretSanta.LocalStore\CircleTools.SecretSanta.LocalStore.csproj" />
     <ProjectReference Include="..\..\src\Apps\SecretSanta\CircleTools.SecretSanta.Ui\CircleTools.SecretSanta.Ui.csproj" />
+    <ProjectReference Include="..\..\src\Apps\SecretSanta\CircleTools.SecretSanta.Service.Core\CircleTools.SecretSanta.Service.Core.csproj" />
+    <ProjectReference Include="..\..\src\Apps\SecretSanta\CircleTools.SecretSanta.Service.Repository\CircleTools.SecretSanta.Service.Repository.csproj" />
+    <ProjectReference Include="..\..\src\Apps\SecretSanta\CircleTools.SecretSanta.Service\CircleTools.SecretSanta.Service.csproj" />
     <ProjectReference Include="..\..\src\BuildingBlocks\CircleTools.Ui.Web\CircleTools.Ui.Web.csproj" />
     <ProjectReference Include="..\..\src\BuildingBlocks\CircleTools.Circles.Contracts\CircleTools.Circles.Contracts.csproj" />
     <ProjectReference Include="..\..\src\BuildingBlocks\CircleTools.Circles.Core\CircleTools.Circles.Core.csproj" />

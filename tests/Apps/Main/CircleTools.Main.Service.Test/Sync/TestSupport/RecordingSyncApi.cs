@@ -34,11 +34,4 @@ public sealed class RecordingSyncApi(ISyncApi inner) : ISyncApi
         return result;
     }
 
-    /// <inheritdoc />
-    public Task<ApiResult> ClaimAsync(Guid groupId, ClaimGroupRequest request, CancellationToken cancellationToken = default) =>
-        inner.ClaimAsync(groupId, request, cancellationToken);
-
-    /// <inheritdoc />
-    public Task<ApiResult> UnclaimAsync(Guid groupId, CancellationToken cancellationToken = default) =>
-        inner.UnclaimAsync(groupId, cancellationToken);
 }

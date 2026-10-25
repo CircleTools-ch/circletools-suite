@@ -14,6 +14,8 @@
          Secret-Santa schema" — the Main host understands the Secret-Santa assignment/link contracts for
          the authorized linking surface only. The generic M3 sync store stays opaque. -->
     <ProjectReference Include="..\..\SecretSanta\CircleTools.SecretSanta.Contracts\CircleTools.SecretSanta.Contracts.csproj" />
+    <ProjectReference Include="..\..\SecretSanta\CircleTools.SecretSanta.Service\CircleTools.SecretSanta.Service.csproj" />
+    <ProjectReference Include="..\..\SecretSanta\CircleTools.SecretSanta.Service.Repository\CircleTools.SecretSanta.Service.Repository.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\CircleTools.Application\CircleTools.Application.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\CircleTools.Circles.Core\CircleTools.Circles.Core.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\CircleTools.Circles.Repository\CircleTools.Circles.Repository.csproj" />

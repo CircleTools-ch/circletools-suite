@@ -11,6 +11,8 @@ related: [UC-SS-007, UC-SS-008, UC-MAIN-015, FR-023, FR-024, FR-026, NFR-001, NF
 
 # FR-025 — Claim local groups into the account
 
+> **Further superseded by [ADR-0086](../../adr/0086-one-way-to-be-in-a-group.md).** Claiming is gone entirely since ADR-0086: a group is put online instead ([FR-038](FR-038-per-group-storage-mode.md)), and an account can take over a group its organizer link owns ([FR-043](FR-043-release-ownership-and-deletion-disposition.md)).
+>
 > **Superseded by [ADR-0044](../../adr/0044-sign-in-reconciliation-and-account-scoped-visibility.md).**
 > The *per-group opt-in claim screen* below is replaced by the **sign-in reconciliation dialog**
 > (Import / Discard / Cancel): on the first interactive sign-in with account-free groups the user

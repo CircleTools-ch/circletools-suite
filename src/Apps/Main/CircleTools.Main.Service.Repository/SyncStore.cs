@@ -29,11 +29,6 @@ namespace CircleTools.Main.Service.Repository;
 /// <param name="timeProvider">The server clock — the only ordering authority (never device time).</param>
 public sealed class SyncStore(SyncDbContext context, ISyncTelemetry telemetry, TimeProvider timeProvider) : ISyncStore
 {
-    // The only kind an un-claim can apply to: a profile is per-account and always synced, never removed
-    // from the account. Platform still stores the kind opaquely; this is the fallback when a marker is
-    // written for an id whose aggregate row is already gone.
-    private const string GroupKind = "group";
-
     /// <inheritdoc />
     public async Task<SyncResponse> ExchangeAsync(
         Guid accountId,
@@ -99,139 +94,14 @@ public sealed class SyncStore(SyncDbContext context, ISyncTelemetry telemetry, T
             .Select(a => new SyncChange(a.Kind, a.AggregateId, a.Version, ParseBody(a.Body)))
             .ToList();
         var outTombstones = appliedMarkers
-            .Where(m => m.MarkerType == SyncMarkerType.Tombstone)
             .Select(m => new SyncTombstone(m.Kind, m.AggregateId, m.Version))
             .ToList();
-        var outUnclaimed = appliedMarkers
-            .Where(m => m.MarkerType == SyncMarkerType.Unclaim)
-            .Select(m => new SyncUnclaimed(m.AggregateId))
-            .ToList();
 
-        return new SyncResponse(newCursor, outChanges, outTombstones, outUnclaimed, collisions);
-    }
-
-    /// <inheritdoc />
-    public async Task ClaimAsync(Guid accountId, SyncChange change, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(change);
-
-        var now = timeProvider.GetUtcNow();
-        var bodyText = change.Body.GetRawText();
-
-        await using var transaction = await context.Database
-            .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-
-        var marker = await context.Markers
-            .FindAsync([accountId, change.Id], cancellationToken).ConfigureAwait(false);
-
-        // A delete already stands for this id: claiming an old copy at or below the tombstone's version
-        // must not resurrect the group (NFR-008). A genuine re-creation past that version is allowed and
-        // falls through to the upsert, clearing the marker as any re-creation does.
-        if (marker is { MarkerType: SyncMarkerType.Tombstone } && change.Version <= marker.Version)
-        {
-            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-            return;
-        }
-
-        var seq = await AllocateSequenceBlockAsync(accountId, 1, cancellationToken).ConfigureAwait(false);
-        var existing = await context.Aggregates
-            .FindAsync([accountId, change.Id], cancellationToken).ConfigureAwait(false);
-
-        // Re-creating the aggregate clears any stale marker standing for its id (an un-claim it is
-        // coming back from, or a superseded tombstone at a lower version).
-        if (marker is not null)
-        {
-            context.Markers.Remove(marker);
-        }
-
-        if (existing is null)
-        {
-            context.Aggregates.Add(new SyncAggregate
-            {
-                AccountId = accountId,
-                AggregateId = change.Id,
-                Kind = change.Kind,
-                Body = bodyText,
-                Version = change.Version,
-                ServerSeq = seq,
-                ServerModifiedAt = now,
-            });
-        }
-        else
-        {
-            // Idempotent re-claim (the retry after a partly-failed multi-group claim): update in place,
-            // never a collision. The version is monotonic so a re-claim of an equal or older copy does
-            // not roll the stored version backwards.
-            existing.Kind = change.Kind;
-            existing.Body = bodyText;
-            existing.Version = Math.Max(change.Version, existing.Version);
-            existing.ServerSeq = seq;
-            existing.ServerModifiedAt = now;
-        }
-
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc />
-    public async Task UnclaimAsync(Guid accountId, Guid groupId, CancellationToken cancellationToken = default)
-    {
-        await using var transaction = await context.Database
-            .BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
-
-        var existing = await context.Aggregates
-            .FindAsync([accountId, groupId], cancellationToken).ConfigureAwait(false);
-        var marker = await context.Markers
-            .FindAsync([accountId, groupId], cancellationToken).ConfigureAwait(false);
-
-        // A delete already stands for this id and outranks an un-claim: the tombstone removes the copy
-        // on every device, and turning it into a keep-the-copy marker would resurrect the group on a
-        // device that had not yet applied the delete (NFR-008). The server copy is already gone, so the
-        // un-claim's own effect — no server copy — already holds; leave the tombstone untouched.
-        if (marker is { MarkerType: SyncMarkerType.Tombstone })
-        {
-            await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-            return;
-        }
-
-        var seq = await AllocateSequenceBlockAsync(accountId, 1, cancellationToken).ConfigureAwait(false);
-        var kind = existing?.Kind ?? marker?.Kind ?? GroupKind;
-
-        // Deleting the aggregate row removes its in-body assignments with it — the sync store keeps no
-        // separate assignment table (ADR-0020).
-        if (existing is not null)
-        {
-            context.Aggregates.Remove(existing);
-        }
-
-        if (marker is null)
-        {
-            context.Markers.Add(new SyncMarker
-            {
-                AccountId = accountId,
-                AggregateId = groupId,
-                Kind = kind,
-                Version = existing?.Version ?? 0,
-                ServerSeq = seq,
-                MarkerType = SyncMarkerType.Unclaim,
-            });
-        }
-        else
-        {
-            // Refresh an existing un-claim marker's sequence so a device that registered after the first
-            // un-claim still pulls it (retention only prunes below every active device's cursor).
-            marker.Kind = kind;
-            marker.Version = existing?.Version ?? marker.Version;
-            marker.ServerSeq = seq;
-            marker.MarkerType = SyncMarkerType.Unclaim;
-        }
-
-        await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        return new SyncResponse(newCursor, outChanges, outTombstones, collisions);
     }
 
     /// <summary>
-    /// Prunes tombstones and un-claim markers that every active device has already seen — those with a
+    /// Prunes tombstones that every active device has already seen — those with a
     /// sequence at or below the slowest active device's cursor (FEAT-004). A device gone quiet since
     /// <paramref name="staleBefore"/> is aged out of the calculation, so a one-time sign-in cannot
     /// freeze retention forever; with no active device, nothing is pruned.
@@ -275,15 +145,7 @@ public sealed class SyncStore(SyncDbContext context, ISyncTelemetry telemetry, T
 
         // A push that would resurrect an aggregate this account has already deleted is dropped —
         // unless it is a genuine re-creation past the tombstone's version (no resurrection: FEAT-004).
-        if (marker is { MarkerType: SyncMarkerType.Tombstone } && change.Version <= marker.Version)
-        {
-            return seq;
-        }
-
-        // Nor may a plain push put back a group that was moved out of the account on another device: that
-        // device kept it as its own, and a stale copy's offline edit would resurrect it in the account
-        // (ADR-0073 Amendment 2). Bringing it back is an explicit claim, which has its own route.
-        if (marker is { MarkerType: SyncMarkerType.Unclaim })
+        if (marker is not null && change.Version <= marker.Version)
         {
             return seq;
         }
@@ -293,7 +155,7 @@ public sealed class SyncStore(SyncDbContext context, ISyncTelemetry telemetry, T
 
         if (existing is null)
         {
-            // A re-created or claimed aggregate clears any stale marker standing for its id.
+            // A re-created aggregate clears any stale tombstone standing for its id.
             if (marker is not null)
             {
                 context.Markers.Remove(marker);
@@ -453,16 +315,6 @@ public sealed class SyncStore(SyncDbContext context, ISyncTelemetry telemetry, T
         return Convert.ToInt64(result, CultureInfo.InvariantCulture);
     }
 
-    /// <inheritdoc />
-    public async Task<AggregateHolding> GetHoldingAsync(Guid aggregateId, Guid accountId, CancellationToken cancellationToken = default)
-    {
-        var holders = await context.Aggregates
-            .Where(a => a.AggregateId == aggregateId)
-            .Select(a => a.AccountId)
-            .Distinct()
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
-        return new AggregateHolding(holders.Contains(accountId), holders.Any(h => h != accountId));
-    }
 
     private static JsonElement ParseBody(string bodyJson)
     {

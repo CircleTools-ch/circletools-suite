@@ -1,11 +1,13 @@
 ---
-status: Accepted
+status: Superseded by ADR-0086
 date: 2026-10-15
 deciders: [Adrian]
 tags: [privacy, sync, secret-santa, account, storage-mode]
 ---
 
 # ADR-0078 — Every "My account" group records which account it belongs to
+
+> **Superseded by [ADR-0086](0086-one-way-to-be-in-a-group.md) (2026-10-22).** Groups no longer have account-scoped kinds: a group is on this device or online, and access is a role assignment.
 
 ## Context and problem statement
 

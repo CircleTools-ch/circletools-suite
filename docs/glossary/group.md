@@ -14,9 +14,12 @@ optional [Budget](budget.md) and [Event details](event-details.md), and — once
 [Draw](draw.md) together with a **draw history** of previous draws. It is the primary aggregate of
 the Secret-Santa app.
 
+A group is kept in one [place](place.md): **on this device**, or **online** as an
+[online group](online-group.md) that organizers and participants reach from their own devices ([ADR-0086](../adr/0086-one-way-to-be-in-a-group.md)).
+
 ## Bounded context(s)
 
-- **Secret-Santa:** the organizing unit; created and managed by an organizer, and the scope that
+- **Secret-Santa:** the organizing unit; created and managed by an [organizer](organizer.md), and the scope that
   carries budget and event details into each [Reveal link](reveal-link.md).
 
 ## Synonyms / do-not-use

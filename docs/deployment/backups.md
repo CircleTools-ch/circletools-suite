@@ -33,6 +33,14 @@ but ships no encryption/retention/verify of its own, and the provider's own snap
 dumps only as long as the account lives. Promote this to an ADR if the backup target or strategy changes
 materially.
 
+## Pre-deploy backups
+
+Since [ADR-0087](../adr/0087-production-data-is-kept.md) the deploy pipeline runs
+`BACKUP_TAG=predeploy bash backup.sh` right before the migrator; a failed backup stops the rollout before
+anything migrates. Pre-deploy snapshots carry the tag `predeploy` and their own retention (the last 20,
+`BACKUP_KEEP_PREDEPLOY`), so neither the nightly policy nor a second deployment on the same day prunes the last
+clean state before a deployment. To restore one, pick it by tag: `restic snapshots --tag predeploy`.
+
 ## Secrets
 
 `backup.sh` / `restore.sh` read [`deploy/.env`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy)
