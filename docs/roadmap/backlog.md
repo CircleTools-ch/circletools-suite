@@ -15,7 +15,17 @@ items missing from it, sequenced in the **[production-release plan](../deploymen
   10.0.20 → 10.0.110, MudBlazor 9.8 → 9.11, Plugin.LocalNotification 12 → 14. Table in the plan.
 - **PR-4 · Full project review (P1)** — incl. open R1/R5 from the
   [2026-10-20 device test](../brainstorming/2026-10-20-secret-santa-release-device-test.md).
-- **PR-5 · Email capacity for December (P1).** Brevo free tier is 300 emails/day (ADR-0037).
+- **PR-5 · Email capacity for December (P1).** ✅ **Alerting implemented (2026-10-28,
+  [ADR-0088](../adr/0088-mail-capacity-alerting.md)).** Brevo free tier is 300 emails/day (ADR-0037). Estimate:
+  a Secret-Santa group sends at most one member-link mail per participant plus a few verification/invitation
+  mails, so ~30 large groups drawing on the same day would be needed to hit the cap; the realistic risk is
+  abuse of the endpoints that accept an email address (rate-limited, NFR-005). Passkey/password sign-in, group
+  creation, draw, sync and link sharing send no mail. Two outbox-derived gauges (mails sent in a rolling 24 h,
+  undeliverable mails) feed Grafana alert rules — warning above 200, critical above 270, critical on a new
+  delivery failure — emailed to `ALERT_EMAIL_TO`, plus an **Email** row on the Business dashboard.
+  **Still owner action:** set `ALERT_EMAIL_TO` in the VM's `.env` **before the next deploy** (compose now
+  requires it), then check *Alerting → Alert rules* in Grafana shows the three rules. Optional: an ntfy
+  webhook contact point as a channel independent of Brevo.
 - **PR-6 · Store listings & screenshots for both stores, DE/EN/FR (P2, after the UI is stable).**
 - **PR-7 · Support page/FAQ, alerting to the owner, rollback runbook, FR native read, legal review (P2).**
 
@@ -554,8 +564,9 @@ checklist.
   via **email** (reuses the Brevo SMTP login, `ALERT_EMAIL_TO`) and/or a **webhook** (`ALERT_WEBHOOK_URL` —
   ntfy/healthchecks/chat), always logging to the journal as a fallback; best-effort, always exits 0. See the
   backups runbook [Monitoring & failure alerting](../deployment/backups.md#monitoring--failure-alerting-gl-11).
-  **Still owner action on the VM:** install `circletools-backup-failure@.service` (step 4) and set at least one
-  `ALERT_*` channel in `.env`. A `restic snapshots` freshness "backup is fresh" signal into Grafana
+  **Installed on the VM 2026-10-28:** `circletools-backup-failure@.service` + `ALERT_EMAIL_TO` in `.env`; the
+  test alert email was sent. That install found that the deploy workflow never shipped
+  `notify-failure.sh` to the VM (so no backup alert could have fired until then); `deploy.yml` now rsyncs it. A `restic snapshots` freshness "backup is fresh" signal into Grafana
   ([ADR-0051](../adr/0051-production-observability-backend.md)) remains a nice-to-have.
   [ADR-0036](../adr/0036-cloud-provider-and-hosting.md).
 - **GL-12 · Confirm the live web apps actually boot in a real browser (verification, P2).** Raised

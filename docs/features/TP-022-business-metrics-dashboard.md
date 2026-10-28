@@ -39,6 +39,9 @@ metric-hygiene check as heavily as the count-correctness checks.
 | Events counted | Seed online groups whose documents hold e events → `events`=e | Integration | ✅ |
 | Members counted | Seed m `circle_memberships` → `members`=m | Integration | ✅ |
 | **Draws counted** | Seed online groups whose events hold d draws → `draws`=d | Integration | ✅ |
+| **Mails sent (24 h)** | Seed `mail.*` rows processed 1 h / 23 h / 25 h ago and a non-mail row → `mail.sent_last_24h`=2 (ADR-0088) | Integration | ✅ |
+| **Mails undeliverable** | Seed one mail row below and one at `MaxAttempts` failures → `mail.undeliverable`=1 (ADR-0088) | Integration | ✅ |
+| Alert provisioning loads | `deploy/grafana/provisioning/alerting/` loads in Grafana 13.2.4: three rules, `owner-email` contact point, policy; empty `ALERT_EMAIL_TO` is rejected by compose | Manual | ➖ |
 | Empty DB | Collect against an empty schema → all gauges = 0, no exception | Integration | ✅ |
 | Best-effort on failure | DB made unreachable mid-run → previous snapshot kept, error logged, host survives | Integration | ✅ |
 | Off the scrape path | Gauge callback reads the snapshot only (no DbContext resolved in the callback) | Unit | ✅ |

@@ -195,6 +195,7 @@ Fill in `/opt/circletools/.env` (keys come from `.env.example`):
 | `ConnectionStrings__maindb` | same user + password: `Host=postgres;Port=5432;Database=maindb;Username=circletools;Password=<same-password>` |
 | `Auth__Jwt__SigningKey` | the generated 48-byte value |
 | `Mail__Username` / `Mail__Password` | Brevo SMTP login + key |
+| `ALERT_EMAIL_TO` | **required** — your address for Grafana's mail-capacity alerts ([ADR-0088](../adr/0088-mail-capacity-alerting.md)) and the backup-failure alert; `docker compose` refuses to start without it |
 | `ACME_EMAIL` | `dev@circletools.ch` |
 | `IMAGE_TAG` | `latest` (or a commit SHA to pin) |
 

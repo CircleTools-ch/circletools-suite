@@ -2,6 +2,7 @@ using System.Diagnostics.Metrics;
 using CircleTools.Circles.Core.Domain;
 using CircleTools.Circles.Repository;
 using CircleTools.Identity;
+using CircleTools.Infrastructure.Outbox;
 using CircleTools.Main.Service.Repository;
 using CircleTools.SecretSanta.Service.Repository;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,8 @@ namespace CircleTools.Main.Service.Test;
 [Collection(BusinessMetricsDatabase.CollectionName)]
 public sealed class BusinessMetricsCollectorTests(BusinessMetricsPostgresFixture fixture)
 {
+    private const int MaxMailAttempts = 5;
+
     [Fact]
     public async Task ReadAsync_CountsAcrossContexts_AndCountsEventsAndDrawsInTheDocuments()
     {
@@ -49,6 +52,16 @@ public sealed class BusinessMetricsCollectorTests(BusinessMetricsPostgresFixture
             secretSanta.Groups.Add(NewOnlineGroup(now, """{"events":[{"draws":[{},{}]},{"draws":[]}]}"""));
             secretSanta.Groups.Add(NewOnlineGroup(now, """{"events":[]}"""));
             await secretSanta.SaveChangesAsync();
+
+            // Mail outbox: sent 1 h ago and 23 h ago (in the 24 h window), sent 25 h ago (outside it),
+            // a non-mail message sent 1 h ago (not mail), one still being retried, one out of attempts.
+            main.OutboxMessages.Add(Sent("mail.verification", now.AddHours(-1)));
+            main.OutboxMessages.Add(Sent("mail.member-link", now.AddHours(-23)));
+            main.OutboxMessages.Add(Sent("mail.password-reset", now.AddHours(-25)));
+            main.OutboxMessages.Add(Sent("other.side-effect", now.AddHours(-1)));
+            main.OutboxMessages.Add(Failed("mail.circle-invitation", now, attempts: MaxMailAttempts - 1));
+            main.OutboxMessages.Add(Failed("mail.circle-invitation", now, attempts: MaxMailAttempts));
+            await main.SaveChangesAsync();
         }
 
         await using var scope = provider.CreateAsyncScope();
@@ -57,6 +70,8 @@ public sealed class BusinessMetricsCollectorTests(BusinessMetricsPostgresFixture
             sp.GetRequiredService<MainDbContext>(),
             sp.GetRequiredService<CirclesDbContext>(),
             sp.GetRequiredService<SecretSantaDbContext>(),
+            now,
+            MaxMailAttempts,
             CancellationToken.None);
 
         Assert.Equal(2, counts.AccountsConfirmed);
@@ -66,6 +81,26 @@ public sealed class BusinessMetricsCollectorTests(BusinessMetricsPostgresFixture
         Assert.Equal(2, counts.Events);
         Assert.Equal(2, counts.Members);
         Assert.Equal(2, counts.Draws);
+        Assert.Equal(2, counts.MailsSentLast24Hours);
+        Assert.Equal(1, counts.MailsUndeliverable);
+    }
+
+    private static OutboxMessage Sent(string type, DateTimeOffset at)
+    {
+        var message = OutboxMessage.Create(type, "{}", at);
+        message.MarkProcessed(at);
+        return message;
+    }
+
+    private static OutboxMessage Failed(string type, DateTimeOffset at, int attempts)
+    {
+        var message = OutboxMessage.Create(type, "{}", at);
+        for (var i = 0; i < attempts; i++)
+        {
+            message.MarkFailed("smtp rejected");
+        }
+
+        return message;
     }
 
     private static CircleToolsUser NewUser(string email, bool confirmed) => new()
@@ -96,7 +131,7 @@ public sealed class BusinessMetricsCollectorTests(BusinessMetricsPostgresFixture
 }
 
 /// <summary>
-/// Metric-hygiene test (TP-022): the business meter must emit exactly the five documented gauges and no
+/// Metric-hygiene test (TP-022): the business meter must emit exactly the seven documented gauges and no
 /// tag key outside the closed allow-list — the guard that keeps a name/email/id/pairing from ever
 /// becoming a metric dimension (ADR-0012/0020, NFR-004). No database needed.
 /// </summary>
@@ -108,6 +143,8 @@ public sealed class BusinessMetricsInstrumentTests
         "circletools.business.draws",
         "circletools.business.events",
         "circletools.business.groups",
+        "circletools.business.mail.sent_last_24h",
+        "circletools.business.mail.undeliverable",
         "circletools.business.members",
     ];
 
@@ -124,7 +161,9 @@ public sealed class BusinessMetricsInstrumentTests
             OnlineGroups: 4,
             Events: 5,
             Members: 6,
-            Draws: 7));
+            Draws: 7,
+            MailsSentLast24Hours: 8,
+            MailsUndeliverable: 9));
 
         // Filter on this instance's meter, not the meter name: API hosts built by other tests in this
         // assembly run in parallel and register their own "CircleTools.Business" meter, whose gauges would
@@ -166,6 +205,8 @@ public sealed class BusinessMetricsInstrumentTests
         Assert.Equal(5, Scalar(measurements, "circletools.business.events"));
         Assert.Equal(6, Scalar(measurements, "circletools.business.members"));
         Assert.Equal(7, Scalar(measurements, "circletools.business.draws"));
+        Assert.Equal(8, Scalar(measurements, "circletools.business.mail.sent_last_24h"));
+        Assert.Equal(9, Scalar(measurements, "circletools.business.mail.undeliverable"));
     }
 
     private static long Scalar(List<Recorded> measurements, string instrument) =>

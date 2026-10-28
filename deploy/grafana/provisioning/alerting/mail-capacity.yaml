@@ -1,0 +1,131 @@
+# Grafana alerting provisioning (ADR-0088): warns the owner before Brevo's free-tier cap of 300 mails/day
+# (ADR-0037) is reached, and when a mail could not be delivered at all. Loaded at Grafana startup.
+#
+# The alert email goes out through Grafana's own SMTP settings (GF_SMTP_* in deploy/compose.yaml), which
+# reuse the same Brevo login as the API, so each alert counts against the cap too. The 200/270 warnings
+# are sent while quota is left; an undeliverable alert caused by the cap itself may not arrive, which is
+# why the 270 warning exists. ALERT_EMAIL_TO comes from deploy/.env.
+#
+# No literal dollar signs elsewhere in this file: Grafana expands dollar-prefixed names from the environment.
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: owner-email
+    receivers:
+      - uid: owner-email
+        type: email
+        settings:
+          addresses: ${ALERT_EMAIL_TO}
+          singleEmail: true
+        disableResolveMessage: false
+
+policies:
+  - orgId: 1
+    receiver: owner-email
+    group_by: ["grafana_folder", "alertname"]
+    group_wait: 30s
+    group_interval: 5m
+    # A capacity warning stays true for hours; one reminder every 6 h is enough.
+    repeat_interval: 6h
+
+groups:
+  - orgId: 1
+    name: mail-capacity
+    folder: CircleTools
+    interval: 1m
+    rules:
+      - uid: mail-cap-warning
+        title: Mail volume above 200 in 24 h
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: max(circletools_business_mail_sent_last_24h{job="api"})
+              instant: true
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [199] }
+        # Nothing scraped means the API is down, which sends no mail; that is not a capacity problem.
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: More than 200 mails were sent in the last 24 h. Brevo's free tier stops at 300/day.
+          description: >-
+            Check the CircleTools Business dashboard (Email row). If the volume is real, upgrade the Brevo
+            plan before the cap is hit; if it is not, look for abuse of the sign-up / reset endpoints.
+            See docs/adr/0088-mail-capacity-alerting.md.
+
+      - uid: mail-cap-critical
+        title: Mail volume above 270 in 24 h
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: max(circletools_business_mail_sent_last_24h{job="api"})
+              instant: true
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [269] }
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: More than 270 mails were sent in the last 24 h. Brevo's cap of 300/day is close.
+          description: >-
+            Mail beyond the cap fails and is retried up to Outbox:MaxAttempts times, then dropped. Upgrade
+            the Brevo plan now. See docs/adr/0088-mail-capacity-alerting.md.
+
+      - uid: mail-undeliverable
+        title: Mails could not be delivered
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              # New failures in the last hour, not the all-time total: old failed rows stay in the outbox, so a
+              # total would keep the alert firing forever. Fires once per new failure, resolves an hour later.
+              expr: max(circletools_business_mail_undeliverable{job="api"}) - max(circletools_business_mail_undeliverable{job="api"} offset 1h)
+              instant: true
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        noDataState: OK
+        execErrState: Error
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: In the last hour, at least one mail exhausted its retries and was not sent.
+          description: >-
+            Causes: the Brevo daily cap, a Brevo outage, or a rejected SMTP login. Read LastError in the
+            outbox_messages table and the API logs in Loki. The alert resolves an hour after the last new
+            failure. See docs/adr/0088-mail-capacity-alerting.md.

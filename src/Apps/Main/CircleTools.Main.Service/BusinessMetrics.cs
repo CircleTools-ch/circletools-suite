@@ -1,9 +1,11 @@
 using System.Diagnostics.Metrics;
 using CircleTools.Circles.Core.Domain;
 using CircleTools.Circles.Repository;
+using CircleTools.Infrastructure.Outbox;
 using CircleTools.Main.Service.Repository;
 using CircleTools.SecretSanta.Service.Repository;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace CircleTools.Main.Service;
 
@@ -22,6 +24,14 @@ namespace CircleTools.Main.Service;
 /// Draws in the online groups' documents. Groups kept on a device never reach the server, so their draws are
 /// not counted (ADR-0086).
 /// </param>
+/// <param name="MailsSentLast24Hours">
+/// Mail outbox messages dispatched in the last rolling 24 h — what Brevo's daily cap is measured against
+/// (ADR-0088). Rolling, so it never depends on where the provider's own day boundary falls.
+/// </param>
+/// <param name="MailsUndeliverable">
+/// Mail outbox messages that exhausted <c>Outbox:MaxAttempts</c> without being sent: a cap hit, a provider
+/// outage or a rejected login all end here (ADR-0088).
+/// </param>
 internal sealed record BusinessCounts(
     long AccountsConfirmed,
     long AccountsUnconfirmed,
@@ -29,10 +39,12 @@ internal sealed record BusinessCounts(
     long OnlineGroups,
     long Events,
     long Members,
-    long Draws)
+    long Draws,
+    long MailsSentLast24Hours,
+    long MailsUndeliverable)
 {
     /// <summary>All-zero counts, published before the first collection completes.</summary>
-    public static readonly BusinessCounts Empty = new(0, 0, 0, 0, 0, 0, 0);
+    public static readonly BusinessCounts Empty = new(0, 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
 /// <summary>
@@ -57,15 +69,23 @@ internal static class BusinessCountReader
         CROSS JOIN LATERAL jsonb_array_elements(COALESCE(e->'draws', '[]'::jsonb)) d
         """;
 
+    // Every outbox message type that sends mail shares this prefix (MailTemplateRenderer).
+    private const string MailTypePrefix = "mail.";
+
+    // The window Brevo's free-tier cap is counted over (ADR-0037, ADR-0088).
+    private static readonly TimeSpan MailWindow = TimeSpan.FromHours(24);
+
     /// <summary>
     /// Runs the count queries over the three contexts the counts come from. Caller owns the contexts' lifetime (a
     /// DI scope). Only counts are read — never a name, email, body, or giver→recipient pairing (ADR-0012/0020,
-    /// NFR-004).
+    /// NFR-004). The mail counts read only the outbox's type and timestamps, never a payload or address.
     /// </summary>
     public static async Task<BusinessCounts> ReadAsync(
         MainDbContext main,
         CirclesDbContext circles,
         SecretSantaDbContext secretSanta,
+        DateTimeOffset now,
+        int maxMailAttempts,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(main);
@@ -80,6 +100,16 @@ internal static class BusinessCountReader
         var events = await secretSanta.Database.SqlQueryRaw<long>(EventCountSql).SingleAsync(cancellationToken).ConfigureAwait(false);
         var draws = await secretSanta.Database.SqlQueryRaw<long>(DrawCountSql).SingleAsync(cancellationToken).ConfigureAwait(false);
 
+        // A message the dispatcher discarded as unrenderable is also marked processed, so it is counted as
+        // sent here — a slight overcount, which errs on the safe side for a capacity alert.
+        var windowStart = now - MailWindow;
+        var mailsSent = await main.OutboxMessages
+            .CountAsync(m => m.Type.StartsWith(MailTypePrefix) && m.ProcessedAt >= windowStart, cancellationToken)
+            .ConfigureAwait(false);
+        var mailsUndeliverable = await main.OutboxMessages
+            .CountAsync(m => m.Type.StartsWith(MailTypePrefix) && m.ProcessedAt == null && m.Attempts >= maxMailAttempts, cancellationToken)
+            .ConfigureAwait(false);
+
         return new BusinessCounts(
             accountsConfirmed,
             accountsUnconfirmed,
@@ -87,7 +117,9 @@ internal static class BusinessCountReader
             onlineGroups,
             events,
             members,
-            draws);
+            draws,
+            mailsSent,
+            mailsUndeliverable);
     }
 }
 
@@ -153,6 +185,18 @@ internal sealed class BusinessMetrics : IDisposable
             () => _counts.Draws,
             unit: "{draw}",
             description: "Draws in online Secret-Santa groups; groups kept on a device are not counted (ADR-0086).");
+
+        _meter.CreateObservableGauge(
+            "circletools.business.mail.sent_last_24h",
+            () => _counts.MailsSentLast24Hours,
+            unit: "{mail}",
+            description: "Mails dispatched in the last rolling 24 h — compared against the provider's daily cap (ADR-0088).");
+
+        _meter.CreateObservableGauge(
+            "circletools.business.mail.undeliverable",
+            () => _counts.MailsUndeliverable,
+            unit: "{mail}",
+            description: "Mails that exhausted Outbox:MaxAttempts without being sent (ADR-0088).");
     }
 
     /// <summary>Publishes a freshly-collected snapshot for the gauges to report.</summary>
@@ -176,6 +220,8 @@ internal sealed class BusinessMetricsCollector : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly BusinessMetrics _metrics;
+    private readonly TimeProvider _clock;
+    private readonly IOptions<OutboxDispatcherOptions> _outboxOptions;
     private readonly ILogger<BusinessMetricsCollector> _logger;
     private readonly TimeSpan _interval;
     private readonly bool _enabled;
@@ -183,11 +229,15 @@ internal sealed class BusinessMetricsCollector : BackgroundService
     /// <summary>Reads the refresh configuration and captures the collaborators.</summary>
     /// <param name="scopeFactory">Opens a DI scope per collection pass to resolve the EF contexts.</param>
     /// <param name="metrics">The meter holder whose snapshot this collector refreshes.</param>
+    /// <param name="clock">The current time, for the rolling mail window.</param>
+    /// <param name="outboxOptions">The dispatcher's retry limit, which defines an undeliverable mail.</param>
     /// <param name="configuration">Reads <c>Observability:BusinessMetrics:*</c> (enabled, interval).</param>
     /// <param name="logger">Records a best-effort collection failure.</param>
     public BusinessMetricsCollector(
         IServiceScopeFactory scopeFactory,
         BusinessMetrics metrics,
+        TimeProvider clock,
+        IOptions<OutboxDispatcherOptions> outboxOptions,
         IConfiguration configuration,
         ILogger<BusinessMetricsCollector> logger)
     {
@@ -195,6 +245,8 @@ internal sealed class BusinessMetricsCollector : BackgroundService
 
         _scopeFactory = scopeFactory;
         _metrics = metrics;
+        _clock = clock;
+        _outboxOptions = outboxOptions;
         _logger = logger;
         _enabled = configuration.GetValue("Observability:BusinessMetrics:Enabled", true);
         var seconds = configuration.GetValue("Observability:BusinessMetrics:RefreshIntervalSeconds", 60);
@@ -230,6 +282,8 @@ internal sealed class BusinessMetricsCollector : BackgroundService
                 services.GetRequiredService<MainDbContext>(),
                 services.GetRequiredService<CirclesDbContext>(),
                 services.GetRequiredService<SecretSantaDbContext>(),
+                _clock.GetUtcNow(),
+                _outboxOptions.Value.MaxAttempts,
                 cancellationToken).ConfigureAwait(false);
 
             _metrics.Publish(counts);

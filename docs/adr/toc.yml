@@ -174,5 +174,7 @@
   href: 0086-one-way-to-be-in-a-group.md
 - name: 0087 Production data is kept
   href: 0087-production-data-is-kept.md
+- name: 0088 Mail capacity alerting
+  href: 0088-mail-capacity-alerting.md
 - name: Template
   href: _template-adr.md

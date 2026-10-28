@@ -161,7 +161,8 @@ reinforcing [ADR-0012](0012-observability-and-telemetry.md)'s privacy posture.
 - **Tempo (traces)** — add a Tempo container + datasource and point the OTLP **traces** endpoint at it
   when request-level tracing is worth it.
 - **Alerting** — Grafana alert rules (error rate / latency / down) once push-notification monitoring is
-  wanted.
+  wanted. **Taken 2026-10-28 for mail capacity** ([ADR-0088](0088-mail-capacity-alerting.md)): rules and an
+  email contact point are provisioned from `deploy/grafana/provisioning/alerting/`; further rules go there.
 - **Mimir / object storage** — if metric cardinality or retention outgrows local Prometheus TSDB.
 
 ## Pros and cons of the options

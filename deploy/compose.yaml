@@ -171,6 +171,18 @@ services:
       # No anonymous access; sign-up disabled — admin login only.
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
+      # Alert email (ADR-0088): Grafana sends through the same Brevo SMTP relay as the API and the backup
+      # alert. ALERT_EMAIL_TO is read by grafana/provisioning/alerting/mail-capacity.yaml. It is required:
+      # Grafana refuses to start with an empty contact-point address, so compose fails first, before a
+      # deploy pulls or changes anything.
+      GF_SMTP_ENABLED: "true"
+      GF_SMTP_HOST: smtp-relay.brevo.com:587
+      GF_SMTP_USER: ${Mail__Username}
+      GF_SMTP_PASSWORD: ${Mail__Password}
+      GF_SMTP_FROM_ADDRESS: ${ALERT_EMAIL_FROM:-no-reply@circletools.ch}
+      GF_SMTP_FROM_NAME: CircleTools Alerts
+      GF_SMTP_STARTTLS_POLICY: MandatoryStartTLS
+      ALERT_EMAIL_TO: ${ALERT_EMAIL_TO:?set ALERT_EMAIL_TO in deploy/.env (ADR-0088)}
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana_data:/var/lib/grafana

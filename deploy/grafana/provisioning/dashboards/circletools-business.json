@@ -78,6 +78,26 @@
         { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(circletools_business_events{job=\"api\"})", "legendFormat": "events" },
         { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(circletools_business_members{job=\"api\"})", "legendFormat": "members" },
         { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(circletools_business_draws{job=\"api\"})", "legendFormat": "draws (online groups)" }
-      ] }
+      ] },
+
+    { "id": 14, "type": "row", "title": "Email — Brevo daily cap 300 (ADR-0088)", "collapsed": false, "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 }, "panels": [] },
+
+    { "id": 15, "type": "stat", "title": "Mails sent (last 24 h)", "datasource": { "type": "prometheus", "uid": "prometheus" }, "gridPos": { "h": 4, "w": 6, "x": 0, "y": 23 },
+      "description": "Mails dispatched in the last rolling 24 h. Alerts fire at 200 (warning) and 270 (critical); Brevo's free tier stops at 300/day.",
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "max": 300, "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 200 }, { "color": "red", "value": 270 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "area", "textMode": "value" },
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "max(circletools_business_mail_sent_last_24h{job=\"api\"})" } ] },
+
+    { "id": 16, "type": "stat", "title": "Undeliverable mails", "datasource": { "type": "prometheus", "uid": "prometheus" }, "gridPos": { "h": 4, "w": 6, "x": 0, "y": 27 },
+      "description": "Mails that exhausted Outbox:MaxAttempts without being sent. Anything above 0 is alerted; see the outbox LastError and the API logs.",
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "red", "value": 1 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "value", "graphMode": "none", "textMode": "value" },
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "max(circletools_business_mail_undeliverable{job=\"api\"})" } ] },
+
+    { "id": 17, "type": "timeseries", "title": "Mails sent (rolling 24 h) over time", "datasource": { "type": "prometheus", "uid": "prometheus" }, "gridPos": { "h": 8, "w": 18, "x": 6, "y": 23 },
+      "description": "The rolling 24 h mail count against the alert thresholds and Brevo's cap.",
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "drawStyle": "line", "fillOpacity": 10, "thresholdsStyle": { "mode": "line" } }, "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 200 }, { "color": "red", "value": 270 } ] } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [ { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "max(circletools_business_mail_sent_last_24h{job=\"api\"})", "legendFormat": "sent (24 h)" } ] }
   ]
 }

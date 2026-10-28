@@ -5,7 +5,7 @@ status: In progress
 owner: Adrian
 target-milestone: M8 — Deployment & operations
 bounded-context: Platform
-related: [ADR-0051, ADR-0012, ADR-0020, ADR-0036, NFR-004, TP-022]
+related: [ADR-0051, ADR-0012, ADR-0020, ADR-0036, ADR-0088, NFR-004, TP-022]
 ---
 
 # FEAT-022 — Business-metrics dashboard (groups / events / draws / accounts over time)
@@ -77,10 +77,16 @@ Prometheus as `circletools_business_*`). Tags are a **closed, low-cardinality se
 | `circletools.business.events` | events in the `secretsanta.groups` documents | — | Counted in Postgres (`jsonb_array_length`); the gauge's series gives the trend |
 | `circletools.business.members` | `circles.circle_memberships` | — | Cross-account circle memberships |
 | `circletools.business.draws` | draws in the `secretsanta.groups` documents | — | **Online groups only** — see risks |
+| `circletools.business.mail.sent_last_24h` | `public.outbox_messages`, `mail.*` with `ProcessedAt` in the last 24 h | — | Rolling window; alerted at 200 / 270 against Brevo's 300/day ([ADR-0088](../adr/0088-mail-capacity-alerting.md)) |
+| `circletools.business.mail.undeliverable` | `public.outbox_messages`, `mail.*` unsent after `Outbox:MaxAttempts` | — | Alerted when it rises ([ADR-0088](../adr/0088-mail-capacity-alerting.md)) |
 
 > **Amended 2026-10-25 (ADR-0086, FEAT-027 phase 4).** The shared-group and linking stores were retired. Groups,
 > events and draws now come from the one Secret-Santa group store; the `kind` tag is `online` instead of
 > `shared`.
+
+> **Amended 2026-10-28 (ADR-0088, backlog PR-5).** Two mail gauges read from the outbox (type and timestamps
+> only — never a payload or address) feed the first Grafana alert rules and a new **Email** row on the
+> dashboard.
 
 ### Where the code lives
 
