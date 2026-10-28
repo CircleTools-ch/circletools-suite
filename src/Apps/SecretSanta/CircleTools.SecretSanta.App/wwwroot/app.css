@@ -79,6 +79,15 @@ h1:focus {
     border-top: env(safe-area-inset-top) solid transparent;
 }
 
+/* The drawer clipped under the app bar starts where MudBlazor's app bar would end, at --mud-appbar-height (in
+   several media-query variants). The app bar above is taller by the inset, so the drawer's first entry, "All
+   groups", sat behind it — on iPad landscape, where the drawer is persistent, it was simply missing (2026-10-28).
+   Start the drawer below the grown app bar instead; !important to beat every MudBlazor variant at once. */
+.mud-drawer.mud-drawer-fixed.mud-drawer-clipped-always {
+    top: calc(var(--mud-appbar-height) + env(safe-area-inset-top)) !important;
+    height: calc(100% - var(--mud-appbar-height) - env(safe-area-inset-top)) !important;
+}
+
 /* Dialog safe-area insets. MudBlazor pads a top- or bottom-anchored dialog by a flat 32px, which on a
    notched iPhone (viewport-fit=cover) is smaller than the status-bar / home-indicator inset — so a
    top-anchored sheet renders under the clock/battery and a bottom sheet under the home indicator. Stack

@@ -33,7 +33,7 @@
   <data name="CreateGroup" xml:space="preserve"><value>Créer un groupe</value></data>
   <data name="CreateGroupFailed" xml:space="preserve"><value>Le groupe n'a pas pu être créé :</value></data>
   <data name="EmptyStateHeadline" xml:space="preserve"><value>Organisez un Père Noël secret avec votre groupe</value></data>
-  <data name="EmptyStateExplainer" xml:space="preserve"><value>Ajoutez tout le monde, indiquez qui ne doit pas tirer qui, et tirez les noms équitablement. Chaque personne reçoit un lien privé qui ne révèle que la personne tirée et sa liste de souhaits — sans connexion et sans compte. Créez votre premier groupe pour commencer.</value></data>
+  <data name="EmptyStateExplainer" xml:space="preserve"><value>Ajoutez tout le monde, indiquez qui ne doit pas tirer qui, et tirez les noms équitablement. Chaque personne reçoit un lien privé qui ne révèle que la personne tirée et sa liste de souhaits – sans connexion et sans compte. Créez votre premier groupe pour commencer.</value></data>
   <data name="EmptyStateAccountSell" xml:space="preserve"><value>Connectez-vous pour synchroniser vos groupes entre vos appareils, voir votre propre attribution et tenir votre propre liste de souhaits.</value></data>
   <data name="EmptyStateSignIn" xml:space="preserve"><value>Se connecter</value></data>
   <data name="EmptyStateCreateGroup" xml:space="preserve"><value>Créer un groupe</value></data>
@@ -58,7 +58,7 @@
   <data name="WishlistLabel" xml:space="preserve"><value>Liste de souhaits (un élément par ligne)</value></data>
   <data name="NoMembers" xml:space="preserve"><value>Aucun membre pour l'instant.</value></data>
   <data name="ExclusionsTitle" xml:space="preserve"><value>Exclusions</value></data>
-  <data name="ExclusionHint" xml:space="preserve"><value>Indiquez qui ne doit pas tirer qui — par exemple les couples, ou les frères et sœurs qui s'offrent déjà des cadeaux.</value></data>
+  <data name="ExclusionHint" xml:space="preserve"><value>Indiquez qui ne doit pas tirer qui – par exemple les couples, ou les frères et sœurs qui s'offrent déjà des cadeaux.</value></data>
   <data name="GiverLabel" xml:space="preserve"><value>Personne offrant</value></data>
   <data name="RecipientLabel" xml:space="preserve"><value>Ne doit pas offrir à</value></data>
   <data name="ExclusionRow" xml:space="preserve"><value>{0} ne doit pas offrir à {1}</value></data>
@@ -86,9 +86,9 @@
   <data name="ShareTitle" xml:space="preserve"><value>Partager les liens</value></data>
   <data name="ShareHint" xml:space="preserve"><value>Envoyez à chaque personne son propre lien. Seul le destinataire voit à qui il offre.</value></data>
   <data name="NoDrawYet" xml:space="preserve"><value>Lancez d'abord un tirage pour générer les liens.</value></data>
-  <data name="DrawInvalidatedNotice" xml:space="preserve"><value>Les membres ont changé depuis ce tirage, il ne couvre donc plus tout le monde. Relancez le tirage pour le mettre à jour — le résultat précédent reste visible jusque-là.</value></data>
+  <data name="DrawInvalidatedNotice" xml:space="preserve"><value>Les membres ont changé depuis ce tirage, il ne couvre donc plus tout le monde. Relancez le tirage pour le mettre à jour – le résultat précédent reste visible jusque-là.</value></data>
   <data name="LinksChangedNotice" xml:space="preserve"><value>Ces liens ont changé depuis que vous en avez distribué certains (une liste de souhaits ou un détail de l'événement a été mis à jour). Partagez à nouveau les liens mis à jour pour que tout le monde ait la dernière version.</value></data>
-  <data name="RedrawWarning" xml:space="preserve"><value>Cet événement a déjà été tiré au sort. Relancer le tirage remplace toutes les attributions - les liens déjà envoyés indiqueront la mauvaise personne.</value></data>
+  <data name="RedrawWarning" xml:space="preserve"><value>Cet événement a déjà été tiré au sort. Relancer le tirage remplace toutes les attributions – les liens déjà envoyés indiqueront la mauvaise personne.</value></data>
   <data name="RedrawConfirm" xml:space="preserve"><value>Relancer quand même le tirage</value></data>
   <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>Ce groupe a déjà été tiré au sort. Ajouter ou retirer un membre implique de relancer le tirage pour inclure tout le monde. Les événements déjà tirés conservent les personnes qui en faisaient partie.</value></data>
   <data name="DuplicateMemberError" xml:space="preserve"><value>Un membre nommé « {0} » existe déjà dans ce groupe.</value></data>
@@ -97,13 +97,13 @@
   <data name="CurrencyInvalid" xml:space="preserve"><value>Saisis un code de devise à 3 lettres (p. ex. CHF).</value></data>
   <data name="BudgetMinExceedsMax" xml:space="preserve"><value>Le minimum ne doit pas dépasser le maximum.</value></data>
   <data name="GiftNoteLabel" xml:space="preserve"><value>Note pour le cadeau</value></data>
-  <data name="GiftNoteHint" xml:space="preserve"><value>Allergies, régime ou mode de vie, ou ce qu'il ne faut pas offrir — visible par la personne qui offre.</value></data>
+  <data name="GiftNoteHint" xml:space="preserve"><value>Allergies, régime ou mode de vie, ou ce qu'il ne faut pas offrir – visible par la personne qui offre.</value></data>
   <data name="RevealGiftNoteLabel" xml:space="preserve"><value>Bon à savoir</value></data>
   <data name="ConfirmDeleteGroup" xml:space="preserve"><value>Supprimer « {0} » et tout son contenu ? Cette action est irréversible.</value></data>
   <data name="ConfirmRemoveMember" xml:space="preserve"><value>Retirer « {0} » de ce groupe ? La personne reste dans les événements déjà tirés.</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Oui, supprimer</value></data>
   <data name="ConfirmRemove" xml:space="preserve"><value>Oui, retirer</value></data>
-  <data name="ExclusionSelfNotAllowed" xml:space="preserve"><value>Une personne ne peut pas être exclue d'elle-même - elle ne se voit jamais attribuer son propre nom.</value></data>
+  <data name="ExclusionSelfNotAllowed" xml:space="preserve"><value>Une personne ne peut pas être exclue d'elle-même – elle ne se voit jamais attribuer son propre nom.</value></data>
   <data name="ExclusionPickBoth" xml:space="preserve"><value>Choisissez une personne qui offre et une personne qui reçoit.</value></data>
   <data name="NotFoundTitle" xml:space="preserve"><value>Introuvable</value></data>
   <data name="NotFoundBody" xml:space="preserve"><value>Désolé, ce contenu n'existe pas.</value></data>
@@ -112,16 +112,16 @@
   <data name="RevealTitle" xml:space="preserve"><value>Votre Père Noël secret</value></data>
   <data name="RevealGreeting" xml:space="preserve"><value>Bonjour {0} !</value></data>
   <data name="RevealLiveHint" xml:space="preserve"><value>Affiche les dernières informations.</value></data>
-  <data name="RevealSnapshotHint" xml:space="preserve"><value>Affiche votre copie enregistrée — vous êtes peut-être hors ligne.</value></data>
+  <data name="RevealSnapshotHint" xml:space="preserve"><value>Affiche votre copie enregistrée – vous êtes peut-être hors ligne.</value></data>
   <data name="RevealBudgetLabel" xml:space="preserve"><value>Budget</value></data>
   <data name="RevealEventLabel" xml:space="preserve"><value>Événement</value></data>
   <data name="RevealButton" xml:space="preserve"><value>Découvrir qui vous avez tiré</value></data>
   <data name="RevealRecipientLabel" xml:space="preserve"><value>Vous êtes le Père Noël secret de</value></data>
   <data name="RevealWishlistLabel" xml:space="preserve"><value>Sa liste de souhaits</value></data>
-  <data name="RevealNoWishlist" xml:space="preserve"><value>Pas encore de liste de souhaits — un peu d'enquête discrète s'impose peut-être.</value></data>
+  <data name="RevealNoWishlist" xml:space="preserve"><value>Pas encore de liste de souhaits – un peu d'enquête discrète s'impose peut-être.</value></data>
   <data name="RevealMalformed" xml:space="preserve"><value>Ce lien est invalide ou incomplet.</value></data>
-  <data name="RevealPrimer" xml:space="preserve"><value>Ceci est votre lien privé de Père Noël secret — vous seul voyez qui vous avez tiré.</value></data>
-  <data name="RevealSpoilerNote" xml:space="preserve"><value>Appuyez sur le bouton quand vous êtes prêt - pas de triche !</value></data>
+  <data name="RevealPrimer" xml:space="preserve"><value>Ceci est votre lien privé de Père Noël secret – vous seul voyez qui vous avez tiré.</value></data>
+  <data name="RevealSpoilerNote" xml:space="preserve"><value>Appuyez sur le bouton quand vous êtes prêt – pas de triche !</value></data>
   <data name="SignIn" xml:space="preserve"><value>Se connecter</value></data>
   <data name="SignOut" xml:space="preserve"><value>Se déconnecter</value></data>
   <data name="SignedInAs" xml:space="preserve"><value>Connecté en tant que {0}</value></data>
@@ -132,7 +132,7 @@
   <data name="ClaimLead" xml:space="preserve"><value>Choisissez les groupes à conserver sur votre compte et à synchroniser sur vos autres appareils.</value></data>
   <data name="ClaimLocalCopyStaysNote" xml:space="preserve"><value>La copie sur cet appareil est toujours conservée.</value></data>
   <data name="ClaimUnclaimedLiveHereOnlyNote" xml:space="preserve"><value>Les groupes non sélectionnés restent uniquement sur cet appareil.</value></data>
-  <data name="ClaimDrawnUploadsAssignmentsWarning" xml:space="preserve"><value>Déjà tiré — ses attributions seront aussi téléversées.</value></data>
+  <data name="ClaimDrawnUploadsAssignmentsWarning" xml:space="preserve"><value>Déjà tiré – ses attributions seront aussi téléversées.</value></data>
   <data name="ClaimConfirm" xml:space="preserve"><value>Ajouter la sélection à mon compte</value></data>
   <data name="ClaimNoGroups" xml:space="preserve"><value>Chaque groupe de cet appareil est déjà sur votre compte.</value></data>
   <data name="ClaimMemberCountSingular" xml:space="preserve"><value>{0} membre</value></data>
@@ -144,15 +144,15 @@
   <data name="SyncedBadge" xml:space="preserve"><value>Sur votre compte</value></data>
   <data name="UnclaimAction" xml:space="preserve"><value>Retirer du compte</value></data>
   <data name="UnclaimConfirmPrompt" xml:space="preserve"><value>Retirer « {0} » de votre compte ?</value></data>
-  <data name="UnclaimKeepsLocalCopyNote" xml:space="preserve"><value>La copie sur cet appareil est conservée — elle cesse simplement de se synchroniser.</value></data>
+  <data name="UnclaimKeepsLocalCopyNote" xml:space="preserve"><value>La copie sur cet appareil est conservée – elle cesse simplement de se synchroniser.</value></data>
   <data name="UnclaimDistinctFromDeleteNote" xml:space="preserve"><value>Ce n'est pas comme Supprimer, qui retire le groupe partout.</value></data>
   <data name="UnclaimConfirm" xml:space="preserve"><value>Oui, retirer du compte</value></data>
   <data name="UnclaimOfflineUnavailable" xml:space="preserve"><value>Vous êtes hors ligne. Retirer du compte nécessite une connexion ; rien n'a changé.</value></data>
   <data name="UnclaimSuccess" xml:space="preserve"><value>Retiré de votre compte. La copie sur cet appareil est conservée.</value></data>
   <data name="UnclaimFailed" xml:space="preserve"><value>L'opération n'a pas pu aboutir. Veuillez réessayer.</value></data>
-  <!-- M4 — Linking (FEAT-005) -->
+  <!-- M4 – Linking (FEAT-005) -->
   <data name="FromCircleTitle" xml:space="preserve"><value>Créer un groupe à partir d'un cercle</value></data>
-  <data name="FromCircleLead" xml:space="preserve"><value>Ajoutez les personnes de l'un de vos cercles comme membres. Le groupe est un instantané — modifier le cercle ensuite ne le change pas.</value></data>
+  <data name="FromCircleLead" xml:space="preserve"><value>Ajoutez les personnes de l'un de vos cercles comme membres. Le groupe est un instantané – modifier le cercle ensuite ne le change pas.</value></data>
   <data name="FromCircleNoCircles" xml:space="preserve"><value>Vous n’avez pas encore de cercle. Les cercles se créent sur circletools.ch.</value></data>
   <data name="FromCircleChooseLabel" xml:space="preserve"><value>Choisir un cercle</value></data>
   <data name="FromCircleGroupNameLabel" xml:space="preserve"><value>Nom du groupe</value></data>
@@ -356,7 +356,7 @@
   <data name="ExclusionPickPerson" xml:space="preserve"><value>Choisir une personne</value></data>
   <data name="RevealNextStep" xml:space="preserve"><value>Vous recevrez aussi un cadeau : dites à la personne qui organise ce qui vous ferait plaisir, pour que votre Père Noël secret ait des idées.</value></data>
   <data name="DrawSummary" xml:space="preserve"><value>{0} personnes participent · exclusions : {1}</value></data>
-  <data name="DrawBeforeNote" xml:space="preserve"><value>Le tirage a lieu sur cet appareil. Personne ne voit ici qui a tiré qui — pas même vous. Chacun le découvre grâce à son propre lien.</value></data>
+  <data name="DrawBeforeNote" xml:space="preserve"><value>Le tirage a lieu sur cet appareil. Personne ne voit ici qui a tiré qui – pas même vous. Chacun le découvre grâce à son propre lien.</value></data>
   <data name="DrawAgain" xml:space="preserve"><value>Refaire le tirage</value></data>
   <data name="Retry" xml:space="preserve"><value>Réessayer</value></data>
   <data name="RemoveNamed" xml:space="preserve"><value>Supprimer {0}</value></data>
@@ -531,7 +531,6 @@
   <data name="JoinNewNameLabel" xml:space="preserve"><value>Pas sur la liste ? Votre nom</value></data>
   <data name="JoinNewNameHint" xml:space="preserve"><value>Vous êtes ajouté·e au groupe sous ce nom.</value></data>
   <data name="MyAssignmentRow" xml:space="preserve"><value>Mon attribution</value></data>
-  <data name="MyAssignmentRowHint" xml:space="preserve"><value>La personne que vous gâtez, pour chaque événement</value></data>
-  <data name="ParticipantOrganizerHint" xml:space="preserve"><value>Vous modifiez votre propre liste de souhaits et votre remarque dans les listes de souhaits de l’événement, comme celles des autres.</value></data>
+  <data name="MyAssignmentRowHint" xml:space="preserve"><value>À qui vous offrez, et votre propre liste de souhaits</value></data>
   <data name="RevealOwnEntryLive" xml:space="preserve"><value>Votre Père Noël secret voit vos changements tout de suite.</value></data>
 </root>

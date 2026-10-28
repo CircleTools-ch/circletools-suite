@@ -88,7 +88,7 @@
   <data name="NoDrawYet" xml:space="preserve"><value>Lose zuerst aus, um Links zu erzeugen.</value></data>
   <data name="DrawInvalidatedNotice" xml:space="preserve"><value>Die Mitglieder haben sich seit dieser Auslosung geändert, daher deckt sie nicht mehr alle ab. Lose erneut aus, um sie zu aktualisieren – das bisherige Ergebnis bleibt bis dahin sichtbar.</value></data>
   <data name="LinksChangedNotice" xml:space="preserve"><value>Diese Links haben sich geändert, seit du einige verteilt hast (eine Wunschliste oder ein Anlass-Detail wurde aktualisiert). Teile die aktualisierten Links erneut, damit alle den neuesten Stand haben.</value></data>
-  <data name="RedrawWarning" xml:space="preserve"><value>Dieser Anlass wurde bereits ausgelost. Ein erneutes Auslosen ersetzt alle Zuordnungen - bereits verschickte Links zeigen dann die falsche Person.</value></data>
+  <data name="RedrawWarning" xml:space="preserve"><value>Dieser Anlass wurde bereits ausgelost. Ein erneutes Auslosen ersetzt alle Zuordnungen – bereits verschickte Links zeigen dann die falsche Person.</value></data>
   <data name="RedrawConfirm" xml:space="preserve"><value>Trotzdem erneut auslosen</value></data>
   <data name="RemoveMemberVoidsDrawWarning" xml:space="preserve"><value>Diese Gruppe wurde bereits ausgelost. Wer Mitglieder hinzufügt oder entfernt, muss neu auslosen, damit alle dabei sind. Bereits ausgeloste Anlässe behalten die Personen, die darin waren.</value></data>
   <data name="DuplicateMemberError" xml:space="preserve"><value>Ein Mitglied mit dem Namen «{0}» gibt es in dieser Gruppe bereits.</value></data>
@@ -103,7 +103,7 @@
   <data name="ConfirmRemoveMember" xml:space="preserve"><value>"{0}" aus dieser Gruppe entfernen? Die Person bleibt in bereits ausgelosten Anlässen erhalten.</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Ja, löschen</value></data>
   <data name="ConfirmRemove" xml:space="preserve"><value>Ja, entfernen</value></data>
-  <data name="ExclusionSelfNotAllowed" xml:space="preserve"><value>Eine Person kann nicht von sich selbst ausgeschlossen werden - sie wird sich ohnehin nie selbst zugelost.</value></data>
+  <data name="ExclusionSelfNotAllowed" xml:space="preserve"><value>Eine Person kann nicht von sich selbst ausgeschlossen werden – sie wird sich ohnehin nie selbst zugelost.</value></data>
   <data name="ExclusionPickBoth" xml:space="preserve"><value>Wähle eine schenkende und eine beschenkte Person.</value></data>
   <data name="NotFoundTitle" xml:space="preserve"><value>Nicht gefunden</value></data>
   <data name="NotFoundBody" xml:space="preserve"><value>Diesen Inhalt gibt es leider nicht.</value></data>
@@ -121,7 +121,7 @@
   <data name="RevealNoWishlist" xml:space="preserve"><value>Noch keine Wunschliste – vielleicht ist etwas Detektivarbeit gefragt.</value></data>
   <data name="RevealMalformed" xml:space="preserve"><value>Dieser Link ist ungültig oder unvollständig.</value></data>
   <data name="RevealPrimer" xml:space="preserve"><value>Das ist dein privater Wichtel-Link – nur du siehst, wen du beschenkst.</value></data>
-  <data name="RevealSpoilerNote" xml:space="preserve"><value>Tippe auf die Schaltfläche, wenn du bereit bist - nicht schummeln!</value></data>
+  <data name="RevealSpoilerNote" xml:space="preserve"><value>Tippe auf die Schaltfläche, wenn du bereit bist – nicht schummeln!</value></data>
   <data name="SignIn" xml:space="preserve"><value>Anmelden</value></data>
   <data name="SignOut" xml:space="preserve"><value>Abmelden</value></data>
   <data name="SignedInAs" xml:space="preserve"><value>Angemeldet als {0}</value></data>
@@ -531,7 +531,6 @@
   <data name="JoinNewNameLabel" xml:space="preserve"><value>Nicht auf der Liste? Dein Name</value></data>
   <data name="JoinNewNameHint" xml:space="preserve"><value>Du wirst unter diesem Namen zur Gruppe hinzugefügt.</value></data>
   <data name="MyAssignmentRow" xml:space="preserve"><value>Meine Zuteilung</value></data>
-  <data name="MyAssignmentRowHint" xml:space="preserve"><value>Wen du beschenkst, für jeden Anlass</value></data>
-  <data name="ParticipantOrganizerHint" xml:space="preserve"><value>Deine eigene Wunschliste und deinen Hinweis bearbeitest du bei den Wunschlisten des Anlasses – wie die der anderen.</value></data>
+  <data name="MyAssignmentRowHint" xml:space="preserve"><value>Wen du beschenkst, und deine eigene Wunschliste</value></data>
   <data name="RevealOwnEntryLive" xml:space="preserve"><value>Dein Wichtel sieht deine Änderungen sofort.</value></data>
 </root>

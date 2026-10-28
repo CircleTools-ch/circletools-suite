@@ -57,6 +57,12 @@
     }
 }
 
+/* A page without the bottom navigation (a reveal or join link, the web) still clears the home indicator: the
+   last field of the reveal page ran under the gesture bar (Pixel pass, 2026-10-28). The inset is 0 on desktop. */
+.ct-safe-bottom {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+}
+
 /* Touch-ergonomics baseline for phones (FEAT-008 W1, ADR-0054). MudBlazor renders its compact
    interactive controls smaller than a comfortable finger target (an icon button is ~34-40px; a menu
    item shorter than 48px), so guarantee a ~48px hit area on the narrow (bottom-bar) breakpoint. Doing
@@ -246,10 +252,15 @@ input[type="date"]::-webkit-clear-button {
 /* Footer at the bottom of short pages (UX review P3, 2026-10-14). A shell opts in with ct-main-fill on its
    content container and wraps the page in .ct-page: the container fills the viewport below the app bar
    and the page grows, so the legal footer rests at the bottom instead of floating mid-screen. */
+/* The native heads push the main content down by the status-bar inset as well (app.css: the app bar grows into
+   the safe area and .mud-main-content gets a matching top border), so that inset comes off the height too. It was
+   missing: a short page was taller than the screen by the status bar, which moved the footer under the FAB on the
+   group list and behind the bottom navigation on every other page (Pixel / iPad pass, 2026-10-28). The inset is 0
+   on the web, where this changes nothing. */
 .ct-main-fill {
     display: flex;
     flex-direction: column;
-    min-height: calc(100dvh - var(--mud-appbar-height));
+    min-height: calc(100dvh - var(--mud-appbar-height) - env(safe-area-inset-top));
 }
 
 .ct-main-fill > .ct-page {
@@ -330,6 +341,13 @@ html {
 /* A past occasion stays reachable but steps back behind the upcoming ones (I5). */
 .ct-past {
     opacity: 0.65;
+}
+
+/* A name in a flex row next to fixed controls (a page title beside its chip and menu): it may shrink below its
+   longest word and breaks inside it, so the controls keep their width (2026-10-28). */
+.ct-wrap-anywhere {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 /* A share-links row (Q21): name + status, then the actions — the same layout for every person. Side by side

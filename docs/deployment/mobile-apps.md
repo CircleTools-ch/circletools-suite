@@ -348,6 +348,8 @@ test account).
 
 ## Submission checklist
 
+The click-by-click order for the last mile is the [store submission guide](store-submission-guide.md).
+
 - [ ] Brand and domain final; `ApplicationId` / bundle id derived from it and set — **done** (`ch.circletools.secretsanta`)
 - [x] App icon and splash are branded art (not the .NET template)
 - [ ] `RevealBaseUrl` in the MAUI head pointed at the deployed origin, not `localhost` — Release defaults to production; verify at build

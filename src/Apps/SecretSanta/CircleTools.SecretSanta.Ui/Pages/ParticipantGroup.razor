@@ -5,6 +5,7 @@
 @using CircleTools.SecretSanta.LocalStore.Online
 @inject IGroupRecordStore Records
 @inject OnlineGroupSync Online
+@inject ISender Sender
 @inject ISyncSignals SyncSignals
 @inject GroupRemoval Removal
 @inject NavigationManager Navigation
@@ -34,7 +35,7 @@ else if (_view is null)
 else
 {
     <div class="d-flex align-center gap-1 mb-1">
-        <MudText Typo="Typo.h4" Class="flex-grow-1">@_view.GroupName</MudText>
+        <MudText Typo="Typo.h4" Class="flex-grow-1 ct-wrap-anywhere">@_view.GroupName</MudText>
         @if (!_organizes)
         {
         <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" AriaLabel="@L["MoreActions"]"
@@ -64,11 +65,11 @@ else
                     {
                         @if (pairing.BudgetAmount is { } amount && pairing.BudgetCurrency is { } currency)
                         {
-                            <MudText Class="mb-1"><strong>@L["RevealBudgetLabel"]:</strong> @BudgetDisplay.Format(pairing.BudgetMin, amount, currency)</MudText>
+                            <MudText Class="mb-1"><strong>@LabelText.WithColon(L["RevealBudgetLabel"])</strong> @BudgetDisplay.Format(pairing.BudgetMin, amount, currency)</MudText>
                         }
                         @if (!string.IsNullOrWhiteSpace(pairing.EventLocation))
                         {
-                            <MudText Class="mb-1"><strong>@L["RevealEventLabel"]:</strong> @pairing.EventLocation</MudText>
+                            <MudText Class="mb-1"><strong>@LabelText.WithColon(L["RevealEventLabel"])</strong> @pairing.EventLocation</MudText>
                         }
                         @if (CalendarFor(occasion, pairing) is { } calendarEvent)
                         {
@@ -78,13 +79,13 @@ else
                         @if (_revealed.Contains(occasion.EventId))
                         {
                             <MudAlert Severity="Severity.Success" Class="mt-2 mb-3">
-                                <MudText Class="mb-1">@L["RevealRecipientLabel"]:</MudText>
+                                <MudText Class="mb-1">@LabelText.WithColon(L["RevealRecipientLabel"])</MudText>
                                 <MudText Typo="Typo.h5" Class="mb-3 participant-recipient">@pairing.RecipientName</MudText>
                                 @if (!string.IsNullOrWhiteSpace(pairing.GiftNote))
                                 {
-                                    <MudText Class="mb-3"><strong>@L["RevealGiftNoteLabel"]:</strong> @pairing.GiftNote</MudText>
+                                    <MudText Class="mb-3"><strong>@LabelText.WithColon(L["RevealGiftNoteLabel"])</strong> @pairing.GiftNote</MudText>
                                 }
-                                <MudText Class="mb-1"><strong>@L["RevealWishlistLabel"]:</strong></MudText>
+                                <MudText Class="mb-1"><strong>@LabelText.WithColon(L["RevealWishlistLabel"])</strong></MudText>
                                 @if (pairing.Wishlist.Count == 0)
                                 {
                                     <MudText>@L["RevealNoWishlist"]</MudText>
@@ -105,29 +106,20 @@ else
                         }
                     }
 
-                    @if (!_organizes)
-                    {
-                        <MudTextField T="string" @bind-Value="_wishes[occasion.EventId]" Lines="4" Variant="Variant.Outlined"
-                                      Label="@L["YourWishlistFor", EventLabel(occasion.EventName)]" HelperText="@L["WishlistLabel"]"
-                                      Disabled="!_canEdit" Class="participant-wishlist" />
-                    }
+                    @* The organizer edits their own wishlist here too (2026-10-28): having to find themselves among
+                       everyone's wishlists was the one way in, and it was not found. *@
+                    <MudTextField T="string" @bind-Value="_wishes[occasion.EventId]" Lines="4" Variant="Variant.Outlined"
+                                  Label="@L["YourWishlistFor", EventLabel(occasion.EventName)]" HelperText="@L["WishlistLabel"]"
+                                  Disabled="!CanSave" Class="participant-wishlist" />
                 </MudCardContent>
             </MudCard>
         }
     </MudStack>
 
-    @* The organizer's own entry is part of the document they edit, so it is edited where everyone's is. *@
-    @if (_organizes)
-    {
-        <MudText Class="mud-text-secondary mt-4">@L["ParticipantOrganizerHint"]</MudText>
-    }
-    else
-    {
-        <MudTextField T="string" @bind-Value="_giftNote" Lines="2" Variant="Variant.Outlined" Class="mt-4"
-                      Label="@L["MyGiftNoteLabel"]" HelperText="@L["MyGiftNoteHelp"]" MaxLength="500" Disabled="!_canEdit" />
-    }
+    <MudTextField T="string" @bind-Value="_giftNote" Lines="2" Variant="Variant.Outlined" Class="mt-4"
+                  Label="@L["MyGiftNoteLabel"]" HelperText="@L["MyGiftNoteHelp"]" MaxLength="500" Disabled="!CanSave" />
 
-    @if (_canEdit && !_organizes)
+    @if (CanSave)
     {
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-3" OnClick="SaveAsync" Disabled="_saving" id="save-own-entry">@L["Save"]</MudButton>
     }
@@ -146,6 +138,9 @@ else
     private string? _giftNote;
     private readonly Dictionary<Guid, string> _wishes = [];
     private readonly HashSet<Guid> _revealed = [];
+
+    // A participant writes their own entry through the server; the organizer writes it into the document they hold.
+    private bool CanSave => _organizes || _canEdit;
 
     protected override void OnInitialized() => SyncSignals.SyncCompleted += OnSyncCompleted;
 
@@ -196,12 +191,27 @@ else
     private async Task SaveAsync()
     {
         _saving = true;
-        var entry = new OwnEntryRequest(
-            string.IsNullOrWhiteSpace(_giftNote) ? null : _giftNote.Trim(),
-            [.. _wishes.Select(w => new OwnWishlist(w.Key, [.. w.Value.Split('\n').Select(i => i.Trim()).Where(i => i.Length > 0)]))]);
-        await Online.WriteOwnEntryAsync(GroupId, entry);
-        var still = (await Records.LoadAsync()).Records.FirstOrDefault(r => r.Id == GroupId)?.PendingEntry;
-        Snackbar.Add(still is null ? L["Saved"] : L["SavedOfflinePending"], still is null ? Severity.Success : Severity.Info);
+        var giftNote = string.IsNullOrWhiteSpace(_giftNote) ? null : _giftNote.Trim();
+        var wishlists = _wishes.Select(w => new OwnWishlist(w.Key, [.. w.Value.Split('\n').Select(i => i.Trim()).Where(i => i.Length > 0)])).ToList();
+        if (_organizes)
+        {
+            // The organizer's own entry is part of their document: the same edits the wishlists and members pages
+            // make, synced like any other change.
+            foreach (var wishlist in wishlists)
+            {
+                await Sender.Send(new SetMemberWishlistCommand(GroupId, wishlist.EventId, _view!.MemberId, wishlist.Items));
+            }
+
+            await Sender.Send(new SetMemberGiftNoteCommand(GroupId, _view!.MemberId, giftNote));
+            Snackbar.Add(L["Saved"], Severity.Success);
+        }
+        else
+        {
+            await Online.WriteOwnEntryAsync(GroupId, new OwnEntryRequest(giftNote, wishlists));
+            var still = (await Records.LoadAsync()).Records.FirstOrDefault(r => r.Id == GroupId)?.PendingEntry;
+            Snackbar.Add(still is null ? L["Saved"] : L["SavedOfflinePending"], still is null ? Severity.Success : Severity.Info);
+        }
+
         _saving = false;
     }
 

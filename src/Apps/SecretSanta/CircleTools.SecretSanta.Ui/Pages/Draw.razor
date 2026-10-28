@@ -76,6 +76,13 @@ else
             {
                 <MudText>@L["DrawPreviousKept"]</MudText>
             }
+            else
+            {
+                @* Coming back later: say that it is drawn and for how many, as right after the draw — the page said
+                   only that the pairings are hidden (Pixel pass, 2026-10-28). *@
+                <MudText id="draw-done">@L["DrawSuccess"]</MudText>
+                <MudText>@L["DrawAssignmentCount", _event.CurrentAssignments.Count]</MudText>
+            }
             <MudText>@L["DrawSpoilerNote"]</MudText>
         </MudAlert>
         @* Once drawn, the next step is handing out the links, so that is the primary action; drawing again

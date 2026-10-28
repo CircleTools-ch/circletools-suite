@@ -34,6 +34,9 @@ public static class QrDialogExtensions
         var options = new DialogOptions
         {
             Position = DialogPosition.Center,
+            // The default (Small, up to 600px) is wider than a phone, so the dialog ran edge to edge; this keeps the
+            // 32px margin the other dialogs have (Pixel pass, 2026-10-28).
+            MaxWidth = MaxWidth.False,
             CloseOnEscapeKey = true,
             // No corner X: the dialog's own Close button is the one way out (two close controls side by
             // side was redundant - UX review P5). Tapping outside / Back also closes it.

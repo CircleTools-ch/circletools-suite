@@ -91,7 +91,8 @@ a git-committed file (rule 9), advances on every merge, and gives both a SemVer 
 
 ### Trigger — hybrid (and this is correct, not a compromise)
 
-- **Web + API → merge to `main` deploys.** The server is ours; deploys are instant and reversible, so
+- **Web + API → merge to `main` deploys** *(superseded 2026-10-28: deploys are started by hand — see the
+  amendment below)*. The server is ours; deploys are instant and reversible, so
   continuous deployment fits. `deploy.yml` runs after the CI gate **succeeds** (`workflow_run`), builds
   the API and Web images stamped with the nbgv version, and pushes them to GHCR — then rolls the VPS
   forward (SSH → migrator → `compose up`, per [ADR-0036](0036-cloud-provider-and-hosting.md)).
@@ -139,6 +140,24 @@ now** on every green merge, but the **SSH rollout job is gated on `DEPLOY_HOST` 
 job emits `deployable`). It activates itself the moment the secret is added — no code change, no failing
 runs against a host that isn't there. This is ADR-0038's "flip to `on: push` once provisioning is done",
 made automatic.
+
+### Amendment (2026-10-28) — the Web + API deploy is started by hand
+
+**Supersedes the "merge to `main` deploys" half of the trigger above.** `deploy.yml` no longer runs after every
+green CI (`workflow_run`); it runs only on **manual dispatch**.
+
+- **Why.** Most merges no longer touch the server: documentation, store copy, and mobile-only changes each
+  rebuilt both images and rolled the VPS — a minute of downtime risk and an image tag per merge for nothing — and
+  a release now has to be timed against the store builds (a web front with a new feature before the store
+  apps carry it, or the reverse). Deploying is a deliberate step, like the mobile release already is.
+- **The gate stays.** A manual run builds the dispatched commit only if **CI succeeded for exactly that
+  commit**; otherwise it refuses with a clear error. A dispatch with `image_tag` is still the rollback path
+  (redeploy an existing image, no rebuild). Migrations still run as the rollout's explicit step.
+- **Cost, accepted.** A server fix waits until someone presses *Run workflow* — the owner is the only
+  deployer, so this is a habit, not a hand-off. A merged-but-undeployed web change is visible as the
+  "a new version is available" prompt never appearing.
+- **Rejected alternative.** Keep the automatic trigger but skip it for docs-only commits by path filter: it
+  still deploys mobile-only and store-copy merges, and still cannot time the web release against the stores.
 
 ## Consequences
 

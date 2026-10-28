@@ -34,7 +34,9 @@ operational, legal and pre-data items that still gate a first deploy.
 
 The **[production-release plan](production-release-plan.md)** (2026-10-20) takes it from there to a
 public 1.0 in both app stores: the Play closed-test clock, the Apple setup, dependency updates, the full
-review and the store listings — as parallel tracks, in order.
+review and the store listings — as parallel tracks, in order. Its last mile, click by click, is the
+**[store submission guide](store-submission-guide.md)** (2026-10-28): TestFlight test information, the
+App Store record, the Play declarations, screenshots, and the production applications.
 
 Both tracks are gated for *execution* on the [brand & domain](../process/naming.md); the current
 day-to-day focus is local development via .NET Aspire, see [arc42 ch. 7](../arc42/07-deployment-view.md).

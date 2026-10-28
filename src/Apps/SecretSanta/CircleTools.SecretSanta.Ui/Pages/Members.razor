@@ -120,7 +120,7 @@ else
                                 @if (!string.IsNullOrWhiteSpace(member.GiftNote))
                                 {
                                     @* A stable per-person note the giver sees on the reveal (FR-037). *@
-                                    <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="flex-basis:100%;">@L["GiftNoteLabel"]: @member.GiftNote</MudText>
+                                    <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="flex-basis:100%;">@LabelText.WithColon(L["GiftNoteLabel"]) @member.GiftNote</MudText>
                                 }
                             </div>
                             @* Every per-person action lives in one overflow menu, so a row is just the name and a

@@ -289,8 +289,9 @@ Add these repo secrets — [browser] (Settings → Secrets and variables → Act
 | `DEPLOY_SSH_KEY` | the private key printed above |
 | `DEPLOY_KNOWN_HOSTS` | output of `ssh-keyscan <server-ip>` |
 
-Then flip `.github/workflows/deploy.yml` from `workflow_dispatch` to `push: [main]` when you're
-ready for automatic deploys (per ADR-0038, milestone 8).
+Deploys are then started by hand: **Actions → Deploy → Run workflow** on `main`. The run refuses a commit whose
+CI has not succeeded; give it an existing `image_tag` to roll back ([ADR-0047](../adr/0047-versioning-and-release-strategy.md)
+amendment 2026-10-28).
 
 ---
 

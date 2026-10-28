@@ -17,7 +17,7 @@
   <data name="FieldDisplayName" xml:space="preserve"><value>Nom affiché</value></data>
   <data name="FieldLanguage" xml:space="preserve"><value>Langue</value></data>
   <data name="FieldPasskeyLabel" xml:space="preserve"><value>Nom de cet appareil</value></data>
-  <data name="PasswordHint" xml:space="preserve"><value>Au moins 12 caractères. C'est la longueur qui compte — une phrase dont vous vous souvenez vaut mieux qu'une suite courte et compliquée.</value></data>
+  <data name="PasswordHint" xml:space="preserve"><value>Au moins 12 caractères. C'est la longueur qui compte – une phrase dont vous vous souvenez vaut mieux qu'une suite courte et compliquée.</value></data>
   <data name="PasswordErrorTooShort" xml:space="preserve"><value>Ce mot de passe est trop court. Veuillez utiliser au moins 12 caractères.</value></data>
   <data name="PasswordErrorBreached" xml:space="preserve"><value>Ce mot de passe figure dans une liste publique de mots de passe divulgués lors de fuites de données. Veuillez en choisir un autre.</value></data>
   <data name="PasswordErrorInvalidToken" xml:space="preserve"><value>Ce lien n'est plus valable. Veuillez en demander un nouveau.</value></data>
@@ -33,7 +33,7 @@
   <data name="ErrorUnexpected" xml:space="preserve"><value>Une erreur s'est produite. Veuillez réessayer.</value></data>
   <data name="VerifyBannerText" xml:space="preserve"><value>Votre adresse e-mail n'est pas encore confirmée. Le lien se trouve dans votre boîte de réception.</value></data>
   <data name="VerifyBannerResend" xml:space="preserve"><value>Renvoyer</value></data>
-  <data name="VerifyBannerSent" xml:space="preserve"><value>Envoyé — consultez votre boîte de réception.</value></data>
+  <data name="VerifyBannerSent" xml:space="preserve"><value>Envoyé – consultez votre boîte de réception.</value></data>
   <data name="RegisterTitle" xml:space="preserve"><value>Créer votre compte</value></data>
   <data name="RegisterLead" xml:space="preserve"><value>Un compte vous permet de synchroniser vos appareils et de partager avec votre famille. Vous pouvez continuer à utiliser les applications sans compte.</value></data>
   <data name="RegisterSubmit" xml:space="preserve"><value>Créer le compte</value></data>

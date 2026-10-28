@@ -30,13 +30,15 @@
 }
 else
 {
+    @* The name takes the free width and wraps (also inside one long word); the chip and the menu keep theirs, so a
+       long family name no longer squeezes the "Online" chip (2026-10-28). *@
     <div class="d-flex align-center gap-1 mb-4">
-        <MudText Typo="Typo.h4">@_group.Name</MudText>
+        <MudText Typo="Typo.h4" Class="flex-grow-1 ct-wrap-anywhere" id="group-name">@_group.Name</MudText>
         @* Place chip (ADR-0086): a glanceable "is this group online?", tapping through to Sharing & sync. Only
            shown for an online group, so a local group stays uncluttered. *@
         @if (_kind == StorageKind.Online)
         {
-            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text"
+            <MudChip T="string" Size="Size.Small" Color="Color.Success" Variant="Variant.Text" Class="flex-shrink-0"
                      Icon="@StorageModeDisplay.Icon(StorageKind.Online)" OnClick="GoToSharing" id="mode-chip">@L["ModeChipOnline"]</MudChip>
         }
         @* The rename field is tucked into an overflow menu (opens a rename sheet) so the hub leads with
@@ -44,7 +46,7 @@ else
         @if (!_readOnly)
         {
             @* The same actions as the group list's menu (Q34). *@
-            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" AriaLabel="@L["MoreActions"]"
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" AriaLabel="@L["MoreActions"]" Class="flex-shrink-0"
                      AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" id="group-menu">
                 <MudMenuItem Icon="@Icons.Material.Filled.Edit" OnClick="() => AfterMenu(RenameAsync)">@L["Rename"]</MudMenuItem>
                 <AuthorizeView>
@@ -62,7 +64,7 @@ else
         }
         else
         {
-            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" AriaLabel="@L["MoreActions"]"
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Default" AriaLabel="@L["MoreActions"]" Class="flex-shrink-0"
                      AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight" id="group-menu">
                 <MudMenuItem Icon="@Icons.Material.Filled.Share" OnClick="GoToSharing">@L["SharingRow"]</MudMenuItem>
                 <MudDivider Class="my-1" />

@@ -6,6 +6,8 @@
 Père Noël secret
 ```
 
+_Variante composite possible : « Secret Santa – Père Noël secret » (31 caractères, trop long) ; garder « Père Noël secret »._
+
 ## Description courte (≤80)
 
 ```
@@ -15,33 +17,46 @@ Organisez votre Père Noël secret en quelques minutes. Hors ligne, sans compte.
 ## Description complète (≤4000)
 
 ```
-Secret Santa rend l'organisation d'un échange de cadeaux sans effort – pour votre famille, vos amis, votre équipe ou n'importe quel groupe.
+Secret Santa rend l'organisation d'un échange de cadeaux facile – pour votre famille, vos amis, votre équipe ou n'importe quel groupe.
 
-Créez un groupe, ajoutez tout le monde et tirez les noms équitablement en quelques secondes. Définissez des exclusions pour que les couples ou les personnes qui se retrouvent toujours ensemble ne se tirent pas mutuellement. Chaque personne reçoit un lien privé qui révèle uniquement qui elle a tiré – ainsi que sa liste de souhaits – pour que le secret reste un secret.
+Créez un groupe, ajoutez tout le monde et tirez les noms au sort équitablement en quelques secondes. Définissez des exclusions pour que les couples ne se tirent pas mutuellement. Chaque personne reçoit un lien privé qui révèle uniquement qui elle a tiré – avec sa liste de souhaits – pour que le secret reste un secret.
 
-Et surtout : l'application fonctionne entièrement hors ligne et ne nécessite aucun compte. Rien à créer, et les personnes que vous invitez n'ont pas besoin de compte non plus – il suffit de partager un lien.
+Aucun compte nécessaire. L'application fonctionne hors ligne, et les personnes invitées n'ont rien à installer ni à créer : un lien suffit.
 
 COMMENT ÇA MARCHE
-• Créez un groupe et ajoutez des membres
+• Créez un groupe et ajoutez les participants
+• Planifiez l'occasion : date, lieu et budget optionnel
 • Définissez qui ne peut pas tirer qui (exclusions)
 • Tirez les noms d'un seul geste
-• Partagez le lien privé de chaque personne par WhatsApp, Messages ou e-mail
-• Chacun ouvre son lien pour voir qui il a tiré, avec la liste de souhaits de cette personne
+• Partagez le lien privé de chaque personne par WhatsApp, Messages, e-mail ou code QR
+• Chacun ouvre son lien pour voir à qui il offre, avec la liste de souhaits de cette personne
 
 FONCTIONNALITÉS
 • Fonctionne hors ligne – aucun compte requis
-• Gratuit, sans publicité
-• Listes de souhaits, pour que chacun sache quoi offrir
-• Budget cadeau optionnel pour garder des dépenses équitables
+• Gratuit, sans publicité et sans pistage
+• Listes de souhaits – chacun ajoute ses envies directement depuis son lien
+• Notes cadeau pour les allergies ou ce qu'il ne faut pas offrir
+• Budget optionnel, en fourchette ou simple maximum
 • Exclusions pour les couples, les familles ou les attributions récurrentes
-• Rappels doux optionnels pour que personne n'oublie de tirer ou d'acheter
-• Compte optionnel pour synchroniser entre vos appareils et réutiliser vos groupes année après année
+• Mettez un groupe en ligne pour que chacun le rejoigne par un lien
+• Rappels avant le grand jour, et ajout de la date à votre calendrier
+• L'an prochain, recommencez avec le même groupe – sans répéter les paires de l'an passé
+• Compte optionnel pour synchroniser entre téléphone, tablette et web
+• Connexion par passkey ou mot de passe
 
 PRIVÉ PAR CONCEPTION
-Vos données restent sur votre appareil. Il n'y a ni cloud ni compte, sauf si vous choisissez de vous connecter pour la synchronisation. Les liens privés restent secrets, et les destinataires n'ont jamais besoin d'un compte.
+Sans compte, vos groupes restent sur votre appareil. Seul ce que vous choisissez de partager – un groupe mis en ligne, ou votre compte si vous en créez un – est enregistré, sur des serveurs en Suisse. Pas de publicité, pas de traceurs, pas de profilage. Exportez ou supprimez vos données à tout moment, directement dans l'application.
 
-DISPONIBLE EN FRANÇAIS, ALLEMAND ET ANGLAIS
-Changez de langue à tout moment depuis la barre latérale.
+EN FRANÇAIS, ALLEMAND ET ANGLAIS
+L'application suit la langue de votre appareil, et vous pouvez en changer à tout moment.
 
 Que ce soit pour Noël, une fête de bureau ou une réunion de famille, Secret Santa enlève le tracas des échanges de cadeaux – pour que vous puissiez profiter du plaisir.
+```
+
+## Notes de version (≤500) — « Nouveautés » par version
+
+```
+<fr-FR>
+Première version : tirage au sort, liens privés, listes de souhaits, rappels et synchronisation optionnelle.
+</fr-FR>
 ```

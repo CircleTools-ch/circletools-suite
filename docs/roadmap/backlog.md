@@ -35,6 +35,54 @@ clean; none caused by the update unless stated:
   other runs (alone and in the full suite); names not captured. Likely the timing-based autosave tests
   (`PastThePause`); watch CI and capture names on the next failure.
 
+Found during the Play screenshot pass on the Pixel 9 Pro (Play build `0.1.128`, 2026-10-28, DE/EN/FR, light
+mode; [store submission guide](../deployment/store-submission-guide.md)) and reported by the owner the same day
+(U-1…U-5, incl. iPad screenshots). **All fixed in the working tree 2026-10-28** and browser-verified against the
+local stack (fresh profile, second origin as a second device, DE/EN/FR, console clean) unless marked
+*device-verify*: those touch only the native heads' safe-area insets and need the next Play/TestFlight build.
+Re-shoot the store screenshots that show SS-3/SS-4 (04 in all languages, FR 01/02) after that build.
+
+- **U-1 · Signing in on a device that never synced showed no online groups until a reload (P1).** ✅ Root cause:
+  ADR-0086 removed the sign-in reconciler, which ended every sign-in with `AutoSync.RequestSync()`; since then
+  nothing triggered the first cycle (only `POST /login` and `GET /circles` went out). `AutoSyncService` now
+  watches the auth state and requests a cycle when an account signs in. Verified: cleared storage → sign in →
+  the group is listed after ~2 s, no reload (before: still empty after 20 s).
+- **U-2 · A long group name squeezed the "Online" chip (P2).** ✅ The name takes the free width and wraps
+  (`ct-wrap-anywhere`); chip and menu keep theirs. Verified with "Moll-Schindelholz-Mauron-Gehri" at 412 px.
+- **U-3 / SS-1 / SS-2 · Footer under the "Create group" FAB / behind the bottom navigation (P1).** ✅ One cause:
+  `.ct-main-fill` sized the page `100dvh − app bar` but the native heads also push the content down by the
+  status-bar inset (`app.css`), so a short page was taller than the screen by the inset and the footer slid
+  under the FAB / the bottom bar. The inset now comes off the height (`circletools.css`). *Device-verify.*
+- **U-4 · No direct way to edit one's own wishlist as an organizer (P1).** ✅ *My assignment*
+  (`/groups/{id}/me`) now shows the wishlist and gift-note fields to the organizer too, saved into the
+  document (`SetMemberWishlistCommand` / `SetMemberGiftNoteCommand`); the row says "…and your own wishlist".
+  Verified: saved there → appears on the event's wishlists page and as the gift note in Members.
+- **U-5 · A group joined (not organized) was missing from the drawer (P2).** ✅ The drawer's *Recently opened*
+  now lists groups taken part in, linking to their page. Verified with a join on a second origin.
+- **U-6 · iPad landscape: "All groups" missing from the persistent drawer (P1).** ✅ The clipped drawer started
+  at MudBlazor's app-bar height, but the native app bar is taller by the safe-area inset, so the first entry sat
+  behind it. `app.css` starts the drawer below the grown app bar. *Device-verify (iPad).*
+- **SS-3 · Hyphen instead of a dash (P2).** ✅ `RevealSpoilerNote`, `RedrawWarning`, `ExclusionSelfNotAllowed` in
+  all languages (— EN, – DE/FR); French copy now uses the spaced en dash throughout (18 em dashes replaced).
+- **SS-4 · French: missing space before the colon (P2).** ✅ The colon was typed into the markup after the label in
+  ~15 places; `LabelText.WithColon` (Ui.Shared, tested) adds the no-break space for French. Six French legal
+  strings fixed by hand. Verified: « Pour : Ben », « Sa liste de souhaits : ».
+- **SS-5 · Deleted group requested on every sync (P2).** ✅ Root cause: the sent removal was dropped from the
+  queue by record equality against a freshly read copy whose permission list is another instance, so it never
+  matched and the delete was re-sent every cycle (404 from the second time). Matched by group and kind now;
+  `PendingRemovalTests` fails on the old code. Verified: delete → queue empty → reload, console clean.
+- **SS-6 · Formal register in German (P3).** ✅ Footer link and all 26 German legal strings moved to *du*
+  (ADR-0032 has no exemption for legal text); legal pages dated 2026-10-28. **Owed:** read them in the light legal
+  review.
+- **SS-7 · No active bottom-nav tab inside a group (P3).** ✅ `NavItem.AlsoActiveFor` (`groups/`) and
+  `BottomNav.MoreActiveFor` (Settings, account). *Device-verify* (the bar is native-only).
+- **SS-8 · Reveal page: back arrow at the far end, content under the gesture bar (P3).** ✅ Arrow at the leading
+  edge (verified); pages without the bottom bar clear the home indicator (`ct-safe-bottom`, *device-verify*).
+- **SS-9 · QR dialog edge to edge (P3).** ✅ `MaxWidth.False` → 32 px margin per side (verified at 412 px).
+- **SS-10 · Draw page on a later visit said only "Assignments are hidden…" (P3).** ✅ Shows "Draw complete ·
+  N assignments" from the event's current draw (verified after a reload).
+- **Noted, not new:** `<html lang>` stays `en` in a French UI — BTP-7.
+
 ## Browser test pass before the Pixel test — Secret-Santa + Main (2026-10-17)
 
 Every feature driven in a browser at phone width (412×915) against the local Aspire stack on the working

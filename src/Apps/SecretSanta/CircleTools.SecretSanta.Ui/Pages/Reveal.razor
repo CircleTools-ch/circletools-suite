@@ -63,14 +63,14 @@ else if (_payload is not null)
 
     @if (_payload.BudgetAmount is { } amount)
     {
-        <MudText Class="mb-1"><strong>@L["RevealBudgetLabel"]:</strong> @BudgetDisplay.Format(_payload.BudgetMin, amount, _payload.BudgetCurrency)</MudText>
+        <MudText Class="mb-1"><strong>@LabelText.WithColon(L["RevealBudgetLabel"])</strong> @BudgetDisplay.Format(_payload.BudgetMin, amount, _payload.BudgetCurrency)</MudText>
     }
 
     @if (HasEvent)
     {
         @* Razor strips the whitespace between these elements, so the separators must be explicit. *@
         <MudText Class="mb-1">
-            <strong>@L["RevealEventLabel"]:</strong>
+            <strong>@LabelText.WithColon(L["RevealEventLabel"])</strong>
             @if (_eventDate is { } date)
             {
                 <span>&nbsp;@date.ToString("d", CultureInfo.CurrentCulture)</span>
@@ -113,9 +113,9 @@ else if (_payload is not null)
             @if (!string.IsNullOrWhiteSpace(_payload.GiftNote))
             {
                 @* The recipient's stable gift note — allergies, dietary/lifestyle, do-not-gift (FR-037). *@
-                <MudText Class="mb-3"><strong>@L["RevealGiftNoteLabel"]:</strong> @_payload.GiftNote</MudText>
+                <MudText Class="mb-3"><strong>@LabelText.WithColon(L["RevealGiftNoteLabel"])</strong> @_payload.GiftNote</MudText>
             }
-            <MudText Class="mb-1"><strong>@L["RevealWishlistLabel"]:</strong></MudText>
+            <MudText Class="mb-1"><strong>@LabelText.WithColon(L["RevealWishlistLabel"])</strong></MudText>
             @if (_payload.Wishlist.Count == 0)
             {
                 <MudText Class="mud-text-secondary">@L["RevealNoWishlist"]</MudText>
@@ -361,7 +361,7 @@ else if (_payload is not null)
 
         return new CalendarEvent(
             Uid: RevealUid(),
-            Title: string.IsNullOrWhiteSpace(_payload.EventName) ? L["AppName"] : $"{L["AppName"]}: {_payload.EventName}",
+            Title: string.IsNullOrWhiteSpace(_payload.EventName) ? L["AppName"] : $"{LabelText.WithColon(L["AppName"])} {_payload.EventName}",
             Date: DateOnly.FromDateTime(date.Date),
             Location: string.IsNullOrWhiteSpace(_payload.EventLocation) ? null : _payload.EventLocation,
             Notes: CalendarEventFactory.ComposeNotes(_payload.EventNotes, budget, L["RevealBudgetLabel"]),

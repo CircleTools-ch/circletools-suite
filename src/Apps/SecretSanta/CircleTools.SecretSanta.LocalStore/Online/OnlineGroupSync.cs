@@ -322,8 +322,13 @@ public sealed class OnlineGroupSync(IGroupRecordStore store, IOnlineGroupApi api
 
         if (sent.Count > 0)
         {
+            // Matched by group and kind, not by record equality: the queue is read afresh here, and its access carries
+            // a permission list that is a different instance, so equality never matched and every sent removal stayed
+            // queued — the delete went out again on every later cycle (SS-5, 2026-10-28).
             var latest = await store.LoadAsync(cancellationToken);
-            await store.SaveAsync(latest with { Removals = [.. latest.Removals.Where(r => !sent.Contains(r))] }, cancellationToken);
+            await store.SaveAsync(
+                latest with { Removals = [.. latest.Removals.Where(r => !sent.Exists(s => s.GroupId == r.GroupId && s.Leave == r.Leave))] },
+                cancellationToken);
         }
     }
 

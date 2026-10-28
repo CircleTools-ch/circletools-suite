@@ -3,10 +3,12 @@
     bottom and clearing the safe-area inset. Shown only on narrow viewports by the shell. Uses NavLink
     for active state so it tracks the current route without extra wiring.
 *@
+@implements IDisposable
+
 <nav class="ct-bottomnav mud-elevation-8">
     @foreach (var item in Items)
     {
-        <NavLink class="ct-bottomnav__item" href="@item.Href"
+        <NavLink class="@(ActiveByPrefix(item.AlsoActiveFor) ? "ct-bottomnav__item active" : "ct-bottomnav__item")" href="@item.Href"
                  Match="@(item.Exact ? NavLinkMatch.All : NavLinkMatch.Prefix)">
             <MudIcon Icon="@item.Icon" Size="Size.Medium" />
             <span class="ct-bottomnav__label">@item.Label</span>
@@ -15,7 +17,7 @@
 
     @if (OnMore.HasDelegate)
     {
-        <button type="button" class="ct-bottomnav__item" @onclick="OnMore">
+        <button type="button" class="@(ActiveByPrefix(MoreActiveFor) ? "ct-bottomnav__item active" : "ct-bottomnav__item")" @onclick="OnMore">
             <MudIcon Icon="@MoreIcon" Size="Size.Medium" />
             <span class="ct-bottomnav__label">@MoreLabel</span>
         </button>
@@ -23,10 +25,33 @@
 </nav>
 
 @code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
     [Parameter, EditorRequired] public IReadOnlyList<NavItem> Items { get; set; } = [];
 
     /// <summary>Optional trailing action (e.g. "More") that is a button, not a route.</summary>
     [Parameter] public EventCallback OnMore { get; set; }
     [Parameter] public string MoreIcon { get; set; } = Icons.Material.Filled.MoreHoriz;
     [Parameter] public string? MoreLabel { get; set; }
+
+    /// <summary>Route prefixes of the pages "More" leads to (Settings), so it reads as the current tab there.</summary>
+    [Parameter] public IReadOnlyList<string>? MoreActiveFor { get; set; }
+
+    protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+
+    // Inside a group no tab was highlighted (2026-10-28): NavLink matches only its own route.
+    private bool ActiveByPrefix(IReadOnlyList<string>? prefixes)
+    {
+        if (prefixes is not { Count: > 0 })
+        {
+            return false;
+        }
+
+        var path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+        return prefixes.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
 }

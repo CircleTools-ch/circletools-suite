@@ -40,7 +40,17 @@ public sealed class FakeOnlineGroupApi : IOnlineGroupApi
     public Task<ApiResult<PushOnlineGroupResponse>> PushAsync(Guid groupId, PushOnlineGroupRequest request, OnlineCredentials credentials, CancellationToken cancellationToken = default) => Fail<PushOnlineGroupResponse>();
 
     /// <inheritdoc />
-    public Task<ApiResult> DeleteAsync(Guid groupId, OnlineCredentials credentials, CancellationToken cancellationToken = default) => Fail();
+    public Task<ApiResult> DeleteAsync(Guid groupId, OnlineCredentials credentials, CancellationToken cancellationToken = default)
+    {
+        Deleted.Add(groupId);
+        return DeleteSucceeds ? Task.FromResult(ApiResult.Ok()) : Fail();
+    }
+
+    /// <summary>Gets the groups a delete was sent for, in order.</summary>
+    public List<Guid> Deleted { get; } = [];
+
+    /// <summary>Gets or sets whether a delete succeeds; otherwise it answers "unreachable".</summary>
+    public bool DeleteSucceeds { get; set; }
 
     /// <inheritdoc />
     public Task<ApiResult<GroupLinks>> SetJoinLinkAsync(Guid groupId, JoinLinkRequest request, OnlineCredentials credentials, CancellationToken cancellationToken = default) => Fail<GroupLinks>();

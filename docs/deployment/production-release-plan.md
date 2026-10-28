@@ -25,6 +25,12 @@ So the work runs as **parallel tracks**, with the long-lead store steps started 
 
 ## Track 1 — Google Play closed test
 
+> **Status 2026-10-28 (Play Console check):** the closed track *Closed testing - Alpha* exists but has
+> **no release, no countries and no testers** — 0 testers opted in, so the 14-day clock has **not started**.
+> Store listing (EN/DE/FR), store settings and every App-content declaration are filled and verified against
+> `store/google-play/`; all of it sits unsent in *Publishing overview* until the first closed-test release
+> is sent for review together with it.
+
 - [ ] Recruit **~15 testers** (family and friends, real devices, real Google accounts — **no paid tester
       services**: Google screens tester quality and such pools are a known rejection reason). Ask them to
       really use the app — the production-access application asks what feedback testing produced.
@@ -40,6 +46,14 @@ So the work runs as **parallel tracks**, with the long-lead store steps started 
 - [ ] Day 14+: apply for production access; then staged rollout (20 % → 50 % → 100 %).
 
 ## Track 2 — Apple App Store
+
+> **Status 2026-10-28 (App Store Connect check):** version 1.0 metadata is complete in DE (primary), EN
+> (US/UK/AU/CA) and FR and matches `store/app-store/`; App Information, age rating (4+, incl. the new
+> social-media questions), DSA (non-trader, active), pricing (free) and availability (174 regions, not China
+> mainland; Mac and Vision Pro off) are set; the privacy label (5 data types) is saved but **awaits the
+> owner's *Publish***; TestFlight test information and review details are filled; build `0.1.128` is
+> processed. Open: accept the updated **Program License Agreement**, screenshots, the 1.0 version bump
+> ([ADR-0047](../adr/0047-versioning-and-release-strategy.md)) so a build matches version 1.0, then submit.
 
 See [mobile runbook, Track B](mobile-apps.md#track-b--apple-app-store) for the step detail.
 
@@ -144,10 +158,14 @@ Everything in the table above is bumped, plus what the bump surfaced:
 
 ## Track 5 — Store listings & screenshots
 
-- [ ] Update `store/google-play/` copy for the features added since 2026-09-17 (accounts & sync, shared
-      groups, live reveal links, own wishlist from the link, reminders, events).
+Step-by-step: [store submission guide](store-submission-guide.md) (2026-10-28).
+
+- [x] Update `store/google-play/` copy for the features added since 2026-09-17 (accounts & sync, shared
+      groups, live reveal links, own wishlist from the link, reminders, events) — 2026-10-28, plus the
+      app-content / data-safety answers in its README.
 - [ ] New phone + tablet screenshots in DE/EN/FR from the final build.
-- [ ] Create the equivalent `store/app-store/` package (copy, keywords, iPhone + iPad screenshots).
+- [x] Create the equivalent `store/app-store/` package (copy, keywords, privacy label, age rating, review
+      notes, TestFlight texts) — 2026-10-28; **iPhone + iPad screenshots still to capture**.
 - [ ] "What's new" text per store and language; a version/release-notes routine (ADR-0047).
 
 ## Other go-live items

@@ -28,7 +28,7 @@ else
 {
     <div class="d-flex align-center flex-wrap gap-1">
         <MudIcon Icon="@StorageModeDisplay.Icon(Value)" Size="Size.Small" Class="mud-text-secondary" aria-hidden="true" />
-        <MudText Typo="Typo.body2">@L["StorageStoredAs"]: <strong>@L[StorageModeDisplay.LabelKey(Value)]</strong></MudText>
+        <MudText Typo="Typo.body2">@LabelText.WithColon(L["StorageStoredAs"]) <strong>@L[StorageModeDisplay.LabelKey(Value)]</strong></MudText>
         @* Each option says what it means in one line (as Settings does) and the current one is checked
            (UX review U3). The menu opens upward, so the dialog's Create button stays visible below it. *@
         <MudMenu Label="@L["StorageChange"]" Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"

@@ -72,7 +72,7 @@ else
                        screen both on one line. Long names wrap instead of pushing the buttons around. *@
                     <div class="ct-share-row">
                         <MudText Class="ct-share-row__name">
-                            <strong>@L["ForLabel"]:</strong> @link.ForLabel
+                            <strong>@LabelText.WithColon(L["ForLabel"])</strong> @link.ForLabel
                             @if (connected)
                             {
                                 <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Text"

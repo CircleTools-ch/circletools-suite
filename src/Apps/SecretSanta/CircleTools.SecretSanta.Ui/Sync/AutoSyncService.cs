@@ -51,6 +51,9 @@ public sealed class AutoSyncService(
     private bool _syncing;
     private bool _resyncRequested;
 
+    // The account the last auth-state change resolved to, so the sign-in trigger fires once per sign-in.
+    private Guid _accountId;
+
     /// <summary>
     /// Set by the sign-in reconciler while its Import / Discard / Cancel dialog is open, so a background
     /// cycle cannot auto-claim (and thereby upload) the very groups the user is deciding to discard. The
@@ -114,6 +117,12 @@ public sealed class AutoSyncService(
         _initialized = true;
         connectivity.Changed += OnConnectivityChanged;
         await connectivity.InitializeAsync();
+
+        // Sign-in trigger: an interactive sign-in must pull the account's groups at once. On a device that
+        // never synced, nothing else fires until the next edit or app start, so the list stayed empty until a
+        // reload (2026-10-28; the sign-in reconciler that used to request this cycle went with ADR-0086).
+        _accountId = await CurrentAccountAsync();
+        auth.AuthenticationStateChanged += OnAuthenticationStateChanged;
 
         // App-start trigger: reconcile on every start, signed in OR out. The shared-by-link cycle
         // (FEAT-013) is account-free and must run for a signed-out co-organizer/participant so a plain
@@ -255,9 +264,38 @@ public sealed class AutoSyncService(
         return state.User.UserId();
     }
 
+    private void OnAuthenticationStateChanged(Task<AuthenticationState> state) => _ = OnAccountChangedAsync(state);
+
+    // Signing in (or switching account) requests a cycle; signing out needs none — the views hide the account's
+    // groups on their own. Token refreshes re-raise the event for the same account and are ignored.
+    private async Task OnAccountChangedAsync(Task<AuthenticationState> state)
+    {
+        Guid accountId;
+        try
+        {
+            accountId = (await state).User.UserId();
+        }
+        catch
+        {
+            return; // Swallowed by design: the next trigger syncs.
+        }
+
+        if (accountId == _accountId)
+        {
+            return;
+        }
+
+        _accountId = accountId;
+        if (accountId != Guid.Empty)
+        {
+            RequestSync();
+        }
+    }
+
     /// <inheritdoc />
     public void Dispose()
     {
+        auth.AuthenticationStateChanged -= OnAuthenticationStateChanged;
         connectivity.Changed -= OnConnectivityChanged;
         _debounce?.Cancel();
         _debounce?.Dispose();

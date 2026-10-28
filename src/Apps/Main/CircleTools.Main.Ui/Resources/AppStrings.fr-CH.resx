@@ -22,7 +22,7 @@
   <data name="FieldDisplayName" xml:space="preserve"><value>Nom affiché</value></data>
   <data name="FieldLanguage" xml:space="preserve"><value>Langue</value></data>
   <data name="FieldPasskeyLabel" xml:space="preserve"><value>Nom de cet appareil</value></data>
-  <data name="PasswordHint" xml:space="preserve"><value>Au moins 12 caractères. C'est la longueur qui compte — une phrase dont vous vous souvenez vaut mieux qu'une suite courte et compliquée.</value></data>
+  <data name="PasswordHint" xml:space="preserve"><value>Au moins 12 caractères. C'est la longueur qui compte – une phrase dont vous vous souvenez vaut mieux qu'une suite courte et compliquée.</value></data>
   <data name="PasswordErrorTooShort" xml:space="preserve"><value>Ce mot de passe est trop court. Veuillez utiliser au moins 12 caractères.</value></data>
   <data name="PasswordErrorBreached" xml:space="preserve"><value>Ce mot de passe figure dans une liste publique de mots de passe divulgués lors de fuites de données. Veuillez en choisir un autre.</value></data>
   <data name="PasswordErrorInvalidToken" xml:space="preserve"><value>Ce lien n'est plus valable. Veuillez en demander un nouveau.</value></data>
@@ -39,7 +39,7 @@
   <data name="ErrorUnexpected" xml:space="preserve"><value>Une erreur s'est produite. Veuillez réessayer.</value></data>
   <data name="VerifyBannerText" xml:space="preserve"><value>Votre adresse e-mail n'est pas encore confirmée. Le lien se trouve dans votre boîte de réception.</value></data>
   <data name="VerifyBannerResend" xml:space="preserve"><value>Renvoyer</value></data>
-  <data name="VerifyBannerSent" xml:space="preserve"><value>Envoyé — consultez votre boîte de réception.</value></data>
+  <data name="VerifyBannerSent" xml:space="preserve"><value>Envoyé – consultez votre boîte de réception.</value></data>
   <data name="RegisterTitle" xml:space="preserve"><value>Créer votre compte</value></data>
   <data name="RegisterLead" xml:space="preserve"><value>Un compte vous permet de synchroniser vos appareils et de partager avec votre famille. Vous pouvez continuer à utiliser les applications sans compte.</value></data>
   <data name="RegisterSubmit" xml:space="preserve"><value>Créer le compte</value></data>
@@ -139,7 +139,7 @@
   <data name="CircleInviteLead" xml:space="preserve"><value>Nous leur enverrons un e-mail avec un lien. Le lien est valable 14 jours.</value></data>
   <data name="CircleInviteEmail" xml:space="preserve"><value>Adresse e-mail</value></data>
   <data name="CircleInviteToJoin" xml:space="preserve"><value>Inviter à rejoindre</value></data>
-  <data name="CircleInviteAsLead" xml:space="preserve"><value>Lorsque la personne accepte, elle reprend le profil de {0} — en conservant sa place et son historique.</value></data>
+  <data name="CircleInviteAsLead" xml:space="preserve"><value>Lorsque la personne accepte, elle reprend le profil de {0} – en conservant sa place et son historique.</value></data>
   <data name="CircleInviteFor" xml:space="preserve"><value>Cette invitation concerne</value></data>
   <data name="CircleInviteForNew" xml:space="preserve"><value>Une nouvelle personne</value></data>
   <data name="CircleInviteForPerson" xml:space="preserve"><value>{0} (hors ligne)</value></data>
@@ -228,7 +228,7 @@
   <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Cédez ou supprimez les cercles que vous possédez avant de supprimer votre compte.</value></data>
   <data name="CircleErrorRefused" xml:space="preserve"><value>Ce n'est pas autorisé.</value></data>
   <data name="CircleLoading" xml:space="preserve"><value>Chargement...</value></data>
-  <data name="CircleOfflineNotice" xml:space="preserve"><value>Les cercles nécessitent une connexion. Reconnectez-vous pour les voir et les gérer — rien n'est enregistré hors ligne ici.</value></data>
+  <data name="CircleOfflineNotice" xml:space="preserve"><value>Les cercles nécessitent une connexion. Reconnectez-vous pour les voir et les gérer – rien n'est enregistré hors ligne ici.</value></data>
   <data name="OpenApp" xml:space="preserve"><value>Ouvrir</value></data>
   <data name="NoOtherApps" xml:space="preserve"><value>Aucune autre application pour l’instant.</value></data>
 </root>
