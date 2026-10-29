@@ -30,16 +30,23 @@ So the work runs as **parallel tracks**, with the long-lead store steps started 
 > Store listing (EN/DE/FR), store settings and every App-content declaration are filled and verified against
 > `store/google-play/`; all of it sits unsent in *Publishing overview* until the first closed-test release
 > is sent for review together with it.
+>
+> **Status 2026-10-29 (Play Console check):** Google **approved** the submission — *Publishing overview*
+> shows *Last published on 29 October 2026* with nothing pending. *Closed testing - Alpha* is **Active**:
+> release **0.1.131** *Available to selected testers* (released 29 Oct 07:11), 178 countries/regions,
+> testers = the Testers Community Google Group `testers-community@googlegroups.com`, feedback address
+> `info@circletools.ch`. Join link: `https://play.google.com/apps/testing/ch.circletools.secretsanta`.
+> The 14-day clock starts once ≥ 12 of the service's testers have opted in and installed.
 
-- [ ] Recruit **~15 testers** (family and friends, real devices, real Google accounts — **no paid tester
-      services**: Google screens tester quality and such pools are a known rejection reason). Ask them to
-      really use the app — the production-access application asks what feedback testing produced.
-- [ ] Collect their Google-account emails into a tester list in Play Console.
-- [ ] Promote the current build to a **closed testing** track; the store listing in
-      `store/google-play/` is sufficient for a closed track for now.
-- [ ] Confirm the **data-safety form** still matches the app *now* — sync, shared groups, live reveal links
-      (ADR-0068), own-entry editing (FR-050) and local notifications (ADR-0060) were added since it was
-      first filled.
+- [x] ~~Recruit **~15 testers** (family and friends, no paid tester services).~~ **Changed 2026-10-29
+      (owner decision, see backlog PR-1):** paid closed-testing service — Testers Community **Pro**
+      (25 testers). Ask for written feedback — the production-access application asks what testing produced.
+- [x] Tester list in Play Console — the service's Google Group is set on the Alpha track.
+- [x] Promote the current build to a **closed testing** track — 0.1.131 on Alpha, approved 2026-10-29.
+- [x] Confirm the **data-safety form** still matches the app *now* — verified 2026-10-29 against
+      `store/google-play/README.md` (backlog PR-1).
+- [x] Submit the app on Testers Community with the join link above — done 2026-10-29 (Pro, 25 testers;
+      their run is 16 days, Day 0 on submission).
 - [ ] Track opt-ins; the 14-day clock starts once the release is approved **and** 12 testers are in. Keep
       ≥ 12 for the whole window.
 - [ ] Ship each fix build (from tracks 3–4) to the closed track during the window.

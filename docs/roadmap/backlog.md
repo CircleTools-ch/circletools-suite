@@ -22,10 +22,14 @@ items missing from it, sequenced in the **[production-release plan](../deploymen
   countries/regions**. **Service bought:** Testers Community **Pro** (25 testers, €24, account
   `circletools.ch@gmail.com`). Its Google Group `testers-community@googlegroups.com` is set as the
   Alpha track's testers; store-listing graphics (icon + 3 feature graphics) labelled *AI-assisted* per
-  owner decision. **Next:** owner clicks *Submit 17 changes for review* (Publishing overview); once Google
-  approves, submit the app on Testers Community (join link
-  `https://play.google.com/apps/testing/ch.circletools.secretsanta`) — the 14-day clock starts when the
-  testers have opted in. Everything else in the console
+  owner decision. **Update 2026-10-29 (Play Console check): Google approved** — Publishing overview
+  *Last published on 29 October 2026*, nothing pending; Alpha is **Active**, 0.1.131 *Available to selected
+  testers* (released 29 Oct 07:11), 178 countries/regions, testers = the Testers Community Google Group,
+  feedback address `info@circletools.ch`. **Submitted on Testers Community 2026-10-29** (Pro credit used,
+  join link `https://play.google.com/apps/testing/ch.circletools.secretsanta`): dashboard shows *Private
+  Testing Pro — Day 0 / 16, reports pending*; testers are assigned within ~6 h. The 14-day Google clock
+  starts once ≥ 12 have opted in and installed — check *Closed testing → Testers*. **Next:** keep the
+  track active, ship fix builds to Alpha, apply for production after day 14. Everything else in the console
   is ready (all 10 app-content declarations done, data-safety form matches `store/google-play/README.md`,
   DE/EN/FR listing with 7 phone screenshots each, store settings).
 - **PR-2 · Apple App Store record, DSA trader status, privacy labels, review demo account (P1, owner).**
