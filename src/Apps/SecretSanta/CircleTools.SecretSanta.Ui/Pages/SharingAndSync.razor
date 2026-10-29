@@ -307,7 +307,7 @@ else
 
     private async Task ShareAsync(string url)
     {
-        await ShareService.ShareAsync(L["AppName"], $"{L["ShareGroupMessage"]}\n{url}", url);
+        await ShareService.ShareAsync(L["ActivityName"], $"{L["ShareGroupMessage"]}\n{url}", url);
     }
 
     private async Task CopyAsync(string url)

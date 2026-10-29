@@ -120,7 +120,7 @@
     private async Task ShareAsync(RevealLinkDto link)
     {
         // The link goes in the body too, so a target that reads only text still receives it.
-        await ShareService.ShareAsync(L["AppName"], RevealShareMessage.Compose(L, link.ForLabel, _groupName, _occasion, link.Url), link.Url);
+        await ShareService.ShareAsync(L["ActivityName"], RevealShareMessage.Compose(L, link.ForLabel, _groupName, _occasion, link.Url), link.Url);
     }
 
     private async Task CopyAsync(RevealLinkDto link)

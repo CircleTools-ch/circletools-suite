@@ -350,18 +350,18 @@ test account).
 
 The click-by-click order for the last mile is the [store submission guide](store-submission-guide.md).
 
-- [ ] Brand and domain final; `ApplicationId` / bundle id derived from it and set — **done** (`ch.circletools.secretsanta`)
+- [x] Brand and domain final; `ApplicationId` / bundle id derived from it and set (`ch.circletools.secretsanta`)
 - [x] App icon and splash are branded art (not the .NET template)
 - [ ] `RevealBaseUrl` in the MAUI head pointed at the deployed origin, not `localhost` — Release defaults to production; verify at build
 - [x] Privacy policy + imprint published, reachable, DE/EN/FR *(live at `secretsanta.circletools.ch/privacy`, `/imprint`; WASM-rendered — see the client-side caveat above; light legal review still owed)*
 - [x] Account-deletion URL published and reachable *(live at `secretsanta.circletools.ch/delete-account`; in-app deletion exists)*
-- [ ] `.well-known/assetlinks.json` + `apple-app-site-association` served with the real Play SHA-256 / Apple Team ID
-- [ ] Apple: Associated Domains capability enabled on the App ID + profile regenerated
+- [x] `.well-known/assetlinks.json` + `apple-app-site-association` served with the real Play SHA-256 / Apple Team ID *(verified 2026-10-29: HTTP 200, no redirect, both AASA files in Apple's CDN)*
+- [x] Apple: Associated Domains capability enabled on the App ID + profile regenerated *(verified 2026-10-29 in the 0.1.129 `.ipa`'s embedded profile)*
 - [ ] Main API deployed with `Auth:Passkey:Origins` set (web + iOS `https://circletools.ch` + Android `apk-key-hash`) — passkey origin allow-list ([ADR-0069](../adr/0069-passkey-origin-allow-list-for-native-heads.md))
 - [ ] Native passkey create + sign-in device-verified on iOS and Android against the deployed API
 - [ ] Store listings and screenshots in DE/EN/FR, per device class **incl. iPad 13"** (mandatory)
-- [ ] Data safety (Play) / privacy labels (Apple) match actual data collection (email + user content when synced; "not collected" on-device-only)
-- [ ] DSA trader status declared (Apple; likely **trader** for a Swiss individual shipping to the EU — confirm in the questionnaire)
+- [x] Data safety (Play) / privacy labels (Apple) match actual data collection (email + user content when synced; "not collected" on-device-only) — *Apple label checked against `store/app-store/README.md` and **published** 2026-10-29; Play data-safety form checked 2026-10-29: already matches `store/google-play/README.md` (incl. sync + device key), no re-submit needed*
+- [x] DSA trader status declared (Apple: **non-trader**, verified in App Store Connect 2026-10-29 — free, no ads/IAP/income; reasoning in `store/app-store/README.md`; flips to *trader* if ever monetized)
 - [ ] Android targets the current required API level (**36 confirmed**); iOS built with the current required SDK (Xcode 26 / iOS 26 on CI)
 - [ ] iPad build tested on iPadOS 26 (Split View / all orientations); 16 KB-aligned native libs verified
 - [ ] Upload keystore and signing assets backed up offline

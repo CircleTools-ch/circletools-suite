@@ -90,10 +90,10 @@ From `store/app-store/README.md`:
 
 ### A5. Version number
 
-The App Store version must equal the build's `CFBundleShortVersionString`. Today `version.json` says
-`0.1`, so builds are `0.1.<height>`. Per [ADR-0047](../adr/0047-versioning-and-release-strategy.md) the
-launch bump is **`"version": "1.0"`** in `version.json` (one line, merged to `main`); every build after it
-is `1.0.<height>`. Create the App Store version with **exactly** the string TestFlight shows for the build
+The App Store version must equal the build's `CFBundleShortVersionString`. Per
+[ADR-0047](../adr/0047-versioning-and-release-strategy.md) the launch bump is **`"version": "1.0"`** in
+`version.json` (one line, merged to `main`; done 2026-10-29) — every build after it is `1.0.<height>`, and
+builds before it are `0.1.<height>` (TestFlight-only). Create the App Store version with **exactly** the string TestFlight shows for the build
 you submit (version page → *+ Version* or edit the number before submission). The same bump makes the
 Android `versionName` read `1.0.x`.
 

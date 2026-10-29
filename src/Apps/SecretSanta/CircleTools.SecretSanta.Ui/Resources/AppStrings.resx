@@ -58,7 +58,8 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="AppName" xml:space="preserve"><value>Secret Santa</value></data>
+  <data name="AppName" xml:space="preserve"><value>Secret Santa</value><comment>The app's brand name (app bar). Deliberately NOT translated — one visible name in every locale and on-device, matching ApplicationTitle (ADR-0057). For the activity in running text use ActivityName.</comment></data>
+  <data name="ActivityName" xml:space="preserve"><value>Secret Santa</value><comment>The gift-exchange activity in the user's language (calendar entry title, share-sheet subject). Unlike AppName this one is translated (ADR-0057).</comment></data>
   <data name="Loading" xml:space="preserve"><value>Loading...</value></data>
   <data name="Back" xml:space="preserve"><value>Back</value></data>
   <data name="Save" xml:space="preserve"><value>Save</value></data>

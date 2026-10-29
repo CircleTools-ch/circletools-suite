@@ -106,13 +106,13 @@ Not blocking a **web** launch, but required before the mobile heads ship and nee
 action:
 
 - ✅ **Play App Signing SHA-256 filled** (2026-09-18) in both `assetlinks.json` files (SecretSanta +
-  Main WebApp), from Play Console → *Protected with Play → App signing*. Still open: the **Apple Team
-  ID** in `apple-app-site-association` (`REPLACE_WITH_APPLE_TEAM_ID`), and **redeploy the web front** so
-  the updated `.well-known/` files actually serve — then reveal / calendar deep links auto-open in the
-  app instead of via the chooser / browser.
+  Main WebApp), from Play Console → *Protected with Play → App signing*. ✅ **Apple Team ID**
+  (`U893QVXCU7`) filled in both `apple-app-site-association` files; verified 2026-10-29 that they serve
+  (HTTP 200, no redirect) and are in Apple's CDN, and that the App Store profile has Associated Domains.
 - The **iOS head builds on hosted macOS CI** ([ADR-0065](../adr/0065-hosted-macos-ios-builds.md),
-  superseding [ADR-0031](../adr/0031-ios-build-host.md)) — no Mac needed. The residual is operational:
-  set the iOS signing secrets and trigger the first `release-mobile.yml` build to TestFlight.
+  superseding [ADR-0031](../adr/0031-ios-build-host.md)) — no Mac needed. ✅ Signing secrets set;
+  `release-mobile.yml` signs and uploads to TestFlight (first successful upload 2026-10-28). What remains
+  is on-device verification and the store submission ([store submission guide](store-submission-guide.md)).
 
 > **Update (2026-09-18):** both project developer accounts (Google Play, Apple Developer) are now
 > **enabled**. The immediate mobile step is internal-testing installs on our own devices — no public

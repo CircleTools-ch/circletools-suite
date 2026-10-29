@@ -272,7 +272,7 @@ else
 
         // Only a share that went somewhere counts as handed out (D5): closing the sheet sends nothing. A
         // platform that cannot tell keeps the old behaviour and counts it.
-        if (await ShareService.ShareAsync(L["AppName"], text, link.Url) != ShareOutcome.Dismissed)
+        if (await ShareService.ShareAsync(L["ActivityName"], text, link.Url) != ShareOutcome.Dismissed)
         {
             await MarkHandedOutAsync(link);
         }

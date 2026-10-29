@@ -379,7 +379,7 @@ else if (_payload is not null)
 
         return new CalendarEvent(
             Uid: RevealUid(),
-            Title: string.IsNullOrWhiteSpace(_payload.EventName) ? L["AppName"] : $"{LabelText.WithColon(L["AppName"])} {_payload.EventName}",
+            Title: string.IsNullOrWhiteSpace(_payload.EventName) ? L["ActivityName"] : $"{LabelText.WithColon(L["ActivityName"])} {_payload.EventName}",
             Date: DateOnly.FromDateTime(date.Date),
             Location: string.IsNullOrWhiteSpace(_payload.EventLocation) ? null : _payload.EventLocation,
             Notes: CalendarEventFactory.ComposeNotes(_payload.EventNotes, budget, L["RevealBudgetLabel"]),

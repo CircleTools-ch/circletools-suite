@@ -3,10 +3,11 @@
 ## App-Name (≤30)
 
 ```
-Wichteln – Secret Santa
+Secret Santa – Wichteln
 ```
 
-_Alternativ nur „Wichteln“. Der Zusatz „Secret Santa“ fängt beide Suchbegriffe ab ([ADR-0057](../../docs/adr/0057-app-store-naming-and-localization.md))._
+_Markenname zuerst, der lokale Suchbegriff danach — der App-Name auf dem Gerät und in der App-Leiste bleibt
+„Secret Santa“ ([ADR-0057](../../docs/adr/0057-app-store-naming-and-localization.md))._
 
 ## Kurzbeschreibung (≤80)
 

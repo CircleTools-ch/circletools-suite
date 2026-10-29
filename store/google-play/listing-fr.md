@@ -3,10 +3,10 @@
 ## Nom de l'application (≤30)
 
 ```
-Père Noël secret
+Secret Santa: Père Noël secret
 ```
 
-_Variante composite possible : « Secret Santa – Père Noël secret » (31 caractères, trop long) ; garder « Père Noël secret »._
+_Exactement 30 caractères (avec « – » ce serait 31, trop long). La marque d'abord, le terme local ensuite ; le nom sur l'appareil et dans la barre de l'app reste « Secret Santa » ([ADR-0057](../../docs/adr/0057-app-store-naming-and-localization.md))._
 
 ## Description courte (≤80)
 

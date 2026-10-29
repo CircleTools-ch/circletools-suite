@@ -9,8 +9,37 @@ Adrian's pre-release list (update everything, full review, both store listings, 
 items missing from it, sequenced in the **[production-release plan](../deployment/production-release-plan.md)**.
 
 - **PR-1 · Start the Play closed test now (P1, owner).** 12 testers × 14 days + up to 7 days review puts
-  production access at mid-to-late November at best. Recruit ~15 family/friends; no paid tester services.
+  production access at mid-to-late November at best. ~~Recruit ~15 family/friends; no paid tester services.~~
+  **Changed 2026-10-29 (owner decision):** use a **paid closed-testing service** instead — the owner does not
+  want to involve family and friends. Google does not forbid paid testers but judges real engagement and
+  asks for feedback in the production-access form, so pick a service with real people on real devices,
+  ≥15 testers (dropout buffer), written feedback, and a refund/redo guarantee. Shortlist (own claims, not
+  verified): Testers Community Starter €14 / 15 testers / "production access or refund" (preferred on
+  price); TesterBee $18.74 / 15; PrimeTestLab $19.99 / 12 or $27.99 / 25.
+  **Status 2026-10-29 (checked in Play Console):** still **not started** — track *Closed testing - Alpha*
+  exists with no release, 0 testers opted in; only internal testing runs. Same day: release **0.1.131**
+  (code 65667, built from `2724e11`) drafted on Alpha with DE/EN/FR release notes and **178
+  countries/regions**. **Service bought:** Testers Community **Pro** (25 testers, €24, account
+  `circletools.ch@gmail.com`). Its Google Group `testers-community@googlegroups.com` is set as the
+  Alpha track's testers; store-listing graphics (icon + 3 feature graphics) labelled *AI-assisted* per
+  owner decision. **Next:** owner clicks *Submit 17 changes for review* (Publishing overview); once Google
+  approves, submit the app on Testers Community (join link
+  `https://play.google.com/apps/testing/ch.circletools.secretsanta`) — the 14-day clock starts when the
+  testers have opted in. Everything else in the console
+  is ready (all 10 app-content declarations done, data-safety form matches `store/google-play/README.md`,
+  DE/EN/FR listing with 7 phone screenshots each, store settings).
 - **PR-2 · Apple App Store record, DSA trader status, privacy labels, review demo account (P1, owner).**
+  ✅ **Done 2026-10-29** (checked in App Store Connect): DSA non-trader declared; privacy label published;
+  App Information, pricing/availability, age rating 4+ and the 1.0 version page filled for DE, FR and
+  EN (US/UK/CA/AU), incl. review contact, notes, demo sign-in and manual release; updated Developer
+  Program License Agreement accepted. Demo account `appreview@circletools.ch` holds the fictitious
+  *Familie Meier* group (Anna–Felix, *Weihnachten 2026*, drawn, online). **Left:** pick the build and
+  upload iPhone 6.9" + iPad 13" screenshots after the on-device pass, then *Add for Review*. The App Store
+  version is **1.0**, so the submitted build must come from the `version.json` → `1.0` bump (made
+  2026-10-29 together with the ADR-0057 app-bar fix: `AppName` stays "Secret Santa" in every locale, new
+  translated `ActivityName` for calendar title / share subject). Commit + push those, rerun
+  `release-mobile.yml`, and use that `1.0.x` build for the weekend iPhone/iPad pass and screenshots
+  (and as an update on the Play Alpha track).
 - **PR-3 · Dependency & toolchain updates (P1).** 44 package updates found 2026-10-20; risky ones are MAUI
   10.0.20 → 10.0.110, MudBlazor 9.8 → 9.11, Plugin.LocalNotification 12 → 14. Table in the plan.
 - **PR-4 · Full project review (P1)** — incl. open R1/R5 from the
@@ -440,12 +469,14 @@ is [ADR-0066](../adr/0066-mobile-native-passkeys.md).
   `circletools.ch` (Main WebApp `wwwroot/.well-known/*`) because the WebAuthn RP-ID is the apex
   (`Auth:Passkey:ServerDomain`). Placeholders: `REPLACE_WITH_PLAY_APP_SIGNING_SHA256` — ✅ **filled
   2026-09-18** (Android SHA-256 from Play App Signing, in both `assetlinks.json`, shared with GL-9) —
-  and `REPLACE_WITH_APPLE_TEAM_ID` (iOS, still open). **Owner/CI:** fill the remaining id; **redeploy**
-  so the updated files serve; ensure Caddy serves the
-  extensionless `apple-app-site-association` as `application/json` (no redirect); enable Associated Domains
-  on the App ID + regenerate the profile. Relates to GL-9, GL-10, [ADR-0066](../adr/0066-mobile-native-passkeys.md).
+  and `REPLACE_WITH_APPLE_TEAM_ID` — ✅ **filled** (Team ID `U893QVXCU7`, both files). ✅ **Verified
+  2026-10-29:** both `apple-app-site-association` files serve HTTP 200 with no redirect and are already in
+  Apple's CDN (`app-site-association.cdn-apple.com/a/v1/<host>`); the distribution profile in build
+  0.1.129 carries `com.apple.developer.associated-domains`. Only on-device verification is left (GL-10).
+  Relates to GL-9, GL-10, [ADR-0066](../adr/0066-mobile-native-passkeys.md).
 - **MSR-4 · Externally-blocked store gates (tracking only).** Not code: privacy-policy + account-deletion
-  URLs (GL-6, hosting), DSA trader declaration (likely *trader* for a Swiss individual → EU), iPad-13"
+  URLs (GL-6, hosting), DSA trader declaration (**non-trader** — free, no ads/IAP/income; reasoning in
+  `store/app-store/README.md`), iPad-13"
   screenshots, App Privacy label / Data-safety form (must match the sync data), 16 KB-page-size verify on
   the release AAB (Play, 1 Feb 2027), Play closed-testing 12×14 days. Enumerated in the runbook checklist.
 
@@ -599,9 +630,9 @@ checklist.
   `Platforms/iOS/Entitlements.plist` declares `applinks:secretsanta.circletools.ch` (+
   `webcredentials:circletools.ch` for passkeys, [ADR-0066](../adr/0066-mobile-native-passkeys.md)), wired
   via csproj `<CodesignEntitlements>`; the `apple-app-site-association` files are scaffolded on both
-  origins (see GL-9). **Still owner/CI:** the iOS head has not been built/run on a device yet (no local
-  Mac — first TestFlight build verifies deep links + passkeys on iPadOS/iOS), and the Associated Domains
-  capability must be enabled on the App ID + provisioning profile regenerated.
+  origins (see GL-9). ✅ Signed builds now reach TestFlight, and the Associated Domains capability is in
+  the App Store profile (verified 2026-10-29 on the 0.1.129 `.ipa`). **Still owner:** run the build on an
+  iPhone and iPad to verify deep links + passkeys on iOS/iPadOS.
   [ADR-0053](../adr/0053-backend-free-first-mobile-release.md).
 - **GL-11 · Alert on backup failure (P2, non-blocking).** ✅ **Implemented (2026-09-17).**
   `circletools-backup.service` now carries `OnFailure=circletools-backup-failure@%n.service`, a templated unit
