@@ -41,8 +41,9 @@ public sealed record ParticipantEventView(
 /// <summary>A member of an online group as the join link shows it: who can still be picked (ADR-0086).</summary>
 /// <param name="MemberId">The member.</param>
 /// <param name="Name">The member's name.</param>
-/// <param name="Taken">Whether someone already took part as this member.</param>
-public sealed record JoinableMember(Guid MemberId, string Name, bool Taken);
+/// <param name="Taken">Whether someone already took part as this member, or an invitation for it is open.</param>
+/// <param name="Invited">Whether it is taken only by an invitation not yet answered.</param>
+public sealed record JoinableMember(Guid MemberId, string Name, bool Taken, bool Invited = false);
 
 /// <summary>What the join link shows before anyone picks themselves.</summary>
 /// <param name="GroupId">The group.</param>

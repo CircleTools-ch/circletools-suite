@@ -275,7 +275,7 @@
   <data name="ShareGroupQrHint" xml:space="preserve"><value>Faites scanner le code à cette personne pour ouvrir le groupe.</value></data>
   <data name="ShareGroupMessage" xml:space="preserve"><value>Rejoignez notre groupe Père Noël secret :</value></data>
   <data name="JoinTitle" xml:space="preserve"><value>Rejoindre le groupe</value></data>
-  <data name="JoinInvitedTo" xml:space="preserve"><value>Vous êtes invité à</value></data>
+  <data name="JoinInvitedTo" xml:space="preserve"><value>Vous êtes invité·e à</value></data>
   <data name="JoinWhoAreYou" xml:space="preserve"><value>Qui êtes-vous dans ce groupe ?</value></data>
   <data name="JoinWhoAreYouHint" xml:space="preserve"><value>Choisissez votre nom pour voir votre propre attribution.</value></data>
   <data name="JoinAlreadyTaken" xml:space="preserve"><value>Déjà rejoint</value></data>

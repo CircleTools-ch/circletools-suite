@@ -57,7 +57,7 @@ public sealed class GroupRecordStore(IKeyValueStore store) : IGroupRecordStore
 
         if (document is { SchemaVersion: GroupRecordsDocument.CurrentSchemaVersion })
         {
-            return document with { Removals = document.Removals ?? [], Invitations = document.Invitations ?? [] };
+            return document with { Removals = document.Removals ?? [], Invitations = document.Invitations ?? [], Parked = document.Parked ?? [] };
         }
 
         // Damaged, or written by another version: the next save would overwrite it, and groups kept on this device

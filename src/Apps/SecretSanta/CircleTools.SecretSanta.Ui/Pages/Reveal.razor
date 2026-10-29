@@ -246,15 +246,21 @@ else if (_payload is not null)
                 {
                     await KeepAsync(revealToken!, _payload!);
                 }
+                else if (_notFound)
+                {
+                    // Reached the server and it does not know the token: the link is gone (group deleted, link
+                    // revoked), not offline — so the copy kept here goes too, instead of standing in for it (ST-2).
+                    await ForgetKeptAsync(revealToken!);
+                    _gone = true;
+                    return;
+                }
                 else if (await LoadKeptAsync(revealToken!) is { } kept)
                 {
                     _payload = kept;
                 }
                 else
                 {
-                    // Reached the server and it does not know the token: the link is gone, not offline.
-                    _gone = _notFound;
-                    _needsConnection = !_notFound;
+                    _needsConnection = true;
                     return;
                 }
             }
@@ -302,6 +308,18 @@ else if (_payload is not null)
         {
             await Store.SetAsync(CircleTools.Ui.Abstractions.StorageScope.Durable, KeptKey(revealToken),
                 JsonSerializer.Serialize(payload, RevealJsonContext.Default.RevealPayload));
+        }
+        catch
+        {
+            // Best-effort.
+        }
+    }
+
+    private async Task ForgetKeptAsync(string revealToken)
+    {
+        try
+        {
+            await Store.RemoveAsync(CircleTools.Ui.Abstractions.StorageScope.Durable, KeptKey(revealToken));
         }
         catch
         {

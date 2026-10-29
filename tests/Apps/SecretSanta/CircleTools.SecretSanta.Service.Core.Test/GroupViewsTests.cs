@@ -90,4 +90,19 @@ public sealed class GroupViewsTests
         Assert.True(preview.Members.Single(m => m.Name == "Cleo").Taken);
         Assert.False(preview.Members.Single(m => m.Name == "Anna").Taken);
     }
+
+    [Fact]
+    public void TheJoinPreview_TellsAnOpenInvitationFromAJoin()
+    {
+        // ST-3: an invited member is reserved, but the join page must not say they already joined.
+        var (document, _, members) = TestGroups.Drawn();
+
+        var preview = GroupViews.ForJoin(
+            document, new HashSet<Guid> { members["Cleo"], members["Dan"] }, new HashSet<Guid> { members["Dan"] });
+
+        var dan = preview.Members.Single(m => m.Name == "Dan");
+        Assert.True(dan.Taken);
+        Assert.True(dan.Invited);
+        Assert.False(preview.Members.Single(m => m.Name == "Cleo").Invited);
+    }
 }

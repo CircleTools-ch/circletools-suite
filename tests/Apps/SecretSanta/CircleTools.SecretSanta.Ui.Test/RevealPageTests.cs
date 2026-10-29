@@ -144,6 +144,27 @@ public sealed class RevealPageTests : IAsyncDisposable
     }
 
     [Fact]
+    public void RevealPage_ShortLink_WhoseGroupWasDeleted_SaysGone_AndDropsTheKeptCopy()
+    {
+        // ST-2 (2026-10-28): a link opened once kept its slice; after the group was deleted the server answers
+        // "not found", and the page showed the kept pairing as "maybe offline" instead of saying the link is gone.
+        var live = new RevealPayload(RevealPayload.CurrentVersion, "Live-Max", ["New headphones"], null, null, null, null, null);
+        _revealApi.SeedRevealSlice("deleted-token", System.Text.Json.JsonSerializer.Serialize(live, RevealJsonContext.Default.RevealPayload));
+        NavigateToRevealLink("#for=Anna&rt=deleted-token");
+        _ctx.Render<Reveal>();
+
+        _revealApi.RemoveRevealSlice("deleted-token");
+        var gone = _ctx.Render<Reveal>();
+
+        Assert.Contains("RevealLinkGone", gone.Markup);
+        Assert.DoesNotContain("Live-Max", gone.Markup);
+
+        // The kept copy went with it: offline later, the page has nothing left to show.
+        _revealApi.RevealSlicesUnreachable = true;
+        Assert.Contains("RevealNeedsConnection", _ctx.Render<Reveal>().Markup);
+    }
+
+    [Fact]
     public void RevealPage_ShortLink_FirstOpenedOffline_SaysItNeedsAConnection()
     {
         _revealApi.RevealSlicesUnreachable = true;

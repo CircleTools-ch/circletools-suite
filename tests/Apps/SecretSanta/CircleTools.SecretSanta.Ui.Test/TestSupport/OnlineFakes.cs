@@ -101,8 +101,12 @@ public sealed class FakeOnlineGroupApi : IOnlineGroupApi
     /// <inheritdoc />
     public Task<ApiResult<JoinResponse>> JoinAsync(string joinToken, JoinRequest request, CancellationToken cancellationToken = default) => Fail<JoinResponse>();
 
+    /// <summary>Gets or sets the signed-in account's overview, or <see langword="null"/> for offline.</summary>
+    public MyGroups? MyGroups { get; set; }
+
     /// <inheritdoc />
-    public Task<ApiResult<MyGroups>> GetMyGroupsAsync(CancellationToken cancellationToken = default) => Fail<MyGroups>();
+    public Task<ApiResult<MyGroups>> GetMyGroupsAsync(CancellationToken cancellationToken = default) =>
+        MyGroups is { } mine ? Task.FromResult(ApiResult.Ok(mine)) : Fail<MyGroups>();
 
     /// <inheritdoc />
     public Task<ApiResult> AnswerInvitationAsync(Guid groupId, bool accept, CancellationToken cancellationToken = default) => Fail();
@@ -126,6 +130,10 @@ public sealed class FakeOnlineGroupApi : IOnlineGroupApi
     /// <param name="bodyJson">The payload JSON (the reveal format).</param>
     public void SeedRevealSlice(string revealToken, string bodyJson) =>
         _pages[revealToken] = System.Text.Json.JsonSerializer.Deserialize(bodyJson, CircleTools.SecretSanta.Core.Reveal.RevealJsonContext.Default.RevealPayload)!;
+
+    /// <summary>Forgets the page a reveal token opened, as when its group is deleted.</summary>
+    /// <param name="revealToken">The token.</param>
+    public void RemoveRevealSlice(string revealToken) => _pages.Remove(revealToken);
 
     /// <summary>Seeds the holder's own entry, so the reveal page offers the editor.</summary>
     /// <param name="revealToken">The token.</param>

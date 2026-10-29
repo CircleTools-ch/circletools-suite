@@ -115,6 +115,28 @@ public sealed class OnlineGroupClientTests(MailApiFactory factory)
     }
 
     [Fact]
+    public async Task TheJoinLink_ShowsAnOpenInvitationAsInvited_AndAJoinAsTaken()
+    {
+        // ST-3 (2026-10-28): an invitee who had not answered yet showed as "Already joined" on the join page.
+        var organizerAccount = await CircleTestAccounts.SignUpAsync(factory, "Organizer");
+        var cleoAccount = await CircleTestAccounts.SignUpAsync(factory, "Cleo");
+        var organizer = OnlineDevice.SignedIn(organizerAccount);
+        var (groupId, _, members) = await organizer.CreateDrawnGroupAsync();
+        await organizer.Sync.MakeOnlineAsync(groupId, organizer.AccountId, joinEnabled: true);
+        var joinToken = (await organizer.RecordAsync(groupId))!.Access!.JoinToken!;
+        await organizer.Sync.AddParticipantAsync(
+            groupId, new AddParticipantRequest(members["Cleo"], ParticipantRoute.Invitation, cleoAccount.Email));
+        await OnlineDevice.SignedOut(factory).Sync.JoinAsync(joinToken, new JoinRequest(members["Ben"], null, WithAccount: false), null);
+
+        var preview = (await new HttpOnlineGroupApi(factory.CreateClient()).PreviewJoinAsync(joinToken)).Value!;
+
+        var cleo = preview.Members.Single(m => m.MemberId == members["Cleo"]);
+        var ben = preview.Members.Single(m => m.MemberId == members["Ben"]);
+        Assert.True(cleo is { Taken: true, Invited: true });
+        Assert.True(ben is { Taken: true, Invited: false });
+    }
+
+    [Fact]
     public async Task AMemberJustAddedOnTheDevice_CanBeInvitedRightAway()
     {
         var organizerAccount = await CircleTestAccounts.SignUpAsync(factory, "Organizer");

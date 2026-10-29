@@ -71,8 +71,9 @@ public static class GroupViews
     /// <summary>What the join link shows: the active roster and who is already taken.</summary>
     /// <param name="document">The group document.</param>
     /// <param name="takenMemberIds">Members that already have a principal.</param>
+    /// <param name="invitedMemberIds">Of those, the ones held only by an invitation not yet answered.</param>
     /// <returns>The preview.</returns>
-    public static JoinPreview ForJoin(GroupState document, IReadOnlySet<Guid> takenMemberIds)
+    public static JoinPreview ForJoin(GroupState document, IReadOnlySet<Guid> takenMemberIds, IReadOnlySet<Guid>? invitedMemberIds = null)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(takenMemberIds);
@@ -81,7 +82,8 @@ public static class GroupViews
         return new JoinPreview(
             group.Id,
             group.Name,
-            [.. group.Members.Select(m => new JoinableMember(m.Id, m.Name, takenMemberIds.Contains(m.Id)))]);
+            [.. group.Members.Select(m => new JoinableMember(
+                m.Id, m.Name, takenMemberIds.Contains(m.Id), invitedMemberIds?.Contains(m.Id) == true))]);
     }
 
     // Only the reader's own pairing is ever built into a view: the factory builds the event's set, and everything

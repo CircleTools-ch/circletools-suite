@@ -141,11 +141,18 @@ public sealed record PendingRemoval(Guid GroupId, OnlineAccess Access, bool Leav
 /// <param name="Records">The groups.</param>
 /// <param name="Removals">Server-side removals still to send.</param>
 /// <param name="Invitations">Invitations waiting for the signed-in account's answer, as last discovered.</param>
+/// <param name="Parked">
+/// Records of a group whose place in <paramref name="Records"/> another holder on this device has right now — another
+/// account, or the device's own link or key while an account with its own role is signed in. They come back when
+/// their holder is the better fit again, so two people sharing a device never hide or overwrite each other's group
+/// (ST-1).
+/// </param>
 public sealed record GroupRecordsDocument(
     int SchemaVersion,
     IReadOnlyList<GroupRecord> Records,
     IReadOnlyList<PendingRemoval> Removals,
-    IReadOnlyList<MyGroup> Invitations)
+    IReadOnlyList<MyGroup> Invitations,
+    IReadOnlyList<GroupRecord>? Parked = null)
 {
     /// <summary>The current local schema (4: the ADR-0086 model; older keys are left behind, decision D2).</summary>
     public const int CurrentSchemaVersion = 4;

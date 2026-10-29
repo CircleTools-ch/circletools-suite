@@ -17,11 +17,11 @@ This complements the submission runbook: [`docs/deployment/mobile-apps.md`](../.
 | `assets/app-icon-512.png` | App icon | 512×512 PNG, ≤1 MB, **no alpha** |
 | `assets/feature-graphic-1024x500{,-de,-fr}.png` | Feature graphic (per language) | 1024×500 PNG/JPEG, ≤15 MB |
 | `screenshots/phone/{en,de,fr}/` | Phone screenshots | 2–8, ~20:9 portrait |
-| `screenshots/tablet/en/` | 7-inch **and** 10-inch tablet | 2–8, **1080×1920 (9:16)** — one set covers both slots |
+| `screenshots/tablet/{en,de,fr}/` | 7-inch **and** 10-inch tablet | 2–8, **1440×2560 (9:16)** — one set covers both slots |
 
 ### Screenshot inventory
 
-**Phone** — captured **on a Pixel 9 Pro from the Play-installed build** (2026-10-28, `0.1.128`) at 1280×2856,
+**Phone** — captured **on a Pixel 9 Pro from the Play-installed build** (2026-10-28, `0.1.129`) at 1280×2856,
 light mode, Android demo-mode status bar, then cropped to **1280×2560 (exactly 2:1)** — status bar and
 gesture bar removed, RGB, no alpha; ≥ 1080 px on both sides, so promotion-eligible. Same seven shots in
 **de/**, **en/**, **fr/**:
@@ -35,18 +35,20 @@ QR-code dialog is deliberately **not** used: it shows a working link into the re
 
 Re-shooting: [store submission guide](../../docs/deployment/store-submission-guide.md#screenshots-for-google-play).
 
-**Tablet** — 1080×1920 (exactly 9:16), English:
-- **tablet/en/** — 01 group · 02 event · 03 members · 04 share · 05 reveal (tablet layout = persistent nav sidebar + content)
+**Tablet** — captured **from the same Play build on the Pixel 9 Pro** (2026-10-28, `0.1.129`) with the
+display switched to a 10-inch tablet geometry (`wm size 1440x2800`, `wm density 320` → 720 dp wide), then
+cropped to **1440×2560 (exactly 9:16)**, status bar and gesture bar removed. Same seven shots and same cast as
+the phone set, in **de/**, **en/**, **fr/**. At 720 dp the app keeps its bottom navigation and widens the
+content column — what a portrait tablet really shows.
 
 The **reveal** shot is the payoff — a recipient opening their private link sees who they drew (Ben →
 David) and that person's wishlist; the **share** shot shows the organizer's per-person Share / Copy / QR
 links. These two lead the set for the top of the listing.
 
-> **Tablet slots:** the `tablet/en/` set is **1080×1920**, which satisfies **both** the 7-inch slot
-> (each side 320–3,840 px) and the 10-inch slot (1,080–7,680 px) — upload the same five to both. Play uses
-> the default-language (English) graphics for locales without their own, so these cover DE/FR too; localized
-> DE/FR tablet shots can be generated the same way if wanted. A portrait-column app leaves whitespace on a
-> tall tablet canvas — normal and compliant.
+> **Tablet slots:** each `tablet/<lang>/` set is **1440×2560**, which satisfies **both** the 7-inch slot
+> (each side 320–3,840 px) and the 10-inch slot (1,080–7,680 px) — upload the same seven to both, per
+> language. Play requires **16:9 / 9:16** for tablets. A portrait-column app leaves whitespace on a tall
+> tablet canvas — normal and compliant.
 >
 > **Phone ratio:** 1280×2560 is exactly 2:1 — the long side may not exceed twice the short side.
 
@@ -113,7 +115,7 @@ Collection happens only when the user creates an account or puts a group online 
   (*Père Noël secret*). The brand mark **floats on the gradient with no tile** (the ring + gift only),
   so it no longer blends into the burgundy background. The standalone **app icon keeps its burgundy
   square** (Google requires a full opaque icon).
-- Screenshots are captured from the standalone web app, which renders the **identical** shared UI as
-  the MAUI head. They're publishable as-is; see the resolution caveat above for promotion/featuring.
+- Phone and tablet screenshots are both captured from the **Play-installed app** on the Pixel 9 Pro (the
+  tablet set by changing the display geometry with `wm size` / `wm density`), not from the web app.
 - German uses **Wichteln** (what German users search) rather than a literal translation; French uses
   **Père Noël secret**.

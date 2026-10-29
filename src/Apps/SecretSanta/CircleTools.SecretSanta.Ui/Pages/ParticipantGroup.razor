@@ -69,7 +69,8 @@ else
                         }
                         @if (!string.IsNullOrWhiteSpace(pairing.EventLocation))
                         {
-                            <MudText Class="mb-1"><strong>@LabelText.WithColon(L["RevealEventLabel"])</strong> @pairing.EventLocation</MudText>
+                            @* The date is under the event's name already, so this line is only the place (ST-4). *@
+                            <MudText Class="mb-1" id="participant-location"><strong>@LabelText.WithColon(L["LocationLabel"])</strong> @pairing.EventLocation</MudText>
                         }
                         @if (CalendarFor(occasion, pairing) is { } calendarEvent)
                         {

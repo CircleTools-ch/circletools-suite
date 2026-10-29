@@ -454,7 +454,7 @@ public sealed class GroupService(
         var details = await ByJoinTokenAsync(joinToken, cancellationToken).ConfigureAwait(false);
         return details is null
             ? null
-            : GroupViews.ForJoin(details.Group.Document, Taken(details));
+            : GroupViews.ForJoin(details.Group.Document, Taken(details), InvitedOnly(details));
     }
 
     /// <summary>Takes part through the join link, as an existing member or as a newly added one.</summary>
@@ -909,6 +909,12 @@ public sealed class GroupService(
 
     private static HashSet<Guid> Taken(OnlineGroupDetails details) =>
         [.. details.Assignments.Where(a => a.MemberId is not null).Select(a => a.MemberId!.Value)];
+
+    // Members reserved by an open invitation and nothing else: the join page says "invited", not "joined" (ST-3).
+    private static HashSet<Guid> InvitedOnly(OnlineGroupDetails details) =>
+        [.. Taken(details).Except(details.Assignments
+            .Where(a => a is { MemberId: not null, State: RoleAssignmentState.Active })
+            .Select(a => a.MemberId!.Value))];
 
     // A person joining under a new name is added to the roster by the server — the one document change a
     // non-organizer can cause. A duplicate name is refused (the person should pick the existing member).

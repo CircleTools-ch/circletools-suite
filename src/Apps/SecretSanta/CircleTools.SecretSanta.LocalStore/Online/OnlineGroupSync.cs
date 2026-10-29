@@ -109,6 +109,17 @@ public sealed class OnlineGroupSync(IGroupRecordStore store, IOnlineGroupApi api
                 await RemoveLocallyAsync(record.Id, cancellationToken);
             }
         }
+
+        // Its records waiting in Parked go the same way: an organized one stays as a device group.
+        var document = await store.LoadAsync(cancellationToken);
+        await store.SaveAsync(
+            document with
+            {
+                Parked = [.. (document.Parked ?? [])
+                    .Where(r => Holder(r) != accountId || r.Document is not null)
+                    .Select(r => Holder(r) == accountId ? r with { Place = GroupPlace.Device, View = null, Access = null, ServerVersion = 0, Dirty = false, SelfMaintained = null, Roles = null } : r)],
+            },
+            cancellationToken);
     }
 
     // ---------------------------------------------------------------- sync
@@ -122,6 +133,12 @@ public sealed class OnlineGroupSync(IGroupRecordStore store, IOnlineGroupApi api
     /// <returns>A task.</returns>
     public async Task SyncAsync(Guid? signedInAccount, CancellationToken cancellationToken = default)
     {
+        // Local and first, so a sign-in or sign-out puts the right holder's records in play even offline.
+        if (Arrange(await store.LoadAsync(cancellationToken), signedInAccount) is { } arranged)
+        {
+            await store.SaveAsync(arranged, cancellationToken);
+        }
+
         await SendRemovalsAsync(signedInAccount, cancellationToken);
 
         if (signedInAccount is { } account)
@@ -276,15 +293,16 @@ public sealed class OnlineGroupSync(IGroupRecordStore store, IOnlineGroupApi api
 
         var groups = mine.Value!.Groups;
         var document = await store.LoadAsync(cancellationToken);
-        var records = document.Records.ToList();
 
         // Groups this account held here but no longer has a role in (released, deleted, handed over) go.
         var active = groups.Where(g => !g.Invited).ToDictionary(g => g.GroupId);
-        records.RemoveAll(r => r is { Place: GroupPlace.Online, Access.Principal: AccessPrincipal.Account }
-            && r.Access.AccountId == account
-            && !active.ContainsKey(r.Id));
+        bool Stale(GroupRecord r) => r.Place == GroupPlace.Online && Holder(r) == account && !active.ContainsKey(r.Id);
+        var records = document.Records.Where(r => !Stale(r)).ToList();
+        var parked = (document.Parked ?? []).Where(r => !Stale(r)).ToList();
 
-        foreach (var group in active.Values.Where(g => records.All(r => r.Id != g.GroupId)))
+        // A group gets this account's own record even when someone else's is here (another account, signed out; or
+        // the device's link or key): the arrangement below decides which one is in play (ST-1).
+        foreach (var group in active.Values.Where(g => !records.Concat(parked).Any(r => r.Id == g.GroupId && Holder(r) == account)))
         {
             var access = new OnlineAccess(AccessPrincipal.Account, group.Role, group.Permissions, AccountId: account, MemberId: group.MemberId);
             var organizes = access.Can(OnlinePermissions.ReadDocument);
@@ -295,9 +313,8 @@ public sealed class OnlineGroupSync(IGroupRecordStore store, IOnlineGroupApi api
             });
         }
 
-        await store.SaveAsync(
-            document with { Records = records, Invitations = [.. groups.Where(g => g.Invited)] },
-            cancellationToken);
+        var discovered = document with { Records = records, Parked = parked, Invitations = [.. groups.Where(g => g.Invited)] };
+        await store.SaveAsync(Arrange(discovered, account) ?? discovered, cancellationToken);
     }
 
     // The document is read right after discovery; until then an empty roster with the right id and name stands in,
@@ -357,11 +374,7 @@ public sealed class OnlineGroupSync(IGroupRecordStore store, IOnlineGroupApi api
 
         var document = await store.LoadAsync(cancellationToken);
         await store.SaveAsync(
-            document with
-            {
-                Records = [.. document.Records.Where(r => r.Id != answer.GroupId),
-                    new GroupRecord(answer.GroupId, GroupPlace.Online, null, null, 0, Dirty: false, Access: access)],
-            },
+            Put(document, new GroupRecord(answer.GroupId, GroupPlace.Online, null, null, 0, Dirty: false, Access: access)),
             cancellationToken);
 
         await SyncGroupAsync(answer.GroupId, cancellationToken);
@@ -468,11 +481,7 @@ public sealed class OnlineGroupSync(IGroupRecordStore store, IOnlineGroupApi api
         var access = new OnlineAccess(AccessPrincipal.OrganizerLink, "owner", view.Permissions, Secret: organizerToken, JoinToken: view.Links.JoinToken);
         var stored = await store.LoadAsync(cancellationToken);
         await store.SaveAsync(
-            stored with
-            {
-                Records = [.. stored.Records.Where(r => r.Id != groupId),
-                    new GroupRecord(groupId, GroupPlace.Online, document, null, view.Version, Dirty: false, access, SelfMaintained: view.SelfMaintained, Roles: view.Roles)],
-            },
+            Put(stored, new GroupRecord(groupId, GroupPlace.Online, document, null, view.Version, Dirty: false, access, SelfMaintained: view.SelfMaintained, Roles: view.Roles)),
             cancellationToken);
         return true;
     }
@@ -631,6 +640,47 @@ public sealed class OnlineGroupSync(IGroupRecordStore store, IOnlineGroupApi api
     {
         var document = await store.LoadAsync(cancellationToken);
         await store.SaveAsync(document with { Records = [.. document.Records.Where(r => r.Id != groupId)] }, cancellationToken);
+    }
+
+    // Who a record belongs to on this device: an account, or (null) the device itself — a device group, an organizer
+    // link or a device key, shown whoever is signed in.
+    private static Guid? Holder(GroupRecord record) =>
+        record.Access is { Principal: AccessPrincipal.Account } access ? access.AccountId : null;
+
+    // Pages and sync find a group by its id, so one record per group is in play and the others wait in Parked (ST-1).
+    // Of the records the signed-in person may see (that account's and the device's), the one that organizes is in
+    // play, else the account's; a group only other accounts hold keeps the record it had. Null when nothing moves.
+    private static GroupRecordsDocument? Arrange(GroupRecordsDocument document, Guid? signedInAccount)
+    {
+        var pool = document.Records.Concat(document.Parked ?? []).ToList();
+        var inPlay = pool
+            .GroupBy(r => r.Id)
+            .Select(g => g
+                .Where(r => Holder(r) is null || Holder(r) == signedInAccount)
+                .OrderBy(r => r.Document is null)
+                .ThenBy(r => Holder(r) is null)
+                .FirstOrDefault()
+                ?? document.Records.FirstOrDefault(r => r.Id == g.Key)
+                ?? g.First())
+            .ToList();
+        if (inPlay.SequenceEqual(document.Records, ReferenceEqualityComparer.Instance))
+        {
+            return null;
+        }
+
+        return document with { Records = inPlay, Parked = [.. pool.Where(r => !inPlay.Contains(r, ReferenceEqualityComparer.Instance))] };
+    }
+
+    // A new record for a group takes the place of the one in play. One of the same holder is replaced; another
+    // holder's waits in Parked instead of being dropped (ST-1).
+    private static GroupRecordsDocument Put(GroupRecordsDocument document, GroupRecord record)
+    {
+        bool Other(GroupRecord r) => r.Id != record.Id || Holder(r) != Holder(record);
+        return document with
+        {
+            Records = [.. document.Records.Where(r => r.Id != record.Id), record],
+            Parked = [.. (document.Parked ?? []).Where(Other), .. document.Records.Where(r => r.Id == record.Id && Other(r))],
+        };
     }
 
     private static string? OwnRole(OrganizerGroupView view, OnlineAccess access) =>

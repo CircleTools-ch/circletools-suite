@@ -228,7 +228,15 @@ To re-shoot:
    this removes the status bar and the gesture bar.
 5. Afterwards reset: `wm size reset`, `wm density reset`, night mode back, demo mode `exit`.
 
-Tablet shots (`screenshots/tablet/en/`) stay valid unless the tablet layout changed visibly.
+**Tablet shots** come from the same phone and build: `adb shell wm size 1440x2800` + `wm density 320` turns
+the Pixel into a 720 dp-wide portrait tablet. Shoot the same seven screens per language, then **crop to
+1440×2560** (y = 140…2700) — Play requires 9:16 for tablet screenshots. Upload the same set to both the
+7-inch and the 10-inch slot.
+
+**Uploading in Play Console** (*Grow users → Store presence → Store listings → Edit default listing*, then
+*Next language* for de-DE / fr-FR): uploads land in the asset library and are added in **completion order**,
+not file order. Upload once, remove them from the slot, then pick them in the library in the wanted order and
+press **Add**. Unique file names (`phone-en-01-reveal.png`, …) keep the library unambiguous.
 
 ## Related
 

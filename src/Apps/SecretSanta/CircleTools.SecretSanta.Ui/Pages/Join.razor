@@ -68,18 +68,25 @@ else
         }
 
         <MudRadioGroup T="Guid" Value="_selectedMemberId" ValueChanged="Pick">
-            @foreach (var member in _preview.Members)
-            {
-                <div class="d-flex align-center">
-                    <MudRadio T="Guid" Value="@member.MemberId" Color="Color.Primary" Dense="true" Disabled="@member.Taken">
-                        @member.Name
-                    </MudRadio>
-                    @if (member.Taken)
-                    {
-                        <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text">@L["JoinAlreadyTaken"]</MudChip>
-                    }
-                </div>
-            }
+            @* One member per line: the group lays its children out in a wrapping row, which put a name beside
+               another member's chip on a phone (ST-5). *@
+            <div class="d-flex flex-column" id="join-members">
+                @foreach (var member in _preview.Members)
+                {
+                    <div class="d-flex align-center">
+                        <MudRadio T="Guid" Value="@member.MemberId" Color="Color.Primary" Dense="true" Disabled="@member.Taken">
+                            @member.Name
+                        </MudRadio>
+                        @if (member.Taken)
+                        {
+                            @* An open invitation reserves the name, but nobody has joined yet (ST-3). *@
+                            <MudChip T="string" Size="Size.Small" Color="Color.Default" Variant="Variant.Text">
+                                @(member.Invited ? L["MemberInvitedBadge"] : L["JoinAlreadyTaken"])
+                            </MudChip>
+                        }
+                    </div>
+                }
+            </div>
         </MudRadioGroup>
 
         <MudTextField T="string" Value="_newName" ValueChanged="TypeNewName" Immediate="true" Class="mt-2" id="join-new-name"

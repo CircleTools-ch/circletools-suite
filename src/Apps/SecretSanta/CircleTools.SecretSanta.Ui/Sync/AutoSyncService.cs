@@ -266,8 +266,9 @@ public sealed class AutoSyncService(
 
     private void OnAuthenticationStateChanged(Task<AuthenticationState> state) => _ = OnAccountChangedAsync(state);
 
-    // Signing in (or switching account) requests a cycle; signing out needs none — the views hide the account's
-    // groups on their own. Token refreshes re-raise the event for the same account and are ignored.
+    // Signing in, switching account or signing out requests a cycle: the views hide the account's groups on their
+    // own, but a group the device holds by link or key that waited while the account's own record was in play comes
+    // back only through the cycle (ST-1). Token refreshes re-raise the event for the same account and are ignored.
     private async Task OnAccountChangedAsync(Task<AuthenticationState> state)
     {
         Guid accountId;
@@ -286,10 +287,7 @@ public sealed class AutoSyncService(
         }
 
         _accountId = accountId;
-        if (accountId != Guid.Empty)
-        {
-            RequestSync();
-        }
+        RequestSync();
     }
 
     /// <inheritdoc />

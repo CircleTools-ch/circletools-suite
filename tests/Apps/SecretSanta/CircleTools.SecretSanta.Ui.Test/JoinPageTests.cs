@@ -88,6 +88,20 @@ public sealed class JoinPageTests : IAsyncDisposable
         Assert.DoesNotContain("Olgas Runde", cut.Markup);
     }
 
+    [Fact]
+    public void AnInvitedMember_IsMarkedInvited_NotJoined()
+    {
+        // ST-3 (2026-10-28): the invitee had not accepted yet, but the chip said "Already joined".
+        _api.Preview = new JoinPreview(_groupId, "Olgas Runde",
+            [new JoinableMember(Guid.NewGuid(), "Kim", Taken: true, Invited: true), new JoinableMember(Guid.NewGuid(), "Lou", Taken: false)]);
+        Use(OnlineRecords.OnDevice(Guid.NewGuid()));
+
+        var cut = Render();
+
+        cut.WaitForAssertion(() => Assert.Contains("MemberInvitedBadge", cut.Find("#join-members").TextContent));
+        Assert.DoesNotContain("JoinAlreadyTaken", cut.Find("#join-members").TextContent);
+    }
+
     /// <inheritdoc />
     public ValueTask DisposeAsync() => _ctx.DisposeAsync();
 

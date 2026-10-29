@@ -50,7 +50,8 @@ mode; [store submission guide](../deployment/store-submission-guide.md)) and rep
 (U-1…U-5, incl. iPad screenshots). **All fixed in the working tree 2026-10-28** and browser-verified against the
 local stack (fresh profile, second origin as a second device, DE/EN/FR, console clean) unless marked
 *device-verify*: those touch only the native heads' safe-area insets and need the next Play/TestFlight build.
-Re-shoot the store screenshots that show SS-3/SS-4 (04 in all languages, FR 01/02) after that build.
+Re-shoot the store screenshots that show SS-3/SS-4 (04 in all languages, FR 01/02) after that build. ✅ Done on
+`0.1.129` (all phone and tablet shots, DE/EN/FR, uploaded to Play as drafts).
 
 - **U-1 · Signing in on a device that never synced showed no online groups until a reload (P1).** ✅ Root cause:
   ADR-0086 removed the sign-in reconciler, which ended every sign-in with `AutoSync.RequestSync()`; since then
@@ -92,6 +93,50 @@ Re-shoot the store screenshots that show SS-3/SS-4 (04 in all languages, FR 01/0
 - **SS-10 · Draw page on a later visit said only "Assignments are hidden…" (P3).** ✅ Shows "Draw complete ·
   N assignments" from the event's current draw (verified after a reload).
 - **Noted, not new:** `<html lang>` stays `en` in a French UI — BTP-7.
+
+Found in the scenario pass on the Play build `0.1.129` (2026-10-28): Pixel 9 Pro app signed in as the review
+account, production web in fresh browsers (organizer `adri3`, invitee `moll`, signed-out joiner and reveal-link
+holder), DE/EN/FR. Covered and working: online group by an account, email invitation accepted on the web, join
+link in the app (with the account) and in a signed-out browser (device key), reveal link only in browser and app,
+wishlist edits propagating app ↔ web ↔ participant views at once, organizer view (*Connected*, read-only member
+entries, *Wishlists 3/5*), sign-out / sign-in on the phone, group deletion (join link then says it no longer works).
+Browser console stayed clean throughout. The store screenshots were re-shot on that build (phone + tablet, DE/EN/FR).
+
+- **ST-1 · Switching accounts on one device hides a group both accounts are in (P1).** Sign out as A, sign in as
+  B: a group B takes part in is missing from the list (survives a restart) when A also had it on this device. Root
+  cause: sign-out keeps A's records on purpose (`AutoSyncService.OnAccountChangedAsync` — "the views hide the
+  account's groups"), and `OnlineGroupSync.DiscoverAsync` adds a discovered group only when *no* record with that
+  id exists, so A's hidden record blocks B's. Repro: review account joined "QA Oct 28" in the app → sign out →
+  sign in as `moll` (also in it) → only "Test" listed; the web lists both, `GET /me/groups` returns both. ✅
+  Pages and sync still find a group by its id, so one record per group is *in play*; the others now wait in
+  `GroupRecordsDocument.Parked` instead of blocking or being dropped. Discovery gives the signed-in account its own
+  record even when someone else's is there, and each sync cycle (now also requested on sign-out) arranges which one
+  is in play: of the signed-in account's and the device's own (link or device key), the one that organizes, else the
+  account's. So another account's record — unsent work included — waits for that account, and a group the device
+  joined without an account gives way to the signed-in account's own role and comes back on sign-out
+  (`AccountSwitchDiscoveryTests`; checked in the browser: device joined as Lou, Ivo signs in → "Als Moe", signs out
+  → "Als Lou", signs in → "Als Moe").
+- **ST-2 · A deleted group's reveal link still shows the pairing from the kept copy (P1).** After the organizer
+  deletes the group, a device that opened the short link before shows the old pairing and wishlists with "Showing
+  your saved copy — you may be offline", while online. `GET /reveal/{token}` answers 404, but `Reveal.razor` loads
+  the kept copy before it looks at `_notFound`. Contradicts the delete dialog ("its links stop working"). ✅ On
+  not-found the page drops the kept copy and shows *link is gone*; offline it still falls back to the copy
+  (`RevealPage_ShortLink_WhoseGroupWasDeleted_SaysGone_AndDropsTheKeptCopy`).
+- **ST-3 · Join page: an invited member is labelled "Already joined" (P3).** Invitees are reserved
+  (`ConnectedMembers.IsTaken` counts `Invited`), which is right, but the chip says *Bereits beigetreten* / *Already
+  joined* before the invitee accepted. ✅ `JoinableMember` gained an optional `Invited` (old clients ignore it);
+  the server sets it for members held only by an open invitation, and the chip then reads *Eingeladen* /
+  *Invited* / *Invité·e* (`MemberInvitedBadge`).
+- **ST-4 · Participant page labels the location "Event:" (P3).** `groups/{id}/me` shows the date on its own line
+  and then *Anlass: Zürich* / *Event: Zürich* / *Événement : Zürich*; the reveal page shows *Anlass: 24.12.2026,
+  Zürich*. ✅ The line is labelled *Ort* / *Location* / *Lieu* (`LocationLabel`).
+- **ST-5 · Join page: member radios flow inline (P3).** On a phone a name lands beside another member's
+  *Already joined* chip (e.g. "Moll · Bereits beigetreten · ○ Pixel"). ✅ One member per line.
+- **ST-6 · French join page: "Vous êtes invité à" next to "ajouté·e" (P3).** ✅ *Vous êtes invité·e à*, like the
+  rest of the French copy.
+- **ST-7 · Returning web visitors stay on the previous build — not a defect.** Two offline caches meant the new
+  worker had installed and was waiting, which is ADR-0048's design: the app offers *Reload* rather than switching
+  under the user. The prompt itself was not looked at during the pass; check it on the next deploy.
 
 ## Browser test pass before the Pixel test — Secret-Santa + Main (2026-10-17)
 
