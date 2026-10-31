@@ -26,13 +26,13 @@
                 <ProblemAlert Message="@_passwordError" Details="@_passwordDetails" />
 
                 <MudStack Spacing="3" Style="max-width:26rem;">
-                    <MudTextField @bind-Value="_currentPassword" Label="@L["FieldCurrentPassword"]" InputType="InputType.Password"
+                    <MudTextField @ref="_currentPasswordField" @bind-Value="_currentPassword" Label="@L["FieldCurrentPassword"]" InputType="InputType.Password"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" Required="true"
                                   autocomplete="current-password" id="current-password" />
-                    <MudTextField @bind-Value="_newPassword" Label="@L["FieldNewPassword"]" InputType="InputType.Password"
+                    <MudTextField @ref="_newPasswordField" @bind-Value="_newPassword" Label="@L["FieldNewPassword"]" InputType="InputType.Password"
                                   HelperText="@L["PasswordHint"]" Variant="Variant.Outlined" Margin="Margin.Dense"
                                   Required="true" autocomplete="new-password" id="new-password" />
-                    <MudTextField @bind-Value="_repeatPassword" Label="@L["FieldRepeatPassword"]" InputType="InputType.Password"
+                    <MudTextField @ref="_repeatPasswordField" @bind-Value="_repeatPassword" Label="@L["FieldRepeatPassword"]" InputType="InputType.Password"
                                   Variant="Variant.Outlined" Margin="Margin.Dense" Required="true"
                                   autocomplete="new-password" id="repeat-password" />
 
@@ -195,6 +195,9 @@
     private string _currentPassword = string.Empty;
     private string _newPassword = string.Empty;
     private string _repeatPassword = string.Empty;
+    private MudTextField<string>? _currentPasswordField;
+    private MudTextField<string>? _newPasswordField;
+    private MudTextField<string>? _repeatPasswordField;
     private string? _passwordError;
     private IReadOnlyList<string>? _passwordDetails;
     private bool _passwordBusy;
@@ -265,6 +268,9 @@
 
         _currentPassword = _newPassword = _repeatPassword = string.Empty;
         _passwordChanged = true;
+        // The cleared fields were touched, so they would show "Required" right under the success message (BTP-3).
+        StateHasChanged();
+        await FieldValidation.ResetAsync(_currentPasswordField, _newPasswordField, _repeatPasswordField);
     }
 
     /// <summary>Ends every session of the account, this one included (FR-049), and returns to the start.</summary>

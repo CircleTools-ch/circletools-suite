@@ -196,7 +196,7 @@
                         }
 
                         <MudStack Spacing="3" Style="max-width:26rem;">
-                            <MudTextField @bind-Value="_inviteEmail" Immediate="true" InputType="InputType.Email"
+                            <MudTextField @ref="_inviteEmailField" @bind-Value="_inviteEmail" Immediate="true" InputType="InputType.Email"
                                           Label="@L["CircleInviteEmail"]" Variant="Variant.Outlined" Margin="Margin.Dense"
                                           Required="true" autocomplete="off" id="invite-email" />
 
@@ -270,8 +270,8 @@
 
                     <form @onsubmit="AddManagedAsync" @onsubmit:preventDefault="true">
                         <MudStack Spacing="3" Style="max-width:26rem;">
-                            <MudTextField @bind-Value="_newManagedName" Immediate="true" Label="@L["CircleManagedName"]"
-                                          Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" />
+                            <MudTextField @ref="_newManagedNameField" @bind-Value="_newManagedName" Immediate="true" Label="@L["CircleManagedName"]"
+                                          Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" id="managed-name" />
                             <BusyButton Variant="Variant.Outlined" Label="@L["CircleManagedAdd"]" Busy="_busy"
                                         Disabled="@(_newManagedName.Trim().Length == 0)" />
                         </MudStack>
@@ -389,10 +389,12 @@
     private CirclePersonResponse? _invitingPerson;
 
     private string _inviteEmail = string.Empty;
+    private MudTextField<string>? _inviteEmailField;
     private Guid? _inviteTargetId;
     private string _rowInviteEmail = string.Empty;
     private string? _rowInviteError;
     private string _newManagedName = string.Empty;
+    private MudTextField<string>? _newManagedNameField;
     private string _managedName = string.Empty;
     private string _managedLanguage = string.Empty;
     private string _editName = string.Empty;
@@ -509,6 +511,9 @@
             _inviteSent = true;
             _inviteEmail = string.Empty;
             _inviteTargetId = null;
+            // Emptied after a send, the touched field would otherwise show "Required" (BTP-3).
+            StateHasChanged();
+            await FieldValidation.ResetAsync(_inviteEmailField);
             await LoadAsync();
             return;
         }
@@ -573,6 +578,9 @@
             if (result.IsSuccess)
             {
                 _newManagedName = string.Empty;
+                // Emptied after an add, the touched field would otherwise show "Required" (BTP-3).
+                StateHasChanged();
+                await FieldValidation.ResetAsync(_newManagedNameField);
             }
 
             return result;

@@ -68,6 +68,15 @@ clean; none caused by the update unless stated:
 - **PR-8 · Date-picker calendar clipped on phones (P2).** In the *Add event* dialog and on *Details*, the
   open calendar is cut off after the third week row (`.mud-picker-calendar-transition` 216 px tall, content
   432 px) — the 24th can't be tapped. Identical on MudBlazor 9.8.0, so pre-existing. Typing the date works.
+  **Re-checked 2026-10-30:** web only. The MAUI app (Galaxy S24, local Debug build) uses the native OS date
+  picker since ADR-0056 (`OperatingSystem.IsBrowser()` switch in `EventEditor` / `CarryForwardEventDialog`):
+  full month, the 24th selectable in *Add event* and on *Details*. The web app at 412×915 still clips
+  (transition 216 px, content 432 px — the calendar shows to the 17th) — so R2 fixes the web picker.
+  **Fixed in the working tree 2026-10-30 (R2):** cause was our own phone touch-target rule (FEAT-008 W1,
+  `circletools.css`), which raised every `.mud-icon-button` — the calendar's day cells included — to 48 px;
+  MudBlazor positions the month grid absolutely in a box sized for 36 px days, so six 48 px rows overflowed
+  and were clipped. The day cells are now exempt, like the adornment and switch buttons. Browser-verified at
+  412×915: full month in *Add event* and on *Details*, 24.12.2026 selected and saved, console clean.
 - **PR-9 · MudBlazor's own validation text is not localized (P3).** A date typed in the wrong format shows
   "Not a valid date time" in English in every UI language. Also: the accepted format follows the
   formatting region (ADR-0056), so `24.12.2026` is rejected on an en-GB browser — consider accepting
@@ -77,6 +86,40 @@ clean; none caused by the update unless stated:
 - **PR-11 · Three SecretSanta.Ui tests failed once under full-suite parallel load (P3).** Passed in four
   other runs (alone and in the full suite); names not captured. Likely the timing-based autosave tests
   (`PastThePause`); watch CI and capture names on the next failure.
+  **2026-10-30:** a full local `dotnet test` (with the Aspire stack also running) failed one E2E test,
+  `SecretSanta.E2E.Test.AccountGroupTests.A_group_organized_without_an_account_is_kept_in_the_account_and_handed_back`
+  (52 s); it passed when re-run alone. Same pattern: load-dependent timing.
+
+- **PR-12 · Release cadence during the Play closed test (P1, decided 2026-10-29).** Testers Community advises
+  shipping several updates during the test window so Google sees active development. **Decision (owner):**
+  a new build on the Alpha track **every 2–3 days**, each one **small** (bug fixes and polish, no features,
+  no structural change), with DE/EN/FR release notes. Before each release: re-check every planned item
+  against the code (some backlog entries are already partly fixed) and run the browser pass from
+  `CLAUDE.md`. Planned slices (testers' feedback may replace or add items):
+
+  | # | Content | Status |
+  |---|---------|--------|
+  | R1 | `706dc24`: version 1.0 bump + "Secret Santa" in the app bar in every language (ADR-0057) | released as **1.0.1** (versionCode 16777217): internal → promoted to Alpha 2026-10-30, sent for Google review; notes in `store/google-play/listing-*.md` |
+  | R2 | PR-8 (date-picker calendar clipped on phones — web only) · BTP-5 (second event suggests the same name — suggest the next year) | fixed in working tree 2026-10-30, browser-verified — **ships with R3 as 1.0.2** (owner, 2026-10-30: R2 alone was too small) |
+  | R3 | BTP-3 (forms show "Required" after a successful submit) · BTP-9 (COPIED label, member-row tap, stale back-link name after a rename) | fixed in working tree 2026-10-30, browser-verified (BTP-9 focus ring: not reproduced, open) — 1.0.2, release notes drafted |
+  | R4 | Localization: PR-9 (MudBlazor validation text; accept `.`/`-` date separators) · BTP-8 leftovers (FR "Réglages" → "Paramètres", FR colon spacing) · BTP-7 (`<html lang>` follows the UI language) | open |
+  | R5 | BTP-6 (hide the wishlist count for a participant) · BTP-4 (Security page: stale device list, duplicate section title) · PR-13 (show-password toggle) | open |
+  | Spare | PR-10 (update banner stacks on a language switch, web) · SYNC-4 (old language behind the import prompt) · tester findings | — |
+
+  Out of scope for this window: new features (CR-1…CR-4, MNF-6/7, IDEA-003). PR-11 (flaky tests) is watched
+  in CI meanwhile. See the [production-release plan](../deployment/production-release-plan.md), track 1.
+
+- **PR-13 · Password fields have no "show password" toggle (P3, reported by the owner 2026-10-31).** On a
+  phone keyboard a typo in a masked password is invisible, so sign-in fails or a new account gets a
+  password the user didn't mean. Add an eye icon at the end of every password field that switches it
+  between masked and clear text (MudBlazor `Adornment.End` + `Visibility`/`VisibilityOff` icon, toggling
+  `InputType.Password` ↔ `InputType.Text`), with a localized DE/EN/FR accessible label ("Show password" /
+  "Hide password"). Masked stays the default, and each page resets to masked when it is opened again. Fields
+  (all in `CircleTools.Ui.Account`): `Login.razor`, `Register.razor`, `ResetPassword.razor`, `Security.razor`
+  (current / new / repeat), `AccountData.razor` (delete-account confirmation). Prefer one shared component
+  over seven copies of the toggle. **Planned for R5** (it already touches `Security.razor` for BTP-4); it
+  fits the PR-12 rule — small polish on existing fields, no new flow. Reaches iOS with the next App Store
+  update after the build now in review. Browser-verify every field in DE/EN/FR plus one Android device pass.
 
 Found during the Play screenshot pass on the Pixel 9 Pro (Play build `0.1.128`, 2026-10-28, DE/EN/FR, light
 mode; [store submission guide](../deployment/store-submission-guide.md)) and reported by the owner the same day
@@ -192,10 +235,20 @@ clean apart from the expected 400/401 of deliberate wrong inputs.
   Browser-verified across two devices without a reload.
 - **BTP-3 · Forms show "Required" on every field after a successful submit (P2).** Change password, circle
   invite, add person: the form resets with validation still armed.
+  **Fixed in the working tree 2026-10-30 (R3):** a touched MudBlazor field re-validates when its value is
+  emptied, on the next render — so the page now renders the cleared values and then resets the fields'
+  validation (`FieldValidation.ResetAsync`, `CircleTools.Ui.Shared`). Component tests for all three forms
+  (each fails without the fix); browser-verified. Known edge: submitting with Enter leaves focus in the
+  emptied field, and leaving it later shows "Required" — MudBlazor's normal blur validation; the button
+  path (what phones use) is clean.
 - **BTP-4 · Security page (P3).** The device list is stale after a password change signed the others out;
   two sections are titled "Signed-in devices" (the second is "sign out everywhere").
 - **BTP-5 · Second event's suggested name repeats the first (P3).** "Christmas 2026" again; one tap creates a
   duplicate-named event. Suggest the next year, or block a duplicate name.
+  **Fixed in the working tree 2026-10-30 (R2):** the suggestion (`EventNameSuggestion`) starts at the current
+  year and skips every year the group already has an event of that localized name for (trimmed, ignoring
+  case) — dialog and wide-screen placeholder alike. Unit-tested; browser-verified in EN/DE/FR (2026 → 2027
+  → 2028), console clean. A duplicate name typed by hand is still allowed.
 - **BTP-6 · Participant's group card shows "Wishlists 2/5" (P3).** Correct for the device (own + recipient),
   but reads as "3 missing". Hide the count for a participant.
 - **BTP-7 · `<html lang>` is always `en` (P2, a11y).** Hard-coded in `index.html`, never updated on a
@@ -207,6 +260,13 @@ clean apart from the expected 400/401 of deliberate wrong inputs.
 - **BTP-9 · Small UI (P3).** Tapping a member row does nothing (only ⋮); a "COPIED!" label never resets; the
   back link keeps the old event name after a rename until navigation; tab title stays "Confirming your
   address" after confirming; focus ring left on the Exclusions card after creating a group.
+  **Fixed in the working tree 2026-10-30 (R3), browser-verified (EN, plus DE/FR for the new string):**
+  tapping a member's name opens them for editing (`EditNamed` accessible label, keyboard Enter/Space too);
+  "Copied!" returns to "Copy" after 2 s (`CopiedFeedback`, share page, sharing & sync, hand-out dialog);
+  the event back link re-reads the name on every local change (`ISyncSignals.LocalChanged`); the tab title
+  follows the card title on verify-email, confirm-email-change and both connect pages. Component tests for
+  the back link. **Still open:** the Exclusions focus ring did not reproduce in the browser (click or Enter
+  leaves focus on the body) — likely touch-only in the Android WebView; check in the next device pass.
 - **BTP-10 · Dev only: the update banner can't apply in development.** `wwwroot/service-worker.js` (dev) has no
   `SKIP_WAITING` handler, so "Reload" never activates a waiting worker and the banner returns. Production's
   worker handles it.
@@ -1309,6 +1369,25 @@ These are review findings, not yet promoted; the P1/P2 items are the candidates 
 cases/requirements (or ADRs, for the mobile-scope decision) if taken forward.
 
 ## Ideas
+
+### IDEA-003 — Wishlists can be switched off per event · _status: idea (2026-10-29), after the closed test_
+- **Problem:** not every group uses [wishlists](../glossary/wishlist.md) — some draw for a surprise gift,
+  a fixed theme or a Schrottwichteln-style exchange (CR-4). Today every UI still offers the wishlist editors and
+  counts, which reads as a missing step ("Wishlists 2/5").
+- **Idea (owner, 2026-10-29):** an [organizer](../glossary/organizer.md) setting **per
+  [event](../glossary/event.md)** — *Wishlists on/off*, **on by default**. Off hides every wishlist edit part
+  in all UIs (organizer views, participant page, reveal link, web and app) for that event.
+- **Fits the model:** a wishlist already belongs to a member *within one event* (ADR-0042), so the switch
+  is an event property, not a group one.
+- **Not a closed-test slice:** it changes the event (domain + contracts + server + local store + sync) and
+  every wishlist surface, so it is a feature, not a small fix (see PR-12).
+- **Open questions:**
+  - Switching off: keep existing entries hidden (and back on switch-on) or delete them? Leaning *keep*.
+  - Old app versions ignore an unknown field and would keep showing the editors — does the server refuse
+    wishlist writes for an event that has them off, and does that need an ADR (sync contract change)?
+  - Also hide wishlist mentions in share texts, emails, reminders and the group card counts?
+  - Does the setting carry forward to a recurring event (CR-1)?
+- **Next:** brainstorming → use case + FR → ADR if the contract question needs one.
 
 ### IDEA-002 — Circle (shared people across the suite) · _status: built & closed (M2, 2026-07-30) — M4 consumes it_
 - **Problem:** every app re-asks who your people are. A family or friend-group has no lasting

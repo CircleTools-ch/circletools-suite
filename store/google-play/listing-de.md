@@ -61,3 +61,19 @@ Ob Weihnachten, Bürofeier oder Familientreffen – Secret Santa nimmt Wichtel-R
 Erste Version: Namen auslosen, private Links teilen, Wunschlisten, Erinnerungen und optionale Synchronisierung.
 </de-DE>
 ```
+
+1.0.1 (Closed Test, 2026-10-30):
+
+```
+<de-DE>
+Version 1.0. Die App heisst jetzt in jeder Sprache „Secret Santa“ – in der Titelleiste wie auf dem Startbildschirm. Kalendereinträge und geteilte Nachrichten sagen weiterhin „Wichteln“.
+</de-DE>
+```
+
+1.0.2 (Closed Test, Entwurf):
+
+```
+<de-DE>
+Ein weiterer Anlass schlägt jetzt das nächste Jahr vor, statt den Namen von diesem Jahr zu wiederholen. Tippe in der Mitgliederliste auf eine Person, um sie zu bearbeiten. „Kopiert!“ wechselt nach kurzer Zeit wieder zu „Kopieren“, der Zurück-Link zeigt einen umbenannten Anlass sofort, und Formulare zeigen nach dem Speichern keine Fehlermeldung mehr an den leeren Feldern. In der Web-App auf dem Handy zeigt der Kalender wieder den ganzen Monat.
+</de-DE>
+```

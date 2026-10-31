@@ -101,7 +101,12 @@ else
                     else
                     {
                         <div class="d-flex justify-space-between align-center gap-2">
-                            <div class="d-flex align-center flex-wrap gap-2" style="min-width:0;">
+                            @* Tapping the person opens them for editing, like the menu's Edit — a row that did
+                               nothing on a tap read as broken (BTP-9). Read-only viewers get a plain row. *@
+                            <div class="@(_readOnly ? "d-flex align-center flex-wrap gap-2 flex-grow-1" : "ct-openable d-flex align-center flex-wrap gap-2 flex-grow-1")"
+                                 style="min-width:0;" role="@(_readOnly ? null : "button")" tabindex="@(_readOnly ? null : "0")"
+                                 aria-label="@(_readOnly ? null : L["EditNamed", member.Name].Value)"
+                                 @onclick="() => EditFromRow(member)" @onkeydown="@(e => EditFromRowOnEnter(e, member))">
                                 <MudText Typo="Typo.subtitle1"><strong>@member.Name</strong></MudText>
                                 @* One badge for "takes part — sees the assignment in the app" (Q30), however they got there;
                                    an invitation still waiting shows as such. Members without either need a reveal link. *@
@@ -414,6 +419,22 @@ else
         }
 
         return false;
+    }
+
+    private void EditFromRow(MemberDto member)
+    {
+        if (!_readOnly)
+        {
+            BeginEdit(member);
+        }
+    }
+
+    private void EditFromRowOnEnter(KeyboardEventArgs args, MemberDto member)
+    {
+        if (args.Key is "Enter" or " ")
+        {
+            EditFromRow(member);
+        }
     }
 
     private void BeginEdit(MemberDto member)

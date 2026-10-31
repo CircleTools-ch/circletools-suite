@@ -15,4 +15,11 @@ public interface ISyncSignals
     /// context). A subscriber marshals onto the render context before touching component state.
     /// </summary>
     event Action? SyncCompleted;
+
+    /// <summary>
+    /// Raised right after any local change, signed in or out, before a sync runs — so a view showing a
+    /// name edited elsewhere on screen (the event back link, BTP-9) can re-read it. A subscriber marshals onto
+    /// the render context before touching component state.
+    /// </summary>
+    event Action? LocalChanged;
 }

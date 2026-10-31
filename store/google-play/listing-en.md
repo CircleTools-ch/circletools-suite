@@ -58,3 +58,19 @@ Whether it's Christmas, an office party or a family get-together, Secret Santa t
 First release: draw names, share private links, wishlists, reminders and optional sync.
 </en-US>
 ```
+
+1.0.1 (closed test, 2026-10-30):
+
+```
+<en-US>
+Version 1.0. The app is now called "Secret Santa" in every language – in the title bar, just like on your home screen. Calendar entries and shared messages still use the word in your language.
+</en-US>
+```
+
+1.0.2 (closed test, draft):
+
+```
+<en-US>
+Adding another event now suggests the next year instead of repeating this year's name. Tap a person in the member list to edit them. "Copied!" switches back to "Copy" after a moment, the back link shows a renamed event right away, and forms no longer show "Required" after saving. In the web app on phones, the date picker shows the whole month again.
+</en-US>
+```

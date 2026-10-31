@@ -321,9 +321,10 @@ else
     }
 
     // "Weihnachten 2026" / "Christmas 2026" / "Noël 2026" — the localized default gift-exchange occasion
-    // for the current year. A format string per culture keeps the word and word order translatable.
-    private string DefaultEventName() => string.Format(
-        System.Globalization.CultureInfo.CurrentCulture, L["DefaultEventNameFormat"], Time.GetLocalNow().Year);
+    // for the current year, or the next year the group has no event of that name for (BTP-5). A format
+    // string per culture keeps the word and word order translatable.
+    private string DefaultEventName() => EventNameSuggestion.Next(
+        L["DefaultEventNameFormat"], Time.GetLocalNow().Year, (_group?.Events ?? []).Select(e => e.Name));
 
     // Upcoming (soonest first), then undated, then past (latest first).
     private IEnumerable<EventSummaryDto> OrderedEvents =>

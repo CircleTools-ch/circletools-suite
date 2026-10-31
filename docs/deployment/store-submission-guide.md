@@ -94,13 +94,18 @@ The App Store version must equal the build's `CFBundleShortVersionString`. Per
 [ADR-0047](../adr/0047-versioning-and-release-strategy.md) the launch bump is **`"version": "1.0"`** in
 `version.json` (one line, merged to `main`; done 2026-10-29) — every build after it is `1.0.<height>`, and
 builds before it are `0.1.<height>` (TestFlight-only). Create the App Store version with **exactly** the string TestFlight shows for the build
-you submit (version page → *+ Version* or edit the number before submission). The same bump makes the
+you submit (version page → *+ Version* or edit the number before submission). The first release went out
+as **1.0.1** (the bump commit itself has height 1), so the version page was renamed from 1.0 on
+2026-10-31. The same bump makes the
 Android `versionName` read `1.0.x`.
 
 ### A6. Screenshots
 
-Capture per [Screenshots for the App Store](#screenshots-for-the-app-store) below; upload per language
-under **iPhone 6.9"** and **iPad 13"** on the version page (drag to reorder — reveal first).
+Capture per [Screenshots for the App Store](#screenshots-for-the-app-store) below. On the version page,
+*App Previews and Screenshots → View All Sizes in Media Manager*: per localization (language picker, top
+right — German, each English storefront, French) upload to **iPhone with Dynamic Island (medium display)**
+(`iphone-6.3/<lang>/`) and **iPad 13"** (`ipad-13/<lang>/`), in file order — reveal first. Uploads save
+without a Save button. Done 2026-10-31.
 
 ### A7. Version page and submission
 
@@ -204,12 +209,33 @@ The upload slot needs exact sizes. What the phone produces, and what to do with 
 | 12, 13, 14 | 1170×2532 | 6.5" | scale to 1284×2778 (same aspect ratio) |
 
 Scaling within the same aspect ratio is invisible; any image tool that resizes to an exact size and saves
-PNG without alpha works. Put the results in `store/app-store/screenshots/iphone-6.9/<lang>/`.
+PNG without alpha works. Put the results in `store/app-store/screenshots/iphone-6.9/<lang>/`. Since
+2026-10 the **required** iPhone slot is the *medium* one (6.1"/6.3", 1206×2622 or 1179×2556), so a 16 Pro /
+17 / 17 Pro's originals go into `iphone-6.3/<lang>/` unscaled and are what gets uploaded. On Windows
+the iPhone appears as a portable device (*Internal Storage* → `YYYYMM_a` folders), like the iPad below.
+Before shooting: silent mode off and the cable unplugged (otherwise a bell and a charging bolt show in the
+status bar), nothing running in the Dynamic Island (a timer or call expands it into a black pill), and the
+app opened from its home-screen icon. Done this way on 2026-10-31.
 
 **iPad 13"** — required because the app supports iPad. An iPad Pro/Air 13" screenshots at 2048×2732 or
 2064×2752 directly. Without one, render the same cast from the web app (identical shared UI) in a
-headless browser at a 1032×1376 viewport and device-scale factor 2 → **2064×2752**, as was done for the
-Play tablet set. Put them in `store/app-store/screenshots/ipad-13/<lang>/`.
+browser at a 1032×1376 viewport and device-scale factor 2 → **2064×2752**, signed in as the review
+account, with the cross-app switcher icon hidden (the native app hides it). Put them in
+`store/app-store/screenshots/ipad-13/<lang>/`. Done this way on 2026-10-30.
+
+**iPad 11"** (optional) — a smaller iPad gives the 11" slot directly (iPad Air M1: 1640×2360). Pull the
+originals over USB (Windows: the iPad appears as a portable device, *Internal Storage* → `YYYYMM_a`
+folders). On the iPad first: **Settings → Multitasking & Gestures → Full Screen Apps** (windowed mode
+draws a resize handle into every screenshot), and always open the app from its **home-screen icon** — an
+app opened from TestFlight or Notes shows a "◀ TestFlight" / "◀ Notizen" back-link in the status bar. To
+open a reveal link in the app, paste it into Notes and tap it, then go home and reopen the app from its
+icon. The event shot is the event **overview** (four tiles), not its *Details* form. Put them in
+`store/app-store/screenshots/ipad-11/<lang>/`.
+
+**Per language**, switch the demo data first and let it sync before shooting: rename the group and the
+event, and change Ben's and David's wishlists through **their own reveal links** (they maintain them
+themselves; the organizer's wishlist page shows them read-only). Copy those links while **signed in** — a
+link copied while signed out is a local-only snapshot that cannot save. Restore German at the end.
 
 ### Screenshots for Google Play
 

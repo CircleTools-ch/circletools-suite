@@ -1,6 +1,8 @@
 @inject IStringLocalizer<AppStrings> L
 @inject RecentAccessService Recent
 @inject ISender Sender
+@inject ISyncSignals SyncSignals
+@implements IDisposable
 
 @* Back-to-overview link shown at the top of each event section page (ADR-0055): it replaces the old
    horizontal tab strip. Tapping it returns to the event hub. It names the event it returns to (like
@@ -22,13 +24,29 @@
 
     private string? _eventName;
 
+    // A rename saved on the page below must show here at once, not only after navigating away (BTP-9).
+    protected override void OnInitialized() => SyncSignals.LocalChanged += OnLocalChanged;
+
     protected override async Task OnParametersSetAsync()
     {
-        var occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));
-        _eventName = string.IsNullOrWhiteSpace(occasion?.Name) ? null : occasion.Name;
+        await LoadNameAsync();
 
         // Best-effort recency, matching the retired EventNav; a failure just leaves the quick-access as is.
         await Recent.RecordEventAsync(EventId);
         await Recent.RecordGroupAsync(GroupId);
     }
+
+    private async Task LoadNameAsync()
+    {
+        var occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));
+        _eventName = string.IsNullOrWhiteSpace(occasion?.Name) ? null : occasion.Name;
+    }
+
+    private void OnLocalChanged() => _ = InvokeAsync(async () =>
+    {
+        await LoadNameAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => SyncSignals.LocalChanged -= OnLocalChanged;
 }

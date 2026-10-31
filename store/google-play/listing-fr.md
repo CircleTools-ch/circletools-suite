@@ -60,3 +60,19 @@ Que ce soit pour Noël, une fête de bureau ou une réunion de famille, Secret S
 Première version : tirage au sort, liens privés, listes de souhaits, rappels et synchronisation optionnelle.
 </fr-FR>
 ```
+
+1.0.1 (test fermé, 2026-10-30):
+
+```
+<fr-FR>
+Version 1.0. L'application s'appelle désormais « Secret Santa » dans toutes les langues – dans la barre de titre comme sur l'écran d'accueil. Les entrées d'agenda et les messages partagés gardent « Père Noël secret ».
+</fr-FR>
+```
+
+1.0.2 (test fermé, brouillon):
+
+```
+<fr-FR>
+Un nouvel événement propose désormais l'année suivante au lieu de répéter le nom de cette année. Touchez une personne dans la liste des membres pour la modifier. « Copié ! » redevient « Copier » après un instant, le lien retour affiche tout de suite un événement renommé, et les formulaires n'affichent plus d'erreur sur les champs vidés après l'enregistrement. Dans l'application web sur téléphone, le calendrier affiche de nouveau le mois entier.
+</fr-FR>
+```

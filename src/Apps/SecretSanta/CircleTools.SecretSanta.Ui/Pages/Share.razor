@@ -7,6 +7,7 @@
 @inject NavigationManager Navigation
 @inject IServiceProvider Services
 @inject IJSRuntime JS
+@inject TimeProvider Time
 @inject IShareService ShareService
 @inject IDialogService Dialogs
 @inject IStringLocalizer<AppStrings> L
@@ -292,6 +293,11 @@ else
             await JS.InvokeVoidAsync("navigator.clipboard.writeText", link.Url);
             _copiedUrl = link.Url;
             await MarkHandedOutAsync(link);
+            StateHasChanged();
+            if (await CopiedFeedback.ExpireAsync(Time, () => _copiedUrl, link.Url))
+            {
+                _copiedUrl = null;
+            }
         }
         catch (JSException)
         {

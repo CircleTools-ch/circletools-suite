@@ -2,6 +2,7 @@
 @inject HandoutProgressService Handout
 @inject IShareService ShareService
 @inject IJSRuntime JS
+@inject TimeProvider Time
 @inject IStringLocalizer<AppStrings> L
 @inject ISender Sender
 
@@ -129,6 +130,11 @@
         {
             await JS.InvokeVoidAsync("navigator.clipboard.writeText", link.Url);
             _copiedUrl = link.Url;
+            StateHasChanged();
+            if (await CopiedFeedback.ExpireAsync(Time, () => _copiedUrl, link.Url))
+            {
+                _copiedUrl = null;
+            }
         }
         catch (JSException)
         {

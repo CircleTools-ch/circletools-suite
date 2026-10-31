@@ -88,6 +88,15 @@
         min-height: 0;
     }
 
+    /* The date picker's day cells are .mud-icon-buttons too. MudBlazor lays the month grid out absolutely
+       (for the slide animation) in a box sized for its own 36px days; at 48px the six week rows overflow it
+       and the popover clips the month after the third week — late-month days unreachable (backlog PR-8).
+       Keep the days at MudBlazor's size: seven 48px columns would not fit the 310px calendar anyway. */
+    .mud-picker-calendar .mud-icon-button {
+        min-width: 0;
+        min-height: 0;
+    }
+
     .mud-menu-item {
         min-height: 48px;
     }

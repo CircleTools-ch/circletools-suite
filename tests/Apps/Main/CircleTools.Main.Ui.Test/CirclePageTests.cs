@@ -221,6 +221,55 @@ public sealed class CirclePageTests
     }
 
     /// <summary>
+    /// After a successful invite the emptied address field is back to its fresh state — not flagged
+    /// "Required" right under the confirmation (BTP-3).
+    /// </summary>
+    [Fact]
+    public async Task Invite_OnSuccess_ClearsTheFieldWithoutFlaggingItRequired()
+    {
+        await using var context = DetailContext(out var circleId, "Owner", Person("Anna", "Owner", isYou: true));
+        context.Api.Respond(HttpMethod.Post, $"{CirclesRoute}/{circleId}/invitations", HttpStatusCode.Accepted);
+
+        var page = RenderDetail(context, circleId);
+        page.Find("#invite-email").Input("bea@example.test");
+        page.Find("#invite-email").Blur();
+        page.FindAll("form").First(f => f.QuerySelector("#invite-email") is not null).Submit();
+
+        page.WaitForAssertion(() =>
+        {
+            Assert.Contains("CircleInviteSent", page.Markup, StringComparison.Ordinal);
+            Assert.Empty(page.Find("#invite-email").GetAttribute("value") ?? string.Empty);
+            Assert.Empty(page.FindAll(".mud-input-error"));
+        });
+    }
+
+    /// <summary>
+    /// After adding an offline person the emptied name field is not flagged "Required" (BTP-3).
+    /// </summary>
+    [Fact]
+    public async Task AddManaged_OnSuccess_ClearsTheFieldWithoutFlaggingItRequired()
+    {
+        await using var context = DetailContext(out var circleId, "Owner", Person("Anna", "Owner", isYou: true));
+        context.Api.RespondJson(
+            HttpMethod.Post,
+            $"{CirclesRoute}/{circleId}/managed-members",
+            Person("Opa", isManaged: true),
+            HttpStatusCode.Created);
+
+        var page = RenderDetail(context, circleId);
+        page.Find("#managed-name").Input("Opa");
+        page.Find("#managed-name").Blur();
+        page.FindAll("form").First(f => f.QuerySelector("#managed-name") is not null).Submit();
+
+        page.WaitForAssertion(() =>
+        {
+            Assert.Contains("CircleSaved", page.Markup, StringComparison.Ordinal);
+            Assert.Empty(page.Find("#managed-name").GetAttribute("value") ?? string.Empty);
+            Assert.Empty(page.FindAll(".mud-input-error"));
+        });
+    }
+
+    /// <summary>
     /// An offline person can be invited straight from their row, and the general invite form offers
     /// aiming an invitation at one — the UI half of FR-019's promotion the backend already supported.
     /// </summary>

@@ -204,7 +204,7 @@ waiting.
 
    | Device class | Required size |
    |---|---|
-   | 6.9-inch iPhone | 1320 × 2868 (1290 × 2796 and 1260 × 2736 also accepted) |
+   | iPhone with Dynamic Island, medium display (6.1"/6.3") | 1206 × 2622 or 1179 × 2556 — required since 2026-10; the 6.9" slot is now optional |
    | 13-inch iPad | 2064 × 2752 |
 
    The iPad set is **required** because the app supports iPad — iPhone-only screenshots block the

@@ -283,6 +283,37 @@ public sealed class AccountPageTests
         Assert.False(cut.Find(".circletools-danger button").HasAttribute("disabled"));
     }
 
+    /// <summary>
+    /// After a successful password change the emptied fields are back to their fresh state — not all three
+    /// flagged "Required" right under the success message (BTP-3).
+    /// </summary>
+    [Fact]
+    public async Task ChangePassword_OnSuccess_ClearsTheFieldsWithoutFlaggingThemRequired()
+    {
+        await using var ctx = new AccountTestContext();
+        ctx.SignIn();
+        ctx.Api.Respond(HttpMethod.Post, $"{Account}/change-password", HttpStatusCode.NoContent);
+
+        var cut = ctx.RenderPage<Security>();
+        string[] fields = ["#current-password", "#new-password", "#repeat-password"];
+        cut.Find(fields[0]).Change("the old long passphrase");
+        cut.Find(fields[1]).Change("a brand new long passphrase");
+        cut.Find(fields[2]).Change("a brand new long passphrase");
+        foreach (var field in fields)
+        {
+            cut.Find(field).Blur();
+        }
+
+        cut.FindAll("form").First(f => f.QuerySelector("#current-password") is not null).Submit();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("PasswordChanged", cut.Markup, StringComparison.Ordinal);
+            Assert.All(fields, field => Assert.Empty(cut.Find(field).GetAttribute("value") ?? string.Empty));
+            Assert.Empty(cut.FindAll(".mud-input-error"));
+        });
+    }
+
     [Fact]
     public async Task DeleteAccount_OnSuccess_SaysTheAccountIsGoneAndDropsTheSession()
     {

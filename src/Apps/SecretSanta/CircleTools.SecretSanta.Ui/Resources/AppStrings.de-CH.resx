@@ -351,6 +351,7 @@
   <data name="StorageStoredAs" xml:space="preserve"><value>Gespeichert</value></data>
   <data name="StorageChange" xml:space="preserve"><value>Ändern</value></data>
   <data name="OpenNamed" xml:space="preserve"><value>{0} öffnen</value></data>
+  <data name="EditNamed" xml:space="preserve"><value>{0} bearbeiten</value></data>
   <data name="MoreActionsFor" xml:space="preserve"><value>Weitere Aktionen für {0}</value></data>
   <data name="Done" xml:space="preserve"><value>Fertig</value></data>
   <data name="MemberAddedAddAnother" xml:space="preserve"><value>{0} hinzugefügt. Nächste Person eingeben oder auf Fertig tippen.</value></data>

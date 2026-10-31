@@ -12,6 +12,11 @@ public sealed class FakeSyncSignals : ISyncSignals
 {
     public event Action? SyncCompleted;
 
+    public event Action? LocalChanged;
+
     /// <summary>Fires the signal, as a completed background sync cycle would.</summary>
     public void RaiseSyncCompleted() => SyncCompleted?.Invoke();
+
+    /// <summary>Fires the local-change signal, as any saved edit would.</summary>
+    public void RaiseLocalChanged() => LocalChanged?.Invoke();
 }

@@ -11,8 +11,10 @@ Play is `store/google-play/`; the step-by-step order is the
 | `listing-de.md` | German — **primary language** of the app record: name, subtitle, promotional text, keywords, description, TestFlight texts |
 | `listing-en.md` | English (U.S.) localization |
 | `listing-fr.md` | French localization |
-| `screenshots/iphone-6.9/{en,de,fr}/` | iPhone screenshots (to be captured) |
-| `screenshots/ipad-13/{en,de,fr}/` | iPad screenshots (to be captured) |
+| `screenshots/iphone-6.3/{en,de,fr}/` | iPhone screenshots, medium display (required slot) |
+| `screenshots/iphone-6.9/{en,de,fr}/` | iPhone screenshots, large display (optional slot, not uploaded) |
+| `screenshots/ipad-13/{en,de,fr}/` | iPad 13" screenshots (required slot) |
+| `screenshots/ipad-11/{en,de,fr}/` | iPad 11" screenshots (optional slot) |
 
 Never commit the review demo account's password or any signing material here — those live in the
 password manager ([ADR-0050](../../docs/adr/0050-secrets-management.md)).
@@ -139,15 +141,47 @@ income, consistent with the imprint and with the "no postal address" decision in
 ## Screenshots
 
 PNG or JPEG, RGB, **no alpha**, **exact** pixel sizes, 1–10 per device class per language (3–6 is the
-sweet spot; the first three show in search results). Order: **reveal**, **share**, **draw**, **group**,
-**event**, **wishlist** — the payoff first.
+sweet spot; the first three show in search results). Upload in file order — the payoff first, the same
+seven shots as the Play listing.
 
-| Slot | Accepted sizes (portrait) | Required |
+| Slot (Media Manager name) | Accepted sizes (portrait) | Required |
 |------|---------------------------|----------|
-| iPhone **6.9"** | 1320×2868, 1290×2796, 1260×2736 | **yes** (or the 6.5" slot instead) |
-| iPhone 6.5" | 1284×2778, 1242×2688 | only if no 6.9" set |
+| iPhone **with Dynamic Island (medium display)** — 6.1"/6.3" | 1206×2622, 1179×2556 | **yes** |
+| iPhone with Dynamic Island (large display) — 6.9" | 1320×2868, 1290×2796, 1260×2736 | no |
 | iPad **13"** | 2064×2752, 2048×2732 | **yes** — the app runs on iPad |
+| iPad 11" | 1640×2360, 1668×2388, 1668×2420, 1488×2266 | no — scaled down from 13" if missing |
 
-Smaller iPhone and iPad slots are scaled down from these automatically. A language without its own
-screenshots shows the primary-language (German) ones. How to capture them is in the
+As of 2026-10-31 App Store Connect requires the **medium** iPhone slot (it used to be 6.9") and uses it for
+every iPhone size; the 13" iPad set covers every iPad. A localization without its own screenshots
+("Using Existing Assets") shows the primary-language (German) ones — so each of the four English
+storefronts (U.S., U.K., Australia, Canada) gets the `en/` set uploaded separately.
+
+**Uploaded 2026-10-31:** `iphone-6.3/` and `ipad-13/` in German, English (U.S., U.K., Australia, Canada) and
+French — 7 each. `iphone-6.9/` (the same shots scaled up) is kept for the optional large slot but not
+uploaded. How to capture them is in the
 [store submission guide](../../docs/deployment/store-submission-guide.md#screenshots-for-the-app-store).
+
+### Screenshot inventory
+
+Same seven shots in **de/**, **en/**, **fr/**, same cast and file names as the Play set
+(`store/google-play/README.md`): 01 reveal · 02 share · 03 draw · 04 own-wishlist · 05 event · 06 group ·
+07 exclusions. Data is the review account's demo group, renamed per language (*Familie Meier* /
+*Meier Family* / *Famille Meier*, *Weihnachten / Christmas / Noël 2026*, Ben's and David's wishlists
+translated) and **restored to German** afterwards. The QR dialog is not used.
+
+**iPhone** (`iphone-6.3/`, 1206×2622 native — uploaded; `iphone-6.9/`, the same scaled to 1320×2868 — spare)
+— captured **on an iPhone from the TestFlight build** on 2026-10-31 (16 Pro / 17 / 17 Pro class), light mode, app opened from its
+home-screen icon, silent mode off and unplugged so the status bar shows no bell or charging bolt. The
+demo data was switched per language from a desktop browser signed in as the review account (group and
+event renamed, Ben's and David's wishlists edited through their own reveal links).
+
+**iPad 11"** (`ipad-11/`, 1640×2360) — captured **on an iPad Air (M1) from the TestFlight build** on
+2026-10-30, light mode, *Full Screen Apps* multitasking (windowed mode draws a resize handle in the corner),
+app opened from its home-screen icon (an app opened from another app shows a "◀ TestFlight" / "◀ Notes"
+back-link in the status bar). The status-bar date follows the iPad's system language (German).
+
+**iPad 13"** (`ipad-13/`, 2064×2752) — the Air's native size does not fit this slot, so these are
+**rendered from the production web app** (identical shared UI) signed in as the review account, in a
+Playwright Chromium at a **1032×1376 viewport, device-scale factor 2** — exactly a 13" iPad's CSS
+viewport, so the layout (permanent side drawer at ≥ 960 px) is what the app shows there. The cross-app
+switcher icon is hidden for the shots because the native app hides it. No iOS status bar.

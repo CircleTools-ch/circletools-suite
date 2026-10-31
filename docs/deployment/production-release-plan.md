@@ -37,6 +37,11 @@ So the work runs as **parallel tracks**, with the long-lead store steps started 
 > testers = the Testers Community Google Group `testers-community@googlegroups.com`, feedback address
 > `info@circletools.ch`. Join link: `https://play.google.com/apps/testing/ch.circletools.secretsanta`.
 > The 14-day clock starts once ≥ 12 of the service's testers have opted in and installed.
+>
+> **Status 2026-10-30:** Testers Community reports **25 testers**; Play Console ticks *Have at least 12
+> testers opted in to your closed test*. The **14-day clock runs from 2026-10-30** — earliest
+> production-access application around **2026-11-13**. First cadence build: R1 = **1.0.1**, promoted from
+> internal testing to *Closed testing - Alpha* and sent for review on 2026-10-30 (backlog PR-12).
 
 - [x] ~~Recruit **~15 testers** (family and friends, no paid tester services).~~ **Changed 2026-10-29
       (owner decision, see backlog PR-1):** paid closed-testing service — Testers Community **Pro**
@@ -48,8 +53,9 @@ So the work runs as **parallel tracks**, with the long-lead store steps started 
 - [x] Submit the app on Testers Community with the join link above — done 2026-10-29 (Pro, 25 testers;
       their run is 16 days, Day 0 on submission).
 - [ ] Track opt-ins; the 14-day clock starts once the release is approved **and** 12 testers are in. Keep
-      ≥ 12 for the whole window.
-- [ ] Ship each fix build (from tracks 3–4) to the closed track during the window.
+      ≥ 12 for the whole window. — 12-tester gate met 2026-10-30 (25 testers); keep it up until day 14.
+- [ ] Ship each fix build (from tracks 3–4) to the closed track during the window — **cadence decided
+      2026-10-29: a small release every 2–3 days**, slices R1…R5 in backlog PR-12.
 - [ ] Day 14+: apply for production access; then staged rollout (20 % → 50 % → 100 %).
 
 ## Track 2 — Apple App Store
@@ -73,8 +79,13 @@ See [mobile runbook, Track B](mobile-apps.md#track-b--apple-app-store) for the s
 - [ ] **Support URL** (required) — decide what it points to (see "Support" below).
 - [ ] **App Review demo account** with a pre-filled group, so reviewers can exercise sign-in and sync.
 - [ ] Listing DE/EN/FR: name, subtitle, description, keywords, promotional text — mirror the Play copy.
-- [ ] Screenshots per device class, incl. **iPad** (required because the app supports iPad).
-- [ ] Submit for review; TestFlight external testing optional (needs a Beta App Review).
+- [x] Screenshots per device class, incl. **iPad** (required because the app supports iPad) — iPad 13" and
+      11" 2026-10-30, iPhone 2026-10-31, each DE/EN/FR in `store/app-store/screenshots/`; uploaded to App
+      Store Connect 2026-10-31 (iPhone medium + iPad 13", German, 4× English, French).
+- [x] Submit for review — **2026-10-31: version 1.0.1 with build 1.0.1** (launch commit `706dc24`) submitted,
+      *Waiting for Review*, manual release. Before that the updated Program License Agreement was accepted
+      and the version page renamed 1.0 → 1.0.1 to match the build. Next: answer any App Review message,
+      then *Release this version* once approved. TestFlight external testing optional (needs a Beta App Review).
 
 ## Track 3 — Dependency & toolchain updates
 
@@ -172,7 +183,7 @@ Step-by-step: [store submission guide](store-submission-guide.md) (2026-10-28).
       app-content / data-safety answers in its README.
 - [ ] New phone + tablet screenshots in DE/EN/FR from the final build.
 - [x] Create the equivalent `store/app-store/` package (copy, keywords, privacy label, age rating, review
-      notes, TestFlight texts) — 2026-10-28; **iPhone + iPad screenshots still to capture**.
+      notes, TestFlight texts) — 2026-10-28; iPad screenshots 2026-10-30, iPhone screenshots 2026-10-31.
 - [ ] "What's new" text per store and language; a version/release-notes routine (ADR-0047).
 
 ## Other go-live items

@@ -406,6 +406,7 @@
   <data name="StorageStoredAs" xml:space="preserve"><value>Stored</value></data>
   <data name="StorageChange" xml:space="preserve"><value>Change</value></data>
   <data name="OpenNamed" xml:space="preserve"><value>Open {0}</value></data>
+  <data name="EditNamed" xml:space="preserve"><value>Edit {0}</value><comment>Accessible name of a member row, which opens that person for editing; {0} is the name.</comment></data>
   <data name="MoreActionsFor" xml:space="preserve"><value>More actions for {0}</value></data>
   <data name="Done" xml:space="preserve"><value>Done</value></data>
   <data name="MemberAddedAddAnother" xml:space="preserve"><value>{0} added. Add the next person, or tap Done.</value></data>

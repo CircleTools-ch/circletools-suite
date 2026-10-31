@@ -11,6 +11,7 @@
 @inject IDialogService Dialogs
 @inject IShareService ShareService
 @inject IJSRuntime JS
+@inject TimeProvider Time
 @inject AuthenticationStateProvider Auth
 @inject ISnackbar Snackbar
 @inject IStringLocalizer<AppStrings> L
@@ -316,6 +317,11 @@ else
         {
             await JS.InvokeVoidAsync("navigator.clipboard.writeText", url);
             _copiedUrl = url;
+            StateHasChanged();
+            if (await CopiedFeedback.ExpireAsync(Time, () => _copiedUrl, url))
+            {
+                _copiedUrl = null;
+            }
         }
         catch (JSException)
         {
