@@ -153,6 +153,15 @@ public sealed class GroupStore(SecretSantaDbContext context, TimeProvider clock)
         var entries = await EntriesAsync(groupId, cancellationToken).ConfigureAwait(false);
         var (merged, rewritten) = MemberEntryMerge.Apply(document, entries);
 
+        // A member the organizer removed keeps no entry row either — what they wrote is deleted with them (ADR-0052).
+        var active = merged.Members.Where(m => !m.IsArchived).Select(m => m.Id).ToHashSet();
+        var removed = entries.Select(e => e.MemberId).Where(id => !active.Contains(id)).ToList();
+        if (removed.Count > 0)
+        {
+            await context.MemberEntries.Where(e => e.GroupId == groupId && removed.Contains(e.MemberId))
+                .ExecuteDeleteAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         var now = clock.GetUtcNow();
         row.Body = GroupDocument.Serialize(merged);
         row.SchemaVersion = schemaVersion;
@@ -276,6 +285,12 @@ public sealed class GroupStore(SecretSantaDbContext context, TimeProvider clock)
             .ExecuteUpdateAsync(
                 s => s.SetProperty(a => a.State, RoleAssignmentState.Active).SetProperty(a => a.ExpiresAt, (DateTimeOffset?)null),
                 cancellationToken);
+
+    /// <inheritdoc />
+    public Task<int> DeleteExpiredInvitationsAsync(DateTimeOffset now, CancellationToken cancellationToken = default) =>
+        context.RoleAssignments
+            .Where(a => a.State == RoleAssignmentState.Invited && a.ExpiresAt != null && a.ExpiresAt <= now)
+            .ExecuteDeleteAsync(cancellationToken);
 
     /// <inheritdoc />
     public async Task RemoveAssignmentAsync(Guid assignmentId, CancellationToken cancellationToken = default)

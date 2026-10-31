@@ -101,7 +101,7 @@
   <data name="GiftNoteHint" xml:space="preserve"><value>Allergies, régime ou mode de vie, ou ce qu'il ne faut pas offrir – visible par la personne qui offre.</value></data>
   <data name="RevealGiftNoteLabel" xml:space="preserve"><value>Bon à savoir</value></data>
   <data name="ConfirmDeleteGroup" xml:space="preserve"><value>Supprimer « {0} » et tout son contenu ? Cette action est irréversible.</value></data>
-  <data name="ConfirmRemoveMember" xml:space="preserve"><value>Retirer « {0} » de ce groupe ? La personne reste dans les événements déjà tirés.</value></data>
+  <data name="ConfirmRemoveMember" xml:space="preserve"><value>Retirer « {0} » de ce groupe ? Ses listes de souhaits et sa remarque sont supprimées. Dans les événements déjà tirés, seul son nom reste.</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Oui, supprimer</value></data>
   <data name="ConfirmRemove" xml:space="preserve"><value>Oui, retirer</value></data>
   <data name="ExclusionSelfNotAllowed" xml:space="preserve"><value>Une personne ne peut pas être exclue d'elle-même – elle ne se voit jamais attribuer son propre nom.</value></data>

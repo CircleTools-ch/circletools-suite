@@ -119,21 +119,35 @@ public sealed class Group : AggregateRoot
         RequireMember(memberId).SetGiftNote(giftNote);
 
     /// <summary>
-    /// Removes a member from the active roster by <strong>archiving</strong> them (ADR-0052): the member
-    /// is kept in the aggregate, so a past draw that includes them still resolves their name and a later
-    /// rename still reaches them, but they take part in no future draw and are hidden from the roster.
-    /// Exclusions that reference them are dropped (an archived member cannot be drawn), and their
-    /// per-event wishlists are kept so a past occasion still reads correctly. Completed draws are
+    /// Removes a member from the active roster. Their exclusions, per-event wishlists and gift note are
+    /// deleted. A member who appears in no draw is then deleted outright; one who appears in a draw (or a
+    /// carried-forward baseline) is <strong>archived</strong> instead (ADR-0052, amended 2026-10-31) — only
+    /// the name is kept, so that past draw still resolves who gave to whom. Completed draws are
     /// <strong>not</strong> discarded; each event's current draw is flagged as no longer matching the
     /// roster so the UI can invite a re-draw.
     /// </summary>
-    /// <param name="memberId">The active member to archive.</param>
+    /// <param name="memberId">The active member to remove.</param>
     /// <exception cref="InvalidOperationException">Thrown when the member is unknown or already archived.</exception>
     public void RemoveMember(Guid memberId)
     {
         var member = RequireMember(memberId);
-        member.Archive();
         _exclusions.RemoveAll(e => e.GiverMemberId == memberId || e.RecipientMemberId == memberId);
+        member.SetGiftNote(null);
+
+        foreach (var occasion in _events)
+        {
+            occasion.SetWishlist(memberId, Wishlist.Empty);
+        }
+
+        if (_events.Any(e => e.ReferencesInDraw(memberId)))
+        {
+            member.Archive();
+        }
+        else
+        {
+            _members.Remove(member);
+        }
+
         MarkRosterChangedOnAllEvents();
     }
 

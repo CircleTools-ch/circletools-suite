@@ -44,7 +44,7 @@ only via their own link/read), and — the properties most easily broken silentl
 | FR-037 / omitted when unset | A payload with no note carries no `gn` key; decodes to null | Unit | ✅ |
 | FR-037 / spoiler gate | The note is hidden until the reveal button is pressed | UI | ✅ |
 | FR-037 + FR-036 / server projection | Publish min budget + note → my-assignments returns both | Integration | ✅ (Docker) |
-| FR-037 / archived member | A member archived after a draw keeps their note on the past reveal | Unit | ➖ (covered by archival + note-on-member) |
+| FR-037 / archived member | ~~A member archived after a draw keeps their note on the past reveal~~ — superseded 2026-10-31: removing a member deletes their note (ADR-0052 amendment) | Unit | ✅ `GroupTests.RemoveMember_InADraw_KeepsOnlyTheName` |
 | NFR-003 | Label, helper, "Good to know" render in DE/EN/FR | E2E | ✅ |
 | E2E | Organizer sets a note → giver's reveal shows "Good to know: …"; no note shows nothing; console clean | End-to-end | ✅ (Playwright) |
 

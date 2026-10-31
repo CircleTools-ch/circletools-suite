@@ -119,7 +119,7 @@ public static class MainRepositoryServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers the retention purge for unverified accounts (NFR-004).
+    /// Registers the retention purges for unverified accounts and sent outbox mail (NFR-004).
     /// </summary>
     /// <param name="services">The service collection to add to.</param>
     /// <param name="configuration">Configuration holding the <c>Retention</c> section.</param>
@@ -134,7 +134,8 @@ public static class MainRepositoryServiceCollectionExtensions
         services.Configure<RetentionOptions>(configuration.GetSection(RetentionOptions.SectionName));
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<PendingAccountPurge>();
-        services.AddHostedService<PendingAccountRetentionService>();
+        services.AddScoped<OutboxPurge>();
+        services.AddHostedService<MainRetentionService>();
 
         return services;
     }

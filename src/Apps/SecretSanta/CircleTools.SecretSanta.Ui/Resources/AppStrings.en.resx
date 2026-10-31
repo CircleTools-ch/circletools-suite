@@ -101,7 +101,7 @@
   <data name="GiftNoteHint" xml:space="preserve"><value>Allergies, dietary or lifestyle needs, or things not to buy — shown to their giver.</value></data>
   <data name="RevealGiftNoteLabel" xml:space="preserve"><value>Good to know</value></data>
   <data name="ConfirmDeleteGroup" xml:space="preserve"><value>Delete "{0}" and everything in it? This cannot be undone.</value></data>
-  <data name="ConfirmRemoveMember" xml:space="preserve"><value>Remove "{0}" from this group? They stay in events you've already drawn.</value></data>
+  <data name="ConfirmRemoveMember" xml:space="preserve"><value>Remove "{0}" from this group? Their wishlists and note are deleted. In events you've already drawn, only their name stays.</value></data>
   <data name="ConfirmYes" xml:space="preserve"><value>Yes, delete</value></data>
   <data name="ConfirmRemove" xml:space="preserve"><value>Yes, remove</value></data>
   <data name="ExclusionSelfNotAllowed" xml:space="preserve"><value>A person cannot be excluded from giving to themselves — they are never assigned to themselves anyway.</value></data>

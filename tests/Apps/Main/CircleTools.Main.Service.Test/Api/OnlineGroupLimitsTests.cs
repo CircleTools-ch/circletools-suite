@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using CircleTools.SecretSanta.Contracts;
 using CircleTools.SecretSanta.Core.Domain;
+using CircleTools.SecretSanta.Service.Core.Access;
 using CircleTools.SecretSanta.Service.Core.Groups;
 using CircleTools.SecretSanta.Service.Repository;
 using Microsoft.EntityFrameworkCore;
@@ -68,6 +69,45 @@ public sealed class OnlineGroupLimitsTests(MailApiFactory factory)
         Assert.Equal(HttpStatusCode.OK, (await device.GetAsync($"{Base}/join/{inUseLinks.JoinToken}")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await owner.Client.GetAsync($"{Base}/groups/{owned.Id}")).StatusCode);
     }
+
+    [Fact]
+    public async Task Retention_DeletesInvitationsThatLapsedUnanswered_KeepingOpenOnes()
+    {
+        var owner = await CircleTestAccounts.SignUpAsync(factory, "Owner");
+        var (group, _, members) = DrawnGroup("Invited");
+        await CreateAsync(owner.Client, group);
+        var now = DateTimeOffset.UtcNow;
+        var lapsed = Invitation(group.Id, members.Values.First(), expiresAt: now.AddDays(-1));
+        var open = Invitation(group.Id, members.Values.Last(), expiresAt: now.AddDays(1));
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<SecretSantaDbContext>();
+            context.RoleAssignments.AddRange(lapsed, open);
+            await context.SaveChangesAsync();
+
+            await scope.ServiceProvider.GetRequiredService<GroupService>().PruneExpiredInvitationsAsync();
+
+            var left = await context.RoleAssignments.AsNoTracking()
+                .Where(a => a.Id == lapsed.Id || a.Id == open.Id).Select(a => a.Id).ToListAsync();
+            Assert.Equal([open.Id], left);
+        }
+    }
+
+    // An unanswered invitation to an account that never existed: the sweep only looks at state and expiry.
+    private static RoleAssignmentRow Invitation(Guid groupId, Guid memberId, DateTimeOffset expiresAt) => new()
+    {
+        Id = Guid.CreateVersion7(),
+        GroupId = groupId,
+        Role = GroupRole.Participant,
+        PrincipalKind = PrincipalKind.Account,
+        AccountId = Guid.CreateVersion7(),
+        MemberId = memberId,
+        State = RoleAssignmentState.Invited,
+        Route = AssignmentRoute.Invitation,
+        CreatedAt = expiresAt.AddDays(-30),
+        ExpiresAt = expiresAt,
+    };
 
     // Moves the groups' last use back past the retention window.
     private async Task AgeAsync(params Guid[] groupIds)

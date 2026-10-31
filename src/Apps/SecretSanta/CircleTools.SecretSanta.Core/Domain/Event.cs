@@ -182,6 +182,16 @@ public sealed class Event : Entity
         DrawInvalidatedByMembershipChange = true;
     }
 
+    /// <summary>
+    /// Gets whether a member appears, as giver or recipient, in any of this event's draws or in its
+    /// carried-forward <see cref="BaselineDraw"/> — i.e. whether removing them must keep their name (ADR-0052).
+    /// </summary>
+    /// <param name="memberId">The member to look for.</param>
+    /// <returns><see langword="true"/> when some draw names the member.</returns>
+    internal bool ReferencesInDraw(Guid memberId) =>
+        _draws.Append(_baselineDraw).OfType<Draw>().Any(d =>
+            d.Assignments.Any(a => a.GiverMemberId == memberId || a.RecipientMemberId == memberId));
+
     /// <summary>Enumerates this event's per-member wishlists as (memberId, wishlist) pairs, for the memento.</summary>
     internal IEnumerable<KeyValuePair<Guid, Wishlist>> Wishlists => _wishlists;
 }

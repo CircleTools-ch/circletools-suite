@@ -28,7 +28,8 @@ public static class MemberEntryMerge
         var group = Group.FromState(document);
         foreach (var entry in list)
         {
-            if (group.FindMember(entry.MemberId) is null)
+            // A removed member (deleted or archived) takes no entry: their data was deleted on purpose (ADR-0052).
+            if (group.FindMember(entry.MemberId) is not { IsArchived: false })
             {
                 continue;
             }

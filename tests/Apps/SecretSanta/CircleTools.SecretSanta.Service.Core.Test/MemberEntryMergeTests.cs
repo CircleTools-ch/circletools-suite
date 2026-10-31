@@ -44,6 +44,23 @@ public sealed class MemberEntryMergeTests
     }
 
     [Fact]
+    public void AnEntryOfARemovedMember_IsSkipped_SoTheirDataStaysDeleted()
+    {
+        // Anna is in the draw, so removing her archives the name only (ADR-0052 amendment); her entry must not
+        // bring her wishlist and note back.
+        var (drawn, eventId, members) = TestGroups.Drawn();
+        var group = Group.FromState(drawn);
+        group.RemoveMember(members["Anna"]);
+        var document = group.ToState();
+        var entry = new MemberEntry(members["Anna"], "No sweets", [new EventWishlist(eventId, ["Book"])], MemberEntryKeeper.Participant);
+
+        var (merged, changed) = MemberEntryMerge.Apply(document, [entry]);
+
+        Assert.False(changed);
+        Assert.Same(document, merged);
+    }
+
+    [Fact]
     public void UnknownMembersAndEvents_AreSkipped()
     {
         var (document, eventId, members) = TestGroups.Drawn();

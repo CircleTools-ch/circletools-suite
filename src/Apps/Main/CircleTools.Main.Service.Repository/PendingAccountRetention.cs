@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace CircleTools.Main.Service.Repository;
 
-/// <summary>Retention settings for unverified accounts (NFR-004).</summary>
+/// <summary>Retention settings for unverified accounts and sent mail (NFR-004).</summary>
 public sealed class RetentionOptions
 {
     /// <summary>Configuration section these options bind to.</summary>
@@ -14,6 +14,10 @@ public sealed class RetentionOptions
 
     /// <summary>Gets or sets how long an unverified account is kept before purging.</summary>
     public TimeSpan PendingAccountLifetime { get; set; } = TimeSpan.FromDays(30);
+
+    /// <summary>Gets or sets how long an outbox message is kept after it was sent (or enqueued, if never sent).</summary>
+    /// <remarks>The privacy policy promises this window; change both together.</remarks>
+    public TimeSpan OutboxMessageLifetime { get; set; } = TimeSpan.FromDays(7);
 
     /// <summary>Gets or sets how often the purge runs.</summary>
     public TimeSpan Interval { get; set; } = TimeSpan.FromHours(1);
@@ -70,14 +74,14 @@ public sealed class PendingAccountPurge(
     }
 }
 
-/// <summary>Runs <see cref="PendingAccountPurge"/> on a timer.</summary>
+/// <summary>Runs <see cref="PendingAccountPurge"/> and <see cref="OutboxPurge"/> on a timer.</summary>
 /// <param name="scopeFactory">Creates a scope per pass.</param>
 /// <param name="options">Retention settings.</param>
 /// <param name="logger">Diagnostics.</param>
-public sealed class PendingAccountRetentionService(
+public sealed class MainRetentionService(
     IServiceScopeFactory scopeFactory,
     IOptions<RetentionOptions> options,
-    ILogger<PendingAccountRetentionService> logger) : BackgroundService
+    ILogger<MainRetentionService> logger) : BackgroundService
 {
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -93,6 +97,10 @@ public sealed class PendingAccountRetentionService(
                     .GetRequiredService<PendingAccountPurge>()
                     .PurgeAsync(stoppingToken)
                     .ConfigureAwait(false);
+                await scope.ServiceProvider
+                    .GetRequiredService<OutboxPurge>()
+                    .PurgeAsync(stoppingToken)
+                    .ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -102,7 +110,7 @@ public sealed class PendingAccountRetentionService(
             catch (Exception ex)
 #pragma warning restore CA1031
             {
-                logger.LogError(ex, "Pending-account purge failed; retrying on the next tick.");
+                logger.LogError(ex, "Retention purge failed; retrying on the next tick.");
             }
 
             try

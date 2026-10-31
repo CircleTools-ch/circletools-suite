@@ -3,6 +3,47 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Legal-page text review — Privacy, About & legal, Delete your data (2026-10-31)
+
+Owner read the three legal pages and asked for an accuracy and wording pass in DE/EN/FR. Decisions: fix the
+code where a page promised more than it did, keep the personal voice but drop odd phrases, **no postal
+address** in the imprint, add every missing disclosure, Swiss German **"Handy"**.
+
+- **LR-1 · Sent mail kept forever (bug, fixed).** Outbox rows hold the recipient address in plain text and
+  were only marked processed, never deleted — contradicting "invitation addresses are never stored in plain
+  text" and "a deleted account is gone for good" (the farewell mail carries the address). `OutboxPurge`
+  (`Main.Service.Repository/OutboxRetention.cs`) now deletes messages 7 days after sending, or after
+  enqueueing if never sent; it runs hourly in `MainRetentionService` (renamed from
+  `PendingAccountRetentionService`). [NFR-004](../requirements/non-functional/NFR-004-data-protection-and-retention.md)
+  updated; covered by `OutboxPurgeTests`. The 7-day window is quoted on both pages — change them together.
+- **LR-2 · False or stale claims corrected.** "Reminder emails" (reminders are device-local notifications,
+  ADR-0060); the email list (nine mail types, not three); "every app works offline" (circles need an
+  account); backup window "a few months" vs "about six months" (restic keeps 6 monthly); "for each group you
+  choose" (one choice for all online groups); delete steps now name the real menu labels; "joining stores the
+  group"; local storage holds groups too; sliding 30-day sign-in described correctly; invitation lifetimes
+  (14 / 30 days) stated.
+- **LR-3 · Disclosures added.** Technical logs (30 days, on-box Loki, IP only in-memory for rate limiting);
+  signed-in device labels; app stores; backups on Swiss Backup; other people's data incl. children; reveal
+  links seen by the messenger used to send them; what the JSON export contains. New keys
+  `Legal_Privacy_Others*` and `Legal_Privacy_Logs*`.
+- **LR-4 · Wording.** "Verwürfelung" / "brouillage" / "scramble" replaced; anglicisms and stiff phrasing
+  removed in all three languages; DE role term `Betreiber:innen` (ADR-0032). Second pass: "Ein Konto brauchst
+  du nur…", no comma before "und" in DE headings, law names DSG / FADP / LPD (no longer "revDSG"/"nLPD"),
+  and no "collection of apps" — only Secret Santa exists so far.
+- **LR-5 · "Remove" kept a member's data (bug, fixed).** Removing a member always archived them with their
+  wishlists and gift note, although the deletion page said it deletes them. `Group.RemoveMember` now deletes
+  wishlists, gift note and exclusions, deletes the member outright when no draw names them, and archives
+  only the name otherwise ([ADR-0052](../adr/0052-member-archival-and-permanent-draw-history.md) amended).
+  Remove-confirmation text updated in DE/EN/FR.
+- **LR-6 · Expired Secret-Santa invitations never deleted (bug, fixed).** Lapsed `Invited` role assignments
+  were ignored on read but kept forever. `GroupService.PruneExpiredInvitationsAsync` now runs in the daily
+  `GroupRetentionService` sweep.
+- **LR-7 · "Circle" as a brand word in every language (next, owner decision 2026-10-31).** Replace DE "Kreis"
+  and FR "cercle" with "Circle" across the whole UI (Main, Secret Santa, account, legal pages), with a glossary
+  update and a short ADR. A separate change from this review.
+- **LR-8 · "I'll point out anything important in the app" dropped (owner decision 2026-10-31).** The app has no
+  in-app notice for policy changes, so the privacy page now only says the date at the top shows the current version.
+
 ## Production release 1.0 — Secret-Santa (2026-10-20)
 
 Adrian's pre-release list (update everything, full review, both store listings, Play tester gate) plus the
@@ -597,7 +638,7 @@ Found while preparing the Google Play Console submission (individual enrolment,
   - **(a) "unconfirmed accounts cleaned up after 30 days" — ✅ already true (audit finding was a false
     negative).** The purge is implemented, tested, and running: `PendingAccountPurge.PurgeAsync` deletes
     `!EmailConfirmed && CreatedAt < now − RetentionOptions.PendingAccountLifetime` (30 days) in
-    `Main.Service.Repository/PendingAccountRetention.cs`, `PendingAccountRetentionService` runs it hourly, and
+    `Main.Service.Repository/PendingAccountRetention.cs`, `PendingAccountRetentionService` (since renamed `MainRetentionService`) runs it hourly, and
     `AddCircleToolsRetention(...)` wires both at `Main.Service/Program.cs:120`. Covered by
     `PendingAccountPurgeTests` (4 tests, green in Repository.Test 58/58). The original "no job found" note was
     a too-narrow grep (searched `Main.Service`/`Identity`, but the job lives in `Main.Service.Repository` and

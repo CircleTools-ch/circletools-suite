@@ -695,6 +695,15 @@ public sealed class GroupService(
     }
 
     /// <summary>
+    /// Retention (NFR-004): deletes the invitations nobody answered before they lapsed. They are already ignored on
+    /// every read; this removes the rows, so an unanswered invitation does not keep its account reference forever.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the sweep.</param>
+    /// <returns>How many invitations were deleted.</returns>
+    public Task<int> PruneExpiredInvitationsAsync(CancellationToken cancellationToken = default) =>
+        store.DeleteExpiredInvitationsAsync(clock.GetUtcNow(), cancellationToken);
+
+    /// <summary>
     /// Account deletion (ADR-0022, FR-043): owned groups are handed over to an organizer link or deleted, as the user
     /// chose; every other role the account held is removed (what they wrote stays in the groups).
     /// </summary>

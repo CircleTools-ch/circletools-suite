@@ -33,6 +33,8 @@ key, never biometric data.
 | Consumed / expired verification, reset and email-change links | invalid on use, purged with the account |
 | Export archives delivered by link | short-lived and **single-use** |
 | Refresh tokens | 30-day sliding window; revoked on password reset and on account deletion |
+| Unanswered Secret-Santa group invitations | deleted by the daily sweep once they lapse (30 days) |
+| Outbox messages (mail payloads, recipient address in plain text) | purged **7 days** after sending — or after enqueueing, if never sent (`OutboxPurge`) |
 | Deleted accounts | **immediate** hard delete, no soft-delete state ([ADR-0022](../../adr/0022-account-deletion-and-data-export.md)) |
 
 **Subject rights.** Export ([FR-014](../functional/FR-014-export-personal-data.md)) and deletion
@@ -73,6 +75,10 @@ Given a pending-verification account created more than 30 days ago
 When the retention job runs
 Then the account and its personal data are purged
 
+Given an outbox message sent more than 7 days ago, or enqueued more than 7 days ago and never sent
+When the retention job runs
+Then the message, and with it the recipient's address, is purged
+
 Given a user who wants their data
 When they use export and deletion
 Then both complete self-service, without contacting support and without manual intervention
@@ -93,6 +99,7 @@ Then their local data is intact
   - **zero** stored personal-data fields beyond those enumerated by an FR;
   - **zero** plaintext passwords, private keys or biometric data at rest;
   - unverified accounts purged within **30 days** (target: 100 % of eligible accounts per run);
+  - outbox messages purged within **7 days** of sending (the privacy policy states this window);
   - export and deletion available **self-service**, 0 manual steps;
   - **zero** soft-deleted account rows remaining after a deletion.
 - **Measurement approach:** the data-model check is **automated**, not reviewed —

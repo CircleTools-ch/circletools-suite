@@ -198,6 +198,53 @@ public sealed class GroupTests
     }
 
     [Fact]
+    public void RemoveMember_InADraw_KeepsOnlyTheName()
+    {
+        // ADR-0052 amendment (2026-10-31): the name stays so the past draw still reads; nothing else does.
+        var group = DrawnGroupOfFour(out var members, out var eventId);
+        group.SetMemberWishlist(eventId, members[0], Wishlist.Create(["Scarf"]));
+        group.SetMemberGiftNote(members[0], "No chocolate");
+
+        group.RemoveMember(members[0]);
+
+        var archived = group.FindMember(members[0])!;
+        Assert.True(archived.IsArchived);
+        Assert.Equal(string.Empty, archived.GiftNote);
+        Assert.Empty(group.FindEvent(eventId)!.WishlistFor(members[0]).Items);
+    }
+
+    [Fact]
+    public void RemoveMember_InNoDraw_DeletesThemOutright()
+    {
+        var group = Group.Create("Family");
+        var eventId = group.AddEvent("Christmas");
+        var alice = group.AddMember("Alice");
+        var bob = group.AddMember("Bob");
+        group.AddExclusion(alice, bob, mutual: true);
+        group.SetMemberWishlist(eventId, alice, Wishlist.Create(["Scarf"]));
+
+        group.RemoveMember(alice);
+
+        Assert.Null(group.FindMember(alice));
+        Assert.Empty(group.Exclusions);
+        Assert.DoesNotContain(alice, group.FindEvent(eventId)!.WishlistMemberIds);
+        Assert.Null(Group.FromState(group.ToState()).FindMember(alice));
+    }
+
+    [Fact]
+    public void RemoveMember_InACarriedForwardBaseline_IsArchived()
+    {
+        // The baseline draw still names them (it steers the next draw's no-repeat rule), so the name stays.
+        var group = DrawnGroupOfFour(out var members, out var eventId);
+        group.AddEventFrom("Next year", eventId, DateTimeOffset.UtcNow);
+        group.RemoveEvent(eventId);
+
+        group.RemoveMember(members[0]);
+
+        Assert.True(group.FindMember(members[0])!.IsArchived);
+    }
+
+    [Fact]
     public void RunDraw_AfterInvalidation_ClearsTheFlag()
     {
         var group = DrawnGroupOfFour(out var members, out var eventId);

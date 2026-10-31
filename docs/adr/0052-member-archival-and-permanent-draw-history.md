@@ -7,6 +7,14 @@ tags: [architecture, domain, secret-santa, ddd, history]
 
 # ADR-0052 — Member archival and permanent draw history
 
+> **Amended 2026-10-31 (owner decision, legal-page review LR-5).** "Remove" no longer keeps a member's
+> data for history. It always deletes the member's exclusions, per-event wishlists and gift note. A member
+> who appears in **no** draw (nor a carried-forward baseline) is then **deleted outright**; only a member a
+> draw names is archived, and then just the name is kept so that draw still reads. Reason: the deletion
+> page promises that removing a person deletes them, and "remove them if they ask you to" is the only
+> lever an organizer has for someone else's data. A past occasion therefore no longer shows a removed
+> member's wishlist.
+
 ## Context and problem statement
 
 A Secret-Santa [Group](../glossary/group.md) owns a **shared** roster of

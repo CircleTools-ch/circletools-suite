@@ -97,6 +97,12 @@ public interface IGroupStore
     /// <returns>Their ids.</returns>
     Task<IReadOnlyList<Guid>> ListOwnerlessInactiveAsync(DateTimeOffset cutoff, CancellationToken cancellationToken = default);
 
+    /// <summary>Deletes the invitations that lapsed unanswered before <paramref name="now"/> (NFR-004).</summary>
+    /// <param name="now">The current time.</param>
+    /// <param name="cancellationToken">Cancels the write.</param>
+    /// <returns>How many were deleted.</returns>
+    Task<int> DeleteExpiredInvitationsAsync(DateTimeOffset now, CancellationToken cancellationToken = default);
+
     /// <summary>Stores a member's entry and merges it into the document, raising the version.</summary>
     /// <param name="groupId">The group.</param>
     /// <param name="entry">The entry; it replaces the stored one (a reveal-link write passes the merged entry).</param>
