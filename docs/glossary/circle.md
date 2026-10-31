@@ -41,6 +41,12 @@ for the other.
 
 ## Product display terms (reference only — not code names)
 
+The feature itself is called **Circle** (plural **Circles**) in every language, capitalised as a
+product name ([ADR-0089](../adr/0089-circle-as-a-product-name-in-every-language.md)): DE *der Circle,
+die Circles*; FR *le Circle, les Circles*; EN *Circle, Circles*. Not "Kreis" or "cercle".
+
+Each circle's own label, chosen by its members:
+
 | Language | Term |
 |----------|------|
 | DE | Familie *(Standard-Bezeichnung, änderbar)* |

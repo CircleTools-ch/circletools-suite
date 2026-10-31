@@ -241,7 +241,7 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
         {
             "de" => new MailModel(
                 $"{inviter} lädt dich zu «{circleName}» ein",
-                "Du wurdest zu einem Kreis eingeladen",
+                "Du wurdest zu einem Circle eingeladen",
                 [
                     $"{inviter} lädt dich zu «{circleName}» ({circleLabel}) bei CircleTools ein.",
                     hasAccount ? "Die Einladung wartet in der App auf dich." : "Hier kannst du sie ansehen und zu- oder absagen.",
@@ -251,7 +251,7 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
                 $"Du erhältst diese E-Mail, weil {inviter} deine Adresse für eine Einladung eingegeben hat. Sie verfällt, sobald sie angenommen, abgelehnt wird oder abläuft."),
             "fr" => new MailModel(
                 $"{inviter} vous invite à «{circleName}»",
-                "Vous êtes invité dans un cercle",
+                "Vous êtes invité dans un Circle",
                 [
                     $"{inviter} vous invite à rejoindre «{circleName}» ({circleLabel}) sur CircleTools.",
                     hasAccount ? "L'invitation vous attend dans l'application." : "Vous pouvez la consulter et accepter ou refuser.",
@@ -261,7 +261,7 @@ public sealed class MailTemplateRenderer(IOptions<MailOptions> options) : IMailT
                 $"Vous recevez ceci car {inviter} a saisi votre adresse pour vous inviter. Elle expire une fois acceptée, refusée ou échue."),
             _ => new MailModel(
                 $"{inviter} invites you to “{circleName}”",
-                "You've been invited to a circle",
+                "You've been invited to a Circle",
                 [
                     $"{inviter} invites you to “{circleName}” ({circleLabel}) on CircleTools.",
                     hasAccount ? "The invitation is waiting for you in the app." : "You can read it and accept or decline.",

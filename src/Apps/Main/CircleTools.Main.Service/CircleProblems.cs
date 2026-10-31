@@ -29,7 +29,7 @@ public static class CircleProblems
     /// </summary>
     /// <returns>A <c>404</c> that says nothing about which of the two it was.</returns>
     public static IResult NoSuchCircle() =>
-        Problem(StatusCodes.Status404NotFound, "circle_not_found", "No such circle.");
+        Problem(StatusCodes.Status404NotFound, "circle_not_found", "No such Circle.");
 
     /// <summary>
     /// The answer given to an invitation that is unknown, revoked, consumed — or addressed to
@@ -52,7 +52,7 @@ public static class CircleProblems
         CircleError.RoleNotPermitted => Problem(
             StatusCodes.Status403Forbidden,
             "role_not_permitted",
-            "Your role in this circle does not allow that."),
+            "Your role in this Circle does not allow that."),
 
         // The account is gone or its address is not verified — as far as circles are concerned those
         // are the same thing, because an unverified account gets nothing account-scoped (FR-016).
@@ -75,42 +75,42 @@ public static class CircleProblems
             retryAfter),
         CircleError.CircleCreationRateLimitReached => TooManyRequests(
             "circle_creation_rate_limit_reached",
-            "Too many circles created today. Please try again later.",
+            "Too many Circles created today. Please try again later.",
             retryAfter),
 
         // Caps. Not "try again later" — nothing frees up on its own.
         CircleError.OwnedCircleLimitReached => Conflict(
             "owned_circle_limit_reached",
-            "You already own as many circles as you can."),
-        CircleError.CircleFull => Conflict("circle_full", "This circle is full."),
+            "You already own as many Circles as you can."),
+        CircleError.CircleFull => Conflict("circle_full", "This Circle is full."),
         CircleError.PendingInvitationLimitReached => Conflict(
             "pending_invitation_limit_reached",
-            "This circle has as many invitations outstanding as it can."),
+            "This Circle has as many invitations outstanding as it can."),
 
         CircleError.InvitationExpired => Problem(
             StatusCodes.Status410Gone,
             "invitation_expired",
             "This invitation has expired. Ask whoever invited you for a new one."),
 
-        CircleError.AlreadyAMember => Conflict("already_a_member", "You are already in this circle."),
+        CircleError.AlreadyAMember => Conflict("already_a_member", "You are already in this Circle."),
         CircleError.MembershipNotFound => Problem(
             StatusCodes.Status404NotFound,
             "membership_not_found",
-            "No such person in this circle."),
+            "No such person in this Circle."),
         CircleError.ManagedMemberNotFound => Problem(
             StatusCodes.Status404NotFound,
             "managed_member_not_found",
-            "No such managed member in this circle."),
+            "No such managed member in this Circle."),
 
         CircleError.ManagedMemberCannotBeElevated => Conflict(
             "managed_member_cannot_be_elevated",
-            "Someone without an account cannot administer a circle."),
+            "Someone without an account cannot administer a Circle."),
         CircleError.ManagedMemberCannotLeave => Conflict(
             "managed_member_cannot_leave",
             "Someone without an account is removed by an owner or admin."),
         CircleError.OwnerCannotBeRemoved => Conflict(
             "owner_cannot_be_removed",
-            "The owner cannot be removed from their own circle."),
+            "The owner cannot be removed from their own Circle."),
         CircleError.OwnerCannotBeDemoted => Conflict(
             "owner_cannot_be_demoted",
             "The owner's role changes by transferring ownership."),
@@ -122,11 +122,11 @@ public static class CircleProblems
             "Only the owner can remove an admin."),
         CircleError.CannotRemoveYourself => Conflict(
             "cannot_remove_yourself",
-            "Leave the circle instead of removing yourself."),
+            "Leave the Circle instead of removing yourself."),
         CircleError.TransferTargetIsManaged => Conflict(
             "transfer_target_is_managed",
             "Ownership can only go to someone who can sign in."),
-        CircleError.AlreadyTheOwner => Conflict("already_the_owner", "They already own this circle."),
+        CircleError.AlreadyTheOwner => Conflict("already_the_owner", "They already own this Circle."),
 
         // Both of these are answers the UI acts on: one offers transfer, the other offers deletion
         // (FR-021).
@@ -135,7 +135,7 @@ public static class CircleProblems
             "Hand ownership to someone else before you leave."),
         CircleError.OwnerMustDeleteCircle => Conflict(
             "owner_must_delete_circle",
-            "You are the only one who could own this circle, so leaving it means deleting it."),
+            "You are the only one who could own this Circle, so leaving it means deleting it."),
 
         _ => Problem(StatusCodes.Status400BadRequest, "refused", "That is not allowed."),
     };

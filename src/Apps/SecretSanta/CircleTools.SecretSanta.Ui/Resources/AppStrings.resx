@@ -207,17 +207,17 @@
   <data name="UnclaimSuccess" xml:space="preserve"><value>Removed from your account. The copy on this device is kept.</value></data>
   <data name="UnclaimFailed" xml:space="preserve"><value>That could not be completed. Please try again.</value></data>
   <!-- M4 — Linking (FEAT-005) -->
-  <data name="FromCircleTitle" xml:space="preserve"><value>Create a group from a circle</value></data>
-  <data name="FromCircleLead" xml:space="preserve"><value>Bring the people from one of your circles in as members. The group is a snapshot — changing the circle later won't change it.</value></data>
-  <data name="FromCircleNoCircles" xml:space="preserve"><value>You don't have any circles yet. Circles are created on circletools.ch.</value></data>
-  <data name="FromCircleChooseLabel" xml:space="preserve"><value>Choose a circle</value></data>
+  <data name="FromCircleTitle" xml:space="preserve"><value>Create a group from a Circle</value></data>
+  <data name="FromCircleLead" xml:space="preserve"><value>Bring the people from one of your Circles in as members. The group is a snapshot — changing the Circle later won't change it.</value></data>
+  <data name="FromCircleNoCircles" xml:space="preserve"><value>You don't have any Circles yet. Circles are created on circletools.ch.</value></data>
+  <data name="FromCircleChooseLabel" xml:space="preserve"><value>Choose a Circle</value></data>
   <data name="FromCircleGroupNameLabel" xml:space="preserve"><value>Group name</value></data>
   <data name="FromCircleManagedBadge" xml:space="preserve"><value>managed</value></data>
   <data name="FromCircleLinkedBadge" xml:space="preserve"><value>has an account</value></data>
   <data name="FromCircleCreate" xml:space="preserve"><value>Create group</value></data>
   <data name="FromCircleBack" xml:space="preserve"><value>Back</value></data>
-  <data name="FromCircleOffline" xml:space="preserve"><value>You are offline. Reading your circles needs a connection.</value></data>
-  <data name="FromCircleReadFailed" xml:space="preserve"><value>Your circles could not be read. Please try again.</value></data>
+  <data name="FromCircleOffline" xml:space="preserve"><value>You are offline. Reading your Circles needs a connection.</value></data>
+  <data name="FromCircleReadFailed" xml:space="preserve"><value>Your Circles could not be read. Please try again.</value></data>
   <data name="FromCircleCreated" xml:space="preserve"><value>The group was created.</value></data>
   <data name="FromCircleDuplicateAccountNotice" xml:space="preserve"><value>Brought in without a link because someone else already uses that account: {0}.</value><comment>{0} is a comma-separated list of names.</comment></data>
   <data name="FromCircleOpenGroup" xml:space="preserve"><value>Open the group</value></data>
@@ -291,7 +291,7 @@
   <data name="WishlistsTitle" xml:space="preserve"><value>Wishlists</value></data>
   <data name="WishlistsLead" xml:space="preserve"><value>Set each member's wishlist for this event.</value></data>
   <data name="ConfirmRemoveEvent" xml:space="preserve"><value>Remove the event "{0}"? Its draw and wishlists will be lost.</value></data>
-  <data name="CreateFromCircleAction" xml:space="preserve"><value>Take members from a circle</value></data>
+  <data name="CreateFromCircleAction" xml:space="preserve"><value>Take members from a Circle</value></data>
   <data name="AllGroups" xml:space="preserve"><value>All groups</value></data>
   <data name="ReconcileImport" xml:space="preserve"><value>Bring into my account</value></data>
   <data name="EventOverview" xml:space="preserve"><value>Overview</value></data>

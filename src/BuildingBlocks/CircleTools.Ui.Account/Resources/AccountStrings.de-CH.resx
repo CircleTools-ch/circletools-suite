@@ -114,7 +114,7 @@
   <data name="DeleteDoneTitle" xml:space="preserve"><value>Dein Konto ist gelöscht</value></data>
   <data name="DeleteDoneText" xml:space="preserve"><value>Davon ist auf unseren Servern nichts mehr vorhanden. Du bist jederzeit wieder willkommen.</value></data>
   <data name="DeleteDoneHome" xml:space="preserve"><value>Zurück zur App</value></data>
-  <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Übergib oder lösche die Kreise, die dir gehören, bevor du dein Konto löschst.</value></data>
+  <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Übergib oder lösche die Circles, die dir gehören, bevor du dein Konto löschst.</value></data>
   <data name="CircleErrorRefused" xml:space="preserve"><value>Das ist nicht erlaubt.</value></data>
   <data name="ChangePasswordTitle" xml:space="preserve"><value>Passwort</value></data>
   <data name="ChangePasswordLead" xml:space="preserve"><value>Ändere dein Passwort. Dieses Gerät bleibt angemeldet, alle anderen Geräte werden abgemeldet.</value></data>

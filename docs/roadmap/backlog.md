@@ -38,9 +38,11 @@ address** in the imprint, add every missing disclosure, Swiss German **"Handy"**
 - **LR-6 · Expired Secret-Santa invitations never deleted (bug, fixed).** Lapsed `Invited` role assignments
   were ignored on read but kept forever. `GroupService.PruneExpiredInvitationsAsync` now runs in the daily
   `GroupRetentionService` sweep.
-- **LR-7 · "Circle" as a brand word in every language (next, owner decision 2026-10-31).** Replace DE "Kreis"
-  and FR "cercle" with "Circle" across the whole UI (Main, Secret Santa, account, legal pages), with a glossary
-  update and a short ADR. A separate change from this review.
+- **LR-7 · "Circle" as a product name in every language (done 2026-10-31, ships after 1.0.1).**
+  [ADR-0089](../adr/0089-circle-as-a-product-name-in-every-language.md): the UI says Circle / Circles in DE, FR
+  and EN — capitalised, masculine in DE/FR (*der/le Circle, die/les Circles*) — instead of "Kreis" / "cercle".
+  All `.resx` strings (Main, Secret Santa, account, legal pages) and the circle invitation mail; glossary
+  updated. "Freundeskreis" and each circle's own label are unchanged.
 - **LR-8 · "I'll point out anything important in the app" dropped (owner decision 2026-10-31).** The app has no
   in-app notice for policy changes, so the privacy page now only says the date at the top shows the current version.
 

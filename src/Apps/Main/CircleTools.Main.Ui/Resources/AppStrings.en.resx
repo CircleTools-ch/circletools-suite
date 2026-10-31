@@ -113,15 +113,15 @@
   <data name="DeleteDoneTitle" xml:space="preserve"><value>Your account is gone</value></data>
   <data name="DeleteDoneText" xml:space="preserve"><value>Nothing of it remains on our servers. You are welcome back any time.</value></data>
   <data name="NavCircles" xml:space="preserve"><value>Circles</value></data>
-  <data name="CirclesTitle" xml:space="preserve"><value>Your circles</value></data>
-  <data name="CirclesLead" xml:space="preserve"><value>A circle is the people you do things with. Set one up once and reuse it.</value></data>
-  <data name="CirclesEmpty" xml:space="preserve"><value>You are not in any circle yet.</value></data>
-  <data name="CirclesCreateTitle" xml:space="preserve"><value>Create a circle</value></data>
+  <data name="CirclesTitle" xml:space="preserve"><value>Your Circles</value></data>
+  <data name="CirclesLead" xml:space="preserve"><value>A Circle is the people you do things with. Set one up once and reuse it.</value></data>
+  <data name="CirclesEmpty" xml:space="preserve"><value>You are not in any Circle yet.</value></data>
+  <data name="CirclesCreateTitle" xml:space="preserve"><value>Create a Circle</value></data>
   <data name="CircleNameField" xml:space="preserve"><value>Name</value></data>
   <data name="CircleLabelField" xml:space="preserve"><value>What to call it</value></data>
-  <data name="CircleLabelHint" xml:space="preserve"><value>The word this circle is called by. It stays as you write it.</value></data>
+  <data name="CircleLabelHint" xml:space="preserve"><value>The word this Circle is called by. It stays as you write it.</value></data>
   <data name="CircleLabelDefault" xml:space="preserve"><value>Family</value></data>
-  <data name="CirclesCreateSubmit" xml:space="preserve"><value>Create circle</value></data>
+  <data name="CirclesCreateSubmit" xml:space="preserve"><value>Create Circle</value></data>
   <data name="CirclesPeopleCount" xml:space="preserve"><value>{0} people</value></data>
   <data name="CirclesPeopleCountOne" xml:space="preserve"><value>1 person</value></data>
   <data name="CirclesOpen" xml:space="preserve"><value>Open</value></data>
@@ -134,7 +134,7 @@
   <data name="CircleSettingsTitle" xml:space="preserve"><value>Circle settings</value></data>
   <data name="CircleRenameSubmit" xml:space="preserve"><value>Save changes</value></data>
   <data name="CircleSaved" xml:space="preserve"><value>Saved.</value></data>
-  <data name="CircleBackToCircles" xml:space="preserve"><value>Back to your circles</value></data>
+  <data name="CircleBackToCircles" xml:space="preserve"><value>Back to your Circles</value></data>
   <data name="CircleInviteTitle" xml:space="preserve"><value>Invite someone</value></data>
   <data name="CircleInviteLead" xml:space="preserve"><value>We will send them an email with a link. The link is good for 14 days.</value></data>
   <data name="CircleInviteEmail" xml:space="preserve"><value>Email address</value></data>
@@ -167,26 +167,26 @@
   <data name="CircleManagedCancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="CircleMakeAdmin" xml:space="preserve"><value>Make admin</value></data>
   <data name="CircleMakeMember" xml:space="preserve"><value>Make member</value></data>
-  <data name="CircleTransfer" xml:space="preserve"><value>Hand over the circle</value></data>
-  <data name="CircleTransferConfirm" xml:space="preserve"><value>Hand this circle to {0}? You stay in it as an admin.</value></data>
+  <data name="CircleTransfer" xml:space="preserve"><value>Hand over the Circle</value></data>
+  <data name="CircleTransferConfirm" xml:space="preserve"><value>Hand this Circle to {0}? You stay in it as an admin.</value></data>
   <data name="CircleRemove" xml:space="preserve"><value>Remove</value></data>
-  <data name="CircleRemoveConfirm" xml:space="preserve"><value>Remove {0} from this circle?</value></data>
+  <data name="CircleRemoveConfirm" xml:space="preserve"><value>Remove {0} from this Circle?</value></data>
   <data name="CircleConfirmYes" xml:space="preserve"><value>Yes, do it</value></data>
   <data name="CircleConfirmNo" xml:space="preserve"><value>Cancel</value></data>
-  <data name="CircleLeave" xml:space="preserve"><value>Leave this circle</value></data>
-  <data name="CircleLeaveConfirm" xml:space="preserve"><value>Leave this circle? You will need a new invitation to come back.</value></data>
+  <data name="CircleLeave" xml:space="preserve"><value>Leave this Circle</value></data>
+  <data name="CircleLeaveConfirm" xml:space="preserve"><value>Leave this Circle? You will need a new invitation to come back.</value></data>
   <data name="CircleLeaveKeeps" xml:space="preserve"><value>Your account stays, and your own Secret-Santa groups, their members and any completed draws are untouched.</value></data>
-  <data name="CircleLeft" xml:space="preserve"><value>You have left the circle.</value></data>
-  <data name="CircleDeleteTitle" xml:space="preserve"><value>Delete this circle</value></data>
+  <data name="CircleLeft" xml:space="preserve"><value>You have left the Circle.</value></data>
+  <data name="CircleDeleteTitle" xml:space="preserve"><value>Delete this Circle</value></data>
   <data name="CircleDeleteLead" xml:space="preserve"><value>Every open invitation is withdrawn as well, and none of this can be undone.</value></data>
-  <data name="CircleDeleteNames" xml:space="preserve"><value>This deletes the circle {0}.</value></data>
+  <data name="CircleDeleteNames" xml:space="preserve"><value>This deletes the Circle {0}.</value></data>
   <data name="CircleDeleteLosesAccess" xml:space="preserve"><value>{0} people will lose access to it.</value></data>
   <data name="CircleDeleteLosesAccessOne" xml:space="preserve"><value>One person will lose access to it.</value></data>
   <data name="CircleDeleteManagedNamed" xml:space="preserve"><value>These people without an account are deleted with it:</value></data>
   <data name="CircleDeleteKeeps" xml:space="preserve"><value>Your Secret-Santa groups, their draws and any reveal links you shared are unaffected.</value></data>
-  <data name="CircleDeleteConfirmPrompt" xml:space="preserve"><value>Type the circle's name to confirm.</value></data>
-  <data name="CircleDeleteSubmit" xml:space="preserve"><value>Delete circle</value></data>
-  <data name="CircleDeleted" xml:space="preserve"><value>The circle is gone.</value></data>
+  <data name="CircleDeleteConfirmPrompt" xml:space="preserve"><value>Type the Circle's name to confirm.</value></data>
+  <data name="CircleDeleteSubmit" xml:space="preserve"><value>Delete Circle</value></data>
+  <data name="CircleDeleted" xml:space="preserve"><value>The Circle is gone.</value></data>
   <data name="InvitationsTitle" xml:space="preserve"><value>Invitations</value></data>
   <data name="InvitationsLead" xml:space="preserve"><value>Circles that have invited you.</value></data>
   <data name="InvitationsEmpty" xml:space="preserve"><value>You have no invitations waiting.</value></data>
@@ -201,31 +201,31 @@
   <data name="InvitationLandingRegister" xml:space="preserve"><value>Create an account to join</value></data>
   <data name="InvitationLandingHint" xml:space="preserve"><value>Join with the address this invitation was sent to.</value></data>
   <data name="InvitationInvalid" xml:space="preserve"><value>This invitation is no longer valid. Ask whoever invited you for a new one.</value></data>
-  <data name="CircleErrorNotFound" xml:space="preserve"><value>This circle does not exist, or you are not in it.</value></data>
+  <data name="CircleErrorNotFound" xml:space="preserve"><value>This Circle does not exist, or you are not in it.</value></data>
   <data name="CircleErrorInvitationNotFound" xml:space="preserve"><value>This invitation is no longer valid.</value></data>
   <data name="CircleErrorInvitationExpired" xml:space="preserve"><value>This invitation has expired. Ask whoever invited you for a new one.</value></data>
-  <data name="CircleErrorRoleNotPermitted" xml:space="preserve"><value>Your role in this circle does not allow that.</value></data>
+  <data name="CircleErrorRoleNotPermitted" xml:space="preserve"><value>Your role in this Circle does not allow that.</value></data>
   <data name="CircleErrorEmailNotVerified" xml:space="preserve"><value>Confirm your email address first.</value></data>
   <data name="CircleErrorInvitationRateLimit" xml:space="preserve"><value>That is a lot of invitations at once. Try again a bit later.</value></data>
-  <data name="CircleErrorCreationRateLimit" xml:space="preserve"><value>You have created a lot of circles today. Try again tomorrow.</value></data>
-  <data name="CircleErrorOwnedLimit" xml:space="preserve"><value>You already own as many circles as you can.</value></data>
-  <data name="CircleErrorFull" xml:space="preserve"><value>This circle is full.</value></data>
-  <data name="CircleErrorPendingInvitationLimit" xml:space="preserve"><value>This circle has as many invitations outstanding as it can.</value></data>
-  <data name="CircleErrorAlreadyAMember" xml:space="preserve"><value>You are already in this circle.</value></data>
-  <data name="CircleErrorMembershipNotFound" xml:space="preserve"><value>That person is not in this circle.</value></data>
-  <data name="CircleErrorManagedMemberNotFound" xml:space="preserve"><value>That person is not in this circle.</value></data>
-  <data name="CircleErrorManagedCannotBeElevated" xml:space="preserve"><value>Someone without an account cannot administer a circle.</value></data>
+  <data name="CircleErrorCreationRateLimit" xml:space="preserve"><value>You have created a lot of Circles today. Try again tomorrow.</value></data>
+  <data name="CircleErrorOwnedLimit" xml:space="preserve"><value>You already own as many Circles as you can.</value></data>
+  <data name="CircleErrorFull" xml:space="preserve"><value>This Circle is full.</value></data>
+  <data name="CircleErrorPendingInvitationLimit" xml:space="preserve"><value>This Circle has as many invitations outstanding as it can.</value></data>
+  <data name="CircleErrorAlreadyAMember" xml:space="preserve"><value>You are already in this Circle.</value></data>
+  <data name="CircleErrorMembershipNotFound" xml:space="preserve"><value>That person is not in this Circle.</value></data>
+  <data name="CircleErrorManagedMemberNotFound" xml:space="preserve"><value>That person is not in this Circle.</value></data>
+  <data name="CircleErrorManagedCannotBeElevated" xml:space="preserve"><value>Someone without an account cannot administer a Circle.</value></data>
   <data name="CircleErrorManagedCannotLeave" xml:space="preserve"><value>Someone without an account is removed by an owner or admin.</value></data>
-  <data name="CircleErrorOwnerCannotBeRemoved" xml:space="preserve"><value>The owner cannot be removed from their own circle.</value></data>
-  <data name="CircleErrorOwnerCannotBeDemoted" xml:space="preserve"><value>The owner's role changes by handing the circle over.</value></data>
+  <data name="CircleErrorOwnerCannotBeRemoved" xml:space="preserve"><value>The owner cannot be removed from their own Circle.</value></data>
+  <data name="CircleErrorOwnerCannotBeDemoted" xml:space="preserve"><value>The owner's role changes by handing the Circle over.</value></data>
   <data name="CircleErrorOwnershipRequiresTransfer" xml:space="preserve"><value>Ownership is handed over, not set as a role.</value></data>
   <data name="CircleErrorAdminCannotRemoveAdmin" xml:space="preserve"><value>Only the owner can remove an admin.</value></data>
-  <data name="CircleErrorCannotRemoveYourself" xml:space="preserve"><value>Leave the circle instead of removing yourself.</value></data>
-  <data name="CircleErrorTransferTargetIsManaged" xml:space="preserve"><value>The circle can only go to someone who can sign in.</value></data>
-  <data name="CircleErrorAlreadyTheOwner" xml:space="preserve"><value>They already own this circle.</value></data>
-  <data name="CircleErrorOwnerMustTransfer" xml:space="preserve"><value>Hand the circle to someone else before you leave.</value></data>
-  <data name="CircleErrorOwnerMustDelete" xml:space="preserve"><value>You are the only one who could own this circle, so leaving it means deleting it.</value></data>
-  <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Hand over or delete the circles you own before deleting your account.</value></data>
+  <data name="CircleErrorCannotRemoveYourself" xml:space="preserve"><value>Leave the Circle instead of removing yourself.</value></data>
+  <data name="CircleErrorTransferTargetIsManaged" xml:space="preserve"><value>The Circle can only go to someone who can sign in.</value></data>
+  <data name="CircleErrorAlreadyTheOwner" xml:space="preserve"><value>They already own this Circle.</value></data>
+  <data name="CircleErrorOwnerMustTransfer" xml:space="preserve"><value>Hand the Circle to someone else before you leave.</value></data>
+  <data name="CircleErrorOwnerMustDelete" xml:space="preserve"><value>You are the only one who could own this Circle, so leaving it means deleting it.</value></data>
+  <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Hand over or delete the Circles you own before deleting your account.</value></data>
   <data name="CircleErrorRefused" xml:space="preserve"><value>That is not allowed.</value></data>
   <data name="CircleLoading" xml:space="preserve"><value>Loading...</value></data>
   <data name="CircleOfflineNotice" xml:space="preserve"><value>Circles need a connection. Reconnect to see and manage them — nothing is saved offline here.</value></data>

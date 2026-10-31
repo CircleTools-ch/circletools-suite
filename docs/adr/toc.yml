@@ -176,5 +176,7 @@
   href: 0087-production-data-is-kept.md
 - name: 0088 Mail capacity alerting
   href: 0088-mail-capacity-alerting.md
+- name: 0089 "Circle" as a product name in every language
+  href: 0089-circle-as-a-product-name-in-every-language.md
 - name: Template
   href: _template-adr.md

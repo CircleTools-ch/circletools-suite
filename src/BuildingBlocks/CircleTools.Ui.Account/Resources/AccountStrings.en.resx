@@ -114,7 +114,7 @@
   <data name="DeleteDoneTitle" xml:space="preserve"><value>Your account is gone</value></data>
   <data name="DeleteDoneText" xml:space="preserve"><value>Nothing of it remains on our servers. You are welcome back any time.</value></data>
   <data name="DeleteDoneHome" xml:space="preserve"><value>Back to the app</value></data>
-  <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Hand over or delete the circles you own before deleting your account.</value></data>
+  <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Hand over or delete the Circles you own before deleting your account.</value></data>
   <data name="CircleErrorRefused" xml:space="preserve"><value>That is not allowed.</value></data>
   <data name="ChangePasswordTitle" xml:space="preserve"><value>Password</value></data>
   <data name="ChangePasswordLead" xml:space="preserve"><value>Change your password. This device stays signed in; all your other devices are signed out.</value></data>

@@ -114,7 +114,7 @@
   <data name="DeleteDoneTitle" xml:space="preserve"><value>Votre compte a été supprimé</value></data>
   <data name="DeleteDoneText" xml:space="preserve"><value>Il n'en reste rien sur nos serveurs. Vous êtes le bienvenu à tout moment.</value></data>
   <data name="DeleteDoneHome" xml:space="preserve"><value>Retour à l'application</value></data>
-  <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Cédez ou supprimez les cercles que vous possédez avant de supprimer votre compte.</value></data>
+  <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Cédez ou supprimez les Circles que vous possédez avant de supprimer votre compte.</value></data>
   <data name="CircleErrorRefused" xml:space="preserve"><value>Ce n'est pas autorisé.</value></data>
   <data name="ChangePasswordTitle" xml:space="preserve"><value>Mot de passe</value></data>
   <data name="ChangePasswordLead" xml:space="preserve"><value>Modifiez votre mot de passe. Cet appareil reste connecté ; tous vos autres appareils sont déconnectés.</value></data>

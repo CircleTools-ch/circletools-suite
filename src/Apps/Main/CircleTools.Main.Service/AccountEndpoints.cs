@@ -892,7 +892,7 @@ public static class AccountEndpoints
                 // would now be false. What the archive still omits is their *content* — that is
                 // FR-014's next slice, and saying so is better than a thin archive being read as
                 // data loss (ADR-0022).
-                "Your circles are not in this archive yet; you can see them in the app.",
+                "Your Circles are not in this archive yet; you can see them in the app.",
                 "Secret-Santa data is stored on your own device and is not synced to the server yet.",
             ]);
 

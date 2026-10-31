@@ -59,7 +59,7 @@ public sealed class SoleOwnerCircleGuard(ISender sender) : IAccountDeletionGuard
 
         return new AccountDeletionRefusal(
             "circles_still_owned",
-            "Hand over or delete the circles you own before deleting your account.",
+            "Hand over or delete the Circles you own before deleting your account.",
             blockers);
     }
 }
