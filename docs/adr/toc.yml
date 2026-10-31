@@ -178,5 +178,7 @@
   href: 0088-mail-capacity-alerting.md
 - name: 0089 "Circle" as a product name in every language
   href: 0089-circle-as-a-product-name-in-every-language.md
+- name: 0090 The backend stays compatible with every released app
+  href: 0090-backend-stays-compatible-with-released-apps.md
 - name: Template
   href: _template-adr.md

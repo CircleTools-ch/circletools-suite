@@ -2,6 +2,9 @@ using System.Net;
 using System.Net.Http.Json;
 using CircleTools.SecretSanta.Contracts;
 using CircleTools.SecretSanta.Core.Domain;
+using CircleTools.SecretSanta.Service.Repository;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using static CircleTools.Main.Service.Test.Api.OnlineGroupScenario;
 
 namespace CircleTools.Main.Service.Test.Api;
@@ -145,6 +148,58 @@ public sealed class OnlineGroupEndpointTests(MailApiFactory factory)
         Assert.DoesNotContain(members["Anna"], after.SelfMaintained);
         Assert.Equal("No sweets", Group.FromState(Read(after.Document)).FindMember(members["Anna"])!.GiftNote);
         Assert.Equal(HttpStatusCode.NotFound, (await anna.Client.GetAsync($"{Base}/groups/{document.Id}/me")).StatusCode);
+    }
+
+    [Fact]
+    public async Task AStalePush_MissingANewcomer_KeepsTheirEntry()
+    {
+        // The organizer's device holds the copy from before Eve joined under a new name. Its push drops Eve from the
+        // document (last write wins, ADR-0016), but must not destroy what Eve wrote: only a push that saw the latest
+        // version removes a missing member's entry. Old and new app versions push the same way.
+        var owner = await CircleTestAccounts.SignUpAsync(factory, "Owner");
+        var eve = await CircleTestAccounts.SignUpAsync(factory, "Eve");
+        var (document, eventId, _) = DrawnGroup();
+        var links = await CreateAsync(owner.Client, document);
+        var join = await ReadAsync<JoinResponse>(await SendAsync(
+            eve.Client, HttpMethod.Post, $"/join/{links.JoinToken}", new JoinRequest(null, "Eve", true)));
+        (await SendAsync(eve.Client, HttpMethod.Put, $"/groups/{document.Id}/me/entry",
+            new OwnEntryRequest("No nuts", [new OwnWishlist(eventId, ["Scarf"])]))).EnsureSuccessStatusCode();
+
+        (await SendAsync(owner.Client, HttpMethod.Put, $"/groups/{document.Id}",
+            new PushOnlineGroupRequest(1, 1, Element(document)))).EnsureSuccessStatusCode();
+
+        Assert.Equal(1, await EntryCountAsync(document.Id, join.MemberId));
+    }
+
+    [Fact]
+    public async Task ACurrentPush_RemovingAMember_DeletesTheirEntry()
+    {
+        var owner = await CircleTestAccounts.SignUpAsync(factory, "Owner");
+        var eve = await CircleTestAccounts.SignUpAsync(factory, "Eve");
+        var (document, eventId, _) = DrawnGroup();
+        var links = await CreateAsync(owner.Client, document);
+        var join = await ReadAsync<JoinResponse>(await SendAsync(
+            eve.Client, HttpMethod.Post, $"/join/{links.JoinToken}", new JoinRequest(null, "Eve", true)));
+        (await SendAsync(eve.Client, HttpMethod.Put, $"/groups/{document.Id}/me/entry",
+            new OwnEntryRequest("No nuts", [new OwnWishlist(eventId, ["Scarf"])]))).EnsureSuccessStatusCode();
+
+        // The organizer reads the latest version, removes Eve (no draw names her, so she is deleted outright) and pushes.
+        var read = await ReadAsync<OrganizerGroupView>(await owner.Client.GetAsync($"{Base}/groups/{document.Id}"));
+        var group = Group.FromState(Read(read.Document));
+        group.RemoveMember(join.MemberId);
+        (await SendAsync(owner.Client, HttpMethod.Put, $"/groups/{document.Id}",
+            new PushOnlineGroupRequest(read.Version, 1, Element(group.ToState())))).EnsureSuccessStatusCode();
+
+        Assert.Equal(0, await EntryCountAsync(document.Id, join.MemberId));
+        var after = await ReadAsync<OrganizerGroupView>(await owner.Client.GetAsync($"{Base}/groups/{document.Id}"));
+        Assert.Null(Group.FromState(Read(after.Document)).FindMember(join.MemberId));
+    }
+
+    private async Task<int> EntryCountAsync(Guid groupId, Guid memberId)
+    {
+        await using var scope = factory.Services.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<SecretSantaDbContext>().MemberEntries
+            .CountAsync(e => e.GroupId == groupId && e.MemberId == memberId);
     }
 
     [Fact]

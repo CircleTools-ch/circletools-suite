@@ -36,7 +36,8 @@ context; endpoints are grouped per resource and map to application commands/quer
   uniform error contract; contracts decoupled from the domain.
 - **Negative:** Minimal APIs need deliberate organization (endpoint grouping) to stay tidy at scale;
   versioning requires discipline (deprecation policy).
-- **Follow-ups:** Define an endpoint-organization convention and a deprecation policy; consider OpenAPI
+- **Follow-ups:** Define an endpoint-organization convention and a deprecation policy (compatibility policy:
+  [ADR-0090](0090-backend-stays-compatible-with-released-apps.md)); consider OpenAPI
   document generation per version (built-in in .NET 10).
 
 ## Pros and cons of the options

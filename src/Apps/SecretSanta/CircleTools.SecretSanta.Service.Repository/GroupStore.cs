@@ -147,15 +147,21 @@ public sealed class GroupStore(SecretSantaDbContext context, TimeProvider clock)
         }
 
         // Newest write wins for now (ADR-0016); the base version is on the wire so a later rule can refuse a stale
-        // push instead, without a protocol change (ADR-0086, several admins).
-        _ = baseVersion;
+        // push instead, without a protocol change (ADR-0086, several admins). Today it only guards entry deletion below.
 
         var entries = await EntriesAsync(groupId, cancellationToken).ConfigureAwait(false);
         var (merged, rewritten) = MemberEntryMerge.Apply(document, entries);
 
         // A member the organizer removed keeps no entry row either — what they wrote is deleted with them (ADR-0052).
-        var active = merged.Members.Where(m => !m.IsArchived).Select(m => m.Id).ToHashSet();
-        var removed = entries.Select(e => e.MemberId).Where(id => !active.Contains(id)).ToList();
+        // An archived member was removed for certain. A member missing from the document was only removed if this
+        // push saw the latest version: a stale copy (say, from before someone joined under a new name) also lacks
+        // them, and that must not destroy what they wrote. Old and new app versions push the same way.
+        var stale = baseVersion < row.Version;
+        var archived = merged.Members.Where(m => m.IsArchived).Select(m => m.Id).ToHashSet();
+        var present = merged.Members.Select(m => m.Id).ToHashSet();
+        var removed = entries.Select(e => e.MemberId)
+            .Where(id => archived.Contains(id) || (!present.Contains(id) && !stale))
+            .ToList();
         if (removed.Count > 0)
         {
             await context.MemberEntries.Where(e => e.GroupId == groupId && removed.Contains(e.MemberId))
