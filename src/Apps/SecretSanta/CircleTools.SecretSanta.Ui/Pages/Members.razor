@@ -263,7 +263,7 @@ else
         _readOnly = (await GroupAccess.ForAsync(Services, GroupId)).ReadOnly;
 
         var group = await Sender.Send(new GetGroupQuery(GroupId));
-        _members = group?.Members ?? [];
+        _members = DisplayOrder.ByName(group?.Members ?? [], m => m.Name);
         _hasCurrentDraw = group?.Events.Any(e => e.HasCurrentDraw) ?? false;
 
         var record = (await Records.LoadAsync()).Records.FirstOrDefault(r => r.Id == GroupId);

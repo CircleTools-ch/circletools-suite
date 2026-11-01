@@ -203,7 +203,22 @@ else
     private async Task LoadAsync()
     {
         _readOnly = (await GroupAccess.ForAsync(Services, GroupId)).ReadOnly;
-        _group = await Sender.Send(new GetGroupQuery(GroupId));
+        // People and rules alphabetically (LO-1): the pickers by name, the rules by giver, then recipient. A
+        // two-way rule has no real giver, so it reads with the earlier name first ("Anna and Zoe", filed under A).
+        // Swapping its ends is safe: removing a rule matches the pair in either order.
+        var group = await Sender.Send(new GetGroupQuery(GroupId));
+        _group = group is null
+            ? null
+            : group with
+            {
+                Members = DisplayOrder.ByName(group.Members, m => m.Name),
+                Exclusions = [.. group.Exclusions
+                    .Select(e => e.Mutual && DisplayOrder.Names.Compare(NameIn(group, e.GiverMemberId), NameIn(group, e.RecipientMemberId)) > 0
+                        ? e with { GiverMemberId = e.RecipientMemberId, RecipientMemberId = e.GiverMemberId }
+                        : e)
+                    .OrderBy(e => NameIn(group, e.GiverMemberId), DisplayOrder.Names)
+                    .ThenBy(e => NameIn(group, e.RecipientMemberId), DisplayOrder.Names)],
+            };
         _feasibility = await Sender.Send(new CheckDrawFeasibilityQuery(GroupId));
     }
 
@@ -211,7 +226,10 @@ else
         memberId is { } id ? NameOf(id) : string.Empty;
 
     private string NameOf(Guid memberId) =>
-        _group?.Members.FirstOrDefault(m => m.Id == memberId)?.Name ?? memberId.ToString();
+        _group is null ? memberId.ToString() : NameIn(_group, memberId);
+
+    private static string NameIn(GroupDto group, Guid memberId) =>
+        group.Members.FirstOrDefault(m => m.Id == memberId)?.Name ?? memberId.ToString();
 
     private async Task AddAsync()
     {

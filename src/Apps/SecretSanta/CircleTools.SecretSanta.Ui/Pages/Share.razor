@@ -195,7 +195,8 @@ else
         var baseLinks = await Sender.Send(new GetRevealLinksQuery(GroupId, EventId));
         _occasion = await Sender.Send(new GetEventQuery(GroupId, EventId));
         _groupName = (await Sender.Send(new GetGroupQuery(GroupId)))?.Name ?? string.Empty;
-        _links = [.. baseLinks.Select(l => revealTokens.TryGetValue(l.GiverMemberId, out var rt)
+        // Alphabetically by the person the link is for (LO-1), not in roster order.
+        _links = [.. DisplayOrder.ByName(baseLinks, l => l.ForLabel).Select(l => revealTokens.TryGetValue(l.GiverMemberId, out var rt)
             ? l with { Url = RevealLinkBuilder.ShortUrl(l.Url, l.ForLabel, rt) }
             : l)];
 

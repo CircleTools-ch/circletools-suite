@@ -3,6 +3,31 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## List order — people alphabetically, no sort buttons (2026-11-01)
+
+Owner, using the app: no list could be ordered, and people appeared in the order they were added. Decision:
+**sensible default orders per list, no generic sort control.** The lists are short (a group is ~4–15 people)
+and a four-way sort button (A–Z / Z–A / added ↑ / added ↓) would clutter every phone screen. "Date added"
+can't be offered honestly either, because a member has no creation time, only a roster position.
+
+- **LO-1 · People alphabetically (done, next release).** Every list of people is sorted by name in the
+  reader's language: case-insensitive, with "Ä" next to "A" in German and accents ignored for the order in
+  French. This covers Members, the exclusion pickers, exclusion rules (by giver, then recipient), event
+  wishlists, Share links (and so the hand-out dialog), the join-link roster and the "from a circle" people
+  picker. The single comparer is `DisplayOrder` (`SecretSanta.Ui/DisplayOrder.cs`), covered by
+  `DisplayOrderTests`. **Display only:** the stored roster order, sync and the draw are untouched, so no ADR
+  or migration. Equal names keep their stored order.
+- **LO-2 · Groups list: next event first (open).** Today: pinned first, then newest first (UX review U7, so
+  a just-created group is on top). Better: pinned, then by the **next upcoming event date**, then newest
+  without an upcoming event. Needs the next event date on `GroupSummaryDto` (local and online groups) and a
+  rule for where a new group with no event goes, so U7 isn't undone. Taking-part groups should follow the
+  same rule.
+- **LO-3 · Wishlist items keep the owner's order (by design).** Items carry the owner's priority, so they
+  are deliberately **not** sorted. They are edited as one text field, one item per line, so moving a line
+  already reorders them. Revisit only if wishlists become structured items (then add up/down or drag).
+- **LO-4 · Optional Groups sort toggle (parked).** If the Groups list ever grows long enough to need it,
+  add a per-device "Upcoming / Name" toggle there only. Don't build it until someone asks.
+
 ## Legal-page text review — Privacy, About & legal, Delete your data (2026-10-31)
 
 Owner read the three legal pages and asked for an accuracy and wording pass in DE/EN/FR. Decisions: fix the

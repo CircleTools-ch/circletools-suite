@@ -203,7 +203,10 @@ else
         }
 
         var preview = await Api.PreviewJoinAsync(_token);
-        _preview = preview.IsSuccess ? preview.Value : null;
+        // The roster alphabetically (LO-1), so a person finds their own name at a glance.
+        _preview = preview.IsSuccess && preview.Value is { } value
+            ? value with { Members = DisplayOrder.ByName(value.Members, m => m.Name) }
+            : null;
         _held = _preview is null ? null : await HeldAsync(_preview.GroupId);
     }
 

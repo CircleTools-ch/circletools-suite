@@ -145,7 +145,8 @@
 
         if (result.IsSuccess)
         {
-            _detail = result.Value;
+            // The circle's people alphabetically (LO-1), as the group's member list will show them.
+            _detail = result.Value! with { People = DisplayOrder.ByName(result.Value!.People, p => p.DisplayName) };
             _groupName = _detail!.Name;
             _selected.Clear();
             // Everyone is pre-selected — the common case is "bring the whole circle in".

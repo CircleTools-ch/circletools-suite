@@ -148,7 +148,7 @@ else
         var previous = _editors.ToDictionary(e => e.MemberId);
         _editors = _event is null
             ? []
-            : _event.Wishlists
+            : DisplayOrder.ByName(_event.Wishlists, w => w.MemberName)
                 .Select(w => previous.TryGetValue(w.MemberId, out var typing) && (typing.HasUnsavedText || typing.Baseline is not null)
                     ? typing
                     : new WishlistEditor
