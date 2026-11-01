@@ -202,7 +202,7 @@ jobs:
           # image, so it is not synced. The scripts are invoked via `bash` (systemd unit + docs), so a
           # missing exec bit after rsync does not matter.
           rsync -az -e "ssh -i key -o UserKnownHostsFile=$HOME/.ssh/known_hosts" \
-            deploy/compose.yaml deploy/loki deploy/prometheus deploy/grafana \
+            deploy/compose.yaml deploy/loki deploy/prometheus deploy/grafana deploy/ntfy \
             deploy/backup.sh deploy/restore.sh deploy/notify-failure.sh deploy/systemd \
             "$DEPLOY_USER@$DEPLOY_HOST:/opt/circletools/"
 

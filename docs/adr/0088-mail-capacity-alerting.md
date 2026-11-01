@@ -69,7 +69,8 @@ on the dashboard, and needs no new moving part. Concretely:
   which is exactly when they matter.
 - **Negative:** an unrenderable message is marked processed and so counted as sent — a negligible overcount.
 - **Follow-ups:** an independent channel (an ntfy webhook contact point) when push alerting is wanted for
-  more than this; revisit the thresholds if the Brevo plan changes (they are hard-coded to the 300/day cap).
+  more than this — **done 2026-10-31 in [ADR-0091](0091-ntfy-push-alerts-and-watchdog.md)**, which also
+  replaces the `owner-email` contact point with `owner` (email + push); revisit the thresholds if the Brevo plan changes (they are hard-coded to the 300/day cap).
 - **New risks:** a deploy fails until `ALERT_EMAIL_TO` is set in the VM's `.env` — loud by design.
 
 ## Pros and cons of the options

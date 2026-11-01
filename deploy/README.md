@@ -99,6 +99,10 @@ stays skipped until `DEPLOY_HOST` is set**, then self-activates — no edit need
   login) auto-provisions both datasources **and the "CircleTools — Service & Host" dashboard**. Host
   CPU/RAM/disk/network come from **node_exporter** and per-container CPU/memory from **cAdvisor** (both
   internal-only). Prometheus/Loki are never published; Caddy denies `/metrics` on the public API origin.
+- **Push alerts (ADR-0091).** A self-hosted **ntfy** (`ntfy/server.yml`, `ntfy.circletools.ch`, deny-all,
+  users/tokens from `.env`) receives every Grafana alert next to the email, plus the backup-failure webhook.
+  An always-firing watchdog rule pings healthchecks.io, which alerts when the VPS or its alerting stops.
+  Setup: [server setup §14](../docs/deployment/server-setup.md#14-push-alerts-ntfy-and-the-watchdog).
 - **CD config sync (done).** `deploy.yml` **rsyncs** `compose.yaml`, the observability config, **and the
   backup scripts/units** (`backup.sh`, `restore.sh`, `systemd/`) to the VM on every deploy (never `.env`)
   and **pins `IMAGE_TAG`** in the VM's `.env` — so config changes ship automatically and a manual

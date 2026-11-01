@@ -1,0 +1,45 @@
+# Watchdog alert rule (ADR-0091): a dead man's switch for the whole alerting path. It is always firing and is
+# routed only to the "healthchecks" contact point (notifications.yaml), which pings healthchecks.io every
+# ~5 min. When the pings stop — the VPS is down, or Grafana, Prometheus or Grafana's alerting has stopped —
+# healthchecks.io alerts the owner from outside this server. Nothing on this server can report its own outage.
+#
+# No literal dollar signs elsewhere in this file: Grafana expands dollar-prefixed names from the environment.
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: watchdog
+    folder: CircleTools
+    interval: 1m
+    rules:
+      - uid: watchdog
+        title: Watchdog
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              # Goes through Prometheus on purpose, so a Prometheus outage also stops the heartbeat.
+              expr: vector(1)
+              instant: true
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0] }
+        # No data or a query error means the heartbeat must stop, not fire a different alert.
+        noDataState: OK
+        execErrState: OK
+        for: 0s
+        labels:
+          watchdog: "true"
+        annotations:
+          summary: Always firing. Its notifications are the heartbeat that healthchecks.io watches.
+          description: >-
+            If healthchecks.io reports this check as down, the VPS or its alerting is not working. Start with
+            docker compose ps on the server. See docs/adr/0091-ntfy-push-alerts-and-watchdog.md.

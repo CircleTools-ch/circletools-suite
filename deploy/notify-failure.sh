@@ -37,9 +37,15 @@ Runbook:      docs/deployment/backups.md"
 # Always leave a trail, even if every channel below is unconfigured or fails.
 logger -t circletools-backup "ALERT: ${SUBJECT}" 2>/dev/null || true
 
-# 1) Optional webhook: a plain-text POST that suits ntfy.sh, healthchecks.io, or a chat webhook.
+# 1) Optional webhook: a plain-text POST that suits ntfy, healthchecks.io, or a chat webhook. The CircleTools
+#    ntfy server denies anonymous publishing (ADR-0091), so ALERT_WEBHOOK_TOKEN is sent as a Bearer token.
 if [ -n "${ALERT_WEBHOOK_URL:-}" ]; then
-  if curl -fsS -m 20 -H "Title: ${SUBJECT}" --data-binary "${BODY}" "${ALERT_WEBHOOK_URL}" >/dev/null 2>&1; then
+  AUTH_HEADER=()
+  if [ -n "${ALERT_WEBHOOK_TOKEN:-}" ]; then
+    AUTH_HEADER=(-H "Authorization: Bearer ${ALERT_WEBHOOK_TOKEN}")
+  fi
+  if curl -fsS -m 20 -H "Title: ${SUBJECT}" -H "Priority: high" "${AUTH_HEADER[@]}" \
+       --data-binary "${BODY}" "${ALERT_WEBHOOK_URL}" >/dev/null 2>&1; then
     echo "alert: webhook sent"
   else
     echo "alert: webhook FAILED"

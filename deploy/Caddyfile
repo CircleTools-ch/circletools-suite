@@ -85,3 +85,18 @@ grafana.circletools.ch {
 		-Server
 	}
 }
+
+# --- ntfy (owner push notifications, ADR-0091) ----------------------------------------------------
+# The phone apps and outside senders reach ntfy here; ntfy enforces its own users, ACL and tokens
+# (deny-all by default). The site name comes from NTFY_HOST (compose.yaml) so the server can run under a
+# non-CircleTools name without editing this file. Responses stream (subscriptions are long-lived), which
+# Caddy's reverse_proxy passes through as-is; ntfy sets its own CSP for its web app.
+{$NTFY_HOST:ntfy.circletools.ch} {
+	reverse_proxy ntfy:80
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}

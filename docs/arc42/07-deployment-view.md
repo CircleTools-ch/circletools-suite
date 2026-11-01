@@ -44,6 +44,10 @@ flowchart LR
   `/metrics`, the API ships OTLP logs to Loki, and **Grafana** is the admin view on its own subdomain
   (`grafana.circletools.ch`) behind a login. Prometheus and Loki are never published; telemetry stays on
   the box.
+- **Alerting:** Grafana alerts go to the owner by email (Brevo) and as a push through a self-hosted **ntfy**
+  container (`ntfy.circletools.ch`, deny-all, shared with the owner's private senders); an always-firing
+  watchdog rule pings **healthchecks.io**, outside the VPS, which alerts when the pings stop
+  ([ADR-0091](../adr/0091-ntfy-push-alerts-and-watchdog.md)).
 - **Static docs:** the DocFX site published to a static host / Pages.
 - Data at rest stays in Switzerland; recurring cost ≈ CHF 12–14/mo. **CI** runs on GitHub Actions
   ([ADR-0038](../adr/0038-ci-cd-pipeline.md)); the **CD** step to this VPS is built at milestone 8 once

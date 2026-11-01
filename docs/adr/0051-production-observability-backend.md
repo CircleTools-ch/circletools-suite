@@ -163,6 +163,8 @@ reinforcing [ADR-0012](0012-observability-and-telemetry.md)'s privacy posture.
 - **Alerting** — Grafana alert rules (error rate / latency / down) once push-notification monitoring is
   wanted. **Taken 2026-10-28 for mail capacity** ([ADR-0088](0088-mail-capacity-alerting.md)): rules and an
   email contact point are provisioned from `deploy/grafana/provisioning/alerting/`; further rules go there.
+  **Push channel and watchdog added 2026-10-31** ([ADR-0091](0091-ntfy-push-alerts-and-watchdog.md)): a
+  self-hosted ntfy, and an always-firing rule that pings healthchecks.io.
 - **Mimir / object storage** — if metric cardinality or retention outgrows local Prometheus TSDB.
 
 ## Pros and cons of the options

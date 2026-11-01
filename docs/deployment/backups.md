@@ -143,7 +143,7 @@ configured in `.env`**:
 | Channel | Config | Notes |
 |---|---|---|
 | **Email** | `ALERT_EMAIL_TO` (+ `ALERT_EMAIL_FROM`, `ALERT_SMTP_URL`) | Reuses the Brevo SMTP login (`Mail__Username` / `Mail__Password`); sent via `curl --ssl-reqd`. |
-| **Webhook** | `ALERT_WEBHOOK_URL` | A plain-text POST — fits an **ntfy.sh** topic, **healthchecks.io**, or a chat webhook. |
+| **Webhook** | `ALERT_WEBHOOK_URL` (+ optional `ALERT_WEBHOOK_TOKEN`) | A plain-text POST — fits an **ntfy** topic, **healthchecks.io**, or a chat webhook. For the suite's own ntfy ([ADR-0091](../adr/0091-ntfy-push-alerts-and-watchdog.md)): `https://ntfy.circletools.ch/circletools-alerts` with the `backup` token, sent as a Bearer token. |
 | **Journal** | always | The alert is logged via `logger -t circletools-backup` even if no channel is set. |
 
 The handler is **best-effort and always exits 0**, so an alert hiccup can never itself become a failed

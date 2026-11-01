@@ -100,10 +100,19 @@ items missing from it, sequenced in the **[production-release plan](../deploymen
   undeliverable mails) feed Grafana alert rules — warning above 200, critical above 270, critical on a new
   delivery failure — emailed to `ALERT_EMAIL_TO`, plus an **Email** row on the Business dashboard.
   **Still owner action:** set `ALERT_EMAIL_TO` in the VM's `.env` **before the next deploy** (compose now
-  requires it), then check *Alerting → Alert rules* in Grafana shows the three rules. Optional: an ntfy
-  webhook contact point as a channel independent of Brevo.
+  requires it), then check *Alerting → Alert rules* in Grafana shows the three rules. ✅ The ntfy push
+  channel independent of Brevo is built (2026-10-31, [ADR-0091](../adr/0091-ntfy-push-alerts-and-watchdog.md)).
 - **PR-6 · Store listings & screenshots for both stores, DE/EN/FR (P2, after the UI is stable).**
 - **PR-7 · Support page/FAQ, alerting to the owner, rollback runbook, FR native read, legal review (P2).**
+  **Alerting channel built (2026-10-31, [ADR-0091](../adr/0091-ntfy-push-alerts-and-watchdog.md)):** a
+  self-hosted ntfy on the VPS (`ntfy.circletools.ch`, deny-all) gets every Grafana alert as a push next to the
+  email, and the backup-failure alert through `ALERT_WEBHOOK_URL`; an always-firing watchdog rule pings
+  healthchecks.io, which alerts when the VPS or its alerting stops. Verified locally (provisioning loads, a
+  firing rule arrives in ntfy formatted by the `grafana` template, the watchdog heartbeat flows, anonymous and
+  cross-topic access is denied). **Still owner action before the next deploy** (compose now requires the
+  values): the `ntfy` A record, the healthchecks.io check, and the `NTFY_*` / `HEALTHCHECKS_PING_URL` values in
+  the VM's `.env` — [server setup §14](../deployment/server-setup.md#14-push-alerts-ntfy-and-the-watchdog).
+  Still open in PR-7: rules for API down and error rate (they can use the same `owner` contact point).
 
 Found during the PR-3 dependency update (2026-10-20) — browser pass at 412×915 on MudBlazor 9.11, console
 clean; none caused by the update unless stated:

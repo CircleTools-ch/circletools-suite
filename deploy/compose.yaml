@@ -109,6 +109,8 @@ services:
     logging: *default-logging
     environment:
       ACME_EMAIL: ${ACME_EMAIL}
+      # The ntfy site name in the Caddyfile (ADR-0091); must match NTFY_BASE_URL on the ntfy service.
+      NTFY_HOST: ${NTFY_HOST:-ntfy.circletools.ch}
     ports:
       - "80:80"
       - "443:443"
@@ -116,6 +118,7 @@ services:
     depends_on:
       - api
       - grafana
+      - ntfy
     volumes:
       # Persist issued certificates and ACME state across restarts.
       - caddy_data:/data
@@ -183,13 +186,45 @@ services:
       GF_SMTP_FROM_NAME: CircleTools Alerts
       GF_SMTP_STARTTLS_POLICY: MandatoryStartTLS
       ALERT_EMAIL_TO: ${ALERT_EMAIL_TO:?set ALERT_EMAIL_TO in deploy/.env (ADR-0088)}
+      # Push alerts and the watchdog (ADR-0091), read by grafana/provisioning/alerting/notifications.yaml.
+      # Required for the same reason as ALERT_EMAIL_TO: an empty webhook URL or credential stops Grafana.
+      # Grafana posts to ntfy over the internal network (http://ntfy), so push alerts do not depend on
+      # Caddy, DNS or the certificate.
+      NTFY_GRAFANA_TOKEN: ${NTFY_GRAFANA_TOKEN:?set NTFY_GRAFANA_TOKEN in deploy/.env (ADR-0091)}
+      HEALTHCHECKS_PING_URL: ${HEALTHCHECKS_PING_URL:?set HEALTHCHECKS_PING_URL in deploy/.env (ADR-0091)}
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
       - loki
+      - ntfy
     # No published port: Caddy reverse-proxies grafana:3000 (deploy/Caddyfile).
+
+  # Push notifications to the owner's phone (ADR-0091) — the alert channel independent of Brevo. Shared
+  # operations infrastructure: CircleTools' alerts and the owner's private senders publish here. Users,
+  # access and tokens come from deploy/.env (single-quoted there, because bcrypt hashes contain dollar
+  # signs); the static settings are in ntfy/server.yml. Reached via Caddy at ntfy.circletools.ch.
+  ntfy:
+    image: binwiederhier/ntfy:v2.32.0
+    restart: unless-stopped
+    logging: *default-logging
+    command: ["serve"]
+    environment:
+      NTFY_BASE_URL: https://${NTFY_HOST:-ntfy.circletools.ch}
+      NTFY_AUTH_USERS: ${NTFY_AUTH_USERS:?set NTFY_AUTH_USERS in deploy/.env (ADR-0091)}
+      NTFY_AUTH_ACCESS: ${NTFY_AUTH_ACCESS:?set NTFY_AUTH_ACCESS in deploy/.env (ADR-0091)}
+      NTFY_AUTH_TOKENS: ${NTFY_AUTH_TOKENS:?set NTFY_AUTH_TOKENS in deploy/.env (ADR-0091)}
+    volumes:
+      - ./ntfy/server.yml:/etc/ntfy/server.yml:ro
+      - ntfy_data:/var/lib/ntfy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/v1/health | grep -q '\"healthy\":true' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    # No published port: Caddy reverse-proxies ntfy:80, and Grafana publishes to it internally.
 
   # Host metrics (CPU / RAM / disk / filesystem / network / load) — reads the host through read-only
   # mounts; Prometheus scrapes it at node-exporter:9100. Not published.
@@ -232,3 +267,4 @@ volumes:
   loki_data:
   prometheus_data:
   grafana_data:
+  ntfy_data:

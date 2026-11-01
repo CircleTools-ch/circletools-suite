@@ -116,7 +116,7 @@ records *which* values exist, not the values.
 
 | Tier | Where it lives | Values | Consumer |
 |---|---|---|---|
-| **Runtime / host** | `/opt/circletools/.env` on the VM (`chmod 600`, owned by the deploy user; git-ignored) | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `ConnectionStrings__maindb` (password in lockstep), `Auth__Jwt__SigningKey` ([ADR-0021](../adr/0021-web-auth-token-model.md)), `Mail__Username`, `Mail__Password` ([ADR-0037](../adr/0037-transactional-email-provider.md)), `GRAFANA_ADMIN_PASSWORD` ([ADR-0051](../adr/0051-production-observability-backend.md)), `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` ([backups](backups.md)) | `compose.yaml` → `api` / `migrator` / `postgres` / `grafana`; **`backup.sh`** (systemd timer) |
+| **Runtime / host** | `/opt/circletools/.env` on the VM (`chmod 600`, owned by the deploy user; git-ignored) | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `ConnectionStrings__maindb` (password in lockstep), `Auth__Jwt__SigningKey` ([ADR-0021](../adr/0021-web-auth-token-model.md)), `Mail__Username`, `Mail__Password` ([ADR-0037](../adr/0037-transactional-email-provider.md)), `GRAFANA_ADMIN_PASSWORD` ([ADR-0051](../adr/0051-production-observability-backend.md)), `NTFY_AUTH_USERS`, `NTFY_AUTH_TOKENS`, `NTFY_GRAFANA_TOKEN`, `ALERT_WEBHOOK_TOKEN`, `HEALTHCHECKS_PING_URL` ([ADR-0091](../adr/0091-ntfy-push-alerts-and-watchdog.md)), `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` ([backups](backups.md)) | `compose.yaml` → `api` / `migrator` / `postgres` / `grafana` / `ntfy`; **`backup.sh`** (systemd timer) |
 | **CI / deploy** | GitHub → Settings → Secrets and variables → Actions (repository encrypted secrets) | `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`; `GITHUB_TOKEN` (built-in, GHCR push) | `.github/workflows/deploy.yml` (SSH rollout) |
 
 CI holds **only deploy access** — never a runtime secret. Postgres is not published off the internal
@@ -187,7 +187,10 @@ offsite dump. **Test the restore** (checklist below) so this drill is exercised,
 
 Self-hosted **Loki + Prometheus + Grafana**, on the same VPS, all on the internal Docker network. Only
 **Grafana** is exposed; Prometheus and Loki have no Caddy site block and are never published. Telemetry
-stays on the box. Scope today is **logs + metrics** (no traces/alerting yet — additive later).
+stays on the box. Scope today is **logs + metrics + alerting** (no traces yet — additive later). Alerts go
+to the owner by email and as a push through **ntfy**, and a watchdog pings healthchecks.io
+([ADR-0088](../adr/0088-mail-capacity-alerting.md), [ADR-0091](../adr/0091-ntfy-push-alerts-and-watchdog.md);
+setup in [server setup §14](server-setup.md#14-push-alerts-ntfy-and-the-watchdog)).
 
 | Piece | Role | Reached by |
 |---|---|---|
@@ -196,6 +199,7 @@ stays on the box. Scope today is **logs + metrics** (no traces/alerting yet — 
 | **Grafana** (`grafana/grafana`) | The admin view; datasources **and** the overview dashboard auto-provisioned | `https://grafana.circletools.ch`, Grafana admin login |
 | **node_exporter** (`prom/node-exporter`) | Host metrics — CPU / RAM / disk / filesystem / network / load | Prometheus only (internal) |
 | **cAdvisor** (`ghcr.io/google/cadvisor`) | Per-container CPU / memory (API vs Postgres vs the stack itself) | Prometheus only (internal) |
+| **ntfy** (`binwiederhier/ntfy`) | Push notifications to the owner's phone — Grafana alerts, backup failures, and the owner's private senders ([ADR-0091](../adr/0091-ntfy-push-alerts-and-watchdog.md)) | `https://ntfy.circletools.ch`, deny-all; users/tokens from `.env`. Grafana posts internally to `http://ntfy` |
 
 **Dashboard.** Grafana provisions **"CircleTools — Service & Host"**
 ([`circletools-overview.json`](https://github.com/CircleTools-ch/circletools-suite/tree/main/deploy/grafana/provisioning/dashboards))

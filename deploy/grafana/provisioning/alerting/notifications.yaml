@@ -1,0 +1,68 @@
+# Grafana alert notification provisioning (ADR-0088, ADR-0091): where alerts go. The rules live in their own
+# files next to this one (mail-capacity.yaml, watchdog.yaml); this file holds the contact points and the one
+# notification policy tree, which every rule file shares.
+#
+# - owner: every alert, by email (ALERT_EMAIL_TO, through Brevo) AND as a push via ntfy, so an alert
+#   still arrives when Brevo is down or its daily cap is used up.
+# - healthchecks: only the always-firing watchdog rule. Its pings stop when the VPS, Grafana, Prometheus or
+#   alerting stops, and healthchecks.io (outside this server) then tells the owner.
+#
+# The values come from deploy/.env through compose.yaml. No literal dollar signs elsewhere in this file:
+# Grafana expands dollar-prefixed names from the environment.
+apiVersion: 1
+
+# ADR-0088 provisioned the email integration as contact point "owner-email" (uid owner-email). ADR-0091
+# replaces it with "owner"; deleting the old uid keeps it from lingering on a server that had it.
+deleteContactPoints:
+  - orgId: 1
+    uid: owner-email
+
+contactPoints:
+  - orgId: 1
+    name: owner
+    receivers:
+      - uid: owner-mail
+        type: email
+        settings:
+          addresses: ${ALERT_EMAIL_TO}
+          singleEmail: true
+        disableResolveMessage: false
+      - uid: owner-ntfy
+        type: webhook
+        settings:
+          # Internal network: no Caddy, DNS or certificate in the path. ntfy's built-in "grafana" template
+          # turns Grafana's webhook JSON into a readable title and message.
+          url: http://ntfy/circletools-alerts?template=grafana
+          httpMethod: POST
+          authorization_scheme: Bearer
+          authorization_credentials: ${NTFY_GRAFANA_TOKEN}
+        disableResolveMessage: false
+
+  - orgId: 1
+    name: healthchecks
+    receivers:
+      - uid: healthchecks-watchdog
+        type: webhook
+        settings:
+          # healthchecks.io accepts any POST to the ping URL as a ping.
+          url: ${HEALTHCHECKS_PING_URL}
+          httpMethod: POST
+        disableResolveMessage: true
+
+policies:
+  - orgId: 1
+    receiver: owner
+    group_by: ["grafana_folder", "alertname"]
+    group_wait: 30s
+    group_interval: 5m
+    # A capacity warning stays true for hours; one reminder every 6 h is enough.
+    repeat_interval: 6h
+    routes:
+      # The watchdog is always firing; re-sending it every 5 min is the heartbeat. It never reaches the owner.
+      - receiver: healthchecks
+        object_matchers:
+          - ["watchdog", "=", "true"]
+        group_wait: 0s
+        group_interval: 1m
+        repeat_interval: 5m
+        continue: false

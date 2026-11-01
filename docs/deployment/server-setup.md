@@ -196,6 +196,7 @@ Fill in `/opt/circletools/.env` (keys come from `.env.example`):
 | `Auth__Jwt__SigningKey` | the generated 48-byte value |
 | `Mail__Username` / `Mail__Password` | Brevo SMTP login + key |
 | `ALERT_EMAIL_TO` | **required** — your address for Grafana's mail-capacity alerts ([ADR-0088](../adr/0088-mail-capacity-alerting.md)) and the backup-failure alert; `docker compose` refuses to start without it |
+| `NTFY_AUTH_USERS`, `NTFY_AUTH_ACCESS`, `NTFY_AUTH_TOKENS`, `NTFY_GRAFANA_TOKEN`, `HEALTHCHECKS_PING_URL` | **required** — push alerts and the watchdog ([ADR-0091](../adr/0091-ntfy-push-alerts-and-watchdog.md)); see [step 14](#14-push-alerts-ntfy-and-the-watchdog) |
 | `ACME_EMAIL` | `dev@circletools.ch` |
 | `IMAGE_TAG` | `latest` (or a commit SHA to pin) |
 
@@ -219,9 +220,10 @@ at the VPS. Get the public IP with — [server]: `hostname -I` or `curl -4 -s ht
 | A | `secretsanta` | `<server-ip>` |
 | A | `api` | `<server-ip>` |
 | A | `grafana` | `<server-ip>` |
+| A | `ntfy` | `<server-ip>` |
 
 > **TLS is automatic (HTTP-01).** Nothing proxies the VPS, so once the A records resolve, Caddy obtains
-> Let's Encrypt certs for all four names via the default HTTP-01 challenge on first boot — no token, no
+> Let's Encrypt certs for all five names via the default HTTP-01 challenge on first boot — no token, no
 > plugin, no "DNS-only" dance. Just make sure ports **80 and 443** are open (firewall step above) and the
 > records have propagated before bringing the stack up.
 
@@ -302,3 +304,70 @@ amendment 2026-10-28).
 - **Content-Security-Policy:** tighten the `Caddyfile` (baseline security headers ship already).
 - **Durable secrets store** and a **production observability sink** — open sub-decisions in
   [web-api-db.md](web-api-db.md).
+
+---
+
+## 14. Push alerts (ntfy) and the watchdog
+
+Grafana sends every alert by email **and** as a push through the self-hosted ntfy, and an always-firing
+watchdog rule pings healthchecks.io, which tells you when the pings stop
+([ADR-0091](../adr/0091-ntfy-push-alerts-and-watchdog.md)). `docker compose` refuses to start until the values
+below are in `.env`, so do this **before the next deploy**.
+
+**1. DNS** — [browser]: add the `ntfy` A record from [step 9](#9-dns-at-infomaniak--browser).
+
+**2. healthchecks.io** — [browser]: create a free account and a check named *CircleTools watchdog* with
+**period 5 minutes, grace 10 minutes**. Keep its notification on **email** (healthchecks.io sends it itself,
+so it does not depend on Brevo or this server). Copy the ping URL (`https://hc-ping.com/<uuid>`). Put the
+account login in the vault.
+
+**3. ntfy users and tokens** — [laptop] (any machine with Docker):
+
+```bash
+# Password hashes (asks for the password twice). One for "owner" (the password you log in with on the
+# phone), one for "circletools" (a long random password you will never need — it only uses tokens):
+docker run --rm -it binwiederhier/ntfy:v2.32.0 user hash
+docker run --rm -it binwiederhier/ntfy:v2.32.0 user hash
+# Two tokens: one for Grafana, one for the backup alert.
+docker run --rm binwiederhier/ntfy:v2.32.0 token generate
+docker run --rm binwiederhier/ntfy:v2.32.0 token generate
+```
+
+**4. `.env`** — [server]: fill these in `/opt/circletools/.env` (the format is in `.env.example`). The three
+`NTFY_AUTH_*` lines **must be in single quotes**, because the hashes contain dollar signs:
+
+```bash
+NTFY_AUTH_USERS='owner:<owner-hash>:admin,circletools:<circletools-hash>:user'
+NTFY_AUTH_ACCESS='circletools:circletools-*:wo'
+NTFY_AUTH_TOKENS='circletools:<grafana-token>:grafana,circletools:<backup-token>:backup'
+NTFY_GRAFANA_TOKEN=<grafana-token>
+HEALTHCHECKS_PING_URL=https://hc-ping.com/<uuid>
+# The backup-failure alert (notify-failure.sh) publishes to the same topic:
+ALERT_WEBHOOK_URL=https://ntfy.circletools.ch/circletools-alerts
+ALERT_WEBHOOK_TOKEN=<backup-token>
+```
+
+Record the hashes' passwords and both tokens in the vault. **Private senders** (for example your home
+Grafana) get their own user, prefix and token in the same three lines, such as `home:<hash>:user`,
+`home:home-*:wo` and `home:<token>:home-grafana`. Those stay in this `.env` only, never in the repository.
+
+**5. Deploy**, then verify — [server]:
+
+```bash
+docker compose ps ntfy                       # "healthy"
+curl -s -o /dev/null -w '%{http_code}\n' -d test https://ntfy.circletools.ch/circletools-alerts   # 403
+curl -s -H "Authorization: Bearer <backup-token>" -d "Test from the server" \
+     https://ntfy.circletools.ch/circletools-alerts                                                # 200
+sudo systemctl start circletools-backup-failure@test.service   # the backup alert arrives as a push
+```
+
+**6. Phone** — install the ntfy app (Android: Play Store or F-Droid; iOS: App Store). In its settings, set
+the default server to `https://ntfy.circletools.ch`, add the user `owner` with its password, and subscribe to
+`circletools-alerts` (and your private topics). On Android, allow notifications and disable battery
+optimisation for the app; iOS gets instant delivery through the ntfy.sh relay set in `server.yml`.
+
+**7. Watchdog** — [browser]: within ten minutes of the deploy, healthchecks.io shows the check as **up**.
+In Grafana, *Alerting → Alert rules* lists the *Watchdog* rule as firing; that is its normal state.
+
+> **Rotating a token:** replace it in `NTFY_AUTH_TOKENS` (and `NTFY_GRAFANA_TOKEN` or `ALERT_WEBHOOK_TOKEN`),
+> then `docker compose up -d ntfy grafana`. ntfy removes tokens that are no longer listed.

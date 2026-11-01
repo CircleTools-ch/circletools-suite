@@ -180,5 +180,7 @@
   href: 0089-circle-as-a-product-name-in-every-language.md
 - name: 0090 The backend stays compatible with every released app
   href: 0090-backend-stays-compatible-with-released-apps.md
+- name: 0091 Push alerts through a self-hosted ntfy, and a watchdog
+  href: 0091-ntfy-push-alerts-and-watchdog.md
 - name: Template
   href: _template-adr.md

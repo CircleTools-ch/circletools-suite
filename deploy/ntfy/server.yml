@@ -1,0 +1,27 @@
+# ntfy push-notification server (ADR-0091): the owner's alert channel that does not depend on Brevo.
+# Shared operations infrastructure: CircleTools' Grafana and backup alerts publish here, and so may the
+# owner's own private senders. Who may publish or read which topic is NOT in this file — users, ACL entries
+# and tokens are declared in deploy/.env (NTFY_AUTH_USERS / NTFY_AUTH_ACCESS / NTFY_AUTH_TOKENS), so private
+# topics and every credential stay off git. base-url comes from NTFY_BASE_URL in compose.yaml.
+
+listen-http: ":80"
+# Caddy terminates TLS and proxies here; without this every visitor counts as Caddy's IP for rate limits.
+behind-proxy: true
+
+# Messages are kept on disk for 12 h so a phone that was offline still receives them on reconnect.
+cache-file: /var/lib/ntfy/cache.db
+cache-duration: 12h
+
+# Nobody can read or publish anything unless an ACL entry or the admin role allows it.
+auth-file: /var/lib/ntfy/user.db
+auth-default-access: deny-all
+
+# Web app: log in with an existing user, no self-service sign-up.
+enable-login: true
+enable-signup: false
+
+# Attachments stay disabled: no attachment-cache-dir is set, so nothing is stored but short alert texts.
+
+# iOS cannot be woken by a self-hosted server. ntfy.sh relays a "poll request" (the message ID only, never
+# the content) to Apple's push service; the iPhone app then fetches the message from this server.
+upstream-base-url: https://ntfy.sh
