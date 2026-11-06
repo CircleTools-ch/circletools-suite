@@ -70,10 +70,10 @@ Version 1.0. Die App heisst jetzt in jeder Sprache „Secret Santa“ – in der
 </de-DE>
 ```
 
-1.0.2 (Closed Test, Entwurf):
+Nächste Version nach 1.0.1 (Closed Test, Entwurf):
 
 ```
 <de-DE>
-Ein weiterer Anlass schlägt jetzt das nächste Jahr vor, statt den Namen von diesem Jahr zu wiederholen. Tippe in der Mitgliederliste auf eine Person, um sie zu bearbeiten. „Kopiert!“ wechselt nach kurzer Zeit wieder zu „Kopieren“, der Zurück-Link zeigt einen umbenannten Anlass sofort, und Formulare zeigen nach dem Speichern keine Fehlermeldung mehr an den leeren Feldern. In der Web-App auf dem Handy zeigt der Kalender wieder den ganzen Monat.
+Personen stehen jetzt in jeder Liste alphabetisch. Beim Entfernen einer Person werden ihre Wunschlisten und ihr Hinweis gelöscht. Datenschutz, Impressum und Datenlöschung sind überarbeitet. Ein weiterer Anlass schlägt das nächste Jahr vor. Tippe in der Mitgliederliste auf eine Person, um sie zu bearbeiten. „Kopiert!“ wechselt wieder zu „Kopieren“, und Formulare zeigen nach dem Speichern keine Fehlermeldung mehr.
 </de-DE>
 ```

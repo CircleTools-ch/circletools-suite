@@ -69,10 +69,10 @@ Version 1.0. L'application s'appelle désormais « Secret Santa » dans toutes l
 </fr-FR>
 ```
 
-1.0.2 (test fermé, brouillon):
+Version suivant la 1.0.1 (test fermé, brouillon):
 
 ```
 <fr-FR>
-Un nouvel événement propose désormais l'année suivante au lieu de répéter le nom de cette année. Touchez une personne dans la liste des membres pour la modifier. « Copié ! » redevient « Copier » après un instant, le lien retour affiche tout de suite un événement renommé, et les formulaires n'affichent plus d'erreur sur les champs vidés après l'enregistrement. Dans l'application web sur téléphone, le calendrier affiche de nouveau le mois entier.
+Les personnes sont désormais triées par ordre alphabétique dans toutes les listes. Retirer une personne supprime ses listes de souhaits et sa remarque. Pages de confidentialité, mentions légales et suppression des données révisées. Un nouvel événement propose l'année suivante. Touchez une personne pour la modifier. « Copié ! » redevient « Copier », et les formulaires n'affichent plus d'erreur après l'enregistrement.
 </fr-FR>
 ```

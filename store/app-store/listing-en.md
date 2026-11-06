@@ -73,10 +73,15 @@ The app follows your device language, and you can switch at any time.
 Whether it's Christmas, an office party or a family get-together, Secret Santa takes the hassle out of gift exchanges — so you can focus on the fun.
 ```
 
-## What's New (≤4000) — not shown for the first version; use from 1.1 on
+## What's New (≤4000) — per update; this is the next version after 1.0.1
 
 ```
-Bug fixes and improvements.
+• People are now listed alphabetically in every list.
+• Removing someone from a group now deletes their wishlists and note. In events you've already drawn, only their name stays.
+• Revised privacy, legal and data deletion pages that say exactly what happens to your data.
+• Adding another event suggests the next year instead of repeating this year's name.
+• Tap a person in the member list to edit them.
+• Smaller fixes: "Copied!" switches back to "Copy", the back link shows a renamed event right away, and forms no longer show "Required" after saving.
 ```
 
 ## TestFlight — Beta App Description (≤4000) — TestFlight → Test Information

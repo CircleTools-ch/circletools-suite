@@ -69,10 +69,16 @@ Die App folgt der Sprache deines Geräts, und du kannst sie jederzeit wechseln.
 Ob Weihnachten, Bürofeier oder Familientreffen – Secret Santa nimmt Wichtel-Runden den Stress und lässt dir den Spass.
 ```
 
-## Neue Funktionen (≤4000) — ab Version 1.1
+## Neue Funktionen (≤4000) — pro Update; hier die nächste Version nach 1.0.1
 
 ```
-Fehlerbehebungen und Verbesserungen.
+• Personen stehen jetzt in jeder Liste alphabetisch.
+• Entfernst du jemanden aus einer Gruppe, werden Wunschlisten und Hinweis der Person gelöscht. In bereits ausgelosten Anlässen bleibt nur ihr Name.
+• Datenschutz, Impressum und Datenlöschung überarbeitet: Die Texte sagen genau, was mit deinen Daten passiert.
+• Ein weiterer Anlass schlägt das nächste Jahr vor, statt den Namen von diesem Jahr zu wiederholen.
+• Tippe in der Mitgliederliste auf eine Person, um sie zu bearbeiten.
+• Kreise heissen jetzt Circles.
+• Kleinere Korrekturen: „Kopiert!“ wechselt wieder zu „Kopieren“, der Zurück-Link zeigt einen umbenannten Anlass sofort, und Formulare zeigen nach dem Speichern keine Fehlermeldung mehr.
 ```
 
 ## TestFlight — Beta-App-Beschreibung (≤4000)

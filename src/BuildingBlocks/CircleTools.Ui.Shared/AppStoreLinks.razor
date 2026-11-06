@@ -7,20 +7,34 @@
     host's AppStoreLinks configuration, and the MAUI heads register none, so this resolves an empty set
     and renders nothing on device — and likewise on the web until the store listings exist. Mirrors
     AppSwitcher's inject-an-enumerable, self-hide-when-empty shape.
+
+    A released App Store link shows Apple's official badge, used as Apple's marketing guidelines require:
+    the unmodified black artwork in the reader's language, at least 40 px high, clear space of a quarter of
+    its height, first in the lineup, and credited in the imprint. The artwork is served from this site, so
+    showing it sends nothing to Apple. Everything else, such as TestFlight, stays a plain button.
 *@
 @if (_links.Count > 0)
 {
-    <div class="d-flex flex-column align-center gap-2 py-4">
+    <div class="d-flex flex-column align-center gap-3 py-4">
         <MudText Typo="Typo.subtitle2" Class="mud-text-secondary">@L["GetTheApp_Heading"]</MudText>
-        <div class="d-flex flex-wrap justify-center gap-2">
+        <div class="d-flex flex-wrap justify-center align-center gap-3">
             @foreach (var link in _links)
             {
                 @* External destinations, so open in a new tab and drop the opener reference. *@
-                <MudButton Href="@link.Url" Target="_blank" rel="noopener noreferrer"
-                           Variant="Variant.Outlined" Color="Color.Primary"
-                           StartIcon="@IconFor(link.Platform)">
-                    @LabelFor(link)
-                </MudButton>
+                @if (ShowsAppStoreBadge(link))
+                {
+                    <a href="@link.Url" target="_blank" rel="noopener noreferrer" class="d-block">
+                        <img src="@AppStoreBadgeSource" alt="@L["GetTheApp_Ios"]" style="display:block;height:48px;width:auto;" />
+                    </a>
+                }
+                else
+                {
+                    <MudButton Href="@link.Url" Target="_blank" rel="noopener noreferrer"
+                               Variant="Variant.Outlined" Color="Color.Primary"
+                               StartIcon="@IconFor(link.Platform)">
+                        @LabelFor(link)
+                    </MudButton>
+                }
             }
         </div>
     </div>
@@ -30,15 +44,32 @@
     private IReadOnlyList<AppStoreLink> _links = [];
 
     // Materialise once (the injected enumerable would otherwise re-run per render) and drop any entry
-    // with no URL, so a half-filled config line never renders a dead button.
+    // with no URL, so a half-filled config line never renders a dead button. Apple's guidelines put the
+    // App Store badge first when badges for other platforms appear.
     protected override void OnInitialized() =>
-        _links = Links.Where(l => !string.IsNullOrWhiteSpace(l.Url)).ToList();
+        _links = Links.Where(l => !string.IsNullOrWhiteSpace(l.Url)).OrderBy(l => IsApple(l.Platform) ? 0 : 1).ToList();
 
     private static bool IsApple(string platform) =>
         platform.Equals("ios", StringComparison.OrdinalIgnoreCase)
         || platform.Equals("apple", StringComparison.OrdinalIgnoreCase)
         || platform.Equals("appstore", StringComparison.OrdinalIgnoreCase)
         || platform.Equals("testflight", StringComparison.OrdinalIgnoreCase);
+
+    // The badge says "Download on the App Store", so it is only for a released app: not for TestFlight, and
+    // not when the configuration asks for its own wording.
+    private static bool ShowsAppStoreBadge(AppStoreLink link) =>
+        IsApple(link.Platform)
+        && !link.Platform.Equals("testflight", StringComparison.OrdinalIgnoreCase)
+        && string.IsNullOrWhiteSpace(link.Label);
+
+    // Read on every render, like the localizer, so the badge follows a language switch.
+    private static string AppStoreBadgeSource =>
+        System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch
+        {
+            "de" => "_content/CircleTools.Ui.Shared/img/store-badges/app-store-de.svg",
+            "fr" => "_content/CircleTools.Ui.Shared/img/store-badges/app-store-fr.svg",
+            _ => "_content/CircleTools.Ui.Shared/img/store-badges/app-store-en.svg",
+        };
 
     // Neutral Material glyphs that certainly ship (Material Icons has no Apple logo, and Apple's brand
     // rules restrict its use anyway): an iPhone outline for Apple, the Android robot for Android.

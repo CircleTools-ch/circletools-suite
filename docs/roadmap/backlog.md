@@ -177,8 +177,8 @@ clean; none caused by the update unless stated:
   | # | Content | Status |
   |---|---------|--------|
   | R1 | `706dc24`: version 1.0 bump + "Secret Santa" in the app bar in every language (ADR-0057) | released as **1.0.1** (versionCode 16777217): internal → promoted to Alpha 2026-10-30, sent for Google review; notes in `store/google-play/listing-*.md` |
-  | R2 | PR-8 (date-picker calendar clipped on phones — web only) · BTP-5 (second event suggests the same name — suggest the next year) | fixed in working tree 2026-10-30, browser-verified — **ships with R3 as 1.0.2** (owner, 2026-10-30: R2 alone was too small) |
-  | R3 | BTP-3 (forms show "Required" after a successful submit) · BTP-9 (COPIED label, member-row tap, stale back-link name after a rename) | fixed in working tree 2026-10-30, browser-verified (BTP-9 focus ring: not reproduced, open) — 1.0.2, release notes drafted |
+  | R2 | PR-8 (date-picker calendar clipped on phones — web only) · BTP-5 (second event suggests the same name — suggest the next year) | fixed in working tree 2026-10-30, browser-verified — **ships with R3** (owner, 2026-10-30: R2 alone was too small). Not built yet on 2026-11-05: goes out in the next build after 1.0.1, whose number comes from the git height, not "1.0.2" |
+  | R3 | BTP-3 (forms show "Required" after a successful submit) · BTP-9 (COPIED label, member-row tap, stale back-link name after a rename) | fixed in working tree 2026-10-30, browser-verified (BTP-9 focus ring: not reproduced, open) — next build after 1.0.1, release notes drafted |
   | R4 | Localization: PR-9 (MudBlazor validation text; accept `.`/`-` date separators) · BTP-8 leftovers (FR "Réglages" → "Paramètres", FR colon spacing) · BTP-7 (`<html lang>` follows the UI language) | open |
   | R5 | BTP-6 (hide the wishlist count for a participant) · BTP-4 (Security page: stale device list, duplicate section title) · PR-13 (show-password toggle) | open |
   | Spare | PR-10 (update banner stacks on a language switch, web) · SYNC-4 (old language behind the import prompt) · tester findings | — |

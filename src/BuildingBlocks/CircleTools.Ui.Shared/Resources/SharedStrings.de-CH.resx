@@ -48,6 +48,8 @@
   <data name="Legal_Imprint_HostingBody" xml:space="preserve"><value>Die App selbst läuft auf deinem Handy oder in deinem Browser. Die Datenbank und der Server-Dienst dahinter, bei denen dein Konto und deine Online-Gruppen liegen, laufen auf Servern bei Infomaniak in Genf, Schweiz.</value></data>
   <data name="Legal_Imprint_DisclaimerHeading" xml:space="preserve"><value>Das Kleingedruckte</value></data>
   <data name="Legal_Imprint_DisclaimerBody" xml:space="preserve"><value>Ich entwickle CircleTools mit Sorgfalt, aber es ist ein kostenloses, privates Projekt: Ich kann nicht versprechen, dass immer alles perfekt funktioniert oder jederzeit verfügbar ist, und soweit gesetzlich zulässig übernehme ich keine Haftung für Probleme, die aus der Nutzung entstehen. Für die Inhalte verlinkter Websites sind deren Betreiber:innen verantwortlich.</value></data>
+  <data name="Legal_Imprint_TrademarksHeading" xml:space="preserve"><value>Marken</value></data>
+  <data name="Legal_Imprint_TrademarksBody" xml:space="preserve"><value>Apple und das Apple-Logo sind Marken von Apple Inc., die in den USA und weiteren Ländern eingetragen sind. App Store ist eine Dienstleistungsmarke von Apple Inc.</value></data>
   <data name="Legal_Delete_Title" xml:space="preserve"><value>Dein Konto und deine Daten löschen</value></data>
   <data name="Legal_Delete_Intro" xml:space="preserve"><value>Hier erfährst du, wie du deine Daten aus Secret Santa und deinem CircleTools-Konto entfernst. Ich bin Adrian Moll und betreibe CircleTools. Deine Daten gehören dir, und du kannst jederzeit aussteigen: dein ganzes Konto löschen, einzelne Einträge darin oder das, was nur auf deinem Gerät liegt.</value></data>
   <data name="Legal_Delete_InAppHeading" xml:space="preserve"><value>Dein Konto löschen</value></data>
@@ -65,6 +67,6 @@
   <data name="Legal_Imprint_AboutHeading" xml:space="preserve"><value>Warum es das gibt</value></data>
   <data name="Legal_Imprint_AboutBody" xml:space="preserve"><value>Ich bin Softwareentwickler und baue CircleTools in meiner Freizeit. Angefangen hat alles mit Secret Santa, einer Wichtel-App für meine eigene Familie – ich fand keine, die konnte, was wir brauchten. Weitere Apps für Familien und Freundeskreise sollen folgen. Die App ist gratis, und ich hoffe, sie macht eure Feste und Treffen ein wenig einfacher.</value></data>
   <data name="GetTheApp_Heading" xml:space="preserve"><value>Hol dir die App</value></data>
-  <data name="GetTheApp_Ios" xml:space="preserve"><value>Im App Store laden</value></data>
+  <data name="GetTheApp_Ios" xml:space="preserve"><value>Laden im App Store</value></data>
   <data name="GetTheApp_Android" xml:space="preserve"><value>Bei Google Play</value></data>
 </root>

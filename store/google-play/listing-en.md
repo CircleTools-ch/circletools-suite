@@ -67,10 +67,10 @@ Version 1.0. The app is now called "Secret Santa" in every language – in the t
 </en-US>
 ```
 
-1.0.2 (closed test, draft):
+Next version after 1.0.1 (closed test, draft):
 
 ```
 <en-US>
-Adding another event now suggests the next year instead of repeating this year's name. Tap a person in the member list to edit them. "Copied!" switches back to "Copy" after a moment, the back link shows a renamed event right away, and forms no longer show "Required" after saving. In the web app on phones, the date picker shows the whole month again.
+People are now listed alphabetically in every list. Removing someone now deletes their wishlists and note. Revised privacy, legal and data deletion pages. Adding another event suggests the next year. Tap a person in the member list to edit them. "Copied!" switches back to "Copy", and forms no longer show "Required" after saving.
 </en-US>
 ```

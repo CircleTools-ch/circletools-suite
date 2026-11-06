@@ -132,6 +132,10 @@ else
             @L["JoinContinue"]
         </MudButton>
     </MudPaper>
+
+    @* Below the join form, so it never competes with joining. Web-only and self-hiding (ADR-0065): with the app
+       installed a join link normally opens in the app, which registers no store links. *@
+    <AppStoreLinks />
 }
 
 @code {
@@ -148,7 +152,8 @@ else
     private bool _withAccount;
     private string? _error;
 
-    private bool AllTaken => _preview is not null && _preview.Members.All(m => m.Taken);
+    // A group with nobody on it yet is not "all taken": All() alone is true for an empty list.
+    private bool AllTaken => _preview is { Members.Count: > 0 } && _preview.Members.All(m => m.Taken);
 
     private bool CanContinue => _selectedMemberId != Guid.Empty || !string.IsNullOrWhiteSpace(_newName);
 

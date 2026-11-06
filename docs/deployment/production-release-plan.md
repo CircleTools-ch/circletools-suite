@@ -84,8 +84,29 @@ See [mobile runbook, Track B](mobile-apps.md#track-b--apple-app-store) for the s
       Store Connect 2026-10-31 (iPhone medium + iPad 13", German, 4× English, French).
 - [x] Submit for review — **2026-10-31: version 1.0.1 with build 1.0.1** (launch commit `706dc24`) submitted,
       *Waiting for Review*, manual release. Before that the updated Program License Agreement was accepted
-      and the version page renamed 1.0 → 1.0.1 to match the build. Next: answer any App Review message,
-      then *Release this version* once approved. TestFlight external testing optional (needs a Beta App Review).
+      and the version page renamed 1.0 → 1.0.1 to match the build. TestFlight external testing optional
+      (needs a Beta App Review).
+- [x] Release — **2026-11-05: approved by App Review (5 days in the queue) and 1.0.1 released manually** in
+      174 regions (owner decision). This build predates the 2026-10-31 legal-text and member-removal fixes
+      (`f8c4a3e`, LR-1 to LR-8), the 1.0.2 fixes (`be6385d`), "Circle" (`25bd5e4`) and the alphabetical lists
+      (`1b80efd`), so the in-app legal pages are outdated until the next version.
+- [x] App Store link on the web — 2026-11-05: `AppStoreLinks` in the Secret Santa web app's production config,
+      shown on the Groups and join pages (owner decision), never in the native apps. No "Android coming soon"
+      (owner decision): the date is not ours and the section only holds working links. Reaches users with the
+      next web deploy. **When Play production is live, add the Android entry** (the URL is in the config comment).
+      2026-11-06: the link shows **Apple's official black badge** (owner decision), downloaded unmodified from
+      Apple's badge service into `CircleTools.Ui.Shared/wwwroot/img/store-badges/` in DE, EN and FR, and served
+      from our own site. Apple's rules followed: at least 40 px high (48 px here), clear space of a quarter of its
+      height, one per layout, first in a lineup, credit in the imprint (*Trademarks*). Check the credit against
+      Apple's Trademark List. With Android, add Google's official badge the same way, including its rules.
+- [ ] Next App Store version from current `main`, submitted promptly, so the corrected legal texts reach iOS.
+      Prepared 2026-11-05: *What's New* in `store/app-store/listing-*.md`, Play notes in
+      `store/google-play/listing-*.md`; browser pass on the local web app (EN, plus privacy and members in DE
+      and FR), console clean. The last mobile build is still `706dc24`: the "1.0.2" of `be6385d` was never
+      built, and the number comes from the git height (ADR-0047), so the commit that is built decides it.
+      Owner steps: run *Release (mobile)* on `main` after CI is green → in App Store Connect *+ Version* with
+      exactly the version TestFlight shows → *What's New* per language, the build, *Manually release*, phased
+      release **on** → submit. Send the same build to Play *Closed testing - Alpha* (cadence, backlog PR-12).
 
 ## Track 3 — Dependency & toolchain updates
 
