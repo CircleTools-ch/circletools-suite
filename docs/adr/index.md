@@ -55,7 +55,7 @@ a row below. Implement only once an ADR is **Accepted**.
 | [0044](0044-sign-in-reconciliation-and-account-scoped-visibility.md) | Sign-in reconciliation of offline data (Import / Discard / Cancel) and account-scoped visibility; silent auto-sync on sign-in, start, change and reconnect. *Amended 2026-10-15:* the prompt is a sheet that must be answered (no answer ≠ keep local); sync also on resume and every 2 min in the foreground | Accepted | 2026-08-14 |
 | [0045](0045-browser-driving-e2e-test-host.md) | Browser-driving E2E test host: Playwright .NET + a CDP virtual authenticator against the AppHost-launched stack, in a dedicated gating CI job (automates the WebAuthn ceremony, arc42 D4) | Accepted | 2026-08-18 |
 | [0046](0046-suite-packaging-and-app-composition.md) | Suite packaging & app composition (federated suite: per-app installs/origins with permanent `ch.circletools.<app>` bundle ids and `<app>.circletools.ch` subdomains, apex RP-ID; Main is a hub, not a container; unified by shared account + SSO + Circles) | Accepted | 2026-08-19 |
-| [0047](0047-versioning-and-release-strategy.md) | Versioning & release strategy (Nerdbank.GitVersioning from a committed `version.json`; hybrid triggers — merge to `main` deploys the server, a `v*` tag cuts a mobile release; one suite version now, splittable per app; Android `versionCode` from git commit count) | Accepted | 2026-08-21 |
+| [0047](0047-versioning-and-release-strategy.md) | Versioning & release strategy (Nerdbank.GitVersioning from a committed `version.json`; hybrid triggers — merge to `main` deploys the server, a `v*` tag cuts a mobile release; one suite version now, splittable per app; Android `versionCode` computed by nbgv from the version) | Accepted | 2026-08-21 |
 | [0048](0048-web-app-update-delivery.md) | Web app update delivery (keep the offline PWA; a shared MudBlazor "Reload" prompt switches to a newly deployed version on the user's terms; all responses revalidate — corrected by ADR-0049; native heads update via the store) | Accepted | 2026-08-21 |
 | [0049](0049-disable-wasm-fingerprinting-for-csp.md) | Disable WASM asset fingerprinting for strict-CSP compatibility (the inline import map fingerprinting emits is blocked by the inline-free CSP and stops boot; `OverrideHtmlAssetPlaceholders=false` on both heads; corrects ADR-0048's immutable cache header) | Accepted | 2026-08-21 |
 | [0050](0050-secrets-management.md) | Secrets management (two-tier: GitHub Actions encrypted secrets for CI/deploy + git-ignored `deploy/.env` on the host for runtime; authoritative copy in a password manager for recovery/rotation; no plaintext in the repo; SOPS+age recorded as the trigger-gated upgrade path) | Accepted | 2026-08-25 |
@@ -301,8 +301,8 @@ and *what triggers a deploy* — now due as milestone 8 begins.
   hybrid**: merge to `main` builds versioned images and (once the VPS exists) deploys the server
   continuously, while a **`v*` tag** cuts a deliberate mobile store release — because a server we own and
   a store-reviewed app have different release mechanics. **One suite version now**, stamped everywhere for
-  provenance, with a no-rewrite path to per-app `version.json` when cadences diverge; Android
-  `versionCode` comes from `git rev-list --count HEAD` (nbgv's height resets on minor bumps). The
+  provenance, with a no-rewrite path to per-app `version.json` when cadences diverge; nbgv computes the
+  Android `versionCode` from the version, which stays monotonic across minor bumps (corrected 2026-11-06). The
   image-build/push runs now; the SSH rollout **self-activates** when `DEPLOY_HOST` is set. **Follow-ups:
   bump to `1.0` at launch; wire the store-upload leg once signing secrets exist**
   ([ADR-0030](0030-mobile-store-publisher-identity.md)); record **secrets management** at M8.

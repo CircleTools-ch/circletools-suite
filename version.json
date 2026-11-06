@@ -7,8 +7,8 @@
   //   - When an app's release cadence diverges from the suite's, drop a nested version.json into
   //     src/Apps/<App>/ and nbgv scopes that subtree independently — no rewrite here.
   //
-  // Android versionCode is NOT derived from the git height (it resets on a major/minor bump);
-  // release-mobile.yml uses `git rev-list --count HEAD`. See ADR-0047.
+  // nbgv also sets the store numbers: Android versionCode = major*16777216 + minor*65536 + height, and
+  // the iOS build number = the three-part version. See ADR-0047, amendment 2026-11-06.
   "$schema": "https://raw.githubusercontent.com/dotnet/Nerdbank.GitVersioning/master/src/NerdBank.GitVersioning/version.schema.json",
   "version": "1.0",
   "publicReleaseRefSpec": [

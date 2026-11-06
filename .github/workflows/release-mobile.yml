@@ -4,8 +4,11 @@
 # unlike the server which deploys continuously on merge (deploy.yml). Pushing a `v*` tag builds the
 # signed Android head with:
 #   - versionName = the suite SemVer from git (nbgv, ADR-0047), e.g. 0.1.42
-#   - versionCode = `git rev-list --count HEAD` — globally monotonic, because nbgv's git height RESETS
-#     on a major/minor bump and a store versionCode must strictly increase forever (ADR-0047).
+#   - versionCode = set by nbgv's MSBuild target from the version: major*16777216 + minor*65536 + height,
+#     e.g. 1.0.1 = 16777217. It increases with every commit and with every major/minor bump, as a store
+#     requires (ADR-0047, amendment 2026-11-06).
+#   - The `git rev-list --count HEAD` value below does NOT reach the app: nbgv overrides the
+#     ApplicationVersion passed on the command line. It only labels the artifact name.
 #
 # SCAFFOLD — like deploy.yml: it builds and archives the artifact now; the SIGNING and the store upload
 # activate once their secrets exist (the ADR-0030 store-account follow-up). No secrets → an unsigned .aab
@@ -58,7 +61,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0 # full history: nbgv version + the git-count versionCode (ADR-0047).
+          fetch-depth: 0 # full history: nbgv's version and its versionCode (ADR-0047).
 
       - name: Setup .NET (from global.json)
         uses: actions/setup-dotnet@v6
@@ -71,8 +74,8 @@ jobs:
         with:
           toolVersion: "3.10.94"
 
-      # versionCode = total commits on this history. Monotonic as long as main is never rewritten
-      # (git-conventions), which a store upload requires.
+      # Total commits on this history. Only labels the artifact: nbgv overrides ApplicationVersion during
+      # the build, so this is NOT the real versionCode (ADR-0047, amendment 2026-11-06).
       - name: Compute versionCode
         id: code
         run: echo "value=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
@@ -84,8 +87,8 @@ jobs:
         if: ${{ env.HAS_SIGNING == 'true' }}
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/upload.jks"
 
-      # Signed release build. versionName from nbgv, versionCode from the git count (both override the
-      # csproj local-dev defaults). The signing props are only added when a keystore is present.
+      # Signed release build. versionName and versionCode end up as nbgv computes them, whatever is passed
+      # here (ADR-0047, amendment 2026-11-06). The signing props are only added when a keystore is present.
       - name: Publish signed Android app bundle
         if: ${{ env.HAS_SIGNING == 'true' }}
         run: |
@@ -166,7 +169,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0 # full history: nbgv version + the git-count build number (ADR-0047).
+          fetch-depth: 0 # full history: nbgv's version, also used as the build number (ADR-0047).
 
       - name: Setup .NET (from global.json)
         uses: actions/setup-dotnet@v6
@@ -179,8 +182,8 @@ jobs:
         with:
           toolVersion: "3.10.94"
 
-      # iOS CFBundleVersion (build number) = total commits, matching the Android versionCode. Monotonic
-      # as long as main is never rewritten (git-conventions), which a store upload requires (ADR-0047).
+      # Total commits on this history. Only labels the artifact: nbgv sets the iOS build number to the
+      # three-part version, e.g. 1.0.1, whatever is passed here (ADR-0047, amendment 2026-11-06).
       - name: Compute build number
         id: code
         run: echo "value=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
@@ -252,8 +255,8 @@ jobs:
           echo "CODESIGN_KEY=$IDENTITY" >> "$GITHUB_ENV"
           echo "CODESIGN_PROVISION=$PROFILE_NAME" >> "$GITHUB_ENV"
 
-      # Signed .ipa. versionName from nbgv, build number from the git count (both override the csproj
-      # local-dev defaults); RevealBaseUrl/ApiBaseUrl baked to production (ADR-0053, matches Android).
+      # Signed .ipa. Version and build number end up as nbgv computes them, whatever is passed here (ADR-0047,
+      # amendment 2026-11-06); RevealBaseUrl/ApiBaseUrl baked to production (ADR-0053, matches Android).
       - name: Publish signed iOS app (.ipa)
         if: ${{ env.HAS_SIGNING == 'true' }}
         run: |

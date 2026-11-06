@@ -116,14 +116,15 @@ subtree independently — **no rewrite**. Starting unified therefore costs nothi
 per-app split until it is earned. Strict single-version (β) would tie a store app's public version to
 server deploys; full independence (γ) is moving parts we do not need yet.
 
-### Android `versionCode` — git commit count, not git height
+### Android `versionCode` — computed by nbgv from the version
+
+*Corrected 2026-11-06, see the amendment below: this section originally said the code was the git commit
+count.*
 
 `versionCode` must be a **strictly increasing** integer that never repeats. nbgv's `VersionHeight`
 **resets to 0 on every `major.minor` bump** in `version.json`, so it is *not* globally monotonic and is
-unsafe as a raw `versionCode`. `release-mobile.yml` therefore sets `versionCode` from
-`git rev-list --count HEAD` (monotonic across the whole history) and `versionName` from the nbgv SemVer,
-passing both as MSBuild overrides to the signed build. The csproj keeps `1.0` / `1` only as local-dev
-defaults.
+unsafe as a raw `versionCode`. nbgv's MSBuild target therefore combines it with the version:
+`major × 16777216 + minor × 65536 + height`. The csproj keeps `1.0` / `1` only as placeholders.
 
 ### Container builds — version passed in, nbgv excluded
 
@@ -159,6 +160,24 @@ green CI (`workflow_run`); it runs only on **manual dispatch**.
 - **Rejected alternative.** Keep the automatic trigger but skip it for docs-only commits by path filter: it
   still deploys mobile-only and store-copy merges, and still cannot time the web release against the stores.
 
+### Amendment (2026-11-06) — the store numbers come from nbgv, not the git commit count
+
+**Corrects the "git commit count" statement above.** While preparing the next store release, the `.aab` of
+the 2026-10-30 run turned out to carry `versionCode` **16777217**, although `release-mobile.yml` passed
+`-p:ApplicationVersion=225`. Backlog PR-12 recorded the same 16777217 for the 1.0.1 release on Play.
+
+- **Why.** `Nerdbank.GitVersioning.targets` (3.10.94) has a build target that sets `ApplicationVersion` during
+  the build, which replaces a value passed on the command line. **Android:**
+  `major × 16777216 + minor × 65536 + height`, so 1.0.1 = 16777217 and 1.0.9 = 16777225. **iOS:** the
+  three-part version, which is why App Store Connect shows build 1.0.1 of version 1.0.1.
+- **Monotonic, so kept.** The number rises with every commit and with every `major.minor` bump, which is what
+  the stores require. The target fails the build beyond major 124, minor 255 or height 65535.
+- **Do not "fix" the pipeline to the commit count.** Play already holds 16777217: a commit-count code (a few
+  hundred) would be lower, and Play would reject every upload.
+- **Left as it is.** The `git rev-list --count HEAD` step and its `ApplicationVersion` argument stay in
+  `release-mobile.yml` with corrected comments. The count only labels the artifact name, such as
+  `secretsanta-android-1.0.1-225`, so that suffix is **not** the version code. Removing them is optional clean-up.
+
 ## Consequences
 
 - **Positive:** versions are automatic, monotonic, and traceable to a commit, with the source of truth
@@ -181,17 +200,17 @@ green CI (`workflow_run`); it runs only on **manual dispatch**.
     ([ADR-0030](0030-mobile-store-publisher-identity.md)); add the **macOS/iOS** leg with the Mac
     ([ADR-0031](0031-ios-build-host.md)).
   - Split `version.json` per app when Secret-Santa and Main diverge in cadence.
-- **New risks:** `git rev-list --count HEAD` as `versionCode` assumes `main`'s history is **never
-  rewritten** (it must not be, per [git-conventions](../process/git-conventions.md)); a rewrite could
-  lower the count and block a store upload. Stated so it is a known invariant, not a surprise.
+- **New risks:** the git height inside `versionCode` assumes `main`'s history is **never rewritten** (it
+  must not be, per [git-conventions](../process/git-conventions.md)); a rewrite could lower the height and
+  block a store upload. Stated so it is a known invariant, not a surprise.
 
 ## Pros and cons of the options
 
 ### Versioning — 1. Nerdbank.GitVersioning (chosen)
 - 👍 Source of truth is a committed `version.json` (rule 9); advances every merge with no tag.
 - 👍 Gives a SemVer name *and* integers; auto-stamps every assembly; offline, deterministic, no server.
-- 👎 Needs full git history in CI; `VersionHeight` resets on minor bumps (so we use commit-count for
-  `versionCode`).
+- 👎 Needs full git history in CI; `VersionHeight` resets on minor bumps (nbgv's `versionCode` formula
+  accounts for that, see the amendment).
 
 ### Versioning — 2. MinVer
 - 👍 Dead simple, tag-driven.
