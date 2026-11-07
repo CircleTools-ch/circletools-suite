@@ -371,6 +371,8 @@
   <data name="Mud_MudChip_Close" xml:space="preserve"><value>Entfernen</value></data>
   <data name="Mud_MudSnackbar_Close" xml:space="preserve"><value>Schliessen</value></data>
   <data name="Mud_MudNavGroup_ToggleExpand" xml:space="preserve"><value>{0} auf- oder zuklappen</value></data>
+  <data name="Mud_Converter_InvalidDateTime" xml:space="preserve"><value>Kein gültiges Datum</value></data>
+  <data name="Mud_Converter_InvalidNumber" xml:space="preserve"><value>Keine gültige Zahl</value></data>
   <data name="MoveToAccountConfirmYes" xml:space="preserve"><value>In mein Konto verschieben</value></data>
   <data name="AccountToLocalConfirm" xml:space="preserve"><value>Diese Gruppe nur noch auf diesem Gerät behalten? Sie wird aus deinem Konto und vom Server entfernt und verschwindet von deinen anderen Geräten.</value></data>
   <data name="AccountToLocalConfirmYes" xml:space="preserve"><value>Nur auf diesem Gerät</value></data>

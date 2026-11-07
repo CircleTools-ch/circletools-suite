@@ -99,14 +99,16 @@ See [mobile runbook, Track B](mobile-apps.md#track-b--apple-app-store) for the s
       from our own site. Apple's rules followed: at least 40 px high (48 px here), clear space of a quarter of its
       height, one per layout, first in a lineup, credit in the imprint (*Trademarks*). Check the credit against
       Apple's Trademark List. With Android, add Google's official badge the same way, including its rules.
-- [ ] Next App Store version from current `main`, submitted promptly, so the corrected legal texts reach iOS.
-      Prepared 2026-11-05: *What's New* in `store/app-store/listing-*.md`, Play notes in
-      `store/google-play/listing-*.md`; browser pass on the local web app (EN, plus privacy and members in DE
-      and FR), console clean. The last mobile build is still `706dc24`: the "1.0.2" of `be6385d` was never
-      built, and the number comes from the git height (ADR-0047), so the commit that is built decides it.
-      Owner steps: run *Release (mobile)* on `main` after CI is green → in App Store Connect *+ Version* with
-      exactly the version TestFlight shows → *What's New* per language, the build, *Manually release*, phased
-      release **on** → submit. Send the same build to Play *Closed testing - Alpha* (cadence, backlog PR-12).
+- [x] Submit the next App Store version, so the corrected legal texts reach iOS — **2026-11-06: 1.0.10** (build
+      1.0.10 from `6736887`, tested quickly on a device by the owner) submitted, *What's New* and promotional text
+      in German, French and all four English storefronts, manual release, 7-day phased release on. The "1.0.2" of
+      `be6385d` was never built; the number comes from the git height (ADR-0047).
+- [ ] When 1.0.10 is approved: *Release This Version*.
+- [x] Same build to Play — **2026-11-06: 1.0.10** (versionCode 16777226) promoted from internal testing to
+      *Closed testing - Alpha* at 100 %, notes in DE/EN/FR, sent for Google's review (backlog PR-12). Play Console
+      showed 7 of the 14 days with 12 testers. Two routine warnings: no deobfuscation file, no native debug symbols.
+- [ ] When Google approves it: **publish under *Publishing overview → Changes ready to publish***. Managed
+      publishing is on, so an approved release does not go out by itself.
 
 ## Track 3 — Dependency & toolchain updates
 

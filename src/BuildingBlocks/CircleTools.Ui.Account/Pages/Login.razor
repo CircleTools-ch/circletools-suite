@@ -18,9 +18,8 @@
                               Variant="Variant.Outlined" Margin="Margin.Dense" Required="true"
                               autocomplete="email" />
 
-                <MudTextField @bind-Value="_password" Label="@L["FieldPassword"]" InputType="InputType.Password"
-                              Variant="Variant.Outlined" Margin="Margin.Dense" Required="true"
-                              autocomplete="current-password" />
+                <PasswordField @bind-Value="_password" Label="@L["FieldPassword"]" Required="true"
+                               autocomplete="current-password" />
 
                 @* Only the web asks (Q25, FR-008): an installed app always stays signed in — the device lock protects
                    it, and "Sign out" / "Sign out everywhere" remain. *@

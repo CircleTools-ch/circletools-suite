@@ -28,11 +28,17 @@
   state every circle is in the moment it is created
   ([FEAT-003](../features/FEAT-003-m2-circles.md)). Test the count at **one**, not only at three —
   the component tests covering both rendered three people and saw nothing.
+- **French puts a no-break space (U+00A0) before a colon**, so the colon never wraps onto a line of its
+  own. In a resource, type it; for a label the markup completes, use `LabelText.WithColon`.
+- **MudBlazor's own strings** go through `SecretSantaMudLocalizer`: its key `K` is looked up as `Mud_K` in
+  `AppStrings`, and a key without an entry stays in English.
 
 ## 4. Culture selection
 - Selected culture is a **user preference**, persisted locally and synced across devices.
 - Persist it through `IKeyValueStore` under a **per-app key** (`CultureOptions.StorageKey`), so two
   apps in the suite do not overwrite each other's choice.
+- `CultureBoundary` keeps `<html lang>` on the chosen language, for screen readers and the browser's
+  translation offer.
 - **Changing language must not reload the page**
   ([UC-MAIN-005](../use-cases/main/UC-MAIN-005-manage-profile.md)). A `forceLoad` navigation is a
   regression, not a shortcut. In Blazor WebAssembly this needs three things, and missing any one of

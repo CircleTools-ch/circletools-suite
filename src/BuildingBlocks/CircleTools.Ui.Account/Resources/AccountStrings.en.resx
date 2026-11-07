@@ -123,7 +123,9 @@
   <data name="PasswordsDoNotMatch" xml:space="preserve"><value>The two new passwords don't match.</value></data>
   <data name="ChangePasswordSubmit" xml:space="preserve"><value>Change password</value></data>
   <data name="PasswordChanged" xml:space="preserve"><value>Your password was changed. Your other devices were signed out.</value></data>
-  <data name="SignOutEverywhereTitle" xml:space="preserve"><value>Signed-in devices</value></data>
+  <data name="ShowPassword" xml:space="preserve"><value>Show password</value></data>
+  <data name="HidePassword" xml:space="preserve"><value>Hide password</value></data>
+  <data name="SignOutEverywhereTitle" xml:space="preserve"><value>Sign out everywhere</value></data>
   <data name="SignOutEverywhereLead" xml:space="preserve"><value>Signing out ends the session on this device only. If you lost a device or signed in somewhere you no longer trust, sign out everywhere.</value></data>
   <data name="SignOutEverywhereButton" xml:space="preserve"><value>Sign out on all devices</value></data>
   <data name="SignOutEverywhereConfirm" xml:space="preserve"><value>Sign out on all your devices, including this one?</value></data>

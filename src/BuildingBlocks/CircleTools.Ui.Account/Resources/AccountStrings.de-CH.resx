@@ -123,7 +123,9 @@
   <data name="PasswordsDoNotMatch" xml:space="preserve"><value>Die beiden neuen Passwörter stimmen nicht überein.</value></data>
   <data name="ChangePasswordSubmit" xml:space="preserve"><value>Passwort ändern</value></data>
   <data name="PasswordChanged" xml:space="preserve"><value>Dein Passwort wurde geändert. Deine anderen Geräte wurden abgemeldet.</value></data>
-  <data name="SignOutEverywhereTitle" xml:space="preserve"><value>Angemeldete Geräte</value></data>
+  <data name="ShowPassword" xml:space="preserve"><value>Passwort anzeigen</value></data>
+  <data name="HidePassword" xml:space="preserve"><value>Passwort verbergen</value></data>
+  <data name="SignOutEverywhereTitle" xml:space="preserve"><value>Überall abmelden</value></data>
   <data name="SignOutEverywhereLead" xml:space="preserve"><value>Abmelden beendet nur die Sitzung auf diesem Gerät. Wenn du ein Gerät verloren hast oder dich irgendwo angemeldet hast, dem du nicht mehr traust, melde dich überall ab.</value></data>
   <data name="SignOutEverywhereButton" xml:space="preserve"><value>Auf allen Geräten abmelden</value></data>
   <data name="SignOutEverywhereConfirm" xml:space="preserve"><value>Auf allen deinen Geräten abmelden, auch auf diesem?</value></data>

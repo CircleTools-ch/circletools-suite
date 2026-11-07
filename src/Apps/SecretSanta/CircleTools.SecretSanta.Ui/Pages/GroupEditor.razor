@@ -355,7 +355,9 @@ else
             parts.Add(L["EventNoDate"]);
         }
 
-        if (_group is { Members.Count: > 0 } && !IsPast(occasion))
+        // Not for a participant: this device holds only their own and their recipient's wishlists, so "2/5" would
+        // read as three missing (BTP-6).
+        if (_group is { Members.Count: > 0 } && !_readOnly && !IsPast(occasion))
         {
             parts.Add(L["EventWishlistProgress", occasion.WishlistsFilled, _group.Members.Count]);
         }

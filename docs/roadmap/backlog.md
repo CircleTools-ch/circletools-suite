@@ -158,6 +158,33 @@ clean; none caused by the update unless stated:
   "Not a valid date time" in English in every UI language. Also: the accepted format follows the
   formatting region (ADR-0056), so `24.12.2026` is rejected on an en-GB browser — consider accepting
   `.`/`-` separators too.
+  **Fixed in the working tree 2026-11-06 (R4):** the message comes through `SecretSantaMudLocalizer`
+  (`Mud_Converter_InvalidDateTime`, also `…InvalidNumber`, DE/EN/FR). `TypedDateConverter` accepts `.`, `-` and
+  `/`, one-digit days and months, two- or four-digit years, and ISO `yyyy-MM-dd`; the region still decides the
+  order of day and month (ADR-0056), so `24.12.2026` stays refused on an en-US browser. **Web only:** the device
+  heads use the native date input and never showed this. Browser-verified on en-GB, de-CH, fr-CH and en-US. A
+  relaxed date stays as typed in the field until the page is reopened (`1-2-2027`, then `01.02.2027`).
+- **PR-14 · Save deletes the date when the date field holds an invalid text (P2, found 2026-11-06, web only).**
+  With a saved date, typing `hello` shows the error, but *Save* then reports success and the date is gone after
+  a reload. MudBlazor sets `Date` to null on a failed conversion, whichever converter is used, so this predates
+  R4. *Add event* has the same gap: the event is created without the date. Neither should go ahead while the
+  field shows an error.
+  **Fixed in the working tree 2026-11-06:** both forms use `TypedDatePicker`. A failed conversion no longer reaches
+  the form, which keeps the last good date; *Save* and *Add event* refuse while the field shows the error; emptying
+  the field still removes the date. Checking `ConversionError` alone was not enough: any later re-render of the
+  form wiped the text and the error, and the next *Save* deleted the date, so the wrapper also renders the picker
+  only when its inputs change. Browser-verified (EN flows, DE/FR error text). `TypedDatePickerTests` cover the
+  wrapper; the refusal in the two forms has no automated test, because bUnit does not run the browser branch.
+  Also verified in Chrome on a Galaxy S24 (2026-11-07, de-CH): both forms refuse `hello` with "Kein gültiges Datum", and
+  the saved date survives a reload.
+  If the error moves the button, a click made straight from the date field can miss it: the error shows, nothing is
+  saved, and an earlier "Saved." stays until the next click.
+- **PR-15 · The web apps' loading percentage goes over 100% (P3, reported by users 2026-11-06, web only).**
+  Measured 101% on every fresh load and reload of the Secret-Santa web app (Debug build, en-GB, de-CH, fr-CH).
+  Blazor's `blazor.webassembly.js` writes `loaded / total` to `--blazor-load-percentage-text` without a limit, and
+  CSS cannot limit a text. The ring is unaffected. Both web apps use the same `app.css`.
+  **Fixed in the working tree 2026-11-07:** both web apps show the ring alone, without the number. The count itself
+  still reaches 101%; why it passes the total was not traced. Browser-verified on both apps (de-CH, Debug build).
 - **PR-10 · Update banner stacks on a language switch (P3).** With "A new version is available" showing,
   switching language adds a second banner in the new language instead of replacing the first.
 - **PR-11 · Three SecretSanta.Ui tests failed once under full-suite parallel load (P3).** Passed in four
@@ -179,8 +206,8 @@ clean; none caused by the update unless stated:
   | R1 | `706dc24`: version 1.0 bump + "Secret Santa" in the app bar in every language (ADR-0057) | released as **1.0.1** (versionCode 16777217): internal → promoted to Alpha 2026-10-30, sent for Google review; notes in `store/google-play/listing-*.md` |
   | R2 | PR-8 (date-picker calendar clipped on phones — web only) · BTP-5 (second event suggests the same name — suggest the next year) | fixed in working tree 2026-10-30, browser-verified — **ships with R3** (owner, 2026-10-30: R2 alone was too small). Not built yet on 2026-11-05: goes out in the next build after 1.0.1, whose number comes from the git height, not "1.0.2" |
   | R3 | BTP-3 (forms show "Required" after a successful submit) · BTP-9 (COPIED label, member-row tap, stale back-link name after a rename) | fixed in working tree 2026-10-30, browser-verified (BTP-9 focus ring: not reproduced, open) — next build after 1.0.1, release notes drafted |
-  | R4 | Localization: PR-9 (MudBlazor validation text; accept `.`/`-` date separators) · BTP-8 leftovers (FR "Réglages" → "Paramètres", FR colon spacing) · BTP-7 (`<html lang>` follows the UI language) | open |
-  | R5 | BTP-6 (hide the wishlist count for a participant) · BTP-4 (Security page: stale device list, duplicate section title) · PR-13 (show-password toggle) | open |
+  | R4 | Localization: PR-9 (MudBlazor validation text; accept `.`/`-` date separators) · BTP-8 leftovers (FR "Réglages" → "Paramètres", FR colon spacing) · BTP-7 (`<html lang>` follows the UI language) | fixed in working tree 2026-11-06, browser-verified (DE/EN/FR); on the Galaxy S24 (2026-11-07) `<html lang>` follows the switch in the app's WebView (`fr-CH`, `en`, `de-CH`), but what TalkBack actually says has not been listened to — next build after 1.0.10, release notes drafted. Of BTP-8 the FR items only: its other copy points stay open |
+  | R5 | BTP-6 (hide the wishlist count for a participant) · BTP-4 (Security page: stale device list, duplicate section title) · PR-13 (show-password toggle) | fixed in working tree 2026-11-07, browser-verified (DE/EN/FR) except as noted on BTP-6; device pass on the Galaxy S24 as noted on PR-13 — **ships with R4** in one build (owner, 2026-11-07), release notes drafted |
   | Spare | PR-10 (update banner stacks on a language switch, web) · SYNC-4 (old language behind the import prompt) · tester findings | — |
 
   Out of scope for this window: new features (CR-1…CR-4, MNF-6/7, IDEA-003). PR-11 (flaky tests) is watched
@@ -197,6 +224,15 @@ clean; none caused by the update unless stated:
   over seven copies of the toggle. **Planned for R5** (it already touches `Security.razor` for BTP-4); it
   fits the PR-12 rule — small polish on existing fields, no new flow. Reaches iOS with the next App Store
   update after the build now in review. Browser-verify every field in DE/EN/FR plus one Android device pass.
+  **Fixed in the working tree 2026-11-07 (R5):** `PasswordField` on all seven fields of the five pages. While the
+  text shows, the input tells the keyboard not to correct or capitalize it; a successful password change masks the
+  fields again. Browser-verified in the Secret-Santa web app (EN/DE/FR, phone width): the typed text survives the
+  toggle, Enter still submits, the button is 48 px. `PasswordFieldTests` cover the component. The Main web app uses
+  the same component but was not opened. **Galaxy S24, Android 14 (2026-11-07):** on the sign-in page of a Debug app
+  build and in Chrome, the toggle reveals and hides the text and keeps it, and the input carries the no-correction
+  attributes. Tapping the eye closes the keyboard, so the user taps the field again to go on typing. Not covered on the
+  device: the Security, sign-up and delete-account pages in the app (no sign-in, to leave the phone's own group out of
+  an account), how a real keyboard or password manager treats the revealed field, and a Release build.
 
 Found during the Play screenshot pass on the Pixel 9 Pro (Play build `0.1.128`, 2026-10-28, DE/EN/FR, light
 mode; [store submission guide](../deployment/store-submission-guide.md)) and reported by the owner the same day
@@ -320,6 +356,8 @@ clean apart from the expected 400/401 of deliberate wrong inputs.
   path (what phones use) is clean.
 - **BTP-4 · Security page (P3).** The device list is stale after a password change signed the others out;
   two sections are titled "Signed-in devices" (the second is "sign out everywhere").
+  **Fixed in the working tree 2026-11-07 (R5):** a successful change reloads the list (2 devices became 1 in the
+  browser), and the second section is now "Sign out everywhere" / "Überall abmelden" / "Se déconnecter partout".
 - **BTP-5 · Second event's suggested name repeats the first (P3).** "Christmas 2026" again; one tap creates a
   duplicate-named event. Suggest the next year, or block a duplicate name.
   **Fixed in the working tree 2026-10-30 (R2):** the suggestion (`EventNameSuggestion`) starts at the current
@@ -328,12 +366,23 @@ clean apart from the expected 400/401 of deliberate wrong inputs.
   → 2028), console clean. A duplicate name typed by hand is still allowed.
 - **BTP-6 · Participant's group card shows "Wishlists 2/5" (P3).** Correct for the device (own + recipient),
   but reads as "3 missing". Hide the count for a participant.
+  **Not reproduced on 2026-11-07, guarded in the working tree (R5):** since ADR-0086 a join-link participant lands on
+  `/groups/{id}/me`, which shows no count, and has no document, so `/groups/{id}` answers "Group not found". The count
+  remains on the group page for a read-only device that holds the document (`CanEditDocument` false), and `GroupEditor`
+  now hides it there. That path was **not exercised**: no browser flow reached it and the page has no component test.
+  The organizer still sees the count (browser-verified).
 - **BTP-7 · `<html lang>` is always `en` (P2, a11y).** Hard-coded in `index.html`, never updated on a
   language switch: screen readers use the English voice; Chrome on Android may offer to translate DE/FR.
+  **Fixed in the working tree 2026-11-06 (R4):** `CultureBoundary` sets it on start and on every switch, on all
+  heads. `index.html` still says `en` until the runtime has started, while only the loading indicator shows.
 - **BTP-8 · Copy (P3).** DE footer "Ihre Daten löschen" (rest uses *du*); FR colon spacing inconsistent
   ("Pour: Anna" vs "Distribués : 5"), hint says "Réglages" on the "Paramètres" page; EN 'There is already a
   “anna”'; reveal page "ready - no peeking" (hyphen); leave dialog promises "the organizer will see that you
   left" but nothing shows it; the reveal hint "tell the organizer what you would like" (see BTP-11).
+  **FR items fixed in the working tree 2026-11-06 (R4):** the app's settings are "Paramètres" everywhere. "réglages"
+  remains for the phone's own settings (`NotificationsBlocked`, `OpenSystemSettings`) and in the legal texts, whose
+  wording the owner reviews. Every French resource colon now follows a no-break space, as `LabelText` does, guarded
+  by a test for `AppStrings` of Secret Santa; the budget line of a calendar entry no longer hard-codes its colon.
 - **BTP-9 · Small UI (P3).** Tapping a member row does nothing (only ⋮); a "COPIED!" label never resets; the
   back link keeps the old event name after a rename until navigation; tab title stays "Confirming your
   address" after confirming; focus ring left on the Exclusions card after creating a group.

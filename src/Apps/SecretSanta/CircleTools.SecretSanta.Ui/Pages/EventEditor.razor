@@ -66,8 +66,7 @@ else
                        the invariant "yyyy-MM-dd" string the input expects (EventDateText adapts it). *@
                     @if (OperatingSystem.IsBrowser())
                     {
-                        <MudDatePicker ReadOnly="_readOnly" @bind-Date="_eventDate" Label="@L["DateLabel"]" Variant="Variant.Outlined"
-                                       Margin="Margin.Dense" Editable="true" />
+                        <TypedDatePicker @ref="_datePicker" ReadOnly="_readOnly" @bind-Date="_eventDate" Label="@L["DateLabel"]" />
                     }
                     else
                     {
@@ -139,9 +138,10 @@ else
     private decimal? _budgetAmount;
     private decimal? _budgetMinAmount;
     private string _budgetCurrency = "CHF";
-    // The event date; null for no date. The browser binds this directly (MudDatePicker); the device head's
+    // The event date; null for no date. The browser binds this directly (TypedDatePicker); the device head's
     // native <input type="date"> binds EventDateText, which adapts it to/from the invariant string format.
     private DateTime? _eventDate;
+    private TypedDatePicker? _datePicker;
     private string _eventLocation = string.Empty;
     private string _eventDescription = string.Empty;
     private string? _status;
@@ -249,6 +249,14 @@ else
     private async Task SaveAsync()
     {
         _budgetError = null;
+
+        // The field shows a text that is no date, so saving would store something else than it shows (PR-14).
+        // It already says why; an earlier "Saved" must not stay beside it.
+        if (_datePicker is { HasUnreadableText: true })
+        {
+            _status = null;
+            return;
+        }
 
         // A budget is optional: no maximum clears it. A set maximum must be positive with a valid currency.
         // The minimum is an optional lower bound (FR-036): blank or non-positive means "no minimum", and a

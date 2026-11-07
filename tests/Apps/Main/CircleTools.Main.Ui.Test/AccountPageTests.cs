@@ -160,7 +160,7 @@ public sealed class AccountPageTests
         ctx.Api.RespondJson(HttpMethod.Post, $"{Account}/login/passkey/options", new { challenge = "abc" });
 
         var cut = ctx.RenderPage<Login>();
-        cut.Find("button[type=button]").Click();
+        cut.Find("button[type=button]:not([aria-label=ShowPassword])").Click();
 
         // FR-011: changing your mind is not a failure, so nothing may be announced as one.
         cut.WaitForAssertion(() =>
@@ -176,7 +176,7 @@ public sealed class AccountPageTests
         ctx.Api.RespondJson(HttpMethod.Post, $"{Account}/login/passkey/options", new { challenge = "abc" });
 
         var cut = ctx.RenderPage<Login>();
-        cut.Find("button[type=button]").Click();
+        cut.Find("button[type=button]:not([aria-label=ShowPassword])").Click();
 
         cut.WaitForAssertion(() =>
             Assert.Contains("LoginPasskeyUnsupported", cut.Find("[role=alert]").TextContent, StringComparison.Ordinal));
@@ -272,7 +272,8 @@ public sealed class AccountPageTests
 
         var cut = ctx.RenderPage<AccountData>();
 
-        var delete = cut.Find(".circletools-danger button");
+        const string DeleteButton = ".circletools-danger button:not([aria-label=ShowPassword])";
+        var delete = cut.Find(DeleteButton);
         Assert.True(delete.HasAttribute("disabled"));
         Assert.DoesNotContain("btn-primary", delete.ClassName, StringComparison.Ordinal);
 
@@ -280,7 +281,7 @@ public sealed class AccountPageTests
         // instead, the button is still disabled when the user's first click arrives — the click
         // lands on nothing and deletion appears not to work. Found in a browser, not here.
         cut.Find("#delete-password").Input("a-long-enough-passphrase");
-        Assert.False(cut.Find(".circletools-danger button").HasAttribute("disabled"));
+        Assert.False(cut.Find(DeleteButton).HasAttribute("disabled"));
     }
 
     /// <summary>
@@ -312,6 +313,81 @@ public sealed class AccountPageTests
             Assert.All(fields, field => Assert.Empty(cut.Find(field).GetAttribute("value") ?? string.Empty));
             Assert.Empty(cut.FindAll(".mud-input-error"));
         });
+    }
+
+    /// <summary>The other devices were signed out by the change, so the list must not keep showing them (BTP-4).</summary>
+    [Fact]
+    public async Task ChangePassword_OnSuccess_RefreshesTheDeviceList()
+    {
+        await using var ctx = new AccountTestContext();
+        ctx.SignIn();
+        var now = DateTimeOffset.UtcNow;
+        var thisDevice = new SessionInfoResponse(Guid.CreateVersion7(), "This phone", now, now, IsCurrent: true);
+        var otherDevice = new SessionInfoResponse(Guid.CreateVersion7(), "Old tablet", now, now, IsCurrent: false);
+        ctx.Api.RespondJson(HttpMethod.Post, $"{Account}/sessions", new[] { thisDevice, otherDevice });
+        ctx.Api.Respond(HttpMethod.Post, $"{Account}/change-password", HttpStatusCode.NoContent);
+
+        var cut = ctx.RenderPage<Security>();
+        cut.WaitForAssertion(() => Assert.Contains("Old tablet", cut.Markup, StringComparison.Ordinal));
+
+        ctx.Api.RespondJson(HttpMethod.Post, $"{Account}/sessions", new[] { thisDevice });
+        cut.Find("#current-password").Change("the old long passphrase");
+        cut.Find("#new-password").Change("a brand new long passphrase");
+        cut.Find("#repeat-password").Change("a brand new long passphrase");
+        cut.FindAll("form").First(f => f.QuerySelector("#current-password") is not null).Submit();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("PasswordChanged", cut.Markup, StringComparison.Ordinal);
+            Assert.DoesNotContain("Old tablet", cut.Markup, StringComparison.Ordinal);
+        });
+    }
+
+    /// <summary>A field revealed before the change does not stay in clear text afterwards (PR-13).</summary>
+    [Fact]
+    public async Task ChangePassword_OnSuccess_MasksARevealedField()
+    {
+        await using var ctx = new AccountTestContext();
+        ctx.SignIn();
+        ctx.Api.Respond(HttpMethod.Post, $"{Account}/change-password", HttpStatusCode.NoContent);
+
+        var cut = ctx.RenderPage<Security>();
+        cut.FindAll("button[aria-label=ShowPassword]")[1].Click();
+        Assert.Equal("text", cut.Find("#new-password").GetAttribute("type"));
+
+        cut.Find("#current-password").Change("the old long passphrase");
+        cut.Find("#new-password").Change("a brand new long passphrase");
+        cut.Find("#repeat-password").Change("a brand new long passphrase");
+        cut.FindAll("form").First(f => f.QuerySelector("#current-password") is not null).Submit();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("PasswordChanged", cut.Markup, StringComparison.Ordinal);
+            Assert.Equal("password", cut.Find("#new-password").GetAttribute("type"));
+        });
+    }
+
+    /// <summary>Every password field on every account page has the toggle (PR-13).</summary>
+    [Fact]
+    public async Task EveryPasswordField_HasAToggle()
+    {
+        await using var ctx = new AccountTestContext();
+        ctx.SignIn();
+
+        AssertOneTogglePerField(ctx.RenderPage<Login>(), expected: 1);
+        AssertOneTogglePerField(ctx.RenderPage<Register>(), expected: 1);
+        AssertOneTogglePerField(ctx.RenderPage<Security>(), expected: 3);
+
+        var data = ctx.RenderPage<AccountData>();
+        data.WaitForAssertion(() => Assert.NotEmpty(data.FindAll("#delete-password")));
+        AssertOneTogglePerField(data, expected: 1);
+
+        static void AssertOneTogglePerField<TPage>(IRenderedComponent<TPage> page, int expected)
+            where TPage : Microsoft.AspNetCore.Components.IComponent
+        {
+            Assert.Equal(expected, page.FindAll("input[type=password]").Count);
+            Assert.Equal(expected, page.FindAll("button[aria-label=ShowPassword]").Count);
+        }
     }
 
     [Fact]

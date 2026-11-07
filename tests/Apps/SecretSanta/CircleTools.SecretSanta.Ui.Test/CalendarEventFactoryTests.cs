@@ -72,6 +72,16 @@ public sealed class CalendarEventFactoryTests
     }
 
     [Fact]
+    public void ComposesNotes_WithTheFrenchColon()
+    {
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("fr-CH");
+
+        var notes = CalendarEventFactory.ComposeNotes(null, new BudgetDto(30m, "CHF", 10m), "Budget");
+
+        Assert.Equal("Budget : CHF 10–30", notes);
+    }
+
+    [Fact]
     public void ComposesNotes_BudgetOnly_AndNotesOnly_AndNeither()
     {
         Assert.Equal("Budget: up to CHF 30", CalendarEventFactory.ComposeNotes(null, new BudgetDto(30m, "CHF"), "Budget"));

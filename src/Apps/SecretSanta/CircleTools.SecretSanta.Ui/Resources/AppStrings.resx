@@ -426,6 +426,8 @@
   <data name="Mud_MudChip_Close" xml:space="preserve"><value>Remove</value></data>
   <data name="Mud_MudSnackbar_Close" xml:space="preserve"><value>Close</value></data>
   <data name="Mud_MudNavGroup_ToggleExpand" xml:space="preserve"><value>Show or hide {0}</value></data>
+  <data name="Mud_Converter_InvalidDateTime" xml:space="preserve"><value>Not a valid date</value></data>
+  <data name="Mud_Converter_InvalidNumber" xml:space="preserve"><value>Not a valid number</value></data>
   <data name="MoveToAccountConfirmYes" xml:space="preserve"><value>Move to my account</value></data>
   <data name="AccountToLocalConfirm" xml:space="preserve"><value>Keep this group only on this device? It is removed from your account and the server, and disappears from your other devices.</value></data>
   <data name="AccountToLocalConfirmYes" xml:space="preserve"><value>Keep on this device only</value></data>

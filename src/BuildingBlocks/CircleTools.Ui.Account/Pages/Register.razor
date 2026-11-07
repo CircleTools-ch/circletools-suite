@@ -31,9 +31,8 @@ else
                                   Variant="Variant.Outlined" Margin="Margin.Dense" Required="true"
                                   autocomplete="email" id="register-email" />
 
-                    <MudTextField @bind-Value="_password" Label="@L["FieldPassword"]" InputType="InputType.Password"
-                                  HelperText="@L["PasswordHint"]" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" autocomplete="new-password" id="register-password" />
+                    <PasswordField @bind-Value="_password" Label="@L["FieldPassword"]" HelperText="@L["PasswordHint"]"
+                                   Required="true" autocomplete="new-password" id="register-password" />
 
                     <BusyButton Label="@L["RegisterSubmit"]" Busy="_busy" FullWidth="true" />
                 </MudStack>

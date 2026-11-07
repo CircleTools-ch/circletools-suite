@@ -74,3 +74,11 @@ Next version after 1.0.1 (closed test, draft):
 People are now listed alphabetically in every list. Removing someone now deletes their wishlists and note. Revised privacy, legal and data deletion pages. Adding another event suggests the next year. Tap a person in the member list to edit them. "Copied!" switches back to "Copy", and forms no longer show "Required" after saving.
 </en-US>
 ```
+
+Next version after 1.0.10 (closed test, draft, R4 + R5):
+
+```
+<en-US>
+Password fields now have an eye icon to show what you typed. The list of signed-in devices updates right after you change your password. Screen readers now use the language the app is showing. Small corrections to the French texts.
+</en-US>
+```

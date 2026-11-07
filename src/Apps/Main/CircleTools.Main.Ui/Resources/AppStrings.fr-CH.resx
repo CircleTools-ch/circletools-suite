@@ -88,7 +88,7 @@
   <data name="PasskeyUnsupported" xml:space="preserve"><value>Ce navigateur ne peut pas créer de passkeys.</value></data>
   <data name="ChangeEmailTitle" xml:space="preserve"><value>Adresse e-mail</value></data>
   <data name="ChangeEmailLead" xml:space="preserve"><value>Votre compte conserve son adresse actuelle jusqu'à ce que vous confirmiez la nouvelle.</value></data>
-  <data name="ChangeEmailCurrent" xml:space="preserve"><value>Adresse actuelle : {0}</value></data>
+  <data name="ChangeEmailCurrent" xml:space="preserve"><value>Adresse actuelle : {0}</value></data>
   <data name="ChangeEmailSubmit" xml:space="preserve"><value>Envoyer la confirmation</value></data>
   <data name="ChangeEmailSent" xml:space="preserve"><value>Si cette adresse peut être utilisée, un e-mail de confirmation lui est envoyé.</value></data>
   <data name="ConfirmEmailTitle" xml:space="preserve"><value>Confirmation de votre nouvelle adresse</value></data>
@@ -182,7 +182,7 @@
   <data name="CircleDeleteNames" xml:space="preserve"><value>Cela supprime le Circle {0}.</value></data>
   <data name="CircleDeleteLosesAccess" xml:space="preserve"><value>{0} personnes en perdront l'accès.</value></data>
   <data name="CircleDeleteLosesAccessOne" xml:space="preserve"><value>Une personne en perdra l'accès.</value></data>
-  <data name="CircleDeleteManagedNamed" xml:space="preserve"><value>Ces personnes sans compte sont supprimées avec lui :</value></data>
+  <data name="CircleDeleteManagedNamed" xml:space="preserve"><value>Ces personnes sans compte sont supprimées avec lui :</value></data>
   <data name="CircleDeleteKeeps" xml:space="preserve"><value>Vos groupes Secret-Santa, leurs tirages et les liens que vous avez partagés ne sont pas touchés.</value></data>
   <data name="CircleDeleteConfirmPrompt" xml:space="preserve"><value>Tapez le nom du Circle pour confirmer.</value></data>
   <data name="CircleDeleteSubmit" xml:space="preserve"><value>Supprimer le Circle</value></data>
@@ -224,7 +224,7 @@
   <data name="CircleErrorTransferTargetIsManaged" xml:space="preserve"><value>Le Circle ne peut aller qu'à quelqu'un qui peut se connecter.</value></data>
   <data name="CircleErrorAlreadyTheOwner" xml:space="preserve"><value>Cette personne possède déjà ce Circle.</value></data>
   <data name="CircleErrorOwnerMustTransfer" xml:space="preserve"><value>Cédez le Circle à quelqu'un d'autre avant de partir.</value></data>
-  <data name="CircleErrorOwnerMustDelete" xml:space="preserve"><value>Vous êtes la seule personne à pouvoir posséder ce Circle : le quitter revient à le supprimer.</value></data>
+  <data name="CircleErrorOwnerMustDelete" xml:space="preserve"><value>Vous êtes la seule personne à pouvoir posséder ce Circle : le quitter revient à le supprimer.</value></data>
   <data name="CircleErrorCirclesStillOwned" xml:space="preserve"><value>Cédez ou supprimez les Circles que vous possédez avant de supprimer votre compte.</value></data>
   <data name="CircleErrorRefused" xml:space="preserve"><value>Ce n'est pas autorisé.</value></data>
   <data name="CircleLoading" xml:space="preserve"><value>Chargement...</value></data>

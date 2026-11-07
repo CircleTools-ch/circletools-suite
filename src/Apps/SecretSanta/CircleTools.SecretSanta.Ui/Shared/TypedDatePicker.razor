@@ -1,0 +1,71 @@
+@*
+    The browser's date field: a MudDatePicker that can be typed into, read by TypedDateConverter (PR-9), and that
+    never loses a date to a typing mistake (PR-14). MudBlazor reports a text it cannot read as "no date", the same
+    as an emptied field, and a later re-render wipes both the text and its error. So a failed conversion is kept
+    from the owner, which goes on holding the last good date, and the picker only re-renders when one of its inputs
+    really changes. An owner must not save while HasUnreadableText holds. The device heads use a native date input
+    instead, because the Mud calendar clips in the phone WebView.
+*@
+
+<MudDatePicker @ref="_picker" Date="_date" DateChanged="OnDateChangedAsync" TextChanged="OnTextChangedAsync"
+               Label="@_label" ReadOnly="_readOnly" Variant="Variant.Outlined" Margin="Margin.Dense" Editable="true"
+               Converter="TypedDateConverter.Instance" UserAttributes="Attributes" />
+
+@code {
+    private MudDatePicker? _picker;
+    private DateTime? _date;
+    private string? _label;
+    private bool _readOnly;
+    private bool _render;
+
+    /// <summary>The date, or <see langword="null"/> for none.</summary>
+    [Parameter] public DateTime? Date { get; set; }
+
+    /// <summary>Raised for a date that was typed or picked, and with <see langword="null"/> for an emptied field.</summary>
+    [Parameter] public EventCallback<DateTime?> DateChanged { get; set; }
+
+    /// <summary>The field's label.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Whether the date can only be read.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>Attributes for the picker, such as its id.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object> Attributes { get; set; } = [];
+
+    /// <summary>Whether the field holds a text that is no date, so its <see cref="Date"/> is not what it shows.</summary>
+    public bool HasUnreadableText => _picker is { ConversionError: true };
+
+    protected override void OnParametersSet()
+    {
+        if (Date != _date || Label != _label || ReadOnly != _readOnly)
+        {
+            _date = Date;
+            _label = Label;
+            _readOnly = ReadOnly;
+            _render = true;
+        }
+    }
+
+    protected override bool ShouldRender() => _render;
+
+    // Here and not in ShouldRender, which Blazor does not ask for the first render.
+    protected override void OnAfterRender(bool firstRender) => _render = false;
+
+    private Task OnDateChangedAsync(DateTime? date) => HasUnreadableText ? Task.CompletedTask : PublishAsync(date);
+
+    // Emptying a field that held an unreadable text changes no date inside the picker, so only the text tells.
+    private Task OnTextChangedAsync(string? text) =>
+        string.IsNullOrEmpty(text) && !HasUnreadableText ? PublishAsync(null) : Task.CompletedTask;
+
+    private Task PublishAsync(DateTime? date)
+    {
+        if (date == _date)
+        {
+            return Task.CompletedTask;
+        }
+
+        _date = date;
+        return DateChanged.InvokeAsync(date);
+    }
+}

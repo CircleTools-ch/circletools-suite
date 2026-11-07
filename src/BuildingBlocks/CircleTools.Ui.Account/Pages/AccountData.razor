@@ -76,9 +76,8 @@ else
                         @* Bound on input, not on change: the button below is gated on this field, and
                            with the default change binding it only unlocks when the field loses focus —
                            so the user's first click lands on a button still disabled that does nothing. *@
-                        <MudTextField @bind-Value="_password" Immediate="true" InputType="InputType.Password"
-                                      Label="@L["DeletePasswordPrompt"]" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                      Required="true" autocomplete="current-password" id="delete-password" />
+                        <PasswordField @bind-Value="_password" Immediate="true" Label="@L["DeletePasswordPrompt"]"
+                                       Required="true" autocomplete="current-password" id="delete-password" />
 
                         @* Not the primary style and not the first thing focused on the page: an
                            irreversible action should take a deliberate move to reach (TP-002). *@

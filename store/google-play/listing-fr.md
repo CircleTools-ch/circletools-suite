@@ -76,3 +76,11 @@ Version suivant la 1.0.1 (test fermé, brouillon):
 Les personnes sont désormais triées par ordre alphabétique dans toutes les listes. Retirer une personne supprime ses listes de souhaits et sa remarque. Pages de confidentialité, mentions légales et suppression des données révisées. Un nouvel événement propose l'année suivante. Touchez une personne pour la modifier. « Copié ! » redevient « Copier », et les formulaires n'affichent plus d'erreur après l'enregistrement.
 </fr-FR>
 ```
+
+Version suivant la 1.0.10 (test fermé, brouillon, R4 + R5):
+
+```
+<fr-FR>
+Les champs de mot de passe ont désormais une icône en forme d'œil pour afficher votre saisie. La liste des appareils connectés se met à jour dès que vous changez de mot de passe. Les lecteurs d'écran utilisent désormais la langue affichée par l'application. Petites corrections dans les textes français.
+</fr-FR>
+```

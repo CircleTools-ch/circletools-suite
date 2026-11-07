@@ -83,7 +83,7 @@
   <data name="PasskeyUnsupported" xml:space="preserve"><value>Impossible de créer un passkey ici. Vous pouvez toujours vous connecter avec votre mot de passe.</value></data>
   <data name="ChangeEmailTitle" xml:space="preserve"><value>Adresse e-mail</value></data>
   <data name="ChangeEmailLead" xml:space="preserve"><value>Votre compte conserve son adresse actuelle jusqu'à ce que vous confirmiez la nouvelle.</value></data>
-  <data name="ChangeEmailCurrent" xml:space="preserve"><value>Adresse actuelle : {0}</value></data>
+  <data name="ChangeEmailCurrent" xml:space="preserve"><value>Adresse actuelle : {0}</value></data>
   <data name="ChangeEmailSubmit" xml:space="preserve"><value>Envoyer la confirmation</value></data>
   <data name="ChangeEmailSent" xml:space="preserve"><value>Si cette adresse peut être utilisée, un e-mail de confirmation lui est envoyé.</value></data>
   <data name="ConfirmEmailTitle" xml:space="preserve"><value>Confirmation de votre nouvelle adresse</value></data>
@@ -123,12 +123,14 @@
   <data name="PasswordsDoNotMatch" xml:space="preserve"><value>Les deux nouveaux mots de passe ne correspondent pas.</value></data>
   <data name="ChangePasswordSubmit" xml:space="preserve"><value>Modifier le mot de passe</value></data>
   <data name="PasswordChanged" xml:space="preserve"><value>Votre mot de passe a été modifié. Vos autres appareils ont été déconnectés.</value></data>
-  <data name="SignOutEverywhereTitle" xml:space="preserve"><value>Appareils connectés</value></data>
+  <data name="ShowPassword" xml:space="preserve"><value>Afficher le mot de passe</value></data>
+  <data name="HidePassword" xml:space="preserve"><value>Masquer le mot de passe</value></data>
+  <data name="SignOutEverywhereTitle" xml:space="preserve"><value>Se déconnecter partout</value></data>
   <data name="SignOutEverywhereLead" xml:space="preserve"><value>La déconnexion ne ferme que la session de cet appareil. Si vous avez perdu un appareil ou vous êtes connecté quelque part où vous n'avez plus confiance, déconnectez-vous partout.</value></data>
   <data name="SignOutEverywhereButton" xml:space="preserve"><value>Se déconnecter de tous les appareils</value></data>
   <data name="SignOutEverywhereConfirm" xml:space="preserve"><value>Vous déconnecter de tous vos appareils, y compris celui-ci ?</value></data>
   <data name="SignOutEverywhereConfirmYes" xml:space="preserve"><value>Se déconnecter partout</value></data>
-  <data name="SignedOutByServer" xml:space="preserve"><value>Vous avez été déconnecté : votre session a été fermée sur un autre appareil ou a expiré.</value></data>
+  <data name="SignedOutByServer" xml:space="preserve"><value>Vous avez été déconnecté : votre session a été fermée sur un autre appareil ou a expiré.</value></data>
   <data name="ConfirmCancel" xml:space="preserve"><value>Annuler</value></data>
   <data name="DevicesTitle" xml:space="preserve"><value>Appareils connectés</value></data>
   <data name="DevicesLead" xml:space="preserve"><value>Les appareils où votre compte est connecté. Déconnectez un appareil que vous n’utilisez plus ou ne reconnaissez pas.</value></data>

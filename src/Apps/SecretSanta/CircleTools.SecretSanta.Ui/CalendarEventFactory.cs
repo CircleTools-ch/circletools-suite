@@ -1,5 +1,7 @@
+using System.Globalization;
 using CircleTools.SecretSanta.Contracts;
 using CircleTools.Ui.Abstractions;
+using CircleTools.Ui.Shared;
 
 namespace CircleTools.SecretSanta.Ui;
 
@@ -70,7 +72,7 @@ public static class CalendarEventFactory
 
         if (budget is { } b)
         {
-            parts.Add($"{budgetLabel}: {BudgetDisplay.Format(b.MinAmount, b.Amount, b.Currency)}");
+            parts.Add($"{LabelText.WithColon(budgetLabel, CultureInfo.CurrentUICulture)} {BudgetDisplay.Format(b.MinAmount, b.Amount, b.Currency)}");
         }
 
         return parts.Count == 0 ? null : string.Join("\n", parts);

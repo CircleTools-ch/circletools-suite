@@ -18,8 +18,7 @@
         <div class="mt-3">
             @if (OperatingSystem.IsBrowser())
             {
-                <MudDatePicker @bind-Date="_date" Label="@L["DateOptionalLabel"]" Variant="Variant.Outlined"
-                               Margin="Margin.Dense" Editable="true" id="new-event-date" />
+                <TypedDatePicker @ref="_datePicker" @bind-Date="_date" Label="@L["DateOptionalLabel"]" id="new-event-date" />
             }
             else
             {
@@ -70,6 +69,7 @@
     private bool _carryForward = true;
     private Guid _sourceId;
     private DateTime? _date;
+    private TypedDatePicker? _datePicker;
 
     // The native date input's invariant "yyyy-MM-dd" value (device heads).
     private string DateText
@@ -109,7 +109,8 @@
 
     private void Submit()
     {
-        if (string.IsNullOrWhiteSpace(_name))
+        // A date text that is no date would create the event without the date (PR-14); the field shows why.
+        if (string.IsNullOrWhiteSpace(_name) || _datePicker is { HasUnreadableText: true })
         {
             return;
         }

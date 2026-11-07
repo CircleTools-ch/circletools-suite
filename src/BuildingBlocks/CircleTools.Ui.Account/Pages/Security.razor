@@ -26,15 +26,12 @@
                 <ProblemAlert Message="@_passwordError" Details="@_passwordDetails" />
 
                 <MudStack Spacing="3" Style="max-width:26rem;">
-                    <MudTextField @ref="_currentPasswordField" @bind-Value="_currentPassword" Label="@L["FieldCurrentPassword"]" InputType="InputType.Password"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" Required="true"
-                                  autocomplete="current-password" id="current-password" />
-                    <MudTextField @ref="_newPasswordField" @bind-Value="_newPassword" Label="@L["FieldNewPassword"]" InputType="InputType.Password"
-                                  HelperText="@L["PasswordHint"]" Variant="Variant.Outlined" Margin="Margin.Dense"
-                                  Required="true" autocomplete="new-password" id="new-password" />
-                    <MudTextField @ref="_repeatPasswordField" @bind-Value="_repeatPassword" Label="@L["FieldRepeatPassword"]" InputType="InputType.Password"
-                                  Variant="Variant.Outlined" Margin="Margin.Dense" Required="true"
-                                  autocomplete="new-password" id="repeat-password" />
+                    <PasswordField @ref="_currentPasswordField" @bind-Value="_currentPassword" Label="@L["FieldCurrentPassword"]"
+                                   Required="true" autocomplete="current-password" id="current-password" />
+                    <PasswordField @ref="_newPasswordField" @bind-Value="_newPassword" Label="@L["FieldNewPassword"]"
+                                   HelperText="@L["PasswordHint"]" Required="true" autocomplete="new-password" id="new-password" />
+                    <PasswordField @ref="_repeatPasswordField" @bind-Value="_repeatPassword" Label="@L["FieldRepeatPassword"]"
+                                   Required="true" autocomplete="new-password" id="repeat-password" />
 
                     <BusyButton Label="@L["ChangePasswordSubmit"]" Busy="_passwordBusy" />
                 </MudStack>
@@ -195,9 +192,9 @@
     private string _currentPassword = string.Empty;
     private string _newPassword = string.Empty;
     private string _repeatPassword = string.Empty;
-    private MudTextField<string>? _currentPasswordField;
-    private MudTextField<string>? _newPasswordField;
-    private MudTextField<string>? _repeatPasswordField;
+    private PasswordField? _currentPasswordField;
+    private PasswordField? _newPasswordField;
+    private PasswordField? _repeatPasswordField;
     private string? _passwordError;
     private IReadOnlyList<string>? _passwordDetails;
     private bool _passwordBusy;
@@ -270,7 +267,16 @@
         _passwordChanged = true;
         // The cleared fields were touched, so they would show "Required" right under the success message (BTP-3).
         StateHasChanged();
-        await FieldValidation.ResetAsync(_currentPasswordField, _newPasswordField, _repeatPasswordField);
+        foreach (var field in new[] { _currentPasswordField, _newPasswordField, _repeatPasswordField })
+        {
+            if (field is not null)
+            {
+                await field.ResetAsync();
+            }
+        }
+
+        // The change signed the other devices out, so the list below no longer holds them (BTP-4).
+        await LoadSessionsAsync();
     }
 
     /// <summary>Ends every session of the account, this one included (FR-049), and returns to the start.</summary>

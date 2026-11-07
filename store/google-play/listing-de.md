@@ -77,3 +77,11 @@ Nächste Version nach 1.0.1 (Closed Test, Entwurf):
 Personen stehen jetzt in jeder Liste alphabetisch. Beim Entfernen einer Person werden ihre Wunschlisten und ihr Hinweis gelöscht. Datenschutz, Impressum und Datenlöschung sind überarbeitet. Ein weiterer Anlass schlägt das nächste Jahr vor. Tippe in der Mitgliederliste auf eine Person, um sie zu bearbeiten. „Kopiert!“ wechselt wieder zu „Kopieren“, und Formulare zeigen nach dem Speichern keine Fehlermeldung mehr.
 </de-DE>
 ```
+
+Nächste Version nach 1.0.10 (Closed Test, Entwurf, R4 + R5):
+
+```
+<de-DE>
+Passwortfelder haben jetzt ein Augen-Symbol, das deine Eingabe anzeigt. Die Liste der angemeldeten Geräte aktualisiert sich gleich nach einer Passwortänderung. Screenreader verwenden jetzt die Sprache, in der die App angezeigt wird. Kleine Korrekturen an den französischen Texten.
+</de-DE>
+```

@@ -1,6 +1,8 @@
 @implements IDisposable
 @inject ICultureProvider Culture
+@inject IJSRuntime JS
 @using System.Globalization
+@using Microsoft.JSInterop
 
 @*
     Rebuilds everything below it whenever the language changes.
@@ -36,7 +38,33 @@
     [EditorRequired]
     public RenderFragment<string> ChildContent { get; set; } = default!;
 
+    // The language <html lang> was last set to, so a re-render with the same language costs no JS call.
+    private string? _documentLanguage;
+
     protected override void OnInitialized() => Culture.CultureChanged += OnCultureChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        var language = Culture.CurrentCulture.Name;
+        if (language == _documentLanguage)
+        {
+            return;
+        }
+
+        // index.html can only name one language, so this is what tells screen readers and the browser's
+        // translation offer the real one (BTP-7), on start and on every switch.
+        _documentLanguage = language;
+        try
+        {
+            await using var module = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./_content/CircleTools.Ui.Shared/js/documentLanguage.js");
+            await module.InvokeVoidAsync("setLanguage", language);
+        }
+        catch (JSException)
+        {
+            // No JS environment or the module is unavailable: the document keeps the language it had.
+        }
+    }
 
     private void OnCultureChanged(object? sender, EventArgs e) => _ = InvokeAsync(StateHasChanged);
 
