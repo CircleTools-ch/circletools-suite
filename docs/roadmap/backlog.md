@@ -263,6 +263,26 @@ clean; none caused by the update unless stated:
   attributes. Tapping the eye closes the keyboard, so the user taps the field again to go on typing. Not covered on the
   device: the Security, sign-up and delete-account pages in the app (no sign-in, to leave the phone's own group out of
   an account), how a real keyboard or password manager treats the revealed field, and a Release build.
+- **PR-17 · Testers Community reports (P1, received 2026-11-10, day 12 / 71 %).** Feedback, ASO and
+  production-access reports, filed with a per-point triage in
+  `store/google-play/closed-test/testers-community/README.md` (outside the docs site, so not a link).
+  No crashes or bugs found. **Proposed, owner to confirm:** rework the EN/DE/FR Play listing text for ASO
+  (EN title `Secret Santa – Gift Exchange`, keyword in the short description, longer description with
+  use cases; no build needed); captioned screenshots after production access (PR-6); show-password
+  toggle already done (PR-13); **decline** Google Sign-in for 1.0 (needs an ADR, privacy/data-safety
+  changes and an equivalent Apple option) and an exit confirmation on Back (against Android guidance,
+  nothing is lost). The service's suggested production-access answers claim changes we did not make
+  (Google Sign-in, exit dialog, family-and-friends testers): **answer from the honest draft** in that
+  README on day 14. **Listing text rewritten 2026-11-10** (EN/DE/FR in `store/google-play/listing-*.md`);
+  **Entered in Play Console 2026-11-10** (default listing en-US, de-DE, fr-FR; AI-asset label kept): 7 changes
+  **sent for review 2026-11-10** (*Changes in review*). Same day, **Alpha 1.0.10** (approved but left
+  unpublished since ~30 Oct) was **published** (owner go-ahead). Managed publishing is on, so once Google
+  approves the listing it waits under *Changes ready to publish* until someone clicks *Publish*.
+  **App Store:** the same descriptions are prepared in `store/app-store/listing-*.md` for the **next iOS
+  version after 1.0.10** (Apple only changes description, keywords, subtitle and name with a new version;
+  1.0.10 is *Ready for Distribution*, no newer version exists yet). Name, subtitle, keywords and promotional
+  text stay. When creating that version, also answer the new age-rating social-media questions in *App
+  Information* (App Store Connect notice, 2026-11-10).
 
 Found during the Play screenshot pass on the Pixel 9 Pro (Play build `0.1.128`, 2026-10-28, DE/EN/FR, light
 mode; [store submission guide](../deployment/store-submission-guide.md)) and reported by the owner the same day

@@ -34,12 +34,12 @@ tirage au sort,cadeaux,Noël,échange,liste de souhaits,famille,bureau,pige,fêt
 
 ## Description (≤4000)
 
+_Revue pour la version suivant la 1.0.10 (backlog PR-17) : même texte que la fiche Play. La version 1.0.10 sur l'App Store affiche encore l'ancienne description ; ce texte la remplace à la création de la prochaine version._
+
 ```
-Secret Santa rend l'organisation d'un échange de cadeaux facile – pour votre famille, vos amis, votre équipe ou n'importe quel groupe.
+Secret Santa est l'application simple pour organiser votre Père Noël secret – en famille, entre amis, entre collègues ou dans votre association. Tirez les noms au sort équitablement, envoyez à chacun un lien privé, et le secret reste un secret.
 
-Créez un groupe, ajoutez tout le monde et tirez les noms au sort équitablement en quelques secondes. Définissez des exclusions pour que les couples ne se tirent pas mutuellement. Chaque personne reçoit un lien privé qui révèle uniquement qui elle a tiré – avec sa liste de souhaits – pour que le secret reste un secret.
-
-Aucun compte nécessaire. L'application fonctionne hors ligne, et les personnes invitées n'ont rien à installer ni à créer : un lien suffit.
+Personne n'a besoin d'installer quoi que ce soit ni de créer un compte. Vous organisez tout dans l'application – elle fonctionne même hors ligne – et les participants n'ont besoin que du lien que vous leur envoyez.
 
 COMMENT ÇA MARCHE
 • Créez un groupe et ajoutez les participants
@@ -49,21 +49,41 @@ COMMENT ÇA MARCHE
 • Partagez le lien privé de chaque personne par WhatsApp, Messages, e-mail ou code QR
 • Chacun ouvre son lien pour voir à qui il offre, avec la liste de souhaits de cette personne
 
-FONCTIONNALITÉS
-• Fonctionne hors ligne – aucun compte requis
-• Gratuit, sans publicité et sans pistage
+FONCTIONNALITÉS PRINCIPALES
+• Tirage au sort équitable, avec exclusions pour les couples, les familles ou les attributions récurrentes
+• Liens privés – chacun ne voit que la personne qu'il a tirée
 • Listes de souhaits – chacun ajoute ses envies directement depuis son lien
 • Notes cadeau pour les allergies ou ce qu'il ne faut pas offrir
 • Budget optionnel, en fourchette ou simple maximum
-• Exclusions pour les couples, les familles ou les attributions récurrentes
-• Mettez un groupe en ligne pour que chacun le rejoigne par un lien
 • Rappels avant le grand jour, et ajout de la date à votre calendrier
+• Mettez un groupe en ligne pour que chacun le rejoigne par un lien
 • L'an prochain, recommencez avec le même groupe – sans répéter les paires de l'an passé
-• Compte optionnel pour synchroniser entre téléphone, tablette et web
-• Connexion par passkey ou mot de passe
+• Fonctionne hors ligne – aucun compte requis
+• Gratuit, sans publicité et sans pistage
+• Compte optionnel pour synchroniser entre téléphone, tablette et web, avec passkey ou mot de passe
+
+IDÉAL POUR
+• Noël en famille – toute la famille participe au tirage, même les proches qui habitent loin
+• Le bureau et l'équipe – un échange de cadeaux sans tableur ni papiers dans un chapeau
+• Les amis et les colocs – prêt en quelques minutes, les liens partent dans le chat du groupe
+• Les associations, les classes et les grands groupes – des exclusions qui fonctionnent, tout simplement
+• Toute l'année – un tirage au sort convient à tout échange de cadeaux, pas seulement en décembre
 
 PRIVÉ PAR CONCEPTION
 Sans compte, vos groupes restent sur votre appareil. Seul ce que vous choisissez de partager – un groupe mis en ligne, ou votre compte si vous en créez un – est enregistré, sur des serveurs en Suisse. Pas de publicité, pas de traceurs, pas de profilage. Exportez ou supprimez vos données à tout moment, directement dans l'application.
+
+QUESTIONS FRÉQUENTES
+Tout le monde a-t-il besoin de l'application Père Noël secret ?
+Non. Seule la personne qui organise utilise l'application. Les autres ouvrent leur lien privé dans n'importe quel navigateur.
+
+Faut-il un compte ?
+Non. Sans compte, vos groupes restent sur votre téléphone. Un compte n'est utile que pour synchroniser entre plusieurs appareils.
+
+Est-ce gratuit ?
+Oui – sans publicité, sans achats intégrés et sans abonnement.
+
+Peut-on recommencer l'an prochain ?
+Oui. Créez un nouvel événement dans le même groupe en reprenant celui de l'an passé – le tirage évite alors les paires de l'an passé.
 
 EN FRANÇAIS, ALLEMAND ET ANGLAIS
 L'application suit la langue de votre appareil, et vous pouvez en changer à tout moment.

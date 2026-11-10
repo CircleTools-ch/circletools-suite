@@ -32,12 +32,12 @@ Geschenktausch,Wichtel,Julklapp,Weihnachten,Geschenke,auslosen,Wunschliste,Famil
 
 ## Beschreibung (≤4000)
 
+_Überarbeitet für die nächste Version nach 1.0.10 (Backlog PR-17): gleicher Text wie im Play-Eintrag. Version 1.0.10 im App Store zeigt noch die bisherige Beschreibung; dieser Text ersetzt sie, sobald die nächste Version angelegt wird._
+
 ```
-Secret Santa macht das Organisieren einer Wichtel-Runde mühelos – für Familie, Freunde, das Team oder jede Gruppe.
+Secret Santa ist die einfache Wichtel-App für jede Wichtel-Runde – mit Familie, Freunden, Arbeitskollegen oder dem Verein. Namen fair auslosen, allen einen privaten Link schicken, und das Geheimnis bleibt ein Geheimnis.
 
-Erstelle eine Gruppe, füge alle hinzu und lose die Namen in Sekunden fair aus. Lege Ausschlüsse fest, damit Paare sich nicht gegenseitig ziehen. Jede Person erhält einen privaten Link, der nur zeigt, wen sie gezogen hat – samt Wunschliste –, damit das Geheimnis ein Geheimnis bleibt.
-
-Kein Konto nötig. Die App funktioniert offline, und die eingeladenen Personen müssen nichts installieren und sich nirgends anmelden: Ein Link genügt.
+Niemand muss etwas installieren oder sich anmelden. Du organisierst alles in der App – sie funktioniert sogar offline –, und die Teilnehmenden brauchen nur den Link, den du ihnen schickst.
 
 SO FUNKTIONIERT'S
 • Gruppe erstellen und die Teilnehmenden hinzufügen
@@ -47,21 +47,41 @@ SO FUNKTIONIERT'S
 • Den privaten Link jeder Person per WhatsApp, Nachrichten, E-Mail oder QR-Code teilen
 • Alle öffnen ihren Link und sehen, wen sie beschenken – samt Wunschliste
 
-FUNKTIONEN
-• Funktioniert offline – kein Konto nötig
-• Gratis, ohne Werbung und ohne Tracking
+DIE WICHTIGSTEN FUNKTIONEN
+• Faire Auslosung, mit Ausschlüssen für Paare, Familien oder wiederkehrende Zuteilungen
+• Private Links – jede Person sieht nur, wen sie gezogen hat
 • Wunschlisten – alle tragen ihre Wünsche direkt über ihren Link ein
 • Geschenk-Hinweise für Allergien oder No-Gos
 • Optionales Budget, als Spanne oder nur als Maximum
-• Ausschlüsse für Paare, Familien oder wiederkehrende Zuteilungen
-• Gruppe online stellen, damit alle per Link beitreten
 • Erinnerungen vor dem grossen Tag und Termin in den Kalender übernehmen
+• Gruppe online stellen, damit alle per Link beitreten
 • Nächstes Jahr wieder mit derselben Gruppe – ohne die Paare vom Vorjahr zu wiederholen
-• Optionales Konto zum Synchronisieren zwischen Handy, Tablet und Web
-• Anmelden mit Passkey oder Passwort
+• Funktioniert offline – kein Konto nötig
+• Gratis, ohne Werbung und ohne Tracking
+• Optionales Konto zum Synchronisieren zwischen Handy, Tablet und Web, mit Passkey oder Passwort
+
+IDEAL FÜR
+• Wichteln an Weihnachten in der Familie – auch mit Verwandten, die weit weg wohnen
+• Wichteln im Büro und im Team – ohne Excel-Liste und ohne Zettel im Hut
+• Freunde und WG – in wenigen Minuten eingerichtet, die Links gehen in den Gruppenchat
+• Vereine, Schulklassen und grössere Gruppen – Ausschlüsse, die einfach funktionieren
+• Schrottwichteln oder Wichteln zu jeder Jahreszeit – nicht nur im Dezember
 
 PRIVAT VON GRUND AUF
 Ohne Konto bleiben deine Gruppen auf deinem Gerät. Gespeichert wird nur, was du bewusst teilst – eine Gruppe, die du online stellst, oder dein Konto, falls du eines erstellst –, und zwar auf Servern in der Schweiz. Keine Werbung, keine Tracker, keine Profile. Exportiere oder lösche deine Daten jederzeit direkt in der App.
+
+FRAGEN UND ANTWORTEN
+Brauchen alle die Wichtel-App?
+Nein. Nur wer organisiert, nutzt die App. Alle anderen öffnen ihren privaten Link in einem beliebigen Browser.
+
+Brauche ich ein Konto?
+Nein. Ohne Konto bleiben deine Gruppen auf deinem Handy. Ein Konto brauchst du nur, wenn du zwischen Geräten synchronisieren möchtest.
+
+Ist die App gratis?
+Ja – ohne Werbung, ohne In-App-Käufe und ohne Abo.
+
+Können wir nächstes Jahr wieder wichteln?
+Ja. Lege in derselben Gruppe einen neuen Anlass an und übernimm den vom Vorjahr – die Auslosung vermeidet dann die Paare vom Vorjahr.
 
 AUF DEUTSCH, ENGLISCH UND FRANZÖSISCH
 Die App folgt der Sprache deines Geräts, und du kannst sie jederzeit wechseln.

@@ -361,7 +361,7 @@ The click-by-click order for the last mile is the [store submission guide](store
 - [ ] Native passkey create + sign-in device-verified on iOS and Android against the deployed API
 - [ ] Store listings and screenshots in DE/EN/FR, per device class **incl. iPad 13"** (mandatory)
 - [x] Data safety (Play) / privacy labels (Apple) match actual data collection (email + user content when synced; "not collected" on-device-only) — *Apple label checked against `store/app-store/README.md` and **published** 2026-10-29; Play data-safety form checked 2026-10-29: already matches `store/google-play/README.md` (incl. sync + device key), no re-submit needed*
-- [x] DSA trader status declared (Apple: **non-trader**, verified in App Store Connect 2026-10-29 — free, no ads/IAP/income; reasoning in `store/app-store/README.md`; flips to *trader* if ever monetized)
+- [x] DSA trader status declared (Apple: **non-trader**, verified in App Store Connect 2026-10-29 — free, no ads/IAP/income; reasoning in `store/app-store/README.md`; flips to *trader* if ever monetized). Google Play: **non-trader**, shown under *Manage account → Account details → Trader status* (checked 2026-11-10, after a console notice "Declare your trader status by 1 February 2027"; nothing to change)
 - [ ] Android targets the current required API level (**36 confirmed**); iOS built with the current required SDK (Xcode 26 / iOS 26 on CI)
 - [ ] iPad build tested on iPadOS 26 (Split View / all orientations); 16 KB-aligned native libs verified
 - [ ] Upload keystore and signing assets backed up offline

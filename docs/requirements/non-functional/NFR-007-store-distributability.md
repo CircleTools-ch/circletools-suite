@@ -35,7 +35,8 @@ which implies required hardware.
 
 **Publisher obligations.** The **DSA trader status** must be declared in App Store Connect. This
 applies to every developer, trader or not, and apps without a verified declaration are removed from
-the EU App Store — which is the majority of the intended audience.
+the EU App Store — which is the majority of the intended audience. Google Play asks for the same
+declaration per developer account (Play Console → *Account details → Trader status*).
 
 **In-product obligations.** Both stores require that an app offering account creation also offers
 **in-app account deletion** *and* a publicly reachable **account-deletion URL** that a user can find

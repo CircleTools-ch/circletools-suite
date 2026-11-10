@@ -36,12 +36,12 @@ names — Apple rejects trademark keywords._
 
 ## Description (≤4000) — version page
 
+_Reworked for the next version after 1.0.10 (backlog PR-17): same text as the Play listing. Version 1.0.10 on the App Store still shows the previous description; this replaces it when the next version is created._
+
 ```
-Secret Santa makes organizing a gift exchange effortless — for your family, friends, team or any group.
+Secret Santa is the simple Secret Santa app for every gift exchange – with your family, friends, colleagues or club. Draw names fairly, give everyone a private link, and keep the secret a secret.
 
-Create a group, add everyone and draw names fairly in seconds. Set exclusions so couples don't draw each other. Everyone gets a private link that reveals only who they've drawn — plus that person's wishlist — so the secret stays a secret.
-
-No account needed. The app works offline, and the people you invite never have to install anything or sign up: a link is all it takes.
+Nobody has to install anything or sign up. You organize everything in the app – it even works offline – and the people taking part only need the link you send them.
 
 HOW IT WORKS
 • Create a group and add the people taking part
@@ -51,26 +51,46 @@ HOW IT WORKS
 • Share each person's private link via WhatsApp, Messages, email or QR code
 • Everyone opens their link to see who they've got, and that person's wishlist
 
-FEATURES
-• Works offline — no account required
-• Free, with no ads and no tracking
-• Wishlists — everyone can add their own wishes straight from their link
+KEY FEATURES
+• Fair name draw, with exclusions for couples, families or repeat pairings
+• Private links – each person sees only who they've drawn
+• Wishlists – everyone adds their wishes straight from their link
 • Gift notes for allergies or things not to give
 • Optional gift budget, as a range or just a maximum
-• Exclusions for couples, families or repeat pairings
-• Put a group online so everyone joins with a link
 • Reminders before the big day, and add the date to your calendar
-• Run it again next year from the same group — without repeating last year's pairs
-• Optional account to sync between your phone, tablet and the web
-• Sign in with a passkey or a password
+• Put a group online so everyone joins with a link
+• Run it again next year from the same group – without repeating last year's pairs
+• Works offline – no account required
+• Free, with no ads and no tracking
+• Optional account to sync between your phone, tablet and the web, with a passkey or a password
+
+PERFECT FOR
+• Family Christmas – the whole family draws names, even relatives who live far away
+• Office and team parties – a gift exchange without a spreadsheet or a hat full of paper slips
+• Friends and flatmates – set it up in minutes and send the links in your group chat
+• Clubs, school classes and associations – larger groups, with exclusions that just work
+• Any time of year – a name draw works for every gift exchange, not just in December
 
 PRIVATE BY DESIGN
-Without an account, your groups stay on your device. Only what you choose to share — a group you put online, or your account if you create one — is stored, on servers in Switzerland. No ads, no trackers, no profiling. Export or delete your data any time, right in the app.
+Without an account, your groups stay on your device. Only what you choose to share – a group you put online, or your account if you create one – is stored, on servers in Switzerland. No ads, no trackers, no profiling. Export or delete your data any time, right in the app.
+
+QUESTIONS & ANSWERS
+Does everyone need the Secret Santa app?
+No. Only the person organizing uses the app. Everyone else opens their private link in any browser.
+
+Do I need an account?
+No. Without an account your groups stay on your phone. Create one only if you want to sync between devices.
+
+Is it free?
+Yes – no ads, no in-app purchases and no subscription.
+
+Can we use it again next year?
+Yes. Add a new event to the same group and carry last year's over – the draw then avoids last year's pairs.
 
 IN ENGLISH, GERMAN AND FRENCH
 The app follows your device language, and you can switch at any time.
 
-Whether it's Christmas, an office party or a family get-together, Secret Santa takes the hassle out of gift exchanges — so you can focus on the fun.
+Whether it's Christmas, an office party or a family get-together, Secret Santa takes the hassle out of gift exchanges – so you can focus on the fun.
 ```
 
 ## What's New (≤4000) — per update; this is the next version after 1.0.10

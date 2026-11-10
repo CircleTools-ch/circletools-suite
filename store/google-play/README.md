@@ -14,6 +14,7 @@ This complements the submission runbook: [`docs/deployment/mobile-apps.md`](../.
 | `listing-en.md` | Default listing (English) | name ≤30, short ≤80, full ≤4000 |
 | `listing-de.md` | German translation (**Wichteln**) | same |
 | `listing-fr.md` | French translation (**Père Noël secret**) | same |
+| `closed-test/testers-community/` | Closed-test reports (feedback, ASO, production-access draft) and what we do with them | — |
 | `assets/app-icon-512.png` | App icon | 512×512 PNG, ≤1 MB, **no alpha** |
 | `assets/feature-graphic-1024x500{,-de,-fr}.png` | Feature graphic (per language) | 1024×500 PNG/JPEG, ≤15 MB |
 | `screenshots/phone/{en,de,fr}/` | Phone screenshots | 2–8, ~20:9 portrait |
