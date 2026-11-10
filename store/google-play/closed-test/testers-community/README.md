@@ -30,7 +30,7 @@ The testers found **no crashes, bugs or broken functions** on any device or SDK.
 *Appli Père Noël secret*; full descriptions gained a key-features heading, a "Perfect for" use-case
 block and a Q&A (EN 2,884, DE 3,100, FR 3,407 chars, all ≤ 4,000). Entered in Play Console the
 same day (en-US, de-DE, fr-FR; the AI-asset label left as it was) and sent for review the same
-day. It needs no build. Managed publishing is on, so after approval it still has to be published. The App Store descriptions in
+day. It needs no build. Approved and published the same day (managed publishing). The App Store descriptions in
 `store/app-store/listing-*.md` carry the same text, for the next iOS version after 1.0.10.
 
 Primary keyword chosen by the tool: *secret santa app* (alternatives: *gift exchange app*, *draw names

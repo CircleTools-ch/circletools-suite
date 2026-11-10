@@ -34,7 +34,7 @@ tirage au sort,cadeaux,Noël,échange,liste de souhaits,famille,bureau,pige,fêt
 
 ## Description (≤4000)
 
-_Revue pour la version suivant la 1.0.10 (backlog PR-17) : même texte que la fiche Play. La version 1.0.10 sur l'App Store affiche encore l'ancienne description ; ce texte la remplace à la création de la prochaine version._
+_Revue pour la 1.0.14 (backlog PR-17) : même texte que la fiche Play. Saisie dans App Store Connect pour la version 1.0.14 le 2026-11-10._
 
 ```
 Secret Santa est l'application simple pour organiser votre Père Noël secret – en famille, entre amis, entre collègues ou dans votre association. Tirez les noms au sort équitablement, envoyez à chacun un lien privé, et le secret reste un secret.
@@ -91,7 +91,7 @@ L'application suit la langue de votre appareil, et vous pouvez en changer à tou
 Que ce soit pour Noël, une fête de bureau ou une réunion de famille, Secret Santa enlève le tracas des échanges de cadeaux – pour que vous puissiez profiter du plaisir.
 ```
 
-## Nouveautés (≤4000) — par mise à jour ; ici la version suivant la 1.0.10
+## Nouveautés (≤4000) — par mise à jour ; ici la 1.0.14
 
 ```
 • Les champs de mot de passe ont désormais une icône en forme d'œil pour afficher votre saisie.

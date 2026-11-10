@@ -36,7 +36,7 @@ names — Apple rejects trademark keywords._
 
 ## Description (≤4000) — version page
 
-_Reworked for the next version after 1.0.10 (backlog PR-17): same text as the Play listing. Version 1.0.10 on the App Store still shows the previous description; this replaces it when the next version is created._
+_Reworked for 1.0.14 (backlog PR-17): same text as the Play listing. Entered in App Store Connect for version 1.0.14 on 2026-11-10 (DE, FR and all four English locales)._
 
 ```
 Secret Santa is the simple Secret Santa app for every gift exchange – with your family, friends, colleagues or club. Draw names fairly, give everyone a private link, and keep the secret a secret.
@@ -93,7 +93,7 @@ The app follows your device language, and you can switch at any time.
 Whether it's Christmas, an office party or a family get-together, Secret Santa takes the hassle out of gift exchanges – so you can focus on the fun.
 ```
 
-## What's New (≤4000) — per update; this is the next version after 1.0.10
+## What's New (≤4000) — per update; this is 1.0.14
 
 ```
 • Password fields now have an eye icon to show what you typed.

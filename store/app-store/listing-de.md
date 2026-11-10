@@ -32,7 +32,7 @@ Geschenktausch,Wichtel,Julklapp,Weihnachten,Geschenke,auslosen,Wunschliste,Famil
 
 ## Beschreibung (≤4000)
 
-_Überarbeitet für die nächste Version nach 1.0.10 (Backlog PR-17): gleicher Text wie im Play-Eintrag. Version 1.0.10 im App Store zeigt noch die bisherige Beschreibung; dieser Text ersetzt sie, sobald die nächste Version angelegt wird._
+_Überarbeitet für 1.0.14 (Backlog PR-17): gleicher Text wie im Play-Eintrag. Am 2026-11-10 in App Store Connect für Version 1.0.14 eingetragen._
 
 ```
 Secret Santa ist die einfache Wichtel-App für jede Wichtel-Runde – mit Familie, Freunden, Arbeitskollegen oder dem Verein. Namen fair auslosen, allen einen privaten Link schicken, und das Geheimnis bleibt ein Geheimnis.
@@ -89,7 +89,7 @@ Die App folgt der Sprache deines Geräts, und du kannst sie jederzeit wechseln.
 Ob Weihnachten, Bürofeier oder Familientreffen – Secret Santa nimmt Wichtel-Runden den Stress und lässt dir den Spass.
 ```
 
-## Neue Funktionen (≤4000) — pro Update; hier die nächste Version nach 1.0.10
+## Neue Funktionen (≤4000) — pro Update; hier 1.0.14
 
 ```
 • Passwortfelder haben jetzt ein Augen-Symbol, das deine Eingabe anzeigt.

@@ -278,11 +278,24 @@ clean; none caused by the update unless stated:
   **sent for review 2026-11-10** (*Changes in review*). Same day, **Alpha 1.0.10** (approved but left
   unpublished since ~30 Oct) was **published** (owner go-ahead). Managed publishing is on, so once Google
   approves the listing it waits under *Changes ready to publish* until someone clicks *Publish*.
+  **Approved the same day** and **published 2026-11-10** (all 7 changes: EN title, and short + full descriptions in EN/DE/FR). R4 + R5 built as
+  **1.0.14** (`7a649d3`, Release (mobile) run 42798371946): on Play *Internal testing* and in TestFlight
+  (*Ready to Submit*); web + backend deployed from the same commit. After the owner's device check on the
+  Pixel 9 Pro, **promoted Internal → Closed testing – Alpha 2026-11-10** (100 %, DE/EN/FR release notes
+  from `store/google-play/listing-*.md`; only the usual deobfuscation and native-symbols warnings) and
+  **sent for review** the same day. Managed publishing: once approved, it still needs *Publish*.
   **App Store:** the same descriptions are prepared in `store/app-store/listing-*.md` for the **next iOS
   version after 1.0.10** (Apple only changes description, keywords, subtitle and name with a new version;
   1.0.10 is *Ready for Distribution*, no newer version exists yet). Name, subtitle, keywords and promotional
   text stay. When creating that version, also answer the new age-rating social-media questions in *App
   Information* (App Store Connect notice, 2026-11-10).
+  **iOS 1.0.14 prepared 2026-11-10** (owner go-ahead): version created in App Store Connect with build
+  1.0.14; description, What's New and promotional text entered for German, French and all four English
+  locales (U.S., U.K., Canada, Australia) and checked after a reload. The new version did not carry over 1.0.10's promotional text, so it
+  was re-entered from the listing files. The age-rating questionnaire was already complete (social media, messaging, user-generated
+  content and the rest all *No*; 4+). After the owner's TestFlight check on an iPhone, **submitted for
+  App Review 2026-11-10**. Release is set to *Manually release this version*, so once approved it waits
+  for someone to click *Release*.
 
 Found during the Play screenshot pass on the Pixel 9 Pro (Play build `0.1.128`, 2026-10-28, DE/EN/FR, light
 mode; [store submission guide](../deployment/store-submission-guide.md)) and reported by the owner the same day
