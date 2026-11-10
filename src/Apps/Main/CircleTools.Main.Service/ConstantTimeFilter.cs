@@ -37,9 +37,11 @@ public sealed record ConstantTimeRequirement(TimeSpan Budget);
 /// <para>
 /// <strong>What it costs and what it assumes.</strong> The wait is asynchronous, so it holds no
 /// thread; it does hold the request scope, which is why these routes stay rate-limited. The budget
-/// must exceed the slow path under real load or the cap stops capping and the difference reappears —
-/// <see cref="DefaultBudget"/> leaves roughly an order of magnitude of headroom over the worst
-/// measurement above, and <c>EnumerationTimingTests</c> is what notices if that ever stops being true.
+/// must exceed the slow path under real load or the cap stops capping and the difference reappears.
+/// <see cref="DefaultBudget"/> leaves about 7x headroom over the slowest route's typical cost, and
+/// <c>ConstantTimeEnvelope.AssertHeldToBudget</c> is what notices if that ever stops being true. It is
+/// headroom, not a guarantee: on a host with every core saturated the invite handler measured
+/// ~180–230 ms, over budget, and its arms separated again (2026-11-07, backlog PR-14).
 /// </para>
 /// </remarks>
 public sealed class ConstantTimeFilter(TimeProvider clock) : IEndpointFilter
@@ -48,10 +50,11 @@ public sealed class ConstantTimeFilter(TimeProvider clock) : IEndpointFilter
     /// The budget applied when a route does not name its own.
     /// </summary>
     /// <remarks>
-    /// Chosen against measurement, not taste: the slowest of these handlers costs about 7 ms under a
-    /// loaded test run, and sign-in and sign-up already cost ~85 ms because of the password hash they
-    /// must pay. A budget in that region gives ample headroom and has the side benefit that the
-    /// address-accepting endpoints stop being distinguishable from each other by duration either.
+    /// Chosen against measurement, not taste: the slowest of these handlers, the invite form, has a
+    /// median cost of 15–21 ms on a busy machine, and sign-in and sign-up already cost ~85 ms because
+    /// of the password hash they must pay. A budget in that region gives headroom and has the side
+    /// benefit that the address-accepting endpoints stop being distinguishable from each other by
+    /// duration either.
     /// Latency is irrelevant on all four: every one of them answers "we have queued a mail".
     /// </remarks>
     public static readonly TimeSpan DefaultBudget = TimeSpan.FromMilliseconds(120);

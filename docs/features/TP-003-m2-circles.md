@@ -209,6 +209,11 @@ Two lessons worth keeping in this plan:
 - **These tests are more trustworthy under load than on an idle machine**, which inverts the usual
   instinct to re-run a failure in isolation and call it flaky.
 
+**Correction (2026-11-07):** that second lesson does not cover the 2 ms spread check on the envelope
+routes, which failed on identical requests as often as on the real arms. The check was measuring the
+timer, so the tests now assert the handler's cost against the budget directly. See
+[backlog PR-14](../roadmap/backlog.md) for the measurements and the limit at saturation.
+
 ### What the reconciliation found (2026-07-30)
 
 Reconciling the matrix against the code was not the clerical exercise the plan expected. Naming drift

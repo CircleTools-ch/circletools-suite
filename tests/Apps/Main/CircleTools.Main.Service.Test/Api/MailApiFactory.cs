@@ -5,6 +5,7 @@ using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -32,6 +33,9 @@ public sealed class MailApiFactory : WebApplicationFactory<Program>, IAsyncLifet
         .Build();
 
     private HttpClient? _mailpitApi;
+
+    /// <summary>The application clock, which reports what a constant-time route's handler cost.</summary>
+    public ConstantTimeClock ConstantTimeClock { get; } = new();
 
     async Task IAsyncLifetime.InitializeAsync()
     {
@@ -102,6 +106,8 @@ public sealed class MailApiFactory : WebApplicationFactory<Program>, IAsyncLifet
 
         // The tests drive dispatch explicitly, so the background loop must not race them.
         builder.UseSetting("Outbox:PollInterval", "01:00:00");
+
+        builder.ConfigureTestServices(services => services.AddSingleton<TimeProvider>(ConstantTimeClock));
     }
 
     /// <summary>Polls the sink until a message addressed to <paramref name="recipient"/> arrives.</summary>

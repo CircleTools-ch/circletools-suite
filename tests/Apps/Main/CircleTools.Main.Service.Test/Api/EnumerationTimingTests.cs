@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using CircleTools.Main.Contracts;
@@ -42,7 +41,7 @@ namespace CircleTools.Main.Service.Test.Api;
 /// <strong>Two kinds of surface, two assertions.</strong> Sign-up and sign-in are equalised by
 /// <c>DecoyPasswordVerifier</c> and keep the honest variance of the work they do, so they are judged
 /// on the ratio between their medians. The rest carry <c>RequireConstantTime</c> and are judged on
-/// whether every path actually reaches the budget — <see cref="AssertHeldToBudget"/> explains why
+/// whether every path actually reaches the budget — <see cref="ConstantTimeEnvelope"/> explains why
 /// measuring their difference instead does not work.
 /// </para>
 /// </remarks>
@@ -81,23 +80,11 @@ public sealed class EnumerationTimingTests(AccountApiFactory factory)
     /// deliberate password hashing. Against medians that size, half a millisecond of scheduling
     /// wobble is a rounding error and the ratio carries the assertion; the floor is only there so a
     /// pathologically fast pair cannot produce a meaningless ratio. The constant-time routes are not
-    /// judged this way at all — see <see cref="AssertHeldToBudget"/> for why a difference threshold
+    /// judged this way at all — see <see cref="ConstantTimeEnvelope"/> for why a difference threshold
     /// cannot work there.
     /// </para>
     /// </remarks>
     private static readonly TimeSpan NoiseFloor = TimeSpan.FromMilliseconds(0.5);
-
-    /// <summary>
-    /// How far a constant-time response may sit from its budget before something other than the
-    /// timer is responsible.
-    /// </summary>
-    /// <remarks>
-    /// <c>Task.Delay</c> does not land exactly on its target — measured within about a millisecond
-    /// either side here, occasionally finishing marginally early. This is that slack and nothing
-    /// more: it is not a leak tolerance, because the assertion it guards is "the budget is in force",
-    /// which fails by ~118 ms when it is not.
-    /// </remarks>
-    private static readonly TimeSpan TimerJitter = TimeSpan.FromMilliseconds(2);
 
     private const string ValidPassword = "correct-horse-battery";
 
@@ -262,7 +249,7 @@ public sealed class EnumerationTimingTests(AccountApiFactory factory)
     /// against queueing a notice — so there the ratio is the instrument that means something.
     /// </para>
     /// </remarks>
-    private static async Task CompareAsync(
+    private async Task CompareAsync(
         string surface,
         Func<Task> existing,
         Func<Task> unknown,
@@ -274,21 +261,22 @@ public sealed class EnumerationTimingTests(AccountApiFactory factory)
             await unknown();
         }
 
-        var existingTimes = new List<double>(Samples);
-        var unknownTimes = new List<double>(Samples);
+        var existingSamples = new List<ConstantTimeSample>(Samples);
+        var unknownSamples = new List<ConstantTimeSample>(Samples);
+        var clock = factory.ConstantTimeClock;
 
         for (var i = 0; i < Samples; i++)
         {
             // Alternate the order so neither path systematically benefits from a warm cache.
             if (i % 2 == 0)
             {
-                existingTimes.Add(await TimeAsync(existing));
-                unknownTimes.Add(await TimeAsync(unknown));
+                existingSamples.Add(await clock.MeasureAsync(existing));
+                unknownSamples.Add(await clock.MeasureAsync(unknown));
             }
             else
             {
-                unknownTimes.Add(await TimeAsync(unknown));
-                existingTimes.Add(await TimeAsync(existing));
+                unknownSamples.Add(await clock.MeasureAsync(unknown));
+                existingSamples.Add(await clock.MeasureAsync(existing));
             }
         }
 
@@ -300,12 +288,19 @@ public sealed class EnumerationTimingTests(AccountApiFactory factory)
         // structural difference when the envelope is removed.
         if (constantTime)
         {
-            AssertHeldToBudget(surface, existingTimes, unknownTimes);
+            ConstantTimeEnvelope.AssertHeldToBudget(
+                surface,
+                new Dictionary<string, List<ConstantTimeSample>>
+                {
+                    ["with an account"] = existingSamples,
+                    ["without one"] = unknownSamples,
+                });
+
             return;
         }
 
-        var existingMedian = Median(existingTimes);
-        var unknownMedian = Median(unknownTimes);
+        var existingMedian = Median(existingSamples.ConvertAll(sample => sample.TotalMs));
+        var unknownMedian = Median(unknownSamples.ConvertAll(sample => sample.TotalMs));
 
         var slower = Math.Max(existingMedian, unknownMedian);
         var faster = Math.Min(existingMedian, unknownMedian);
@@ -319,62 +314,6 @@ public sealed class EnumerationTimingTests(AccountApiFactory factory)
             + $"Unknown address: {unknownMedian:F2} ms median. "
             + $"That is a {ratio:F2}x difference ({difference:F2} ms) over {Samples} interleaved samples — "
             + "an attacker can tell which addresses have accounts by timing alone.");
-    }
-
-    /// <summary>
-    /// Asserts that a route carrying <c>RequireConstantTime</c> really is pinned to its budget.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <strong>Why this and not a tighter spread threshold.</strong> Comparing the two paths directly
-    /// runs into a resolution wall: <c>Task.Delay</c> lands within about a millisecond of its target,
-    /// and the structural leaks this suite has actually caught were 0.70 ms (forgot-password),
-    /// 1.05 ms (the invite form) and 3.01 ms (change-email). Timer jitter and the smallest real leak
-    /// overlap, so no spread threshold separates them — one that catches 0.70 ms also fails on a
-    /// quiet Tuesday.
-    /// </para>
-    /// <para>
-    /// So the assertion changes shape. Rather than measure a difference too small to resolve, it
-    /// checks the property that makes the difference unobservable in the first place: <em>every</em>
-    /// path takes at least the budget. Remove the filter and both paths drop to single-digit
-    /// milliseconds, roughly 118 ms below the line, which no jitter explains. That failure is
-    /// unmissable where a sub-millisecond one was arguable — and it stays unmissable if the leak the
-    /// filter hides ever grows.
-    /// </para>
-    /// </remarks>
-    private static void AssertHeldToBudget(string surface, List<double> existingTimes, List<double> unknownTimes)
-    {
-        var budget = ConstantTimeFilter.DefaultBudget.TotalMilliseconds;
-        var existingFloor = existingTimes.Min();
-        var unknownFloor = unknownTimes.Min();
-        var lowest = Math.Min(existingFloor, unknownFloor);
-
-        // The minimum, because the budget is a floor: load pushes samples above it and nothing
-        // pushes them below, so it is the one statistic a busy machine cannot inflate.
-        Assert.True(
-            lowest >= budget - TimerJitter.TotalMilliseconds,
-            $"NFR-005: {surface} is not being held to its constant-time budget. "
-            + $"Fastest with an account: {existingFloor:F2} ms. Fastest without: {unknownFloor:F2} ms. "
-            + $"The budget is {budget:F0} ms. Either the route lost its RequireConstantTime, or the "
-            + "filter is no longer running outermost — and the work behind it is timeable again.");
-
-        var difference = Math.Abs(existingFloor - unknownFloor);
-
-        Assert.True(
-            difference <= TimerJitter.TotalMilliseconds,
-            $"NFR-005: {surface} diverges by more than timer jitter even under its budget. "
-            + $"Fastest with an account: {existingFloor:F2} ms. Fastest without: {unknownFloor:F2} ms — "
-            + $"a {difference:F2} ms difference. The budget has stopped covering the slower path; "
-            + "raise ConstantTimeFilter.DefaultBudget rather than this threshold.");
-    }
-
-    private static async Task<double> TimeAsync(Func<Task> call)
-    {
-        var stopwatch = Stopwatch.StartNew();
-        await call();
-        stopwatch.Stop();
-
-        return stopwatch.Elapsed.TotalMilliseconds;
     }
 
     private static double Median(List<double> values)
