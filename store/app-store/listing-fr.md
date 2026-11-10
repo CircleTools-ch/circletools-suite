@@ -71,16 +71,13 @@ L'application suit la langue de votre appareil, et vous pouvez en changer à tou
 Que ce soit pour Noël, une fête de bureau ou une réunion de famille, Secret Santa enlève le tracas des échanges de cadeaux – pour que vous puissiez profiter du plaisir.
 ```
 
-## Nouveautés (≤4000) — par mise à jour ; ici la version suivant la 1.0.1
+## Nouveautés (≤4000) — par mise à jour ; ici la version suivant la 1.0.10
 
 ```
-• Les personnes sont désormais triées par ordre alphabétique dans toutes les listes.
-• Retirer une personne d'un groupe supprime désormais ses listes de souhaits et sa remarque. Dans les événements déjà tirés, seul son nom reste.
-• Pages de confidentialité, mentions légales et suppression des données révisées : elles disent exactement ce qu'il advient de vos données.
-• Un nouvel événement propose l'année suivante au lieu de répéter le nom de cette année.
-• Touchez une personne dans la liste des membres pour la modifier.
-• Les cercles s'appellent désormais Circles.
-• Petites corrections : « Copié ! » redevient « Copier », le lien retour affiche tout de suite un événement renommé, et les formulaires n'affichent plus d'erreur après l'enregistrement.
+• Les champs de mot de passe ont désormais une icône en forme d'œil pour afficher votre saisie.
+• La liste des appareils connectés se met à jour dès que vous changez de mot de passe.
+• Les lecteurs d'écran utilisent désormais la langue affichée par l'application.
+• Petites corrections dans les textes français.
 ```
 
 ## TestFlight — Description de l'app bêta (≤4000)

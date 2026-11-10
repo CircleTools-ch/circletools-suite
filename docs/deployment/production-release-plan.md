@@ -109,6 +109,10 @@ See [mobile runbook, Track B](mobile-apps.md#track-b--apple-app-store) for the s
       showed 7 of the 14 days with 12 testers. Two routine warnings: no deobfuscation file, no native debug symbols.
 - [ ] When Google approves it: **publish under *Publishing overview → Changes ready to publish***. Managed
       publishing is on, so an approved release does not go out by itself.
+- [ ] Next App Store version after 1.0.10 (R4 + R5, `3e4e012`): *What's New* drafted 2026-11-07 in
+      `store/app-store/listing-*.md` (the 1.0.10 text is in git history), same content as the Play notes. Before
+      submitting, check on an iPhone: the eye icon, the device list after a password change, and that VoiceOver
+      follows the app's language. None of this has run on iOS yet.
 
 ## Track 3 — Dependency & toolchain updates
 
