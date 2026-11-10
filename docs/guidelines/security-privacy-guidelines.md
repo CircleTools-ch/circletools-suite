@@ -44,6 +44,9 @@ and status are the easy half and are not the half that has failed here.
   hash on both sides shrinks the *ratio* while leaving the absolute difference exactly where it was.
   It defeats the test, not the attacker.
 - **A new address-accepting route needs a timing test**, not only a body/status one — added to
-  `EnumerationTimingTests` or `InvitationTimingTests`. Assert that the budget is reached rather than
-  that the paths are close: the real leaks measured 0.70–3.01 ms, which is inside the resolution of
-  the timer you would measure them with.
+  `EnumerationTimingTests` or `InvitationTimingTests`, through
+  `ConstantTimeEnvelope.AssertHeldToBudget`. Assert that the budget is reached and that the handler
+  fits inside it, rather than that the paths are close: the real leaks measured 0.70–3.01 ms, which
+  is inside the resolution of the timer you would measure them with. Identical requests sent as
+  separate arms differ by up to 4.64 ms on a busy machine, so a tight difference threshold fails on
+  routes with nothing wrong.

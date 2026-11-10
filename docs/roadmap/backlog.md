@@ -193,6 +193,36 @@ clean; none caused by the update unless stated:
   **2026-10-30:** a full local `dotnet test` (with the Aspire stack also running) failed one E2E test,
   `SecretSanta.E2E.Test.AccountGroupTests.A_group_organized_without_an_account_is_kept_in_the_account_and_handed_back`
   (52 s); it passed when re-run alone. Same pattern: load-dependent timing.
+- **PR-16 · Timing tests failed on routes with nothing wrong; the budget has a real limit at saturation
+  (test fixed 2026-11-07; P3 owner decision open).** `InvitationTimingTests` failed about 1 run in 5, and
+  `EnumerationTimingTests` less often, always with arms about 2 ms apart and every arm at the budget.
+  **Cause: the threshold, not the budget.** The handlers fit the budget at about 7x (invite: median
+  15–17 ms against 120 ms), but on Windows `Task.Delay` lands a median of 3.9 ms late and up to 14 ms late
+  at p95, so 2 ms between the fastest samples of two arms measures the timer. An A/A control proved it:
+  identical requests sent as separate arms failed the old check as often as the real arms.
+
+  | Old 2 ms check, invite form | Real arms failed | Identical requests failed |
+  |---|---|---|
+  | Machine at ~40 % CPU | 3/20 | 2/20 |
+  | Beside a Main test-project run | 4/15 | 2/15 |
+
+  **Fix (test code only; production behaviour and the budget are unchanged).** The tests now read each
+  handler's cost off the wait the filter requests (`ConstantTimeClock`) and assert it directly: the
+  cheapest run per arm must fit in half the budget. The floor check is unchanged and the caller-side
+  spread check stays as a coarse 10 ms limit, for work outside the filter (`ConstantTimeEnvelope`).
+  NFR-005 is not weakened: an arm costing 70 ms more now fails even though it stays under budget and the
+  old check could not see it; +130 ms in the handler, +15 ms outside the filter and a bypassed filter all
+  fail too (3/3 runs each on the invite form; the bypass 1 run, on all four constant-time routes).
+  **Reliability after the fix, on Windows:** 20/20 passes for each of the two classes alone and beside a
+  looping Main test-project run (19 loops, none failed). Not measured on the Ubuntu CI runners.
+  **Open (owner, P3): the budget does stop covering the invite form on a saturated host.** With all 8
+  logical CPUs busy, its handler has a median of 180–230 ms, about 100 % of requests overrun, and the arms
+  separate again (member ~180–195 ms, others ~215–235 ms): a real leak under that load, not noise. Both
+  classes therefore fail there (0/5 each), correctly for the invite form, and that is why the fix does not
+  promise a pass at saturation. Even with room to spare 1.6 % of requests overran (5.6 % beside a test run),
+  without favouring an arm. All of this was measured against a Postgres in Docker on a dev machine, so
+  before changing anything: decide whether to raise `DefaultBudget`, ideally after measuring handler cost
+  in production. These routes answer "we have queued a mail", so extra latency costs little.
 
 - **PR-12 · Release cadence during the Play closed test (P1, decided 2026-10-29).** Testers Community advises
   shipping several updates during the test window so Google sees active development. **Decision (owner):**

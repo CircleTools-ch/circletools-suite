@@ -2,6 +2,7 @@ using CircleTools.Circles.Repository;
 using CircleTools.Main.Service.Repository;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,9 @@ public sealed class AccountApiFactory : WebApplicationFactory<Program>, IAsyncLi
     private readonly PostgreSqlContainer _database = new PostgreSqlBuilder("postgres:17-alpine")
         .WithDatabase("maindb_api_tests")
         .Build();
+
+    /// <summary>The application clock, which reports what a constant-time route's handler cost.</summary>
+    public ConstantTimeClock ConstantTimeClock { get; } = new();
 
     async Task IAsyncLifetime.InitializeAsync()
     {
@@ -66,6 +70,8 @@ public sealed class AccountApiFactory : WebApplicationFactory<Program>, IAsyncLi
         // factory runs in Production, where loopback is not auto-allowed, so ConnectEndpointsTests
         // asserts against this explicit origin — the same Cors:AllowedOrigins the CORS policy reads.
         builder.UseSetting("Cors:AllowedOrigins:0", "https://sibling.test");
+
+        builder.ConfigureTestServices(services => services.AddSingleton<TimeProvider>(ConstantTimeClock));
     }
 }
 
@@ -82,11 +88,10 @@ public sealed class AccountApi : ICollectionFixture<AccountApiFactory>
 /// finished and with nothing beside it.
 /// </summary>
 /// <remarks>
-/// A constant-time route is judged on the fastest sample of each path (NFR-005). Sustained CPU
-/// contention from collections running in parallel lifted every sample of one path a few
-/// milliseconds above the budget and failed a route with no leak (122.90 ms against 120.64 ms, see
-/// the 2026-10-21 device-test re-check). Running alone removes that contention without loosening
-/// the thresholds.
+/// Running alone keeps the decoy-equalised routes, which are judged on the ratio of their medians,
+/// away from contention by the parallel collections. It was also the first answer to a failure on a
+/// constant-time route (122.90 ms against 120.64 ms, see the 2026-10-21 device-test re-check), but
+/// that one was timer noise, which isolation does not remove: see <see cref="ConstantTimeEnvelope"/>.
 /// </remarks>
 [CollectionDefinition(CollectionName, DisableParallelization = true)]
 public sealed class TimingApi : ICollectionFixture<AccountApiFactory>

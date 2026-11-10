@@ -129,8 +129,10 @@ Then they are rate-limited per address and per source with progressive backoff
     > the timer used to look for it.
   - **100 %** of address-accepting endpoints rate-limited per address and per source.
 - **Measurement approach:** paired **automated tests** per endpoint asserting identical body and
-  status; a timing test comparing the two distributions over repeated runs; a review checklist item
-  whenever an address-accepting endpoint is added or its error handling changed.
+  status; a timing test per endpoint, comparing the two distributions over repeated runs for a decoy
+  surface, and for an envelope surface asserting that every path reaches the budget and that its
+  handler fits within half of it; a review checklist item whenever an address-accepting endpoint is
+  added or its error handling changed.
 
 ## Dependencies & related
 
