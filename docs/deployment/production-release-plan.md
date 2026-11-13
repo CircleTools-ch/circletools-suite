@@ -52,11 +52,19 @@ So the work runs as **parallel tracks**, with the long-lead store steps started 
       `store/google-play/README.md` (backlog PR-1).
 - [x] Submit the app on Testers Community with the join link above — done 2026-10-29 (Pro, 25 testers;
       their run is 16 days, Day 0 on submission).
-- [ ] Track opt-ins; the 14-day clock starts once the release is approved **and** 12 testers are in. Keep
-      ≥ 12 for the whole window. — 12-tester gate met 2026-10-30 (25 testers); keep it up until day 14.
-- [ ] Ship each fix build (from tracks 3–4) to the closed track during the window — **cadence decided
-      2026-10-29: a small release every 2–3 days**, slices R1…R5 in backlog PR-12.
-- [ ] Day 14+: apply for production access; then staged rollout (20 % → 50 % → 100 %).
+- [x] Track opt-ins; the 14-day clock starts once the release is approved **and** 12 testers are in. Keep
+      ≥ 12 for the whole window. — 12-tester gate met 2026-10-30 (25 testers); **2026-11-13 the Dashboard
+      ticks all three closed-test criteria** (release, ≥ 12 opted in, ≥ 12 for 14 days).
+- [x] Ship each fix build (from tracks 3–4) to the closed track during the window — **cadence decided
+      2026-10-29: a small release every 2–3 days**, slices R1…R5 in backlog PR-12. Shipped 1.0.1, 1.0.10 and
+      1.0.14 (R4 + R5; on Alpha since 11 Nov 08:58).
+- [x] Day 14+: apply for production access — **applied 2026-11-13 15:53** with the honest answers from
+      `store/google-play/closed-test/testers-community/README.md` (backlog PR-17); expected installs in year
+      one: 0–10K. Google reviews in about 7 days and emails the account owner. Keep the Alpha track active
+      meanwhile.
+- [ ] When access is granted: production release from the Alpha build (1.0.14), staged rollout
+      (20 % → 50 % → 100 %), then *Publish* (managed publishing is on); add the Android store link and
+      Google's badge on the web (track 2).
 
 ## Track 2 — Apple App Store
 

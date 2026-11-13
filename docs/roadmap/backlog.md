@@ -296,6 +296,12 @@ clean; none caused by the update unless stated:
   content and the rest all *No*; 4+). After the owner's TestFlight check on an iPhone, **submitted for
   App Review 2026-11-10**. Release is set to *Manually release this version*, so once approved it waits
   for someone to click *Release*.
+  **Production access applied 2026-11-13 15:53** (day 14; Dashboard ticked all three closed-test criteria;
+  Alpha runs 1.0.14 since 11 Nov). Answered from the honest draft, not the service's suggestions:
+  recruitment *Easy*, expected installs **0–10K**, no claim about Android vitals (not checked). The form
+  had no "what did you do differently" question. Play shows *We have your application for production
+  access* — review usually ≤ 7 days, result by email. **Next:** keep Alpha active; on approval, production
+  release of 1.0.14 with a staged rollout (production-release plan, track 1).
 
 Found during the Play screenshot pass on the Pixel 9 Pro (Play build `0.1.128`, 2026-10-28, DE/EN/FR, light
 mode; [store submission guide](../deployment/store-submission-guide.md)) and reported by the owner the same day
