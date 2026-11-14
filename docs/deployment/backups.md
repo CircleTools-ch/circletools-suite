@@ -158,7 +158,7 @@ positive "backup is fresh" signal to complement this failure alert.
 - ✅ Scripted and committed (`deploy/backup.sh`, `deploy/restore.sh`, `deploy/systemd/`).
 - ✅ **Exercised on the VM (2026-09-17).** Swiss Backup S3 access + secrets are in
   `/opt/circletools/.env`; the encrypted restic repo was initialised at
-  `s3.swiss-backup02.infomaniak.com/circletools-backup/circletools`; a manual `backup.sh` ran green
+  the Swiss Backup bucket named in `RESTIC_REPOSITORY` (`.env` on the VM); a manual `backup.sh` ran green
   (snapshot saved; `restic check` → *no errors were found*); and the `restore.sh` drill **PASSED** — 33
   tables restored across all five schemas (circles 6 / linking 6 / public 12 / shared 4 / sync 5) into a
   scratch DB and dropped, without touching live data. First dump ≈ 56 KiB (9 KiB stored), so the 200 GB

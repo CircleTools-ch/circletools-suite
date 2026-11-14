@@ -3,6 +3,276 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Open source & self-hosting (2026-11-13)
+
+Owner, while the Play production application is in review: make the **whole repository open source** and
+publish **container images** so anyone can self-host the suite, while the hosted service stays the
+comfortable default. The official Android/iOS apps connect to the hosted backend by default; advanced users
+can point them at their own server. Applies to Secret-Santa and every future CircleTools app.
+
+Decisions are recorded as ADRs. Only an **Accepted** ADR is implemented:
+[0099](../adr/0099-apache-2-license.md) license (Accepted; superseded [0092](../adr/0092-open-source-license-and-contributions.md)) ·
+[0093](../adr/0093-publish-the-repository.md) publishing the repo ·
+[0094](../adr/0094-trademark-and-brand-policy.md) brand ·
+[0095](../adr/0095-self-host-deployment-topology.md) self-host topology ·
+[0096](../adr/0096-client-server-selection-and-discovery.md) server choice in the apps ·
+[0097](../adr/0097-passkeys-and-links-on-self-hosted-servers.md) passkeys & links ·
+[0098](../adr/0098-container-image-distribution.md) images.
+
+**Where it stands (2026-11-13):** OSS-1 (license) is done in the working tree, **not committed yet**. ADRs
+0093–0098 are **Proposed** and waiting for the owner's review. **Next:** accept ADR-0093, then OSS-2/OSS-3
+(history audit) — both must be finished before the repository is made public, which cannot be undone.
+**2026-11-14:** OSS-2 done (pattern scan + gitleaks + trufflehog: no secrets). OSS-3 reviewed: one deleted
+screenshot and the commit identity force a history rewrite — chosen; the rewrite is done and verified in a
+scratch mirror and force-pushed; old PR refs deliberately not purged (owner decision). **OSS-2 and OSS-3
+done.** Next: accept ADR-0093, then OSS-4 (operational docs) and OSS-5 (CI/repo hardening).
+
+**Choices to confirm when reviewing the Proposed ADRs.** Claude picked these as defaults during drafting;
+each is a real trade-off, not a technical necessity:
+
+- ADR-0094 — a written trademark policy only, no registered trademark (cheaper, weaker in a dispute).
+- ADR-0095 — self-host registration defaults to `invite` (not `open`), and the first account becomes the
+  instance admin; mail is optional; single-origin mode is the self-host default.
+- ADR-0096 — a custom server can only be chosen while signed out; data is **not** moved between servers
+  automatically (export/import only); new apps must keep working with older servers.
+- ADR-0097 — self-hosted servers trust the official Android app for passkeys **by default** (operators can
+  turn it off); the official iOS app gets no passkeys on self-hosted servers (platform limit, not a choice).
+- ADR-0098 — `:latest` points at the last **release**, not the last build; `:edge` is the last build.
+
+**Order:** OSS (decide, audit, go public) → IMG + SH (the self-hosted web app already works with its own
+server, so this is useful before any app change) → CS (custom server in the mobile apps).
+
+**Phase 1 — Open-source the repository (owner decisions first)**
+
+- **OSS-1 · License (ADR-0099, Accepted 2026-11-13 — Apache-2.0).** Done in the working tree 2026-11-13.
+  First implemented as AGPL-3.0 + CLA (ADR-0092), then switched to Apache-2.0 the same day because the CLA
+  (gist, bot, legal review) was too heavy; nothing had been committed.
+  - ✅ `LICENSE` is the verbatim Apache-2.0 text (from apache.org, so GitHub detects it); `NOTICE` holds the
+    copyright line and the third-party components (all MIT / Apache-2.0 / BSD / PostgreSQL, plus the
+    SecLists-derived password list, Open Sans and Apple's badge artwork). Keep it in step with
+    `Directory.Packages.props`.
+  - ✅ SPDX header (`SPDX-FileCopyrightText: 2026 CircleTools contributors` + `SPDX-License-Identifier:
+    Apache-2.0`) on every hand-written source file in `src/`, `tests/`, `deploy/`. Enforced by IDE0073 for C#
+    (`.editorconfig` `file_header_template`, so IDEs also insert it) and by `SpdxHeaderTests` for Razor, JS,
+    CSS, XAML, HTML, shell, SQL, Dockerfiles and the Caddyfile. Migrations and `*.Designer.cs` exempt.
+  - ✅ License section in `CONTRIBUTING.md` (contributions under Apache-2.0 §5, nothing to sign) and `README.md`.
+  - ✅ About & legal has an "Open source" section (DE/EN/FR) with a link to the license; the source link is
+    behind `OpenSource.IsSourceCodePublic` (`Ui.Shared/OpenSource.cs`), off until the repo is public (OSS-5).
+  - ⏳ **Owner:** uninstall the CLA Assistant GitHub app from the `CircleTools-ch` organization (installed
+    2026-11-13 for ADR-0092, no longer needed).
+- **OSS-2 · Secret scan of the full history (ADR-0093).** `gitleaks` + `trufflehog` over all refs; rotate
+  anything found, then remove it from history.
+  - ✅ **First pass 2026-11-14 (Claude, pattern scan, no tools installed):** every blob reachable from any of
+    the 241 commits on all local and remote refs, checked for private keys, cloud/GitHub/Google/Slack/Stripe/
+    SendGrid tokens, JWTs, ntfy tokens, connection-string passwords, key/secret assignments and risky file
+    names (`.env`, `.pem`, `.jks`, `.keystore`, `.p12`, `.p8`, `google-services.json`, …). **Nothing real
+    found.** Every `deploy/.env.example` version holds only `change-me-…` / `your-…` / `tk_replace_with_…`
+    placeholders; `appsettings.Production.json` (all versions) holds no secrets; `appsettings.Development.json`
+    has the marked dev-only keys (`dev-only-signing-key-…`, the `AAECAwQ…` byte-sequence key) — fine to
+    publish, and production must never use them. The Android `apk-key-hash` values are public anyway
+    (`assetlinks.json`). No keystores, APK/AAB/IPA, database dumps or logs were ever committed.
+  - ✅ **gitleaks 8.30.1, 2026-11-14** (`gitleaks git . --log-opts="--all" --redact`, 209 commits = every
+    non-merge commit on all refs): 20 hits, **all false positives** — 9× the Android `apk-key-hash` passkey
+    origins (public fingerprints, also in `assetlinks.json`) in `appsettings.Production.json` and ADR-0069;
+    10× the dev-only `AAECAwQ…` byte-sequence key in `appsettings.Development.json` and four test
+    factories; 1× a fake token literal in an old `AccountPageTests`. Nothing to rotate. Before publishing,
+    add a `.gitleaksignore` (or allow-list in `.gitleaks.toml`) for these fingerprints so a CI gitleaks job
+    (OSS-5) starts green.
+  - ✅ **trufflehog 3.99.9, 2026-11-14** (official Docker image, `git file:///repo --no-verification`,
+    container run with `--network none` so no candidate left the machine; ~29 MB scanned, the same volume as
+    gitleaks): 11 unverified hits, **all false positives** — 8× `Password=postgres` in the local-dev
+    connection string of the design-time `*DbContextFactory` classes and an old `appsettings.Development.json`,
+    3× a one-letter dummy password in `PersistedModelReviewTests` / `MainDbContextModelTests`. 0 verified.
+    **OSS-2 is done:** two scanners plus a pattern scan, nothing to rotate or remove.
+- **OSS-3 · Personal-data review of the history.** Commit author emails (noreply for future commits;
+  decide on a mailmap/rewrite for past ones), real names in device-test and brainstorming notes,
+  screenshots, IPs and host names. **Found 2026-11-13:** all 241 commits so far carry the owner's personal
+  Gmail address as author email, and the current tree contains it in this backlog (3 places) and in
+  `docs/brainstorming/2026-10-20-secret-santa-release-device-test.md`. Switch git to the GitHub `noreply`
+  address before the next commit, remove it from those docs, and decide whether to rewrite the history.
+  - **Full-history review 2026-11-14 (Claude).** Findings, most serious first:
+    1. **Deleted screenshot with the owner's email.** `Iphone_Passkey_error.png` (repo root, added in
+       `381b6c4`, deleted in `a6de34a`, both 2026-10-02) shows the Security page with the account address in
+       full. Deleting the file did not remove it from history → needs `git filter-repo --path
+       Iphone_Passkey_error.png --invert-paths` (or the squash fallback of ADR-0093).
+    2. **Commit identity.** All 452 author/committer entries use the owner's personal address (the other 30
+       are GitHub's own `noreply` for web merges). Rewrite with a mailmap during the same `filter-repo` run,
+       or accept it as public. Either way, switch `user.email` to the GitHub `noreply` address first.
+    3. **Personal addresses in the current tree.** Both of the owner's personal addresses (accounts A and B
+       of the device tests) appear in this backlog (Two-account and Sync sections) and in
+       `docs/brainstorming/2026-10-20-secret-santa-release-device-test.md`. Replace with "account A" /
+       "account B"; history keeps them unless rewritten (`filter-repo --replace-text`).
+    4. **Server IP.** The VPS's public IPv4 is in this backlog (Go-live section). Low risk (DNS for
+       `api.circletools.ch` reveals it), but it belongs in OSS-4's private notes.
+    5. **Low / owner's call:** the owner's first name in ADR `deciders`, brainstorming front matter and
+       arc42 (normal for a public project); the project mailbox `circletools.ch@…` and the role addresses
+       `info@`, `appreview@`, `dev@`, `hello@`, `no-reply@` on the brand domain (intended to be public); a
+       private LAN address (`192.168.100.x`) in the device-testing docs and the MAUI `.csproj` (harmless);
+       the third-party email strings inside `BreachedPasswords.txt` are entries of the public SecLists source,
+       not our data.
+    - **Checked and clean:** every store screenshot (App Store and Play, all sizes and languages) uses
+      made-up people (Anna, Ben, Clara, …); no family members' names in the device-test notes ("Bei Oma"
+      is an example event location); no other real person's address in any version of any file.
+    - **Owner decision 2026-11-14: rewrite the history.** Done by Claude in a scratch mirror (the working
+      repository and GitHub untouched): mirror clone of the local repo, remote branches refreshed from
+      GitHub, then `git filter-repo --invert-paths --path Iphone_Passkey_error.png --replace-text …
+      --mailmap …`. Replacements: the two personal addresses → "account A" / "account B", the server IPv4
+      → `<server IP>`; author/committer → the owner's GitHub `noreply` address. Hashes above are the
+      pre-rewrite ones.
+      - ✅ Verified: 240 commits (the "Delete screenshot" commit became empty and was dropped), 450
+        identities on `noreply`, 30 GitHub web-merge identities unchanged; screenshot and all three strings
+        absent from every blob and commit message; all 33 branch names present (filter-repo folds
+        `origin/*` into local branches — only `main` differed, local one commit ahead, and
+        `io-android-errors`, whose tip was the dropped commit); new `main` tree differs from the old one
+        only in the two scrubbed docs; gitleaks on the rewrite: the same 20 known false positives.
+      - ✅ Working tree: the same replacements applied to this backlog and the device-test note.
+      - ✅ Working repo moved onto the rewritten history 2026-11-14 (owner's order): all 15 local branches
+        repointed, `main` and the `claude/ecstatic-brahmagupta-674f54` worktree reset with `--mixed`, so
+        their uncommitted changes are kept unchanged. A bundle of every pre-rewrite ref was kept outside the
+        repo as a fallback. The `origin/*` remote-tracking refs still show the old history until the
+        force-push and the next fetch.
+      - ✅ `user.email` set to the GitHub `noreply` address in this repository's local git config (covers
+        its worktrees; the global setting is unchanged, so a fresh clone elsewhere needs it again).
+      - ✅ **Force-pushed 2026-11-14** (owner's order): GitHub had only `main` left (all feature branches
+        were already deleted there), so only `main` was pushed, with `--force-with-lease` on the old tip.
+        GitHub `main` = the rewritten local `main`; the last 100 commits all carry the `noreply` address.
+        Local-only branches and the stale `origin/*` leftovers were **not** pushed (no deleted branch
+        resurrected).
+      - ✅ **Owner decision 2026-11-14: no purge.** The owner accepts that the closed PRs keep showing the
+        old author address and the screenshot once the repo is public (exposure = one personal email address
+        and a Security-page screenshot, no secrets). No GitHub Support request; OSS-3 is done.
+      - (Context for that decision:) GitHub still serves the old commits by hash (checked: the
+        screenshot commit is reachable) through the 30 closed PRs' `refs/pull/*` refs (PR #27,
+        `io-android-errors`, holds the screenshot; every PR's commit list shows the old author address).
+        Only **GitHub Support** can drop them: open a "remove sensitive data" request for
+        `CircleTools-ch/circletools-suite` naming the PR refs and the screenshot path; the repo stays
+        private until they confirm. ✅ Locally, the 31 stale `origin/*` refs were pruned 2026-11-14; only
+        `origin/main` is left and `main` is level with it.
+      - (Superseded plan text:) force-push all
+        branches to GitHub (`--force --mirror` from the rewrite, or per branch). Other clones (CI caches,
+        any other machine) must be re-cloned. GitHub keeps unreferenced old commits reachable by hash for a
+        while and in cached PR refs — ask GitHub Support to purge them before the repo goes public
+        (GitHub's "removing sensitive data" procedure).
+- **OSS-4 · Operational docs review.** Move server-specific operator detail (admin hostnames, user names,
+  backup target paths) to the password manager / private notes; keep design and security reasoning public.
+  - ✅ **Reviewed 2026-11-14 (Claude)** — `docs/`, `deploy/`, `.github/workflows/`, `store/`, `README.md`.
+    Very little was server-specific; the runbooks were already written with `<placeholder>`s.
+    - **Generalized:** the exact Swiss Backup endpoint/bucket/path (in `backups.md` and the GL-5 entry
+      here) now points at `RESTIC_REPOSITORY` in the VM's `.env`, which already holds it.
+    - **Kept public, on purpose:** the public hostnames (`api.`, `grafana.`, `ntfy.` — in DNS and CT logs
+      anyway); provider choices (Infomaniak, Swiss Backup, Brevo, healthchecks.io); `/opt/circletools` and the
+      container paths; the SSH user names `ubuntu` / `deploy` (key-only SSH, `PermitRootLogin no`,
+      fail2ban, ufw 22/80/443 only, Postgres never published — knowing the names gives nothing); the ntfy
+      user and topic names in `.env.example` (templates, deny-all server); the Apple Team ID and Play
+      fingerprints (served in `.well-known` anyway); the review account `appreview@` (its password is only in
+      the password manager); the owner's name as App Store contact (public on the store listing).
+    - **Not a doc question:** everything removed now is still in the public history (no further rewrite,
+      OSS-3 decision), so anything that needs to stay unknown must be **changed on the server**, not
+      deleted from docs. Nothing found needs that. Optional hardening, owner's call: give Grafana a
+      non-default admin user (`GF_SECURITY_ADMIN_USER`; today it is Grafana's default on a public login
+      page, protected by the strong password and Grafana's brute-force lockout) and, if the real ntfy admin
+      is still called `owner` like the template, rename it.
+    - **OSS-4 done.**
+- **OSS-5 · CI and repository hardening.** GitHub Environments with required reviewer for release/deploy
+  secrets; outside-contributor workflow approval; actions pinned to SHAs; branch protection; private
+  vulnerability reporting; `SECURITY.md`; issue/PR templates; CODEOWNERS. Then flip to public, set `OpenSource.IsSourceCodePublic` to `true` (shows the source link on
+  About & legal), and supersede ADR-0076 (public docs site).
+  - **State found 2026-11-14:** the org is on GitHub **Free** and the repo is private, so **branch
+    protection, rulesets, environments (and their reviewers) and private vulnerability reporting are not
+    available until the repo is public** (API: "Upgrade to GitHub Pro or make this repository public"). All 15
+    secrets are repository-level (`DEPLOY_*`, `ANDROID_*`, `PLAY_SERVICE_ACCOUNT_JSON`, `IOS_*`,
+    `APPSTORE_*`). Good already: no `pull_request_target`; every workflow sets `permissions:` (read by
+    default); the default workflow token is read-only; `ci.yml` (the only PR-triggered workflow) uses no
+    secrets; deploy is `workflow_dispatch` only and store releases need a `v*` tag push (write access).
+  - ✅ **Done in the working tree 2026-11-14 (Claude):**
+    - All 32 `uses:` in the four workflows pinned to commit SHAs with the exact version as a comment.
+    - `secret-scan` job in `ci.yml`: gitleaks 8.30.1 over the full history, binary checked against the
+      release's SHA-256 (no third-party action — `gitleaks-action` needs a paid license for organizations).
+      `.gitleaks.toml` allow-lists exactly the three reviewed false positives (OSS-2); the history scans clean.
+    - `SECURITY.md` (private reporting, `dev@circletools.ch` fallback, scope, supported versions), linked from
+      `CONTRIBUTING.md`; `.github/CODEOWNERS`; issue forms (bug, idea, security redirect, blank issues off)
+      and a PR template (DoD, DE/EN/FR, no real personal data, Apache-2.0); `.github/dependabot.yml` for
+      GitHub Actions only (NuGet bumps stay manual because they must refresh the lock files in the same change;
+      vulnerable NuGet packages are caught by Dependabot alerts and the NuGet audit in the build).
+    - **Found on the way:** `main` CI and the docs site were red since 2026-11-14 — two Microsoft advisories
+      published 2026-11-10/12 against Aspire 13.6.2 (GHSA-4g86-54fm-h9h8 critical, GHSA-f7vh-h5g3-7jrh high)
+      fail the restore (NuGet audit, warnings as errors). Bumped Aspire to **13.6.5** (AppHost SDK +
+      `Aspire.Hosting.PostgreSQL`), which needs the **10.0.14** servicing band, so all 25 `10.0.13` pins moved
+      to `10.0.14`; lock files refreshed (only 10.0.13 → 10.0.14 changes). Dev-time only (the AppHost is not
+      deployed), but it blocked CI. **Verified locally:** full solution builds with 0 errors (the 45 warnings
+      are the known AndroidX `NU1608` ones), 1,050 tests pass, both E2E suites pass against the new Aspire
+      stack when run one at a time (9/9 and 2/2; run together they fight over the stack, CI runs them apart),
+      DocFX builds (one known ADR-0035 source-link warning).
+  - ⏳ **Owner, after these changes are pushed (possible while private):** Settings → Actions → "Require
+    actions to be pinned to a full-length commit SHA"; Settings → Advanced Security → Dependabot alerts and
+    security updates on.
+  - ⏳ **Owner, on flip day (in this order — each needs the repo public):**
+    1. Environments `production` and `store-release`, required reviewer `adrian-moll`; `production` limited
+       to `main`, `store-release` to `main` + tags `v*`.
+    2. Re-enter the secrets as environment secrets (`DEPLOY_*` → `production`; `ANDROID_*`,
+       `PLAY_SERVICE_ACCOUNT_JSON`, `IOS_*`, `APPSTORE_*` → `store-release`), add `environment: production` to
+       the rollout job in `deploy.yml` and `environment: store-release` to the `android` and `ios` jobs in
+       `release-mobile.yml`, run each once, then delete the repository-level copies.
+    3. Ruleset on `main`: PRs required, required checks (`build-test`, `secret-scan`, the docs build), no force
+       push, no deletion; owner bypass allowed (a sole maintainer cannot approve their own PR).
+    4. Actions → "Require approval for all external contributors"; private vulnerability reporting, secret
+       scanning and push protection on.
+    5. Flip to public; `OpenSource.IsSourceCodePublic = true`; supersede ADR-0076.
+- **OSS-6 · Trademark policy (ADR-0094).** `TRADEMARKS.md`; brand assets in one documented place so a fork
+  can rebrand in one change; link from `README.md`, `CONTRIBUTING.md`, self-hosting guide.
+
+**Phase 2 — Public images (ADR-0098)**
+
+- **IMG-1 · Multi-arch builds.** `linux/amd64` + `linux/arm64` with buildx; SDK stage on `$BUILDPLATFORM`.
+- **IMG-2 · Tags and releases.** `:edge` from `main`; `:stable`, `:<major>`, `:<major>.<minor>`, `:latest`
+  only on a GitHub Release with notes (migrations, config changes, min app / min server versions); our
+  production `.env` pins a version or `edge`.
+- **IMG-3 · Supply chain.** cosign keyless signing, SLSA provenance, SBOM; base images pinned by digest;
+  non-root user.
+- **IMG-4 · Make the GHCR packages public** (after OSS-5).
+
+**Phase 3 — Self-host edition of the server (ADR-0095)**
+
+- **SH-1 · Single-origin mode.** Hub at `/`, apps under `/<app>/`, API under `/api/`; configurable base path
+  in every WASM app (routing, service-worker scope, static assets); same-origin SSO hand-off.
+- **SH-2 · Runtime configuration in the web image.** Generate each app's `appsettings.json` and the CSP at
+  container start from `CIRCLETOOLS_PUBLIC_URL` / `CIRCLETOOLS_MODE`; plain HTTP by default,
+  `CIRCLETOOLS_TLS=auto` for stand-alone Caddy TLS.
+- **SH-3 · API options from one public URL.** CORS, passkey RP-ID/origins, SSO return-uri allow-list, mail
+  link origins derived from `CIRCLETOOLS_PUBLIC_URL`; forwarded headers only from the proxy network; clear
+  log when the request origin does not match.
+- **SH-4 · `deploy/selfhost/compose.yaml`.** `postgres` + `api` + `web`; opt-in
+  `CIRCLETOOLS_MIGRATE_ON_START`; observability as an optional profile; no ntfy/cAdvisor/node-exporter.
+- **SH-5 · `setup` script.** Generates JWT, share-token and email-HMAC keys into `.env`.
+- **SH-6 · Optional mail.** Any SMTP; with none, invitation mails are switched off and the UI says so;
+  link invitations keep working.
+- **SH-7 · Registration policy.** `CIRCLETOOLS_REGISTRATION=open|invite|closed` (self-host default `invite`);
+  first account is the instance admin.
+- **SH-8 · Operator legal pages.** Operator-supplied imprint/privacy (mounted Markdown or URL); fallback
+  text naming the self-hosted operator; CircleTools texts only on the hosted service.
+- **SH-9 · Docs and CI.** Self-hosting guide + configuration reference + upgrade/backup notes in
+  `docs/deployment/` (reverse-proxy examples: Traefik, Nginx Proxy Manager, Caddy, Synology); CI boots the
+  self-host stack on amd64 and arm64 and runs an E2E smoke test.
+
+**Phase 4 — Custom server in the apps (ADR-0096, ADR-0097)**
+
+- **CS-1 · Discovery endpoint.** `GET /.well-known/circletools` on the API (name, versions, public/API/app
+  URLs, auth capabilities, registration, features, operator).
+- **CS-2 · Feature spec + test plan** for Settings → Advanced → Server (FEAT/TP from the templates), plus an
+  NFR for self-hostability.
+- **CS-3 · Runtime server setting.** `ApiBaseUrl` / `RevealBaseUrl` become "build-time default, runtime
+  override"; change only while signed out; HTTPS only; server name/host shown on sign-in and account
+  screens; version handshake with clear DE/EN/FR messages.
+- **CS-4 · Passkeys on self-hosted servers.** Self-host defaults for `assetlinks.json` and the Android
+  `apk-key-hash` origins (current + previous Play signing keys); passkey availability in the discovery
+  document; passkey UI hidden where unsupported (iOS app on a self-hosted server). Release checklist gets
+  "update self-host passkey defaults if the signing key rotates".
+- **CS-5 · Links follow the server.** Reveal/join/event links use the chosen server's public URL; they open
+  in the browser (no App Link for foreign hosts).
+- **CS-6 · Compatibility both ways.** Document the minimum supported server version per app release;
+  capability checks instead of assumptions; store privacy declarations mention user-chosen third-party
+  servers.
+
 ## List order — people alphabetically, no sort buttons (2026-11-01)
 
 Owner, using the app: no list could be ordered, and people appeared in the order they were added. Decision:
@@ -193,6 +463,9 @@ clean; none caused by the update unless stated:
   **2026-10-30:** a full local `dotnet test` (with the Aspire stack also running) failed one E2E test,
   `SecretSanta.E2E.Test.AccountGroupTests.A_group_organized_without_an_account_is_kept_in_the_account_and_handed_back`
   (52 s); it passed when re-run alone. Same pattern: load-dependent timing.
+  **2026-11-13:** two more, each failed once in a full non-MAUI `dotnet test` run and passed on every re-run
+  (alone and as a whole project): `Main.Ui.Test.AccountPageTests.ChangePassword_OnSuccess_ClearsTheFieldsWithoutFlaggingThemRequired`
+  and `SecretSanta.Ui.Test.MembersPageParticipantTests.AGroupOnThisDevice_SaysHowToLetPeopleIn_AndOffersNoInvite`.
 - **PR-16 · Timing tests failed on routes with nothing wrong; the budget has a real limit at saturation
   (test fixed 2026-11-07; P3 owner decision open).** `InvitationTimingTests` failed about 1 run in 5, and
   `EnumerationTimingTests` less often, always with arms about 2 ms apart and every arm at the budget.
@@ -855,7 +1128,7 @@ checklist.
   ADR — ADR-0036 fixes the policy). Runbook [Backups & restore](../deployment/backups.md); secrets templated
   in `deploy/.env.example`. ✅ **Closed on the VM (2026-09-17).** Swiss Backup S3 access + secrets
   provisioned in `/opt/circletools/.env`; the restic repo was initialised at
-  `s3.swiss-backup02.infomaniak.com/circletools-backup/circletools`; a manual `backup.sh` ran green
+  the Swiss Backup bucket named in `RESTIC_REPOSITORY` (`.env` on the VM); a manual `backup.sh` ran green
   (snapshot saved, `restic check` reported *no errors*); the `restore.sh` drill **PASSED** — 33 tables
   restored across all five schemas (circles/linking/public/shared/sync) into a scratch DB and dropped,
   without touching live data; and `circletools-backup.timer` is installed + enabled (nightly ~03:30 UTC,
