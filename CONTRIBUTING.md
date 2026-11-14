@@ -58,9 +58,39 @@ traceability links closed, PR reviewed.
 
 ## Proposing an architecture decision
 
-Copy [`docs/adr/0000-template.md`](docs/adr/0000-template.md), fill it in, add it to the ADR
+Copy [`docs/adr/_template-adr.md`](docs/adr/_template-adr.md), fill it in, add it to the ADR
 register in [`docs/adr/index.md`](docs/adr/index.md), and open a PR for discussion. Implement
 only after the ADR is **Accepted**.
+
+## License
+
+CircleTools is open source under the **Apache License 2.0**
+([`LICENSE`](LICENSE), [`NOTICE`](NOTICE), [ADR-0099](docs/adr/0099-apache-2-license.md)).
+
+- **Your contribution is under the same license.** By opening a pull request you contribute under the
+  Apache License 2.0 (its section 5). There is nothing to sign. You keep the copyright in your work.
+- **License header in every source file.** New files start with:
+
+  ```csharp
+  // SPDX-FileCopyrightText: 2026 CircleTools contributors
+  // SPDX-License-Identifier: Apache-2.0
+  ```
+
+  Use the comment syntax of the file type (`@* … *@` in Razor, `/* … */` in CSS, `<!-- … -->` in
+  XAML/HTML, `#` in shell scripts and Dockerfiles). Put it after a shebang, XML declaration or doctype.
+  Visual Studio and Rider insert it into new C# files from `.editorconfig`. The build fails on a C# file
+  without it (IDE0073), and `SpdxHeaderTests` fails on any other file type. Generated code (EF Core
+  migrations, `*.Designer.cs`) is exempt.
+- **Third-party code** needs a permissive license compatible with Apache-2.0 (MIT, Apache-2.0, BSD, ISC,
+  …). GPL and AGPL code cannot be included. Add it to [`NOTICE`](NOTICE) in the same PR that adds the
+  package to `Directory.Packages.props`.
+- **The name and logos are not covered by the license.** A fork you publish must use its own name and
+  logos ([ADR-0094](docs/adr/0094-trademark-and-brand-policy.md)).
+
+## Security problems
+
+Please don't open a public issue for a vulnerability — report it privately as described in
+[`SECURITY.md`](SECURITY.md).
 
 ## Code of Conduct
 

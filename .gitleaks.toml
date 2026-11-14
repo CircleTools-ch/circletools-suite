@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 CircleTools contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# gitleaks configuration (ADR-0093). The default rules apply; the allow-list below holds only values
+# that were reviewed and are not secrets (backlog OSS-2, 2026-11-14). Add to it only after the same
+# review, with the reason next to the entry.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Reviewed non-secrets"
+regexTarget = "match"
+regexes = [
+  # Android passkey origins: base64url SHA-256 of the Play app-signing certificates. Public by design —
+  # the same fingerprints are served in .well-known/assetlinks.json.
+  '''apk-key-hash:[A-Za-z0-9_-]{43}''',
+  # The development-only 32-byte key (bytes 0..31) in appsettings.Development.json and the test factories.
+  # Production supplies its own keys from the environment.
+  '''AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8=''',
+  # A made-up antiforgery-style token literal in an early AccountPageTests.
+  '''CfDJ8Abc-_123''',
+]

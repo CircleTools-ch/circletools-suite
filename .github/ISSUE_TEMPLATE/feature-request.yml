@@ -1,0 +1,25 @@
+name: Idea or feature request
+description: Suggest something new or a change.
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas are collected in the backlog and go through the project's process (brainstorming → use case →
+        decision) before they are built — see CONTRIBUTING.md.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would it solve?
+      description: Describe the situation, not only the solution.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+  - type: dropdown
+    id: app
+    attributes:
+      label: App
+      options: [Secret Santa, The CircleTools hub / accounts, A new app, Self-hosting]

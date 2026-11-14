@@ -1,0 +1,8 @@
+# Code owners (ADR-0093). Every pull request needs a review from an owner once branch protection is on.
+# Add more specific lines below the default when the project gains maintainers for an area.
+*                       @adrian-moll
+
+# Changes here can reach secrets, signing keys or production — always the owner.
+/.github/               @adrian-moll
+/deploy/                @adrian-moll
+/Directory.Packages.props @adrian-moll

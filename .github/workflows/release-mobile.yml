@@ -59,18 +59,18 @@ jobs:
       HAS_SIGNING: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
       HAS_PLAY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # full history: nbgv's version and its versionCode (ADR-0047).
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
 
       - name: Compute version (nbgv)
         id: nbgv
-        uses: dotnet/nbgv@v0.5.2
+        uses: dotnet/nbgv@705dad19ab067f12f4e9eeaa60812e01edef5d25 # v0.5.2
         with:
           toolVersion: "3.10.94"
 
@@ -118,7 +118,7 @@ jobs:
             -p:AndroidPackageFormat=aab
 
       - name: Upload bundle artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: secretsanta-android-${{ steps.nbgv.outputs.SimpleVersion }}-${{ steps.code.outputs.value }}
           path: "src/Apps/SecretSanta/CircleTools.SecretSanta.App/bin/Release/net10.0-android/**/*.aab"
@@ -139,7 +139,7 @@ jobs:
 
       - name: Upload to Play internal track
         if: ${{ env.HAS_SIGNING == 'true' && env.HAS_PLAY == 'true' }}
-        uses: r0adkll/upload-google-play@v1
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: ch.circletools.secretsanta
@@ -167,18 +167,18 @@ jobs:
       HAS_SIGNING: ${{ secrets.IOS_DIST_CERT_P12_BASE64 != '' }}
       HAS_TESTFLIGHT: ${{ secrets.APPSTORE_ISSUER_ID != '' }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0 # full history: nbgv's version, also used as the build number (ADR-0047).
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
 
       - name: Compute version (nbgv)
         id: nbgv
-        uses: dotnet/nbgv@v0.5.2
+        uses: dotnet/nbgv@705dad19ab067f12f4e9eeaa60812e01edef5d25 # v0.5.2
         with:
           toolVersion: "3.10.94"
 
@@ -214,7 +214,7 @@ jobs:
           echo "version=$XCODE" >> "$GITHUB_OUTPUT"
 
       - name: Select Xcode
-        uses: maxim-lobanov/setup-xcode@v1
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
           xcode-version: ${{ steps.xcode.outputs.version }}
 
@@ -271,7 +271,7 @@ jobs:
 
       - name: Upload .ipa artifact
         if: ${{ env.HAS_SIGNING == 'true' }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: secretsanta-ios-${{ steps.nbgv.outputs.SimpleVersion }}-${{ steps.code.outputs.value }}
           path: "src/Apps/SecretSanta/CircleTools.SecretSanta.App/bin/Release/net10.0-ios/ios-arm64/publish/*.ipa"
@@ -281,7 +281,7 @@ jobs:
       # TestFlight upload — needs BOTH the signed .ipa and the App Store Connect API key.
       - name: Upload to TestFlight
         if: ${{ env.HAS_SIGNING == 'true' && env.HAS_TESTFLIGHT == 'true' }}
-        uses: apple-actions/upload-testflight-build@v5
+        uses: apple-actions/upload-testflight-build@665328adbecbc3ad929d3da710696d928b8a7ba9 # v5.9.0
         with:
           app-path: "src/Apps/SecretSanta/CircleTools.SecretSanta.App/bin/Release/net10.0-ios/ios-arm64/publish/CircleTools.SecretSanta.App.ipa"
           issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}

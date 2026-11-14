@@ -82,13 +82,13 @@ jobs:
     outputs:
       image_tag: ${{ steps.nbgv.outputs.SimpleVersion }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.guard.outputs.ref }}
           fetch-depth: 0 # full history: nbgv computes the version from git height (ADR-0047).
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
 
@@ -97,12 +97,12 @@ jobs:
       # the in-project stamping never disagree.
       - name: Compute version (nbgv)
         id: nbgv
-        uses: dotnet/nbgv@v0.5.2
+        uses: dotnet/nbgv@705dad19ab067f12f4e9eeaa60812e01edef5d25 # v0.5.2
         with:
           toolVersion: "3.10.94"
 
       - name: Log in to GHCR
-        uses: docker/login-action@v4
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -111,7 +111,7 @@ jobs:
       # VERSION (SemVer2, clean on main) is stamped into the image assemblies; .git is not in the build
       # context, so the Dockerfiles publish with ContainerBuild=true and this explicit version (ADR-0047).
       - name: Build & push API image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: deploy/api.Dockerfile
@@ -124,7 +124,7 @@ jobs:
             ${{ env.IMAGE_PREFIX }}/circletools-api:latest
 
       - name: Build & push Web image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: deploy/web.Dockerfile
@@ -167,7 +167,7 @@ jobs:
     steps:
       # The runner needs the deploy/ tree so it can rsync compose.yaml + observability config to the VM.
       - name: Check out deploy config
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.guard.outputs.ref }}
 

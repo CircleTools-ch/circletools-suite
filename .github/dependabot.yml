@@ -1,0 +1,15 @@
+# Dependabot (ADR-0093). GitHub Actions are pinned to commit SHAs; Dependabot keeps those pins and their
+# version comments current. NuGet is covered by Dependabot security alerts and the NuGet audit in the
+# build (warnings as errors); version bumps stay manual because every bump must refresh the
+# packages.lock.json files in the same change.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "chore(ci)"

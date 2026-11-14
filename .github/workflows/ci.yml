@@ -31,8 +31,8 @@ jobs:
     outputs:
       src: ${{ steps.filter.outputs.src }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: dorny/paths-filter@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
           filters: |
@@ -46,18 +46,39 @@ jobs:
               - '.config/dotnet-tools.json'
               - '.github/workflows/**'
 
+  # Secret scan of the full history on every push and PR (ADR-0093). Uses the repository's .gitleaks.toml,
+  # which allow-lists only reviewed non-secrets. The binary is downloaded from the gitleaks release and
+  # checked against the release asset's SHA-256 before it runs (no third-party action, no license key).
+  secret-scan:
+    name: secret-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: gitleaks
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/gitleaks.tar.gz" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/gitleaks.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/gitleaks.tar.gz" -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" git . --redact --no-banner --log-opts="--all"
+
   build-test:
     name: build-test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         # Full history: Nerdbank.GitVersioning (ADR-0047) computes the version from git height, which a
         # shallow clone cannot satisfy — every build in the graph now references nbgv.
         with:
           fetch-depth: 0
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
           cache: true
@@ -80,14 +101,14 @@ jobs:
     name: docs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         # Full history: Nerdbank.GitVersioning (ADR-0047) computes the version from git height, which a
         # shallow clone cannot satisfy — every build in the graph now references nbgv.
         with:
           fetch-depth: 0
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
           cache: true
@@ -115,14 +136,14 @@ jobs:
     # project is in CircleTools.slnx but NOT CircleTools.NoMaui.slnx, so the core suite never runs
     # it — it is its own gate here. ubuntu-latest provides the Docker runtime the stack needs.
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         # Full history: Nerdbank.GitVersioning (ADR-0047) computes the version from git height, which a
         # shallow clone cannot satisfy — every build in the graph now references nbgv.
         with:
           fetch-depth: 0
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
           cache: true
@@ -154,14 +175,14 @@ jobs:
     if: needs.changes.outputs.src == 'true'
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         # Full history: Nerdbank.GitVersioning (ADR-0047) computes the version from git height, which a
         # shallow clone cannot satisfy — every build in the graph now references nbgv.
         with:
           fetch-depth: 0
 
       - name: Setup .NET (from global.json)
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
         with:
           global-json-file: global.json
           cache: true
