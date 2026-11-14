@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 using CircleTools.Circles.Core.Application;
 using CircleTools.Circles.Core.Domain;
 using CircleTools.Circles.Core.Test.TestSupport;

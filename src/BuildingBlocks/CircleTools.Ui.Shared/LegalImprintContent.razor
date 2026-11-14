@@ -1,3 +1,6 @@
+@* SPDX-FileCopyrightText: 2026 CircleTools contributors *@
+@* SPDX-License-Identifier: Apache-2.0 *@
+
 @inject IStringLocalizer<SharedStrings> L
 
 @*
@@ -8,7 +11,7 @@
 
 <MudStack Spacing="3" Style="max-width:44rem;">
     <MudText Typo="Typo.h4" GutterBottom="true">@L["Legal_Imprint_Title"]</MudText>
-    <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">@LabelText.WithColon(L["Legal_UpdatedLabel"]) 2026-11-06</MudText>
+    <MudText Typo="Typo.caption" Class="mud-text-secondary mb-2">@LabelText.WithColon(L["Legal_UpdatedLabel"]) 2026-11-13</MudText>
 
     <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Imprint_OperatorHeading"]</MudText>
     <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Imprint_OperatorBody"]</MudText>
@@ -21,6 +24,19 @@
 
     <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Imprint_DisclaimerHeading"]</MudText>
     <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Imprint_DisclaimerBody"]</MudText>
+
+    <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Imprint_OpenSourceHeading"]</MudText>
+    <MudText Typo="Typo.body1" Class="mb-2">@L["Legal_Imprint_OpenSourceBody"]</MudText>
+    @* External destinations, so open in a new tab (the system browser on a phone) and drop the opener. *@
+    <div class="d-flex flex-wrap gap-4 mb-3">
+        <MudLink Href="@OpenSource.LicenseUrl" Typo="Typo.body1" Target="_blank" rel="noopener noreferrer"
+                 data-testid="imprint-license-link">@L["Legal_Imprint_LicenseLink"]</MudLink>
+        @if (OpenSource.IsSourceCodePublic)
+        {
+            <MudLink Href="@OpenSource.SourceCodeUrl" Typo="Typo.body1" Target="_blank" rel="noopener noreferrer"
+                     data-testid="imprint-source-link">@L["Legal_Imprint_SourceLink"]</MudLink>
+        }
+    </div>
 
     <MudText Typo="Typo.h6" GutterBottom="true">@L["Legal_Imprint_TrademarksHeading"]</MudText>
     <MudText Typo="Typo.body1" Class="mb-3">@L["Legal_Imprint_TrademarksBody"]</MudText>

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 namespace CircleTools.SecretSanta.Core.Persistence;
 
 /// <summary>Serializable snapshot of a <c>Budget</c> value object.</summary>

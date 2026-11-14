@@ -1,4 +1,7 @@
-﻿using Microsoft.UI.Xaml;
+﻿// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
+using Microsoft.UI.Xaml;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.

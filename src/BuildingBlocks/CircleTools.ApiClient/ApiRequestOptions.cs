@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 namespace CircleTools.ApiClient;
 
 /// <summary>Markers a caller can attach to a request for handlers further down the chain.</summary>

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 namespace CircleTools.SecretSanta.Core.Domain;
 
 /// <summary>The reason a draw could not be produced.</summary>

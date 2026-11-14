@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 // Shared pull-to-refresh gesture (FEAT-008 W3, ADR-0054). A WebView/browser touch gesture used by both
 // the WASM web heads and the MAUI Blazor Hybrid head (both render in a web view). When the page is
 // scrolled to the very top and the user drags down past a threshold, it invokes a .NET callback (which

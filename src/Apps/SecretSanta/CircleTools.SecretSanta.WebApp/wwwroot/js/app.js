@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 // Connectivity bridge for BrowserConnectivity (ADR-0044): exposes navigator.onLine and the window
 // online/offline events to .NET so the silent auto-sync can flush queued edits on reconnect. Defined
 // here (an external file) rather than inline because the Content-Security-Policy forbids inline

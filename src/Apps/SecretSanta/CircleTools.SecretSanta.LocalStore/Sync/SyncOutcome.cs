@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 namespace CircleTools.SecretSanta.LocalStore;
 
 /// <summary>How a sync cycle ended, as a fact the UI can phrase without it reading as an error (FEAT-004).</summary>

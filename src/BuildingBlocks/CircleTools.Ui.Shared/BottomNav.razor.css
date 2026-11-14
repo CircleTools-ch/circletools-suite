@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: 2026 CircleTools contributors */
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /* Fixed bottom tab bar (ADR-0040). Colours come from MudBlazor theme CSS variables so it follows the
    light/dark theme automatically. Height + safe-area padding keep it clear of the iOS home indicator.
 

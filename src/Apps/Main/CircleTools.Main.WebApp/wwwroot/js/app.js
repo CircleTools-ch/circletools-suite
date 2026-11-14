@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 // Blazor startup, in a file rather than an inline <script> because the Content-Security-Policy has
 // no 'unsafe-inline' (ADR-0021). index.html therefore starts the runtime with autostart="false".
 

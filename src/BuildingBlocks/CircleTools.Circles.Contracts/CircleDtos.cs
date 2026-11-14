@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 namespace CircleTools.Circles.Contracts;
 
 /// <summary>Creation of a circle (FR-016).</summary>

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 using Bunit;
 using CircleTools.SecretSanta.Ui;
 using CircleTools.SecretSanta.Ui.Shared;

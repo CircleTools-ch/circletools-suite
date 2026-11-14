@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 using MauiDevices = Microsoft.Maui.Devices;
 using AppHaptics = CircleTools.Ui.Abstractions.IHapticFeedback;
 

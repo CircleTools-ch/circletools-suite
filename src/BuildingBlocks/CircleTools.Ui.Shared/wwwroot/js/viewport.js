@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 // Keyboard and scroll behaviour for the phone heads (Q11, 2026-10-16 device test). Shared by the WASM web heads
 // and the MAUI Blazor Hybrid head; harmless on desktop.
 //

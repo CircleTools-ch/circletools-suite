@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 // Hands an iCalendar (.ics) document to the OS so the browser routes it to the calendar app (MNF-6,
 // ADR-0028 amendment). A Blob download is the portable path: desktop browsers open it in the calendar
 // app, mobile browsers offer "add to calendar". Nothing is written silently — the calendar UI confirms.

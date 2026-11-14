@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 // Presents the native share sheet via the Web Share API (ADR-0028, IShareService).
 //
 // A module rather than inline script, for the same reason as passkeys.js / download.js: the CSP has

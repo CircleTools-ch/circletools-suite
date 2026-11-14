@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: 2026 CircleTools contributors */
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /* Host chrome for the MAUI WebView head. The app UI is MudBlazor now (ADR-0040); nothing here depends
    on Bootstrap. The MudTheme (CircleToolsTheme) owns colours — this file keeps only the pre-boot error
    banner, plain validation helpers, and the iOS status-bar safe area. */

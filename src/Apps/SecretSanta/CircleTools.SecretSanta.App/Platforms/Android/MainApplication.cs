@@ -1,4 +1,7 @@
-﻿using Android.App;
+﻿// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
+using Android.App;
 using Android.Runtime;
 
 namespace CircleTools.SecretSanta.App;

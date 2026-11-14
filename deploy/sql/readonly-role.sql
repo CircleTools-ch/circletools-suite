@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: 2026 CircleTools contributors
+-- SPDX-License-Identifier: Apache-2.0
+
 -- Operator read-only database role (ADR-0075).
 --
 -- Creates (or updates) a login role `circletools_readonly` that may SELECT every table in `maindb` —

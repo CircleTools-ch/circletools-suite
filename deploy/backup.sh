@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 CircleTools contributors
+# SPDX-License-Identifier: Apache-2.0
 #
 # Nightly Postgres backup -> Infomaniak Swiss Backup (ADR-0036, backlog GL-5).
 #

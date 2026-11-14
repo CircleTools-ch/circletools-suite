@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 namespace CircleTools.SecretSanta.Service.Core.Access;
 
 /// <summary>A role a principal can hold in an online group (ADR-0086).</summary>

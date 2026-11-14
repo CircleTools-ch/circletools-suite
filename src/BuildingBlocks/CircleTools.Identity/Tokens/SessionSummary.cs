@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 namespace CircleTools.Identity.Tokens;
 
 /// <summary>One signed-in device in the list on <em>Security</em> (ADR-0079 amendment).</summary>

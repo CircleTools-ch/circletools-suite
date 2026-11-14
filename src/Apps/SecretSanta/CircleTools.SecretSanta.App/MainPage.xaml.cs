@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 using Microsoft.AspNetCore.Components.WebView.Maui;
 
 namespace CircleTools.SecretSanta.App;

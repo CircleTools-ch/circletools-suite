@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 // Native <input type="date"> fields (see .ct-date-field, used for the event date) are styled with
 // appearance:none so the browser's picker-indicator chevron — which Android WebView renders as native
 // chrome that CSS cannot hide on its own — is gone, in favour of a Material calendar adornment. That

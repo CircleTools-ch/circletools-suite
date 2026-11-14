@@ -1,3 +1,6 @@
+/* SPDX-FileCopyrightText: 2026 CircleTools contributors */
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /* Host chrome that renders before Blazor/MudBlazor loads (the loading spinner and the pre-boot error
    banner), plus a few plain form-validation helpers. The app UI itself is MudBlazor now (ADR-0040);
    nothing here depends on Bootstrap. */

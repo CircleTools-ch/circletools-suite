@@ -182,5 +182,21 @@
   href: 0090-backend-stays-compatible-with-released-apps.md
 - name: 0091 Push alerts through a self-hosted ntfy, and a watchdog
   href: 0091-ntfy-push-alerts-and-watchdog.md
+- name: 0092 Open-source license (AGPL-3.0) and contributor terms (superseded)
+  href: 0092-open-source-license-and-contributions.md
+- name: 0093 Publish the repository on GitHub
+  href: 0093-publish-the-repository.md
+- name: 0094 Trademark and brand policy
+  href: 0094-trademark-and-brand-policy.md
+- name: 0095 Self-host deployment topology
+  href: 0095-self-host-deployment-topology.md
+- name: 0096 Choosing the server in the apps, and discovery
+  href: 0096-client-server-selection-and-discovery.md
+- name: 0097 Passkeys and app links on self-hosted servers
+  href: 0097-passkeys-and-links-on-self-hosted-servers.md
+- name: 0098 Public container images
+  href: 0098-container-image-distribution.md
+- name: 0099 Apache-2.0 license (supersedes 0092)
+  href: 0099-apache-2-license.md
 - name: Template
   href: _template-adr.md

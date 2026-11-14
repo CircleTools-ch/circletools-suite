@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 using CircleTools.SecretSanta.LocalStore;
 using CircleTools.Ui.Account.Auth;
 using Microsoft.AspNetCore.Components.Authorization;

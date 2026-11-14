@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 // WebAuthn ceremonies (FR-010, FR-011).
 //
 // The server hands out options and verifies the result; this file only walks the browser through

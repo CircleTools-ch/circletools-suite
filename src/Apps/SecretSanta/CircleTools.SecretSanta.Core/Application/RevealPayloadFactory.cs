@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 using System.Globalization;
 using CircleTools.SecretSanta.Contracts;
 using CircleTools.SecretSanta.Core.Domain;

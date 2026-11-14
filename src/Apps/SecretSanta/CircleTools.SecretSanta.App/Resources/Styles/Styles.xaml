@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!-- SPDX-FileCopyrightText: 2026 CircleTools contributors -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 <!--
     Implicit native styles for the device head. The UI is a Blazor WebView, so the native surface is
     small: the page ground behind the WebView (no white/black flash on load, a neutral ground that

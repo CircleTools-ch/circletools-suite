@@ -31,6 +31,14 @@ end_of_line = crlf
 indent_size = 4
 max_line_length = 120
 
+# ---- License header (ADR-0099) ----
+# Every hand-written C# file starts with the SPDX header; IDEs insert it into new files and the build
+# fails without it (IDE0073 under EnforceCodeStyleInBuild). Generated code (Migrations, *.Designer.cs)
+# is exempt — see the sections at the end of this file. Non-C# files are checked by
+# SpdxHeaderTests in CircleTools.Architecture.Test.
+file_header_template = SPDX-FileCopyrightText: 2026 CircleTools contributors\nSPDX-License-Identifier: Apache-2.0
+dotnet_diagnostic.IDE0073.severity = error
+
 # ---- Language conventions ----
 # 'this.' — do not require
 dotnet_style_qualification_for_field = false:warning

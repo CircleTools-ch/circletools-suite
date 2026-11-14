@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 namespace CircleTools.SecretSanta.Contracts;
 
 /// <summary>Summary view of a group for list screens (ADR-0042: a group owns a shared roster and events).</summary>

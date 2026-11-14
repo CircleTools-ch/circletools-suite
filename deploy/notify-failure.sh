@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: 2026 CircleTools contributors
+# SPDX-License-Identifier: Apache-2.0
 #
 # OnFailure alert handler for the nightly backup (backlog GL-11). Invoked by
 # deploy/systemd/circletools-backup-failure@.service when circletools-backup.service fails, with the

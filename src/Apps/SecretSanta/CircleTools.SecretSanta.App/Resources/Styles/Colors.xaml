@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!-- SPDX-FileCopyrightText: 2026 CircleTools contributors -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 <!--
     Secret-Santa native palette (ADR-0040). The in-app UI is MudBlazor with a neutral "sobre" theme and
     one calm accent (CircleToolsTheme); these MAUI resources mirror it so native chrome (page background

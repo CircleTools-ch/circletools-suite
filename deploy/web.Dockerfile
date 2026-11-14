@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CircleTools contributors
+# SPDX-License-Identifier: Apache-2.0
+
 # Web image (ADR-0036 / ADR-0046): one Caddy that terminates TLS, serves both standalone WASM PWAs
 # as static files, and reverse-proxies the API. Build context is the repository root:
 #   docker build -f deploy/web.Dockerfile -t circletools-web .

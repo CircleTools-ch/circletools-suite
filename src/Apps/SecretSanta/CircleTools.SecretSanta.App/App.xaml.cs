@@ -1,4 +1,7 @@
-﻿using Microsoft.Maui.Controls.PlatformConfiguration.AndroidSpecific;
+﻿// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
+using Microsoft.Maui.Controls.PlatformConfiguration.AndroidSpecific;
 
 namespace CircleTools.SecretSanta.App;
 

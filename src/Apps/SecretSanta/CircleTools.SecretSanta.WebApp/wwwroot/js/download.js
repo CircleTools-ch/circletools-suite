@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 // Saves generated content as a file (FR-014).
 //
 // A module rather than inline script, for the same reason as passkeys.js: the CSP has no

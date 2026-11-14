@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CircleTools contributors
+# SPDX-License-Identifier: Apache-2.0
+
 # CircleTools reverse proxy / static host (ADR-0036, ADR-0063, ADR-0046).
 # Three origins on one Caddy: the Main hub, Secret-Santa, and the API. Caddy obtains and renews
 # Let's Encrypt certificates automatically for each site name via the default HTTP-01 challenge.

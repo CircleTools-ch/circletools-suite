@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 namespace CircleTools.Infrastructure.Outbox;
 
 /// <summary>Reads and updates pending outbox messages on behalf of the dispatcher.</summary>

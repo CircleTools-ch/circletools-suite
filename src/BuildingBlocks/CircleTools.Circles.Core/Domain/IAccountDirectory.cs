@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 namespace CircleTools.Circles.Core.Domain;
 
 /// <summary>What the Circles context needs to know about an account, and nothing more.</summary>

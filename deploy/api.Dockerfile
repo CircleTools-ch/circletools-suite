@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 CircleTools contributors
+# SPDX-License-Identifier: Apache-2.0
+
 # Main API image (ADR-0036). Build context is the repository root:
 #   docker build -f deploy/api.Dockerfile -t circletools-api .
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build

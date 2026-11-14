@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 using CircleTools.Circles.Repository;
 using CircleTools.Main.Service.Repository;
 using Microsoft.AspNetCore.Hosting;

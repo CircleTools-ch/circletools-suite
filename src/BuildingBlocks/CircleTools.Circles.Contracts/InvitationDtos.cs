@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 namespace CircleTools.Circles.Contracts;
 
 /// <summary>Invitation of a person to a circle by email address (FR-017). Owner and admin only.</summary>

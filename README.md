@@ -104,4 +104,7 @@ dotnet run --project src/Aspire/CircleTools.AppHost
 
 ## License
 
-Proprietary — see [`LICENSE`](LICENSE). Private, pre-release project.
+Open source under the **Apache License 2.0**. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE)
+(third-party components), and [ADR-0099](docs/adr/0099-apache-2-license.md) for why. Contributions are
+accepted under the same license (see [`CONTRIBUTING.md`](CONTRIBUTING.md)). The CircleTools name and logos
+are not covered by the license.

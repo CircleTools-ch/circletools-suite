@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 // PostgreSQL resource + the Main module's database.

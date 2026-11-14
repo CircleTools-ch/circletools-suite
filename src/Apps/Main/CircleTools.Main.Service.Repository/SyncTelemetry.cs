@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 CircleTools contributors
+// SPDX-License-Identifier: Apache-2.0
+
 using System.Diagnostics.Metrics;
 using Microsoft.Extensions.Logging;
 
