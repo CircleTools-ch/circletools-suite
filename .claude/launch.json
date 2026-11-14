@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "secretsanta-web",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/Apps/SecretSanta/CircleTools.SecretSanta.WebApp", "--launch-profile", "http"],
+      "port": 5081
+    }
+  ]
+}
