@@ -1,11 +1,14 @@
 ---
-status: Accepted
+status: Superseded by ADR-0093
 date: 2026-10-13
 deciders: [Adrian]
 tags: [documentation, ci-cd, deployment, security, docfx]
 ---
 
 # ADR-0076 — Publish the documentation site to private GitHub Pages
+
+> **Superseded by [ADR-0093](0093-publish-the-repository.md)** when the repository went public: the docs site
+> is published to public GitHub Pages ([docs site](../deployment/docs-site.md)). Kept as history.
 
 ## Context and problem statement
 

@@ -20,9 +20,9 @@ Two tracks:
 And, before either of them, **[device testing](device-testing.md)** — which of our machines can
 build each head, which devices can run it, and what to type. Nothing there needs a store account.
 
-The **[documentation site](docs-site.md)** is this DocFX site itself, published to **private** GitHub
-Pages ([ADR-0076](../adr/0076-docs-site-to-private-github-pages.md)) — a one-time owner enablement, after
-which every push to `main` republishes it for repo members.
+The **[documentation site](docs-site.md)** is this DocFX site itself, published to **public** GitHub
+Pages ([ADR-0093](../adr/0093-publish-the-repository.md), superseding ADR-0076) — a one-time owner
+enablement, after which every push to `main` republishes it.
 
 For the observability the VM will run, **[local observability](dev-observability.md)** brings up the
 same Loki + Prometheus + Grafana stack under Aspire — with the production dashboards and datasources —

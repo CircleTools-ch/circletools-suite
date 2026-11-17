@@ -150,7 +150,7 @@
   href: 0074-aot-safe-mediator-pipeline-over-value-types.md
 - name: 0075 Operator read-only database access
   href: 0075-operator-read-only-database-access.md
-- name: 0076 Docs site to private GitHub Pages
+- name: 0076 Docs site to private GitHub Pages (superseded)
   href: 0076-docs-site-to-private-github-pages.md
 - name: 0077 Retract linking projection on group delete
   href: 0077-retract-linking-projection-on-group-delete.md

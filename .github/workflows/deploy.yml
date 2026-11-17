@@ -6,14 +6,14 @@
 #   1. computes the suite version from git (nbgv, ADR-0047: 0.1.<git-height>),
 #   2. builds the API + Web images, stamped with that version, and pushes them to GHCR tagged
 #      :<version>, :<commit-sha>, and :latest,
-#   3. rolls the VPS forward over SSH (migrator, then `compose up`) — ONLY once the DEPLOY_* secrets and
-#      the VPS exist. Until then the images are built and pushed; the rollout job self-skips.
+#   3. rolls the VPS forward over SSH (migrator, then `compose up`).
 #
-# This is the milestone-8 "flip to on:push" from ADR-0038, made automatic: the rollout activates the
-# moment DEPLOY_HOST is set — no edit to this file needed.
+# The rollout job runs in the `production` environment (ADR-0093): the owner approves every rollout, and
+# the DEPLOY_* secrets live in that environment, out of reach of any other job or workflow. If they are
+# missing, the job fails with a clear message instead of skipping.
 #
-# Required repo secrets (still gated on the open secrets-management decision — see deploy/README.md):
-#   DEPLOY_HOST        VPS hostname / IP     (its presence is what enables the rollout job)
+# Secrets of the `production` environment:
+#   DEPLOY_HOST        VPS hostname / IP
 #   DEPLOY_USER        SSH user with docker access
 #   DEPLOY_SSH_KEY     private key for that user
 #   DEPLOY_KNOWN_HOSTS ssh-keyscan output for DEPLOY_HOST (host-key pinning)
@@ -136,35 +136,28 @@ jobs:
             ${{ env.IMAGE_PREFIX }}/circletools-web:${{ needs.guard.outputs.ref }}
             ${{ env.IMAGE_PREFIX }}/circletools-web:latest
 
-  # Is there a VPS to deploy to yet? DEPLOY_HOST's presence is the switch (secrets can't be read in a
-  # job-level `if`, so it is checked here in `run` and surfaced as an output).
-  preflight:
-    needs: guard
-    runs-on: ubuntu-latest
-    outputs:
-      deployable: ${{ steps.check.outputs.deployable }}
-    steps:
-      - id: check
-        run: |
-          set -euo pipefail
-          if [ -n "${{ secrets.DEPLOY_HOST }}" ]; then
-            echo "deployable=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "deployable=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::DEPLOY_HOST not set — images built & pushed to GHCR, VPS rollout skipped (milestone 8)."
-          fi
-
   deploy:
     name: deploy to VPS
-    needs: [guard, build-push, preflight]
-    # Run when a VPS exists and the build either succeeded (build mode) or was skipped (rollback mode).
+    needs: [guard, build-push]
+    # Run when the build either succeeded (build mode) or was skipped (rollback mode).
     if: >-
       ${{ always()
         && needs.guard.result == 'success'
-        && needs.preflight.outputs.deployable == 'true'
         && (needs.build-push.result == 'success' || needs.build-push.result == 'skipped') }}
     runs-on: ubuntu-latest
+    # Required reviewer + the DEPLOY_* secrets (ADR-0093). Limited to `main` in the environment settings.
+    environment: production
     steps:
+      - name: Check the deploy secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_SSH_KEY" ]; then
+            echo "::error::DEPLOY_HOST / DEPLOY_SSH_KEY are not set in the 'production' environment — see docs/deployment/server-setup.md."
+            exit 1
+          fi
+
       # The runner needs the deploy/ tree so it can rsync compose.yaml + observability config to the VM.
       - name: Check out deploy config
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

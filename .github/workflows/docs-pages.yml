@@ -1,7 +1,7 @@
-# Publish the DocFX documentation site to GitHub Pages (ADR-0076).
+# Publish the DocFX documentation site to public GitHub Pages (ADR-0093, superseding ADR-0076).
 # Builds the same link-checked site as the CI `docs` job and deploys it to Pages. The deploy job is
 # GATED on the `DOCS_PAGES_ENABLED` repository variable (mirroring deploy.yml's self-activation), so until
-# the owner has enabled Pages with PRIVATE visibility and set that variable, the site is only built and
+# the owner has enabled Pages and set that variable, the site is only built and
 # uploaded as an artifact — never published. See docs/deployment/docs-site.md.
 name: Docs site
 
@@ -59,9 +59,9 @@ jobs:
   deploy:
     name: deploy
     needs: build
-    # Self-activates only once the owner enables Pages (Settings -> Pages -> Source: GitHub Actions) with
-    # PRIVATE access control and sets the DOCS_PAGES_ENABLED repository variable to 'true' (ADR-0076). Until
-    # then this job is skipped and no site is published.
+    # Self-activates only once the owner enables Pages (Settings -> Pages -> Source: GitHub Actions) and sets
+    # the DOCS_PAGES_ENABLED repository variable to 'true' (docs/deployment/docs-site.md). Until then this job
+    # is skipped and no site is published — also the safe default for forks.
     if: vars.DOCS_PAGES_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment:

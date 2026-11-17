@@ -10,8 +10,8 @@ An update replaced the local .NET 10 SDK with **SDK 11.0.100** (installed: 9.0.3
 tests, DocFX). Owner asked whether to move to the 11 SDK or to `net11.0`. **Decision 2026-11-17: stay on .NET 10
 (LTS) through the Secret-Santa season; evaluate .NET 11 in January with an ADR.**
 
-- **NET-1 · Reinstall the .NET 10 SDK now (owner, ⏳).** The latest 10.0.4xx SDK, side by side with 11;
-  `global.json` then selects it again. No repo change.
+- **NET-1 · Reinstall the .NET 10 SDK now.** ✅ 2026-11-17: SDK 10.0.404 installed side by side with 11
+  (winget `Microsoft.DotNet.SDK.10`); `global.json` selects it, MAUI workloads intact, DocFX builds again.
 - **NET-2 · ADR: target framework after .NET 10 (January 2027).** Options: move to `net11.0` (STS) in the
   quiet season, or stay on `net10.0` until `net12.0` (next LTS, expected November 2027). Weigh:
   - **Support window** — check Microsoft's current policy; if STS releases get 24 months, .NET 11 ends about
@@ -87,8 +87,8 @@ server, so this is useful before any app change) → CS (custom server in the mo
   - ✅ License section in `CONTRIBUTING.md` (contributions under Apache-2.0 §5, nothing to sign) and `README.md`.
   - ✅ About & legal has an "Open source" section (DE/EN/FR) with a link to the license; the source link is
     behind `OpenSource.IsSourceCodePublic` (`Ui.Shared/OpenSource.cs`), off until the repo is public (OSS-5).
-  - ⏳ **Owner:** uninstall the CLA Assistant GitHub app from the `CircleTools-ch` organization (installed
-    2026-11-13 for ADR-0092, no longer needed).
+  - ✅ CLA Assistant gone (2026-11-17): no app installed in `CircleTools-ch`, no repository webhook, and the
+    owner confirmed neither the organization's nor the personal app settings list it.
 - **OSS-2 · Secret scan of the full history (ADR-0093).** `gitleaks` + `trufflehog` over all refs; rotate
   anything found, then remove it from history.
   - ✅ **First pass 2026-11-14 (Claude, pattern scan, no tools installed):** every blob reachable from any of
@@ -232,21 +232,45 @@ server, so this is useful before any app change) → CS (custom server in the mo
       are the known AndroidX `NU1608` ones), 1,050 tests pass, both E2E suites pass against the new Aspire
       stack when run one at a time (9/9 and 2/2; run together they fight over the stack, CI runs them apart),
       DocFX builds (one known ADR-0035 source-link warning).
-  - ⏳ **Owner, after these changes are pushed (possible while private):** Settings → Actions → "Require
-    actions to be pinned to a full-length commit SHA"; Settings → Advanced Security → Dependabot alerts and
-    security updates on.
-  - ⏳ **Owner, on flip day (in this order — each needs the repo public):**
-    1. Environments `production` and `store-release`, required reviewer `adrian-moll`; `production` limited
-       to `main`, `store-release` to `main` + tags `v*`.
-    2. Re-enter the secrets as environment secrets (`DEPLOY_*` → `production`; `ANDROID_*`,
-       `PLAY_SERVICE_ACCOUNT_JSON`, `IOS_*`, `APPSTORE_*` → `store-release`), add `environment: production` to
-       the rollout job in `deploy.yml` and `environment: store-release` to the `android` and `ios` jobs in
-       `release-mobile.yml`, run each once, then delete the repository-level copies.
-    3. Ruleset on `main`: PRs required, required checks (`build-test`, `secret-scan`, the docs build), no force
-       push, no deletion; owner bypass allowed (a sole maintainer cannot approve their own PR).
-    4. Actions → "Require approval for all external contributors"; private vulnerability reporting, secret
-       scanning and push protection on.
-    5. Flip to public; `OpenSource.IsSourceCodePublic = true`; supersede ADR-0076.
+  - ✅ **2026-11-17 (owner's go-ahead):** actions must be pinned to a full-length commit SHA
+    (`sha_pinning_required`); Dependabot alerts and security updates on. A CI re-run passed under the pinning
+    rule; `deploy.yml` and `release-mobile.yml` are first exercised at the next deploy / store release.
+  - ⏳ **Flip day.** Environments, rulesets and private vulnerability reporting only exist once the repo is
+    public (Free plan), so going public comes **first** and the rest follows the same session. The short
+    window is safe: only the owner has write access, fork PRs never receive secrets, and no workflow uses
+    `pull_request_target`.
+    - **Before — ✅ prepared 2026-11-17 in the working tree, uncommitted until the day** (committing earlier
+      would show a dead source link after the next web deploy and put the deploy behind an environment that
+      cannot exist yet):
+      - `deploy.yml`: rollout job in `environment: production`; the `preflight` job that skipped the rollout
+        while `DEPLOY_HOST` was unset is removed (an environment secret is invisible to other jobs, so it
+        would have skipped every deploy silently); the job now fails with a clear message if the secrets are
+        missing. `release-mobile.yml`: `android` and `ios` in `environment: store-release` (every run, also a
+        manual test build, then waits for approval).
+      - `OpenSource.IsSourceCodePublic = true`; `ImprintOpenSourceTests` now asserts the link (URL, new tab,
+        `noopener`). Checked in the running web app: "Source code on GitHub" / "Quellcode auf GitHub" /
+        "Code source sur GitHub" next to the license link, console clean.
+      - ADR-0076 marked *Superseded by ADR-0093* (ADR-0093 already decided this — no new ADR);
+        `docs/deployment/docs-site.md` rewritten for public Pages (Source: GitHub Actions + the
+        `DOCS_PAGES_ENABLED` variable); `docs-pages.yml` comments; deployment index.
+      - Runbooks: `server-setup.md`, `web-api-db.md`, `deploy/README.md` say *production environment*
+        instead of repository secrets. README status: live hosted service, apps in store release, open source.
+      - Verified: NoMaui solution builds with 0 warnings, Secret-Santa UI tests 232/232, architecture tests
+        34/34, DocFX builds (the known ADR-0035 warning only).
+    1. **Owner:** Settings → General → Change visibility → Public.
+       Then Settings → Pages → Source: *GitHub Actions*, and the repository variable `DOCS_PAGES_ENABLED = true`.
+    2. **Owner:** environments `production` (deployment branch `main`) and `store-release` (`main` + tags
+       `v*`), required reviewer `adrian-moll`; re-enter the secrets there (`DEPLOY_*` → `production`;
+       `ANDROID_*`, `PLAY_SERVICE_ACCOUNT_JSON`, `IOS_*`, `APPSTORE_*` → `store-release`). GitHub never shows
+       secret values, so this needs the password manager.
+    3. **Claude:** merge the prepared changes; owner runs `deploy.yml` once (approving the environment) to
+       prove the rollout still reaches the VM; then delete the repository-level copies of the secrets.
+    4. **Claude, with the owner's go-ahead:** ruleset on `main` (PR required, required checks `build-test`,
+       `secret-scan`, `docs`, no force push, no deletion, owner bypass); Actions → approval required for all
+       external contributors; private vulnerability reporting, secret scanning and push protection on;
+       GHCR packages public (IMG-4) only when ADR-0098 is accepted.
+    5. **Check:** the repo page, `SECURITY.md` link, issue forms, the source link on About & legal after the
+       next web deploy.
 - **OSS-6 · Trademark policy (ADR-0094).** `TRADEMARKS.md`; brand assets in one documented place so a fork
   can rebrand in one change; link from `README.md`, `CONTRIBUTING.md`, self-hosting guide.
   - ✅ **Done 2026-11-17 (Claude), ADR-0094 Accepted.** `TRADEMARKS.md` in the repository root: what the marks

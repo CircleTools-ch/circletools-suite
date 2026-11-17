@@ -117,7 +117,7 @@ records *which* values exist, not the values.
 | Tier | Where it lives | Values | Consumer |
 |---|---|---|---|
 | **Runtime / host** | `/opt/circletools/.env` on the VM (`chmod 600`, owned by the deploy user; git-ignored) | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `ConnectionStrings__maindb` (password in lockstep), `Auth__Jwt__SigningKey` ([ADR-0021](../adr/0021-web-auth-token-model.md)), `Mail__Username`, `Mail__Password` ([ADR-0037](../adr/0037-transactional-email-provider.md)), `GRAFANA_ADMIN_PASSWORD` ([ADR-0051](../adr/0051-production-observability-backend.md)), `NTFY_AUTH_USERS`, `NTFY_AUTH_TOKENS`, `NTFY_GRAFANA_TOKEN`, `ALERT_WEBHOOK_TOKEN`, `HEALTHCHECKS_PING_URL` ([ADR-0091](../adr/0091-ntfy-push-alerts-and-watchdog.md)), `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` ([backups](backups.md)) | `compose.yaml` → `api` / `migrator` / `postgres` / `grafana` / `ntfy`; **`backup.sh`** (systemd timer) |
-| **CI / deploy** | GitHub → Settings → Secrets and variables → Actions (repository encrypted secrets) | `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`; `GITHUB_TOKEN` (built-in, GHCR push) | `.github/workflows/deploy.yml` (SSH rollout) |
+| **CI / deploy** | GitHub → Settings → Environments → `production` (environment secrets, required reviewer; [ADR-0093](../adr/0093-publish-the-repository.md)) | `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS`; `GITHUB_TOKEN` (built-in, GHCR push) | `.github/workflows/deploy.yml` (SSH rollout) |
 
 CI holds **only deploy access** — never a runtime secret. Postgres is not published off the internal
 Docker network, so the DB credentials never leave the box. `ACME_EMAIL` and `IMAGE_TAG` in `.env` are
@@ -138,10 +138,11 @@ other way round.
    vault, keep the `ConnectionStrings__maindb` password **identical** to `POSTGRES_PASSWORD`, then
    `chmod 600 /opt/circletools/.env` and `chown` it to the deploy user.
 3. **Derive the CI tier:** add `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` (the private key),
-   `DEPLOY_KNOWN_HOSTS` (`ssh-keyscan <host>`) as GitHub Actions secrets; append the deploy **public** key
+   `DEPLOY_KNOWN_HOSTS` (`ssh-keyscan <host>`) as secrets of the `production` environment; append the deploy **public** key
    to the VM user's `~/.ssh/authorized_keys`. `GITHUB_TOKEN` is built-in — nothing to create.
-4. Setting **`DEPLOY_HOST`** is the switch that self-activates the rollout job in `deploy.yml` — no edit
-   to the workflow needed.
+4. The rollout job in `deploy.yml` runs in that environment and waits for the reviewer's approval; without
+   the secrets it fails with a clear message (the old "self-activates once `DEPLOY_HOST` is set" gate was
+   removed when the repository went public).
 
 ### Rotation
 

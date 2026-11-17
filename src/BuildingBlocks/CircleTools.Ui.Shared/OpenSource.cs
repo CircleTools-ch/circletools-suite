@@ -15,9 +15,10 @@ public static class OpenSource
     public const string SourceCodeUrl = "https://github.com/CircleTools-ch/circletools-suite";
 
     /// <summary>
-    /// Whether the repository at <see cref="SourceCodeUrl"/> is public yet. Until it is (ADR-0093, backlog
-    /// OSS-5), the source link is hidden so a released app never shows a link that leads to a 404. Set it
-    /// to <see langword="true"/> in the same change that makes the repository public.
+    /// Whether the repository at <see cref="SourceCodeUrl"/> is public, which shows the source link on
+    /// About &amp; legal. It was <see langword="false"/> while the repository was private, so a released app
+    /// never showed a link leading to a 404; it became <see langword="true"/> when the repository went
+    /// public (ADR-0093, backlog OSS-5).
     /// </summary>
-    public static bool IsSourceCodePublic => false;
+    public static bool IsSourceCodePublic => true;
 }
