@@ -48,7 +48,9 @@ The App Store row uses the same results for every language; the API barely varie
   Keep "Wichteln" in the title. Re-run the search a few days after the change.
   - ✅ 2026-11-17: written in `store/google-play/listing-de.md`
     (short description "Wichtel auslosen, private Links teilen: Wichteln offline und ohne Konto.", 72/80; two
-    bare "Wichtel" in the full description). ⏳ Owner: paste into Play Console → *Main store listing* → German.
+    bare "Wichtel" in the full description). ✅ Same day: entered in Play Console (German – de-DE, default
+    listing; the live text matched the previous repo version exactly) and **sent for review** — only these two
+    changes, managed publishing off, so they go live on approval. ⏳ Re-run the "Wichtel" search a few days later.
     The App Store's German description stays as it is until the next iOS version (Apple does not search it).
 - **ASO-2 · App Store name per language, with the next iOS version (P2).** Replace "CircleTools" in the name
   with the local search term, matching Play: "Secret Santa – Wichtel App" (DE), "Secret Santa: Gift Exchange"
