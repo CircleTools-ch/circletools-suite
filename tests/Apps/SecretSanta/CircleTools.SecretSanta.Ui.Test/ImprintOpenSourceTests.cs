@@ -39,20 +39,16 @@ public sealed class ImprintOpenSourceTests : IAsyncDisposable
     }
 
     [Fact]
-    public void LinksTheSourceCode_OnlyOnceTheRepositoryIsPublic()
+    public void LinksTheSourceCode_InANewTab_NowThatTheRepositoryIsPublic()
     {
+        Assert.True(OpenSource.IsSourceCodePublic);
+
         var cut = _ctx.Render<LegalImprintContent>();
 
-        var source = cut.FindAll("[data-testid=imprint-source-link]");
-
-        if (OpenSource.IsSourceCodePublic)
-        {
-            Assert.Equal(OpenSource.SourceCodeUrl, Assert.Single(source).GetAttribute("href"));
-        }
-        else
-        {
-            Assert.Empty(source);
-        }
+        var source = Assert.Single(cut.FindAll("[data-testid=imprint-source-link]"));
+        Assert.Equal(OpenSource.SourceCodeUrl, source.GetAttribute("href"));
+        Assert.Equal("_blank", source.GetAttribute("target"));
+        Assert.Contains("noopener", source.GetAttribute("rel"), StringComparison.Ordinal);
     }
 
     /// <inheritdoc />

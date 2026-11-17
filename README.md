@@ -42,7 +42,7 @@ default). **Code & documentation:** English only.
 
 ## Status
 
-🟢 **M1–M5 built and closed; deployment (M8) is the only open milestone.** See the
+🟢 **M1–M5 built and closed; the hosted service is live and the apps are in the stores' release process (M8).** See the
 [roadmap](docs/roadmap/roadmap.md) and [backlog](docs/roadmap/backlog.md).
 
 - **Secret-Santa MVP — shipped** ([FEAT-001](docs/features/FEAT-001-secret-santa-mvp.md)). Create a
@@ -65,13 +65,13 @@ default). **Code & documentation:** English only.
 - **Milestone 7 — Testing & CI — complete.** GitHub Actions runs build/test, link-checked docs and
   the MAUI heads on every push/PR ([ADR-0038](docs/adr/0038-ci-cd-pipeline.md)), and the WebAuthn
   ceremony and invitation sign-up journey are automated over a real-Chromium E2E host.
-- **Not yet deployed — but not blocked on undecided decisions.** Hosting
-  ([ADR-0036](docs/adr/0036-cloud-provider-and-hosting.md)) and transactional email
-  ([ADR-0037](docs/adr/0037-transactional-email-provider.md)) are both **Accepted (2026-08-13)**, and
-  the brand and `circletools.ch` domain are final. What remains for **M8 — Deployment** is
-  **operational provisioning** (VPS, secrets, DNS, backups) and the **legal pages** (privacy / imprint
-  / account-deletion, DE/EN/FR) — execution, not decisions. See the
-  [launch-readiness assessment](docs/deployment/launch-readiness.md).
+- **Live.** The hosted service runs at [`circletools.ch`](https://circletools.ch) and
+  [`secretsanta.circletools.ch`](https://secretsanta.circletools.ch) on a Swiss VPS
+  ([ADR-0036](docs/adr/0036-cloud-provider-and-hosting.md)); the Android and iOS apps go through the
+  Play and App Store release process — current state in the [backlog](docs/roadmap/backlog.md).
+- **Open source.** The whole repository is public under Apache-2.0
+  ([ADR-0099](docs/adr/0099-apache-2-license.md), [ADR-0093](docs/adr/0093-publish-the-repository.md)).
+  Self-hosting images and a self-host edition of the server are next (ADR-0095, ADR-0098, Proposed).
 
 ## Quickstart
 

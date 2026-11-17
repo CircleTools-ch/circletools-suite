@@ -61,7 +61,7 @@ Images are versioned automatically from git — **Nerdbank.GitVersioning** stamp
 
 **Trigger:** deploy runs after the CI gate succeeds on `main` (and on manual dispatch for
 redeploy/rollback). It **always builds and pushes** the versioned images to GHCR; the **SSH rollout job
-stays skipped until `DEPLOY_HOST` is set**, then self-activates — no edit needed. Set `IMAGE_TAG` in
+runs in the `production` environment** and waits for the owner's approval (ADR-0093). Set `IMAGE_TAG` in
 `.env` (or let the workflow pass it) to pin which tag the stack runs. Mobile store releases are a
 *separate*, tag-triggered workflow (`release-mobile.yml`), not part of this server track.
 

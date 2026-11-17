@@ -18,7 +18,8 @@
 # iOS leg rides the same v* tag as Android, staying OUT of the per-push ci.yml gate to keep macOS minutes
 # (10x multiplier) near CHF 0 at this release cadence.
 #
-# Repo secrets (not yet set):
+# Secrets of the `store-release` environment (ADR-0093; required reviewer, tags v* and main only).
+# Every run, including a manual test build, waits for the owner's approval:
 #   Android (ADR-0030):
 #     ANDROID_KEYSTORE_BASE64        base64 of the upload keystore (.jks)
 #     ANDROID_KEYSTORE_PASSWORD      keystore password
@@ -50,6 +51,8 @@ jobs:
   android:
     name: Android (Secret-Santa)
     runs-on: windows-latest # matches ci.yml build-maui; the Android head builds with the MAUI workload
+    # Signing + Play secrets live in this environment, behind the owner's approval (ADR-0093).
+    environment: store-release
     defaults:
       run:
         shell: bash
@@ -158,6 +161,8 @@ jobs:
     # as of 2026-09). Re-check at each .NET/Xcode bump; move to a `macos-NN` label once Xcode 27 is GA
     # there (ADR-0065 hosted-image-lag risk / runner-swap note).
     runs-on: xcode-27
+    # Signing + App Store Connect secrets live in this environment, behind the owner's approval (ADR-0093).
+    environment: store-release
     defaults:
       run:
         shell: bash
