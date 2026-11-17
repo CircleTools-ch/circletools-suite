@@ -32,8 +32,6 @@ see [naming](process/naming.md).
 
 ## How this site is organized
 
-| Section | Contents |
-|---------|----------|
 The top bar has one entry per section; the section's pages are listed in the sidebar on the left,
 which has a filter box (useful for the 100-odd ADRs).
 

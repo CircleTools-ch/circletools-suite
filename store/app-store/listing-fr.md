@@ -8,11 +8,13 @@ le Luxembourg utilisent la même localisation.
 ## Nom (≤30)
 
 ```
-Secret Santa - CircleTools
+Secret Santa – Tirage au sort
 ```
 
-_Identique au nom anglais ([ADR-0057](../../docs/adr/0057-app-store-naming-and-localization.md)) ;
-« Père Noël secret » figure dans le sous-titre et « tirage au sort » dans les mots-clés._
+_From the next iOS version (backlog ASO-2, [ADR-0057, amendment 2026-11-17](../../docs/adr/0057-app-store-naming-and-localization.md)):
+the brand first, then the search term. Until then "Secret Santa - CircleTools". « Père Noël secret » stays
+in the subtitle. The name must be unique on the store; if App Store Connect refuses it, use
+`Secret Santa: tirage cadeaux`._
 
 ## Sous-titre (≤30)
 
@@ -29,8 +31,12 @@ Noël approche ! Tirez les noms en quelques secondes, envoyez un lien privé à 
 ## Mots-clés (≤100)
 
 ```
-tirage au sort,cadeaux,Noël,échange,liste de souhaits,famille,bureau,pige,fête,amis
+échange de cadeaux,liste de souhaits,pige,famille,bureau,collègues,fête,amis,cadeau,anonyme
 ```
+
+_From the next iOS version (ASO-2): « tirage au sort » is now in the name and « Noël » in the subtitle, so
+they leave this field; new: collègues, cadeau, anonyme. Was:
+`tirage au sort,cadeaux,Noël,échange,liste de souhaits,famille,bureau,pige,fête,amis`._
 
 ## Description (≤4000)
 

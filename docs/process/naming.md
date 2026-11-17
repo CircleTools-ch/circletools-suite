@@ -16,8 +16,8 @@ kept below as the record.
 - **TLD:** `.ch`-first (Swiss audience); a matching `.com` is a nice-to-have.
 - **App domains:** apps are **subdomains** of the (future) suite domain — e.g.
   `secretsanta.<suite-domain>`. Per-app brand names are decided during each app's idea step.
-- **App store naming:** one universal, stable visible name per app (identical in DE/EN/FR and
-  on-device); discoverability is localized in the store **listing** (title/keywords), not the name; no
+- **App store naming:** one universal brand name per app (identical in DE/EN/FR and on-device); the
+  store name is *brand + localized descriptor* on both stores (amended 2026-11-17); no
   per-language or per-name domains — see [ADR-0057](../adr/0057-app-store-naming-and-localization.md)
   and the dedicated section below.
 
@@ -52,6 +52,11 @@ Standing rule for **every** suite app, so each app's branding step inherits it i
   put the local search terms in the localized **Play title** (e.g. `Secret Santa – Wichteln` (DE),
   `Secret Santa – Père Noël secret` (FR)) and the **Apple keyword field** (`Wichteln`,
   `Schrottwichteln`, `Père Noël secret`, `tirage au sort`, …). The visible name stays single.
+- **Amended 2026-11-17:** the **App Store Name** follows the Play pattern too — brand first, identical in
+  every locale, then a localized descriptor with the local search term (Secret Santa: `– Wichtel ziehen`
+  (DE), `– Draw Names` (EN), `– Tirage au sort` (FR)). Apple localizes the name per language and requires
+  it to be unique on the store, so check availability before deciding. The on-device name stays the brand
+  alone. See the ADR-0057 amendment.
 - **A store name is NOT derived from a domain.** A localized name needs **no** new domain — the single
   per-app origin `<app>.circletools.ch` serves every locale. **No per-language or per-name domains** are
   created. Vanity marketing redirects (e.g. `wichteln.ch`) are a separate, optional future decision,

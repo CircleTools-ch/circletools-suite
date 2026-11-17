@@ -53,7 +53,7 @@
   <data name="Legal_Imprint_DisclaimerHeading" xml:space="preserve"><value>The small print</value></data>
   <data name="Legal_Imprint_DisclaimerBody" xml:space="preserve"><value>I build CircleTools with care, but it's a free personal project: I can't promise it will always work perfectly or always be available, and as far as the law allows, I can't accept liability for problems that come from using it. I'm not responsible for the content of other websites I link to.</value></data>
   <data name="Legal_Imprint_TrademarksHeading" xml:space="preserve"><value>Trademarks</value></data>
-  <data name="Legal_Imprint_TrademarksBody" xml:space="preserve"><value>Apple and the Apple logo are trademarks of Apple Inc., registered in the U.S. and other countries. App Store is a service mark of Apple Inc.</value></data>
+  <data name="Legal_Imprint_TrademarksBody" xml:space="preserve"><value>Apple and the Apple logo are trademarks of Apple Inc., registered in the U.S. and other countries. App Store is a service mark of Apple Inc. Google Play and the Google Play logo are trademarks of Google LLC.</value></data>
   <data name="Legal_Imprint_OpenSourceHeading" xml:space="preserve"><value>Open source</value></data>
   <data name="Legal_Imprint_OpenSourceBody" xml:space="preserve"><value>CircleTools is open-source software: you may use, change and share it under the Apache License, version 2.0. It comes with no warranty. The name CircleTools and its logos are not covered by that license.</value></data>
   <data name="Legal_Imprint_LicenseLink" xml:space="preserve"><value>Read the license (Apache 2.0)</value></data>

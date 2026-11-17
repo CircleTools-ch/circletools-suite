@@ -14,6 +14,14 @@
   letter-spacing: 0.2px;
 }
 
+/* The modern theme sizes the logo by the SVG's own dimensions, so the square brand logo overflowed the top
+   bar. Keep it at the height of the bar's text. */
+#logo {
+  width: 2rem;
+  height: 2rem;
+  margin-right: 0.5rem;
+}
+
 /* Make embedded diagram SVGs responsive */
 article img[src$=".svg"] {
   max-width: 100%;

@@ -8,6 +8,12 @@
       "port": 5081
     },
     {
+      "name": "secretsanta-web-prodconfig",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set ASPNETCORE_ENVIRONMENT=Production&& set ASPNETCORE_URLS=http://localhost:5082&& dotnet run --project src/Apps/SecretSanta/CircleTools.SecretSanta.WebApp --no-launch-profile -p:WasmApplicationEnvironmentName=Production"],
+      "port": 5082
+    },
+    {
       "name": "docs-site",
       "runtimeExecutable": "dotnet",
       "runtimeArgs": ["docfx", "serve", "docfx/_site", "--port", "8080"],

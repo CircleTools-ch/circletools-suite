@@ -13,8 +13,11 @@
 
     A released App Store link shows Apple's official badge, used as Apple's marketing guidelines require:
     the unmodified black artwork in the reader's language, at least 40 px high, clear space of a quarter of
-    its height, first in the lineup, and credited in the imprint. The artwork is served from this site, so
-    showing it sends nothing to Apple. Everything else, such as TestFlight, stays a plain button.
+    its height, first in the lineup, and credited in the imprint. A released Google Play link likewise shows
+    Google's official "Get it on Google Play" badge in the reader's language, at the same height as Apple's
+    (Google asks for no smaller than other store badges), credited in the imprint; only the transparent
+    margin of Google's PNG was trimmed so both badges line up. Both are served from this site, so showing
+    them sends nothing to Apple or Google. Everything else, such as TestFlight, stays a plain button.
 *@
 @if (_links.Count > 0)
 {
@@ -28,6 +31,12 @@
                 {
                     <a href="@link.Url" target="_blank" rel="noopener noreferrer" class="d-block">
                         <img src="@AppStoreBadgeSource" alt="@L["GetTheApp_Ios"]" style="display:block;height:48px;width:auto;" />
+                    </a>
+                }
+                else if (ShowsGooglePlayBadge(link))
+                {
+                    <a href="@link.Url" target="_blank" rel="noopener noreferrer" class="d-block">
+                        <img src="@GooglePlayBadgeSource" alt="@L["GetTheApp_Android"]" style="display:block;height:48px;width:auto;" />
                     </a>
                 }
                 else
@@ -65,14 +74,27 @@
         && !link.Platform.Equals("testflight", StringComparison.OrdinalIgnoreCase)
         && string.IsNullOrWhiteSpace(link.Label);
 
-    // Read on every render, like the localizer, so the badge follows a language switch.
-    private static string AppStoreBadgeSource =>
-        System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch
+    // Same rule for Google Play: the "Get it on Google Play" badge is for the released listing only, not
+    // when the configuration asks for its own wording (for example a testing link).
+    private static bool ShowsGooglePlayBadge(AppStoreLink link) =>
+        link.Platform.Equals("android", StringComparison.OrdinalIgnoreCase)
+        && string.IsNullOrWhiteSpace(link.Label);
+
+    // Read on every render, like the localizer, so the badges follow a language switch.
+    private static string AppStoreBadgeSource => BadgeSource("app-store", "svg");
+
+    private static string GooglePlayBadgeSource => BadgeSource("google-play", "png");
+
+    private static string BadgeSource(string store, string extension)
+    {
+        var language = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch
         {
-            "de" => "_content/CircleTools.Ui.Shared/img/store-badges/app-store-de.svg",
-            "fr" => "_content/CircleTools.Ui.Shared/img/store-badges/app-store-fr.svg",
-            _ => "_content/CircleTools.Ui.Shared/img/store-badges/app-store-en.svg",
+            "de" => "de",
+            "fr" => "fr",
+            _ => "en",
         };
+        return $"_content/CircleTools.Ui.Shared/img/store-badges/{store}-{language}.{extension}";
+    }
 
     // Neutral Material glyphs that certainly ship (Material Icons has no Apple logo, and Apple's brand
     // rules restrict its use anyway): an iPhone outline for Apple, the Android robot for Android.

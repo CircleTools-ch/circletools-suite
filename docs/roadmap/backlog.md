@@ -3,6 +3,74 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## Store search — "Wichtel" and the App Store ranking (2026-11-17)
+
+The owner found the app on Google Play for "Wichteln" but not for "Wichtel". Claude checked both stores for the
+Swiss storefront. **Google Play:** the store's web search (`hl` = language, `gl=CH`), up to ~30 results.
+**App Store:** Apple's iTunes Search API (`country=ch`), which approximates the App Store app's search but is
+not identical to it. Ranks are positions in those lists; "n/a" means the term was not searched in that language.
+
+| Term | Play EN | Play DE | Play FR | App Store |
+|------|---------|---------|---------|-----------|
+| SecretSanta | 5 | 4 | 7 | 8 |
+| Secret Santa | 8 | 8 | 10 | 50 |
+| secret santa app | 9 | n/a | n/a | 20 |
+| gift exchange | 4 | n/a | n/a | 53 |
+| name draw | not found | n/a | n/a | 46 |
+| Wichtel | n/a | **29 of 29** | n/a | 41 |
+| Wichteln | n/a | 6 | n/a | 56 |
+| Wichtel App / wichteln app | n/a | 13 / 7 | n/a | 51 |
+| Julklapp / Geschenktausch | n/a | not found / not found | n/a | 12 / 2 |
+| père noël secret / pere noel secret | n/a | n/a | 6 / 4 | 16 / 16 |
+| échange de cadeaux | n/a | n/a | 5 | 23 |
+| tirage au sort noël | n/a | n/a | not found | 20 |
+| gift / Geschenk / cadeau | not found | not found | not found | not found |
+
+The App Store row uses the same results for every language; the API barely varies them.
+
+**Reading.**
+- **Google Play is fine for the main terms** (4–10). "Wichtel" alone is the gap: the listing has the word
+  only in hyphenated compounds ("Wichtel-App", "Wichtel-Runde"), which apparently do not match the bare word.
+- **The App Store is weak everywhere** (rank 41–56 for the core terms). This is partly the young app's few
+  downloads and ratings, but the name spends 11 of its 30 characters on "CircleTools", which nobody searches
+  for; the name is the strongest ranking field.
+- **The one-word generic terms** (gift, Geschenk, cadeau) are not worth chasing.
+
+**Release needed?**
+- **Google Play: no.** The title and both descriptions are changed in Play Console → *Main store listing*. Each
+  change goes through a listing review, usually within hours, and no new build is needed.
+- **App Store: yes, for the parts that count.** The name, subtitle and keywords can only be changed with a new
+  app version (a new build). The promotional text can be changed at any time, but it is not used for search.
+
+**Items.**
+- **ASO-1 · Play DE: the bare word "Wichtel" (P2, no release).** Use "Wichtel" as a word on its own in the
+  short description and a few natural places in the full description (for example "wer dein Wichtel ist").
+  Keep "Wichteln" in the title. Re-run the search a few days after the change.
+  - ✅ 2026-11-17: written in `store/google-play/listing-de.md`
+    (short description "Wichtel auslosen, private Links teilen: Wichteln offline und ohne Konto.", 72/80; two
+    bare "Wichtel" in the full description). ✅ Same day: entered in Play Console (German – de-DE, default
+    listing; the live text matched the previous repo version exactly) and **sent for review** — only these two
+    changes, managed publishing off, so they go live on approval. ⏳ Re-run the "Wichtel" search a few days later.
+    The App Store's German description stays as it is until the next iOS version (Apple does not search it).
+- **ASO-2 · App Store name per language, with the next iOS version (P2).** Replace "CircleTools" in the name
+  with the local search term, matching Play: "Secret Santa – Wichtel App" (DE), "Secret Santa: Gift Exchange"
+  (EN), "Secret Santa: Père Noël secret" (FR). Then free up the keywords that this repeats, because Apple
+  counts a word once across name, subtitle and keywords. This changes the identical-name rule of
+  [ADR-0057](../adr/0057-app-store-naming-and-localization.md), so amend the ADR first. Owner decision.
+  - ✅ 2026-11-17 (owner's go-ahead): ADR-0057 amended; `naming.md` updated. Those three names turned out to
+    be taken by other apps, so the names are **`Secret Santa – Wichtel ziehen`** (DE),
+    **`Secret Santa – Draw Names`** (EN, all four English locales) and **`Secret Santa – Tirage au sort`**
+    (FR); no exact match in the App Store search API, fallbacks in the listing files. Subtitles and keywords
+    rebalanced so no word repeats across name, subtitle and keywords (DE subtitle `Wichteln: auslosen und
+    teilen`, EN `Gift exchange & wishlists`, FR unchanged). All in `store/app-store/listing-{de,en,fr}.md`.
+  - ⏳ Owner: with the **next iOS version** (new build), enter name and subtitle under *App Information* and
+    the keywords on the version page, per language. App Store Connect refuses a taken name on save — then use
+    the fallback. Aim to submit by about 2026-11-24 so it is live in early December (the last review took
+    5 days). Re-run the search a week after release.
+- **ASO-3 · Developer name on the App Store (owner, later).** It shows the owner's legal name because the
+  Apple account is an individual account. Showing "CircleTools" needs an organization account (a legal entity
+  and a D-U-N-S number). Google Play already shows "CircleTools".
+
 ## .NET 11 — evaluate in January (2026-11-17)
 
 An update replaced the local .NET 10 SDK with **SDK 11.0.100** (installed: 9.0.320 and 11.0.100). Since
