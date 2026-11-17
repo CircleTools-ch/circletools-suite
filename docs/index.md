@@ -17,23 +17,33 @@ lives here as Markdown and is published as this site via DocFX.
 
 A suite of small apps under one brand, one login, and shared configuration, with a global
 dashboard over every app. The first app is **Secret-Santa**. Each app runs **offline with no
-account** (local SQLite) and can **sync across devices** with an optional account. Native
-Android/iOS (MAUI Blazor Hybrid) + Web (Blazor) share the same feature code.
+account** (a local JSON key-value store, [ADR-0015](adr/0015-mvp-client-offline-storage.md)) and can
+**sync across devices** with an optional account. Native Android/iOS (MAUI Blazor Hybrid) + Web
+(Blazor) share the same feature code.
 
 Swiss-first audience; product languages **German, French, English**; code and documentation
 are **English**.
 
-> **Note:** CircleTools is a placeholder brand name. Choosing the final name and domain is the
-> first tracked step — see [naming](process/naming.md).
+The service is live at [circletools.ch](https://circletools.ch) and
+[secretsanta.circletools.ch](https://secretsanta.circletools.ch). The source code is open under
+Apache-2.0 at [github.com/CircleTools-ch/circletools-suite](https://github.com/CircleTools-ch/circletools-suite)
+([ADR-0093](adr/0093-publish-the-repository.md)). The brand and domain were chosen on 2026-08-13 —
+see [naming](process/naming.md).
 
 ## How this site is organized
 
 | Section | Contents |
 |---------|----------|
-| **Process** | Ways of working, git conventions, definition of done, naming |
+The top bar has one entry per section; the section's pages are listed in the sidebar on the left,
+which has a filter box (useful for the 100-odd ADRs).
+
+| Section | Contents |
+|---------|----------|
+| **Process** | Ways of working, git conventions, definition of done, naming, brand assets |
 | **Architecture** | The 12 arc42 chapters |
 | **Decisions** | Architecture Decision Records (ADRs) |
-| **Product** | Roadmap, requirements, use cases, feature specs, brainstorming |
+| **Product** | Roadmap & backlog, requirements, use cases, feature specs, brainstorming |
 | **Guidelines** | Coding, architecture, testing, localization, documentation, security |
 | **Glossary** | Canonical domain terms |
-| **API Reference** | Generated from the C# XML doc comments in `src/` |
+| **Deployment** | Hosting, server setup, backups, the docs site |
+| **API** | Generated from the C# XML doc comments in `src/` |

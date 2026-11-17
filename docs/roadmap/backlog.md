@@ -53,7 +53,8 @@ scratch mirror and force-pushed; old PR refs deliberately not purged (owner deci
 done.** Next: accept ADR-0093, then OSS-4 (operational docs) and OSS-5 (CI/repo hardening).
 **2026-11-14 (later):** OSS-4 done; OSS-5 repository files committed and green in CI (`84b82ec`); OSS-1
 committed (`90058e6`). **2026-11-17:** ADR-0093 and ADR-0094 **Accepted**; OSS-6 done (policy +
-brand checklist; OSS-6b, the brand in one place, stays open). **Next:** the OSS-5 flip-day steps. ADRs 0095–0098 stay Proposed until IMG/SH/CS.
+brand checklist; OSS-6b, the brand in one place, stays open). Later the same day: **OSS-5 done — the
+repository is public** (flip day, see OSS-5). **Next:** OSS-6b. ADRs 0095–0098 stay Proposed until IMG/SH/CS.
 
 **Choices to confirm when reviewing the Proposed ADRs.** Claude picked these as defaults during drafting;
 each is a real trade-off, not a technical necessity:
@@ -235,7 +236,19 @@ server, so this is useful before any app change) → CS (custom server in the mo
   - ✅ **2026-11-17 (owner's go-ahead):** actions must be pinned to a full-length commit SHA
     (`sha_pinning_required`); Dependabot alerts and security updates on. A CI re-run passed under the pinning
     rule; `deploy.yml` and `release-mobile.yml` are first exercised at the next deploy / store release.
-  - ⏳ **Flip day.** Environments, rulesets and private vulnerability reporting only exist once the repo is
+  - ✅ **Flip day — done 2026-11-17.** Repo public; Pages publishing
+    (`https://circletools-ch.github.io/circletools-suite/`); environments `production` and `store-release`
+    hold the 4 + 11 secrets and the 15 repository-level copies are deleted; PR #31 (squash) merged and one
+    approved deploy reached the VM. A new `DEPLOY_SSH_KEY` was made **on the server** — one made in
+    PowerShell 7 with `-N '""'` got the literal passphrase `""` and was refused; the old and failed keys are
+    removed from `authorized_keys`, and the old Play service-account key is deleted (the `store-release` copy
+    is first exercised at the next store release). Ruleset *Main-Protection* (from 2026-08-13: PR required,
+    squash only, no force push, no deletion, no bypass) now requires `build-test`, `docs`, `build-maui` and
+    `secret-scan`; fork workflows need approval for all outside contributors; private vulnerability
+    reporting, secret scanning and push protection on. Checked: the source link on About & legal of both
+    `circletools.ch` and `secretsanta.circletools.ch` (new tab, console clean); issue forms and `SECURITY.md`
+    on `main`. Still open: GHCR packages public (IMG-4) once ADR-0098 is accepted. The original plan follows.
+  - **Flip day (plan as prepared).** Environments, rulesets and private vulnerability reporting only exist once the repo is
     public (Free plan), so going public comes **first** and the rest follows the same session. The short
     window is safe: only the owner has write access, fork PRs never receive secrets, and no workflow uses
     `pull_request_target`.

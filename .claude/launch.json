@@ -6,6 +6,12 @@
       "runtimeExecutable": "dotnet",
       "runtimeArgs": ["run", "--project", "src/Apps/SecretSanta/CircleTools.SecretSanta.WebApp", "--launch-profile", "http"],
       "port": 5081
+    },
+    {
+      "name": "docs-site",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["docfx", "serve", "docfx/_site", "--port", "8080"],
+      "port": 8080
     }
   ]
 }
