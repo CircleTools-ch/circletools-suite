@@ -1,110 +1,109 @@
-# CircleTools — app suite for families & friends
+# CircleTools
 
-> **CircleTools** is the **final** brand, at **`circletools.ch`** (registered at Infomaniak,
-> **2026-08-13**). It is also the solution / project / namespace prefix. See the naming history in
-> [`docs/process/naming.md`](docs/process/naming.md).
+[![CI](https://github.com/CircleTools-ch/circletools-suite/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/CircleTools-ch/circletools-suite/actions/workflows/ci.yml)
+[![Docs](https://github.com/CircleTools-ch/circletools-suite/actions/workflows/docs-pages.yml/badge.svg?branch=main)](https://circletools-ch.github.io/circletools-suite/)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-A suite of small, delightful apps for **families and groups of friends** — one brand,
-one login, shared configuration, and a global dashboard over every app. The first app is
-a **Secret-Santa** app.
+**Small apps for families and groups of friends.** CircleTools is a suite of apps under one brand
+and one optional account. The first app is **Secret-Santa**: create a group, add members and
+wishlists, set exclusions, run a fair draw, and share a private reveal link with each person.
 
-Every app works two ways:
+Every app works **offline with no account**: data stays on your device. If you sign in, it **syncs
+across devices** and you can reuse your *circles* (the standing groups of people you organize things
+with) in every app.
 
-- **Standalone & offline** — no account, no backend; all data stored locally in a JSON key-value
-  store (web `localStorage`, MAUI file-per-key — not SQLite; see [ADR-0015](docs/adr/0015-mvp-client-offline-storage.md)).
-- **Connected** — create an account (email + password, optional passkeys) to **sync across
-  devices** via a Postgres-backed API.
+**Try it:** [secretsanta.circletools.ch](https://secretsanta.circletools.ch) · account and circles
+at [circletools.ch](https://circletools.ch) · documentation at
+[circletools-ch.github.io/circletools-suite](https://circletools-ch.github.io/circletools-suite/)
 
-**Targets:** native **Android & iOS** (phone + tablet, .NET MAUI Blazor Hybrid) and a
-responsive **Web** app (Blazor) — sharing the same feature code.
+## Features
 
-**Audience:** Switzerland-first. **Product languages:** German, French, English (`de-CH`
-default). **Code & documentation:** English only.
+- **Secret-Santa:** groups, members, wishlists, exclusions, a fair draw with history, and one or more
+  events per group. Reveal links are self-contained, so each person sees only their own match.
+- **Offline first:** the web app is an installable Blazor WebAssembly PWA, and the Android and iOS apps
+  are built with .NET MAUI Blazor Hybrid from the same feature code.
+- **Optional account:** email and password or **passkeys**, email verification, password reset, data
+  export and account deletion. Sign in once and use every app in the suite (single sign-on).
+- **Circles:** invite people by email, keep members for people who never sign up, and manage roles.
+- **Swiss first:** German (`de-CH` by default), French and English.
 
 ## Tech stack
 
-- **.NET 10**, **.NET Aspire** (orchestration)
-- **Domain-Driven Design** (strategic + tactical)
-- **PostgreSQL** (backend) · **JSON key-value store** (on-device, per [ADR-0015](docs/adr/0015-mvp-client-offline-storage.md))
-- **Blazor** (Web) + **MAUI Blazor Hybrid** (native), shared via Razor Class Libraries
-- **DocFX** for the documentation site
+.NET 10 · .NET Aspire · Blazor WebAssembly · .NET MAUI Blazor Hybrid · ASP.NET Core · PostgreSQL ·
+MudBlazor · DocFX. The code follows Domain-Driven Design with a strict inward-pointing layering
+(Domain ← Application ← Infrastructure ← Hosts), checked by architecture tests.
 
-## Repository map
+## Getting started
 
-| Path | What |
-|------|------|
-| [`docs/`](docs/) | **All** documentation (Markdown): arc42, ADRs, requirements, use cases, guidelines, process |
-| [`docfx/`](docfx/) | The **Documentation** project — builds the static docs site |
-| [`src/`](src/) | Production code — Aspire hosts, shared building blocks, and the apps |
-| [`tests/`](tests/) | Test projects — unit, integration, component, architecture |
-| [`CLAUDE.md`](CLAUDE.md) | How AI assistants (and new humans) work in this repo |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Dev setup, workflow, conventions |
-
-## Status
-
-🟢 **M1–M5 built and closed; the hosted service is live and the apps are in the stores' release process (M8).** See the
-[roadmap](docs/roadmap/roadmap.md) and [backlog](docs/roadmap/backlog.md).
-
-- **Secret-Santa MVP — shipped** ([FEAT-001](docs/features/FEAT-001-secret-santa-mvp.md)). Create a
-  group, add members and wishlists, define exclusions, run a fair draw, share self-contained reveal
-  links. Fully offline, no account, no backend — a standalone Blazor WASM PWA plus a MAUI head.
-- **M1 — Identity in the Main shell — built and closed**
-  ([FEAT-002](docs/features/FEAT-002-m1-identity.md)). Sign-up with email verification, password and
-  passkey sign-in, refresh rotation with reuse detection, password reset, profile and language,
-  email change, data export, account deletion.
-- **M2 — Circles — built and closed** ([FEAT-003](docs/features/FEAT-003-m2-circles.md)). A circle is
-  the standing set of people apps reuse: create one with a label you choose, invite by email without
-  the form revealing whether an address already has an account, accept or decline from the mail link
-  or in the app, keep managed members for people who will never sign up, administer roles and
-  ownership, leave, delete. Online-only for now — offline circles are M3's decision, not a patch.
-  **537 tests green across 12 projects.**
-- **M3 — Sync & claim, M4 — Linking, M5 — Cross-app SSO, and Events per group — all built and
-  closed.** App↔backend reconciliation with the anonymous→account claim, member↔user linking with
-  consent, the redirect-based PKCE single-sign-on hand-off across suite origins, and one-or-more
-  events per group each with its own draw history — see the [roadmap](docs/roadmap/roadmap.md).
-- **Milestone 7 — Testing & CI — complete.** GitHub Actions runs build/test, link-checked docs and
-  the MAUI heads on every push/PR ([ADR-0038](docs/adr/0038-ci-cd-pipeline.md)), and the WebAuthn
-  ceremony and invitation sign-up journey are automated over a real-Chromium E2E host.
-- **Live.** The hosted service runs at [`circletools.ch`](https://circletools.ch) and
-  [`secretsanta.circletools.ch`](https://secretsanta.circletools.ch) on a Swiss VPS
-  ([ADR-0036](docs/adr/0036-cloud-provider-and-hosting.md)); the Android and iOS apps go through the
-  Play and App Store release process — current state in the [backlog](docs/roadmap/backlog.md).
-- **Open source.** The whole repository is public under Apache-2.0
-  ([ADR-0099](docs/adr/0099-apache-2-license.md), [ADR-0093](docs/adr/0093-publish-the-repository.md)).
-  Self-hosting images and a self-host edition of the server are next (ADR-0095, ADR-0098, Proposed).
-
-## Quickstart
-
-Prerequisites: **.NET 10 SDK** (pinned via [`global.json`](global.json)); **MAUI workloads** for the
-native Secret-Santa head; **Docker** for the Aspire stack (Postgres + Mailpit) and the integration
-tests, which use Testcontainers.
+**Prerequisites:** the .NET 10 SDK (the band is pinned in [`global.json`](global.json)) and Docker
+(for the local Postgres and Mailpit, and for the integration tests). The Android and iOS heads also
+need the MAUI workloads (`dotnet workload restore`).
 
 ```bash
-# Restore local tools (DocFX)
+git clone https://github.com/CircleTools-ch/circletools-suite.git
+cd circletools-suite
 dotnet tool restore
-
-# Build & serve the documentation site locally (opens on http://localhost:8080)
-dotnet docfx docfx/docfx.json --serve
-
-# Build the solution
 dotnet build CircleTools.slnx
+dotnet test
+```
 
-# Run the full local stack (Postgres, Mailpit, Main API, and both WASM clients —
-# main-web and secretsanta-web) and open the Aspire dashboard
+**Run the whole stack:** Postgres, Mailpit, the API and both web apps, with the Aspire dashboard:
+
+```bash
 dotnet run --project src/Aspire/CircleTools.AppHost
 ```
 
-## Where to find things
+**Run only the Secret-Santa web app:** offline, no backend needed:
 
-- **How we work:** [`docs/process/ways-of-working.md`](docs/process/ways-of-working.md)
-- **Architecture (arc42):** [`docs/arc42/`](docs/arc42/)
-- **Decisions (ADR log):** [`docs/adr/`](docs/adr/)
-- **Guidelines:** [`docs/guidelines/`](docs/guidelines/)
-- **Glossary (ubiquitous language):** [`docs/glossary/`](docs/glossary/)
+```bash
+dotnet run --project src/Apps/SecretSanta/CircleTools.SecretSanta.WebApp --launch-profile http
+```
+
+Then open <http://localhost:5081>.
+
+**Build the docs site locally:**
+
+```bash
+dotnet docfx docfx/docfx.json --serve
+```
+
+## Repository layout
+
+| Path | What |
+|------|------|
+| [`src/Apps/`](src/Apps/) | The apps: `Main` (account, circles, API) and `SecretSanta` (web, MAUI, core) |
+| [`src/BuildingBlocks/`](src/BuildingBlocks/) | Shared kernel, identity, circles, localization, shared UI |
+| [`src/Aspire/`](src/Aspire/) | The Aspire AppHost and service defaults for local development |
+| [`tests/`](tests/) | Unit, integration, component, architecture and end-to-end tests |
+| [`docs/`](docs/) | All documentation as Markdown: arc42, ADRs, requirements, guidelines, process |
+| [`deploy/`](deploy/) | Docker Compose, Caddy and observability configuration for the hosted service |
+
+## Documentation
+
+Everything is documented in [`docs/`](docs/) and published at
+**[circletools-ch.github.io/circletools-suite](https://circletools-ch.github.io/circletools-suite/)**:
+
+- [Architecture (arc42)](docs/arc42/01-introduction-and-goals.md) and the
+  [decision log (ADRs)](docs/adr/index.md): what we built and why
+- [Roadmap](docs/roadmap/roadmap.md) and [backlog](docs/roadmap/backlog.md): where the project stands
+- [Guidelines](docs/guidelines/coding-guidelines.md): coding, architecture, testing, localization,
+  security
+- [Glossary](docs/glossary/index.md): the domain terms the code uses
+
+## Contributing
+
+Contributions are welcome. Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) first: the project follows
+a documented process ([ways of working](docs/process/ways-of-working.md)), Conventional Commits and a
+[Definition of Done](docs/process/definition-of-done.md). Significant design changes start as an ADR.
+[`CLAUDE.md`](CLAUDE.md) is the operating manual for AI assistants and a quick orientation for people
+too. Please follow the [code of conduct](CODE_OF_CONDUCT.md).
+
+## Security
+
+Please don't open public issues for vulnerabilities. Report them privately as described in
+[`SECURITY.md`](SECURITY.md).
 
 ## License
 
-Open source under the **Apache License 2.0**. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE)
-(third-party components), and [ADR-0099](docs/adr/0099-apache-2-license.md) for why. Contributions are
-accepted under the same license (see [`CONTRIBUTING.md`](CONTRIBUTING.md)). The CircleTools name and logos
-are not covered by the license — see the [trademark policy](TRADEMARKS.md).
+Licensed under the [Apache License 2.0](LICENSE); third-party notices are in [`NOTICE`](NOTICE). The
+CircleTools name and logos are not covered by the license; see the [trademark policy](TRADEMARKS.md).

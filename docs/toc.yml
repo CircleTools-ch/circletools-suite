@@ -1,29 +1,32 @@
 # Master table of contents — drives the top navigation bar of the docs site.
+# Each section points at its FOLDER (`adr/`), not at its toc.yml: a folder link puts one entry in the top
+# bar and shows that folder's toc.yml as the sidebar. Pointing at `adr/toc.yml` instead copies the whole
+# list (100+ ADRs) into a top-bar dropdown that does not fit on a screen.
 - name: Home
   href: index.md
 - name: Process
-  href: process/toc.yml
+  href: process/
 - name: Architecture
-  href: arc42/toc.yml
+  href: arc42/
 - name: Decisions
-  href: adr/toc.yml
+  href: adr/
 - name: Product
   items:
-    - name: Roadmap
-      href: roadmap/toc.yml
+    - name: Roadmap & backlog
+      href: roadmap/
     - name: Requirements
-      href: requirements/toc.yml
-    - name: Use Cases
-      href: use-cases/toc.yml
+      href: requirements/
+    - name: Use cases
+      href: use-cases/
     - name: Features
-      href: features/toc.yml
+      href: features/
     - name: Brainstorming
-      href: brainstorming/toc.yml
+      href: brainstorming/
 - name: Guidelines
-  href: guidelines/toc.yml
+  href: guidelines/
 - name: Glossary
-  href: glossary/toc.yml
+  href: glossary/
 - name: Deployment
-  href: deployment/toc.yml
-- name: API Reference
-  href: api/toc.yml
+  href: deployment/
+- name: API
+  href: api/

@@ -8,6 +8,9 @@
 
 ## 2. Structure
 - Follow the folder conventions: every folder has `index.md` + `toc.yml`; templates prefixed `_template-`.
+- In the root `docs/toc.yml` (the site's top bar), link a section by its **folder** (`href: adr/`), never
+  by its `toc.yml`: a folder link gives one top-bar entry and shows the folder's `toc.yml` as the sidebar,
+  while `href: adr/toc.yml` copies the whole list into a top-bar dropdown.
 - Use the right artifact template (the artifact/template map is in the repository `CLAUDE.md`);
   keep the traceability chain by ID.
 
