@@ -85,7 +85,9 @@ CircleTools is open source under the **Apache License 2.0**
   …). GPL and AGPL code cannot be included. Add it to [`NOTICE`](NOTICE) in the same PR that adds the
   package to `Directory.Packages.props`.
 - **The name and logos are not covered by the license.** A fork you publish must use its own name and
-  logos ([ADR-0094](docs/adr/0094-trademark-and-brand-policy.md)).
+  logos — see the [trademark policy](TRADEMARKS.md) and the [brand assets](docs/process/brand-assets.md)
+  checklist ([ADR-0094](docs/adr/0094-trademark-and-brand-policy.md)). New brand files or strings are
+  added to that checklist in the same PR.
 
 ## Security problems
 
