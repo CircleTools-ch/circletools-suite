@@ -1,5 +1,5 @@
 ---
-status: Proposed
+status: Accepted
 date: 2026-11-13
 deciders: [Adrian]
 tags: [open-source, legal, branding, self-hosting]
@@ -30,6 +30,9 @@ Apache-2.0 covers copyright and patents, not names and logos (its section 6 says
 3. **Registered trademark** now, plus a policy
 
 ## Decision outcome
+
+> **Accepted 2026-11-17 (owner)**, including the default of a written policy only — no registered
+> trademark for now (cheaper; weaker in a dispute; Option 3 stays the follow-up if a real conflict appears).
 
 **Chosen: Option 1 — a short written policy in the repo (`TRADEMARKS.md`)**, with registration
 (Option 3) left as a follow-up if a real conflict appears.

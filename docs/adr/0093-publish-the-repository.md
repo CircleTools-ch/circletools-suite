@@ -1,5 +1,5 @@
 ---
-status: Proposed
+status: Accepted
 date: 2026-11-13
 deciders: [Adrian]
 tags: [open-source, security, privacy, ci, documentation]
@@ -40,6 +40,13 @@ whatever was visible. Today the repo was written for a private audience:
 3. **Publish code only, keep docs in a separate private repository**
 
 ## Decision outcome
+
+> **Accepted 2026-11-17 (owner).** Checklist items 1–3 had already been carried out on 2026-11-14, before
+> acceptance: two scanners plus a pattern scan found no secrets; the history was rewritten (one screenshot
+> removed, author email moved to the GitHub `noreply` address, two addresses and the server IP replaced) and
+> force-pushed. The owner decided **not** to have GitHub purge the old commits that the 30 closed pull requests
+> still reference, so the old author address and that screenshot stay reachable there once the repository is
+> public. Details and the remaining flip-day steps: backlog OSS-2…OSS-5.
 
 **Chosen: Option 1 — audit and publish the existing repository**, falling back to Option 2 only if the
 audit finds something in history that cannot be removed cleanly. Option 3 is rejected: docs-as-code is

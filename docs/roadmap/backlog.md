@@ -12,8 +12,8 @@ can point them at their own server. Applies to Secret-Santa and every future Cir
 
 Decisions are recorded as ADRs. Only an **Accepted** ADR is implemented:
 [0099](../adr/0099-apache-2-license.md) license (Accepted; superseded [0092](../adr/0092-open-source-license-and-contributions.md)) ·
-[0093](../adr/0093-publish-the-repository.md) publishing the repo ·
-[0094](../adr/0094-trademark-and-brand-policy.md) brand ·
+[0093](../adr/0093-publish-the-repository.md) publishing the repo (Accepted 2026-11-17) ·
+[0094](../adr/0094-trademark-and-brand-policy.md) brand (Accepted 2026-11-17) ·
 [0095](../adr/0095-self-host-deployment-topology.md) self-host topology ·
 [0096](../adr/0096-client-server-selection-and-discovery.md) server choice in the apps ·
 [0097](../adr/0097-passkeys-and-links-on-self-hosted-servers.md) passkeys & links ·
@@ -26,11 +26,15 @@ Decisions are recorded as ADRs. Only an **Accepted** ADR is implemented:
 screenshot and the commit identity force a history rewrite — chosen; the rewrite is done and verified in a
 scratch mirror and force-pushed; old PR refs deliberately not purged (owner decision). **OSS-2 and OSS-3
 done.** Next: accept ADR-0093, then OSS-4 (operational docs) and OSS-5 (CI/repo hardening).
+**2026-11-14 (later):** OSS-4 done; OSS-5 repository files committed and green in CI (`84b82ec`); OSS-1
+committed (`90058e6`). **2026-11-17:** ADR-0093 and ADR-0094 **Accepted**. **Next:** OSS-6 (`TRADEMARKS.md`,
+brand assets in one place), then the OSS-5 flip-day steps. ADRs 0095–0098 stay Proposed until IMG/SH/CS.
 
 **Choices to confirm when reviewing the Proposed ADRs.** Claude picked these as defaults during drafting;
 each is a real trade-off, not a technical necessity:
 
-- ADR-0094 — a written trademark policy only, no registered trademark (cheaper, weaker in a dispute).
+- ~~ADR-0094 — a written trademark policy only, no registered trademark (cheaper, weaker in a dispute).~~
+  Confirmed with the acceptance on 2026-11-17.
 - ADR-0095 — self-host registration defaults to `invite` (not `open`), and the first account becomes the
   instance admin; mail is optional; single-origin mode is the self-host default.
 - ADR-0096 — a custom server can only be chosen while signed out; data is **not** moved between servers
