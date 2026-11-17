@@ -57,6 +57,16 @@ The App Store row uses the same results for every language; the API barely varie
   (EN), "Secret Santa: Père Noël secret" (FR). Then free up the keywords that this repeats, because Apple
   counts a word once across name, subtitle and keywords. This changes the identical-name rule of
   [ADR-0057](../adr/0057-app-store-naming-and-localization.md), so amend the ADR first. Owner decision.
+  - ✅ 2026-11-17 (owner's go-ahead): ADR-0057 amended; `naming.md` updated. Those three names turned out to
+    be taken by other apps, so the names are **`Secret Santa – Wichtel ziehen`** (DE),
+    **`Secret Santa – Draw Names`** (EN, all four English locales) and **`Secret Santa – Tirage au sort`**
+    (FR); no exact match in the App Store search API, fallbacks in the listing files. Subtitles and keywords
+    rebalanced so no word repeats across name, subtitle and keywords (DE subtitle `Wichteln: auslosen und
+    teilen`, EN `Gift exchange & wishlists`, FR unchanged). All in `store/app-store/listing-{de,en,fr}.md`.
+  - ⏳ Owner: with the **next iOS version** (new build), enter name and subtitle under *App Information* and
+    the keywords on the version page, per language. App Store Connect refuses a taken name on save — then use
+    the fallback. Aim to submit by about 2026-11-24 so it is live in early December (the last review took
+    5 days). Re-run the search a week after release.
 - **ASO-3 · Developer name on the App Store (owner, later).** It shows the owner's legal name because the
   Apple account is an individual account. Showing "CircleTools" needs an organization account (a legal entity
   and a D-U-N-S number). Google Play already shows "CircleTools".

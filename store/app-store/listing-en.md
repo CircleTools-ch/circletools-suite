@@ -7,17 +7,21 @@ language.
 ## Name (≤30) — App Information
 
 ```
-Secret Santa - CircleTools
+Secret Santa – Draw Names
 ```
 
-_The name the app record was created with (plain "Secret Santa" is taken on the App Store). It must be
-identical in every locale ([ADR-0057](../../docs/adr/0057-app-store-naming-and-localization.md))._
+_From the next iOS version (backlog ASO-2, [ADR-0057, amendment 2026-11-17](../../docs/adr/0057-app-store-naming-and-localization.md)):
+the brand first, then the search term. Until then "Secret Santa - CircleTools" (plain "Secret Santa" is
+taken). Set it in all four English locales (U.S., U.K., Australia, Canada). The name must be unique on the
+store; if App Store Connect refuses it, use `Secret Santa Draw & Wishlist`._
 
 ## Subtitle (≤30) — App Information
 
 ```
-Draw names, share secret links
+Gift exchange & wishlists
 ```
+
+_Was "Draw names, share secret links"; "draw names" is now in the name, and Apple counts each word once._
 
 ## Promotional text (≤170) — version page, editable any time without review
 
@@ -28,8 +32,12 @@ Christmas is coming! Draw names in seconds, share a private link with everyone a
 ## Keywords (≤100, comma-separated, no spaces) — version page
 
 ```
-gift exchange,name draw,kris kringle,christmas,xmas,wishlist,family,office,party,holiday,randomizer
+kris kringle,pollyanna,christmas,xmas,randomizer,generator,picker,family,office,party,holiday,swap
 ```
+
+_From the next iOS version (ASO-2): "gift exchange" and "wishlist" are now in the subtitle and "name draw"
+in the name, so they leave this field; new: pollyanna (a U.S. name for the game), generator, picker, swap.
+Was: `gift exchange,name draw,kris kringle,christmas,xmas,wishlist,family,office,party,holiday,randomizer`._
 
 _Do not repeat words from the name or subtitle (they are indexed anyway) and never use competitors'
 names — Apple rejects trademark keywords._

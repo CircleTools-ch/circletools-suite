@@ -79,7 +79,8 @@ Concretely, and as the standing rule for every suite app:
      secret` (FR). Title stays within one brand.
    - **Apple App Store** — put the local terms (`Wichteln`, `Schrottwichteln`, `Père Noël secret`,
      `tirage au sort`, …) in the **localized keyword field** (100 chars, invisible to users); the
-     visible **Name** stays "Secret Santa", the **Subtitle** localizes freely.
+     visible **Name** stays "Secret Santa", the **Subtitle** localizes freely. *(Amended 2026-11-17: the
+     Name now also carries a localized descriptor after the brand — see the amendment below.)*
 
 3. **No per-language or per-name domains.** The single per-app origin `<app>.circletools.ch` serves
    every locale ([ADR-0046](0046-suite-packaging-and-app-composition.md)). Vanity marketing redirects
@@ -106,6 +107,43 @@ and the domain, not **which** name a given app gets.
     step.
 - **New risks:** none. No new identifier is created and nothing here is permanent — listing metadata
   is editable per release.
+
+## Amendment (2026-11-17) — the App Store name gets a localized descriptor, like the Play title
+
+**What changed.** Rule 2 kept the visible App Store **Name** identical in every locale and left the local
+terms to the subtitle and keywords. In practice the name became **"Secret Santa - CircleTools"**: plain
+"Secret Santa" is taken, and App Store names must be unique, so the record needed a suffix. A search check
+on 2026-11-17 ([backlog](../roadmap/backlog.md), *Store search*, ASO-2) found the app at rank **41–56** in
+the Swiss App Store for its core terms ("Secret Santa", "Wichtel", "Wichteln"), against rank **4–10** on
+Google Play, whose localized title already follows rule 2's composite pattern. The name is the field Apple
+weighs most, and 11 of its 30 characters went to "CircleTools", which nobody searches for.
+
+**Amended rule 2, App Store part:** the App Store **Name** follows the same composite pattern as the Play
+title — **the brand first, identical in every locale, then a localized descriptor that carries the local
+search term**. Apple localizes the name per language (App Store Connect → *App Information*), and every
+localized name must be unique on the store. For Secret Santa (from the next iOS version):
+
+| Locale | Name (≤30) | Why this descriptor |
+|---|---|---|
+| DE | `Secret Santa – Wichtel ziehen` | bare "Wichtel" in the strongest field; "Wichteln" stays in the subtitle |
+| EN | `Secret Santa – Draw Names` | "draw names" is what the app does; "gift exchange" moves to the subtitle |
+| FR | `Secret Santa – Tirage au sort` | "tirage au sort"; "Père Noël secret" stays in the subtitle |
+
+The obvious first choices ("Secret Santa – Wichtel App", "Secret Santa: Gift Exchange", "Secret Santa: Père
+Noël secret") already belong to other apps. The names above had no exact match in the App Store search API;
+App Store Connect is the final check and refuses a taken name when it is saved. Fallbacks, in order:
+`Secret Santa: Wichteln & Losen` / `Wichteln: Secret Santa Losung` (DE), `Secret Santa Draw & Wishlist`
+(EN), `Secret Santa: tirage cadeaux` (FR).
+
+**Unchanged:** the brand stays "Secret Santa", first in every locale, and the **on-device name**
+(`ApplicationTitle` / `CFBundleDisplayName`) stays the single "Secret Santa"; the store name still starts with it, so the
+two stay recognizably the same app. Rule 3 (no per-language domains) is
+untouched. The App Store's developer line shows the account holder; showing "CircleTools" there needs an
+organization account (backlog ASO-3), independent of this ADR.
+
+**Consequence for the suite rule.** Every app's store name, on both stores, is *brand + localized
+descriptor*; only the brand part must be identical across locales. The keyword field must not repeat words
+from the name or subtitle (Apple indexes them once), so the keywords are rebalanced with each name change.
 
 ## Pros and cons of the options
 

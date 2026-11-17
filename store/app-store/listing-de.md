@@ -6,17 +6,22 @@ App Store Connect → *Secret Santa* → Sprache oben rechts **Deutsch** hinzuf�
 ## Name (≤30)
 
 ```
-Secret Santa - CircleTools
+Secret Santa – Wichtel ziehen
 ```
 
-_Identisch mit dem englischen Namen ([ADR-0057](../../docs/adr/0057-app-store-naming-and-localization.md));
-„Wichteln“ steht im Untertitel und in den Keywords._
+_Ab der nächsten iOS-Version (backlog ASO-2, [ADR-0057, Amendment 2026-11-17](../../docs/adr/0057-app-store-naming-and-localization.md)):
+Marke zuerst, dann der lokale Suchbegriff. Bisher „Secret Santa - CircleTools“. App Store Connect →
+*App-Informationen* → Sprache Deutsch. Der Name muss im App Store eindeutig sein; ist er vergeben, der
+Reihe nach: `Secret Santa: Wichteln & Losen`, `Wichteln: Secret Santa Losung`._
 
 ## Untertitel (≤30)
 
 ```
-Wichteln: Namen ziehen, teilen
+Wichteln: auslosen und teilen
 ```
+
+_Bisher „Wichteln: Namen ziehen, teilen“; „ziehen“ steht jetzt im Namen, und Apple zählt jedes Wort nur
+einmal._
 
 ## Werbetext (≤170)
 
@@ -27,8 +32,12 @@ Bald ist Weihnachten! Namen in Sekunden auslosen, allen einen privaten Link schi
 ## Keywords (≤100)
 
 ```
-Geschenktausch,Wichtel,Julklapp,Weihnachten,Geschenke,auslosen,Wunschliste,Familie,Büro,Losung
+Schrottwichteln,Weihnachtswichteln,Geschenktausch,Julklapp,Weihnachten,Geschenke,Wunschliste,Losung
 ```
+
+_Ab der nächsten iOS-Version (ASO-2). „Wichtel“ steht jetzt im Namen und „auslosen“ im Untertitel, also
+nicht mehr hier; neu „Schrottwichteln“ und „Weihnachtswichteln“. Bisher:
+`Geschenktausch,Wichtel,Julklapp,Weihnachten,Geschenke,auslosen,Wunschliste,Familie,Büro,Losung`._
 
 ## Beschreibung (≤4000)
 
