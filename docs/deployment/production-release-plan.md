@@ -107,6 +107,15 @@ See [mobile runbook, Track B](mobile-apps.md#track-b--apple-app-store) for the s
       from our own site. Apple's rules followed: at least 40 px high (48 px here), clear space of a quarter of its
       height, one per layout, first in a lineup, credit in the imprint (*Trademarks*). Check the credit against
       Apple's Trademark List. With Android, add Google's official badge the same way, including its rules.
+      **2026-11-17: Google Play added** (owner decision): the Android entry is in the production config, and it
+      shows **Google's official "Get it on Google Play" badge**, downloaded from Google's badge service
+      (`play.google.com/intl/en_us/badges/…/{de,en,fr}_badge_web_generic.png`) into the same folder as
+      `google-play-{de,en,fr}.png`. Only the transparent margin was trimmed (the English file has one, the German
+      and French ones do not), so all three line up with Apple's badge; the artwork itself is unchanged. Shown at
+      48 px like Apple's (Google asks for no smaller than other store badges), after it, credited in the imprint
+      ("Google Play and the Google Play logo are trademarks of Google LLC.", DE/EN/FR). An Android link with its
+      own `Label` (for example a testing link) stays a plain button. Checked locally with the production config in
+      DE, EN and FR. Reaches users with the next web deploy.
 - [x] Submit the next App Store version, so the corrected legal texts reach iOS — **2026-11-06: 1.0.10** (build
       1.0.10 from `6736887`, tested quickly on a device by the owner) submitted, *What's New* and promotional text
       in German, French and all four English storefronts, manual release, 7-day phased release on. The "1.0.2" of

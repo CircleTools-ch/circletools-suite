@@ -27,6 +27,7 @@ namespace CircleTools.SecretSanta.Ui.Test;
 public sealed class JoinPageTests : IAsyncDisposable
 {
     private const string StoreUrl = "https://apps.apple.com/app/id6817309711";
+    private const string PlayUrl = "https://play.google.com/store/apps/details?id=ch.circletools.secretsanta";
 
     private readonly Bunit.BunitContext _ctx = new();
     private readonly IKeyValueStore _keyValues = new StubKeyValueStore();
@@ -169,6 +170,51 @@ public sealed class JoinPageTests : IAsyncDisposable
         {
             CultureInfo.CurrentUICulture = previous;
         }
+    }
+
+    [Theory]
+    [InlineData("de-CH", "google-play-de.png")]
+    [InlineData("fr-CH", "google-play-fr.png")]
+    [InlineData("en", "google-play-en.png")]
+    public void TheGooglePlayBadge_FollowsTheLanguage_AndComesAfterTheAppStoreBadge(string culture, string file)
+    {
+        var previous = CultureInfo.CurrentUICulture;
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(culture);
+        try
+        {
+            // Registered first, shown second: Apple's guidelines put the App Store badge first.
+            _ctx.Services.AddSingleton(new AppStoreLink("android", PlayUrl));
+            _ctx.Services.AddSingleton(new AppStoreLink("ios", StoreUrl));
+            Use(OnlineRecords.OnDevice(Guid.NewGuid()));
+
+            var cut = Render();
+
+            cut.WaitForAssertion(() => Assert.NotNull(cut.Find("#join-panel")));
+            var badges = cut.FindAll("a[target=_blank] img[src*='store-badges/']");
+            Assert.Equal(2, badges.Count);
+            Assert.Contains("app-store-", badges[0].GetAttribute("src"), StringComparison.Ordinal);
+            Assert.EndsWith(file, badges[1].GetAttribute("src"), StringComparison.Ordinal);
+            Assert.Equal("GetTheApp_Android", badges[1].GetAttribute("alt"));
+            Assert.Equal(PlayUrl, cut.Find($"a[href='{PlayUrl}']").GetAttribute("href"));
+        }
+        finally
+        {
+            CultureInfo.CurrentUICulture = previous;
+        }
+    }
+
+    [Fact]
+    public void AnAndroidLinkWithItsOwnLabel_StaysAPlainButton_NotTheStoreBadge()
+    {
+        // The badge says "Get it on Google Play"; a testing link with its own wording is not that.
+        _ctx.Services.AddSingleton(new AppStoreLink("android", "https://play.google.com/apps/testing/x", "Join the test"));
+        Use(OnlineRecords.OnDevice(Guid.NewGuid()));
+
+        var cut = Render();
+
+        cut.WaitForAssertion(() => Assert.NotNull(cut.Find("#join-panel")));
+        Assert.Contains("Join the test", cut.Markup, StringComparison.Ordinal);
+        Assert.Empty(cut.FindAll("a[href^='https://play.google.com'] img"));
     }
 
     [Fact]

@@ -12,8 +12,12 @@ _Markenname zuerst, der lokale Suchbegriff danach — der App-Name auf dem Gerä
 ## Kurzbeschreibung (≤80)
 
 ```
-Wichtel-App: Namen auslosen, private Links teilen. Offline, ohne Konto.
+Wichtel auslosen, private Links teilen: Wichteln offline und ohne Konto.
 ```
+
+_2026-11-17 (backlog ASO-1): "Wichtel" steht jetzt als eigenes Wort am Anfang. Vorher stand es nur in
+Bindestrich-Wörtern ("Wichtel-App"), und die Suche nach "Wichtel" fand die App erst auf Platz 29. Auch die
+Beschreibung nennt "Wichtel" jetzt an zwei Stellen als eigenes Wort._
 
 ## Vollständige Beschreibung (≤4000)
 
@@ -28,11 +32,11 @@ SO FUNKTIONIERT'S
 • Festlegen, wer wen nicht ziehen darf (Ausschlüsse)
 • Namen mit einem Tippen auslosen
 • Den privaten Link jeder Person per WhatsApp, Nachrichten, E-Mail oder QR-Code teilen
-• Alle öffnen ihren Link und sehen, wen sie beschenken – samt Wunschliste
+• Alle öffnen ihren Link und sehen, wen sie als Wichtel beschenken – samt Wunschliste
 
 DIE WICHTIGSTEN FUNKTIONEN
 • Faire Auslosung, mit Ausschlüssen für Paare, Familien oder wiederkehrende Zuteilungen
-• Private Links – jede Person sieht nur, wen sie gezogen hat
+• Private Links – jede Person sieht nur ihren eigenen Wichtel
 • Wunschlisten – alle tragen ihre Wünsche direkt über ihren Link ein
 • Geschenk-Hinweise für Allergien oder No-Gos
 • Optionales Budget, als Spanne oder nur als Maximum
