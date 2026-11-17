@@ -3,6 +3,31 @@
 Idea stubs and work items, newest-first. Promote items into
 [brainstorming](../brainstorming/index.md) → [use cases](../use-cases/index.md) as they mature.
 
+## .NET 11 — evaluate in January (2026-11-17)
+
+An update replaced the local .NET 10 SDK with **SDK 11.0.100** (installed: 9.0.320 and 11.0.100). Since
+`global.json` pins `10.0.402` with `rollForward: latestFeature`, no `dotnet` command works in the repo (build,
+tests, DocFX). Owner asked whether to move to the 11 SDK or to `net11.0`. **Decision 2026-11-17: stay on .NET 10
+(LTS) through the Secret-Santa season; evaluate .NET 11 in January with an ADR.**
+
+- **NET-1 · Reinstall the .NET 10 SDK now (owner, ⏳).** The latest 10.0.4xx SDK, side by side with 11;
+  `global.json` then selects it again. No repo change.
+- **NET-2 · ADR: target framework after .NET 10 (January 2027).** Options: move to `net11.0` (STS) in the
+  quiet season, or stay on `net10.0` until `net12.0` (next LTS, expected November 2027). Weigh:
+  - **Support window** — check Microsoft's current policy; if STS releases get 24 months, .NET 11 ends about
+    when .NET 10 does (≈ November 2028), so it buys features and performance, not time.
+  - **Ecosystem** — Npgsql/EF Core provider, Aspire, MAUI 11 workloads, bUnit, Playwright, nbgv all available
+    for 11; the `NU1608` AndroidX constraint warnings already present.
+  - **Effort and risk** — every `Microsoft.*` pin and lock file, the MAUI Android and iOS heads (re-test on
+    both phones, new store builds), new analyzers under `TreatWarningsAsErrors` and `EnforceCodeStyleInBuild`,
+    CI images (`setup-dotnet` from `global.json`), the Docker SDK and runtime images in `deploy/`.
+  - **Timing** — not between November and early January (the app's season, store reviews).
+  - **Alternative considered and rejected for now:** only the SDK to 11 (`rollForward: latestMajor`) while
+    targeting `net10.0` — possible, but new analyzers and MAUI workload/SDK coupling make it a hidden
+    upgrade; reinstalling SDK 10 is cheaper.
+- **NET-3 · If NET-2 says upgrade:** a branch with the full bump, a green CI including `build-maui` and both
+  E2E suites, the device pass on Android and iOS (CLAUDE.md "verify UI work"), then store releases.
+
 ## Open source & self-hosting (2026-11-13)
 
 Owner, while the Play production application is in review: make the **whole repository open source** and
@@ -27,8 +52,8 @@ screenshot and the commit identity force a history rewrite — chosen; the rewri
 scratch mirror and force-pushed; old PR refs deliberately not purged (owner decision). **OSS-2 and OSS-3
 done.** Next: accept ADR-0093, then OSS-4 (operational docs) and OSS-5 (CI/repo hardening).
 **2026-11-14 (later):** OSS-4 done; OSS-5 repository files committed and green in CI (`84b82ec`); OSS-1
-committed (`90058e6`). **2026-11-17:** ADR-0093 and ADR-0094 **Accepted**. **Next:** OSS-6 (`TRADEMARKS.md`,
-brand assets in one place), then the OSS-5 flip-day steps. ADRs 0095–0098 stay Proposed until IMG/SH/CS.
+committed (`90058e6`). **2026-11-17:** ADR-0093 and ADR-0094 **Accepted**; OSS-6 done (policy +
+brand checklist; OSS-6b, the brand in one place, stays open). **Next:** the OSS-5 flip-day steps. ADRs 0095–0098 stay Proposed until IMG/SH/CS.
 
 **Choices to confirm when reviewing the Proposed ADRs.** Claude picked these as defaults during drafting;
 each is a real trade-off, not a technical necessity:
@@ -224,6 +249,22 @@ server, so this is useful before any app change) → CS (custom server in the mo
     5. Flip to public; `OpenSource.IsSourceCodePublic = true`; supersede ADR-0076.
 - **OSS-6 · Trademark policy (ADR-0094).** `TRADEMARKS.md`; brand assets in one documented place so a fork
   can rebrand in one change; link from `README.md`, `CONTRIBUTING.md`, self-hosting guide.
+  - ✅ **Done 2026-11-17 (Claude), ADR-0094 Accepted.** `TRADEMARKS.md` in the repository root: what the marks
+    are (the name, domain, brand mark and logos; app names only together with CircleTools or our logos — a
+    generic "Secret Santa" is not ours), what is fine without asking (run it, self-host with the official
+    images, say "based on / compatible with CircleTools"), what needs a rename (store apps, public services,
+    anything that looks official), keep `LICENSE`/`NOTICE`, ask at `info@circletools.ch`.
+    [Brand assets](../process/brand-assets.md) lists every logo, colour, UI string, config value, domain and
+    store identity a publishing fork must change. Linked from `README.md`, `CONTRIBUTING.md` and the process
+    index; the self-hosting guide links it when SH-9 writes that guide.
+- **OSS-6b · Brand in one place (open).** ADR-0094 asks that a rebrand be a single change; today it is the
+  checklist above, spread over dozens of files: two hex colours repeated in eight places (app bar, `theme-color`,
+  manifests, MAUI icon/splash, mail settings), names in four `.resx` sets × 4 cultures, icons in five
+  folders, and domains in `Caddyfile`, app settings, `MainActivity.cs`, entitlements and `.well-known`. Needs a
+  feature spec: one brand definition (names, colours, origins, ids) feeding the WASM/MAUI builds, manifests,
+  mail settings and the resx placeholders, plus one asset folder. Overlaps SH-2/SH-3 (origins from
+  `CIRCLETOOLS_PUBLIC_URL`) — do it with or after them. Until then: add any new brand file or string to the
+  checklist in the same PR (stated in `CONTRIBUTING.md`).
 
 **Phase 2 — Public images (ADR-0098)**
 
