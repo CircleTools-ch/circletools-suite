@@ -103,7 +103,7 @@ The app follows your device language, and you can switch at any time.
 Whether it's Christmas, an office party or a family get-together, Secret Santa takes the hassle out of gift exchanges – so you can focus on the fun.
 ```
 
-## What's New (≤4000) — per update; this is the version after 1.0.14
+## What's New (≤4000) — per update; this is 1.0.28
 
 ```
 Secret Santa is now open source: About & legal shows the license and a link to the source code. Plus security updates and small improvements.
