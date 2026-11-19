@@ -107,3 +107,11 @@ Nächste Version nach 1.0.10 (Closed Test, Entwurf, R4 + R5):
 Passwortfelder haben jetzt ein Augen-Symbol, das deine Eingabe anzeigt. Die Liste der angemeldeten Geräte aktualisiert sich gleich nach einer Passwortänderung. Screenreader verwenden jetzt die Sprache, in der die App angezeigt wird. Kleine Korrekturen an den französischen Texten.
 </de-DE>
 ```
+
+Version nach 1.0.14 (Produktion, vorbereitet 2026-11-19):
+
+```
+<de-DE>
+Secret Santa ist jetzt Open Source: Unter „Über & Rechtliches“ findest du die Lizenz und einen Link zum Quellcode. Dazu Sicherheits-Updates und kleine Verbesserungen.
+</de-DE>
+```

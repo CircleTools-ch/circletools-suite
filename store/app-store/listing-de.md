@@ -6,22 +6,23 @@ App Store Connect → *Secret Santa* → Sprache oben rechts **Deutsch** hinzuf�
 ## Name (≤30)
 
 ```
-Secret Santa – Wichtel ziehen
+Secret Santa – Wichteln
 ```
 
 _Ab der nächsten iOS-Version (backlog ASO-2, [ADR-0057, Amendment 2026-11-17](../../docs/adr/0057-app-store-naming-and-localization.md)):
-Marke zuerst, dann der lokale Suchbegriff. Bisher „Secret Santa - CircleTools“. App Store Connect →
-*App-Informationen* → Sprache Deutsch. Der Name muss im App Store eindeutig sein; ist er vergeben, der
-Reihe nach: `Secret Santa: Wichteln & Losen`, `Wichteln: Secret Santa Losung`._
+Marke zuerst, dann der lokale Suchbegriff — derselbe Titel wie bei Google Play. Bisher „Secret Santa -
+CircleTools“. App Store Connect → *App-Informationen* → Sprache Deutsch. Der Name muss im App Store
+eindeutig sein; ist er vergeben, der Reihe nach: `Secret Santa – Wichtel ziehen`,
+`Secret Santa: Wichteln & Losen`._
 
 ## Untertitel (≤30)
 
 ```
-Wichteln: auslosen und teilen
+Wichtel auslosen und teilen
 ```
 
-_Bisher „Wichteln: Namen ziehen, teilen“; „ziehen“ steht jetzt im Namen, und Apple zählt jedes Wort nur
-einmal._
+_Bisher „Wichteln: Namen ziehen, teilen“. „Wichteln“ steht jetzt im Namen, „Wichtel“ hier — so stehen beide
+Suchwörter in den stärksten Feldern, und Apple zählt jedes Wort nur einmal._
 
 ## Werbetext (≤170)
 
@@ -35,8 +36,8 @@ Bald ist Weihnachten! Namen in Sekunden auslosen, allen einen privaten Link schi
 Schrottwichteln,Weihnachtswichteln,Geschenktausch,Julklapp,Weihnachten,Geschenke,Wunschliste,Losung
 ```
 
-_Ab der nächsten iOS-Version (ASO-2). „Wichtel“ steht jetzt im Namen und „auslosen“ im Untertitel, also
-nicht mehr hier; neu „Schrottwichteln“ und „Weihnachtswichteln“. Bisher:
+_Ab der nächsten iOS-Version (ASO-2). „Wichtel“ und „auslosen“ stehen jetzt im Untertitel, also nicht mehr
+hier; neu „Schrottwichteln“ und „Weihnachtswichteln“. Bisher:
 `Geschenktausch,Wichtel,Julklapp,Weihnachten,Geschenke,auslosen,Wunschliste,Familie,Büro,Losung`._
 
 ## Beschreibung (≤4000)
@@ -98,13 +99,10 @@ Die App folgt der Sprache deines Geräts, und du kannst sie jederzeit wechseln.
 Ob Weihnachten, Bürofeier oder Familientreffen – Secret Santa nimmt Wichtel-Runden den Stress und lässt dir den Spass.
 ```
 
-## Neue Funktionen (≤4000) — pro Update; hier 1.0.14
+## Neue Funktionen (≤4000) — pro Update; hier die Version nach 1.0.14
 
 ```
-• Passwortfelder haben jetzt ein Augen-Symbol, das deine Eingabe anzeigt.
-• Die Liste der angemeldeten Geräte aktualisiert sich gleich nach einer Passwortänderung.
-• Screenreader verwenden jetzt die Sprache, in der die App angezeigt wird.
-• Kleine Korrekturen an den französischen Texten.
+Secret Santa ist jetzt Open Source: Unter „Über & Rechtliches“ findest du die Lizenz und einen Link zum Quellcode. Dazu Sicherheits-Updates und kleine Verbesserungen.
 ```
 
 ## TestFlight — Beta-App-Beschreibung (≤4000)

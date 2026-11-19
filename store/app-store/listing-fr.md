@@ -8,19 +8,23 @@ le Luxembourg utilisent la même localisation.
 ## Nom (≤30)
 
 ```
-Secret Santa – Tirage au sort
+Secret Santa – Père Noël
 ```
 
 _From the next iOS version (backlog ASO-2, [ADR-0057, amendment 2026-11-17](../../docs/adr/0057-app-store-naming-and-localization.md)):
-the brand first, then the search term. Until then "Secret Santa - CircleTools". « Père Noël secret » stays
-in the subtitle. The name must be unique on the store; if App Store Connect refuses it, use
-`Secret Santa: tirage cadeaux`._
+the brand first, then the search term. Until then "Secret Santa - CircleTools". With "Secret" already in the
+brand, all three words of « père noël secret » are in the name; "Secret Santa: Père Noël secret" (the Play
+title) is taken. The name must be unique on the store; if App Store Connect refuses it, use
+`Secret Santa – Tirage au sort`._
 
 ## Sous-titre (≤30)
 
 ```
-Père Noël secret, sans compte
+Tirage au sort, sans compte
 ```
+
+_From the next iOS version (ASO-2). Was « Père Noël secret, sans compte »; « Père Noël » is now in the name,
+so « tirage au sort » takes its place here._
 
 ## Texte promotionnel (≤170)
 
@@ -34,7 +38,7 @@ Noël approche ! Tirez les noms en quelques secondes, envoyez un lien privé à 
 échange de cadeaux,liste de souhaits,pige,famille,bureau,collègues,fête,amis,cadeau,anonyme
 ```
 
-_From the next iOS version (ASO-2): « tirage au sort » is now in the name and « Noël » in the subtitle, so
+_From the next iOS version (ASO-2): « Noël » is now in the name and « tirage au sort » in the subtitle, so
 they leave this field; new: collègues, cadeau, anonyme. Was:
 `tirage au sort,cadeaux,Noël,échange,liste de souhaits,famille,bureau,pige,fête,amis`._
 
@@ -97,13 +101,10 @@ L'application suit la langue de votre appareil, et vous pouvez en changer à tou
 Que ce soit pour Noël, une fête de bureau ou une réunion de famille, Secret Santa enlève le tracas des échanges de cadeaux – pour que vous puissiez profiter du plaisir.
 ```
 
-## Nouveautés (≤4000) — par mise à jour ; ici la 1.0.14
+## Nouveautés (≤4000) — par mise à jour ; ici la version suivant la 1.0.14
 
 ```
-• Les champs de mot de passe ont désormais une icône en forme d'œil pour afficher votre saisie.
-• La liste des appareils connectés se met à jour dès que vous changez de mot de passe.
-• Les lecteurs d'écran utilisent désormais la langue affichée par l'application.
-• Petites corrections dans les textes français.
+Secret Santa est désormais open source : « À propos & mentions légales » affiche la licence et un lien vers le code source. Ainsi que des mises à jour de sécurité et de petites améliorations.
 ```
 
 ## TestFlight — Description de l'app bêta (≤4000)

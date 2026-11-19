@@ -63,6 +63,21 @@ The App Store row uses the same results for every language; the API barely varie
     (FR); no exact match in the App Store search API, fallbacks in the listing files. Subtitles and keywords
     rebalanced so no word repeats across name, subtitle and keywords (DE subtitle `Wichteln: auslosen und
     teilen`, EN `Gift exchange & wishlists`, FR unchanged). All in `store/app-store/listing-{de,en,fr}.md`.
+  - ✅ 2026-11-19, reviewed again with the owner: **`Secret Santa – Wichteln`** (DE, subtitle `Wichtel
+    auslosen und teilen`), **`Secret Santa – Gift Swap`** (EN, subtitle `Gift exchange & wishlists`; "Draw
+    Names" dropped because the market leader's brand is "Drawnames") and **`Secret Santa – Père Noël`** (FR,
+    subtitle `Tirage au sort, sans compte`). All three had no exact match on the App Store. **Owner decision:
+    the same name on both stores** per language, so the Play titles follow (DE already matches; EN and FR
+    change on Play, no release needed). ADR-0057 amendment, listing files and `naming.md` updated.
+    **Timing (owner):** the Play titles change when the iOS version goes live, so both stores switch together.
+  - **Release for ASO-2 (prepared 2026-11-19, owner decision "release now").** Contents since 1.0.14: the
+    open-source section on About & legal (license + source link, ADR-0099), the Google Play trademark line,
+    the .NET 10.0.14 servicing updates. No new feature; the in-app rating prompt follows in an early-December
+    version. Release notes DE/EN/FR in the listing files (Play "Versionshinweise" + App Store "What's New").
+    Steps: merge → *Release (mobile)* on `main` → approve `store-release` twice (Android, iOS; the first real
+    run of the environment's secrets) → Play: promote the internal build to production → App Store Connect:
+    new version, the build, What's New, name/subtitle (*App Information*) and keywords per language → submit.
+    Then the Play EN/FR titles.
   - ⏳ Owner: with the **next iOS version** (new build), enter name and subtitle under *App Information* and
     the keywords on the version page, per language. App Store Connect refuses a taken name on save — then use
     the fallback. Aim to submit by about 2026-11-24 so it is live in early December (the last review took
