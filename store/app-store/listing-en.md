@@ -7,13 +7,14 @@ language.
 ## Name (≤30) — App Information
 
 ```
-Secret Santa – Draw Names
+Secret Santa – Gift Swap
 ```
 
 _From the next iOS version (backlog ASO-2, [ADR-0057, amendment 2026-11-17](../../docs/adr/0057-app-store-naming-and-localization.md)):
 the brand first, then the search term. Until then "Secret Santa - CircleTools" (plain "Secret Santa" is
-taken). Set it in all four English locales (U.S., U.K., Australia, Canada). The name must be unique on the
-store; if App Store Connect refuses it, use `Secret Santa Draw & Wishlist`._
+taken). Set it in all four English locales (U.S., U.K., Australia, Canada). "Secret Santa – Gift Exchange"
+(the Play title) is taken; "Draw Names" is avoided because the market leader's brand is "Drawnames". The name
+must be unique on the store; if App Store Connect refuses it, use `Secret Santa: Draw & Wishlist`._
 
 ## Subtitle (≤30) — App Information
 
@@ -21,7 +22,8 @@ store; if App Store Connect refuses it, use `Secret Santa Draw & Wishlist`._
 Gift exchange & wishlists
 ```
 
-_Was "Draw names, share secret links"; "draw names" is now in the name, and Apple counts each word once._
+_Was "Draw names, share secret links". "Gift exchange" — the Play title's term — moves here from the
+keywords, so "gift swap" (name) and "gift exchange" (subtitle) are both in the strongest fields._
 
 ## Promotional text (≤170) — version page, editable any time without review
 
@@ -32,11 +34,11 @@ Christmas is coming! Draw names in seconds, share a private link with everyone a
 ## Keywords (≤100, comma-separated, no spaces) — version page
 
 ```
-kris kringle,pollyanna,christmas,xmas,randomizer,generator,picker,family,office,party,holiday,swap
+kris kringle,pollyanna,christmas,xmas,randomizer,generator,picker,name draw,family,office,party
 ```
 
-_From the next iOS version (ASO-2): "gift exchange" and "wishlist" are now in the subtitle and "name draw"
-in the name, so they leave this field; new: pollyanna (a U.S. name for the game), generator, picker, swap.
+_From the next iOS version (ASO-2): "gift exchange" and "wishlist" are now in the subtitle, so they leave
+this field ("holiday" makes room); new: pollyanna (a U.S. name for the game), generator, picker.
 Was: `gift exchange,name draw,kris kringle,christmas,xmas,wishlist,family,office,party,holiday,randomizer`._
 
 _Do not repeat words from the name or subtitle (they are indexed anyway) and never use competitors'
@@ -101,13 +103,10 @@ The app follows your device language, and you can switch at any time.
 Whether it's Christmas, an office party or a family get-together, Secret Santa takes the hassle out of gift exchanges – so you can focus on the fun.
 ```
 
-## What's New (≤4000) — per update; this is 1.0.14
+## What's New (≤4000) — per update; this is the version after 1.0.14
 
 ```
-• Password fields now have an eye icon to show what you typed.
-• The list of signed-in devices updates right after you change your password.
-• Screen readers now use the language the app is showing.
-• Small corrections to the French texts.
+Secret Santa is now open source: About & legal shows the license and a link to the source code. Plus security updates and small improvements.
 ```
 
 ## TestFlight — Beta App Description (≤4000) — TestFlight → Test Information

@@ -3,8 +3,12 @@
 ## App name (≤30)
 
 ```
-Secret Santa – Gift Exchange
+Secret Santa – Gift Swap
 ```
+
+_2026-11-19 (backlog ASO-2): the same name as on the App Store, where "Secret Santa – Gift Exchange" is taken
+(owner decision: one name per language on both stores). Was "Secret Santa – Gift Exchange"; "gift exchange" now
+leads the short description and stays all through the full description._
 
 _Brand first, then the search term, as in DE/FR — the name on the device and in the app bar stays "Secret Santa"
 ([ADR-0057](../../docs/adr/0057-app-store-naming-and-localization.md)). Reworked for ASO on 2026-11-10 (backlog PR-17,
@@ -13,8 +17,10 @@ _Brand first, then the search term, as in DE/FR — the name on the device and i
 ## Short description (≤80)
 
 ```
-Secret Santa app: draw names, share private links. Offline, no sign-up.
+Gift exchange app: draw names, share private links. Offline, no sign-up.
 ```
+
+_2026-11-19: was "Secret Santa app: …" — "Secret Santa" is in the name already, "gift exchange" left it._
 
 ## Full description (≤4000)
 
@@ -102,5 +108,13 @@ Next version after 1.0.10 (closed test, draft, R4 + R5):
 ```
 <en-US>
 Password fields now have an eye icon to show what you typed. The list of signed-in devices updates right after you change your password. Screen readers now use the language the app is showing. Small corrections to the French texts.
+</en-US>
+```
+
+Version after 1.0.14 (production, prepared 2026-11-19):
+
+```
+<en-US>
+Secret Santa is now open source: About & legal shows the license and a link to the source code. Plus security updates and small improvements.
 </en-US>
 ```

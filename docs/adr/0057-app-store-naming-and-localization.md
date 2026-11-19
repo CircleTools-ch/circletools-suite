@@ -123,17 +123,21 @@ title — **the brand first, identical in every locale, then a localized descrip
 search term**. Apple localizes the name per language (App Store Connect → *App Information*), and every
 localized name must be unique on the store. For Secret Santa (from the next iOS version):
 
-| Locale | Name (≤30) | Why this descriptor |
-|---|---|---|
-| DE | `Secret Santa – Wichtel ziehen` | bare "Wichtel" in the strongest field; "Wichteln" stays in the subtitle |
-| EN | `Secret Santa – Draw Names` | "draw names" is what the app does; "gift exchange" moves to the subtitle |
-| FR | `Secret Santa – Tirage au sort` | "tirage au sort"; "Père Noël secret" stays in the subtitle |
+| Locale | Name (≤30) | Subtitle (≤30) | Why |
+|---|---|---|---|
+| DE | `Secret Santa – Wichteln` | `Wichtel auslosen und teilen` | same as the Play title; "Wichteln" (name) and "Wichtel" (subtitle) both in the strongest fields |
+| EN | `Secret Santa – Gift Swap` | `Gift exchange & wishlists` | "Secret Santa – Gift Exchange" (the Play title) is taken; "Draw Names" is avoided because the market leader's brand is "Drawnames" |
+| FR | `Secret Santa – Père Noël` | `Tirage au sort, sans compte` | with "Secret" in the brand, all three words of "père noël secret" are in the name; "Secret Santa: Père Noël secret" is taken |
 
-The obvious first choices ("Secret Santa – Wichtel App", "Secret Santa: Gift Exchange", "Secret Santa: Père
-Noël secret") already belong to other apps. The names above had no exact match in the App Store search API;
-App Store Connect is the final check and refuses a taken name when it is saved. Fallbacks, in order:
-`Secret Santa: Wichteln & Losen` / `Wichteln: Secret Santa Losung` (DE), `Secret Santa Draw & Wishlist`
-(EN), `Secret Santa: tirage cadeaux` (FR).
+Several first choices ("Secret Santa – Wichtel App", "Secret Santa: Gift Exchange", "Secret Santa: Père Noël
+secret", "Secret Santa Name Picker", "Secret Santa Generator") already belong to other apps. The names above had
+no exact match in the App Store search API on 2026-11-19; App Store Connect is the final check and refuses a
+taken name when it is saved. Fallbacks: `Secret Santa – Wichtel ziehen` (DE), `Secret Santa: Draw & Wishlist`
+(EN), `Secret Santa – Tirage au sort` (FR).
+
+**Same name on both stores.** Per language, the Play title is set to the same name as the App Store name
+(owner decision 2026-11-19: different names per store confuse people). The App Store's uniqueness rule decides
+the name; Play, which has no such rule, follows.
 
 **Unchanged:** the brand stays "Secret Santa", first in every locale, and the **on-device name**
 (`ApplicationTitle` / `CFBundleDisplayName`) stays the single "Secret Santa"; the store name still starts with it, so the

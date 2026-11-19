@@ -3,8 +3,12 @@
 ## Nom de l'application (≤30)
 
 ```
-Secret Santa: Père Noël secret
+Secret Santa – Père Noël
 ```
+
+_2026-11-19 (backlog ASO-2): the same name as on the App Store, where "Secret Santa: Père Noël secret" is taken
+(owner decision: one name per language on both stores). All three words of « père noël secret » are still in
+the name. Was « Secret Santa: Père Noël secret »._
 
 _Exactement 30 caractères (avec « – » ce serait 31, trop long). La marque d'abord, le terme local ensuite ; le nom sur l'appareil et dans la barre de l'app reste « Secret Santa » ([ADR-0057](../../docs/adr/0057-app-store-naming-and-localization.md))._
 
@@ -100,5 +104,13 @@ Version suivant la 1.0.10 (test fermé, brouillon, R4 + R5):
 ```
 <fr-FR>
 Les champs de mot de passe ont désormais une icône en forme d'œil pour afficher votre saisie. La liste des appareils connectés se met à jour dès que vous changez de mot de passe. Les lecteurs d'écran utilisent désormais la langue affichée par l'application. Petites corrections dans les textes français.
+</fr-FR>
+```
+
+Version suivant la 1.0.14 (production, préparée le 2026-11-19) :
+
+```
+<fr-FR>
+Secret Santa est désormais open source : « À propos & mentions légales » affiche la licence et un lien vers le code source. Ainsi que des mises à jour de sécurité et de petites améliorations.
 </fr-FR>
 ```

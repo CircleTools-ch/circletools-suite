@@ -53,9 +53,10 @@ Standing rule for **every** suite app, so each app's branding step inherits it i
   `Secret Santa – Père Noël secret` (FR)) and the **Apple keyword field** (`Wichteln`,
   `Schrottwichteln`, `Père Noël secret`, `tirage au sort`, …). The visible name stays single.
 - **Amended 2026-11-17:** the **App Store Name** follows the Play pattern too — brand first, identical in
-  every locale, then a localized descriptor with the local search term (Secret Santa: `– Wichtel ziehen`
-  (DE), `– Draw Names` (EN), `– Tirage au sort` (FR)). Apple localizes the name per language and requires
-  it to be unique on the store, so check availability before deciding. The on-device name stays the brand
+  every locale, then a localized descriptor with the local search term (Secret Santa: `– Wichteln`
+  (DE), `– Gift Swap` (EN), `– Père Noël` (FR)). Apple localizes the name per language and requires
+  it to be unique on the store, so check availability before deciding. Per language, the Play title uses
+  the same name, so both stores match. The on-device name stays the brand
   alone. See the ADR-0057 amendment.
 - **A store name is NOT derived from a domain.** A localized name needs **no** new domain — the single
   per-app origin `<app>.circletools.ch` serves every locale. **No per-language or per-name domains** are
