@@ -753,6 +753,16 @@ clean; none caused by the update unless stated:
   had no "what did you do differently" question. Play shows *We have your application for production
   access* — review usually ≤ 7 days, result by email. **Next:** keep Alpha active; on approval, production
   release of 1.0.14 with a staged rollout (production-release plan, track 1).
+- **PR-18 · Android code shrinking with R8 (P3, flagged by Play Console 2026-11-20).** The production track
+  for 1.0.28 shows "DEX code optimisation is below our threshold" with obfuscation at 1%, and the release
+  warns that there is no deobfuscation file. The Android build does not use R8 shrinking or obfuscation.
+  Turning it on would make the app smaller and a little faster. It is not a blocker. **Risk:** R8 can strip
+  code that MAUI, Blazor Hybrid and reflection-based serializers load at runtime, so it needs keep rules
+  and a full device test pass (create → members → exclusions → draw → share → reveal, sign-in and sync,
+  DE/EN/FR). **Steps:** check what MAUI on .NET 10 supports (`AndroidLinkTool=r8`, trimming), decide in an
+  ADR, try it on a branch, compare the AAB size, test a Play internal build on the Pixel, then upload the
+  mapping file with each release (the "no deobfuscation file" warning). Not before the Secret-Santa season
+  is over; January together with NET-2.
 
 Found during the Play screenshot pass on the Pixel 9 Pro (Play build `0.1.128`, 2026-10-28, DE/EN/FR, light
 mode; [store submission guide](../deployment/store-submission-guide.md)) and reported by the owner the same day
