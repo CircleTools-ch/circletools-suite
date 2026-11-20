@@ -10,7 +10,7 @@ _2026-11-19 (backlog ASO-2): the same name as on the App Store, where "Secret Sa
 (owner decision: one name per language on both stores). All three words of « père noël secret » are still in
 the name. Was « Secret Santa: Père Noël secret »._
 
-_Exactement 30 caractères (avec « – » ce serait 31, trop long). La marque d'abord, le terme local ensuite ; le nom sur l'appareil et dans la barre de l'app reste « Secret Santa » ([ADR-0057](../../docs/adr/0057-app-store-naming-and-localization.md))._
+_24 caractères sur 30. La marque d'abord, le terme local ensuite ; le nom sur l'appareil et dans la barre de l'app reste « Secret Santa » ([ADR-0057](../../docs/adr/0057-app-store-naming-and-localization.md))._
 
 ## Description courte (≤80)
 
@@ -107,7 +107,7 @@ Les champs de mot de passe ont désormais une icône en forme d'œil pour affich
 </fr-FR>
 ```
 
-Version suivant la 1.0.14 (production, préparée le 2026-11-19) :
+1.0.28 (production, envoyée en examen le 2026-11-19) :
 
 ```
 <fr-FR>

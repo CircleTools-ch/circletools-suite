@@ -242,6 +242,31 @@ Re-check both at every release and at every .NET/MAUI upgrade.
 - Secrets that must never reach the repository: the Android upload keystore and its passwords, Apple
   certificates and provisioning profiles, and the App Store Connect API key.
 
+### Store-release secrets: lessons from 1.0.28 (2026-11-19)
+
+The signing and store secrets live in the GitHub environment `store-release`. Its first real run
+(*Release (mobile)*, 1.0.28) failed three times before it went through. Each time the value in the secret
+was wrong; the workflow was fine.
+
+- **iOS, p12 import "MAC verification failed (wrong password?)".** The certificate and its password were
+  correct locally (`Get-PfxData`); re-setting both secrets fixed it.
+- **Android, `jarsigner` exit code 1.** `keytool -list` said "keystore password was incorrect". The password
+  was kept in a password-manager note rendered as Markdown, and the preview hid an escaped character, so the
+  copied value was missing it. **Keep passwords in password fields, never in Markdown notes**, and check a
+  keystore password with `keytool -list -keystore <file>` before setting the secret.
+- **Play upload "invalid_grant: Invalid JWT Signature".** Google rejected the service-account key in
+  `PLAY_SERVICE_ACCOUNT_JSON`. First it was a key that had been deleted. Then it was a new key pasted into
+  the interactive `gh secret set` prompt, which can break the multi-line JSON. **Set it from the file:**
+  `gh secret set PLAY_SERVICE_ACCOUNT_JSON --env store-release --repo CircleTools-ch/circletools-suite < key.json`,
+  and check that the file's `private_key_id` is an **active** key on the service account.
+- **Order of work.** The repository-level copies of these secrets were deleted before the environment's
+  copies had been used once. Next time, **run a release from the new location first**, then delete the old
+  copies.
+- **Version number.** Read the version from CI (`GitBuildVersionSimple` in the job log) or from the uploaded
+  build, not from a local count; the App Store version must match the build.
+- A rerun of one job needs the `store-release` approval again, and GitHub refuses to rerun a job while
+  another job of the same run is still in progress.
+
 ## App preparation — in-repo readiness (2026-09-17)
 
 A store-requirements pass (Apple + Google 2026 rules, tablet/iPad priority) was run against the MAUI

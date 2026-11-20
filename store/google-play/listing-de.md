@@ -108,7 +108,7 @@ Passwortfelder haben jetzt ein Augen-Symbol, das deine Eingabe anzeigt. Die List
 </de-DE>
 ```
 
-Version nach 1.0.14 (Produktion, vorbereitet 2026-11-19):
+1.0.28 (Produktion, am 2026-11-19 zur Prüfung gesendet):
 
 ```
 <de-DE>

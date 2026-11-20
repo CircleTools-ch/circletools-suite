@@ -99,7 +99,7 @@ Die App folgt der Sprache deines Geräts, und du kannst sie jederzeit wechseln.
 Ob Weihnachten, Bürofeier oder Familientreffen – Secret Santa nimmt Wichtel-Runden den Stress und lässt dir den Spass.
 ```
 
-## Neue Funktionen (≤4000) — pro Update; hier die Version nach 1.0.14
+## Neue Funktionen (≤4000) — pro Update; hier 1.0.28
 
 ```
 Secret Santa ist jetzt Open Source: Unter „Über & Rechtliches“ findest du die Lizenz und einen Link zum Quellcode. Dazu Sicherheits-Updates und kleine Verbesserungen.

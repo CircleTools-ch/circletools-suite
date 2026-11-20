@@ -101,7 +101,7 @@ L'application suit la langue de votre appareil, et vous pouvez en changer à tou
 Que ce soit pour Noël, une fête de bureau ou une réunion de famille, Secret Santa enlève le tracas des échanges de cadeaux – pour que vous puissiez profiter du plaisir.
 ```
 
-## Nouveautés (≤4000) — par mise à jour ; ici la version suivant la 1.0.14
+## Nouveautés (≤4000) — par mise à jour ; ici la 1.0.28
 
 ```
 Secret Santa est désormais open source : « À propos & mentions légales » affiche la licence et un lien vers le code source. Ainsi que des mises à jour de sécurité et de petites améliorations.

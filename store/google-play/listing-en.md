@@ -111,7 +111,7 @@ Password fields now have an eye icon to show what you typed. The list of signed-
 </en-US>
 ```
 
-Version after 1.0.14 (production, prepared 2026-11-19):
+1.0.28 (production, sent for review 2026-11-19):
 
 ```
 <en-US>

@@ -69,7 +69,8 @@ The App Store row uses the same results for every language; the API barely varie
     subtitle `Tirage au sort, sans compte`). All three had no exact match on the App Store. **Owner decision:
     the same name on both stores** per language, so the Play titles follow (DE already matches; EN and FR
     change on Play, no release needed). ADR-0057 amendment, listing files and `naming.md` updated.
-    **Timing (owner):** the Play titles change when the iOS version goes live, so both stores switch together.
+    **Timing (owner):** the Play titles change when the iOS version goes live, so both stores switch together
+    (superseded on 2026-11-19: changed at once, see below).
   - **Release for ASO-2 (prepared 2026-11-19, owner decision "release now").** Contents since 1.0.14: the
     open-source section on About & legal (license + source link, ADR-0099), the Google Play trademark line,
     the .NET 10.0.14 servicing updates. No new feature; the in-app rating prompt follows in an early-December
@@ -78,10 +79,22 @@ The App Store row uses the same results for every language; the API barely varie
     run of the environment's secrets) → Play: promote the internal build to production → App Store Connect:
     new version, the build, What's New, name/subtitle (*App Information*) and keywords per language → submit.
     Then the Play EN/FR titles.
-  - ⏳ Owner: with the **next iOS version** (new build), enter name and subtitle under *App Information* and
-    the keywords on the version page, per language. App Store Connect refuses a taken name on save — then use
-    the fallback. Aim to submit by about 2026-11-24 so it is live in early December (the last review took
-    5 days). Re-run the search a week after release.
+  - ✅ 2026-11-19, **released as 1.0.28** (not 1.0.29 as first counted: CI's nbgv height on `main` 8a6e40e
+    gives `1.0.28`). Both store builds came from *Release (mobile)* run 44476907533.
+    - **App Store:** version 1.0.28 with build 1.0.28, What's New and keywords in DE, FR and all four English
+      locales; names and subtitles under *App Information* as above. App Store Connect accepted all three
+      names, so no fallback was needed. Manual release. **Submitted for review** the same day. Creating the
+      version first needed the owner to accept an updated Apple agreement.
+    - **Google Play:** 1.0.28 promoted from internal testing to production at 100%, with the DE/EN/FR
+      release notes. **Owner decision the same day: change the titles now**, not when iOS goes live (this
+      replaces the timing note above). EN name `Secret Santa – Gift Swap` and the new EN short description,
+      FR name `Secret Santa – Père Noël`; the DE name already matched. All four changes sent for review
+      together; managed publishing is off, so they go live on approval.
+  - ✅ 2026-11-20: both stores approved 1.0.28; the owner released iOS (manual release). The new App Store
+    names show only from the release on, not in TestFlight and not on the home screen, which keeps
+    "Secret Santa" ([ADR-0057](../adr/0057-app-store-naming-and-localization.md)).
+  - ⏳ Re-run the store searches about 2026-11-27 (a week after release), together with the ASO-1 "Wichtel"
+    check.
 - **ASO-3 · Developer name on the App Store (owner, later).** It shows the owner's legal name because the
   Apple account is an individual account. Showing "CircleTools" needs an organization account (a legal entity
   and a D-U-N-S number). Google Play already shows "CircleTools".
@@ -740,6 +753,16 @@ clean; none caused by the update unless stated:
   had no "what did you do differently" question. Play shows *We have your application for production
   access* — review usually ≤ 7 days, result by email. **Next:** keep Alpha active; on approval, production
   release of 1.0.14 with a staged rollout (production-release plan, track 1).
+- **PR-18 · Android code shrinking with R8 (P3, flagged by Play Console 2026-11-20).** The production track
+  for 1.0.28 shows "DEX code optimisation is below our threshold" with obfuscation at 1%, and the release
+  warns that there is no deobfuscation file. The Android build does not use R8 shrinking or obfuscation.
+  Turning it on would make the app smaller and a little faster. It is not a blocker. **Risk:** R8 can strip
+  code that MAUI, Blazor Hybrid and reflection-based serializers load at runtime, so it needs keep rules
+  and a full device test pass (create → members → exclusions → draw → share → reveal, sign-in and sync,
+  DE/EN/FR). **Steps:** check what MAUI on .NET 10 supports (`AndroidLinkTool=r8`, trimming), decide in an
+  ADR, try it on a branch, compare the AAB size, test a Play internal build on the Pixel, then upload the
+  mapping file with each release (the "no deobfuscation file" warning). Not before the Secret-Santa season
+  is over; January together with NET-2.
 
 Found during the Play screenshot pass on the Pixel 9 Pro (Play build `0.1.128`, 2026-10-28, DE/EN/FR, light
 mode; [store submission guide](../deployment/store-submission-guide.md)) and reported by the owner the same day
