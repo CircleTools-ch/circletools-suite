@@ -90,8 +90,11 @@ The App Store row uses the same results for every language; the API barely varie
       replaces the timing note above). EN name `Secret Santa – Gift Swap` and the new EN short description,
       FR name `Secret Santa – Père Noël`; the DE name already matched. All four changes sent for review
       together; managed publishing is off, so they go live on approval.
-  - ⏳ Owner: **release iOS 1.0.28** in App Store Connect once Apple approves it. Re-run the store searches a
-    week after both are live, together with the ASO-1 "Wichtel" check.
+  - ✅ 2026-11-20: both stores approved 1.0.28; the owner released iOS (manual release). The new App Store
+    names show only from the release on, not in TestFlight and not on the home screen, which keeps
+    "Secret Santa" ([ADR-0057](../adr/0057-app-store-naming-and-localization.md)).
+  - ⏳ Re-run the store searches about 2026-11-27 (a week after release), together with the ASO-1 "Wichtel"
+    check.
 - **ASO-3 · Developer name on the App Store (owner, later).** It shows the owner's legal name because the
   Apple account is an individual account. Showing "CircleTools" needs an organization account (a legal entity
   and a D-U-N-S number). Google Play already shows "CircleTools".
