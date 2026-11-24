@@ -15,10 +15,18 @@ updates:
       prefix: "chore(ci)"
   # Base images of deploy/api.Dockerfile and deploy/web.Dockerfile are pinned as `tag@sha256:digest`
   # (ADR-0098); Dependabot keeps the digest (and the tag) current.
+  #
+  # Major versions are ignored. The .NET image tag must match the projects' TargetFramework: an
+  # aspnet:11.0 runtime does not run a net10.0 API, and CI never builds the images, so such a bump
+  # passes every check and only fails on the server (PR #37, 2026-11-24). A .NET major moves in
+  # its own change, together with the TargetFramework; a Caddy major the same way.
   - package-ecosystem: docker
     directory: /deploy
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       base-images:
         patterns: ["*"]
