@@ -511,12 +511,11 @@
 
         if (result.IsSuccess)
         {
+            // Emptied after a send, the touched field would otherwise show "Required" (BTP-3).
+            await FieldValidation.ResetAsync(_inviteEmailField);
             _inviteSent = true;
             _inviteEmail = string.Empty;
             _inviteTargetId = null;
-            // Emptied after a send, the touched field would otherwise show "Required" (BTP-3).
-            StateHasChanged();
-            await FieldValidation.ResetAsync(_inviteEmailField);
             await LoadAsync();
             return;
         }
@@ -580,10 +579,9 @@
 
             if (result.IsSuccess)
             {
-                _newManagedName = string.Empty;
                 // Emptied after an add, the touched field would otherwise show "Required" (BTP-3).
-                StateHasChanged();
                 await FieldValidation.ResetAsync(_newManagedNameField);
+                _newManagedName = string.Empty;
             }
 
             return result;

@@ -266,10 +266,8 @@
             return;
         }
 
-        _currentPassword = _newPassword = _repeatPassword = string.Empty;
-        _passwordChanged = true;
-        // The cleared fields were touched, so they would show "Required" right under the success message (BTP-3).
-        StateHasChanged();
+        // The fields were touched, so emptying them would show "Required" right under the success message
+        // (BTP-3). Resetting them first makes them untouched, and an untouched field does not validate.
         foreach (var field in new[] { _currentPasswordField, _newPasswordField, _repeatPasswordField })
         {
             if (field is not null)
@@ -277,6 +275,9 @@
                 await field.ResetAsync();
             }
         }
+
+        _currentPassword = _newPassword = _repeatPassword = string.Empty;
+        _passwordChanged = true;
 
         // The change signed the other devices out, so the list below no longer holds them (BTP-4).
         await LoadSessionsAsync();
