@@ -242,8 +242,9 @@ at the VPS. Get the public IP with — [server]: `hostname -I` or `curl -4 -s ht
 ```bash
 cd /opt/circletools
 
-# If the GHCR packages are still private, log in first (PAT with read:packages):
-#   echo <ghcr-pat> | docker login ghcr.io -u <your-github-username> --password-stdin
+# The GHCR packages are public (IMG-4, 2026-11-24): no `docker login ghcr.io` is needed. Don't keep one:
+# when a stored login expires, GHCR refuses every pull, even of public images (Deploy 1.0.31 failed so).
+#   docker logout ghcr.io
 
 export IMAGE_TAG=edge            # or the version / commit SHA the workflow built
 docker compose pull

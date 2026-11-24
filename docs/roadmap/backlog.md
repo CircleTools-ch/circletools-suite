@@ -439,6 +439,21 @@ feature spec (new SH-10). Items below updated to match.
     the merge is the test. Dependabot picking up `*.Dockerfile` names shows on its first weekly run.
   - IMG-4 open: owner makes both packages public (*Package settings → Change visibility*), ideally after
     the first signed build, then the first `server-v…` release.
+- **2026-11-24 — merged (#36) and first Deploy run (1.0.31):**
+  - Proven in CI: the amd64 + arm64 build, provenance, SBOM and cosign signing (signature tag
+    `sha256-<digest>` beside `1.0.31` and `:edge` on both packages). Dependabot found `*.Dockerfile` on its
+    first run; its first PR (#37) proposed `10.0` → `11.0` and was closed. Majors are now ignored (#38),
+    since an `aspnet:11.0` runtime does not run the `net10.0` API and CI never builds the images.
+  - **The rollout failed at `docker compose pull` on the VM:** "denied" for every `ghcr.io` image, even the
+    public `cadvisor`. The VM's stored GHCR login (a PAT with `read:packages`) had expired or been revoked,
+    and GHCR refuses even public pulls with an invalid login. Production stayed on 1.0.28 (the backup,
+    migration and `up` never ran), but `.env` already said `IMAGE_TAG=1.0.31`.
+  - IMG-4 ✅ the same day: the org policy (*Settings → Packages → Package creation*) allowed private
+    packages only. **Public** is now allowed, and both packages are **public**; anonymous pulls of `1.0.31`
+    return 200. The VM no longer needs a GHCR login: run `docker logout ghcr.io` there, then re-run the
+    failed Deploy job.
+  - Still open: a `cosign verify` against the public images (Docker was not running on the dev machine),
+    and the first `server-v…` release.
 
 **Phase 3 — Self-host edition of the server (ADR-0095)**
 
