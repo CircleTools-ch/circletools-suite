@@ -11,8 +11,11 @@ name: circletools
 
 x-images:
   # Pull-based deploy on the VM uses these; `build:` is for producing/pushing them (CI or local).
-  api: &api-image ghcr.io/circletools-ch/circletools-api:${IMAGE_TAG:-latest}
-  web: &web-image ghcr.io/circletools-ch/circletools-web:${IMAGE_TAG:-latest}
+  # Every rollout pins IMAGE_TAG=<version> in the VM's .env (deploy.yml). The fallback is :edge (the last
+  # build from main), not :latest — :latest is the last *server release* (ADR-0098) and can be older than
+  # what this server already runs.
+  api: &api-image ghcr.io/circletools-ch/circletools-api:${IMAGE_TAG:-edge}
+  web: &web-image ghcr.io/circletools-ch/circletools-web:${IMAGE_TAG:-edge}
 
 # Log rotation for the json-file driver (ADR-0051): the local `docker compose logs` floor cannot grow
 # unbounded and fill the NVMe. The API additionally ships its structured logs to Loki over OTLP, but

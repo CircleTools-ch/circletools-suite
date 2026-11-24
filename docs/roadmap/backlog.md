@@ -151,6 +151,8 @@ done.** Next: accept ADR-0093, then OSS-4 (operational docs) and OSS-5 (CI/repo 
 committed (`90058e6`). **2026-11-17:** ADR-0093 and ADR-0094 **Accepted**; OSS-6 done (policy +
 brand checklist; OSS-6b, the brand in one place, stays open). Later the same day: **OSS-5 done — the
 repository is public** (flip day, see OSS-5). **Next:** OSS-6b. ADRs 0095–0098 stay Proposed until IMG/SH/CS.
+**2026-11-20:** ADR-0098 **Accepted** (after a review against the code); IMG-1…IMG-4 unblocked. ADRs
+0095–0097 stay Proposed.
 
 **Choices to confirm when reviewing the Proposed ADRs.** Claude picked these as defaults during drafting;
 each is a real trade-off, not a technical necessity:
@@ -401,18 +403,51 @@ server, so this is useful before any app change) → CS (custom server in the mo
 
 **Phase 2 — Public images (ADR-0098)**
 
-- **IMG-1 · Multi-arch builds.** `linux/amd64` + `linux/arm64` with buildx; SDK stage on `$BUILDPLATFORM`.
-- **IMG-2 · Tags and releases.** `:edge` from `main`; `:stable`, `:<major>`, `:<major>.<minor>`, `:latest`
-  only on a GitHub Release with notes (migrations, config changes, min app / min server versions); our
-  production `.env` pins a version or `edge`.
-- **IMG-3 · Supply chain.** cosign keyless signing, SLSA provenance, SBOM; base images pinned by digest;
-  non-root user.
+**Review 2026-11-20 (Claude, against the code; owner asked for both amendments):** ADR-0095 and ADR-0098
+revised. **ADR-0098 Accepted 2026-11-20** (owner), so IMG-1…IMG-4 can be built; ADR-0095 stays
+**Proposed**. Changes: server releases on `server-v*` tags
+(`v*` starts the store release); no `:<major>` / `:<major>.<minor>` tags; the two service workers would
+delete each other's caches on one origin; without mail nobody can create an account (FR-007), so the
+no-mail rules and a setup link for the first admin; the instance admin and account invitations need a
+feature spec (new SH-10). Items below updated to match.
+
+- **IMG-1 · Multi-arch builds.** `linux/amd64` + `linux/arm64` with buildx; SDK stage on `$BUILDPLATFORM`
+  (the API and WASM output don't depend on the CPU, so only the runtime stage differs).
+- **IMG-2 · Tags and releases.** `deploy.yml` pushes `:<version>`, `:<commit-sha>`, `:edge` (no longer
+  `:latest`); `release-server.yml` on a `server-v<version>` tag re-tags those images as `:stable` /
+  `:latest` and writes the GitHub Release with notes (migrations, config changes, min app / min server
+  versions). Production already pins `IMAGE_TAG=<version>`; the compose fallback changes from `latest` to
+  `edge` in the same change.
+- **IMG-3 · Supply chain.** cosign keyless signing, SLSA provenance, SBOM; base images pinned by digest
+  with a Dependabot `docker` entry; non-root (`USER $APP_UID` in the API image, Caddy as non-root on 8080
+  in plain-HTTP mode).
 - **IMG-4 · Make the GHCR packages public** (after OSS-5).
+- **Built 2026-11-20 on `feat/public-images` (Claude, owner's go-ahead), not merged:**
+  - IMG-1 ✅ in code: both Dockerfiles build the SDK stage on `$BUILDPLATFORM` (`UseAppHost=false` for the
+    API), `deploy.yml` builds `linux/amd64,linux/arm64` with QEMU + Buildx and a GHA layer cache.
+  - IMG-2 ✅ in code: `:edge` replaces `:latest` in `deploy.yml`; compose fallback and `.env.example` →
+    `edge`; new `release-server.yml` (on a published GitHub Release `server-v<version>`, not a pre-release)
+    checks `:<version>` and `:<commit-sha>` are the same image and re-tags it `:stable` + `:latest`.
+  - IMG-3 ✅ in code: base images pinned `tag@digest` (SDK/aspnet 10.0, Caddy 2.11.9-alpine), Dependabot
+    `docker` entry for `/deploy`, provenance `mode=max` + SBOM, cosign keyless signing by digest
+    (`id-token: write` on the build job only), OCI labels (`source` links the package to the repo), API as
+    `USER $APP_UID`. **Web image still root, on purpose:** Caddy holds the TLS certificates in root-owned
+    volumes on our server; non-root moves to SH-2 (plain-HTTP mode) with a one-time `chown` of
+    `caddy_data` / `caddy_config`.
+  - New page [Container images](../deployment/container-images.md) (tags, server release, `cosign verify`).
+  - **Not yet proven:** signing, provenance and the GHA cache only run in CI — the first Deploy run after
+    the merge is the test. Dependabot picking up `*.Dockerfile` names shows on its first weekly run.
+  - IMG-4 open: owner makes both packages public (*Package settings → Change visibility*), ideally after
+    the first signed build, then the first `server-v…` release.
 
 **Phase 3 — Self-host edition of the server (ADR-0095)**
 
-- **SH-1 · Single-origin mode.** Hub at `/`, apps under `/<app>/`, API under `/api/`; configurable base path
-  in every WASM app (routing, service-worker scope, static assets); same-origin SSO hand-off.
+- **SH-1 · Single-origin mode.** Hub at `/`, apps under `/<app>/`, API under `/api/` (the API's routes
+  already start with `/api/v…`, so only Caddy routes them); configurable base path in every WASM app
+  (routing, static assets); same-origin SSO hand-off. **Service workers:** per-app cache names, each worker
+  deletes only its own caches and answers navigations only under its own base path (today the hub's worker
+  would wipe Secret-Santa's cache and serve the hub's page at `/secretsanta/`); review the shared storage
+  keys `circletools.themeMode` and `circletools.sso.*`.
 - **SH-2 · Runtime configuration in the web image.** Generate each app's `appsettings.json` and the CSP at
   container start from `CIRCLETOOLS_PUBLIC_URL` / `CIRCLETOOLS_MODE`; plain HTTP by default,
   `CIRCLETOOLS_TLS=auto` for stand-alone Caddy TLS.
@@ -421,11 +456,18 @@ server, so this is useful before any app change) → CS (custom server in the mo
   log when the request origin does not match.
 - **SH-4 · `deploy/selfhost/compose.yaml`.** `postgres` + `api` + `web`; opt-in
   `CIRCLETOOLS_MIGRATE_ON_START`; observability as an optional profile; no ntfy/cAdvisor/node-exporter.
-- **SH-5 · `setup` script.** Generates JWT, share-token and email-HMAC keys into `.env`.
+- **SH-5 · `setup` script.** Generates JWT, share-token and email-HMAC keys into `.env`, and prints the
+  one-time setup link for the first account (instance admin; 24 h, single use; `setup --admin-link` for a
+  new one).
 - **SH-6 · Optional mail.** Any SMTP; with none, invitation mails are switched off and the UI says so;
-  link invitations keep working.
-- **SH-7 · Registration policy.** `CIRCLETOOLS_REGISTRATION=open|invite|closed` (self-host default `invite`);
-  first account is the instance admin.
+  link invitations keep working. Self-service sign-up needs mail (verification, FR-007): the API refuses
+  `open` without SMTP; password reset becomes an admin-issued link.
+- **SH-7 · Registration policy.** `CIRCLETOOLS_REGISTRATION=open|invite|closed`. Self-host default `closed`
+  (first account via the setup link) until SH-10 ships, then `invite`.
+- **SH-10 · Instance admin and account invitations (new feature, spec first).** No admin role and no
+  account invitation exist today. Glossary entries (**instance admin**, **account invitation**,
+  **operator**) → FEAT + TP from the templates → build: admin role, issue/revoke account invitation and
+  password-reset links, the admin sees no one's groups.
 - **SH-8 · Operator legal pages.** Operator-supplied imprint/privacy (mounted Markdown or URL); fallback
   text naming the self-hosted operator; CircleTools texts only on the hosted service.
 - **SH-9 · Docs and CI.** Self-hosting guide + configuration reference + upgrade/backup notes in
@@ -666,6 +708,11 @@ clean; none caused by the update unless stated:
   fail too (3/3 runs each on the invite form; the bypass 1 run, on all four constant-time routes).
   **Reliability after the fix, on Windows:** 20/20 passes for each of the two classes alone and beside a
   looping Main test-project run (19 loops, none failed). Not measured on the Ubuntu CI runners.
+  **2026-11-24: the floor check's 2 ms tolerance was too tight on Linux.** `main` CI (2026-11-20,
+  resend-verification) and PR #36 (change-email) each failed once with the fastest response 2.04 / 2.12 ms
+  under the 120 ms budget, handlers at 1–2 ms. `Task.Delay` lands early on Linux (coarse timer tick, wait
+  truncated to whole ms); a WSL2 measurement saw up to 9.76 ms early. `TimerEarlyLanding` is now 15 ms
+  (test code only); a lost filter still misses it by ~100 ms. Both timing classes pass locally (6/6).
   **Open (owner, P3): the budget does stop covering the invite form on a saturated host.** With all 8
   logical CPUs busy, its handler has a median of 180–230 ms, about 100 % of requests overrun, and the arms
   separate again (member ~180–195 ms, others ~215–235 ms): a real leak under that load, not noise. Both

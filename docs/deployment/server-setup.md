@@ -198,7 +198,7 @@ Fill in `/opt/circletools/.env` (keys come from `.env.example`):
 | `ALERT_EMAIL_TO` | **required** — your address for Grafana's mail-capacity alerts ([ADR-0088](../adr/0088-mail-capacity-alerting.md)) and the backup-failure alert; `docker compose` refuses to start without it |
 | `NTFY_AUTH_USERS`, `NTFY_AUTH_ACCESS`, `NTFY_AUTH_TOKENS`, `NTFY_GRAFANA_TOKEN`, `HEALTHCHECKS_PING_URL` | **required** — push alerts and the watchdog ([ADR-0091](../adr/0091-ntfy-push-alerts-and-watchdog.md)); see [step 14](#14-push-alerts-ntfy-and-the-watchdog) |
 | `ACME_EMAIL` | `dev@circletools.ch` |
-| `IMAGE_TAG` | `latest` (or a commit SHA to pin) |
+| `IMAGE_TAG` | `edge` for the first bring-up; every deploy then pins the version it built ([container images](container-images.md)) |
 
 Lock the file down:
 
@@ -245,7 +245,7 @@ cd /opt/circletools
 # If the GHCR packages are still private, log in first (PAT with read:packages):
 #   echo <ghcr-pat> | docker login ghcr.io -u <your-github-username> --password-stdin
 
-export IMAGE_TAG=latest          # or the commit SHA the workflow built
+export IMAGE_TAG=edge            # or the version / commit SHA the workflow built
 docker compose pull
 docker compose run --rm migrator # applies EF Core migrations, then exits
 docker compose up -d
