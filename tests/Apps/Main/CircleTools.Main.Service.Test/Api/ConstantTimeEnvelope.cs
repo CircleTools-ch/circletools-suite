@@ -86,10 +86,22 @@ public static class ConstantTimeEnvelope
 {
     /// <summary>
     /// How far below its budget a response may land before something other than the timer is
-    /// responsible. <c>Task.Delay</c> has been measured landing up to 1.27 ms early.
+    /// responsible.
     /// </summary>
-    /// <remarks>Not a leak tolerance: losing the filter misses this by ~100 ms.</remarks>
-    private static readonly TimeSpan TimerEarlyLanding = TimeSpan.FromMilliseconds(2);
+    /// <remarks>
+    /// <para>
+    /// <c>Task.Delay</c> lands early on Linux: the timer queue runs on a coarse tick and the delay is
+    /// truncated to whole milliseconds. Measured: up to 1.27 ms early on Windows; 2.04 ms and 2.12 ms
+    /// on the Ubuntu CI runners (2026-11-20 and 2026-11-24, which failed the old 2 ms tolerance on
+    /// routes with nothing wrong); and up to 9.76 ms early under WSL2 (fastest of 400 waits for a
+    /// 120 ms budget, 3 of them more than 2 ms early). 15 ms covers all of them with room.
+    /// </para>
+    /// <para>
+    /// Not a leak tolerance: losing the filter misses this by ~100 ms, because the handlers behind it
+    /// cost 1–2 ms. The early landing is the timer's, so it does not depend on the path taken.
+    /// </para>
+    /// </remarks>
+    private static readonly TimeSpan TimerEarlyLanding = TimeSpan.FromMilliseconds(15);
 
     /// <summary>
     /// How far apart the paths' fastest responses may sit, as seen by the caller.

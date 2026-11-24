@@ -708,6 +708,11 @@ clean; none caused by the update unless stated:
   fail too (3/3 runs each on the invite form; the bypass 1 run, on all four constant-time routes).
   **Reliability after the fix, on Windows:** 20/20 passes for each of the two classes alone and beside a
   looping Main test-project run (19 loops, none failed). Not measured on the Ubuntu CI runners.
+  **2026-11-24: the floor check's 2 ms tolerance was too tight on Linux.** `main` CI (2026-11-20,
+  resend-verification) and PR #36 (change-email) each failed once with the fastest response 2.04 / 2.12 ms
+  under the 120 ms budget, handlers at 1–2 ms. `Task.Delay` lands early on Linux (coarse timer tick, wait
+  truncated to whole ms); a WSL2 measurement saw up to 9.76 ms early. `TimerEarlyLanding` is now 15 ms
+  (test code only); a lost filter still misses it by ~100 ms. Both timing classes pass locally (6/6).
   **Open (owner, P3): the budget does stop covering the invite form on a saturated host.** With all 8
   logical CPUs busy, its handler has a median of 180–230 ms, about 100 % of requests overrun, and the arms
   separate again (member ~180–195 ms, others ~215–235 ms): a real leak under that load, not noise. Both
