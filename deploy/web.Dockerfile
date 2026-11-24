@@ -11,7 +11,7 @@
 
 # The WASM output is the same on every architecture, so the SDK stage runs once, natively, on the build
 # machine ($BUILDPLATFORM); only the Caddy runtime stage differs per architecture.
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0@sha256:bef136a371963aaa46ec97882845ef6f54dec15728bb4b128b1c2a400ffbc9b4 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:11.0@sha256:2794448a07118a6eaf00f29ab5d2bf44928517ce5ff86505a63a69230374f599 AS build
 WORKDIR /src
 
 # Version stamped into the assemblies. The deploy workflow computes it from git (nbgv, ADR-0047) and
