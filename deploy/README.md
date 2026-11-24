@@ -52,10 +52,12 @@ migrator first (the CD workflow and the commands above both do).
 
 ## Image versioning & the deploy trigger (ADR-0047)
 
-Images are versioned automatically from git — **Nerdbank.GitVersioning** stamps `0.1.<git-height>`
-(from the root [`version.json`](../version.json)) into the assemblies, and
-[`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) tags each pushed image
-`:<version>`, `:<commit-sha>`, and `:latest`. The version reaches the image via a `VERSION` build-arg
+Images are versioned automatically from git — **Nerdbank.GitVersioning** stamps
+`<major>.<minor>.<git-height>` (from the root [`version.json`](../version.json)) into the assemblies, and
+[`.github/workflows/deploy.yml`](../.github/workflows/deploy.yml) builds each image for `linux/amd64` and
+`linux/arm64`, tags it `:<version>`, `:<commit-sha>` and `:edge`, and signs it with cosign. `:stable` and
+`:latest` are set only by a server release ([`release-server.yml`](../.github/workflows/release-server.yml),
+ADR-0098); see [container images](../docs/deployment/container-images.md). The version reaches the image via a `VERSION` build-arg
 (the build context omits `.git`), so the Dockerfiles here publish with `-p:ContainerBuild=true
 -p:Version=$VERSION`.
 

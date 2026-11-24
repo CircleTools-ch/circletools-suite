@@ -13,3 +13,14 @@ updates:
         patterns: ["*"]
     commit-message:
       prefix: "chore(ci)"
+  # Base images of deploy/api.Dockerfile and deploy/web.Dockerfile are pinned as `tag@sha256:digest`
+  # (ADR-0098); Dependabot keeps the digest (and the tag) current.
+  - package-ecosystem: docker
+    directory: /deploy
+    schedule:
+      interval: weekly
+    groups:
+      base-images:
+        patterns: ["*"]
+    commit-message:
+      prefix: "chore(docker)"

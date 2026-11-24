@@ -1,0 +1,94 @@
+# Server release (ADR-0098): promotes images that deploy.yml already built to :stable and :latest.
+#
+# A server release is a GitHub Release whose tag is `server-v<version>` (for example `server-v1.0.30`) on the
+# commit those images were built from, with notes on migrations, configuration changes, breaking changes
+# and the minimum app / server versions (ADR-0096). Publishing that release runs this workflow, which
+#   1. checks that :<version> and :<commit-sha> of both images exist and are the same image (so the release
+#      tag sits on the commit the images were built from),
+#   2. re-tags that image as :stable and :latest — no rebuild, so the released image is exactly the one our
+#      server ran, and its cosign signature, provenance and SBOM (attached by digest) carry over.
+#
+# Not `v*`: a `v*` tag push starts the mobile store release (release-mobile.yml). A pre-release does not
+# touch :stable / :latest. See docs/deployment/container-images.md.
+name: Release (server)
+
+on:
+  release:
+    types: [published]
+
+concurrency:
+  group: release-server
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_PREFIX: ghcr.io/circletools-ch
+
+jobs:
+  promote:
+    name: promote images to stable
+    if: ${{ startsWith(github.event.release.tag_name, 'server-v') && !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve version and commit
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          version="${TAG#server-v}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release tag '$TAG' must be server-v<major>.<minor>.<patch>, the version deploy.yml built (for example server-v1.0.30)."
+            exit 1
+          fi
+          commit="$(gh api "repos/${{ github.repository }}/commits/$TAG" --jq .sha)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          echo "Release $TAG → version $version, commit $commit"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Check the images belong to the release commit
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          COMMIT: ${{ steps.release.outputs.commit }}
+        run: |
+          set -euo pipefail
+          for image in circletools-api circletools-web; do
+            by_version="$(docker buildx imagetools inspect "$IMAGE_PREFIX/$image:$VERSION" --format '{{json .Manifest.Digest}}' 2>/dev/null || true)"
+            by_commit="$(docker buildx imagetools inspect "$IMAGE_PREFIX/$image:$COMMIT" --format '{{json .Manifest.Digest}}' 2>/dev/null || true)"
+            if [ -z "$by_version" ]; then
+              echo "::error::$image:$VERSION does not exist. Run Deploy for this commit first, then publish the release."
+              exit 1
+            fi
+            if [ "$by_version" != "$by_commit" ]; then
+              echo "::error::$image:$VERSION was not built from $COMMIT (the release tag's commit). Put the tag on the commit Deploy built."
+              exit 1
+            fi
+            echo "$image:$VERSION = $by_version"
+          done
+
+      - name: Re-tag as stable and latest
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          for image in circletools-api circletools-web; do
+            docker buildx imagetools create \
+              --tag "$IMAGE_PREFIX/$image:stable" \
+              --tag "$IMAGE_PREFIX/$image:latest" \
+              "$IMAGE_PREFIX/$image:$VERSION"
+          done
+          echo "### Promoted $VERSION to :stable and :latest" >> "$GITHUB_STEP_SUMMARY"

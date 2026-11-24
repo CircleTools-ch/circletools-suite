@@ -10,6 +10,8 @@ Two tracks:
   Swiss Backup, Infomaniak DNS, Caddy TLS) under the suite domain; Brevo for transactional email.
   - **[Server setup](server-setup.md)** — first-time VPS provisioning runbook (hardening, Docker,
     stack bring-up), executed on the box.
+  - **[Container images](container-images.md)** — the API and web images: amd64 + arm64, tags
+    (`:edge`, `:stable`), making a server release, verifying signatures ([ADR-0098](../adr/0098-container-image-distribution.md)).
   - **[Backups & restore](backups.md)** — nightly `pg_dump` → Swiss Backup via restic, and the
     (safe) restore drill that keeps GL-5's "restore tested" honest.
   - **[Operator read-only DB access](operator-db-read-access.md)** — a `SELECT`-only role reached over an

@@ -7,6 +7,11 @@ tags: [deployment, self-hosting, configuration, docker, security]
 
 # ADR-0095 — Self-host deployment: one domain, configuration at runtime, minimal stack
 
+> **Revised 2026-11-20** (review against the code, still Proposed): service-worker and cache rules for
+> several apps on one origin; API routing needs no API change; what "mail is optional" means for sign-up
+> and password reset; the first admin comes from a setup link, not from being first; the instance admin
+> and account invitations are a separate feature spec, with `closed` as the default until it ships.
+
 ## Context and problem statement
 
 The production stack ([ADR-0036](0036-cloud-provider-and-hosting.md), `deploy/`) is built
@@ -59,6 +64,27 @@ is `'self'`, and the passkey RP-ID is simply the host. Each WASM app gets a conf
 (`<base href>`), and the SSO hand-off ([ADR-0039](0039-cross-app-single-sign-on.md)) becomes a
 same-origin navigation.
 
+- **API routing needs no change in the API.** Every public API route already starts with `/api/v…`, so
+  the web container's Caddy proxies `/api/*` to the API unchanged (no path stripping, no `PathBase`).
+  `/alive` and `/metrics` stay internal, as on the hosted service.
+- **The SSO hand-off can usually be skipped.** The apps keep separate refresh-token keys
+  (`main.refreshToken`, `secretsanta.refreshToken`), so each app still signs in on its own; on one origin
+  the hand-off is a same-origin redirect with no new trust boundary. Whether the apps should instead share
+  one sign-in in this mode is left to the base-path work (SH-1), not decided here.
+- **Apps on one origin must not interfere with each other.** Today each app's service worker deletes
+  every cache starting with `offline-cache-` except its own, and answers *every* navigation in its scope
+  with its own `index.html`. On one origin the hub's worker (scope `/`) would delete Secret-Santa's
+  offline cache and vice versa, and on a device that has opened the hub, a first visit to `/secretsanta/`
+  could be answered with the hub's page. Rules for `single-origin`, which the multi-origin service also
+  follows so there is one code path:
+  - each app's cache names carry the app id (`offline-cache-<app>-<version>`), and a worker deletes only
+    its own old caches;
+  - a worker answers navigations with its `index.html` only for paths under its own base path; the hub's
+    worker leaves `/<app>/…` and `/api/…` to the network;
+  - each app's worker is registered with its base path as scope;
+  - browser-storage keys are already app-prefixed (`circletools.secretsanta.*`, `main.*`); shared keys
+    (`circletools.themeMode`, `circletools.sso.*`) are reviewed during SH-1 and kept shared only on purpose.
+
 **Configuration at runtime, not at build time:**
 
 - The **web image** generates each app's `appsettings.json` at container start from environment
@@ -82,9 +108,40 @@ API trusts forwarded headers only from the configured proxy network.
 and the UI says so; invitations by link ([ADR-0058](0058-account-free-link-shared-groups.md)) keep
 working. Any SMTP server works (not only Brevo).
 
-**Registration policy:** `CIRCLETOOLS_REGISTRATION=open|invite|closed` (default `invite` for self-host, so a
-public instance is not an open sign-up by accident); the first account created becomes the instance
-admin.
+Mail is also what confirms an account today: sign-up creates a pending account and sends a verification
+mail ([FR-007](../requirements/functional/FR-007-create-suite-account.md)), and a forgotten password is
+reset by mail ([FR-009](../requirements/functional/FR-009-reset-password.md)). Without mail:
+
+- **Self-service sign-up is off.** `open` registration requires mail; the API refuses to start with
+  `CIRCLETOOLS_REGISTRATION=open` and no SMTP, with a clear log message.
+- **Accounts are confirmed by link instead.** An account invitation link (below) proves the address the
+  same way the verification mail does — whoever holds it may create that account — so an account created
+  through one is confirmed at once.
+- **Password reset becomes an admin action:** the instance admin issues a one-time reset link and hands it
+  over. Passkeys keep working as on the hosted service.
+
+**Registration policy:** `CIRCLETOOLS_REGISTRATION=open|invite|closed`.
+
+- `open` — today's behaviour (needs mail, see above). The hosted service's mode.
+- `closed` — nobody can sign up; only accounts that already exist sign in.
+- `invite` — an account can only be created through an **account invitation link** that the instance
+  admin issues. This is the self-host default once it exists, so a public instance is not an open sign-up
+  by accident.
+
+**The first account is created through a setup link, not by being first.** The `setup` command prints a
+one-time link that creates the first account and makes it the instance admin; it expires after first use
+or 24 hours, and `setup --admin-link` issues a new one. "Whoever reaches a new server first becomes
+admin" would hand a freshly started public server to whoever finds it before its operator.
+
+**Account invitations and the instance admin are new features, not settings.** Today the code has no admin
+role and no way to invite someone to create an account (invitations exist only to groups and circles).
+They get their own feature spec and test plan (admin role, issuing and revoking account invitation and
+reset links, what the admin can and cannot see — never other people's groups). Their names go into the
+glossary first: **instance admin** and **account invitation** must not be confused with the
+[organizer link](../glossary/organizer-link.md) or the superseded [admin link](../glossary/admin-link.md),
+which are about organizing one group, not about the server. **Until that feature ships**, the self-host default is
+`closed` with the setup link for the first account, so a self-hosted server works for one household
+from the start.
 
 **Secrets:** a `setup` command (shell script and documented `openssl rand` equivalents) generates the JWT
 signing key, the share-token encryption key ([ADR-0061](0061-share-token-and-creator-key-at-rest-protection.md))
@@ -104,10 +161,14 @@ image version, not a new deployment design.
   same images with different configuration; adding an app is a config change.
 - **Negative:** two topologies to test; base-path support touches routing, service worker scope and static
   asset paths in every WASM app; runtime config generation adds startup code to the web image.
-- **Follow-ups:** base-path support in the WASM apps; config generation in the web image; API options
-  derived from one public URL; self-host compose file and `setup` script; configurable legal pages;
-  registration policy; self-hosting guide and configuration reference in `docs/deployment/`; a CI job that
-  boots the self-host stack and runs an E2E smoke test against it.
+- **Follow-ups:** base-path support in the WASM apps, including the service-worker and cache rules above;
+  config generation in the web image; API options derived from one public URL; self-host compose file and
+  `setup` script (keys and the first-admin setup link); configurable legal pages; registration policy and
+  the no-mail rules; a feature spec + test plan for the instance admin and account invitations, with
+  glossary entries (**instance admin**, **account invitation**, **operator**) before any code; self-hosting
+  guide and configuration reference in `docs/deployment/`; a CI job that boots the self-host stack and runs
+  an E2E smoke test against it, which opens the hub first and then an app, so the service-worker rules are
+  covered.
 - **New risks:** a misconfigured proxy (wrong forwarded headers) breaks passkeys or links — the guide covers
   the common proxies, and the API logs a clear error when the request origin does not match the configured
   public URL.

@@ -4,6 +4,8 @@
   href: web-api-db.md
 - name: Server setup (VPS provisioning)
   href: server-setup.md
+- name: Container images
+  href: container-images.md
 - name: Backups & restore
   href: backups.md
 - name: Operator read-only DB access

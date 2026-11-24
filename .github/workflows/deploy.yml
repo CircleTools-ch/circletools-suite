@@ -3,10 +3,12 @@
 # Runs ONLY on manual dispatch (ADR-0047 amendment 2026-10-28): a docs-only or mobile-only merge no longer rolls
 # the server. Still only green commits ship: a build run first checks that CI succeeded for the commit (main's
 # tip), and refuses otherwise. A dispatch with an image_tag is a rollback to an existing image. Every run:
-#   1. computes the suite version from git (nbgv, ADR-0047: 0.1.<git-height>),
-#   2. builds the API + Web images, stamped with that version, and pushes them to GHCR tagged
-#      :<version>, :<commit-sha>, and :latest,
+#   1. computes the suite version from git (nbgv, ADR-0047: <major>.<minor>.<git-height>),
+#   2. builds the API + Web images for linux/amd64 and linux/arm64, stamped with that version, pushes them
+#      to GHCR tagged :<version>, :<commit-sha> and :edge, with SLSA provenance and an SBOM, and signs them
+#      with cosign (keyless, GitHub OIDC) — ADR-0098,
 #   3. rolls the VPS forward over SSH (migrator, then `compose up`).
+# :stable / :latest are NOT set here: only a server release does that (release-server.yml, ADR-0098).
 #
 # The rollout job runs in the `production` environment (ADR-0093): the owner approves every rollout, and
 # the DEPLOY_* secrets live in that environment, out of reach of any other job or workflow. If they are
@@ -79,6 +81,12 @@ jobs:
     needs: guard
     if: ${{ needs.guard.outputs.build == 'true' }}
     runs-on: ubuntu-latest
+    # Job-level permissions replace the workflow's: id-token lets cosign sign keylessly with this run's
+    # GitHub OIDC identity; it is granted to this job only (ADR-0098).
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     outputs:
       image_tag: ${{ steps.nbgv.outputs.SimpleVersion }}
     steps:
@@ -108,33 +116,74 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Multi-arch (ADR-0098). The SDK stages run natively on the runner ($BUILDPLATFORM); QEMU is only
+      # needed for the few commands in the arm64 runtime stages (the API's apt-get for curl).
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
+
       # VERSION (SemVer2, clean on main) is stamped into the image assemblies; .git is not in the build
       # context, so the Dockerfiles publish with ContainerBuild=true and this explicit version (ADR-0047).
+      # provenance mode=max + sbom attach SLSA provenance and an SPDX SBOM to each image (ADR-0098).
       - name: Build & push API image
+        id: api
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: deploy/api.Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
           build-args: |
             VERSION=${{ steps.nbgv.outputs.SemVer2 }}
+          labels: |
+            org.opencontainers.image.revision=${{ needs.guard.outputs.ref }}
           tags: |
             ${{ env.IMAGE_PREFIX }}/circletools-api:${{ steps.nbgv.outputs.SimpleVersion }}
             ${{ env.IMAGE_PREFIX }}/circletools-api:${{ needs.guard.outputs.ref }}
-            ${{ env.IMAGE_PREFIX }}/circletools-api:latest
+            ${{ env.IMAGE_PREFIX }}/circletools-api:edge
 
       - name: Build & push Web image
+        id: web
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: deploy/web.Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
           build-args: |
             VERSION=${{ steps.nbgv.outputs.SemVer2 }}
+          labels: |
+            org.opencontainers.image.revision=${{ needs.guard.outputs.ref }}
           tags: |
             ${{ env.IMAGE_PREFIX }}/circletools-web:${{ steps.nbgv.outputs.SimpleVersion }}
             ${{ env.IMAGE_PREFIX }}/circletools-web:${{ needs.guard.outputs.ref }}
-            ${{ env.IMAGE_PREFIX }}/circletools-web:latest
+            ${{ env.IMAGE_PREFIX }}/circletools-web:edge
+
+      # Keyless signature by digest (covers every tag of the image, including a later :stable re-tag).
+      # Verify with the command in docs/deployment/container-images.md.
+      - name: Sign images (cosign)
+        env:
+          API_DIGEST: ${{ steps.api.outputs.digest }}
+          WEB_DIGEST: ${{ steps.web.outputs.digest }}
+        run: |
+          set -euo pipefail
+          cosign sign --yes "${IMAGE_PREFIX}/circletools-api@${API_DIGEST}"
+          cosign sign --yes "${IMAGE_PREFIX}/circletools-web@${WEB_DIGEST}"
 
   deploy:
     name: deploy to VPS
