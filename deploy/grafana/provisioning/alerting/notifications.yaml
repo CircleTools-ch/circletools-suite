@@ -1,5 +1,5 @@
 # Grafana alert notification provisioning (ADR-0088, ADR-0091): where alerts go. The rules live in their own
-# files next to this one (mail-capacity.yaml, watchdog.yaml); this file holds the contact points and the one
+# files next to this one (mail-capacity.yaml, api-health.yaml, watchdog.yaml); this file holds the contact points and the one
 # notification policy tree, which every rule file shares.
 #
 # - owner: every alert, by email (ALERT_EMAIL_TO, through Brevo) AND as a push via ntfy, so an alert

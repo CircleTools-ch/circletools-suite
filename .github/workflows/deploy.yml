@@ -228,7 +228,9 @@ jobs:
         #    deploy — not by hand), 2) pin the deployed IMAGE_TAG in the VM's .env (so a manual
         #    `docker compose` matches the pipeline instead of drifting to a stale :latest), then
         #    3) back up the database (ADR-0087: production data is kept — a failed backup stops the rollout
-        #    before anything migrates), 4) migrate as an explicit one-shot and roll the stack forward.
+        #    before anything migrates), 4) migrate as an explicit one-shot and roll the stack forward,
+        #    5) restart Grafana: it reads its provisioning (alert rules, dashboards' datasources) only at
+        #    start, and `up -d` leaves an unchanged container running, so synced rule files would not load.
         env:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -254,4 +256,5 @@ jobs:
              IMAGE_TAG=$TAG docker compose pull && \
              BACKUP_TAG=predeploy bash backup.sh && \
              IMAGE_TAG=$TAG docker compose run --rm migrator && \
-             IMAGE_TAG=$TAG docker compose up -d --remove-orphans"
+             IMAGE_TAG=$TAG docker compose up -d --remove-orphans && \
+             docker compose restart grafana"

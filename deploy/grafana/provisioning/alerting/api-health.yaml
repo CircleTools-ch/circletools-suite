@@ -1,0 +1,87 @@
+# API health alert rules (PR-7; channel per ADR-0091, layout per ADR-0088): tells the owner when the API stops
+# answering Prometheus, or when a noticeable share of its responses are server errors. Loaded at Grafana
+# startup; the alerts go to the "owner" contact point (email + ntfy push, notifications.yaml).
+#
+# What these rules cannot see: the whole VPS being down (the watchdog in watchdog.yaml covers that from
+# outside), and the public path through Caddy, DNS or TLS (Prometheus scrapes the API on the internal network).
+#
+# No literal dollar signs elsewhere in this file: Grafana expands dollar-prefixed names from the environment.
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: api-health
+    folder: CircleTools
+    interval: 1m
+    rules:
+      - uid: api-down
+        title: API down
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              # 1 while Prometheus can scrape the API's /metrics (every 30 s), 0 when it cannot.
+              expr: max(up{job="api"})
+              instant: true
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: lt, params: [1] }
+        # No series at all means Prometheus no longer knows the API target: treat it as down.
+        noDataState: Alerting
+        execErrState: Error
+        # A rollout restarts the API for well under a minute; 3 minutes ignores that and still reports a
+        # real outage quickly.
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: Prometheus has not been able to reach the API for 3 minutes. The apps cannot sync or sign in.
+          description: >-
+            On the server: docker compose ps, then docker compose logs --tail 200 api. A failed rollout can be
+            rolled back by dispatching Deploy with an older version (docs/deployment/container-images.md).
+
+      - uid: api-error-rate
+        title: API error rate above 5 %
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              # Share of 5xx responses over 10 minutes, in percent, but only when there were at least 5 of
+              # them: at night a single failed request out of three would otherwise read as 33 %. With fewer
+              # than 5 errors the query returns nothing, which is "no data" and OK below.
+              expr: >-
+                (100 * sum(increase(http_server_request_duration_seconds_count{job="api",http_response_status_code=~"5.."}[10m]))
+                / clamp_min(sum(increase(http_server_request_duration_seconds_count{job="api"}[10m])), 1))
+                and on() (sum(increase(http_server_request_duration_seconds_count{job="api",http_response_status_code=~"5.."}[10m])) >= 5)
+              instant: true
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [5] }
+        # No data = fewer than 5 errors, or no traffic at all. An API that is down is the rule above.
+        noDataState: OK
+        execErrState: Error
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: More than 5 % of the API's responses in the last 10 minutes were server errors (5xx).
+          description: >-
+            Check the CircleTools Overview dashboard (5xx error rate) and the API logs in Loki for the failing
+            route. Typical causes: the database is unreachable or full, a broken migration, a failing outbound
+            call. Same thresholds as the dashboard's red level (5 %).
