@@ -370,7 +370,8 @@ the default server to `https://ntfy.circletools.ch`, add the user `owner` with i
 optimisation for the app; iOS gets instant delivery through the ntfy.sh relay set in `server.yml`.
 
 **7. Watchdog** — [browser]: within ten minutes of the deploy, healthchecks.io shows the check as **up**.
-In Grafana, *Alerting → Alert rules* lists the *Watchdog* rule as firing; that is its normal state.
+In Grafana, *Alerting → Alert rules* lists the *Watchdog* rule as firing; that is its normal state. The
+other rules (mail capacity, *API down*, *API error rate above 5 %*) are normal when they are not firing.
 
 > **Rotating a token:** replace it in `NTFY_AUTH_TOKENS` (and `NTFY_GRAFANA_TOKEN` or `ALERT_WEBHOOK_TOKEN`),
 > then `docker compose up -d ntfy grafana`. ntfy removes tokens that are no longer listed.

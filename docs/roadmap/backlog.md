@@ -95,6 +95,10 @@ The App Store row uses the same results for every language; the API barely varie
     "Secret Santa" ([ADR-0057](../adr/0057-app-store-naming-and-localization.md)).
   - ⏳ Re-run the store searches about 2026-11-27 (a week after release), together with the ASO-1 "Wichtel"
     check.
+  - **In-app rating prompt: on hold (owner, 2026-11-25).** The owner dislikes being prompted for a review
+    and is not sure the app should do it, so the early-December version planned above does not include it.
+    If it comes back, it goes through brainstorming first (the alternative is a passive "Rate this app" entry
+    on About & legal, which never interrupts).
 - **ASO-3 · Developer name on the App Store (owner, later).** It shows the owner's legal name because the
   Apple account is an individual account. Showing "CircleTools" needs an organization account (a legal entity
   and a D-U-N-S number). Google Play already shows "CircleTools".
@@ -456,7 +460,11 @@ feature spec (new SH-10). Items below updated to match.
   - 2026-11-25: `cosign verify` passes for both public `1.0.31` images with **cosign 3.1.4**, which the
     workflow signs with. cosign 2.6 answers `no signatures found` (it does not read the 3.x bundle
     format), so [Container images](../deployment/container-images.md) now names cosign 3.
-  - Still open: the first `server-v…` release.
+  - ✅ 2026-11-25: **first server release, [Server 1.0.31](https://github.com/CircleTools-ch/circletools-suite/releases/tag/server-v1.0.31)**
+    (`server-v1.0.31` on `0da8a34`, the commit both 1.0.31 images carry in their revision label). *Release
+    (server)* passed; `:stable` and `:latest` now point at the 1.0.31 digests of both images. The notes say
+    plainly that it is **not a self-hosting release yet**: the store apps cannot choose another server
+    (Phase 4, CS-*) and the self-host edition is not built (Phase 3, SH-*). Phase 2 (IMG-1…IMG-4) is done.
 
 **Phase 3 — Self-host edition of the server (ADR-0095)**
 
@@ -646,6 +654,16 @@ items missing from it, sequenced in the **[production-release plan](../deploymen
   values): the `ntfy` A record, the healthchecks.io check, and the `NTFY_*` / `HEALTHCHECKS_PING_URL` values in
   the VM's `.env` — [server setup §14](../deployment/server-setup.md#14-push-alerts-ntfy-and-the-watchdog).
   Still open in PR-7: rules for API down and error rate (they can use the same `owner` contact point).
+  ✅ 2026-11-25: both rules in `deploy/grafana/provisioning/alerting/api-health.yaml`, to the `owner` contact
+  point. **API down:** `up{job="api"}` below 1 (or no series) for 3 min, so a rollout restart does not fire it.
+  **Error rate:** more than 5 % 5xx over 10 min, only once there are at least 5 errors (so one failed request
+  at night does not read as 33 %), for 5 min. Checked locally against Grafana 13.2.4 + Prometheus: both rules
+  load, both queries run, the threshold expression returns a value at 6 errors and nothing at 4, and *API
+  down* went pending → firing after 3 min with no API running. Goes live with the next Deploy: Grafana reads
+  rule files only at start and `up -d` left an unchanged Grafana running, so `deploy.yml` now restarts
+  Grafana after every rollout (synced rule changes did not load before; Prometheus has the same gap for
+  `prometheus.yml`, not changed here). Not covered: the public path (Caddy/DNS/TLS); the outside probe in ADR-0091's
+  follow-ups would close that.
 
 Found during the PR-3 dependency update (2026-10-20) — browser pass at 412×915 on MudBlazor 9.11, console
 clean; none caused by the update unless stated:
