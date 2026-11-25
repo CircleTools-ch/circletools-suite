@@ -452,8 +452,11 @@ feature spec (new SH-10). Items below updated to match.
     packages only. **Public** is now allowed, and both packages are **public**; anonymous pulls of `1.0.31`
     return 200. The VM no longer needs a GHCR login: run `docker logout ghcr.io` there, then re-run the
     failed Deploy job.
-  - Still open: a `cosign verify` against the public images (Docker was not running on the dev machine),
-    and the first `server-v…` release.
+  - The re-run rolled 1.0.31 out the same evening (no migrations; both web apps serve the new build).
+  - 2026-11-25: `cosign verify` passes for both public `1.0.31` images with **cosign 3.1.4**, which the
+    workflow signs with. cosign 2.6 answers `no signatures found` (it does not read the 3.x bundle
+    format), so [Container images](../deployment/container-images.md) now names cosign 3.
+  - Still open: the first `server-v…` release.
 
 **Phase 3 — Self-host edition of the server (ADR-0095)**
 

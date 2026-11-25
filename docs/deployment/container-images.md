@@ -47,13 +47,18 @@ rebuilds them.
 ## Verifying an image
 
 Every image is signed with cosign (keyless, by this repository's Deploy workflow) and carries SLSA
-provenance and an SPDX SBOM. To check that an image was built by our CI from this repository:
+provenance and an SPDX SBOM. To check that an image was built by our CI from this repository, use
+**cosign 3.x**. The images are signed in cosign 3's bundle format, and cosign 2 answers
+`no signatures found` for them:
 
 ```bash
 cosign verify ghcr.io/circletools-ch/circletools-api:stable \
   --certificate-identity-regexp '^https://github.com/CircleTools-ch/circletools-suite/\.github/workflows/deploy\.yml@refs/heads/main$' \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
+
+Without cosign installed, run it from its image instead:
+`docker run --rm ghcr.io/sigstore/cosign/cosign:v3.1.4 verify …` with the same arguments.
 
 The provenance and the SBOM:
 

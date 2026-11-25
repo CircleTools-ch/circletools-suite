@@ -14,6 +14,13 @@
       "port": 5082
     },
     {
+      "name": "apphost",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/Aspire/CircleTools.AppHost", "--launch-profile", "https"],
+      "port": 17073,
+      "url": "https://localhost:17073"
+    },
+    {
       "name": "docs-site",
       "runtimeExecutable": "dotnet",
       "runtimeArgs": ["docfx", "serve", "docfx/_site", "--port", "8080"],
