@@ -177,6 +177,12 @@ services:
       # No anonymous access; sign-up disabled — admin login only.
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
+      # Grafana's own SQLite (grafana.db). Without WAL a write blocks every reader, and rule evaluation
+      # failed with SQLITE_BUSY ("database is locked") when the 1-minute rule tick met Grafana's own writes
+      # — a false DatasourceError page on 2026-11-26. WAL lets reads go on during writes; the retries ride
+      # out the rest. (ADR-0088)
+      GF_DATABASE_WAL: "true"
+      GF_DATABASE_QUERY_RETRIES: "5"
       # Alert email (ADR-0088): Grafana sends through the same Brevo SMTP relay as the API and the backup
       # alert. ALERT_EMAIL_TO is read by grafana/provisioning/alerting/mail-capacity.yaml. It is required:
       # Grafana refuses to start with an empty contact-point address, so compose fails first, before a

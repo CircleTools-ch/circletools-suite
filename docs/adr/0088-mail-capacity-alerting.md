@@ -72,6 +72,15 @@ on the dashboard, and needs no new moving part. Concretely:
   more than this — **done 2026-10-31 in [ADR-0091](0091-ntfy-push-alerts-and-watchdog.md)**, which also
   replaces the `owner-email` contact point with `owner` (email + push); revisit the thresholds if the Brevo plan changes (they are hard-coded to the 300/day cap).
 - **New risks:** a deploy fails until `ALERT_EMAIL_TO` is set in the VM's `.env` — loud by design.
+- **Amendment 2026-11-26 — evaluation errors do not page.** At 02:15 local time all three mail rules
+  fired a critical `DatasourceError` (value `-1`, real volume 0): Grafana could not build the query because
+  its own SQLite database (`grafana.db`) was briefly locked (`SQLITE_BUSY`). Two changes: Grafana's SQLite
+  runs with WAL and query retries (`GF_DATABASE_WAL`, `GF_DATABASE_QUERY_RETRIES` in `deploy/compose.yaml`),
+  and these rules and the API-health rules use `execErrState: KeepLast` instead of `Error`, so a failed
+  evaluation keeps the last state. A lasting evaluation failure is still reported: it also stops the
+  watchdog heartbeat ([ADR-0091](0091-ntfy-push-alerts-and-watchdog.md)), and healthchecks.io pages from
+  outside. Accepted gap: if only these rules failed for a long time while the watchdog kept working, it
+  would go unnoticed.
 
 ## Pros and cons of the options
 
