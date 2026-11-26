@@ -36,7 +36,9 @@ groups:
                 - evaluator: { type: lt, params: [1] }
         # No series at all means Prometheus no longer knows the API target: treat it as down.
         noDataState: Alerting
-        execErrState: Error
+        # A query that cannot run (e.g. Grafana's own DB briefly locked) keeps the last state instead of paging a
+        # DatasourceError; a lasting breakage stops the watchdog heartbeat (ADR-0091) and pages from outside.
+        execErrState: KeepLast
         # A rollout restarts the API for well under a minute; 3 minutes ignores that and still reports a
         # real outage quickly.
         for: 3m
@@ -75,7 +77,9 @@ groups:
                 - evaluator: { type: gt, params: [5] }
         # No data = fewer than 5 errors, or no traffic at all. An API that is down is the rule above.
         noDataState: OK
-        execErrState: Error
+        # A query that cannot run (e.g. Grafana's own DB briefly locked) keeps the last state instead of paging a
+        # DatasourceError; a lasting breakage stops the watchdog heartbeat (ADR-0091) and pages from outside.
+        execErrState: KeepLast
         for: 5m
         labels:
           severity: critical

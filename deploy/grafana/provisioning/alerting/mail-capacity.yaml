@@ -36,7 +36,9 @@ groups:
                 - evaluator: { type: gt, params: [199] }
         # Nothing scraped means the API is down, which sends no mail; that is not a capacity problem.
         noDataState: OK
-        execErrState: Error
+        # A query that cannot run (e.g. Grafana's own DB briefly locked) keeps the last state instead of paging a
+        # DatasourceError; a lasting breakage stops the watchdog heartbeat (ADR-0091) and pages from outside.
+        execErrState: KeepLast
         for: 0s
         labels:
           severity: warning
@@ -67,7 +69,9 @@ groups:
               conditions:
                 - evaluator: { type: gt, params: [269] }
         noDataState: OK
-        execErrState: Error
+        # A query that cannot run (e.g. Grafana's own DB briefly locked) keeps the last state instead of paging a
+        # DatasourceError; a lasting breakage stops the watchdog heartbeat (ADR-0091) and pages from outside.
+        execErrState: KeepLast
         for: 0s
         labels:
           severity: critical
@@ -99,7 +103,9 @@ groups:
               conditions:
                 - evaluator: { type: gt, params: [0] }
         noDataState: OK
-        execErrState: Error
+        # A query that cannot run (e.g. Grafana's own DB briefly locked) keeps the last state instead of paging a
+        # DatasourceError; a lasting breakage stops the watchdog heartbeat (ADR-0091) and pages from outside.
+        execErrState: KeepLast
         for: 0s
         labels:
           severity: critical
