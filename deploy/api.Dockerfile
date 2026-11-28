@@ -11,7 +11,7 @@
 # The SDK stage always runs on the build machine's own architecture ($BUILDPLATFORM), never under
 # emulation: the API is published framework-dependent without a runtime identifier, so its output is
 # portable IL that runs on amd64 and arm64 alike. Only the runtime stage below differs per architecture.
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0@sha256:bef136a371963aaa46ec97882845ef6f54dec15728bb4b128b1c2a400ffbc9b4 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0@sha256:8c6edfb26c85153f236d26efebd9ad349aec403583f343f201ee67838b23658d AS build
 WORKDIR /src
 
 # Version stamped into the assemblies. The deploy workflow computes it from git (nbgv, ADR-0047) and
@@ -27,7 +27,7 @@ COPY . .
 RUN dotnet publish src/Apps/Main/CircleTools.Main.Service/CircleTools.Main.Service.csproj \
     -c Release -o /app -p:ContainerBuild=true -p:Version=$VERSION -p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:12b1135f5f8b3c0a214f2a680ff2033dff4f684f445d6c697d9524ceeb303586 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:aac50ceef10391e78a899e3d2ccd00bbafa2dcb56ccf4586cbccf00edb84fc21 AS runtime
 ARG VERSION=0.0.0-dev
 # curl backs the Compose liveness healthcheck (GET /alive). Non-chiseled aspnet image has apt.
 RUN apt-get update \
